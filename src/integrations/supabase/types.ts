@@ -14,7 +14,156 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      change_logs: {
+        Row: {
+          action: string
+          created_at: string
+          description: string | null
+          id: number
+          new_value: number | null
+          old_value: number | null
+          piece_id: number | null
+          store_id: number
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          description?: string | null
+          id?: number
+          new_value?: number | null
+          old_value?: number | null
+          piece_id?: number | null
+          store_id: number
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          description?: string | null
+          id?: number
+          new_value?: number | null
+          old_value?: number | null
+          piece_id?: number | null
+          store_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "change_logs_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "pieces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "change_logs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pieces: {
+        Row: {
+          category: string
+          code: number
+          created_at: string
+          id: number
+          image_url: string | null
+          name: string
+          size: string
+        }
+        Insert: {
+          category: string
+          code: number
+          created_at?: string
+          id?: number
+          image_url?: string | null
+          name: string
+          size: string
+        }
+        Update: {
+          category?: string
+          code?: number
+          created_at?: string
+          id?: number
+          image_url?: string | null
+          name?: string
+          size?: string
+        }
+        Relationships: []
+      }
+      store_pieces: {
+        Row: {
+          id: number
+          piece_id: number
+          quantity: number
+          store_id: number
+        }
+        Insert: {
+          id?: number
+          piece_id: number
+          quantity?: number
+          store_id: number
+        }
+        Update: {
+          id?: number
+          piece_id?: number
+          quantity?: number
+          store_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_pieces_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "pieces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_pieces_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stores: {
+        Row: {
+          created_at: string
+          id: number
+          model: string
+          name: string
+          number: number
+          primary_mod: string
+          secondary_mod: string
+          type: string
+          uf: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          model: string
+          name: string
+          number: number
+          primary_mod: string
+          secondary_mod: string
+          type: string
+          uf: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          model?: string
+          name?: string
+          number?: number
+          primary_mod?: string
+          secondary_mod?: string
+          type?: string
+          uf?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
