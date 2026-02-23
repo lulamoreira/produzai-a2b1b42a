@@ -6,6 +6,7 @@ import {
   type Store,
 } from "@/hooks/useStoreData";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import StoreSelector from "@/components/StoreSelector";
 import StoreDetail from "@/components/StoreDetail";
 import AddPieceDialog from "@/components/AddPieceDialog";
@@ -29,6 +30,7 @@ import {
 
 const Index = () => {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useUserRole();
   const { data: stores = [], isLoading: loadingStores } = useStores();
   const { data: pieces = [], isLoading: loadingPieces } = usePieces();
   const { data: allStorePieces = [] } = useAllStorePieces();
@@ -110,7 +112,7 @@ const Index = () => {
               </span>
             </div>
 
-            <AddPieceDialog existingPieces={pieces} />
+            {isAdmin && <AddPieceDialog existingPieces={pieces} />}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -143,6 +145,11 @@ const Index = () => {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem className="text-xs text-muted-foreground" disabled>
                   {user?.email}
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-xs" disabled>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${isAdmin ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                    {isAdmin ? 'Admin' : 'Visualizador'}
+                  </span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={signOut}>
                   <LogOut className="w-4 h-4 mr-2" />
@@ -196,6 +203,7 @@ const Index = () => {
               store={selectedStore}
               pieces={pieces}
               allStorePieces={allStorePieces}
+              isAdmin={isAdmin}
             />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in">
