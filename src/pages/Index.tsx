@@ -1,64 +1,142 @@
 import { useState, useMemo } from "react";
-import { stores, Store } from "@/data/storeData";
+import {
+  useStores,
+  usePieces,
+  useAllStorePieces,
+  type Store,
+} from "@/hooks/useStoreData";
 import StoreSelector from "@/components/StoreSelector";
 import StoreDetail from "@/components/StoreDetail";
-import { Package, ChevronLeft } from "lucide-react";
+import AddPieceDialog from "@/components/AddPieceDialog";
+import { exportAllStores, exportFilteredStores } from "@/lib/exportExcel";
+import {
+  Package,
+  ChevronLeft,
+  Download,
+  FileSpreadsheet,
+  Filter,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Index = () => {
+  const { data: stores = [], isLoading: loadingStores } = useStores();
+  const { data: pieces = [], isLoading: loadingPieces } = usePieces();
+  const { data: allStorePieces = [] } = useAllStorePieces();
+
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [selectedType, setSelectedType] = useState("");
   const [showList, setShowList] = useState(true);
 
+  const statesList = useMemo(
+    () => [...new Set(stores.map((s) => s.uf))].sort(),
+    [stores]
+  );
+  const typesList = useMemo(
+    () => [...new Set(stores.map((s) => s.type))].sort(),
+    [stores]
+  );
+
   const filteredStores = useMemo(() => {
     return stores.filter((store) => {
-      const matchesSearch = store.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = store.name
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
       const matchesState = !selectedState || store.uf === selectedState;
       const matchesType = !selectedType || store.type === selectedType;
       return matchesSearch && matchesState && matchesType;
     });
-  }, [searchTerm, selectedState, selectedType]);
+  }, [stores, searchTerm, selectedState, selectedType]);
 
   const totalPieces = useMemo(() => {
-    return stores.reduce((sum, s) => sum + Object.values(s.quantities).reduce((a, b) => a + b, 0), 0);
-  }, []);
+    return allStorePieces.reduce((sum, sp) => sum + sp.quantity, 0);
+  }, [allStorePieces]);
 
   const handleSelectStore = (store: Store) => {
     setSelectedStore(store);
     setShowList(false);
   };
 
+  const isLoading = loadingStores || loadingPieces;
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-10 h-10 border-3 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+          <p className="text-muted-foreground text-sm">Carregando dados...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-border bg-gradient-to-r from-card via-card to-primary/5 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
               <Package className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
               <h1 className="text-lg font-display font-bold text-foreground leading-tight">
                 Lindt Excellence Pistache
               </h1>
-              <p className="text-xs text-muted-foreground">Campanha Brasil 2026</p>
+              <p className="text-xs text-muted-foreground">
+                Campanha Brasil 2026
+              </p>
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-4 text-sm text-muted-foreground">
-            <span><strong className="text-foreground">{stores.length}</strong> lojas</span>
-            <span>·</span>
-            <span><strong className="text-foreground">{totalPieces}</strong> peças total</span>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:flex items-center gap-4 text-sm text-muted-foreground mr-3">
+              <span>
+                <strong className="text-foreground">{stores.length}</strong> lojas
+              </span>
+              <span>·</span>
+              <span>
+                <strong className="text-foreground">{totalPieces}</strong> peças
+              </span>
+            </div>
+
+            <AddPieceDialog existingPieces={pieces} />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Download className="w-4 h-4 mr-1" /> Exportar
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => exportAllStores(stores, pieces, allStorePieces)}>
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Todas as Lojas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportFilteredStores(filteredStores, pieces, allStorePieces)}>
+                  <Filter className="w-4 h-4 mr-2" />
+                  Com Filtros Aplicados ({filteredStores.length})
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
 
       {/* Main content */}
       <div className="max-w-7xl mx-auto flex min-h-[calc(100vh-73px)]">
-        {/* Sidebar - store list */}
-        <aside className={`w-full md:w-80 lg:w-96 border-r border-border p-4 md:block shrink-0 ${
-          showList ? "block" : "hidden md:block"
-        }`}>
+        {/* Sidebar */}
+        <aside
+          className={`w-full md:w-80 lg:w-96 border-r border-border p-4 md:block shrink-0 ${
+            showList ? "block" : "hidden md:block"
+          }`}
+        >
           <StoreSelector
             stores={filteredStores}
             selectedStore={selectedStore}
@@ -69,12 +147,15 @@ const Index = () => {
             onStateChange={setSelectedState}
             selectedType={selectedType}
             onTypeChange={setSelectedType}
+            states={statesList}
+            storeTypes={typesList}
           />
         </aside>
 
         {/* Detail panel */}
-        <main className={`flex-1 p-6 ${!showList ? "block" : "hidden md:block"}`}>
-          {/* Mobile back button */}
+        <main
+          className={`flex-1 p-6 ${!showList ? "block" : "hidden md:block"}`}
+        >
           {!showList && (
             <button
               onClick={() => setShowList(true)}
@@ -86,17 +167,22 @@ const Index = () => {
           )}
 
           {selectedStore ? (
-            <StoreDetail store={selectedStore} />
+            <StoreDetail
+              store={selectedStore}
+              pieces={pieces}
+              allStorePieces={allStorePieces}
+            />
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in">
-              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                <Package className="w-8 h-8 text-muted-foreground" />
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center mb-4">
+                <Package className="w-10 h-10 text-primary/60" />
               </div>
               <h2 className="text-xl font-display font-bold text-foreground mb-2">
                 Selecione uma loja
               </h2>
               <p className="text-muted-foreground text-sm max-w-xs">
-                Escolha uma loja na lista ao lado para ver quais peças da campanha serão enviadas.
+                Escolha uma loja na lista ao lado para ver e editar as peças da
+                campanha.
               </p>
             </div>
           )}
