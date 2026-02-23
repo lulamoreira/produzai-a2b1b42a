@@ -19,8 +19,10 @@ import {
   Filter,
   LogOut,
   UserCircle,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +33,7 @@ import {
 const Index = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
+  const navigate = useNavigate();
   const { data: stores = [], isLoading: loadingStores } = useStores();
   const { data: pieces = [], isLoading: loadingPieces } = usePieces();
   const { data: allStorePieces = [] } = useAllStorePieces();
@@ -151,6 +154,12 @@ const Index = () => {
                     {isAdmin ? 'Admin' : 'Visualizador'}
                   </span>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem onClick={() => navigate("/admin")}>
+                    <Shield className="w-4 h-4 mr-2" />
+                    Painel Admin
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={signOut}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Sair
