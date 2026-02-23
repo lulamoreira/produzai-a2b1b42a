@@ -5,6 +5,7 @@ import {
   useAllStorePieces,
   type Store,
 } from "@/hooks/useStoreData";
+import { useAuth } from "@/hooks/useAuth";
 import StoreSelector from "@/components/StoreSelector";
 import StoreDetail from "@/components/StoreDetail";
 import AddPieceDialog from "@/components/AddPieceDialog";
@@ -15,6 +16,8 @@ import {
   Download,
   FileSpreadsheet,
   Filter,
+  LogOut,
+  UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const Index = () => {
+  const { user, signOut } = useAuth();
   const { data: stores = [], isLoading: loadingStores } = useStores();
   const { data: pieces = [], isLoading: loadingPieces } = usePieces();
   const { data: allStorePieces = [] } = useAllStorePieces();
@@ -122,6 +126,27 @@ const Index = () => {
                 <DropdownMenuItem onClick={() => exportFilteredStores(filteredStores, pieces, allStorePieces)}>
                   <Filter className="w-4 h-4 mr-2" />
                   Com Filtros Aplicados ({filteredStores.length})
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* User menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="ghost" className="gap-1">
+                  <UserCircle className="w-4 h-4" />
+                  <span className="hidden sm:inline text-xs max-w-[100px] truncate">
+                    {user?.email?.split("@")[0]}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem className="text-xs text-muted-foreground" disabled>
+                  {user?.email}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={signOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
