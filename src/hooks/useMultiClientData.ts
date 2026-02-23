@@ -429,15 +429,24 @@ export async function fetchAddressByCep(cep: string) {
   const clean = cep.replace(/\D/g, "");
   if (clean.length !== 8) return null;
   try {
-    const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
-    const data = await res.json();
-    if (data.erro) return null;
-    return {
-      street: data.logradouro || "",
-      neighborhood: data.bairro || "",
-      city: data.localidade || "",
-      state: data.uf || "",
-      complement: data.complemento || "",
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cep-lookup?cep=${clean}`;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    const response = await fetch(url, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data.error) return null;
+    return data as {
+      street: string;
+      neighborhood: string;
+      city: string;
+      state: string;
+      complement: string;
     };
   } catch {
     return null;
