@@ -14,6 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_pieces: {
+        Row: {
+          campaign_id: string
+          category: string
+          code: number
+          created_at: string
+          id: string
+          image_url: string | null
+          name: string
+          size: string
+        }
+        Insert: {
+          campaign_id: string
+          category: string
+          code: number
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          size: string
+        }
+        Update: {
+          campaign_id?: string
+          category?: string
+          code?: number
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          size?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_pieces_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_store_pieces: {
+        Row: {
+          campaign_id: string
+          id: string
+          piece_id: string
+          quantity: number
+          store_id: string
+        }
+        Insert: {
+          campaign_id: string
+          id?: string
+          piece_id: string
+          quantity?: number
+          store_id: string
+        }
+        Update: {
+          campaign_id?: string
+          id?: string
+          piece_id?: string
+          quantity?: number
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_store_pieces_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_store_pieces_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_pieces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_store_pieces_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       change_logs: {
         Row: {
           action: string
@@ -61,6 +177,119 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      client_stores: {
+        Row: {
+          city: string | null
+          client_id: string
+          cnpj: string | null
+          complement: string | null
+          created_at: string
+          custom_field_1: string | null
+          custom_field_2: string | null
+          custom_field_3: string | null
+          custom_field_4: string | null
+          custom_field_5: string | null
+          id: string
+          manager_name: string | null
+          name: string
+          neighborhood: string | null
+          nickname: string | null
+          number: string | null
+          phone: string | null
+          state: string | null
+          state_registration: string | null
+          street: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          city?: string | null
+          client_id: string
+          cnpj?: string | null
+          complement?: string | null
+          created_at?: string
+          custom_field_1?: string | null
+          custom_field_2?: string | null
+          custom_field_3?: string | null
+          custom_field_4?: string | null
+          custom_field_5?: string | null
+          id?: string
+          manager_name?: string | null
+          name: string
+          neighborhood?: string | null
+          nickname?: string | null
+          number?: string | null
+          phone?: string | null
+          state?: string | null
+          state_registration?: string | null
+          street?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          city?: string | null
+          client_id?: string
+          cnpj?: string | null
+          complement?: string | null
+          created_at?: string
+          custom_field_1?: string | null
+          custom_field_2?: string | null
+          custom_field_3?: string | null
+          custom_field_4?: string | null
+          custom_field_5?: string | null
+          id?: string
+          manager_name?: string | null
+          name?: string
+          neighborhood?: string | null
+          nickname?: string | null
+          number?: string | null
+          phone?: string | null
+          state?: string | null
+          state_registration?: string | null
+          street?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_stores_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          created_at: string
+          custom_field_1_label: string | null
+          custom_field_2_label: string | null
+          custom_field_3_label: string | null
+          custom_field_4_label: string | null
+          custom_field_5_label: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          custom_field_1_label?: string | null
+          custom_field_2_label?: string | null
+          custom_field_3_label?: string | null
+          custom_field_4_label?: string | null
+          custom_field_5_label?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          custom_field_1_label?: string | null
+          custom_field_2_label?: string | null
+          custom_field_3_label?: string | null
+          custom_field_4_label?: string | null
+          custom_field_5_label?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       pieces: {
         Row: {
@@ -191,6 +420,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_client_access: {
+        Row: {
+          can_edit: boolean
+          client_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          can_edit?: boolean
+          client_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          can_edit?: boolean
+          client_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_client_access_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -217,6 +478,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_client_access: {
+        Args: { _client_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_client_edit_access: {
+        Args: { _client_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
