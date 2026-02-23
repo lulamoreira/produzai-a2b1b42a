@@ -35,7 +35,11 @@ const CampaignDetail = () => {
   const updateStorePiece = useUpdateCampaignStorePiece();
 
   const [pieceDialogOpen, setPieceDialogOpen] = useState(false);
-  const [pieceForm, setPieceForm] = useState({ code: "", category: "", name: "", size: "" });
+  const [pieceForm, setPieceForm] = useState({
+    code: "", category: "", name: "",
+    width: "", length: "", height: "",
+    store_category: typeof window !== "undefined" ? localStorage.getItem("last_store_category") || "" : "",
+  });
   const [storeSearch, setStoreSearch] = useState("");
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -57,14 +61,23 @@ const CampaignDetail = () => {
   const handleAddPiece = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!campaignId) return;
+    const size = [pieceForm.width, pieceForm.length, pieceForm.height].filter(Boolean).join(" x ");
+    if (pieceForm.store_category) {
+      localStorage.setItem("last_store_category", pieceForm.store_category);
+    }
     await addPiece.mutateAsync({
       campaign_id: campaignId,
       code: parseInt(pieceForm.code),
       category: pieceForm.category,
       name: pieceForm.name,
-      size: pieceForm.size,
+      size,
+      store_category: pieceForm.store_category || undefined,
     });
-    setPieceForm({ code: "", category: "", name: "", size: "" });
+    setPieceForm({
+      code: "", category: "", name: "",
+      width: "", length: "", height: "",
+      store_category: pieceForm.store_category,
+    });
     setPieceDialogOpen(false);
   };
 
@@ -129,7 +142,15 @@ const CampaignDetail = () => {
                   <Input placeholder="Código *" type="number" value={pieceForm.code} onChange={(e) => setPieceForm((f) => ({ ...f, code: e.target.value }))} required />
                   <Input placeholder="Categoria *" value={pieceForm.category} onChange={(e) => setPieceForm((f) => ({ ...f, category: e.target.value }))} required />
                   <Input placeholder="Nome *" value={pieceForm.name} onChange={(e) => setPieceForm((f) => ({ ...f, name: e.target.value }))} required />
-                  <Input placeholder="Tamanho *" value={pieceForm.size} onChange={(e) => setPieceForm((f) => ({ ...f, size: e.target.value }))} required />
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground">Medidas</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Input placeholder="Largura" value={pieceForm.width} onChange={(e) => setPieceForm((f) => ({ ...f, width: e.target.value }))} />
+                      <Input placeholder="Comprimento" value={pieceForm.length} onChange={(e) => setPieceForm((f) => ({ ...f, length: e.target.value }))} />
+                      <Input placeholder="Altura" value={pieceForm.height} onChange={(e) => setPieceForm((f) => ({ ...f, height: e.target.value }))} />
+                    </div>
+                  </div>
+                  <Input placeholder="Categoria de Loja" value={pieceForm.store_category} onChange={(e) => setPieceForm((f) => ({ ...f, store_category: e.target.value }))} />
                   <Button type="submit" className="w-full" disabled={addPiece.isPending}>Adicionar</Button>
                 </form>
               </DialogContent>
