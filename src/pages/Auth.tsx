@@ -64,18 +64,14 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-primary/20">
             <Package className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-display font-bold text-foreground">
-            Lindt Excellence Pistache
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Campanha Brasil 2026</p>
+          <h1 className="text-2xl font-display font-bold text-foreground">Gestão de Campanhas</h1>
+          <p className="text-sm text-muted-foreground mt-1">Plataforma de gestão multi-cliente</p>
         </div>
 
-        {/* Card */}
         <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
           <h2 className="text-lg font-display font-bold text-foreground mb-1">
             {forgotPassword ? "Recuperar Senha" : isLogin ? "Entrar" : "Criar Conta"}
@@ -84,92 +80,46 @@ const Auth = () => {
             {forgotPassword
               ? "Informe seu email para receber o link de recuperação"
               : isLogin
-              ? "Acesse o painel de controle da campanha"
-              : "Crie sua conta para gerenciar a campanha"}
+              ? "Acesse a plataforma de gestão"
+              : "Crie sua conta para acessar"}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && !forgotPassword && (
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Nome de exibição"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className="pl-10"
-                  required={!isLogin}
-                />
+                <Input placeholder="Nome de exibição" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="pl-10" required={!isLogin} />
               </div>
             )}
-
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-10"
-                required
-              />
+              <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
             </div>
-
             {!forgotPassword && (
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Senha"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
+                <Input type={showPassword ? "text" : "password"} placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10 pr-10" required minLength={6} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             )}
-
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading
-                ? "Aguarde..."
-                : forgotPassword
-                ? "Enviar Link"
-                : isLogin
-                ? "Entrar"
-                : "Criar Conta"}
+              {loading ? "Aguarde..." : forgotPassword ? "Enviar Link" : isLogin ? "Entrar" : "Criar Conta"}
             </Button>
           </form>
 
           {!forgotPassword && (
             <>
               <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">ou</span>
-                </div>
+                <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>
+                <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">ou</span></div>
               </div>
-
               <Button
-                type="button"
-                variant="outline"
-                className="w-full gap-2"
-                disabled={loading}
+                type="button" variant="outline" className="w-full gap-2" disabled={loading}
                 onClick={async () => {
-                  const { error } = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: window.location.origin,
-                  });
-                  if (error) {
-                    toast.error("Erro ao conectar com Google.");
-                  }
+                  const { error } = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+                  if (error) toast.error("Erro ao conectar com Google.");
                 }}
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -185,33 +135,15 @@ const Auth = () => {
 
           <div className="mt-4 space-y-2 text-center">
             {!forgotPassword && isLogin && (
-              <button
-                onClick={() => setForgotPassword(true)}
-                className="text-sm text-primary hover:underline"
-              >
-                Esqueci minha senha
-              </button>
+              <button onClick={() => setForgotPassword(true)} className="text-sm text-primary hover:underline">Esqueci minha senha</button>
             )}
-
             <div>
-              <button
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setForgotPassword(false);
-                }}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
+              <button onClick={() => { setIsLogin(!isLogin); setForgotPassword(false); }} className="text-sm text-muted-foreground hover:text-foreground">
                 {isLogin ? "Não tem conta? Cadastre-se" : "Já tem conta? Entrar"}
               </button>
             </div>
-
             {forgotPassword && (
-              <button
-                onClick={() => setForgotPassword(false)}
-                className="text-sm text-muted-foreground hover:text-foreground"
-              >
-                Voltar ao login
-              </button>
+              <button onClick={() => setForgotPassword(false)} className="text-sm text-muted-foreground hover:text-foreground">Voltar ao login</button>
             )}
           </div>
         </div>
