@@ -24,6 +24,7 @@ export type Database = {
           image_url: string | null
           name: string
           size: string
+          store_category: string | null
         }
         Insert: {
           campaign_id: string
@@ -34,6 +35,7 @@ export type Database = {
           image_url?: string | null
           name: string
           size: string
+          store_category?: string | null
         }
         Update: {
           campaign_id?: string
@@ -44,6 +46,7 @@ export type Database = {
           image_url?: string | null
           name?: string
           size?: string
+          store_category?: string | null
         }
         Relationships: [
           {

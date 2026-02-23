@@ -53,6 +53,7 @@ export type CampaignPiece = {
   category: string;
   name: string;
   size: string;
+  store_category: string | null;
   image_url: string | null;
   created_at: string;
 };
@@ -291,7 +292,7 @@ export function useCampaignPieces(campaignId: string | undefined) {
 export function useAddCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (piece: { campaign_id: string; code: number; category: string; name: string; size: string; image_url?: string }) => {
+    mutationFn: async (piece: { campaign_id: string; code: number; category: string; name: string; size: string; store_category?: string; image_url?: string }) => {
       const { error } = await supabase.from("campaign_pieces").insert(piece);
       if (error) throw error;
     },

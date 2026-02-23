@@ -1,0 +1,1 @@
+ALTER TABLE public.campaign_pieces ADD COLUMN store_category text;
