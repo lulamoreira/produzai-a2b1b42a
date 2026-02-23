@@ -48,9 +48,10 @@ interface StoreDetailProps {
   store: Store;
   pieces: Piece[];
   allStorePieces?: { store_id: number; piece_id: number; quantity: number; id: number }[];
+  isAdmin?: boolean;
 }
 
-const StoreDetail = ({ store, pieces, allStorePieces }: StoreDetailProps) => {
+const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDetailProps) => {
   const { data: storePieces = [], isLoading } = useStorePieces(store.id);
   const updateQuantity = useUpdateQuantity();
   const addPieceToStore = useAddPieceToStore();
@@ -233,54 +234,56 @@ const StoreDetail = ({ store, pieces, allStorePieces }: StoreDetailProps) => {
         </div>
       )}
 
-      {/* Add piece button */}
-      <div className="flex justify-end">
-        <Dialog open={addPieceOpen} onOpenChange={setAddPieceOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-              <Plus className="w-4 h-4 mr-1" /> Adicionar Peça
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle className="font-display">Adicionar Peça à Loja</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Peça</label>
-                <Select value={addPieceId} onValueChange={setAddPieceId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecionar peça..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availablePieces.map((p) => (
-                      <SelectItem key={p.id} value={String(p.id)}>
-                        {p.name} ({p.category})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Quantidade</label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={addPieceQty}
-                  onChange={(e) => setAddPieceQty(Number(e.target.value))}
-                />
-              </div>
-              <Button
-                onClick={handleAddPiece}
-                disabled={!addPieceId || addPieceQty < 1 || addPieceToStore.isPending}
-                className="w-full"
-              >
-                <Check className="w-4 h-4 mr-1" /> Confirmar
+      {/* Add piece button - admin only */}
+      {isAdmin && (
+        <div className="flex justify-end">
+          <Dialog open={addPieceOpen} onOpenChange={setAddPieceOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                <Plus className="w-4 h-4 mr-1" /> Adicionar Peça
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle className="font-display">Adicionar Peça à Loja</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Peça</label>
+                  <Select value={addPieceId} onValueChange={setAddPieceId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar peça..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availablePieces.map((p) => (
+                        <SelectItem key={p.id} value={String(p.id)}>
+                          {p.name} ({p.category})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Quantidade</label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={addPieceQty}
+                    onChange={(e) => setAddPieceQty(Number(e.target.value))}
+                  />
+                </div>
+                <Button
+                  onClick={handleAddPiece}
+                  disabled={!addPieceId || addPieceQty < 1 || addPieceToStore.isPending}
+                  className="w-full"
+                >
+                  <Check className="w-4 h-4 mr-1" /> Confirmar
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
 
       {/* Pieces by category */}
       <div className="space-y-4">
@@ -362,22 +365,26 @@ const StoreDetail = ({ store, pieces, allStorePieces }: StoreDetailProps) => {
                       <span className={`px-3 py-1 rounded-full text-sm font-bold ${categoryBadge[category] || "bg-muted text-foreground"}`}>
                         {qty}
                       </span>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:opacity-100"
-                        onClick={() => handleStartEdit(piece.id, qty)}
-                      >
-                        <Edit3 className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 hover:opacity-100"
-                        onClick={() => handleRemovePiece(piece.id, qty)}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
+                      {isAdmin && (
+                        <>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 opacity-0 group-hover:opacity-100 hover:opacity-100"
+                            onClick={() => handleStartEdit(piece.id, qty)}
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-destructive opacity-0 group-hover:opacity-100 hover:opacity-100"
+                            onClick={() => handleRemovePiece(piece.id, qty)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
