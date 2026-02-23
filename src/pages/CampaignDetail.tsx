@@ -8,17 +8,21 @@ import {
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription,
 } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 const CampaignDetail = () => {
@@ -35,23 +39,96 @@ const CampaignDetail = () => {
   const updatePiece = useUpdateCampaignPiece();
   const updateStorePiece = useUpdateCampaignStorePiece();
 
+  // ─── Piece dialogs ─────────────────────────────────────
   const [pieceDialogOpen, setPieceDialogOpen] = useState(false);
   const [pieceForm, setPieceForm] = useState({
     code: "", category: "", name: "",
     width: "", length: "", height: "",
     store_category: typeof window !== "undefined" ? localStorage.getItem("last_store_category") || "" : "",
   });
-  const [storeSearch, setStoreSearch] = useState("");
-  const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
-  const [editValue, setEditValue] = useState("");
-
-  // Edit piece
   const [editPieceDialogOpen, setEditPieceDialogOpen] = useState(false);
   const [editPieceForm, setEditPieceForm] = useState({
     id: "", code: "", category: "", name: "",
     width: "", length: "", height: "",
     store_category: "",
   });
+
+  // ─── Store filters ─────────────────────────────────────
+  const [storeSearch, setStoreSearch] = useState("");
+  const [cityFilter, setCityFilter] = useState("__all__");
+  const [stateFilter, setStateFilter] = useState("__all__");
+  const [storeCategoryFilter, setStoreCategoryFilter] = useState("__all__");
+
+  // ─── Matrix editing ────────────────────────────────────
+  const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
+  const [editValue, setEditValue] = useState("");
+
+  // ─── Derived data ──────────────────────────────────────
+  const qtyMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
+    return map;
+  }, [storePieces]);
+
+  const totalPieces = useMemo(() => storePieces.reduce((s, sp) => s + sp.quantity, 0), [storePieces]);
+
+  // Unique cities, states, store_categories from pieces
+  const uniqueCities = useMemo(() => [...new Set(stores.map((s) => s.city).filter(Boolean))].sort() as string[], [stores]);
+  const uniqueStates = useMemo(() => [...new Set(stores.map((s) => s.state).filter(Boolean))].sort() as string[], [stores]);
+  const uniqueStoreCategories = useMemo(() => [...new Set(pieces.map((p) => p.store_category).filter(Boolean))].sort() as string[], [pieces]);
+
+  const filteredStores = useMemo(() => {
+    return stores.filter((s) => {
+      const matchesSearch = storeSearch === "" ||
+        s.name.toLowerCase().includes(storeSearch.toLowerCase()) ||
+        s.nickname?.toLowerCase().includes(storeSearch.toLowerCase());
+      const matchesCity = cityFilter === "__all__" || s.city === cityFilter;
+      const matchesState = stateFilter === "__all__" || s.state === stateFilter;
+      // Store category filter: show stores that have pieces with matching store_category
+      const matchesStoreCategory = storeCategoryFilter === "__all__" || true; // applied on matrix level
+      return matchesSearch && matchesCity && matchesState && matchesStoreCategory;
+    });
+  }, [stores, storeSearch, cityFilter, stateFilter, storeCategoryFilter]);
+
+  // For each store, compute total pieces assigned in this campaign
+  const storeStats = useMemo(() => {
+    const stats: Record<string, { totalQty: number; pieceCount: number }> = {};
+    stores.forEach((s) => {
+      let totalQty = 0;
+      let pieceCount = 0;
+      pieces.forEach((p) => {
+        const qty = qtyMap[`${s.id}-${p.id}`] || 0;
+        totalQty += qty;
+        if (qty > 0) pieceCount++;
+      });
+      stats[s.id] = { totalQty, pieceCount };
+    });
+    return stats;
+  }, [stores, pieces, qtyMap]);
+
+  // ─── Handlers ──────────────────────────────────────────
+  const handleAddPiece = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!campaignId) return;
+    const size = [pieceForm.width, pieceForm.length, pieceForm.height].filter(Boolean).join(" x ");
+    if (pieceForm.store_category) {
+      localStorage.setItem("last_store_category", pieceForm.store_category);
+    }
+    await addPiece.mutateAsync({
+      campaign_id: campaignId,
+      code: parseInt(pieceForm.code),
+      category: pieceForm.category,
+      name: pieceForm.name,
+      size,
+      store_category: pieceForm.store_category || undefined,
+    });
+    setPieceForm({
+      code: "", category: "", name: "",
+      width: "", length: "", height: "",
+      store_category: pieceForm.store_category,
+    });
+    setPieceDialogOpen(false);
+  };
 
   const handleOpenEditPiece = (piece: CampaignPiece) => {
     const sizeParts = piece.size?.split(" x ") || [];
@@ -82,43 +159,6 @@ const CampaignDetail = () => {
     setEditPieceDialogOpen(false);
   };
 
-  // Build quantity map: { `${storeId}-${pieceId}`: quantity }
-  const qtyMap = useMemo(() => {
-    const map: Record<string, number> = {};
-    storePieces.forEach((sp) => {
-      map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity;
-    });
-    return map;
-  }, [storePieces]);
-
-  const filteredStores = stores.filter((s) =>
-    s.name.toLowerCase().includes(storeSearch.toLowerCase()) ||
-    s.nickname?.toLowerCase().includes(storeSearch.toLowerCase())
-  );
-
-  const handleAddPiece = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!campaignId) return;
-    const size = [pieceForm.width, pieceForm.length, pieceForm.height].filter(Boolean).join(" x ");
-    if (pieceForm.store_category) {
-      localStorage.setItem("last_store_category", pieceForm.store_category);
-    }
-    await addPiece.mutateAsync({
-      campaign_id: campaignId,
-      code: parseInt(pieceForm.code),
-      category: pieceForm.category,
-      name: pieceForm.name,
-      size,
-      store_category: pieceForm.store_category || undefined,
-    });
-    setPieceForm({
-      code: "", category: "", name: "",
-      width: "", length: "", height: "",
-      store_category: pieceForm.store_category,
-    });
-    setPieceDialogOpen(false);
-  };
-
   const handleCellClick = (storeId: string, pieceId: string) => {
     if (!isAdmin) return;
     const qty = qtyMap[`${storeId}-${pieceId}`] || 0;
@@ -138,8 +178,72 @@ const CampaignDetail = () => {
     setEditingCell(null);
   };
 
-  const totalPieces = useMemo(() => storePieces.reduce((s, sp) => s + sp.quantity, 0), [storePieces]);
+  // ─── Piece form fields (shared between add/edit) ──────
+  const renderPieceFormFields = (
+    form: typeof pieceForm,
+    setForm: React.Dispatch<React.SetStateAction<typeof pieceForm>>,
+  ) => (
+    <>
+      <Input placeholder="Código *" type="number" value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} required />
+      <Input placeholder="Categoria *" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} required />
+      <Input placeholder="Nome *" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
+      <div>
+        <label className="text-xs font-medium text-muted-foreground">Medidas</label>
+        <div className="grid grid-cols-3 gap-2">
+          <Input placeholder="Largura" value={form.width} onChange={(e) => setForm((f) => ({ ...f, width: e.target.value }))} />
+          <Input placeholder="Comprimento" value={form.length} onChange={(e) => setForm((f) => ({ ...f, length: e.target.value }))} />
+          <Input placeholder="Altura" value={form.height} onChange={(e) => setForm((f) => ({ ...f, height: e.target.value }))} />
+        </div>
+      </div>
+      <Input placeholder="Categoria de Loja" value={form.store_category} onChange={(e) => setForm((f) => ({ ...f, store_category: e.target.value }))} />
+    </>
+  );
 
+  // ─── Store filters bar ─────────────────────────────────
+  const renderStoreFilters = () => (
+    <div className="flex flex-wrap items-center gap-3 mb-4">
+      <div className="relative flex-1 min-w-[200px] max-w-xs">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="pl-10" />
+      </div>
+      {uniqueStates.length > 0 && (
+        <Select value={stateFilter} onValueChange={setStateFilter}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Todos estados</SelectItem>
+            {uniqueStates.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      )}
+      {uniqueCities.length > 0 && (
+        <Select value={cityFilter} onValueChange={setCityFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Cidade" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Todas cidades</SelectItem>
+            {uniqueCities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      )}
+      {uniqueStoreCategories.length > 0 && (
+        <Select value={storeCategoryFilter} onValueChange={setStoreCategoryFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Cat. de Loja" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__">Todas categorias</SelectItem>
+            {uniqueStoreCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      )}
+      <span className="text-sm text-muted-foreground">{filteredStores.length} loja(s)</span>
+    </div>
+  );
+
+  // ─── Loading / Not found ───────────────────────────────
   if (loadingCampaign) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -156,6 +260,11 @@ const CampaignDetail = () => {
     );
   }
 
+  // ─── Filtered pieces for matrix (by store_category) ───
+  const matrixPieces = storeCategoryFilter === "__all__"
+    ? pieces
+    : pieces.filter((p) => p.store_category === storeCategoryFilter);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
@@ -169,181 +278,284 @@ const CampaignDetail = () => {
               {pieces.length} peça(s) · {stores.length} loja(s) · {totalPieces} unidade(s) total
             </p>
           </div>
-          {isAdmin && (
-            <Dialog open={pieceDialogOpen} onOpenChange={setPieceDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Nova Peça</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Nova Peça</DialogTitle></DialogHeader>
-                <form onSubmit={handleAddPiece} className="space-y-3">
-                  <Input placeholder="Código *" type="number" value={pieceForm.code} onChange={(e) => setPieceForm((f) => ({ ...f, code: e.target.value }))} required />
-                  <Input placeholder="Categoria *" value={pieceForm.category} onChange={(e) => setPieceForm((f) => ({ ...f, category: e.target.value }))} required />
-                  <Input placeholder="Nome *" value={pieceForm.name} onChange={(e) => setPieceForm((f) => ({ ...f, name: e.target.value }))} required />
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground">Medidas</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <Input placeholder="Largura" value={pieceForm.width} onChange={(e) => setPieceForm((f) => ({ ...f, width: e.target.value }))} />
-                      <Input placeholder="Comprimento" value={pieceForm.length} onChange={(e) => setPieceForm((f) => ({ ...f, length: e.target.value }))} />
-                      <Input placeholder="Altura" value={pieceForm.height} onChange={(e) => setPieceForm((f) => ({ ...f, height: e.target.value }))} />
-                    </div>
-                  </div>
-                  <Input placeholder="Categoria de Loja" value={pieceForm.store_category} onChange={(e) => setPieceForm((f) => ({ ...f, store_category: e.target.value }))} />
-                  <Button type="submit" className="w-full" disabled={addPiece.isPending}>Adicionar</Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          )}
         </div>
       </header>
 
       <main className="max-w-[95vw] mx-auto px-4 py-6">
-        {pieces.length === 0 ? (
-          <div className="text-center py-20">
-            <Package className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-            <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma peça cadastrada</h2>
-            <p className="text-muted-foreground text-sm">Adicione peças para começar a distribuir pelas lojas.</p>
-          </div>
-        ) : stores.length === 0 ? (
-          <div className="text-center py-20">
-            <Package className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-            <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma loja cadastrada</h2>
-            <p className="text-muted-foreground text-sm">Cadastre lojas no cliente para distribuir peças.</p>
-          </div>
-        ) : (
-          <>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="relative max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="pl-10" />
+        <Tabs defaultValue="stores">
+          <TabsList className="mb-6">
+            <TabsTrigger value="stores" className="gap-1"><Store className="w-4 h-4" /> Lojas</TabsTrigger>
+            <TabsTrigger value="matrix" className="gap-1"><Grid3X3 className="w-4 h-4" /> Matriz</TabsTrigger>
+            <TabsTrigger value="pieces" className="gap-1"><LayoutList className="w-4 h-4" /> Peças</TabsTrigger>
+          </TabsList>
+
+          {/* ─── TAB: LOJAS ─── */}
+          <TabsContent value="stores">
+            {renderStoreFilters()}
+
+            {filteredStores.length === 0 ? (
+              <div className="text-center py-16">
+                <Store className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">Nenhuma loja encontrada.</p>
               </div>
-              <span className="text-sm text-muted-foreground">{filteredStores.length} loja(s)</span>
-            </div>
-
-            <div className="border border-border rounded-lg overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="sticky left-0 bg-card z-[5] min-w-[180px]">Loja</TableHead>
-                    {pieces.map((p) => (
-                      <TableHead key={p.id} className="text-center min-w-[100px]">
-                        <div className="flex flex-col items-center gap-0.5">
-                          <span className="text-xs font-bold">{p.code}</span>
-                          <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{p.name}</span>
-                          {isAdmin && (
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <button onClick={() => handleOpenEditPiece(p)} className="text-muted-foreground/50 hover:text-primary">
-                                <Edit3 className="w-3 h-3" />
-                              </button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <button className="text-destructive/50 hover:text-destructive">
-                                    <Trash2 className="w-3 h-3" />
-                                  </button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Excluir peça?</AlertDialogTitle>
-                                    <AlertDialogDescription>A peça será removida de todas as lojas desta campanha.</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deletePiece.mutate(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          )}
-                        </div>
-                      </TableHead>
-                    ))}
-                    <TableHead className="text-center font-bold">Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredStores.map((store) => {
-                    const storeTotal = pieces.reduce((s, p) => s + (qtyMap[`${store.id}-${p.id}`] || 0), 0);
-                    return (
-                      <TableRow key={store.id}>
-                        <TableCell className="sticky left-0 bg-card z-[5] font-medium">
-                          <div>
-                            <span className="text-sm">{store.name}</span>
-                            {store.nickname && <span className="text-[10px] text-muted-foreground ml-1">({store.nickname})</span>}
-                          </div>
-                        </TableCell>
-                        {pieces.map((p) => {
-                          const key = `${store.id}-${p.id}`;
-                          const qty = qtyMap[key] || 0;
-                          const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === p.id;
-
-                          return (
-                            <TableCell key={p.id} className="text-center p-1">
-                              {isEditing ? (
-                                <Input
-                                  type="number"
-                                  min={0}
-                                  value={editValue}
-                                  onChange={(e) => setEditValue(e.target.value)}
-                                  onBlur={handleCellSave}
-                                  onKeyDown={(e) => { if (e.key === "Enter") handleCellSave(); if (e.key === "Escape") setEditingCell(null); }}
-                                  className="w-16 h-8 text-center mx-auto text-sm"
-                                  autoFocus
-                                />
-                              ) : (
-                                <button
-                                  onClick={() => handleCellClick(store.id, p.id)}
-                                  className={`w-full h-8 text-sm rounded transition-colors ${
-                                    qty > 0
-                                      ? "bg-primary/10 text-primary font-semibold hover:bg-primary/20"
-                                      : isAdmin
-                                      ? "text-muted-foreground/40 hover:bg-muted"
-                                      : "text-muted-foreground/40"
-                                  }`}
-                                  disabled={!isAdmin}
-                                >
-                                  {qty || "—"}
-                                </button>
+            ) : (
+              <div className="border border-border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Loja</TableHead>
+                      <TableHead>Cidade/Estado</TableHead>
+                      <TableHead className="text-center">Peças</TableHead>
+                      <TableHead className="text-center">Qtd Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredStores.map((store) => {
+                      const stats = storeStats[store.id] || { totalQty: 0, pieceCount: 0 };
+                      return (
+                        <TableRow key={store.id}>
+                          <TableCell>
+                            <div>
+                              <span className="font-medium text-foreground">{store.name}</span>
+                              {store.nickname && store.nickname !== store.name && (
+                                <span className="text-xs text-muted-foreground ml-1.5">({store.nickname})</span>
                               )}
-                            </TableCell>
-                          );
-                        })}
-                        <TableCell className="text-center font-bold text-sm">{storeTotal}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                  {/* Totals row */}
-                  <TableRow className="bg-muted/50 font-bold">
-                    <TableCell className="sticky left-0 bg-muted/50 z-[5]">Total</TableCell>
-                    {pieces.map((p) => {
-                      const pieceTotal = filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
-                      return <TableCell key={p.id} className="text-center text-sm">{pieceTotal}</TableCell>;
+                            </div>
+                            {store.cnpj && <p className="text-[10px] text-muted-foreground mt-0.5">CNPJ: {store.cnpj}</p>}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <MapPin className="w-3 h-3" />
+                              {[store.city, store.state].filter(Boolean).join(" / ") || "—"}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className={`text-sm font-medium ${stats.pieceCount > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                              {stats.pieceCount} / {pieces.length}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className={`text-sm font-semibold ${stats.totalQty > 0 ? "text-foreground" : "text-muted-foreground"}`}>
+                              {stats.totalQty}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      );
                     })}
-                    <TableCell className="text-center text-sm text-primary">{totalPieces}</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ─── TAB: MATRIZ ─── */}
+          <TabsContent value="matrix">
+            {renderStoreFilters()}
+
+            {pieces.length === 0 ? (
+              <div className="text-center py-20">
+                <Package className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma peça cadastrada</h2>
+                <p className="text-muted-foreground text-sm">Adicione peças na aba "Peças" para começar a distribuir.</p>
+              </div>
+            ) : filteredStores.length === 0 ? (
+              <div className="text-center py-20">
+                <Store className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma loja encontrada</h2>
+                <p className="text-muted-foreground text-sm">Ajuste os filtros ou cadastre lojas no cliente.</p>
+              </div>
+            ) : (
+              <div className="border border-border rounded-lg overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="sticky left-0 bg-card z-[5] min-w-[180px]">Loja</TableHead>
+                      {matrixPieces.map((p) => (
+                        <TableHead key={p.id} className="text-center min-w-[100px]">
+                          <div className="flex flex-col items-center gap-0.5">
+                            <span className="text-xs font-bold">{p.code}</span>
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{p.name}</span>
+                            {p.store_category && (
+                              <span className="text-[9px] bg-accent text-accent-foreground px-1 rounded">{p.store_category}</span>
+                            )}
+                          </div>
+                        </TableHead>
+                      ))}
+                      <TableHead className="text-center font-bold">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredStores.map((store) => {
+                      const storeTotal = matrixPieces.reduce((s, p) => s + (qtyMap[`${store.id}-${p.id}`] || 0), 0);
+                      return (
+                        <TableRow key={store.id}>
+                          <TableCell className="sticky left-0 bg-card z-[5] font-medium">
+                            <div>
+                              <span className="text-sm">{store.name}</span>
+                              {store.nickname && store.nickname !== store.name && (
+                                <span className="text-[10px] text-muted-foreground ml-1">({store.nickname})</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          {matrixPieces.map((p) => {
+                            const key = `${store.id}-${p.id}`;
+                            const qty = qtyMap[key] || 0;
+                            const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === p.id;
+                            return (
+                              <TableCell key={p.id} className="text-center p-1">
+                                {isEditing ? (
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    value={editValue}
+                                    onChange={(e) => setEditValue(e.target.value)}
+                                    onBlur={handleCellSave}
+                                    onKeyDown={(e) => { if (e.key === "Enter") handleCellSave(); if (e.key === "Escape") setEditingCell(null); }}
+                                    className="w-16 h-8 text-center mx-auto text-sm"
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <button
+                                    onClick={() => handleCellClick(store.id, p.id)}
+                                    className={`w-full h-8 text-sm rounded transition-colors ${
+                                      qty > 0
+                                        ? "bg-primary/10 text-primary font-semibold hover:bg-primary/20"
+                                        : isAdmin
+                                        ? "text-muted-foreground/40 hover:bg-muted"
+                                        : "text-muted-foreground/40"
+                                    }`}
+                                    disabled={!isAdmin}
+                                  >
+                                    {qty || "—"}
+                                  </button>
+                                )}
+                              </TableCell>
+                            );
+                          })}
+                          <TableCell className="text-center font-bold text-sm">{storeTotal}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {/* Totals row */}
+                    <TableRow className="bg-muted/50 font-bold">
+                      <TableCell className="sticky left-0 bg-muted/50 z-[5]">Total</TableCell>
+                      {matrixPieces.map((p) => {
+                        const pieceTotal = filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
+                        return <TableCell key={p.id} className="text-center text-sm">{pieceTotal}</TableCell>;
+                      })}
+                      <TableCell className="text-center text-sm text-primary">
+                        {matrixPieces.reduce((total, p) => total + filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0), 0)}
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ─── TAB: PEÇAS ─── */}
+          <TabsContent value="pieces">
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-base font-semibold text-foreground">{pieces.length} peça(s) cadastrada(s)</h2>
+              {isAdmin && (
+                <Dialog open={pieceDialogOpen} onOpenChange={setPieceDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Nova Peça</Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Nova Peça</DialogTitle>
+                      <DialogDescription>Preencha os dados da peça para adicioná-la à campanha.</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleAddPiece} className="space-y-3">
+                      {renderPieceFormFields(pieceForm, setPieceForm)}
+                      <Button type="submit" className="w-full" disabled={addPiece.isPending}>Adicionar</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
-          </>
-        )}
+
+            {pieces.length === 0 ? (
+              <div className="text-center py-16">
+                <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm">Nenhuma peça cadastrada nesta campanha.</p>
+              </div>
+            ) : (
+              <div className="border border-border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[80px]">Código</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Medidas</TableHead>
+                      <TableHead>Cat. Loja</TableHead>
+                      <TableHead className="text-center">Total distribuído</TableHead>
+                      {isAdmin && <TableHead className="w-[80px]">Ações</TableHead>}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pieces.map((p) => {
+                      const pieceTotal = stores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
+                      return (
+                        <TableRow key={p.id}>
+                          <TableCell className="font-bold text-primary">{p.code}</TableCell>
+                          <TableCell className="font-medium">{p.name}</TableCell>
+                          <TableCell className="text-muted-foreground">{p.category}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{p.size || "—"}</TableCell>
+                          <TableCell>
+                            {p.store_category ? (
+                              <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{p.store_category}</span>
+                            ) : "—"}
+                          </TableCell>
+                          <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
+                          {isAdmin && (
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditPiece(p)}>
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir peça?</AlertDialogTitle>
+                                      <AlertDialogDescription>A peça será removida de todas as lojas desta campanha.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => deletePiece.mutate(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Edit Piece Dialog */}
       <Dialog open={editPieceDialogOpen} onOpenChange={setEditPieceDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Editar Peça</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Editar Peça</DialogTitle>
+            <DialogDescription>Altere os dados da peça.</DialogDescription>
+          </DialogHeader>
           <form onSubmit={handleEditPiece} className="space-y-3">
-            <Input placeholder="Código *" type="number" value={editPieceForm.code} onChange={(e) => setEditPieceForm((f) => ({ ...f, code: e.target.value }))} required />
-            <Input placeholder="Categoria *" value={editPieceForm.category} onChange={(e) => setEditPieceForm((f) => ({ ...f, category: e.target.value }))} required />
-            <Input placeholder="Nome *" value={editPieceForm.name} onChange={(e) => setEditPieceForm((f) => ({ ...f, name: e.target.value }))} required />
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Medidas</label>
-              <div className="grid grid-cols-3 gap-2">
-                <Input placeholder="Largura" value={editPieceForm.width} onChange={(e) => setEditPieceForm((f) => ({ ...f, width: e.target.value }))} />
-                <Input placeholder="Comprimento" value={editPieceForm.length} onChange={(e) => setEditPieceForm((f) => ({ ...f, length: e.target.value }))} />
-                <Input placeholder="Altura" value={editPieceForm.height} onChange={(e) => setEditPieceForm((f) => ({ ...f, height: e.target.value }))} />
-              </div>
-            </div>
-            <Input placeholder="Categoria de Loja" value={editPieceForm.store_category} onChange={(e) => setEditPieceForm((f) => ({ ...f, store_category: e.target.value }))} />
+            {renderPieceFormFields(editPieceForm, setEditPieceForm as any)}
             <Button type="submit" className="w-full" disabled={updatePiece.isPending}>Salvar</Button>
           </form>
         </DialogContent>
