@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   useCampaign, useClient, useClientStores, useCampaignPieces, useCampaignStorePieces,
-  useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignStorePiece,
+  useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece,
   type CampaignPiece, type ClientStore,
 } from "@/hooks/useMultiClientData";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -18,7 +18,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3 } from "lucide-react";
 import { toast } from "sonner";
 
 const CampaignDetail = () => {
@@ -32,6 +32,7 @@ const CampaignDetail = () => {
   const { data: storePieces = [] } = useCampaignStorePieces(campaignId);
   const addPiece = useAddCampaignPiece();
   const deletePiece = useDeleteCampaignPiece();
+  const updatePiece = useUpdateCampaignPiece();
   const updateStorePiece = useUpdateCampaignStorePiece();
 
   const [pieceDialogOpen, setPieceDialogOpen] = useState(false);
@@ -43,6 +44,43 @@ const CampaignDetail = () => {
   const [storeSearch, setStoreSearch] = useState("");
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
   const [editValue, setEditValue] = useState("");
+
+  // Edit piece
+  const [editPieceDialogOpen, setEditPieceDialogOpen] = useState(false);
+  const [editPieceForm, setEditPieceForm] = useState({
+    id: "", code: "", category: "", name: "",
+    width: "", length: "", height: "",
+    store_category: "",
+  });
+
+  const handleOpenEditPiece = (piece: CampaignPiece) => {
+    const sizeParts = piece.size?.split(" x ") || [];
+    setEditPieceForm({
+      id: piece.id,
+      code: String(piece.code),
+      category: piece.category,
+      name: piece.name,
+      width: sizeParts[0] || "",
+      length: sizeParts[1] || "",
+      height: sizeParts[2] || "",
+      store_category: piece.store_category || "",
+    });
+    setEditPieceDialogOpen(true);
+  };
+
+  const handleEditPiece = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const size = [editPieceForm.width, editPieceForm.length, editPieceForm.height].filter(Boolean).join(" x ");
+    await updatePiece.mutateAsync({
+      id: editPieceForm.id,
+      code: parseInt(editPieceForm.code),
+      category: editPieceForm.category,
+      name: editPieceForm.name,
+      size,
+      store_category: editPieceForm.store_category || null,
+    });
+    setEditPieceDialogOpen(false);
+  };
 
   // Build quantity map: { `${storeId}-${pieceId}`: quantity }
   const qtyMap = useMemo(() => {
@@ -193,23 +231,28 @@ const CampaignDetail = () => {
                           <span className="text-xs font-bold">{p.code}</span>
                           <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{p.name}</span>
                           {isAdmin && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <button className="text-destructive/50 hover:text-destructive mt-0.5">
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir peça?</AlertDialogTitle>
-                                  <AlertDialogDescription>A peça será removida de todas as lojas desta campanha.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => deletePiece.mutate(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <button onClick={() => handleOpenEditPiece(p)} className="text-muted-foreground/50 hover:text-primary">
+                                <Edit3 className="w-3 h-3" />
+                              </button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <button className="text-destructive/50 hover:text-destructive">
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir peça?</AlertDialogTitle>
+                                    <AlertDialogDescription>A peça será removida de todas as lojas desta campanha.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => deletePiece.mutate(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           )}
                         </div>
                       </TableHead>
@@ -283,6 +326,28 @@ const CampaignDetail = () => {
           </>
         )}
       </main>
+
+      {/* Edit Piece Dialog */}
+      <Dialog open={editPieceDialogOpen} onOpenChange={setEditPieceDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar Peça</DialogTitle></DialogHeader>
+          <form onSubmit={handleEditPiece} className="space-y-3">
+            <Input placeholder="Código *" type="number" value={editPieceForm.code} onChange={(e) => setEditPieceForm((f) => ({ ...f, code: e.target.value }))} required />
+            <Input placeholder="Categoria *" value={editPieceForm.category} onChange={(e) => setEditPieceForm((f) => ({ ...f, category: e.target.value }))} required />
+            <Input placeholder="Nome *" value={editPieceForm.name} onChange={(e) => setEditPieceForm((f) => ({ ...f, name: e.target.value }))} required />
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">Medidas</label>
+              <div className="grid grid-cols-3 gap-2">
+                <Input placeholder="Largura" value={editPieceForm.width} onChange={(e) => setEditPieceForm((f) => ({ ...f, width: e.target.value }))} />
+                <Input placeholder="Comprimento" value={editPieceForm.length} onChange={(e) => setEditPieceForm((f) => ({ ...f, length: e.target.value }))} />
+                <Input placeholder="Altura" value={editPieceForm.height} onChange={(e) => setEditPieceForm((f) => ({ ...f, height: e.target.value }))} />
+              </div>
+            </div>
+            <Input placeholder="Categoria de Loja" value={editPieceForm.store_category} onChange={(e) => setEditPieceForm((f) => ({ ...f, store_category: e.target.value }))} />
+            <Button type="submit" className="w-full" disabled={updatePiece.isPending}>Salvar</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

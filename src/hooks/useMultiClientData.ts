@@ -301,6 +301,18 @@ export function useAddCampaignPiece() {
   });
 }
 
+export function useUpdateCampaignPiece() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: Partial<CampaignPiece> & { id: string }) => {
+      const { error } = await supabase.from("campaign_pieces").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_pieces"] }); toast.success("Peça atualizada!"); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
 export function useDeleteCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
