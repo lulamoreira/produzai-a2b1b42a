@@ -492,6 +492,80 @@ export function useDeleteCampaignPieceLocation() {
   });
 }
 
+// ─── Campaign Store Status ───────────────────────────────
+
+export type CampaignStoreStatus = {
+  id: string;
+  campaign_id: string;
+  store_id: string;
+  enabled: boolean;
+  created_at: string;
+};
+
+export function useCampaignStoreStatus(campaignId: string | undefined) {
+  return useQuery({
+    queryKey: ["campaign_store_status", campaignId],
+    queryFn: async () => {
+      if (!campaignId) return [];
+      const { data, error } = await supabase
+        .from("campaign_store_status")
+        .select("*")
+        .eq("campaign_id", campaignId);
+      if (error) throw error;
+      return data as CampaignStoreStatus[];
+    },
+    enabled: !!campaignId,
+  });
+}
+
+export function useUpsertCampaignStoreStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ campaignId, storeId, enabled }: { campaignId: string; storeId: string; enabled: boolean }) => {
+      const { data: existing } = await supabase
+        .from("campaign_store_status")
+        .select("id")
+        .eq("campaign_id", campaignId)
+        .eq("store_id", storeId)
+        .maybeSingle();
+
+      if (existing) {
+        const { error } = await supabase.from("campaign_store_status").update({ enabled }).eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("campaign_store_status").insert({ campaign_id: campaignId, store_id: storeId, enabled });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_store_status"] }); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useBulkUpsertCampaignStoreStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ campaignId, storeIds, enabled }: { campaignId: string; storeIds: string[]; enabled: boolean }) => {
+      for (const storeId of storeIds) {
+        const { data: existing } = await supabase
+          .from("campaign_store_status")
+          .select("id")
+          .eq("campaign_id", campaignId)
+          .eq("store_id", storeId)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase.from("campaign_store_status").update({ enabled }).eq("id", existing.id);
+        } else {
+          await supabase.from("campaign_store_status").insert({ campaign_id: campaignId, store_id: storeId, enabled });
+        }
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_store_status"] }); toast.success("Status atualizado!"); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
 // ─── CEP Lookup ──────────────────────────────────────────
 
 export async function fetchAddressByCep(cep: string) {
