@@ -238,18 +238,27 @@ const CampaignDetail = () => {
       ? stores
       : stores.filter(s => s.store_model === piece.store_category || s.store_model === "Outras" || !s.store_model);
     
-    // Only assign to stores that don't already have this piece
-    const toAssign = targetStores.filter(s => !qtyMap[`${s.id}-${piece.id}`]);
-    if (toAssign.length === 0) {
-      toast.info("Todas as lojas compatíveis já possuem esta peça.");
-      return;
+    // Check if piece is already distributed (any target store has it)
+    const assignedStores = targetStores.filter(s => qtyMap[`${s.id}-${piece.id}`]);
+    const isDistributed = assignedStores.length > 0;
+
+    if (isDistributed) {
+      // Remove from all target stores
+      for (const store of assignedStores) {
+        await updateStorePiece.mutateAsync({
+          campaignId, storeId: store.id, pieceId: piece.id, quantity: 0,
+        });
+      }
+      toast.success(`Peça removida de ${assignedStores.length} loja(s)!`);
+    } else {
+      // Assign to all target stores
+      for (const store of targetStores) {
+        await updateStorePiece.mutateAsync({
+          campaignId, storeId: store.id, pieceId: piece.id, quantity: 1,
+        });
+      }
+      toast.success(`Peça distribuída para ${targetStores.length} loja(s)!`);
     }
-    for (const store of toAssign) {
-      await updateStorePiece.mutateAsync({
-        campaignId, storeId: store.id, pieceId: piece.id, quantity: 1,
-      });
-    }
-    toast.success(`Peça distribuída para ${toAssign.length} loja(s)!`);
   };
 
   // ─── Piece form fields (shared between add/edit) ──────
@@ -985,9 +994,17 @@ const CampaignDetail = () => {
                           {isAdmin && (
                             <TableCell>
                               <div className="flex items-center gap-1">
-                                <Button variant="ghost" size="icon" className="h-7 w-7" title="Distribuir para lojas compatíveis" onClick={() => handleDistributePiece(p)}>
-                                  <CheckSquare className="w-3.5 h-3.5 text-secondary" />
-                                </Button>
+                                {(() => {
+                                  const targetStores = p.store_category === "Outras" || !p.store_category
+                                    ? stores
+                                    : stores.filter(s => s.store_model === p.store_category || s.store_model === "Outras" || !s.store_model);
+                                  const isDistributed = targetStores.some(s => qtyMap[`${s.id}-${p.id}`]);
+                                  return (
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" title={isDistributed ? "Remover de todas as lojas" : "Distribuir para lojas compatíveis"} onClick={() => handleDistributePiece(p)}>
+                                      <CheckSquare className={`w-3.5 h-3.5 ${isDistributed ? "text-primary" : "text-muted-foreground"}`} />
+                                    </Button>
+                                  );
+                                })()}
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditPiece(p)}>
                                   <Edit3 className="w-3.5 h-3.5" />
                                 </Button>
