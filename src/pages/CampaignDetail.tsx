@@ -23,7 +23,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
 
@@ -67,6 +67,12 @@ const CampaignDetail = () => {
   const [cityFilter, setCityFilter] = useState("__all__");
   const [stateFilter, setStateFilter] = useState("__all__");
   const [storeCategoryFilter, setStoreCategoryFilter] = useState("__all__");
+
+  // ─── Store detail view ────────────────────────────────
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+  const [addPieceToStoreOpen, setAddPieceToStoreOpen] = useState(false);
+  const [storeEditingPieceId, setStoreEditingPieceId] = useState<string | null>(null);
+  const [storeEditQtyValue, setStoreEditQtyValue] = useState("");
 
   // ─── Matrix editing ────────────────────────────────────
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
@@ -451,7 +457,12 @@ const CampaignDetail = () => {
                         <TableRow key={store.id}>
                           <TableCell>
                             <div>
-                              <span className="font-medium text-foreground">{store.name}</span>
+                              <button
+                                className="font-medium text-foreground hover:text-primary hover:underline transition-colors text-left"
+                                onClick={() => setSelectedStoreId(store.id)}
+                              >
+                                {store.name}
+                              </button>
                               {store.nickname && store.nickname !== store.name && (
                                 <span className="text-xs text-muted-foreground ml-1.5">({store.nickname})</span>
                               )}
@@ -481,6 +492,228 @@ const CampaignDetail = () => {
                 </Table>
               </div>
             )}
+
+            {/* ─── Store Detail Panel ─── */}
+            {selectedStoreId && (() => {
+              const selectedStore = stores.find(s => s.id === selectedStoreId);
+              if (!selectedStore) return null;
+              const storePiecesForStore = pieces.map(p => ({
+                ...p,
+                quantity: qtyMap[`${selectedStoreId}-${p.id}`] || 0,
+              }));
+              const assignedPieces = storePiecesForStore.filter(p => p.quantity > 0);
+              const unassignedPieces = storePiecesForStore.filter(p => p.quantity === 0);
+              const totalQty = assignedPieces.reduce((s, p) => s + p.quantity, 0);
+
+              const CARD_COLORS = [
+                "from-primary/15 to-primary/5 border-primary/25",
+                "from-secondary/15 to-secondary/5 border-secondary/25",
+                "from-accent/15 to-accent/5 border-accent/25",
+                "from-info/15 to-info/5 border-info/25",
+              ];
+
+              return (
+                <div className="mt-6 border border-border rounded-xl bg-card overflow-hidden">
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-secondary/10 to-primary/10 px-5 py-4 flex items-center justify-between border-b border-border">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center shadow-glow-secondary">
+                        <Store className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-foreground text-lg">{selectedStore.name}</h3>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ") || "Sem localização"}
+                          {" · "}{assignedPieces.length} peça(s) · {totalQty} unidade(s)
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          className="text-xs gap-1 gradient-accent text-white border-0"
+                          onClick={() => setAddPieceToStoreOpen(true)}
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Incluir Peça
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedStoreId(null)}>
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Piece Cards */}
+                  <div className="p-4">
+                    {assignedPieces.length === 0 ? (
+                      <div className="text-center py-10">
+                        <Package className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Nenhuma peça atribuída a esta loja.</p>
+                        {isAdmin && (
+                          <Button size="sm" variant="outline" className="mt-3 text-xs gap-1" onClick={() => setAddPieceToStoreOpen(true)}>
+                            <Plus className="w-3.5 h-3.5" /> Incluir primeira peça
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {assignedPieces.map((p, idx) => {
+                          const colorClass = CARD_COLORS[idx % CARD_COLORS.length];
+                          const isEditingQty = storeEditingPieceId === p.id;
+                          return (
+                            <div key={p.id} className={`bg-gradient-to-br ${colorClass} border rounded-xl p-4 transition-all hover:shadow-md`}>
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                                      #{p.code}
+                                    </span>
+                                    {p.store_category && (
+                                      <span className="text-[10px] bg-accent/20 text-accent-foreground px-1.5 py-0.5 rounded">
+                                        {p.store_category}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <h4 className="font-semibold text-foreground text-sm truncate">{p.name}</h4>
+                                  <p className="text-[11px] text-muted-foreground mt-0.5">{p.category}</p>
+                                  {p.size && <p className="text-[10px] text-muted-foreground">📐 {p.size}</p>}
+                                </div>
+                              </div>
+
+                              {/* Quantity controls */}
+                              <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
+                                {isEditingQty ? (
+                                  <div className="flex items-center gap-1">
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      value={storeEditQtyValue}
+                                      onChange={(e) => setStoreEditQtyValue(e.target.value)}
+                                      onBlur={() => {
+                                        if (campaignId) {
+                                          updateStorePiece.mutate({
+                                            campaignId, storeId: selectedStoreId, pieceId: p.id,
+                                            quantity: Math.max(0, parseInt(storeEditQtyValue) || 0),
+                                          });
+                                        }
+                                        setStoreEditingPieceId(null);
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                          if (campaignId) {
+                                            updateStorePiece.mutate({
+                                              campaignId, storeId: selectedStoreId, pieceId: p.id,
+                                              quantity: Math.max(0, parseInt(storeEditQtyValue) || 0),
+                                            });
+                                          }
+                                          setStoreEditingPieceId(null);
+                                        }
+                                        if (e.key === "Escape") setStoreEditingPieceId(null);
+                                      }}
+                                      className="w-20 h-8 text-center text-sm"
+                                      autoFocus
+                                    />
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      if (!isAdmin) return;
+                                      setStoreEditingPieceId(p.id);
+                                      setStoreEditQtyValue(String(p.quantity));
+                                    }}
+                                    className="flex items-center gap-1.5 text-sm font-bold text-foreground hover:text-primary transition-colors"
+                                    disabled={!isAdmin}
+                                  >
+                                    <Package className="w-3.5 h-3.5" />
+                                    {p.quantity} un.
+                                    {isAdmin && <Edit3 className="w-3 h-3 text-muted-foreground" />}
+                                  </button>
+                                )}
+
+                                {isAdmin && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Remover peça da loja?</AlertDialogTitle>
+                                        <AlertDialogDescription>A quantidade será zerada para "{p.name}" nesta loja.</AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                          onClick={() => {
+                                            if (campaignId) {
+                                              updateStorePiece.mutate({
+                                                campaignId, storeId: selectedStoreId, pieceId: p.id, quantity: 0,
+                                              });
+                                            }
+                                          }}
+                                        >
+                                          Remover
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add piece to store dialog */}
+                  <Dialog open={addPieceToStoreOpen} onOpenChange={setAddPieceToStoreOpen}>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Incluir Peça em {selectedStore.name}</DialogTitle>
+                        <DialogDescription>Selecione uma peça e defina a quantidade.</DialogDescription>
+                      </DialogHeader>
+                      {unassignedPieces.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">Todas as peças já foram incluídas nesta loja.</p>
+                      ) : (
+                        <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                          {unassignedPieces.map((p) => (
+                            <div key={p.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-primary">#{p.code}</span>
+                                  <span className="text-sm font-medium truncate">{p.name}</span>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground">{p.category} {p.size ? `· ${p.size}` : ""}</p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs gap-1 ml-2"
+                                onClick={() => {
+                                  if (campaignId) {
+                                    updateStorePiece.mutate({
+                                      campaignId, storeId: selectedStoreId, pieceId: p.id, quantity: 1,
+                                    });
+                                    toast.success(`"${p.name}" adicionada com 1 un.`);
+                                  }
+                                }}
+                              >
+                                <Plus className="w-3.5 h-3.5" /> Incluir
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              );
+            })()}
           </TabsContent>
 
           {/* ─── TAB: MATRIZ ─── */}
