@@ -812,7 +812,7 @@ const CampaignDetail = () => {
               <p className="text-sm text-muted-foreground text-center py-4">Nenhuma localização cadastrada.</p>
             ) : (
               <div className="space-y-1 max-h-[300px] overflow-y-auto">
-                {pieceLocations.map((loc) => (
+                {[...pieceLocations].sort((a, b) => a.name.localeCompare(b.name)).map((loc) => (
                   <div key={loc.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
                     <span className="text-sm">{loc.name}</span>
                     <Button
