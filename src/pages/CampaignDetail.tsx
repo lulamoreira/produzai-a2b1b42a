@@ -516,10 +516,18 @@ const CampaignDetail = () => {
                     try {
                       const items = await parsePiecesImport(file);
                       if (items.length === 0) { toast.error("Nenhuma peça encontrada."); return; }
+                      let added = 0, updated = 0;
                       for (const item of items) {
-                        await addPiece.mutateAsync({ campaign_id: campaignId, ...item });
+                        const existing = pieces.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+                        if (existing) {
+                          await updatePiece.mutateAsync({ id: existing.id, ...item });
+                          updated++;
+                        } else {
+                          await addPiece.mutateAsync({ campaign_id: campaignId, ...item });
+                          added++;
+                        }
                       }
-                      toast.success(`${items.length} peça(s) importada(s)!`);
+                      toast.success(`${added} adicionada(s), ${updated} atualizada(s)!`);
                     } catch { toast.error("Erro ao importar."); }
                     e.target.value = "";
                   }} />
