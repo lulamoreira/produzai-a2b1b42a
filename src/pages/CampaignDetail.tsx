@@ -184,18 +184,39 @@ const CampaignDetail = () => {
     setForm: React.Dispatch<React.SetStateAction<typeof pieceForm>>,
   ) => (
     <>
-      <Input placeholder="Código *" type="number" value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} required />
-      <Input placeholder="Categoria *" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} required />
-      <Input placeholder="Nome *" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
       <div>
-        <label className="text-xs font-medium text-muted-foreground">Medidas</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Código *</label>
+        <Input type="number" value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} required />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Categoria *</label>
+        <Input value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} required />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome *</label>
+        <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Medidas</label>
         <div className="grid grid-cols-3 gap-2">
-          <Input placeholder="Largura" value={form.width} onChange={(e) => setForm((f) => ({ ...f, width: e.target.value }))} />
-          <Input placeholder="Comprimento" value={form.length} onChange={(e) => setForm((f) => ({ ...f, length: e.target.value }))} />
-          <Input placeholder="Altura" value={form.height} onChange={(e) => setForm((f) => ({ ...f, height: e.target.value }))} />
+          <div>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">Largura</label>
+            <Input value={form.width} onChange={(e) => setForm((f) => ({ ...f, width: e.target.value }))} />
+          </div>
+          <div>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">Comprimento</label>
+            <Input value={form.length} onChange={(e) => setForm((f) => ({ ...f, length: e.target.value }))} />
+          </div>
+          <div>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">Altura</label>
+            <Input value={form.height} onChange={(e) => setForm((f) => ({ ...f, height: e.target.value }))} />
+          </div>
         </div>
       </div>
-      <Input placeholder="Categoria de Loja" value={form.store_category} onChange={(e) => setForm((f) => ({ ...f, store_category: e.target.value }))} />
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Categoria de Loja</label>
+        <Input value={form.store_category} onChange={(e) => setForm((f) => ({ ...f, store_category: e.target.value }))} />
+      </div>
     </>
   );
 
