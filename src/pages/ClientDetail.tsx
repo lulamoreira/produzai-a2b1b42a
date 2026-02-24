@@ -489,12 +489,12 @@ const ClientDetail = () => {
                         </AlertDialogTrigger>
                         <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir campanha?</AlertDialogTitle>
-                            <AlertDialogDescription>Todos os dados desta campanha serão removidos.</AlertDialogDescription>
+                            <AlertDialogTitle>Tem certeza que deseja excluir esta campanha?</AlertDialogTitle>
+                            <AlertDialogDescription>Todos os dados associados a esta campanha serão apagados permanentemente, incluindo peças, quantidades por loja e configurações. Esta ação não pode ser desfeita.</AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteCampaign.mutate(c.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                            <AlertDialogAction onClick={() => deleteCampaign.mutate(c.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">SIM</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
