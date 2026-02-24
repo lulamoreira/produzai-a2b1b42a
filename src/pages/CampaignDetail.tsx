@@ -86,6 +86,7 @@ const CampaignDetail = () => {
 
   // ─── Store detail view ────────────────────────────────
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+  const [deactivateStoreId, setDeactivateStoreId] = useState<string | null>(null);
   const [addPieceToStoreOpen, setAddPieceToStoreOpen] = useState(false);
   const [storeEditingPieceId, setStoreEditingPieceId] = useState<string | null>(null);
   const [storeEditQtyValue, setStoreEditQtyValue] = useState("");
@@ -555,7 +556,12 @@ const CampaignDetail = () => {
                               checked={enabled}
                               onCheckedChange={(checked) => {
                                 if (!campaignId) return;
-                                upsertStoreStatus.mutate({ campaignId, storeId: store.id, enabled: checked });
+                                if (!checked && stats.pieceCount > 0) {
+                                  // Has pieces — ask for confirmation
+                                  setDeactivateStoreId(store.id);
+                                } else {
+                                  upsertStoreStatus.mutate({ campaignId, storeId: store.id, enabled: checked });
+                                }
                               }}
                               disabled={!isAdmin}
                             />
@@ -815,9 +821,40 @@ const CampaignDetail = () => {
                 </div>
               );
             })()}
+
+            {/* Deactivate store confirmation dialog */}
+            <AlertDialog open={!!deactivateStoreId} onOpenChange={(open) => { if (!open) setDeactivateStoreId(null); }}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Desativar loja?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta loja possui peças e quantidades atribuídas nesta campanha. Ao desativá-la, todas as peças e quantidades serão removidas permanentemente. Deseja continuar?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={async () => {
+                      if (!campaignId || !deactivateStoreId) return;
+                      const storePiecesToRemove = pieces.filter(p => qtyMap[`${deactivateStoreId}-${p.id}`] > 0);
+                      for (const p of storePiecesToRemove) {
+                        await updateStorePiece.mutateAsync({
+                          campaignId, storeId: deactivateStoreId, pieceId: p.id, quantity: 0,
+                        });
+                      }
+                      upsertStoreStatus.mutate({ campaignId, storeId: deactivateStoreId, enabled: false });
+                      setDeactivateStoreId(null);
+                      toast.success("Loja desativada e peças removidas!");
+                    }}
+                  >
+                    SIM
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </TabsContent>
 
-          {/* ─── TAB: MATRIZ ─── */}
           <TabsContent value="matrix">
             {renderStoreFilters()}
             <div className="flex flex-wrap items-center gap-2 mb-4">
