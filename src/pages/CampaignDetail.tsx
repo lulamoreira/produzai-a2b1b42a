@@ -638,7 +638,7 @@ const CampaignDetail = () => {
                )}
               {isAdmin && (
                 <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setLocationDialogOpen(true)}>
-                  <MapPin className="w-3.5 h-3.5" /> Localizações
+                  <MapPin className="w-3.5 h-3.5" /> Localização na loja
                 </Button>
               )}
               {isAdmin && (
