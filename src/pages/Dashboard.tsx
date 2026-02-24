@@ -179,15 +179,15 @@ const Dashboard = () => {
                       </AlertDialogTrigger>
                       <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
+                          <AlertDialogTitle>Tem certeza que deseja excluir este cliente?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Todas as campanhas, lojas e dados deste cliente serão removidos permanentemente.
+                            Todos os dados associados a este cliente serão apagados permanentemente, incluindo campanhas, lojas, peças e quantidades. Esta ação não pode ser desfeita.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
                           <AlertDialogAction onClick={() => deleteClient.mutate(client.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Excluir
+                            SIM
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
