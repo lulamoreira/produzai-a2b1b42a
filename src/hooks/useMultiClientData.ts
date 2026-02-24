@@ -74,6 +74,7 @@ export type UserClientAccess = {
   user_id: string;
   client_id: string;
   can_edit: boolean;
+  category_id: string | null;
   created_at: string;
 };
 
@@ -405,7 +406,7 @@ export function useUserClientAccess(clientId?: string) {
 export function useAddUserClientAccess() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (access: { user_id: string; client_id: string; can_edit: boolean }) => {
+    mutationFn: async (access: { user_id: string; client_id: string; can_edit: boolean; category_id?: string }) => {
       const { error } = await supabase.from("user_client_access").insert(access);
       if (error) throw error;
     },
@@ -417,8 +418,10 @@ export function useAddUserClientAccess() {
 export function useUpdateUserClientAccess() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, can_edit }: { id: string; can_edit: boolean }) => {
-      const { error } = await supabase.from("user_client_access").update({ can_edit }).eq("id", id);
+    mutationFn: async ({ id, can_edit, category_id }: { id: string; can_edit: boolean; category_id?: string }) => {
+      const updateData: any = { can_edit };
+      if (category_id !== undefined) updateData.category_id = category_id;
+      const { error } = await supabase.from("user_client_access").update(updateData).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["user_client_access"] }); toast.success("Permissão atualizada!"); },
