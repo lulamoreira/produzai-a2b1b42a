@@ -162,7 +162,7 @@ const Admin = () => {
         <Tabs defaultValue="users">
           <TabsList className="mb-6">
             <TabsTrigger value="users" className="gap-1"><Users className="w-4 h-4" /> Usuários</TabsTrigger>
-            <TabsTrigger value="categories" className="gap-1"><Tags className="w-4 h-4" /> Categorias</TabsTrigger>
+            <TabsTrigger value="categories" className="gap-1"><Tags className="w-4 h-4" /> Roles</TabsTrigger>
             <TabsTrigger value="access" className="gap-1"><KeyRound className="w-4 h-4" /> Acesso por Cliente</TabsTrigger>
           </TabsList>
 
@@ -217,12 +217,12 @@ const Admin = () => {
           {/* ─── Categories Tab ─── */}
           <TabsContent value="categories">
             <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-base font-semibold text-foreground">Categorias de Permissão ({categories.length})</h2>
-              <Button size="sm" onClick={openNewCategory}><Plus className="w-4 h-4 mr-1" /> Nova Categoria</Button>
+              <h2 className="text-base font-semibold text-foreground">Roles ({categories.length})</h2>
+              <Button size="sm" onClick={openNewCategory}><Plus className="w-4 h-4 mr-1" /> Novo Role</Button>
             </div>
 
             {categories.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-8 text-center">Nenhuma categoria criada ainda.</p>
+              <p className="text-muted-foreground text-sm py-8 text-center">Nenhum role criado ainda.</p>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
                 {categories.map((cat) => (
@@ -241,8 +241,8 @@ const Admin = () => {
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir categoria "{cat.name}"?</AlertDialogTitle>
-                              <AlertDialogDescription>Usuários com esta categoria perderão suas permissões associadas.</AlertDialogDescription>
+                              <AlertDialogTitle>Excluir role "{cat.name}"?</AlertDialogTitle>
+                              <AlertDialogDescription>Usuários com este role perderão suas permissões associadas.</AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -289,7 +289,7 @@ const Admin = () => {
             <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
               <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>{editingCategory ? "Editar Categoria" : "Nova Categoria"}</DialogTitle>
+                  <DialogTitle>{editingCategory ? "Editar Role" : "Novo Role"}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div>
@@ -329,8 +329,8 @@ const Admin = () => {
                       </TableBody>
                     </Table>
                   </div>
-                  <Button onClick={handleSaveCategory} className="w-full" disabled={addCategory.isPending || updateCategory.isPending}>
-                    {editingCategory ? "Salvar" : "Criar Categoria"}
+                   <Button onClick={handleSaveCategory} className="w-full" disabled={addCategory.isPending || updateCategory.isPending}>
+                    {editingCategory ? "Salvar" : "Criar Role"}
                   </Button>
                 </div>
               </DialogContent>
@@ -371,9 +371,9 @@ const Admin = () => {
                       </Select>
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-foreground mb-1 block">Categoria de Permissão</label>
+                      <label className="text-sm font-medium text-foreground mb-1 block">Role</label>
                       <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-                        <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Selecione o role" /></SelectTrigger>
                         <SelectContent>
                           {categories.map((cat) => (
                             <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
@@ -396,7 +396,7 @@ const Admin = () => {
                     <TableRow>
                       <TableHead>Usuário</TableHead>
                       <TableHead>Cliente</TableHead>
-                      <TableHead>Categoria</TableHead>
+                      <TableHead>Role</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
