@@ -180,17 +180,13 @@ const Admin = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Usuário</TableHead>
-                      <TableHead>Role</TableHead>
+                      <TableHead>Role / Cliente</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {users.map((u) => {
                       const userAccesses = allAccess.filter((a) => a.user_id === u.user_id);
-                      const userCategories = userAccesses
-                        .map((a) => categories.find((cat) => cat.id === a.category_id))
-                        .filter(Boolean);
-                      const uniqueCategories = [...new Map(userCategories.map((c) => [c!.id, c!])).values()];
 
                       return (
                       <TableRow key={u.user_id}>
@@ -201,16 +197,30 @@ const Admin = () => {
                         <TableCell>
                           {u.role === "admin" ? (
                             <Badge variant="default" className="text-[10px] uppercase">Admin</Badge>
-                          ) : uniqueCategories.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {uniqueCategories.map((cat) => (
-                                <Badge key={cat.id} variant="outline" className="text-[10px]">
-                                  {cat.name}
-                                </Badge>
-                              ))}
+                          ) : userAccesses.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {userAccesses.map((a) => {
+                                const c = clients.find((c) => c.id === a.client_id);
+                                return (
+                                  <div key={a.id} className="flex items-center gap-2">
+                                    <span className="text-xs text-muted-foreground min-w-[80px] truncate">{c?.name || "—"}</span>
+                                    <Select
+                                      value={a.category_id || ""}
+                                      onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: false, category_id: val })}
+                                    >
+                                      <SelectTrigger className="w-[140px] h-7 text-xs"><SelectValue placeholder="Sem role" /></SelectTrigger>
+                                      <SelectContent>
+                                        {categories.map((cat) => (
+                                          <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                );
+                              })}
                             </div>
                           ) : (
-                            <Badge variant="secondary" className="text-[10px] uppercase">Sem role</Badge>
+                            <span className="text-xs text-muted-foreground italic">Sem acesso</span>
                           )}
                         </TableCell>
                         <TableCell className="text-right">
