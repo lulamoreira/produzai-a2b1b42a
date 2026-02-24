@@ -169,15 +169,34 @@ const CampaignDetail = () => {
   const handleEditPiece = async (e: React.FormEvent) => {
     e.preventDefault();
     const size = [editPieceForm.width, editPieceForm.length, editPieceForm.height].filter(Boolean).join(" x ");
+    const code = editPieceForm.code ? parseInt(editPieceForm.code) : nextPieceCode.seq;
     await updatePiece.mutateAsync({
       id: editPieceForm.id,
-      code: parseInt(editPieceForm.code),
+      code,
       category: editPieceForm.category,
       name: editPieceForm.name,
       size,
       store_category: editPieceForm.store_category || null,
     });
     setEditPieceDialogOpen(false);
+  };
+
+  const handleReviewPieceCodes = async () => {
+    const piecesWithoutCode = pieces.filter((p) => !p.code || p.code === 0);
+    if (piecesWithoutCode.length === 0) {
+      toast.info("Todas as peças já possuem código.");
+      return;
+    }
+    const usedNumbers = new Set<number>(pieces.filter((p) => p.code && p.code > 0).map((p) => p.code));
+    let count = 0;
+    for (const piece of piecesWithoutCode) {
+      let seq = 1;
+      while (usedNumbers.has(seq)) seq++;
+      usedNumbers.add(seq);
+      await updatePiece.mutateAsync({ id: piece.id, code: seq });
+      count++;
+    }
+    toast.success(`${count} peça(s) receberam código automaticamente.`);
   };
 
   const handleCellClick = (storeId: string, pieceId: string) => {
@@ -538,6 +557,11 @@ const CampaignDetail = () => {
               <Button size="sm" variant="outline" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha")}>
                 <Download className="w-4 h-4 mr-1" /> Exportar
               </Button>
+              {isAdmin && (
+                <Button size="sm" variant="outline" onClick={handleReviewPieceCodes}>
+                  Revisar Códigos
+                </Button>
+              )}
               {isAdmin && (
                 <>
                 <label className="cursor-pointer">

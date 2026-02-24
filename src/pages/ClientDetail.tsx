@@ -189,9 +189,34 @@ const ClientDetail = () => {
   const handleEditStore = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editStoreId) return;
-    await updateStore.mutateAsync({ id: editStoreId, ...editStoreForm });
+    const formData = { ...editStoreForm };
+    if (!formData.store_code && client) {
+      formData.store_code = generateStoreCode(client.name, formData.country, stores);
+    }
+    await updateStore.mutateAsync({ id: editStoreId, ...formData });
     setEditStoreDialogOpen(false);
     setEditStoreId(null);
+  };
+
+  const handleReviewStoreCodes = async () => {
+    if (!client) return;
+    const storesWithoutCode = stores.filter((s) => !s.store_code);
+    if (storesWithoutCode.length === 0) {
+      toast.info("Todas as lojas já possuem código.");
+      return;
+    }
+    // Build a running list of all codes (existing + newly assigned)
+    const allStores = [...stores];
+    let count = 0;
+    for (const store of storesWithoutCode) {
+      const code = generateStoreCode(client.name, store.country || "", allStores);
+      await updateStore.mutateAsync({ id: store.id, store_code: code });
+      // Update allStores so next iteration sees this code
+      const idx = allStores.findIndex((s) => s.id === store.id);
+      if (idx >= 0) allStores[idx] = { ...allStores[idx], store_code: code };
+      count++;
+    }
+    toast.success(`${count} loja(s) receberam código automaticamente.`);
   };
 
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -599,6 +624,9 @@ const ClientDetail = () => {
 
                   <Button size="sm" variant="outline" onClick={() => exportClientStores(stores, client.name)}>
                     <Download className="w-4 h-4 mr-1" /> Exportar
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={handleReviewStoreCodes}>
+                    Revisar Códigos
                   </Button>
                   <label className="cursor-pointer">
                     <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportFile} />
