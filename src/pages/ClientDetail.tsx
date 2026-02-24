@@ -224,31 +224,61 @@ const ClientDetail = () => {
   ) => (
     <>
       <div className="grid grid-cols-2 gap-3">
-        <Input
-          placeholder="Nome *"
-          value={form.name}
-          onChange={(e) => options?.nameChangeHandler ? options.nameChangeHandler(e.target.value) : setForm((f) => ({ ...f, name: e.target.value }))}
-          required
-        />
-        <Input
-          placeholder="Apelido"
-          value={form.nickname}
-          onChange={(e) => options?.nicknameChangeHandler ? options.nicknameChangeHandler(e.target.value) : setForm((f) => ({ ...f, nickname: e.target.value }))}
-        />
-        <Input placeholder="CNPJ" value={form.cnpj} onChange={(e) => setForm((f) => ({ ...f, cnpj: e.target.value }))} />
-        <Input placeholder="Inscrição Estadual" value={form.state_registration} onChange={(e) => setForm((f) => ({ ...f, state_registration: e.target.value }))} />
-        <div className="flex gap-2">
-          <Input placeholder="CEP" value={form.zip_code} onChange={(e) => setForm((f) => ({ ...f, zip_code: e.target.value }))} />
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome *</label>
+          <Input value={form.name} onChange={(e) => options?.nameChangeHandler ? options.nameChangeHandler(e.target.value) : setForm((f) => ({ ...f, name: e.target.value }))} required />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Apelido</label>
+          <Input value={form.nickname} onChange={(e) => options?.nicknameChangeHandler ? options.nicknameChangeHandler(e.target.value) : setForm((f) => ({ ...f, nickname: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">CNPJ</label>
+          <Input value={form.cnpj} onChange={(e) => setForm((f) => ({ ...f, cnpj: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Inscrição Estadual</label>
+          <Input value={form.state_registration} onChange={(e) => setForm((f) => ({ ...f, state_registration: e.target.value }))} />
+        </div>
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP</label>
+            <Input value={form.zip_code} onChange={(e) => setForm((f) => ({ ...f, zip_code: e.target.value }))} />
+          </div>
           <Button type="button" variant="outline" size="sm" onClick={() => handleCepLookup(form, setForm)}>Buscar</Button>
         </div>
-        <Input placeholder="Rua" value={form.street} onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))} />
-        <Input placeholder="Número" value={form.number} onChange={(e) => setForm((f) => ({ ...f, number: e.target.value }))} />
-        <Input placeholder="Complemento" value={form.complement} onChange={(e) => setForm((f) => ({ ...f, complement: e.target.value }))} />
-        <Input placeholder="Bairro" value={form.neighborhood} onChange={(e) => setForm((f) => ({ ...f, neighborhood: e.target.value }))} />
-        <Input placeholder="Cidade" value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
-        <Input placeholder="Estado" value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} />
-        <Input placeholder="Telefone" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
-        <Input placeholder="Gerente Responsável" value={form.manager_name} onChange={(e) => setForm((f) => ({ ...f, manager_name: e.target.value }))} className="col-span-2" />
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Rua</label>
+          <Input value={form.street} onChange={(e) => setForm((f) => ({ ...f, street: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Número</label>
+          <Input value={form.number} onChange={(e) => setForm((f) => ({ ...f, number: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Complemento</label>
+          <Input value={form.complement} onChange={(e) => setForm((f) => ({ ...f, complement: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Bairro</label>
+          <Input value={form.neighborhood} onChange={(e) => setForm((f) => ({ ...f, neighborhood: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Cidade</label>
+          <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Estado</label>
+          <Input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefone</label>
+          <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+        </div>
+        <div className="col-span-2">
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Gerente Responsável</label>
+          <Input value={form.manager_name} onChange={(e) => setForm((f) => ({ ...f, manager_name: e.target.value }))} />
+        </div>
       </div>
 
       {customFieldLabels.some(Boolean) && (
@@ -256,12 +286,10 @@ const ClientDetail = () => {
           <p className="text-sm font-medium text-foreground">Campos Personalizados</p>
           {customFieldLabels.map((label, i) =>
             label ? (
-              <Input
-                key={i}
-                placeholder={label}
-                value={(form as any)[`custom_field_${i + 1}`]}
-                onChange={(e) => setForm((f) => ({ ...f, [`custom_field_${i + 1}`]: e.target.value }))}
-              />
+              <div key={i}>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">{label}</label>
+                <Input value={(form as any)[`custom_field_${i + 1}`]} onChange={(e) => setForm((f) => ({ ...f, [`custom_field_${i + 1}`]: e.target.value }))} />
+              </div>
             ) : null
           )}
         </div>
@@ -297,12 +325,14 @@ const ClientDetail = () => {
                 <p className="text-sm text-muted-foreground mb-4">Defina os nomes dos campos extras para as lojas deste cliente. Campos sem nome não serão exibidos.</p>
                 <div className="space-y-3">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Input
-                      key={i}
-                      placeholder={`Campo personalizado ${i} (ex: Tipo de Piso)`}
-                      value={(customLabels as any)[`custom_field_${i}_label`]}
-                      onChange={(e) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: e.target.value }))}
-                    />
+                    <div key={i}>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Campo {i}</label>
+                      <Input
+                        placeholder={`Ex: Tipo de Piso`}
+                        value={(customLabels as any)[`custom_field_${i}_label`]}
+                        onChange={(e) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: e.target.value }))}
+                      />
+                    </div>
                   ))}
                 </div>
                 <Button onClick={handleSaveSettings} className="w-full mt-4" disabled={updateClient.isPending}>Salvar</Button>
@@ -330,8 +360,11 @@ const ClientDetail = () => {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader><DialogTitle>Nova Campanha</DialogTitle></DialogHeader>
-                    <form onSubmit={handleAddCampaign} className="space-y-4">
-                      <Input placeholder="Nome da campanha" value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
+    <form onSubmit={handleAddCampaign} className="space-y-4">
+                      <div>
+                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da campanha *</label>
+                        <Input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
+                      </div>
                       <Button type="submit" className="w-full" disabled={addCampaign.isPending}>Criar</Button>
                     </form>
                   </DialogContent>
