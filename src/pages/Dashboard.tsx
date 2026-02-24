@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useClients, useAddClient, useUpdateClient, useDeleteClient, type Client } from "@/hooks/useMultiClientData";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
@@ -41,6 +43,14 @@ const Dashboard = () => {
   const addClient = useAddClient();
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
+
+  const { data: allCampaigns = [] } = useQuery({
+    queryKey: ["all-campaigns"],
+    queryFn: async () => {
+      const { data } = await supabase.from("campaigns").select("id");
+      return data || [];
+    },
+  });
 
   const [search, setSearch] = useState("");
   const [newName, setNewName] = useState("");
@@ -128,7 +138,7 @@ const Dashboard = () => {
               <Package className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">—</p>
+              <p className="text-2xl font-bold text-foreground">{allCampaigns.length}</p>
               <p className="text-[11px] text-muted-foreground">Campanhas</p>
             </div>
           </div>
