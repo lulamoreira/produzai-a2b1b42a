@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      campaign_notification_emails: {
+        Row: {
+          campaign_id: string
+          created_at: string | null
+          email: string
+          id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string | null
+          email: string
+          id?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string | null
+          email?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_notification_emails_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_piece_locations: {
         Row: {
           campaign_id: string
@@ -373,6 +402,92 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      occurrence_motives: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          description: string
+          id: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          description: string
+          id?: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          description?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      occurrences: {
+        Row: {
+          campaign_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          motive_id: string | null
+          photo_url: string | null
+          piece_id: string
+          status: string | null
+          store_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          motive_id?: string | null
+          photo_url?: string | null
+          piece_id: string
+          status?: string | null
+          store_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          motive_id?: string | null
+          photo_url?: string | null
+          piece_id?: string
+          status?: string | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "occurrences_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "occurrences_motive_id_fkey"
+            columns: ["motive_id"]
+            isOneToOne: false
+            referencedRelation: "occurrence_motives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "occurrences_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_pieces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "occurrences_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       permission_categories: {
         Row: {

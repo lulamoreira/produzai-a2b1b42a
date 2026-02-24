@@ -26,9 +26,10 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
+import OccurrencesTab from "@/components/OccurrencesTab";
 
 const CampaignDetail = () => {
   const { clientId, campaignId } = useParams<{ clientId: string; campaignId: string }>();
@@ -478,6 +479,7 @@ const CampaignDetail = () => {
             <TabsTrigger value="stores" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Store className="w-4 h-4" /> Lojas</TabsTrigger>
             <TabsTrigger value="matrix" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Grid3X3 className="w-4 h-4" /> Matriz</TabsTrigger>
             <TabsTrigger value="pieces" className="gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><LayoutList className="w-4 h-4" /> Peças</TabsTrigger>
+            <TabsTrigger value="occurrences" className="gap-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive"><AlertTriangle className="w-4 h-4" /> Ocorrências</TabsTrigger>
           </TabsList>
 
           {/* ─── TAB: LOJAS ─── */}
@@ -1134,6 +1136,11 @@ const CampaignDetail = () => {
                 </Table>
               </div>
             )}
+          </TabsContent>
+
+          {/* ─── TAB: OCORRÊNCIAS ─── */}
+          <TabsContent value="occurrences">
+            <OccurrencesTab campaignId={campaignId!} stores={stores} pieces={pieces} />
           </TabsContent>
         </Tabs>
       </main>
