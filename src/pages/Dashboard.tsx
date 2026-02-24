@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useClients, useAddClient, useDeleteClient, type Client } from "@/hooks/useMultiClientData";
+import { useClients, useAddClient, useUpdateClient, useDeleteClient, type Client } from "@/hooks/useMultiClientData";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +25,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { data: clients = [], isLoading } = useClients();
   const addClient = useAddClient();
+  const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
 
   const [search, setSearch] = useState("");
@@ -107,10 +108,18 @@ const Dashboard = () => {
                   try {
                     const items = await parseClientsImport(file);
                     if (items.length === 0) { toast.error("Nenhum cliente encontrado."); return; }
+                    let added = 0, updated = 0;
                     for (const item of items) {
-                      await addClient.mutateAsync(item);
+                      const existing = clients.find(c => c.name.toLowerCase() === item.name.toLowerCase());
+                      if (existing) {
+                        await updateClient.mutateAsync({ id: existing.id, name: item.name });
+                        updated++;
+                      } else {
+                        await addClient.mutateAsync(item);
+                        added++;
+                      }
                     }
-                    toast.success(`${items.length} cliente(s) importado(s)!`);
+                    toast.success(`${added} adicionado(s), ${updated} atualizado(s)!`);
                   } catch { toast.error("Erro ao importar."); }
                   e.target.value = "";
                 }} />

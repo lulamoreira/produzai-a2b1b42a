@@ -168,11 +168,11 @@ const ClientDetail = () => {
     setEditStoreId(null);
   };
 
-  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !clientId) return;
     const reader = new FileReader();
-    reader.onload = (evt) => {
+    reader.onload = async (evt) => {
       try {
         const wb = XLSX.read(evt.target?.result, { type: "binary" });
         const ws = wb.Sheets[wb.SheetNames[0]];
@@ -197,7 +197,18 @@ const ClientDetail = () => {
           toast.error("Nenhuma loja encontrada na planilha.");
           return;
         }
-        importStores.mutate(mapped);
+        let added = 0, updated = 0;
+        for (const item of mapped) {
+          const existing = stores.find(s => s.name.toLowerCase() === item.name.toLowerCase());
+          if (existing) {
+            await updateStore.mutateAsync({ id: existing.id, ...item });
+            updated++;
+          } else {
+            await addStore.mutateAsync(item);
+            added++;
+          }
+        }
+        toast.success(`${added} adicionada(s), ${updated} atualizada(s)!`);
       } catch {
         toast.error("Erro ao ler a planilha.");
       }
@@ -373,10 +384,18 @@ const ClientDetail = () => {
                     try {
                       const items = await parseCampaignsImport(file);
                       if (items.length === 0) { toast.error("Nenhuma campanha encontrada."); return; }
+                      let added = 0, updated = 0;
                       for (const item of items) {
-                        await addCampaign.mutateAsync({ client_id: clientId, name: item.name });
+                        const existing = campaigns.find(c => c.name.toLowerCase() === item.name.toLowerCase());
+                        if (existing) {
+                          // Campaign only has name, so just skip if same name exists
+                          updated++;
+                        } else {
+                          await addCampaign.mutateAsync({ client_id: clientId, name: item.name });
+                          added++;
+                        }
                       }
-                      toast.success(`${items.length} campanha(s) importada(s)!`);
+                      toast.success(`${added} adicionada(s), ${updated} já existente(s)!`);
                     } catch { toast.error("Erro ao importar."); }
                     e.target.value = "";
                   }} />
