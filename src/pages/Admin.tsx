@@ -149,13 +149,15 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
             <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
           </Button>
-          <Shield className="w-5 h-5 text-primary" />
+          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary">
+            <Shield className="w-5 h-5 text-white" />
+          </div>
            <h1 className="text-lg font-bold text-foreground">Painel de Administração</h1>
-           <Button variant="outline" size="sm" className="ml-auto gap-1" onClick={() => navigate("/approvals")}>
+           <Button variant="outline" size="sm" className="ml-auto gap-1.5" onClick={() => navigate("/approvals")}>
              <UserCheck className="w-4 h-4" /> Aprovações
            </Button>
          </div>
@@ -163,10 +165,10 @@ const Admin = () => {
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         <Tabs defaultValue="users">
-          <TabsList className="mb-6">
-            <TabsTrigger value="users" className="gap-1"><Users className="w-4 h-4" /> Usuários</TabsTrigger>
-            <TabsTrigger value="categories" className="gap-1"><Tags className="w-4 h-4" /> Roles</TabsTrigger>
-            <TabsTrigger value="access" className="gap-1"><KeyRound className="w-4 h-4" /> Acesso por Cliente</TabsTrigger>
+          <TabsList className="mb-6 bg-card border border-border">
+            <TabsTrigger value="users" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Users className="w-4 h-4" /> Usuários</TabsTrigger>
+            <TabsTrigger value="categories" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Tags className="w-4 h-4" /> Roles</TabsTrigger>
+            <TabsTrigger value="access" className="gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><KeyRound className="w-4 h-4" /> Acesso por Cliente</TabsTrigger>
           </TabsList>
 
           {/* ─── Users Tab ─── */}

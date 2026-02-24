@@ -340,12 +340,15 @@ const CampaignDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="max-w-[95vw] mx-auto px-4 py-4 flex items-center gap-3">
+        <div className="max-w-[95vw] mx-auto px-4 py-3 flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => navigate(`/clients/${clientId}`)}>
             <ArrowLeft className="w-4 h-4 mr-1" /> {client?.name || "Voltar"}
           </Button>
+          <div className="w-10 h-10 rounded-xl gradient-secondary flex items-center justify-center shadow-glow-secondary flex-shrink-0">
+            <Package className="w-5 h-5 text-white" />
+          </div>
           <div className="flex-1">
-            <h1 className="text-lg font-display font-bold text-foreground">{campaign.name}</h1>
+            <h1 className="text-lg font-bold text-foreground">{campaign.name}</h1>
             <p className="text-xs text-muted-foreground">
               {pieces.length} peça(s) · {stores.length} loja(s) · {totalPieces} unidade(s) total
             </p>
@@ -355,10 +358,10 @@ const CampaignDetail = () => {
 
       <main className="max-w-[95vw] mx-auto px-4 py-6">
         <Tabs defaultValue="stores">
-          <TabsList className="mb-6">
-            <TabsTrigger value="stores" className="gap-1"><Store className="w-4 h-4" /> Lojas</TabsTrigger>
-            <TabsTrigger value="matrix" className="gap-1"><Grid3X3 className="w-4 h-4" /> Matriz</TabsTrigger>
-            <TabsTrigger value="pieces" className="gap-1"><LayoutList className="w-4 h-4" /> Peças</TabsTrigger>
+          <TabsList className="mb-6 bg-card border border-border">
+            <TabsTrigger value="stores" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Store className="w-4 h-4" /> Lojas</TabsTrigger>
+            <TabsTrigger value="matrix" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Grid3X3 className="w-4 h-4" /> Matriz</TabsTrigger>
+            <TabsTrigger value="pieces" className="gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><LayoutList className="w-4 h-4" /> Peças</TabsTrigger>
           </TabsList>
 
           {/* ─── TAB: LOJAS ─── */}
