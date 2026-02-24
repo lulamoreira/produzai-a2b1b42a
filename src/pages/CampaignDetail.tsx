@@ -5,6 +5,7 @@ import {
   useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece,
   useCampaignPieceLocations, useAddCampaignPieceLocation, useDeleteCampaignPieceLocation,
   useUpdateClientStore,
+  useCampaignStoreStatus, useUpsertCampaignStoreStatus, useBulkUpsertCampaignStoreStatus,
   type CampaignPiece, type ClientStore,
 } from "@/hooks/useMultiClientData";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -46,6 +47,18 @@ const CampaignDetail = () => {
   const addPieceLocation = useAddCampaignPieceLocation();
   const deletePieceLocation = useDeleteCampaignPieceLocation();
   const updateClientStore = useUpdateClientStore();
+  const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
+  const upsertStoreStatus = useUpsertCampaignStoreStatus();
+  const bulkUpsertStoreStatus = useBulkUpsertCampaignStoreStatus();
+
+  // Campaign store enabled map (default true if no record exists)
+  const storeEnabledMap = useMemo(() => {
+    const map: Record<string, boolean> = {};
+    campaignStoreStatus.forEach((s) => { map[s.store_id] = s.enabled; });
+    return map;
+  }, [campaignStoreStatus]);
+
+  const isStoreEnabled = (storeId: string) => storeEnabledMap[storeId] !== false;
 
   // ─── Location management ──────────────────────────────
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
@@ -107,6 +120,8 @@ const CampaignDetail = () => {
       return matchesSearch && matchesCity && matchesState && matchesStoreCategory;
     });
   }, [stores, storeSearch, cityFilter, stateFilter, storeCategoryFilter]);
+
+  const allEnabled = useMemo(() => filteredStores.every(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
 
   // For each store, compute total pieces assigned in this campaign
   const storeStats = useMemo(() => {
@@ -237,7 +252,7 @@ const CampaignDetail = () => {
 
   const handleDistributePiece = async (piece: CampaignPiece) => {
     if (!campaignId) return;
-    const autoStores = stores.filter(s => s.auto_distribute);
+    const autoStores = stores.filter(s => s.auto_distribute && isStoreEnabled(s.id));
     const targetStores = piece.store_category === "Outras" || !piece.store_category
       ? autoStores
       : autoStores.filter(s => s.store_model === piece.store_category || s.store_model === "Outras" || !s.store_model);
@@ -480,6 +495,25 @@ const CampaignDetail = () => {
                       <TableHead>Loja</TableHead>
                       <TableHead>Cidade/Estado</TableHead>
                       <TableHead>Modelo</TableHead>
+                      <TableHead className="text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span>Ativa</span>
+                          {isAdmin && (
+                            <Switch
+                              checked={allEnabled}
+                              onCheckedChange={(checked) => {
+                                if (!campaignId) return;
+                                bulkUpsertStoreStatus.mutate({
+                                  campaignId,
+                                  storeIds: filteredStores.map(s => s.id),
+                                  enabled: checked,
+                                });
+                              }}
+                              className="scale-75"
+                            />
+                          )}
+                        </div>
+                      </TableHead>
                       <TableHead className="text-center">Auto</TableHead>
                       <TableHead className="text-center">Peças</TableHead>
                       <TableHead className="text-center">Qtd Total</TableHead>
@@ -488,8 +522,9 @@ const CampaignDetail = () => {
                   <TableBody>
                     {filteredStores.map((store) => {
                       const stats = storeStats[store.id] || { totalQty: 0, pieceCount: 0 };
+                      const enabled = isStoreEnabled(store.id);
                       return (
-                        <TableRow key={store.id}>
+                        <TableRow key={store.id} className={!enabled ? "opacity-50" : ""}>
                           <TableCell>
                             <div>
                               <button
@@ -512,6 +547,16 @@ const CampaignDetail = () => {
                           </TableCell>
                           <TableCell>
                             <span className="text-sm text-muted-foreground">{store.store_model || "—"}</span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Switch
+                              checked={enabled}
+                              onCheckedChange={(checked) => {
+                                if (!campaignId) return;
+                                upsertStoreStatus.mutate({ campaignId, storeId: store.id, enabled: checked });
+                              }}
+                              disabled={!isAdmin}
+                            />
                           </TableCell>
                           <TableCell className="text-center">
                             <Switch

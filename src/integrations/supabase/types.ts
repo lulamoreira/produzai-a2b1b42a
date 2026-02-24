@@ -133,6 +133,45 @@ export type Database = {
           },
         ]
       }
+      campaign_store_status: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          enabled: boolean
+          id: string
+          store_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          store_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_store_status_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_store_status_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           client_id: string
