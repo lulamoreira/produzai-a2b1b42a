@@ -107,8 +107,10 @@ export function useAddOccurrence() {
       description?: string;
       photo_url?: string;
     }) => {
-      const { error } = await supabase.from("occurrences").insert(data);
+      const { data: inserted, error } = await supabase.from("occurrences").insert(data).select().single();
       if (error) throw error;
+      // Fire-and-forget notification
+      supabase.functions.invoke("notify-occurrence", { body: { record: inserted } }).catch(console.error);
     },
     onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: ["occurrences", vars.campaign_id] }),
   });
