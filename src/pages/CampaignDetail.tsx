@@ -799,6 +799,9 @@ const CampaignDetail = () => {
                               {store.nickname && store.nickname !== store.name && (
                                 <span className="text-[10px] text-muted-foreground ml-1">({store.nickname})</span>
                               )}
+                              {store.store_model && (
+                                <p className="text-[10px] text-muted-foreground">{store.store_model}</p>
+                              )}
                             </div>
                           </TableCell>
                           {matrixPieces.map((p) => {
