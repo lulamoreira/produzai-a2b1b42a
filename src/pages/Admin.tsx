@@ -12,7 +12,7 @@ import {
   type PermissionCategory,
 } from "@/hooks/usePermissionCategories";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Shield, ArrowLeft, Users, KeyRound, Plus, Trash2, Tags, Edit3 } from "lucide-react";
+import { Shield, ArrowLeft, Users, KeyRound, Plus, Trash2, Tags, Edit3, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -154,8 +154,11 @@ const Admin = () => {
             <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
           </Button>
           <Shield className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-bold text-foreground">Painel de Administração</h1>
-        </div>
+           <h1 className="text-lg font-bold text-foreground">Painel de Administração</h1>
+           <Button variant="outline" size="sm" className="ml-auto gap-1" onClick={() => navigate("/approvals")}>
+             <UserCheck className="w-4 h-4" /> Aprovações
+           </Button>
+         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
