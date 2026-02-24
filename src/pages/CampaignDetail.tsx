@@ -446,6 +446,7 @@ const CampaignDetail = () => {
                     <TableRow>
                       <TableHead>Loja</TableHead>
                       <TableHead>Cidade/Estado</TableHead>
+                      <TableHead>Modelo</TableHead>
                       <TableHead className="text-center">Peças</TableHead>
                       <TableHead className="text-center">Qtd Total</TableHead>
                     </TableRow>
@@ -474,6 +475,9 @@ const CampaignDetail = () => {
                               <MapPin className="w-3 h-3" />
                               {[store.city, store.state].filter(Boolean).join(" / ") || "—"}
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-muted-foreground">{store.store_model || "—"}</span>
                           </TableCell>
                           <TableCell className="text-center">
                             <span className={`text-sm font-medium ${stats.pieceCount > 0 ? "text-primary" : "text-muted-foreground"}`}>
