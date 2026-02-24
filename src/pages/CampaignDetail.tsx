@@ -4,6 +4,7 @@ import {
   useCampaign, useClient, useClientStores, useCampaignPieces, useCampaignStorePieces,
   useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece,
   useCampaignPieceLocations, useAddCampaignPieceLocation, useDeleteCampaignPieceLocation,
+  useUpdateClientStore,
   type CampaignPiece, type ClientStore,
 } from "@/hooks/useMultiClientData";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -20,6 +21,7 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -43,6 +45,7 @@ const CampaignDetail = () => {
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const addPieceLocation = useAddCampaignPieceLocation();
   const deletePieceLocation = useDeleteCampaignPieceLocation();
+  const updateClientStore = useUpdateClientStore();
 
   // ─── Location management ──────────────────────────────
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
@@ -234,9 +237,10 @@ const CampaignDetail = () => {
 
   const handleDistributePiece = async (piece: CampaignPiece) => {
     if (!campaignId) return;
+    const autoStores = stores.filter(s => s.auto_distribute);
     const targetStores = piece.store_category === "Outras" || !piece.store_category
-      ? stores
-      : stores.filter(s => s.store_model === piece.store_category || s.store_model === "Outras" || !s.store_model);
+      ? autoStores
+      : autoStores.filter(s => s.store_model === piece.store_category || s.store_model === "Outras" || !s.store_model);
     
     // Check if piece is already distributed (any target store has it)
     const assignedStores = targetStores.filter(s => qtyMap[`${s.id}-${piece.id}`]);
@@ -476,6 +480,7 @@ const CampaignDetail = () => {
                       <TableHead>Loja</TableHead>
                       <TableHead>Cidade/Estado</TableHead>
                       <TableHead>Modelo</TableHead>
+                      <TableHead className="text-center">Auto</TableHead>
                       <TableHead className="text-center">Peças</TableHead>
                       <TableHead className="text-center">Qtd Total</TableHead>
                     </TableRow>
@@ -507,6 +512,15 @@ const CampaignDetail = () => {
                           </TableCell>
                           <TableCell>
                             <span className="text-sm text-muted-foreground">{store.store_model || "—"}</span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Switch
+                              checked={store.auto_distribute}
+                              onCheckedChange={(checked) => {
+                                updateClientStore.mutate({ id: store.id, auto_distribute: checked });
+                              }}
+                              disabled={!isAdmin}
+                            />
                           </TableCell>
                           <TableCell className="text-center">
                             <span className={`text-sm font-medium ${stats.pieceCount > 0 ? "text-primary" : "text-muted-foreground"}`}>
@@ -995,9 +1009,10 @@ const CampaignDetail = () => {
                             <TableCell>
                               <div className="flex items-center gap-1">
                                 {(() => {
+                                  const autoStores = stores.filter(s => s.auto_distribute);
                                   const targetStores = p.store_category === "Outras" || !p.store_category
-                                    ? stores
-                                    : stores.filter(s => s.store_model === p.store_category || s.store_model === "Outras" || !s.store_model);
+                                    ? autoStores
+                                    : autoStores.filter(s => s.store_model === p.store_category || s.store_model === "Outras" || !s.store_model);
                                   const isDistributed = targetStores.some(s => qtyMap[`${s.id}-${p.id}`]);
                                   return (
                                     <Button variant="ghost" size="icon" className="h-7 w-7" title={isDistributed ? "Remover de todas as lojas" : "Distribuir para lojas compatíveis"} onClick={() => handleDistributePiece(p)}>
