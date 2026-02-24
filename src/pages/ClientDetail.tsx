@@ -21,6 +21,30 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+
+// Helper to parse "Label|type" format from custom field labels
+const FIELD_TYPES = [
+  { value: "text", label: "Texto" },
+  { value: "number", label: "Número" },
+  { value: "date", label: "Data" },
+  { value: "boolean", label: "Sim/Não" },
+] as const;
+
+type FieldType = typeof FIELD_TYPES[number]["value"];
+
+function parseFieldLabel(raw: string | null): { name: string; type: FieldType } {
+  if (!raw) return { name: "", type: "text" };
+  const parts = raw.split("|");
+  const type = (parts[1] as FieldType) || "text";
+  return { name: parts[0], type: FIELD_TYPES.some(t => t.value === type) ? type : "text" };
+}
+
+function encodeFieldLabel(name: string, type: FieldType): string {
+  if (!name.trim()) return "";
+  return type === "text" ? name.trim() : `${name.trim()}|${type}`;
+}
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
@@ -193,13 +217,14 @@ const ClientDetail = () => {
     s.city?.toLowerCase().includes(storeSearch.toLowerCase())
   );
 
-  const customFieldLabels = [
+  const customFieldLabelsRaw = [
     client?.custom_field_1_label,
     client?.custom_field_2_label,
     client?.custom_field_3_label,
     client?.custom_field_4_label,
     client?.custom_field_5_label,
   ];
+  const customFieldsParsed = customFieldLabelsRaw.map(parseFieldLabel);
 
   if (loadingClient) {
     return (
@@ -281,14 +306,28 @@ const ClientDetail = () => {
         </div>
       </div>
 
-      {customFieldLabels.some(Boolean) && (
+      {customFieldsParsed.some(f => f.name) && (
         <div className="border-t border-border pt-3 space-y-3">
           <p className="text-sm font-medium text-foreground">Campos Personalizados</p>
-          {customFieldLabels.map((label, i) =>
-            label ? (
+          {customFieldsParsed.map((field, i) =>
+            field.name ? (
               <div key={i}>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">{label}</label>
-                <Input value={(form as any)[`custom_field_${i + 1}`]} onChange={(e) => setForm((f) => ({ ...f, [`custom_field_${i + 1}`]: e.target.value }))} />
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">{field.name}</label>
+                {field.type === "boolean" ? (
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={(form as any)[`custom_field_${i + 1}`] === "true"}
+                      onCheckedChange={(checked) => setForm((f) => ({ ...f, [`custom_field_${i + 1}`]: checked ? "true" : "false" }))}
+                    />
+                    <span className="text-sm text-muted-foreground">{(form as any)[`custom_field_${i + 1}`] === "true" ? "Sim" : "Não"}</span>
+                  </div>
+                ) : (
+                  <Input
+                    type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+                    value={(form as any)[`custom_field_${i + 1}`]}
+                    onChange={(e) => setForm((f) => ({ ...f, [`custom_field_${i + 1}`]: e.target.value }))}
+                  />
+                )}
               </div>
             ) : null
           )}
@@ -324,16 +363,35 @@ const ClientDetail = () => {
                 <DialogHeader><DialogTitle>Campos Personalizáveis</DialogTitle></DialogHeader>
                 <p className="text-sm text-muted-foreground mb-4">Defina os nomes dos campos extras para as lojas deste cliente. Campos sem nome não serão exibidos.</p>
                 <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i}>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Campo {i}</label>
-                      <Input
-                        placeholder={`Ex: Tipo de Piso`}
-                        value={(customLabels as any)[`custom_field_${i}_label`]}
-                        onChange={(e) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: e.target.value }))}
-                      />
-                    </div>
-                  ))}
+                  {[1, 2, 3, 4, 5].map((i) => {
+                    const parsed = parseFieldLabel((customLabels as any)[`custom_field_${i}_label`]);
+                    return (
+                      <div key={i} className="space-y-1">
+                        <label className="text-xs font-medium text-muted-foreground block">Campo {i}</label>
+                        <div className="flex gap-2">
+                          <Input
+                            className="flex-1"
+                            placeholder={`Ex: Tipo de Piso`}
+                            value={parsed.name}
+                            onChange={(e) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(e.target.value, parsed.type) }))}
+                          />
+                          <Select
+                            value={parsed.type}
+                            onValueChange={(val) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(parsed.name, val as FieldType) }))}
+                          >
+                            <SelectTrigger className="w-[120px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {FIELD_TYPES.map(ft => (
+                                <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
                 <Button onClick={handleSaveSettings} className="w-full mt-4" disabled={updateClient.isPending}>Salvar</Button>
               </DialogContent>
