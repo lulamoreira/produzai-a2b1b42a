@@ -61,15 +61,18 @@ function generateStoreCode(clientName: string, country: string, existingStores: 
   const clientPart = (clientName || "XXX").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
   const countryPart = (country || "BRA").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
   const prefix = `${clientPart}${countryPart}`;
-  // Find max sequential number for this prefix
-  let maxSeq = 0;
+  // Collect all existing sequential numbers for this prefix
+  const usedNumbers = new Set<number>();
   existingStores.forEach((s) => {
     if (s.store_code && s.store_code.startsWith(prefix)) {
       const numPart = parseInt(s.store_code.substring(prefix.length));
-      if (!isNaN(numPart) && numPart > maxSeq) maxSeq = numPart;
+      if (!isNaN(numPart)) usedNumbers.add(numPart);
     }
   });
-  return `${prefix}${String(maxSeq + 1).padStart(4, "0")}`;
+  // Find the lowest available number starting from 1
+  let seq = 1;
+  while (usedNumbers.has(seq)) seq++;
+  return `${prefix}${String(seq).padStart(4, "0")}`;
 }
 
 const ClientDetail = () => {
