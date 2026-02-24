@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   useCampaign, useClient, useClientStores, useCampaignPieces, useCampaignStorePieces,
   useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece,
+  useCampaignPieceLocations, useAddCampaignPieceLocation, useDeleteCampaignPieceLocation,
   type CampaignPiece, type ClientStore,
 } from "@/hooks/useMultiClientData";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -39,6 +40,13 @@ const CampaignDetail = () => {
   const deletePiece = useDeleteCampaignPiece();
   const updatePiece = useUpdateCampaignPiece();
   const updateStorePiece = useUpdateCampaignStorePiece();
+  const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
+  const addPieceLocation = useAddCampaignPieceLocation();
+  const deletePieceLocation = useDeleteCampaignPieceLocation();
+
+  // ─── Location management ──────────────────────────────
+  const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const [newLocationName, setNewLocationName] = useState("");
 
   // ─── Piece dialogs ─────────────────────────────────────
   const [pieceDialogOpen, setPieceDialogOpen] = useState(false);
@@ -230,7 +238,18 @@ const CampaignDetail = () => {
       </div>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Localização na Loja *</label>
-        <Input value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} required />
+        {pieceLocations.length > 0 ? (
+          <Select value={form.category} onValueChange={(val) => setForm((f) => ({ ...f, category: val }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione a localização" />
+            </SelectTrigger>
+            <SelectContent>
+              {pieceLocations.map((loc) => <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} required />
+        )}
       </div>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome *</label>
@@ -262,10 +281,20 @@ const CampaignDetail = () => {
             </SelectTrigger>
             <SelectContent>
               {uniqueStoreModels.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+              {!uniqueStoreModels.includes("Outras") && (
+                <SelectItem value="Outras">Outras</SelectItem>
+              )}
             </SelectContent>
           </Select>
         ) : (
-          <Input value={form.store_category} onChange={(e) => setForm((f) => ({ ...f, store_category: e.target.value }))} placeholder="Nenhum modelo cadastrado nas lojas" />
+          <Select value={form.store_category} onValueChange={(val) => setForm((f) => ({ ...f, store_category: val }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o modelo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Outras">Outras</SelectItem>
+            </SelectContent>
+          </Select>
         )}
       </div>
     </>
@@ -606,6 +635,11 @@ const CampaignDetail = () => {
                 <Button size="sm" variant="outline" className="text-xs gap-1" onClick={handleReviewPieceCodes}>
                   <Sparkles className="w-3.5 h-3.5" /> Revisar Códigos
                 </Button>
+               )}
+              {isAdmin && (
+                <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setLocationDialogOpen(true)}>
+                  <MapPin className="w-3.5 h-3.5" /> Localizações
+                </Button>
               )}
               {isAdmin && (
                 <>
@@ -738,6 +772,62 @@ const CampaignDetail = () => {
             {renderPieceFormFields(editPieceForm, setEditPieceForm as any)}
             <Button type="submit" className="w-full" disabled={updatePiece.isPending}>Salvar</Button>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Locations Dialog */}
+      <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gerenciar Localizações</DialogTitle>
+            <DialogDescription>Cadastre localizações de peças para esta campanha.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nome da localização"
+                value={newLocationName}
+                onChange={(e) => setNewLocationName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newLocationName.trim() && campaignId) {
+                    e.preventDefault();
+                    addPieceLocation.mutate({ campaign_id: campaignId, name: newLocationName.trim() });
+                    setNewLocationName("");
+                  }
+                }}
+              />
+              <Button
+                size="sm"
+                disabled={!newLocationName.trim() || addPieceLocation.isPending}
+                onClick={() => {
+                  if (!campaignId || !newLocationName.trim()) return;
+                  addPieceLocation.mutate({ campaign_id: campaignId, name: newLocationName.trim() });
+                  setNewLocationName("");
+                }}
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            {pieceLocations.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma localização cadastrada.</p>
+            ) : (
+              <div className="space-y-1 max-h-[300px] overflow-y-auto">
+                {pieceLocations.map((loc) => (
+                  <div key={loc.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
+                    <span className="text-sm">{loc.name}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => deletePieceLocation.mutate(loc.id)}
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

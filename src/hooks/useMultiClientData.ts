@@ -441,6 +441,56 @@ export function useDeleteUserClientAccess() {
   });
 }
 
+// ─── Campaign Piece Locations ────────────────────────────
+
+export type CampaignPieceLocation = {
+  id: string;
+  campaign_id: string;
+  name: string;
+  created_at: string;
+};
+
+export function useCampaignPieceLocations(campaignId: string | undefined) {
+  return useQuery({
+    queryKey: ["campaign_piece_locations", campaignId],
+    queryFn: async () => {
+      if (!campaignId) return [];
+      const { data, error } = await supabase
+        .from("campaign_piece_locations")
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .order("name");
+      if (error) throw error;
+      return data as CampaignPieceLocation[];
+    },
+    enabled: !!campaignId,
+  });
+}
+
+export function useAddCampaignPieceLocation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (location: { campaign_id: string; name: string }) => {
+      const { error } = await supabase.from("campaign_piece_locations").insert(location);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_piece_locations"] }); toast.success("Localização adicionada!"); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useDeleteCampaignPieceLocation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("campaign_piece_locations").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_piece_locations"] }); toast.success("Localização removida!"); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
 // ─── CEP Lookup ──────────────────────────────────────────
 
 export async function fetchAddressByCep(cep: string) {
