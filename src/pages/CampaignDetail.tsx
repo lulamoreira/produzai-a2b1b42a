@@ -122,6 +122,7 @@ const CampaignDetail = () => {
   }, [stores, storeSearch, cityFilter, stateFilter, storeCategoryFilter]);
 
   const allEnabled = useMemo(() => filteredStores.every(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
+  const activeFilteredStores = useMemo(() => filteredStores.filter(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
 
   // For each store, compute total pieces assigned in this campaign
   const storeStats = useMemo(() => {
@@ -528,8 +529,9 @@ const CampaignDetail = () => {
                           <TableCell>
                             <div>
                               <button
-                                className="font-medium text-foreground hover:text-primary hover:underline transition-colors text-left"
-                                onClick={() => setSelectedStoreId(store.id)}
+                                className={`font-medium text-left transition-colors ${enabled ? "text-foreground hover:text-primary hover:underline" : "text-muted-foreground cursor-not-allowed"}`}
+                                onClick={() => enabled && setSelectedStoreId(store.id)}
+                                disabled={!enabled}
                               >
                                 {store.name}
                               </button>
@@ -819,7 +821,7 @@ const CampaignDetail = () => {
           <TabsContent value="matrix">
             {renderStoreFilters()}
             <div className="flex flex-wrap items-center gap-2 mb-4">
-              <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(filteredStores, matrixPieces, storePieces, campaign?.name || "Campanha")}>
+              <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha")}>
                 <Download className="w-3.5 h-3.5" /> Exportar Matriz
               </Button>
               {isAdmin && (
@@ -850,7 +852,7 @@ const CampaignDetail = () => {
                 <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma peça cadastrada</h2>
                 <p className="text-muted-foreground text-sm">Adicione peças na aba "Peças" para começar a distribuir.</p>
               </div>
-            ) : filteredStores.length === 0 ? (
+            ) : activeFilteredStores.length === 0 ? (
               <div className="text-center py-20">
                 <Store className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
                 <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma loja encontrada</h2>
@@ -877,7 +879,7 @@ const CampaignDetail = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredStores.map((store) => {
+                    {activeFilteredStores.map((store) => {
                       const storeTotal = matrixPieces.reduce((s, p) => s + (qtyMap[`${store.id}-${p.id}`] || 0), 0);
                       return (
                         <TableRow key={store.id}>
