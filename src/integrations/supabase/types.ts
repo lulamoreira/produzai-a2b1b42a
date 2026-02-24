@@ -389,6 +389,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approval_status: Database["public"]["Enums"]["approval_status"]
           avatar_url: string | null
           created_at: string
           display_name: string | null
@@ -397,6 +398,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          approval_status?: Database["public"]["Enums"]["approval_status"]
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -405,6 +407,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          approval_status?: Database["public"]["Enums"]["approval_status"]
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
@@ -576,6 +579,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "viewer"
+      approval_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -704,6 +708,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "viewer"],
+      approval_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
