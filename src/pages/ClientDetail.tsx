@@ -53,8 +53,24 @@ const emptyStoreForm = {
   name: "", nickname: "", cnpj: "", state_registration: "",
   zip_code: "", street: "", number: "", complement: "", neighborhood: "",
   city: "", state: "", phone: "", manager_name: "",
+  store_model: "", country: "", store_code: "",
   custom_field_1: "", custom_field_2: "", custom_field_3: "", custom_field_4: "", custom_field_5: "",
 };
+
+function generateStoreCode(clientName: string, country: string, existingStores: { store_code: string | null }[]): string {
+  const clientPart = (clientName || "XXX").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
+  const countryPart = (country || "BRA").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
+  const prefix = `${clientPart}${countryPart}`;
+  // Find max sequential number for this prefix
+  let maxSeq = 0;
+  existingStores.forEach((s) => {
+    if (s.store_code && s.store_code.startsWith(prefix)) {
+      const numPart = parseInt(s.store_code.substring(prefix.length));
+      if (!isNaN(numPart) && numPart > maxSeq) maxSeq = numPart;
+    }
+  });
+  return `${prefix}${String(maxSeq + 1).padStart(4, "0")}`;
+}
 
 const ClientDetail = () => {
   const { clientId } = useParams<{ clientId: string }>();
@@ -129,7 +145,11 @@ const ClientDetail = () => {
   const handleAddStore = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientId) return;
-    await addStore.mutateAsync({ client_id: clientId, ...storeForm });
+    const formData = { ...storeForm };
+    if (!formData.store_code && client) {
+      formData.store_code = generateStoreCode(client.name, formData.country, stores);
+    }
+    await addStore.mutateAsync({ client_id: clientId, ...formData });
     setStoreForm({ ...emptyStoreForm });
     nicknameTouchedRef.current = false;
     setStoreDialogOpen(false);
@@ -151,6 +171,9 @@ const ClientDetail = () => {
       state: store.state || "",
       phone: store.phone || "",
       manager_name: store.manager_name || "",
+      store_model: store.store_model || "",
+      country: store.country || "",
+      store_code: store.store_code || "",
       custom_field_1: store.custom_field_1 || "",
       custom_field_2: store.custom_field_2 || "",
       custom_field_3: store.custom_field_3 || "",
@@ -184,7 +207,7 @@ const ClientDetail = () => {
           city: r["cidade"] || r["Cidade"] || r["city"] || null,
           state: r["estado"] || r["Estado"] || r["uf"] || r["UF"] || null,
           cnpj: r["cnpj"] || r["CNPJ"] || null,
-          state_registration: r["inscricao_estadual"] || r["Inscricao Estadual"] || r["IE"] || null,
+          state_registration: r["inscricao_estadual"] || r["Inscricao Estadual"] || r["IE"] || r["Inscrição Estadual"] || null,
           zip_code: r["cep"] || r["CEP"] || null,
           street: r["rua"] || r["Rua"] || r["logradouro"] || r["Logradouro"] || null,
           number: r["numero"] || r["Numero"] || r["Número"] || null,
@@ -192,6 +215,9 @@ const ClientDetail = () => {
           neighborhood: r["bairro"] || r["Bairro"] || null,
           phone: r["telefone"] || r["Telefone"] || r["phone"] || null,
           manager_name: r["gerente"] || r["Gerente"] || r["responsavel"] || r["Responsavel"] || null,
+          country: r["país"] || r["País"] || r["pais"] || r["country"] || null,
+          store_model: r["modelo de loja"] || r["Modelo de Loja"] || r["store_model"] || null,
+          store_code: r["código da loja"] || r["Código da Loja"] || r["store_code"] || null,
         })).filter((s) => s.name);
         if (mapped.length === 0) {
           toast.error("Nenhuma loja encontrada na planilha.");
@@ -312,9 +338,21 @@ const ClientDetail = () => {
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefone</label>
           <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
         </div>
-        <div className="col-span-2">
+        <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Gerente Responsável</label>
           <Input value={form.manager_name} onChange={(e) => setForm((f) => ({ ...f, manager_name: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
+          <Input value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} placeholder="Ex: Brasil" />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
+          <Input value={form.store_model} onChange={(e) => setForm((f) => ({ ...f, store_model: e.target.value }))} placeholder="Ex: Premium" />
+        </div>
+        <div className="col-span-2">
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Código da Loja</label>
+          <Input value={form.store_code} onChange={(e) => setForm((f) => ({ ...f, store_code: e.target.value }))} placeholder="Gerado automaticamente" />
         </div>
       </div>
 
@@ -582,11 +620,12 @@ const ClientDetail = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nome</TableHead>
-                      <TableHead>Apelido</TableHead>
-                      <TableHead>Cidade</TableHead>
-                      <TableHead>UF</TableHead>
-                      <TableHead>CNPJ</TableHead>
-                      <TableHead>Telefone</TableHead>
+                       <TableHead>Apelido</TableHead>
+                       <TableHead>Código</TableHead>
+                       <TableHead>Cidade</TableHead>
+                       <TableHead>UF</TableHead>
+                       <TableHead>Modelo</TableHead>
+                       <TableHead>Telefone</TableHead>
                       <TableHead>Gerente</TableHead>
                       {isAdmin && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
@@ -596,9 +635,10 @@ const ClientDetail = () => {
                       <TableRow key={s.id}>
                         <TableCell className="font-medium">{s.name}</TableCell>
                         <TableCell>{s.nickname || "—"}</TableCell>
+                        <TableCell className="text-xs font-mono">{s.store_code || "—"}</TableCell>
                         <TableCell>{s.city || "—"}</TableCell>
                         <TableCell>{s.state || "—"}</TableCell>
-                        <TableCell className="text-xs">{s.cnpj || "—"}</TableCell>
+                        <TableCell className="text-xs">{s.store_model || "—"}</TableCell>
                         <TableCell className="text-xs">{s.phone || "—"}</TableCell>
                         <TableCell className="text-xs">{s.manager_name || "—"}</TableCell>
                         {isAdmin && (

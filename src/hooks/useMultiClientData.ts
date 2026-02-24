@@ -38,6 +38,9 @@ export type ClientStore = {
   neighborhood: string | null;
   phone: string | null;
   manager_name: string | null;
+  store_model: string | null;
+  country: string | null;
+  store_code: string | null;
   custom_field_1: string | null;
   custom_field_2: string | null;
   custom_field_3: string | null;

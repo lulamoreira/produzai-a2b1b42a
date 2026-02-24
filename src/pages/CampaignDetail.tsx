@@ -108,16 +108,24 @@ const CampaignDetail = () => {
   }, [stores, pieces, qtyMap]);
 
   // ─── Handlers ──────────────────────────────────────────
+  const maxPieceCode = useMemo(() => pieces.reduce((max, p) => Math.max(max, p.code), 0), [pieces]);
+
+  const uniqueStoreModels = useMemo(() => 
+    [...new Set(stores.map((s) => s.store_model).filter(Boolean))].sort() as string[], 
+    [stores]
+  );
+
   const handleAddPiece = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!campaignId) return;
     const size = [pieceForm.width, pieceForm.length, pieceForm.height].filter(Boolean).join(" x ");
+    const code = pieceForm.code ? parseInt(pieceForm.code) : maxPieceCode + 1;
     if (pieceForm.store_category) {
       localStorage.setItem("last_store_category", pieceForm.store_category);
     }
     await addPiece.mutateAsync({
       campaign_id: campaignId,
-      code: parseInt(pieceForm.code),
+      code,
       category: pieceForm.category,
       name: pieceForm.name,
       size,
@@ -186,11 +194,11 @@ const CampaignDetail = () => {
   ) => (
     <>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Código *</label>
-        <Input type="number" value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} required />
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Código</label>
+        <Input type="number" value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} placeholder={String(maxPieceCode + 1)} />
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Categoria *</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Localização na Loja *</label>
         <Input value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} required />
       </div>
       <div>
@@ -215,8 +223,19 @@ const CampaignDetail = () => {
         </div>
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Categoria de Loja</label>
-        <Input value={form.store_category} onChange={(e) => setForm((f) => ({ ...f, store_category: e.target.value }))} />
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
+        {uniqueStoreModels.length > 0 ? (
+          <Select value={form.store_category} onValueChange={(val) => setForm((f) => ({ ...f, store_category: val }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o modelo" />
+            </SelectTrigger>
+            <SelectContent>
+              {uniqueStoreModels.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input value={form.store_category} onChange={(e) => setForm((f) => ({ ...f, store_category: e.target.value }))} placeholder="Nenhum modelo cadastrado nas lojas" />
+        )}
       </div>
     </>
   );
@@ -566,9 +585,9 @@ const CampaignDetail = () => {
                     <TableRow>
                       <TableHead className="w-[80px]">Código</TableHead>
                       <TableHead>Nome</TableHead>
-                      <TableHead>Categoria</TableHead>
+                      <TableHead>Localização na Loja</TableHead>
                       <TableHead>Medidas</TableHead>
-                      <TableHead>Cat. Loja</TableHead>
+                      <TableHead>Modelo de Loja</TableHead>
                       <TableHead className="text-center">Total distribuído</TableHead>
                       {isAdmin && <TableHead className="w-[80px]">Ações</TableHead>}
                     </TableRow>

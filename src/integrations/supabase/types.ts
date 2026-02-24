@@ -187,6 +187,7 @@ export type Database = {
           client_id: string
           cnpj: string | null
           complement: string | null
+          country: string | null
           created_at: string
           custom_field_1: string | null
           custom_field_2: string | null
@@ -202,6 +203,8 @@ export type Database = {
           phone: string | null
           state: string | null
           state_registration: string | null
+          store_code: string | null
+          store_model: string | null
           street: string | null
           zip_code: string | null
         }
@@ -210,6 +213,7 @@ export type Database = {
           client_id: string
           cnpj?: string | null
           complement?: string | null
+          country?: string | null
           created_at?: string
           custom_field_1?: string | null
           custom_field_2?: string | null
@@ -225,6 +229,8 @@ export type Database = {
           phone?: string | null
           state?: string | null
           state_registration?: string | null
+          store_code?: string | null
+          store_model?: string | null
           street?: string | null
           zip_code?: string | null
         }
@@ -233,6 +239,7 @@ export type Database = {
           client_id?: string
           cnpj?: string | null
           complement?: string | null
+          country?: string | null
           created_at?: string
           custom_field_1?: string | null
           custom_field_2?: string | null
@@ -248,6 +255,8 @@ export type Database = {
           phone?: string | null
           state?: string | null
           state_registration?: string | null
+          store_code?: string | null
+          store_model?: string | null
           street?: string | null
           zip_code?: string | null
         }

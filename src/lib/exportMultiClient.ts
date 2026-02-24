@@ -80,19 +80,24 @@ export function exportClientStores(stores: ClientStore[], clientName: string) {
     "Bairro": s.neighborhood || "",
     "Cidade": s.city || "",
     "Estado": s.state || "",
+    "País": s.country || "",
     "Telefone": s.phone || "",
     "Gerente": s.manager_name || "",
+    "Modelo de Loja": s.store_model || "",
+    "Código da Loja": s.store_code || "",
   }));
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{
     "Nome": "", "Apelido": "", "CNPJ": "", "Inscrição Estadual": "",
     "CEP": "", "Rua": "", "Número": "", "Complemento": "", "Bairro": "",
-    "Cidade": "", "Estado": "", "Telefone": "", "Gerente": "",
+    "Cidade": "", "Estado": "", "País": "", "Telefone": "", "Gerente": "",
+    "Modelo de Loja": "", "Código da Loja": "",
   }]);
   ws["!cols"] = [
     { wch: 30 }, { wch: 20 }, { wch: 18 }, { wch: 18 },
     { wch: 10 }, { wch: 30 }, { wch: 8 }, { wch: 15 }, { wch: 20 },
-    { wch: 20 }, { wch: 5 }, { wch: 15 }, { wch: 20 },
+    { wch: 20 }, { wch: 5 }, { wch: 15 }, { wch: 15 }, { wch: 20 },
+    { wch: 18 }, { wch: 15 },
   ];
   XLSX.utils.book_append_sheet(wb, ws, "Lojas");
   XLSX.writeFile(wb, `Lojas_${clientName.replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
@@ -103,14 +108,14 @@ export function exportClientStores(stores: ClientStore[], clientName: string) {
 export function exportCampaignPieces(pieces: CampaignPiece[], campaignName: string) {
   const rows = pieces.map((p) => ({
     "Código": p.code,
-    "Categoria": p.category,
+    "Localização na Loja": p.category,
     "Nome": p.name,
     "Medidas": p.size,
-    "Categoria de Loja": p.store_category || "",
+    "Modelo de Loja": p.store_category || "",
   }));
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{
-    "Código": "", "Categoria": "", "Nome": "", "Medidas": "", "Categoria de Loja": "",
+    "Código": "", "Localização na Loja": "", "Nome": "", "Medidas": "", "Modelo de Loja": "",
   }]);
   ws["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }];
   XLSX.utils.book_append_sheet(wb, ws, "Peças");
@@ -127,10 +132,10 @@ export function parsePiecesImport(file: File): Promise<Array<{ code: number; cat
         const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws);
         const mapped = rows.map((r) => ({
           code: parseInt(r["Código"] || r["codigo"] || r["code"] || "0") || 0,
-          category: r["Categoria"] || r["categoria"] || r["category"] || "",
+          category: r["Localização na Loja"] || r["Categoria"] || r["categoria"] || r["category"] || "",
           name: r["Nome"] || r["nome"] || r["name"] || "",
           size: r["Medidas"] || r["medidas"] || r["size"] || "",
-          store_category: r["Categoria de Loja"] || r["categoria_loja"] || r["store_category"] || undefined,
+          store_category: r["Modelo de Loja"] || r["Categoria de Loja"] || r["categoria_loja"] || r["store_category"] || undefined,
         })).filter((p) => p.name && p.code > 0);
         resolve(mapped);
       } catch { reject(new Error("Erro ao ler planilha.")); }
