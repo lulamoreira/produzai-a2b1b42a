@@ -20,7 +20,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles } from "lucide-react";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -453,207 +453,278 @@ const ClientDetail = () => {
 
           {/* ─── Campaigns Tab ─── */}
           <TabsContent value="campaigns">
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <h2 className="text-base font-semibold text-foreground">{campaigns.length} campanha(s)</h2>
-              <Button size="sm" variant="outline" onClick={() => exportCampaigns(campaigns, client.name)}>
-                <Download className="w-4 h-4 mr-1" /> Exportar
-              </Button>
-              {isAdmin && (
-                <>
-                <label className="cursor-pointer">
-                  <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file || !clientId) return;
-                    try {
-                      const items = await parseCampaignsImport(file);
-                      if (items.length === 0) { toast.error("Nenhuma campanha encontrada."); return; }
-                      let added = 0, updated = 0;
-                      for (const item of items) {
-                        const existing = campaigns.find(c => c.name.toLowerCase() === item.name.toLowerCase());
-                        if (existing) {
-                          // Campaign only has name, so just skip if same name exists
-                          updated++;
-                        } else {
-                          await addCampaign.mutateAsync({ client_id: clientId, name: item.name });
-                          added++;
-                        }
-                      }
-                      toast.success(`${added} adicionada(s), ${updated} já existente(s)!`);
-                    } catch { toast.error("Erro ao importar."); }
-                    e.target.value = "";
-                  }} />
-                  <Button size="sm" variant="outline" asChild>
-                    <span><Upload className="w-4 h-4 mr-1" /> Importar</span>
+            {/* Stats cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+              <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
+                  <Megaphone className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{campaigns.length}</p>
+                  <p className="text-[11px] text-muted-foreground">Campanhas</p>
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center">
+                  <Store className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{stores.length}</p>
+                  <p className="text-[11px] text-muted-foreground">Lojas</p>
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 rounded-xl p-4 col-span-2 sm:col-span-1">
+                <p className="text-xs font-semibold text-foreground mb-2">Ações</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportCampaigns(campaigns, client.name)}>
+                    <Download className="w-3 h-3" /> Exportar
                   </Button>
-                </label>
-                <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Nova Campanha</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader><DialogTitle>Nova Campanha</DialogTitle></DialogHeader>
-    <form onSubmit={handleAddCampaign} className="space-y-4">
-                      <div>
-                        <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da campanha *</label>
-                        <Input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
-                      </div>
-                      <Button type="submit" className="w-full" disabled={addCampaign.isPending}>Criar</Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-                </>
-              )}
+                  {isAdmin && (
+                    <>
+                      <label className="cursor-pointer">
+                        <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file || !clientId) return;
+                          try {
+                            const items = await parseCampaignsImport(file);
+                            if (items.length === 0) { toast.error("Nenhuma campanha encontrada."); return; }
+                            let added = 0, updated = 0;
+                            for (const item of items) {
+                              const existing = campaigns.find(c => c.name.toLowerCase() === item.name.toLowerCase());
+                              if (existing) { updated++; } else {
+                                await addCampaign.mutateAsync({ client_id: clientId, name: item.name });
+                                added++;
+                              }
+                            }
+                            toast.success(`${added} adicionada(s), ${updated} já existente(s)!`);
+                          } catch { toast.error("Erro ao importar."); }
+                          e.target.value = "";
+                        }} />
+                        <Button size="sm" variant="outline" className="text-xs h-7 gap-1" asChild>
+                          <span><Upload className="w-3 h-3" /> Importar</span>
+                        </Button>
+                      </label>
+                      <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button size="sm" className="text-xs h-7 gap-1 gradient-primary text-white border-0">
+                            <Plus className="w-3 h-3" /> Nova
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader><DialogTitle>Nova Campanha</DialogTitle></DialogHeader>
+                          <form onSubmit={handleAddCampaign} className="space-y-4">
+                            <div>
+                              <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da campanha *</label>
+                              <Input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
+                            </div>
+                            <Button type="submit" className="w-full gradient-primary text-white border-0" disabled={addCampaign.isPending}>Criar</Button>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
             {loadingCampaigns ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
             ) : campaigns.length === 0 ? (
               <div className="text-center py-16">
-                <Megaphone className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-3 shadow-glow-primary">
+                  <Megaphone className="w-8 h-8 text-white" />
+                </div>
                 <p className="text-muted-foreground text-sm">Nenhuma campanha cadastrada.</p>
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {campaigns.map((c) => (
-                  <div
-                    key={c.id}
-                    className="group bg-card border border-border rounded-xl p-4 hover:shadow-lg hover:shadow-primary/5 transition-all cursor-pointer relative"
-                    onClick={() => navigate(`/clients/${clientId}/campaigns/${c.id}`)}
-                  >
-                    <h3 className="font-display font-bold text-foreground group-hover:text-primary transition-colors">{c.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">{new Date(c.created_at).toLocaleDateString("pt-BR")}</p>
-                    {isAdmin && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="absolute top-3 right-3 h-7 w-7 opacity-0 group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Tem certeza que deseja excluir esta campanha?</AlertDialogTitle>
-                            <AlertDialogDescription>Todos os dados associados a esta campanha serão apagados permanentemente, incluindo peças, quantidades por loja e configurações. Esta ação não pode ser desfeita.</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => deleteCampaign.mutate(c.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">SIM</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </div>
-                ))}
+                {campaigns.map((c, i) => {
+                  const CAMP_COLORS = [
+                    "from-primary/10 to-primary/5 border-primary/20",
+                    "from-secondary/10 to-secondary/5 border-secondary/20",
+                    "from-accent/10 to-accent/5 border-accent/20",
+                    "from-info/10 to-info/5 border-info/20",
+                  ];
+                  const CAMP_ICONS = ["gradient-primary", "gradient-secondary", "gradient-accent", "bg-info"];
+                  const cidx = i % CAMP_COLORS.length;
+                  return (
+                    <div
+                      key={c.id}
+                      className={`group bg-gradient-to-br ${CAMP_COLORS[cidx]} border rounded-xl p-4 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden`}
+                      onClick={() => navigate(`/clients/${clientId}/campaigns/${c.id}`)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-9 h-9 rounded-lg ${CAMP_ICONS[cidx]} flex items-center justify-center shadow-md flex-shrink-0`}>
+                          <Megaphone className="w-4 h-4 text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-foreground text-sm group-hover:text-primary transition-colors truncate">{c.name}</h3>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {new Date(c.created_at).toLocaleDateString("pt-BR")}
+                          </p>
+                        </div>
+                        {isAdmin && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Tem certeza que deseja excluir esta campanha?</AlertDialogTitle>
+                                <AlertDialogDescription>Todos os dados associados a esta campanha serão apagados permanentemente, incluindo peças, quantidades por loja e configurações. Esta ação não pode ser desfeita.</AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteCampaign.mutate(c.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">SIM</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                        <span>Acessar</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
 
           {/* ─── Stores Tab ─── */}
           <TabsContent value="stores">
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <div className="relative flex-1 max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="pl-10" />
+            {/* Stats + Actions */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+              <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center">
+                  <Store className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{stores.length}</p>
+                  <p className="text-[11px] text-muted-foreground">Lojas</p>
+                </div>
               </div>
-              <span className="text-sm text-muted-foreground">{stores.length} loja(s)</span>
-              {isAdmin && (
-                <>
-                  <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" onClick={() => setCustomLabels({
-                        custom_field_1_label: client.custom_field_1_label || "",
-                        custom_field_2_label: client.custom_field_2_label || "",
-                        custom_field_3_label: client.custom_field_3_label || "",
-                        custom_field_4_label: client.custom_field_4_label || "",
-                        custom_field_5_label: client.custom_field_5_label || "",
-                      })}>
-                        <Settings className="w-4 h-4 mr-1" /> Campos
+              <div className="bg-gradient-to-br from-info/10 to-info/5 border border-info/20 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-info flex items-center justify-center">
+                  <Search className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 rounded-xl p-4 col-span-2 sm:col-span-1">
+                <p className="text-xs font-semibold text-foreground mb-2">Ações</p>
+                <div className="flex flex-wrap gap-1.5">
+                  <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportClientStores(stores, client.name)}>
+                    <Download className="w-3 h-3" /> Exportar
+                  </Button>
+                  {isAdmin && (
+                    <>
+                      <label className="cursor-pointer">
+                        <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportFile} />
+                        <Button size="sm" variant="outline" className="text-xs h-7 gap-1" asChild>
+                          <span><Upload className="w-3 h-3" /> Importar</span>
+                        </Button>
+                      </label>
+                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleReviewStoreCodes}>
+                        <Sparkles className="w-3 h-3" /> Códigos
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>Campos Personalizáveis</DialogTitle></DialogHeader>
-                      <p className="text-sm text-muted-foreground mb-4">Defina os nomes dos campos extras para as lojas deste cliente. Campos sem nome não serão exibidos.</p>
-                      <div className="space-y-3">
-                        {[1, 2, 3, 4, 5].map((i) => {
-                          const parsed = parseFieldLabel((customLabels as any)[`custom_field_${i}_label`]);
-                          return (
-                            <div key={i} className="space-y-1">
-                              <label className="text-xs font-medium text-muted-foreground block">Campo {i}</label>
-                              <div className="flex gap-2">
-                                <Input
-                                  className="flex-1"
-                                  placeholder={`Ex: Tipo de Piso`}
-                                  value={parsed.name}
-                                  onChange={(e) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(e.target.value, parsed.type) }))}
-                                />
-                                <Select
-                                  value={parsed.type}
-                                  onValueChange={(val) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(parsed.name, val as FieldType) }))}
-                                >
-                                  <SelectTrigger className="w-[120px]">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {FIELD_TYPES.map(ft => (
-                                      <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <Button onClick={handleSaveSettings} className="w-full mt-4" disabled={updateClient.isPending}>Salvar</Button>
-                    </DialogContent>
-                  </Dialog>
-
-                  <Dialog open={storeDialogOpen} onOpenChange={(open) => {
-                    setStoreDialogOpen(open);
-                    if (!open) {
-                      setStoreForm({ ...emptyStoreForm });
-                      nicknameTouchedRef.current = false;
-                    }
-                  }}>
-                    <DialogTrigger asChild>
-                      <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Nova Loja</Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                      <DialogHeader><DialogTitle>Nova Loja</DialogTitle></DialogHeader>
-                      <form onSubmit={handleAddStore} className="space-y-4">
-                        {renderStoreFormFields(storeForm, setStoreForm, {
-                          nameChangeHandler: handleNameChange,
-                          nicknameChangeHandler: handleNicknameChange,
-                        })}
-                        <Button type="submit" className="w-full" disabled={addStore.isPending}>Adicionar Loja</Button>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-
-                  <Dialog open={editStoreDialogOpen} onOpenChange={setEditStoreDialogOpen}>
-                    <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                      <DialogHeader><DialogTitle>Editar Loja</DialogTitle></DialogHeader>
-                      <form onSubmit={handleEditStore} className="space-y-4">
-                        {renderStoreFormFields(editStoreForm, setEditStoreForm)}
-                        <Button type="submit" className="w-full" disabled={updateStore.isPending}>Salvar Alterações</Button>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-
-                  <Button size="sm" variant="outline" onClick={() => exportClientStores(stores, client.name)}>
-                    <Download className="w-4 h-4 mr-1" /> Exportar
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={handleReviewStoreCodes}>
-                    Revisar Códigos
-                  </Button>
-                  <label className="cursor-pointer">
-                    <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportFile} />
-                    <Button size="sm" variant="outline" asChild>
-                      <span><Upload className="w-4 h-4 mr-1" /> Importar</span>
-                    </Button>
-                  </label>
-                </>
-              )}
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {isAdmin && (
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setCustomLabels({
+                      custom_field_1_label: client.custom_field_1_label || "",
+                      custom_field_2_label: client.custom_field_2_label || "",
+                      custom_field_3_label: client.custom_field_3_label || "",
+                      custom_field_4_label: client.custom_field_4_label || "",
+                      custom_field_5_label: client.custom_field_5_label || "",
+                    })}>
+                      <Settings className="w-3.5 h-3.5" /> Campos
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader><DialogTitle>Campos Personalizáveis</DialogTitle></DialogHeader>
+                    <p className="text-sm text-muted-foreground mb-4">Defina os nomes dos campos extras para as lojas deste cliente. Campos sem nome não serão exibidos.</p>
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4, 5].map((i) => {
+                        const parsed = parseFieldLabel((customLabels as any)[`custom_field_${i}_label`]);
+                        return (
+                          <div key={i} className="space-y-1">
+                            <label className="text-xs font-medium text-muted-foreground block">Campo {i}</label>
+                            <div className="flex gap-2">
+                              <Input
+                                className="flex-1"
+                                placeholder={`Ex: Tipo de Piso`}
+                                value={parsed.name}
+                                onChange={(e) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(e.target.value, parsed.type) }))}
+                              />
+                              <Select
+                                value={parsed.type}
+                                onValueChange={(val) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(parsed.name, val as FieldType) }))}
+                              >
+                                <SelectTrigger className="w-[120px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {FIELD_TYPES.map(ft => (
+                                    <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <Button onClick={handleSaveSettings} className="w-full mt-4" disabled={updateClient.isPending}>Salvar</Button>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={storeDialogOpen} onOpenChange={(open) => {
+                  setStoreDialogOpen(open);
+                  if (!open) {
+                    setStoreForm({ ...emptyStoreForm });
+                    nicknameTouchedRef.current = false;
+                  }
+                }}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="gap-1 text-xs gradient-secondary text-white border-0">
+                      <Plus className="w-3.5 h-3.5" /> Nova Loja
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                    <DialogHeader><DialogTitle>Nova Loja</DialogTitle></DialogHeader>
+                    <form onSubmit={handleAddStore} className="space-y-4">
+                      {renderStoreFormFields(storeForm, setStoreForm, {
+                        nameChangeHandler: handleNameChange,
+                        nicknameChangeHandler: handleNicknameChange,
+                      })}
+                      <Button type="submit" className="w-full gradient-secondary text-white border-0" disabled={addStore.isPending}>Adicionar Loja</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog open={editStoreDialogOpen} onOpenChange={setEditStoreDialogOpen}>
+                  <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                    <DialogHeader><DialogTitle>Editar Loja</DialogTitle></DialogHeader>
+                    <form onSubmit={handleEditStore} className="space-y-4">
+                      {renderStoreFormFields(editStoreForm, setEditStoreForm)}
+                      <Button type="submit" className="w-full" disabled={updateStore.isPending}>Salvar Alterações</Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
 
             {loadingStores ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
