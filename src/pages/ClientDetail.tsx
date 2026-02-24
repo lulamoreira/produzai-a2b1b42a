@@ -668,7 +668,15 @@ const ClientDetail = () => {
                   <TableBody>
                     {filteredStores.map((s) => (
                       <TableRow key={s.id}>
-                        <TableCell className="font-medium">{s.name}</TableCell>
+                        <TableCell className="font-medium">
+                          <button
+                            type="button"
+                            className="text-left hover:text-primary hover:underline underline-offset-2 transition-colors cursor-pointer"
+                            onClick={() => handleOpenEditStore(s)}
+                          >
+                            {s.name}
+                          </button>
+                        </TableCell>
                         <TableCell>{s.nickname || "—"}</TableCell>
                         <TableCell className="text-xs font-mono">{s.store_code || "—"}</TableCell>
                         <TableCell>{s.city || "—"}</TableCell>
