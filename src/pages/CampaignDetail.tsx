@@ -497,7 +497,13 @@ const CampaignDetail = () => {
             {selectedStoreId && (() => {
               const selectedStore = stores.find(s => s.id === selectedStoreId);
               if (!selectedStore) return null;
-              const storePiecesForStore = pieces.map(p => ({
+              // Filter pieces by store model compatibility: same model + "Outras"
+              const storeModel = selectedStore.store_model;
+              const compatiblePieces = pieces.filter(p => {
+                if (!storeModel || !p.store_category) return true;
+                return p.store_category === storeModel || p.store_category === "Outras";
+              });
+              const storePiecesForStore = compatiblePieces.map(p => ({
                 ...p,
                 quantity: qtyMap[`${selectedStoreId}-${p.id}`] || 0,
               }));
@@ -525,6 +531,7 @@ const CampaignDetail = () => {
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                           <MapPin className="w-3 h-3" />
                           {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ") || "Sem localização"}
+                          {selectedStore.store_model && ` · Modelo: ${selectedStore.store_model}`}
                           {" · "}{assignedPieces.length} peça(s) · {totalQty} unidade(s)
                         </p>
                       </div>
