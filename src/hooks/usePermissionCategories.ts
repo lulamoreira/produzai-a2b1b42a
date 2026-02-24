@@ -43,7 +43,7 @@ export function useAddPermissionCategory() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["permission_categories"] });
-      toast.success("Categoria criada!");
+      toast.success("Role criado!");
     },
     onError: (e) => toast.error("Erro: " + e.message),
   });
@@ -58,7 +58,7 @@ export function useUpdatePermissionCategory() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["permission_categories"] });
-      toast.success("Categoria atualizada!");
+      toast.success("Role atualizado!");
     },
     onError: (e) => toast.error("Erro: " + e.message),
   });
@@ -73,7 +73,7 @@ export function useDeletePermissionCategory() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["permission_categories"] });
-      toast.success("Categoria removida!");
+      toast.success("Role removido!");
     },
     onError: (e) => toast.error("Erro: " + e.message),
   });
