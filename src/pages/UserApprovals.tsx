@@ -4,13 +4,21 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Shield, UserCheck, UserX, Clock } from "lucide-react";
+import { ArrowLeft, Shield, UserCheck, UserX, Clock, Trash2 } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const statusConfig: Record<ApprovalStatus, { label: string; color: string; icon: React.ReactNode }> = {
   approved: {
@@ -31,10 +39,28 @@ const statusConfig: Record<ApprovalStatus, { label: string; color: string; icon:
 };
 
 const UserApprovals = () => {
+  const { user } = useAuth();
   const { isAdmin, isLoading: loadingRole } = useUserRole();
   const { data: users = [], isLoading } = useAllUsersApproval();
   const updateStatus = useUpdateApprovalStatus();
   const navigate = useNavigate();
+  const qc = useQueryClient();
+
+  const deleteUser = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["all_users_approval"] });
+      qc.invalidateQueries({ queryKey: ["pending_users_count"] });
+      toast.success("Usuário excluído!");
+    },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
 
   if (loadingRole) {
     return (
@@ -55,7 +81,7 @@ const UserApprovals = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/admin")}>
             <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
           </Button>
           <Shield className="w-5 h-5 text-primary" />
@@ -64,7 +90,7 @@ const UserApprovals = () => {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4 mb-6 flex-wrap">
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
             <Clock className="w-4 h-4 text-yellow-600" />
             <span className="text-sm font-medium text-yellow-700">{pending.length} pendente(s)</span>
@@ -99,6 +125,7 @@ const UserApprovals = () => {
               <TableBody>
                 {sorted.map((u) => {
                   const cfg = statusConfig[u.approval_status];
+                  const isCurrentUser = u.user_id === user?.id;
                   return (
                     <TableRow
                       key={u.user_id}
@@ -123,21 +150,53 @@ const UserApprovals = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Select
-                          value={u.approval_status}
-                          onValueChange={(val) =>
-                            updateStatus.mutate({ userId: u.user_id, status: val as ApprovalStatus })
-                          }
-                        >
-                          <SelectTrigger className="w-[140px] h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="approved">✅ Aprovar</SelectItem>
-                            <SelectItem value="rejected">❌ Rejeitar</SelectItem>
-                            <SelectItem value="pending">⏳ Pendente</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center justify-end gap-2">
+                          {isCurrentUser ? (
+                            <span className="text-xs text-muted-foreground italic">Você</span>
+                          ) : (
+                            <>
+                              <Select
+                                value={u.approval_status}
+                                onValueChange={(val) =>
+                                  updateStatus.mutate({ userId: u.user_id, status: val as ApprovalStatus })
+                                }
+                              >
+                                <SelectTrigger className="w-[140px] h-8 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="approved">✅ Aprovar</SelectItem>
+                                  <SelectItem value="rejected">❌ Rejeitar</SelectItem>
+                                  <SelectItem value="pending">⏳ Pendente</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir usuário "{u.display_name || "Sem nome"}"?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação é permanente. O usuário e todos os seus acessos serão removidos do sistema.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => deleteUser.mutate(u.user_id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      SIM, excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
