@@ -44,13 +44,18 @@ const Dashboard = () => {
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
 
-  const { data: allCampaigns = [] } = useQuery({
-    queryKey: ["all-campaigns"],
+  const { data: campaignCounts = {} } = useQuery({
+    queryKey: ["campaign-counts"],
     queryFn: async () => {
-      const { data } = await supabase.from("campaigns").select("id");
-      return data || [];
+      const { data } = await supabase.from("campaigns").select("client_id");
+      const counts: Record<string, number> = {};
+      (data || []).forEach((c) => {
+        counts[c.client_id] = (counts[c.client_id] || 0) + 1;
+      });
+      return counts;
     },
   });
+
 
   const [search, setSearch] = useState("");
   const [newName, setNewName] = useState("");
@@ -123,7 +128,7 @@ const Dashboard = () => {
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         {/* Stats bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+        <div className="grid grid-cols-2 gap-3 mb-8">
           <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
               <Briefcase className="w-5 h-5 text-white" />
@@ -133,16 +138,7 @@ const Dashboard = () => {
               <p className="text-[11px] text-muted-foreground">Clientes</p>
             </div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center">
-              <Package className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{allCampaigns.length}</p>
-              <p className="text-[11px] text-muted-foreground">Campanhas</p>
-            </div>
-          </div>
-          <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3 col-span-2 sm:col-span-2">
+          <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3 col-span-1 sm:col-span-1">
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground mb-1">Ações rápidas</p>
               <div className="flex gap-2">
@@ -230,6 +226,7 @@ const Dashboard = () => {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((client, i) => {
               const colorIdx = i % CARD_COLORS.length;
+              const clientCampaignCount = campaignCounts[client.id] || 0;
               return (
                 <div
                   key={client.id}
@@ -272,9 +269,14 @@ const Dashboard = () => {
                       </AlertDialog>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 mt-4 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                    <span>Acessar</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  <div className="flex items-center justify-between mt-4">
+                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Package className="w-3.5 h-3.5" /> {clientCampaignCount} campanha(s)
+                    </span>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                      <span>Acessar</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
                   </div>
                 </div>
               );
