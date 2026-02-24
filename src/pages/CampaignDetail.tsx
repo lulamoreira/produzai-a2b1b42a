@@ -23,7 +23,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
 
@@ -230,6 +230,26 @@ const CampaignDetail = () => {
       quantity: Math.max(0, qty),
     });
     setEditingCell(null);
+  };
+
+  const handleDistributePiece = async (piece: CampaignPiece) => {
+    if (!campaignId) return;
+    const targetStores = piece.store_category === "Outras" || !piece.store_category
+      ? stores
+      : stores.filter(s => s.store_model === piece.store_category || s.store_model === "Outras" || !s.store_model);
+    
+    // Only assign to stores that don't already have this piece
+    const toAssign = targetStores.filter(s => !qtyMap[`${s.id}-${piece.id}`]);
+    if (toAssign.length === 0) {
+      toast.info("Todas as lojas compatíveis já possuem esta peça.");
+      return;
+    }
+    for (const store of toAssign) {
+      await updateStorePiece.mutateAsync({
+        campaignId, storeId: store.id, pieceId: piece.id, quantity: 1,
+      });
+    }
+    toast.success(`Peça distribuída para ${toAssign.length} loja(s)!`);
   };
 
   // ─── Piece form fields (shared between add/edit) ──────
@@ -965,6 +985,9 @@ const CampaignDetail = () => {
                           {isAdmin && (
                             <TableCell>
                               <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" title="Distribuir para lojas compatíveis" onClick={() => handleDistributePiece(p)}>
+                                  <CheckSquare className="w-3.5 h-3.5 text-secondary" />
+                                </Button>
                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditPiece(p)}>
                                   <Edit3 className="w-3.5 h-3.5" />
                                 </Button>
