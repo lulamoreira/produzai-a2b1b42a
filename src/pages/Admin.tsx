@@ -181,6 +181,7 @@ const Admin = () => {
                     <TableRow>
                       <TableHead>Usuário</TableHead>
                       <TableHead>Role / Cliente</TableHead>
+                      <TableHead className="text-right">Tipo</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -220,6 +221,19 @@ const Admin = () => {
                             </div>
                           ) : (
                             <span className="text-xs text-muted-foreground italic">Sem acesso</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {u.user_id === user?.id ? (
+                            <span className="text-xs text-muted-foreground italic">Você</span>
+                          ) : (
+                            <Select value={u.role} onValueChange={(val) => handleRoleChange(u.user_id, val as AppRole)}>
+                              <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="viewer">Usuário</SelectItem>
+                              </SelectContent>
+                            </Select>
                           )}
                         </TableCell>
                       </TableRow>
