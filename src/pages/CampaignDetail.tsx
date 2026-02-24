@@ -108,7 +108,19 @@ const CampaignDetail = () => {
   }, [stores, pieces, qtyMap]);
 
   // ─── Handlers ──────────────────────────────────────────
-  const maxPieceCode = useMemo(() => pieces.reduce((max, p) => Math.max(max, p.code), 0), [pieces]);
+  const nextPieceCode = useMemo(() => {
+    const campaignPrefix = (campaign?.name || "XXX").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
+    const usedNumbers = new Set<number>();
+    pieces.forEach((p) => {
+      const codeStr = String(p.code);
+      // Extract number portion (code is stored as number, prefix is visual)
+      usedNumbers.add(p.code);
+    });
+    // Find lowest available number starting from 1
+    let seq = 1;
+    while (usedNumbers.has(seq)) seq++;
+    return { prefix: campaignPrefix, seq, full: `${campaignPrefix}${String(seq).padStart(4, "0")}` };
+  }, [pieces, campaign]);
 
   const uniqueStoreModels = useMemo(() => 
     [...new Set(stores.map((s) => s.store_model).filter(Boolean))].sort() as string[], 
@@ -119,7 +131,7 @@ const CampaignDetail = () => {
     e.preventDefault();
     if (!campaignId) return;
     const size = [pieceForm.width, pieceForm.length, pieceForm.height].filter(Boolean).join(" x ");
-    const code = pieceForm.code ? parseInt(pieceForm.code) : maxPieceCode + 1;
+    const code = pieceForm.code ? parseInt(pieceForm.code) : nextPieceCode.seq;
     if (pieceForm.store_category) {
       localStorage.setItem("last_store_category", pieceForm.store_category);
     }
@@ -195,7 +207,7 @@ const CampaignDetail = () => {
     <>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Código</label>
-        <Input type="number" value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} placeholder={String(maxPieceCode + 1)} />
+        <Input type="number" value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} placeholder={nextPieceCode.full} />
       </div>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Localização na Loja *</label>
