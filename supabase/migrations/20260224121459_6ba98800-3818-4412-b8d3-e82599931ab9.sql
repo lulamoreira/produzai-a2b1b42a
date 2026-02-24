@@ -1,0 +1,1 @@
+ALTER TABLE public.client_stores ADD COLUMN auto_distribute boolean NOT NULL DEFAULT true;

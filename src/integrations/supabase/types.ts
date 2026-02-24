@@ -212,6 +212,7 @@ export type Database = {
       }
       client_stores: {
         Row: {
+          auto_distribute: boolean
           city: string | null
           client_id: string
           cnpj: string | null
@@ -238,6 +239,7 @@ export type Database = {
           zip_code: string | null
         }
         Insert: {
+          auto_distribute?: boolean
           city?: string | null
           client_id: string
           cnpj?: string | null
@@ -264,6 +266,7 @@ export type Database = {
           zip_code?: string | null
         }
         Update: {
+          auto_distribute?: boolean
           city?: string | null
           client_id?: string
           cnpj?: string | null
