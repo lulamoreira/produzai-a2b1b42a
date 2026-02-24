@@ -185,16 +185,33 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((u) => (
+                    {users.map((u) => {
+                      const userAccesses = allAccess.filter((a) => a.user_id === u.user_id);
+                      const userCategories = userAccesses
+                        .map((a) => categories.find((cat) => cat.id === a.category_id))
+                        .filter(Boolean);
+                      const uniqueCategories = [...new Map(userCategories.map((c) => [c!.id, c!])).values()];
+
+                      return (
                       <TableRow key={u.user_id}>
                         <TableCell>
                           <p className="font-medium text-foreground text-sm">{u.display_name || "Sem nome"}</p>
                           <p className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={u.role === "admin" ? "default" : "secondary"} className="text-[10px] uppercase">
-                            {u.role === "admin" ? "Admin" : "Visualizador"}
-                          </Badge>
+                          {u.role === "admin" ? (
+                            <Badge variant="default" className="text-[10px] uppercase">Admin</Badge>
+                          ) : uniqueCategories.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {uniqueCategories.map((cat) => (
+                                <Badge key={cat.id} variant="outline" className="text-[10px]">
+                                  {cat.name}
+                                </Badge>
+                              ))}
+                            </div>
+                          ) : (
+                            <Badge variant="secondary" className="text-[10px] uppercase">Sem role</Badge>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           {u.user_id === user?.id ? (
@@ -210,7 +227,8 @@ const Admin = () => {
                           )}
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
