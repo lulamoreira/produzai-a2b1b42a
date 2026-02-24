@@ -20,7 +20,8 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download } from "lucide-react";
+import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 
@@ -358,9 +359,31 @@ const ClientDetail = () => {
 
           {/* ─── Campaigns Tab ─── */}
           <TabsContent value="campaigns">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
               <h2 className="text-base font-semibold text-foreground">{campaigns.length} campanha(s)</h2>
+              <Button size="sm" variant="outline" onClick={() => exportCampaigns(campaigns, client.name)}>
+                <Download className="w-4 h-4 mr-1" /> Exportar
+              </Button>
               {isAdmin && (
+                <>
+                <label className="cursor-pointer">
+                  <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !clientId) return;
+                    try {
+                      const items = await parseCampaignsImport(file);
+                      if (items.length === 0) { toast.error("Nenhuma campanha encontrada."); return; }
+                      for (const item of items) {
+                        await addCampaign.mutateAsync({ client_id: clientId, name: item.name });
+                      }
+                      toast.success(`${items.length} campanha(s) importada(s)!`);
+                    } catch { toast.error("Erro ao importar."); }
+                    e.target.value = "";
+                  }} />
+                  <Button size="sm" variant="outline" asChild>
+                    <span><Upload className="w-4 h-4 mr-1" /> Importar</span>
+                  </Button>
+                </label>
                 <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Nova Campanha</Button>
@@ -376,6 +399,7 @@ const ClientDetail = () => {
                     </form>
                   </DialogContent>
                 </Dialog>
+                </>
               )}
             </div>
 
@@ -513,10 +537,13 @@ const ClientDetail = () => {
                     </DialogContent>
                   </Dialog>
 
+                  <Button size="sm" variant="outline" onClick={() => exportClientStores(stores, client.name)}>
+                    <Download className="w-4 h-4 mr-1" /> Exportar
+                  </Button>
                   <label className="cursor-pointer">
                     <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportFile} />
                     <Button size="sm" variant="outline" asChild>
-                      <span><Upload className="w-4 h-4 mr-1" /> Importar Planilha</span>
+                      <span><Upload className="w-4 h-4 mr-1" /> Importar</span>
                     </Button>
                   </label>
                 </>

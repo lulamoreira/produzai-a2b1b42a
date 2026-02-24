@@ -22,8 +22,9 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
 
 const CampaignDetail = () => {
   const { clientId, campaignId } = useParams<{ clientId: string; campaignId: string }>();
@@ -372,6 +373,31 @@ const CampaignDetail = () => {
           {/* ─── TAB: MATRIZ ─── */}
           <TabsContent value="matrix">
             {renderStoreFilters()}
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <Button size="sm" variant="outline" onClick={() => exportMatrix(filteredStores, matrixPieces, storePieces, campaign?.name || "Campanha")}>
+                <Download className="w-4 h-4 mr-1" /> Exportar Matriz
+              </Button>
+              {isAdmin && (
+                <label className="cursor-pointer">
+                  <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !campaignId) return;
+                    try {
+                      const items = await parseMatrixImport(file, pieces, stores);
+                      if (items.length === 0) { toast.error("Nenhum dado encontrado."); return; }
+                      for (const item of items) {
+                        await updateStorePiece.mutateAsync({ campaignId, storeId: item.storeId, pieceId: item.pieceId, quantity: item.quantity });
+                      }
+                      toast.success(`${items.length} quantidade(s) importada(s)!`);
+                    } catch { toast.error("Erro ao importar."); }
+                    e.target.value = "";
+                  }} />
+                  <Button size="sm" variant="outline" asChild>
+                    <span><Upload className="w-4 h-4 mr-1" /> Importar Matriz</span>
+                  </Button>
+                </label>
+              )}
+            </div>
 
             {pieces.length === 0 ? (
               <div className="text-center py-20">
@@ -476,9 +502,31 @@ const CampaignDetail = () => {
 
           {/* ─── TAB: PEÇAS ─── */}
           <TabsContent value="pieces">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex flex-wrap items-center gap-3 mb-4">
               <h2 className="text-base font-semibold text-foreground">{pieces.length} peça(s) cadastrada(s)</h2>
+              <Button size="sm" variant="outline" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha")}>
+                <Download className="w-4 h-4 mr-1" /> Exportar
+              </Button>
               {isAdmin && (
+                <>
+                <label className="cursor-pointer">
+                  <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !campaignId) return;
+                    try {
+                      const items = await parsePiecesImport(file);
+                      if (items.length === 0) { toast.error("Nenhuma peça encontrada."); return; }
+                      for (const item of items) {
+                        await addPiece.mutateAsync({ campaign_id: campaignId, ...item });
+                      }
+                      toast.success(`${items.length} peça(s) importada(s)!`);
+                    } catch { toast.error("Erro ao importar."); }
+                    e.target.value = "";
+                  }} />
+                  <Button size="sm" variant="outline" asChild>
+                    <span><Upload className="w-4 h-4 mr-1" /> Importar</span>
+                  </Button>
+                </label>
                 <Dialog open={pieceDialogOpen} onOpenChange={setPieceDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Nova Peça</Button>
@@ -494,6 +542,7 @@ const CampaignDetail = () => {
                     </form>
                   </DialogContent>
                 </Dialog>
+                </>
               )}
             </div>
 
