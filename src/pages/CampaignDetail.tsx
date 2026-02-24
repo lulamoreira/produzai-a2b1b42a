@@ -22,7 +22,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash } from "lucide-react";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
 
@@ -357,6 +357,46 @@ const CampaignDetail = () => {
       </header>
 
       <main className="max-w-[95vw] mx-auto px-4 py-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center">
+              <Store className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{stores.length}</p>
+              <p className="text-[11px] text-muted-foreground">Lojas</p>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg gradient-accent flex items-center justify-center">
+              <LayoutList className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{pieces.length}</p>
+              <p className="text-[11px] text-muted-foreground">Peças</p>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
+              <Package className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{totalPieces}</p>
+              <p className="text-[11px] text-muted-foreground">Unidades</p>
+            </div>
+          </div>
+          <div className="bg-gradient-to-br from-info/10 to-info/5 border border-info/20 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-info flex items-center justify-center">
+              <Hash className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{uniqueStoreCategories.length || "—"}</p>
+              <p className="text-[11px] text-muted-foreground">Modelos</p>
+            </div>
+          </div>
+        </div>
+
         <Tabs defaultValue="stores">
           <TabsList className="mb-6 bg-card border border-border">
             <TabsTrigger value="stores" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Store className="w-4 h-4" /> Lojas</TabsTrigger>
@@ -426,9 +466,9 @@ const CampaignDetail = () => {
           {/* ─── TAB: MATRIZ ─── */}
           <TabsContent value="matrix">
             {renderStoreFilters()}
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <Button size="sm" variant="outline" onClick={() => exportMatrix(filteredStores, matrixPieces, storePieces, campaign?.name || "Campanha")}>
-                <Download className="w-4 h-4 mr-1" /> Exportar Matriz
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(filteredStores, matrixPieces, storePieces, campaign?.name || "Campanha")}>
+                <Download className="w-3.5 h-3.5" /> Exportar Matriz
               </Button>
               {isAdmin && (
                 <label className="cursor-pointer">
@@ -555,14 +595,16 @@ const CampaignDetail = () => {
 
           {/* ─── TAB: PEÇAS ─── */}
           <TabsContent value="pieces">
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <h2 className="text-base font-semibold text-foreground">{pieces.length} peça(s) cadastrada(s)</h2>
-              <Button size="sm" variant="outline" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha")}>
-                <Download className="w-4 h-4 mr-1" /> Exportar
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-accent/15 text-accent-foreground">
+                {pieces.length} peça(s)
+              </span>
+              <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha")}>
+                <Download className="w-3.5 h-3.5" /> Exportar
               </Button>
               {isAdmin && (
-                <Button size="sm" variant="outline" onClick={handleReviewPieceCodes}>
-                  Revisar Códigos
+                <Button size="sm" variant="outline" className="text-xs gap-1" onClick={handleReviewPieceCodes}>
+                  <Sparkles className="w-3.5 h-3.5" /> Revisar Códigos
                 </Button>
               )}
               {isAdmin && (
@@ -589,13 +631,15 @@ const CampaignDetail = () => {
                     } catch { toast.error("Erro ao importar."); }
                     e.target.value = "";
                   }} />
-                  <Button size="sm" variant="outline" asChild>
-                    <span><Upload className="w-4 h-4 mr-1" /> Importar</span>
+                  <Button size="sm" variant="outline" className="text-xs gap-1" asChild>
+                    <span><Upload className="w-3.5 h-3.5" /> Importar</span>
                   </Button>
                 </label>
                 <Dialog open={pieceDialogOpen} onOpenChange={setPieceDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Nova Peça</Button>
+                    <Button size="sm" className="text-xs gap-1 gradient-accent text-white border-0">
+                      <Plus className="w-3.5 h-3.5" /> Nova Peça
+                    </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
@@ -604,7 +648,7 @@ const CampaignDetail = () => {
                     </DialogHeader>
                     <form onSubmit={handleAddPiece} className="space-y-3">
                       {renderPieceFormFields(pieceForm, setPieceForm)}
-                      <Button type="submit" className="w-full" disabled={addPiece.isPending}>Adicionar</Button>
+                      <Button type="submit" className="w-full gradient-accent text-white border-0" disabled={addPiece.isPending}>Adicionar</Button>
                     </form>
                   </DialogContent>
                 </Dialog>
