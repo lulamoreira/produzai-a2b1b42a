@@ -346,57 +346,6 @@ const ClientDetail = () => {
           <div className="flex-1">
             <h1 className="text-lg font-display font-bold text-foreground">{client.name}</h1>
           </div>
-          {isAdmin && (
-            <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" onClick={() => setCustomLabels({
-                  custom_field_1_label: client.custom_field_1_label || "",
-                  custom_field_2_label: client.custom_field_2_label || "",
-                  custom_field_3_label: client.custom_field_3_label || "",
-                  custom_field_4_label: client.custom_field_4_label || "",
-                  custom_field_5_label: client.custom_field_5_label || "",
-                })}>
-                  <Settings className="w-4 h-4 mr-1" /> Campos
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Campos Personalizáveis</DialogTitle></DialogHeader>
-                <p className="text-sm text-muted-foreground mb-4">Defina os nomes dos campos extras para as lojas deste cliente. Campos sem nome não serão exibidos.</p>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => {
-                    const parsed = parseFieldLabel((customLabels as any)[`custom_field_${i}_label`]);
-                    return (
-                      <div key={i} className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground block">Campo {i}</label>
-                        <div className="flex gap-2">
-                          <Input
-                            className="flex-1"
-                            placeholder={`Ex: Tipo de Piso`}
-                            value={parsed.name}
-                            onChange={(e) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(e.target.value, parsed.type) }))}
-                          />
-                          <Select
-                            value={parsed.type}
-                            onValueChange={(val) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(parsed.name, val as FieldType) }))}
-                          >
-                            <SelectTrigger className="w-[120px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {FIELD_TYPES.map(ft => (
-                                <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <Button onClick={handleSaveSettings} className="w-full mt-4" disabled={updateClient.isPending}>Salvar</Button>
-              </DialogContent>
-            </Dialog>
-          )}
         </div>
       </header>
 
@@ -482,6 +431,56 @@ const ClientDetail = () => {
               <span className="text-sm text-muted-foreground">{stores.length} loja(s)</span>
               {isAdmin && (
                 <>
+                  <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" onClick={() => setCustomLabels({
+                        custom_field_1_label: client.custom_field_1_label || "",
+                        custom_field_2_label: client.custom_field_2_label || "",
+                        custom_field_3_label: client.custom_field_3_label || "",
+                        custom_field_4_label: client.custom_field_4_label || "",
+                        custom_field_5_label: client.custom_field_5_label || "",
+                      })}>
+                        <Settings className="w-4 h-4 mr-1" /> Campos
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader><DialogTitle>Campos Personalizáveis</DialogTitle></DialogHeader>
+                      <p className="text-sm text-muted-foreground mb-4">Defina os nomes dos campos extras para as lojas deste cliente. Campos sem nome não serão exibidos.</p>
+                      <div className="space-y-3">
+                        {[1, 2, 3, 4, 5].map((i) => {
+                          const parsed = parseFieldLabel((customLabels as any)[`custom_field_${i}_label`]);
+                          return (
+                            <div key={i} className="space-y-1">
+                              <label className="text-xs font-medium text-muted-foreground block">Campo {i}</label>
+                              <div className="flex gap-2">
+                                <Input
+                                  className="flex-1"
+                                  placeholder={`Ex: Tipo de Piso`}
+                                  value={parsed.name}
+                                  onChange={(e) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(e.target.value, parsed.type) }))}
+                                />
+                                <Select
+                                  value={parsed.type}
+                                  onValueChange={(val) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(parsed.name, val as FieldType) }))}
+                                >
+                                  <SelectTrigger className="w-[120px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {FIELD_TYPES.map(ft => (
+                                      <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <Button onClick={handleSaveSettings} className="w-full mt-4" disabled={updateClient.isPending}>Salvar</Button>
+                    </DialogContent>
+                  </Dialog>
+
                   <Dialog open={storeDialogOpen} onOpenChange={(open) => {
                     setStoreDialogOpen(open);
                     if (!open) {
@@ -504,7 +503,6 @@ const ClientDetail = () => {
                     </DialogContent>
                   </Dialog>
 
-                  {/* Edit Store Dialog */}
                   <Dialog open={editStoreDialogOpen} onOpenChange={setEditStoreDialogOpen}>
                     <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
                       <DialogHeader><DialogTitle>Editar Loja</DialogTitle></DialogHeader>
