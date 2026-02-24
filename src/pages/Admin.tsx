@@ -6,10 +6,16 @@ import {
   useClients, useUserClientAccess, useAddUserClientAccess,
   useUpdateUserClientAccess, useDeleteUserClientAccess,
 } from "@/hooks/useMultiClientData";
+import {
+  usePermissionCategories, useAddPermissionCategory,
+  useUpdatePermissionCategory, useDeletePermissionCategory,
+  type PermissionCategory,
+} from "@/hooks/usePermissionCategories";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Shield, ArrowLeft, Users, KeyRound, Plus, Trash2 } from "lucide-react";
+import { Shield, ArrowLeft, Users, KeyRound, Plus, Trash2, Tags, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -20,8 +26,44 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { AppRole } from "@/hooks/useUserRole";
+
+const MODULES = [
+  { key: "clients", label: "Clientes" },
+  { key: "campaigns", label: "Campanhas" },
+  { key: "stores", label: "Lojas" },
+  { key: "pieces", label: "Peças" },
+] as const;
+
+const PERMISSIONS = [
+  { key: "view", label: "Visualizar" },
+  { key: "edit", label: "Editar" },
+  { key: "delete", label: "Apagar" },
+] as const;
+
+type ModuleKey = typeof MODULES[number]["key"];
+type PermKey = typeof PERMISSIONS[number]["key"];
+
+const defaultCategoryForm = (): Omit<PermissionCategory, "id" | "created_at"> => ({
+  name: "",
+  can_view_clients: true, can_edit_clients: false, can_delete_clients: false,
+  can_view_campaigns: true, can_edit_campaigns: false, can_delete_campaigns: false,
+  can_view_stores: true, can_edit_stores: false, can_delete_stores: false,
+  can_view_pieces: true, can_edit_pieces: false, can_delete_pieces: false,
+});
+
+const getCategoryField = (form: any, perm: PermKey, mod: ModuleKey): boolean => {
+  return form[`can_${perm}_${mod}`] ?? false;
+};
+
+const setCategoryField = (form: any, perm: PermKey, mod: ModuleKey, val: boolean) => {
+  return { ...form, [`can_${perm}_${mod}`]: val };
+};
 
 const Admin = () => {
   const { user } = useAuth();
@@ -36,10 +78,21 @@ const Admin = () => {
   const updateAccess = useUpdateUserClientAccess();
   const deleteAccess = useDeleteUserClientAccess();
 
+  const { data: categories = [] } = usePermissionCategories();
+  const addCategory = useAddPermissionCategory();
+  const updateCategory = useUpdatePermissionCategory();
+  const deleteCategory = useDeletePermissionCategory();
+
+  // Access dialog state
   const [accessDialogOpen, setAccessDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedClientId, setSelectedClientId] = useState("");
-  const [canEdit, setCanEdit] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+
+  // Category dialog state
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<PermissionCategory | null>(null);
+  const [categoryForm, setCategoryForm] = useState(defaultCategoryForm());
 
   if (loadingRole) {
     return (
@@ -57,12 +110,40 @@ const Admin = () => {
   };
 
   const handleAddAccess = () => {
-    if (!selectedUserId || !selectedClientId) return;
-    addAccess.mutate({ user_id: selectedUserId, client_id: selectedClientId, can_edit: canEdit });
+    if (!selectedUserId || !selectedClientId || !selectedCategoryId) return;
+    addAccess.mutate({
+      user_id: selectedUserId,
+      client_id: selectedClientId,
+      can_edit: false,
+      category_id: selectedCategoryId,
+    });
     setAccessDialogOpen(false);
     setSelectedUserId("");
     setSelectedClientId("");
-    setCanEdit(false);
+    setSelectedCategoryId("");
+  };
+
+  const openNewCategory = () => {
+    setEditingCategory(null);
+    setCategoryForm(defaultCategoryForm());
+    setCategoryDialogOpen(true);
+  };
+
+  const openEditCategory = (cat: PermissionCategory) => {
+    setEditingCategory(cat);
+    const { id, created_at, ...rest } = cat;
+    setCategoryForm(rest);
+    setCategoryDialogOpen(true);
+  };
+
+  const handleSaveCategory = () => {
+    if (!categoryForm.name.trim()) return;
+    if (editingCategory) {
+      updateCategory.mutate({ id: editingCategory.id, ...categoryForm });
+    } else {
+      addCategory.mutate(categoryForm);
+    }
+    setCategoryDialogOpen(false);
   };
 
   return (
@@ -81,9 +162,11 @@ const Admin = () => {
         <Tabs defaultValue="users">
           <TabsList className="mb-6">
             <TabsTrigger value="users" className="gap-1"><Users className="w-4 h-4" /> Usuários</TabsTrigger>
+            <TabsTrigger value="categories" className="gap-1"><Tags className="w-4 h-4" /> Categorias</TabsTrigger>
             <TabsTrigger value="access" className="gap-1"><KeyRound className="w-4 h-4" /> Acesso por Cliente</TabsTrigger>
           </TabsList>
 
+          {/* ─── Users Tab ─── */}
           <TabsContent value="users">
             <h2 className="text-base font-semibold text-foreground mb-4">Usuários ({users.length})</h2>
             {loadingUsers ? (
@@ -131,6 +214,130 @@ const Admin = () => {
             )}
           </TabsContent>
 
+          {/* ─── Categories Tab ─── */}
+          <TabsContent value="categories">
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-base font-semibold text-foreground">Categorias de Permissão ({categories.length})</h2>
+              <Button size="sm" onClick={openNewCategory}><Plus className="w-4 h-4 mr-1" /> Nova Categoria</Button>
+            </div>
+
+            {categories.length === 0 ? (
+              <p className="text-muted-foreground text-sm py-8 text-center">Nenhuma categoria criada ainda.</p>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {categories.map((cat) => (
+                  <div key={cat.id} className="border border-border rounded-lg p-4 bg-card">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-bold text-foreground">{cat.name}</h3>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditCategory(cat)}>
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir categoria "{cat.name}"?</AlertDialogTitle>
+                              <AlertDialogDescription>Usuários com esta categoria perderão suas permissões associadas.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteCategory.mutate(cat.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">SIM</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr>
+                            <th className="text-left pb-1 text-muted-foreground font-medium">Módulo</th>
+                            {PERMISSIONS.map((p) => (
+                              <th key={p.key} className="text-center pb-1 text-muted-foreground font-medium">{p.label}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {MODULES.map((m) => (
+                            <tr key={m.key}>
+                              <td className="py-0.5 text-foreground">{m.label}</td>
+                              {PERMISSIONS.map((p) => (
+                                <td key={p.key} className="text-center">
+                                  {getCategoryField(cat, p.key, m.key) ? (
+                                    <span className="text-primary font-bold">✓</span>
+                                  ) : (
+                                    <span className="text-muted-foreground">—</span>
+                                  )}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Category Create/Edit Dialog */}
+            <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{editingCategory ? "Editar Categoria" : "Nova Categoria"}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground mb-1 block">Nome</label>
+                    <Input
+                      value={categoryForm.name}
+                      onChange={(e) => setCategoryForm((f) => ({ ...f, name: e.target.value }))}
+                      placeholder="Ex: Editor de Campanhas"
+                    />
+                  </div>
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs">Módulo</TableHead>
+                          {PERMISSIONS.map((p) => (
+                            <TableHead key={p.key} className="text-xs text-center">{p.label}</TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {MODULES.map((m) => (
+                          <TableRow key={m.key}>
+                            <TableCell className="text-sm font-medium">{m.label}</TableCell>
+                            {PERMISSIONS.map((p) => (
+                              <TableCell key={p.key} className="text-center">
+                                <Checkbox
+                                  checked={getCategoryField(categoryForm, p.key, m.key)}
+                                  onCheckedChange={(checked) =>
+                                    setCategoryForm((f) => setCategoryField(f, p.key, m.key, !!checked))
+                                  }
+                                />
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <Button onClick={handleSaveCategory} className="w-full" disabled={addCategory.isPending || updateCategory.isPending}>
+                    {editingCategory ? "Salvar" : "Criar Categoria"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </TabsContent>
+
+          {/* ─── Access Tab ─── */}
           <TabsContent value="access">
             <div className="flex items-center gap-3 mb-4">
               <h2 className="text-base font-semibold text-foreground">Acessos ({allAccess.length})</h2>
@@ -163,9 +370,16 @@ const Admin = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-foreground">Pode editar?</label>
-                      <Switch checked={canEdit} onCheckedChange={setCanEdit} />
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1 block">Categoria de Permissão</label>
+                      <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                        <SelectTrigger><SelectValue placeholder="Selecione a categoria" /></SelectTrigger>
+                        <SelectContent>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <Button onClick={handleAddAccess} className="w-full" disabled={addAccess.isPending}>Conceder</Button>
                   </div>
@@ -182,7 +396,7 @@ const Admin = () => {
                     <TableRow>
                       <TableHead>Usuário</TableHead>
                       <TableHead>Cliente</TableHead>
-                      <TableHead>Edição</TableHead>
+                      <TableHead>Categoria</TableHead>
                       <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -190,15 +404,23 @@ const Admin = () => {
                     {allAccess.map((a) => {
                       const u = users.find((u) => u.user_id === a.user_id);
                       const c = clients.find((c) => c.id === a.client_id);
+                      const cat = categories.find((cat) => cat.id === a.category_id);
                       return (
                         <TableRow key={a.id}>
                           <TableCell className="text-sm">{u?.display_name || a.user_id.slice(0, 8)}</TableCell>
                           <TableCell className="text-sm">{c?.name || a.client_id.slice(0, 8)}</TableCell>
                           <TableCell>
-                            <Switch
-                              checked={a.can_edit}
-                              onCheckedChange={(checked) => updateAccess.mutate({ id: a.id, can_edit: checked })}
-                            />
+                            <Select
+                              value={a.category_id || ""}
+                              onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: false, category_id: val })}
+                            >
+                              <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue placeholder="Sem categoria" /></SelectTrigger>
+                              <SelectContent>
+                                {categories.map((cat) => (
+                                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                           <TableCell className="text-right">
                             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteAccess.mutate(a.id)}>

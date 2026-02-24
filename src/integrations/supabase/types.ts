@@ -303,6 +303,60 @@ export type Database = {
         }
         Relationships: []
       }
+      permission_categories: {
+        Row: {
+          can_delete_campaigns: boolean
+          can_delete_clients: boolean
+          can_delete_pieces: boolean
+          can_delete_stores: boolean
+          can_edit_campaigns: boolean
+          can_edit_clients: boolean
+          can_edit_pieces: boolean
+          can_edit_stores: boolean
+          can_view_campaigns: boolean
+          can_view_clients: boolean
+          can_view_pieces: boolean
+          can_view_stores: boolean
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          can_delete_campaigns?: boolean
+          can_delete_clients?: boolean
+          can_delete_pieces?: boolean
+          can_delete_stores?: boolean
+          can_edit_campaigns?: boolean
+          can_edit_clients?: boolean
+          can_edit_pieces?: boolean
+          can_edit_stores?: boolean
+          can_view_campaigns?: boolean
+          can_view_clients?: boolean
+          can_view_pieces?: boolean
+          can_view_stores?: boolean
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          can_delete_campaigns?: boolean
+          can_delete_clients?: boolean
+          can_delete_pieces?: boolean
+          can_delete_stores?: boolean
+          can_edit_campaigns?: boolean
+          can_edit_clients?: boolean
+          can_edit_pieces?: boolean
+          can_edit_stores?: boolean
+          can_view_campaigns?: boolean
+          can_view_clients?: boolean
+          can_view_pieces?: boolean
+          can_view_stores?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       pieces: {
         Row: {
           category: string
@@ -435,6 +489,7 @@ export type Database = {
       user_client_access: {
         Row: {
           can_edit: boolean
+          category_id: string | null
           client_id: string
           created_at: string
           id: string
@@ -442,6 +497,7 @@ export type Database = {
         }
         Insert: {
           can_edit?: boolean
+          category_id?: string | null
           client_id: string
           created_at?: string
           id?: string
@@ -449,12 +505,20 @@ export type Database = {
         }
         Update: {
           can_edit?: boolean
+          category_id?: string | null
           client_id?: string
           created_at?: string
           id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_client_access_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "permission_categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_client_access_client_id_fkey"
             columns: ["client_id"]
@@ -490,6 +554,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_category_permission: {
+        Args: { _client_id: string; _permission: string; _user_id: string }
+        Returns: boolean
+      }
       has_client_access: {
         Args: { _client_id: string; _user_id: string }
         Returns: boolean
