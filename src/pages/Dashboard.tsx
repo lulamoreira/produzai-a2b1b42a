@@ -15,7 +15,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Package, Plus, Search, UserCircle, LogOut, Shield, Trash2 } from "lucide-react";
+import { Package, Plus, Search, UserCircle, LogOut, Shield, Trash2, Download, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { exportClients, parseClientsImport } from "@/lib/exportMultiClient";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -93,21 +95,44 @@ const Dashboard = () => {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Buscar cliente..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
           </div>
+          <Button size="sm" variant="outline" onClick={() => exportClients(clients)}>
+            <Download className="w-4 h-4 mr-1" /> Exportar
+          </Button>
           {isAdmin && (
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo Cliente</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Novo Cliente</DialogTitle></DialogHeader>
-                <form onSubmit={handleAdd} className="space-y-4">
-                  <Input placeholder="Nome do cliente" value={newName} onChange={(e) => setNewName(e.target.value)} required />
-                  <Button type="submit" className="w-full" disabled={addClient.isPending}>
-                    {addClient.isPending ? "Criando..." : "Criar Cliente"}
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <>
+              <label className="cursor-pointer">
+                <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  try {
+                    const items = await parseClientsImport(file);
+                    if (items.length === 0) { toast.error("Nenhum cliente encontrado."); return; }
+                    for (const item of items) {
+                      await addClient.mutateAsync(item);
+                    }
+                    toast.success(`${items.length} cliente(s) importado(s)!`);
+                  } catch { toast.error("Erro ao importar."); }
+                  e.target.value = "";
+                }} />
+                <Button size="sm" variant="outline" asChild>
+                  <span><Upload className="w-4 h-4 mr-1" /> Importar</span>
+                </Button>
+              </label>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo Cliente</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Novo Cliente</DialogTitle></DialogHeader>
+                  <form onSubmit={handleAdd} className="space-y-4">
+                    <Input placeholder="Nome do cliente" value={newName} onChange={(e) => setNewName(e.target.value)} required />
+                    <Button type="submit" className="w-full" disabled={addClient.isPending}>
+                      {addClient.isPending ? "Criando..." : "Criar Cliente"}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </>
           )}
         </div>
 
