@@ -49,6 +49,19 @@ function encodeFieldLabel(name: string, type: FieldType): string {
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
+function formatCep(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
 const emptyStoreForm = {
   name: "", nickname: "", cnpj: "", state_registration: "",
   zip_code: "", street: "", number: "", complement: "", neighborhood: "",
@@ -334,7 +347,7 @@ const ClientDetail = () => {
         <div className="flex gap-2 items-end">
           <div className="flex-1">
             <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP</label>
-            <Input value={form.zip_code} onChange={(e) => setForm((f) => ({ ...f, zip_code: e.target.value }))} />
+            <Input value={formatCep(form.zip_code)} onChange={(e) => setForm((f) => ({ ...f, zip_code: formatCep(e.target.value) }))} placeholder="00000-000" maxLength={9} />
           </div>
           <Button type="button" variant="outline" size="sm" onClick={() => handleCepLookup(form, setForm)}>Buscar</Button>
         </div>
@@ -364,7 +377,7 @@ const ClientDetail = () => {
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefone</label>
-          <Input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
+          <Input value={formatPhone(form.phone)} onChange={(e) => setForm((f) => ({ ...f, phone: formatPhone(e.target.value) }))} placeholder="(00)00000-0000" maxLength={14} />
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Gerente Responsável</label>
@@ -682,7 +695,7 @@ const ClientDetail = () => {
                         <TableCell>{s.city || "—"}</TableCell>
                         <TableCell>{s.state || "—"}</TableCell>
                         <TableCell className="text-xs">{s.store_model || "—"}</TableCell>
-                        <TableCell className="text-xs">{s.phone || "—"}</TableCell>
+                        <TableCell className="text-xs">{s.phone ? formatPhone(s.phone) : "—"}</TableCell>
                         <TableCell className="text-xs">{s.manager_name || "—"}</TableCell>
                         {isAdmin && (
                           <TableCell className="text-right">
