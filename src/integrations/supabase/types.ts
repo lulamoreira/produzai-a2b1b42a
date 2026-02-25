@@ -80,8 +80,10 @@ export type Database = {
           created_at: string
           id: string
           image_url: string | null
+          installation_instructions: string
           name: string
           size: string
+          specification: string
           store_category: string | null
         }
         Insert: {
@@ -91,8 +93,10 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          installation_instructions?: string
           name: string
           size: string
+          specification?: string
           store_category?: string | null
         }
         Update: {
@@ -102,8 +106,10 @@ export type Database = {
           created_at?: string
           id?: string
           image_url?: string | null
+          installation_instructions?: string
           name?: string
           size?: string
+          specification?: string
           store_category?: string | null
         }
         Relationships: [
