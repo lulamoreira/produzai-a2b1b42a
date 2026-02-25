@@ -5,6 +5,7 @@ import {
   useMessages,
   useSendMessage,
   useDeleteMessage,
+  useEditMessage,
   useStartConversation,
   type ChatConversation,
 } from "@/hooks/useChat";
@@ -27,6 +28,9 @@ import {
   MessageSquare,
   Send,
   Trash2,
+  Pencil,
+  Check,
+  X,
   Plus,
   UserCircle,
 } from "lucide-react";
@@ -40,6 +44,7 @@ const Chat = () => {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [deleteMessageId, setDeleteMessageId] = useState<string | null>(null);
+  const [editingMessage, setEditingMessage] = useState<{ id: string; content: string } | null>(null);
   const [showNewChat, setShowNewChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +52,7 @@ const Chat = () => {
   const { data: messages = [] } = useMessages(selectedConversation);
   const sendMessage = useSendMessage();
   const deleteMessage = useDeleteMessage();
+  const editMessage = useEditMessage();
   const startConversation = useStartConversation();
 
   // Get all users for new conversation
@@ -212,7 +218,46 @@ const Chat = () => {
                             : "bg-muted text-foreground"
                         }`}
                       >
-                        <p>{msg.content}</p>
+                        {editingMessage?.id === msg.id ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              autoFocus
+                              className="bg-transparent border-b border-primary-foreground/40 outline-none text-sm w-full min-w-[120px]"
+                              value={editingMessage.content}
+                              onChange={(e) =>
+                                setEditingMessage({ ...editingMessage, content: e.target.value })
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  editMessage.mutate(
+                                    { messageId: msg.id, content: editingMessage.content.trim() },
+                                    { onSuccess: () => setEditingMessage(null) }
+                                  );
+                                }
+                                if (e.key === "Escape") setEditingMessage(null);
+                              }}
+                            />
+                            <button
+                              onClick={() => {
+                                editMessage.mutate(
+                                  { messageId: msg.id, content: editingMessage.content.trim() },
+                                  { onSuccess: () => setEditingMessage(null) }
+                                );
+                              }}
+                              className="p-0.5 rounded hover:bg-primary-foreground/20"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setEditingMessage(null)}
+                              className="p-0.5 rounded hover:bg-primary-foreground/20"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <p>{msg.content}</p>
+                        )}
                         <p
                           className={`text-[10px] mt-1 ${
                             isMine ? "text-primary-foreground/60" : "text-muted-foreground"
@@ -220,14 +265,23 @@ const Chat = () => {
                         >
                           {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
                         </p>
-                        {isMine && (
-                          <button
-                            onClick={() => setDeleteMessageId(msg.id)}
-                            className="absolute -left-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-destructive/10"
-                            title="Apagar mensagem"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                          </button>
+                        {isMine && editingMessage?.id !== msg.id && (
+                          <div className="absolute -left-16 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+                            <button
+                              onClick={() => setEditingMessage({ id: msg.id, content: msg.content })}
+                              className="p-1 rounded-md hover:bg-accent/50"
+                              title="Editar mensagem"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                            </button>
+                            <button
+                              onClick={() => setDeleteMessageId(msg.id)}
+                              className="p-1 rounded-md hover:bg-destructive/10"
+                              title="Apagar mensagem"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
