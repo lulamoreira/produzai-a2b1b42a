@@ -16,18 +16,24 @@ export type Database = {
     Tables: {
       agencies: {
         Row: {
+          color: string | null
           created_at: string
           id: string
+          logo_url: string | null
           name: string
         }
         Insert: {
+          color?: string | null
           created_at?: string
           id?: string
+          logo_url?: string | null
           name: string
         }
         Update: {
+          color?: string | null
           created_at?: string
           id?: string
+          logo_url?: string | null
           name?: string
         }
         Relationships: []

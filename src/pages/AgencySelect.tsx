@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useAgencies, useAddAgency, useDeleteAgency } from "@/hooks/useAgencies";
+import {
+  useAgencies, useAddAgency, useUpdateAgency, useDeleteAgency,
+  validateAndUploadLogo, MAX_LOGO_SIZE_KB, MAX_LOGO_DIMENSION, MIN_LOGO_DIMENSION,
+} from "@/hooks/useAgencies";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,7 +18,14 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Building2, Plus, ArrowRight, Trash2, LogOut, Shield, Sparkles, MessageSquare } from "lucide-react";
+import { Building2, Plus, ArrowRight, Trash2, LogOut, Shield, Sparkles, MessageSquare, Upload, Palette, ImageIcon } from "lucide-react";
+import { toast } from "sonner";
+
+const PRESET_COLORS = [
+  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
+  "#f97316", "#eab308", "#22c55e", "#14b8a6",
+  "#06b6d4", "#3b82f6", "#1e293b", "#64748b",
+];
 
 const AgencySelect = () => {
   const { user, signOut } = useAuth();
@@ -23,16 +33,85 @@ const AgencySelect = () => {
   const navigate = useNavigate();
   const { data: agencies = [], isLoading } = useAgencies();
   const addAgency = useAddAgency();
+  const updateAgency = useUpdateAgency();
   const deleteAgency = useDeleteAgency();
+
   const [newName, setNewName] = useState("");
+  const [newColor, setNewColor] = useState(PRESET_COLORS[0]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // Edit state
+  const [editAgency, setEditAgency] = useState<{ id: string; name: string; color: string; logo_url: string | null } | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
+  const [editLogoPreview, setEditLogoPreview] = useState<string | null>(null);
+  const editFileRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoSelect = (file: File | undefined, isEdit = false) => {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    if (isEdit) {
+      setEditLogoFile(file);
+      setEditLogoPreview(url);
+    } else {
+      setLogoFile(file);
+      setLogoPreview(url);
+    }
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
-    await addAgency.mutateAsync({ name: newName.trim() });
-    setNewName("");
-    setDialogOpen(false);
+    setUploading(true);
+    try {
+      const created = await addAgency.mutateAsync({ name: newName.trim(), color: newColor });
+      if (logoFile && created?.id) {
+        const logoUrl = await validateAndUploadLogo(logoFile, created.id);
+        await updateAgency.mutateAsync({ id: created.id, logo_url: logoUrl });
+      }
+      setNewName("");
+      setNewColor(PRESET_COLORS[0]);
+      setLogoFile(null);
+      setLogoPreview(null);
+      setDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editAgency) return;
+    setUploading(true);
+    try {
+      const updates: any = { id: editAgency.id, name: editAgency.name, color: editAgency.color };
+      if (editLogoFile) {
+        const logoUrl = await validateAndUploadLogo(editLogoFile, editAgency.id);
+        updates.logo_url = logoUrl;
+      }
+      await updateAgency.mutateAsync(updates);
+      setEditAgency(null);
+      setEditLogoFile(null);
+      setEditLogoPreview(null);
+      setEditDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const openEdit = (agency: typeof agencies[0]) => {
+    setEditAgency({ id: agency.id, name: agency.name, color: agency.color || PRESET_COLORS[0], logo_url: agency.logo_url });
+    setEditLogoFile(null);
+    setEditLogoPreview(null);
+    setEditDialogOpen(true);
   };
 
   if (isLoading) {
@@ -42,6 +121,62 @@ const AgencySelect = () => {
       </div>
     );
   }
+
+  const LogoUploadArea = ({ preview, logoUrl, onFileSelect, fileInputRef }: {
+    preview: string | null; logoUrl?: string | null; onFileSelect: (f: File | undefined) => void; fileInputRef: React.RefObject<HTMLInputElement>;
+  }) => (
+    <div>
+      <label className="text-xs font-medium text-muted-foreground mb-1 block">
+        Logo (quadrada, {MIN_LOGO_DIMENSION}–{MAX_LOGO_DIMENSION}px, máx {MAX_LOGO_SIZE_KB}KB)
+      </label>
+      <div
+        className="border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary/50 transition-colors"
+        onClick={() => fileInputRef.current?.click()}
+      >
+        {(preview || logoUrl) ? (
+          <img src={preview || logoUrl!} alt="Logo" className="w-20 h-20 rounded-lg object-cover" />
+        ) : (
+          <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center">
+            <ImageIcon className="w-8 h-8 text-muted-foreground" />
+          </div>
+        )}
+        <span className="text-xs text-muted-foreground">Clique para selecionar</span>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="hidden"
+          onChange={(e) => onFileSelect(e.target.files?.[0])}
+        />
+      </div>
+    </div>
+  );
+
+  const ColorPicker = ({ value, onChange }: { value: string; onChange: (c: string) => void }) => (
+    <div>
+      <label className="text-xs font-medium text-muted-foreground mb-1 block">Cor da agência</label>
+      <div className="flex flex-wrap gap-2">
+        {PRESET_COLORS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            className={`w-8 h-8 rounded-full border-2 transition-all ${value === c ? "border-foreground scale-110" : "border-transparent"}`}
+            style={{ backgroundColor: c }}
+            onClick={() => onChange(c)}
+          />
+        ))}
+        <label className="w-8 h-8 rounded-full border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors overflow-hidden relative">
+          <Palette className="w-4 h-4 text-muted-foreground" />
+          <input
+            type="color"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="absolute inset-0 opacity-0 cursor-pointer"
+          />
+        </label>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,14 +241,45 @@ const AgencySelect = () => {
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da agência</label>
                     <Input placeholder="Ex: Agência XPTO" value={newName} onChange={(e) => setNewName(e.target.value)} required />
                   </div>
-                  <Button type="submit" className="w-full gradient-primary text-white border-0" disabled={addAgency.isPending}>
-                    {addAgency.isPending ? "Criando..." : "Criar Agência"}
+                  <ColorPicker value={newColor} onChange={setNewColor} />
+                  <LogoUploadArea
+                    preview={logoPreview}
+                    onFileSelect={(f) => handleLogoSelect(f, false)}
+                    fileInputRef={fileRef as React.RefObject<HTMLInputElement>}
+                  />
+                  <Button type="submit" className="w-full gradient-primary text-white border-0" disabled={addAgency.isPending || uploading}>
+                    {uploading ? "Enviando..." : addAgency.isPending ? "Criando..." : "Criar Agência"}
                   </Button>
                 </form>
               </DialogContent>
             </Dialog>
           )}
         </div>
+
+        {/* Edit dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Editar Agência</DialogTitle></DialogHeader>
+            {editAgency && (
+              <form onSubmit={handleEdit} className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da agência</label>
+                  <Input value={editAgency.name} onChange={(e) => setEditAgency({ ...editAgency, name: e.target.value })} required />
+                </div>
+                <ColorPicker value={editAgency.color} onChange={(c) => setEditAgency({ ...editAgency, color: c })} />
+                <LogoUploadArea
+                  preview={editLogoPreview}
+                  logoUrl={editAgency.logo_url}
+                  onFileSelect={(f) => handleLogoSelect(f, true)}
+                  fileInputRef={editFileRef as React.RefObject<HTMLInputElement>}
+                />
+                <Button type="submit" className="w-full gradient-primary text-white border-0" disabled={uploading}>
+                  {uploading ? "Salvando..." : "Salvar Alterações"}
+                </Button>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {agencies.length === 0 ? (
           <div className="text-center py-20">
@@ -125,56 +291,82 @@ const AgencySelect = () => {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {agencies.map((agency) => (
-              <div
-                key={agency.id}
-                className="group bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-6 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative"
-                onClick={() => navigate(`/agency/${agency.id}`)}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center shadow-lg flex-shrink-0">
-                      <Building2 className="w-6 h-6 text-white" />
+            {agencies.map((agency) => {
+              const agencyColor = agency.color || PRESET_COLORS[0];
+              return (
+                <div
+                  key={agency.id}
+                  className="group border rounded-xl p-6 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden"
+                  style={{
+                    background: `linear-gradient(135deg, ${agencyColor}15, ${agencyColor}08)`,
+                    borderColor: `${agencyColor}30`,
+                  }}
+                  onClick={() => navigate(`/agency/${agency.id}`)}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden"
+                        style={{ backgroundColor: agencyColor }}
+                      >
+                        {agency.logo_url ? (
+                          <img src={agency.logo_url} alt={agency.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <Building2 className="w-6 h-6 text-white" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-foreground text-base group-hover:transition-colors" style={{ color: undefined }}>
+                          {agency.name}
+                        </h3>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          Criado em {new Date(agency.created_at).toLocaleDateString("pt-BR")}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-bold text-foreground text-base group-hover:text-primary transition-colors">{agency.name}</h3>
-                      <p className="text-[11px] text-muted-foreground mt-0.5">
-                        Criado em {new Date(agency.created_at).toLocaleDateString("pt-BR")}
-                      </p>
-                    </div>
-                  </div>
-                  {isAdmin && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                    {isAdmin && (
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={(e) => { e.stopPropagation(); openEdit(agency); }}
+                        >
+                          <Palette className="w-4 h-4 text-muted-foreground" />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir agência?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Todos os clientes, campanhas e dados associados a esta agência serão apagados permanentemente. Esta ação não pode ser desfeita.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => deleteAgency.mutate(agency.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            SIM
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
-                <div className="flex items-center justify-end mt-4">
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                    <span>Acessar</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir agência?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Todos os clientes, campanhas e dados associados a esta agência serão apagados permanentemente.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteAgency.mutate(agency.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                SIM
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-end mt-4">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground transition-colors" style={{ color: undefined }}>
+                      <span>Acessar</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
