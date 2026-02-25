@@ -298,6 +298,7 @@ export type Database = {
           neighborhood: string | null
           nickname: string | null
           number: string | null
+          observations: string | null
           phone: string | null
           state: string | null
           state_registration: string | null
@@ -325,6 +326,7 @@ export type Database = {
           neighborhood?: string | null
           nickname?: string | null
           number?: string | null
+          observations?: string | null
           phone?: string | null
           state?: string | null
           state_registration?: string | null
@@ -352,6 +354,7 @@ export type Database = {
           neighborhood?: string | null
           nickname?: string | null
           number?: string | null
+          observations?: string | null
           phone?: string | null
           state?: string | null
           state_registration?: string | null
