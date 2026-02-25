@@ -487,50 +487,6 @@ const CampaignDetail = () => {
           </div>
         </div>
 
-        {/* Chart: Lojas por Estado */}
-        {(() => {
-          const stateData = Object.entries(
-            stores.reduce<Record<string, number>>((acc, s) => {
-              const st = s.state || "N/D";
-              acc[st] = (acc[st] || 0) + 1;
-              return acc;
-            }, {})
-          )
-            .map(([state, count]) => ({ state, count }))
-            .sort((a, b) => b.count - a.count);
-
-          if (stateData.length === 0) return null;
-
-          const COLORS = [
-            "hsl(var(--primary))",
-            "hsl(var(--secondary))",
-            "hsl(var(--accent))",
-            "hsl(var(--info))",
-          ];
-
-          return (
-            <div className="bg-card border border-border rounded-xl p-4 mb-6">
-              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-primary" /> Lojas por Estado
-              </h3>
-              <ResponsiveContainer width="100%" height={Math.max(200, stateData.length * 32)}>
-                <BarChart data={stateData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
-                  <YAxis type="category" dataKey="state" width={40} tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }} />
-                  <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-                    formatter={(value: number) => [`${value} loja(s)`, "Quantidade"]}
-                  />
-                  <Bar dataKey="count" radius={[0, 6, 6, 0]} maxBarSize={24}>
-                    {stateData.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          );
-        })()}
         <Tabs defaultValue="stores">
           <TabsList className="mb-6 bg-card border border-border">
             <TabsTrigger value="stores" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Store className="w-4 h-4" /> Lojas</TabsTrigger>
@@ -541,6 +497,51 @@ const CampaignDetail = () => {
 
           {/* ─── TAB: LOJAS ─── */}
           <TabsContent value="stores">
+            {/* Chart: Lojas por Estado */}
+            {(() => {
+              const stateData = Object.entries(
+                stores.reduce<Record<string, number>>((acc, s) => {
+                  const st = s.state || "N/D";
+                  acc[st] = (acc[st] || 0) + 1;
+                  return acc;
+                }, {})
+              )
+                .map(([state, count]) => ({ state, count }))
+                .sort((a, b) => b.count - a.count);
+
+              if (stateData.length === 0) return null;
+
+              const COLORS = [
+                "hsl(var(--primary))",
+                "hsl(var(--secondary))",
+                "hsl(var(--accent))",
+                "hsl(var(--info))",
+              ];
+
+              return (
+                <div className="bg-card border border-border rounded-xl p-4 mb-6">
+                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-primary" /> Lojas por Estado
+                  </h3>
+                  <ResponsiveContainer width="100%" height={Math.max(200, stateData.length * 32)}>
+                    <BarChart data={stateData} layout="vertical" margin={{ left: 10, right: 20, top: 0, bottom: 0 }}>
+                      <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                      <YAxis type="category" dataKey="state" width={40} tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }} />
+                      <Tooltip
+                        contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
+                        formatter={(value: number) => [`${value} loja(s)`, "Quantidade"]}
+                      />
+                      <Bar dataKey="count" radius={[0, 6, 6, 0]} maxBarSize={24}>
+                        {stateData.map((_, i) => (
+                          <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              );
+            })()}
+
             {renderStoreFilters()}
 
             {filteredStores.length === 0 ? (
