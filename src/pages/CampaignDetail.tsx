@@ -27,6 +27,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle } from "lucide-react";
+import QuickMatrixEditor from "@/components/QuickMatrixEditor";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
 import OccurrencesTab from "@/components/OccurrencesTab";
@@ -860,6 +861,20 @@ const CampaignDetail = () => {
           <TabsContent value="matrix">
             {renderStoreFilters()}
             <div className="flex flex-wrap items-center gap-2 mb-4">
+              <QuickMatrixEditor
+                stores={activeFilteredStores}
+                pieces={matrixPieces}
+                qtyMap={qtyMap}
+                campaignId={campaignId!}
+                isAdmin={isAdmin}
+                onSaveBatch={async (changes) => {
+                  for (const c of changes) {
+                    await updateStorePiece.mutateAsync({
+                      campaignId: campaignId!, storeId: c.storeId, pieceId: c.pieceId, quantity: c.quantity,
+                    });
+                  }
+                }}
+              />
               <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha")}>
                 <Download className="w-3.5 h-3.5" /> Exportar Matriz
               </Button>
