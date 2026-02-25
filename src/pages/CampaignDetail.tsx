@@ -72,12 +72,16 @@ const CampaignDetail = () => {
     code: "", category: "", name: "",
     width: "", length: "", height: "",
     store_category: typeof window !== "undefined" ? localStorage.getItem("last_store_category") || "" : "",
+    specification: "Vide Book/Manual",
+    installation_instructions: "Sem informações específicas",
   });
   const [editPieceDialogOpen, setEditPieceDialogOpen] = useState(false);
   const [editPieceForm, setEditPieceForm] = useState({
     id: "", code: "", category: "", name: "",
     width: "", length: "", height: "",
     store_category: "",
+    specification: "Vide Book/Manual",
+    installation_instructions: "Sem informações específicas",
   });
 
   // ─── Store filters ─────────────────────────────────────
@@ -178,11 +182,15 @@ const CampaignDetail = () => {
       name: pieceForm.name,
       size,
       store_category: pieceForm.store_category || undefined,
+      specification: pieceForm.specification,
+      installation_instructions: pieceForm.installation_instructions,
     });
     setPieceForm({
       code: "", category: "", name: "",
       width: "", length: "", height: "",
       store_category: pieceForm.store_category,
+      specification: "Vide Book/Manual",
+      installation_instructions: "Sem informações específicas",
     });
     setPieceDialogOpen(false);
   };
@@ -198,6 +206,8 @@ const CampaignDetail = () => {
       length: sizeParts[1] || "",
       height: sizeParts[2] || "",
       store_category: piece.store_category || "",
+      specification: piece.specification || "Vide Book/Manual",
+      installation_instructions: piece.installation_instructions || "Sem informações específicas",
     });
     setEditPieceDialogOpen(true);
   };
@@ -213,6 +223,8 @@ const CampaignDetail = () => {
       name: editPieceForm.name,
       size,
       store_category: editPieceForm.store_category || null,
+      specification: editPieceForm.specification,
+      installation_instructions: editPieceForm.installation_instructions,
     });
     setEditPieceDialogOpen(false);
   };
@@ -354,6 +366,14 @@ const CampaignDetail = () => {
             </SelectContent>
           </Select>
         )}
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Especificação</label>
+        <Input value={form.specification} onChange={(e) => setForm((f) => ({ ...f, specification: e.target.value }))} />
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Instruções de Instalação</label>
+        <Input value={form.installation_instructions} onChange={(e) => setForm((f) => ({ ...f, installation_instructions: e.target.value }))} />
       </div>
     </>
   );
@@ -1087,6 +1107,8 @@ const CampaignDetail = () => {
                       <TableHead>Localização na Loja</TableHead>
                       <TableHead>Medidas</TableHead>
                       <TableHead>Modelo de Loja</TableHead>
+                      <TableHead>Especificação</TableHead>
+                      <TableHead>Instruções de Instalação</TableHead>
                       <TableHead className="text-center">Total distribuído</TableHead>
                       {isAdmin && <TableHead className="w-[80px]">Ações</TableHead>}
                     </TableRow>
@@ -1105,6 +1127,8 @@ const CampaignDetail = () => {
                               <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{p.store_category}</span>
                             ) : "—"}
                           </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{p.specification}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{p.installation_instructions}</TableCell>
                           <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
                           {isAdmin && (
                             <TableCell>
