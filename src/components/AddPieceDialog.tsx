@@ -17,7 +17,7 @@ interface AddPieceDialogProps {
 
 const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ code: "", category: "", name: "", size: "", image_url: "" });
+  const [form, setForm] = useState({ code: "", category: "", name: "", size: "", image_url: "", specification: "Vide Book/Manual", installation_instructions: "Sem informações específicas" });
   const addPiece = useAddPiece();
 
   const maxCode = existingPieces.reduce((max, p) => Math.max(max, p.code), 0);
@@ -31,8 +31,10 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
       name: form.name,
       size: form.size,
       image_url: form.image_url || undefined,
+      specification: form.specification,
+      installation_instructions: form.installation_instructions,
     });
-    setForm({ code: "", category: "", name: "", size: "", image_url: "" });
+    setForm({ code: "", category: "", name: "", size: "", image_url: "", specification: "Vide Book/Manual", installation_instructions: "Sem informações específicas" });
     setOpen(false);
   };
 
@@ -84,6 +86,20 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
               placeholder="Ex: 90x60cm"
               value={form.size}
               onChange={(e) => setForm({ ...form, size: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Especificação</label>
+            <Input
+              value={form.specification}
+              onChange={(e) => setForm({ ...form, specification: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Instruções de Instalação</label>
+            <Input
+              value={form.installation_instructions}
+              onChange={(e) => setForm({ ...form, installation_instructions: e.target.value })}
             />
           </div>
           <div>

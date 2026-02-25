@@ -9,6 +9,8 @@ export type Piece = {
   name: string;
   size: string;
   image_url: string | null;
+  specification: string;
+  installation_instructions: string;
 };
 
 export type Store = {
@@ -278,7 +280,7 @@ export function useUpdatePieceImage() {
 export function useAddPiece() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (piece: { code: number; category: string; name: string; size: string; image_url?: string }) => {
+    mutationFn: async (piece: { code: number; category: string; name: string; size: string; image_url?: string; specification?: string; installation_instructions?: string }) => {
       const { error } = await supabase.from("pieces").insert(piece);
       if (error) throw error;
     },

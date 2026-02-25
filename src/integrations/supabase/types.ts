@@ -606,8 +606,10 @@ export type Database = {
           created_at: string
           id: number
           image_url: string | null
+          installation_instructions: string
           name: string
           size: string
+          specification: string
         }
         Insert: {
           category: string
@@ -615,8 +617,10 @@ export type Database = {
           created_at?: string
           id?: number
           image_url?: string | null
+          installation_instructions?: string
           name: string
           size: string
+          specification?: string
         }
         Update: {
           category?: string
@@ -624,8 +628,10 @@ export type Database = {
           created_at?: string
           id?: number
           image_url?: string | null
+          installation_instructions?: string
           name?: string
           size?: string
+          specification?: string
         }
         Relationships: []
       }
