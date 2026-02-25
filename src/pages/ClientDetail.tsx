@@ -90,7 +90,7 @@ function generateStoreCode(clientName: string, country: string, existingStores: 
 }
 
 const ClientDetail = () => {
-  const { clientId } = useParams<{ clientId: string }>();
+  const { agencyId, clientId } = useParams<{ agencyId: string; clientId: string }>();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const { data: client, isLoading: loadingClient } = useClient(clientId);
@@ -442,7 +442,7 @@ const ClientDetail = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/agency/${agencyId}`)}>
             <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
           </Button>
           <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary flex-shrink-0">
@@ -562,7 +562,7 @@ const ClientDetail = () => {
                     <div
                       key={c.id}
                       className={`group bg-gradient-to-br ${CAMP_COLORS[cidx]} border rounded-xl p-4 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden`}
-                      onClick={() => navigate(`/clients/${clientId}/campaigns/${c.id}`)}
+                      onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
                     >
                       <div className="flex items-start gap-3">
                         <div className={`w-9 h-9 rounded-lg ${CAMP_ICONS[cidx]} flex items-center justify-center shadow-md flex-shrink-0`}>

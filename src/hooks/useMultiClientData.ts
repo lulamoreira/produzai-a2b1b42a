@@ -84,14 +84,13 @@ export type UserClientAccess = {
 
 // ─── Clients ─────────────────────────────────────────────
 
-export function useClients() {
+export function useClients(agencyId?: string) {
   return useQuery({
-    queryKey: ["clients"],
+    queryKey: ["clients", agencyId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("*")
-        .order("name");
+      let query = supabase.from("clients").select("*").order("name");
+      if (agencyId) query = query.eq("agency_id", agencyId);
+      const { data, error } = await query;
       if (error) throw error;
       return data as Client[];
     },
@@ -118,7 +117,7 @@ export function useClient(clientId: string | undefined) {
 export function useAddClient() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (client: { name: string; custom_field_1_label?: string; custom_field_2_label?: string; custom_field_3_label?: string; custom_field_4_label?: string; custom_field_5_label?: string }) => {
+    mutationFn: async (client: { name: string; agency_id: string; custom_field_1_label?: string; custom_field_2_label?: string; custom_field_3_label?: string; custom_field_4_label?: string; custom_field_5_label?: string }) => {
       const { error } = await supabase.from("clients").insert(client);
       if (error) throw error;
     },
