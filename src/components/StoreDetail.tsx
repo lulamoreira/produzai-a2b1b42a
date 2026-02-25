@@ -315,6 +315,12 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
                       {piece.name}
                     </p>
                     <p className="text-xs text-muted-foreground">{piece.size}</p>
+                    <p className="text-xs text-muted-foreground truncate" title={piece.specification}>
+                      📋 {piece.specification}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate" title={piece.installation_instructions}>
+                      🔧 {piece.installation_instructions}
+                    </p>
                   </div>
 
                   {editingPiece === piece.id ? (
