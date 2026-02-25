@@ -68,6 +68,7 @@ const emptyStoreForm = {
   city: "", state: "", phone: "", manager_name: "",
   store_model: "", country: "", store_code: "",
   custom_field_1: "", custom_field_2: "", custom_field_3: "", custom_field_4: "", custom_field_5: "",
+  observations: "",
 };
 
 function generateStoreCode(clientName: string, country: string, existingStores: { store_code: string | null }[]): string {
@@ -195,6 +196,7 @@ const ClientDetail = () => {
       custom_field_3: store.custom_field_3 || "",
       custom_field_4: store.custom_field_4 || "",
       custom_field_5: store.custom_field_5 || "",
+      observations: (store as any).observations || "",
     });
     setEditStoreDialogOpen(true);
   };
@@ -394,6 +396,15 @@ const ClientDetail = () => {
         <div className="col-span-2">
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Código da Loja</label>
           <Input value={form.store_code} onChange={(e) => setForm((f) => ({ ...f, store_code: e.target.value }))} placeholder="Gerado automaticamente" />
+        </div>
+        <div className="col-span-2">
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
+          <textarea
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            value={form.observations}
+            onChange={(e) => setForm((f) => ({ ...f, observations: e.target.value }))}
+            placeholder="Observações sobre a loja..."
+          />
         </div>
       </div>
 
