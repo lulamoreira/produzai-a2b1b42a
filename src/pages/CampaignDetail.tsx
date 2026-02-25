@@ -34,7 +34,7 @@ import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImpor
 import OccurrencesTab from "@/components/OccurrencesTab";
 
 const CampaignDetail = () => {
-  const { clientId, campaignId } = useParams<{ clientId: string; campaignId: string }>();
+  const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const { data: client } = useClient(clientId);
@@ -449,7 +449,7 @@ const CampaignDetail = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="max-w-[95vw] mx-auto px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/clients/${clientId}`)}>
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}`)}>
             <ArrowLeft className="w-4 h-4 mr-1" /> {client?.name || "Voltar"}
           </Button>
           <div className="w-10 h-10 rounded-xl gradient-secondary flex items-center justify-center shadow-glow-secondary flex-shrink-0">

@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,7 +17,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Package, Plus, Search, UserCircle, LogOut, Shield, Trash2, Download, Upload, Briefcase, ArrowRight, Sparkles, MessageSquare } from "lucide-react";
+import { Package, Plus, Search, UserCircle, LogOut, Shield, Trash2, Download, Upload, Briefcase, ArrowRight, ArrowLeft, Sparkles, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { exportClients, parseClientsImport } from "@/lib/exportMultiClient";
 
@@ -39,7 +39,8 @@ const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
-  const { data: clients = [], isLoading } = useClients();
+  const { agencyId } = useParams<{ agencyId: string }>();
+  const { data: clients = [], isLoading } = useClients(agencyId);
   const addClient = useAddClient();
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
@@ -68,7 +69,7 @@ const Dashboard = () => {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName.trim()) return;
-    await addClient.mutateAsync({ name: newName.trim() });
+    await addClient.mutateAsync({ name: newName.trim(), agency_id: agencyId! });
     setNewName("");
     setDialogOpen(false);
   };
@@ -87,9 +88,9 @@ const Dashboard = () => {
       <header className="border-b border-border bg-card sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
+              <ArrowLeft className="w-4 h-4 mr-1" /> Agências
+            </Button>
             <div>
               <h1 className="text-lg font-bold text-foreground">Gestão de Campanhas</h1>
               <p className="text-xs text-muted-foreground">{clients.length} cliente(s) cadastrado(s)</p>
@@ -164,7 +165,7 @@ const Dashboard = () => {
                               await updateClient.mutateAsync({ id: existing.id, name: item.name });
                               updated++;
                             } else {
-                              await addClient.mutateAsync(item);
+                              await addClient.mutateAsync({ ...item, agency_id: agencyId! });
                               added++;
                             }
                           }
@@ -234,7 +235,7 @@ const Dashboard = () => {
                 <div
                   key={client.id}
                   className={`group bg-gradient-to-br ${CARD_COLORS[colorIdx]} border rounded-xl p-5 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden`}
-                  onClick={() => navigate(`/clients/${client.id}`)}
+                  onClick={() => navigate(`/agency/${agencyId}/clients/${client.id}`)}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">

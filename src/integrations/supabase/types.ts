@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      agencies: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       campaign_notification_emails: {
         Row: {
           campaign_id: string
@@ -434,6 +452,7 @@ export type Database = {
       }
       clients: {
         Row: {
+          agency_id: string
           created_at: string
           custom_field_1_label: string | null
           custom_field_2_label: string | null
@@ -444,6 +463,7 @@ export type Database = {
           name: string
         }
         Insert: {
+          agency_id: string
           created_at?: string
           custom_field_1_label?: string | null
           custom_field_2_label?: string | null
@@ -454,6 +474,7 @@ export type Database = {
           name: string
         }
         Update: {
+          agency_id?: string
           created_at?: string
           custom_field_1_label?: string | null
           custom_field_2_label?: string | null
@@ -463,7 +484,15 @@ export type Database = {
           id?: string
           name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       occurrence_motives: {
         Row: {
