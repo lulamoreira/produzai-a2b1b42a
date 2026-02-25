@@ -473,7 +473,7 @@ const CampaignDetail = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">{stores.length}</p>
-              <p className="text-[11px] text-muted-foreground">Lojas</p>
+              <p className="text-[11px] text-muted-foreground">Lojas cadastradas</p>
             </div>
           </div>
           <div className="bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 rounded-xl p-4 flex items-center gap-3">
@@ -482,7 +482,7 @@ const CampaignDetail = () => {
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">{pieces.length}</p>
-              <p className="text-[11px] text-muted-foreground">Peças</p>
+              <p className="text-[11px] text-muted-foreground">Peças cadastradas</p>
             </div>
           </div>
         </div>
