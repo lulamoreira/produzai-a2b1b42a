@@ -71,9 +71,20 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
     toast.success("Link copiado!");
   };
 
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const MAX_EMAIL_LENGTH = 254;
+
   const handleAddEmail = () => {
-    if (!newEmail.trim() || !newEmail.includes("@")) return;
-    addEmail.mutate({ campaignId, email: newEmail.trim() }, {
+    const trimmed = newEmail.trim();
+    if (!trimmed || !EMAIL_REGEX.test(trimmed)) {
+      toast.error("Por favor, insira um email válido");
+      return;
+    }
+    if (trimmed.length > MAX_EMAIL_LENGTH) {
+      toast.error("Email muito longo");
+      return;
+    }
+    addEmail.mutate({ campaignId, email: trimmed }, {
       onSuccess: () => setNewEmail(""),
       onError: (e) => toast.error(e.message),
     });
