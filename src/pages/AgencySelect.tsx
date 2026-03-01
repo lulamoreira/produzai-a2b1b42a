@@ -9,6 +9,7 @@ import {
 } from "@/hooks/useAgencies";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { supabase } from "@/integrations/supabase/client";
+import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -234,45 +235,7 @@ const AgencySelect = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-foreground">{getGreeting()}, {displayName}!</h1>
-              <p className="text-xs text-muted-foreground">Selecione uma agência</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => navigate("/chat")}>
-              <MessageSquare className="w-3.5 h-3.5" /> Chat
-            </Button>
-            {isAdmin && (
-              <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => navigate("/admin")}>
-                <Shield className="w-3.5 h-3.5" /> Admin
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="ghost" className="gap-1.5 rounded-full px-3">
-                  <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
-                  </div>
-                  <span className="hidden sm:inline text-xs max-w-[120px] truncate">{displayName}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem className="text-xs text-muted-foreground" disabled>{user?.email}</DropdownMenuItem>
-                <DropdownMenuItem onClick={signOut} className="text-destructive">
-                  <LogOut className="w-4 h-4 mr-2" /> Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
+      <AppHeader subtitle="Selecione uma agência" />
 
       <main className="max-w-5xl mx-auto px-4 py-12">
         <div className="text-center mb-10">

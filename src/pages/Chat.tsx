@@ -12,6 +12,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import AppHeader from "@/components/AppHeader";
 import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
@@ -97,16 +98,13 @@ const Chat = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <MessageSquare className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-bold text-foreground">Chat</h1>
-        </div>
-      </header>
+      <AppHeader
+        backTo="/"
+        backLabel="Voltar"
+        title="Chat"
+        maxWidth="max-w-4xl"
+        showNav={false}
+      />
 
       <div className="flex-1 max-w-4xl mx-auto w-full flex">
         {/* Conversation List */}
