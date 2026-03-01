@@ -106,11 +106,18 @@ export function useAddOccurrence() {
       motive_id: string;
       description?: string;
       photo_url?: string;
-    }) => {
-      const { error } = await supabase.from("occurrences").insert(data);
-      if (error) throw error;
-      // Fire-and-forget notification
+    }): Promise<string | null> => {
+      const { data: inserted, error } = await supabase.from("occurrences").insert(data).select("id").maybeSingle();
+      if (error) {
+        // Fallback: insert without returning (anon may not have SELECT)
+        const { error: err2 } = await supabase.from("occurrences").insert(data);
+        if (err2) throw err2;
+        // Fire-and-forget notification
+        supabase.functions.invoke("notify-occurrence", { body: { record: data } }).catch(console.error);
+        return null;
+      }
       supabase.functions.invoke("notify-occurrence", { body: { record: data } }).catch(console.error);
+      return inserted?.id ?? null;
     },
     onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: ["occurrences", vars.campaign_id] }),
   });

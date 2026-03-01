@@ -521,6 +521,35 @@ export type Database = {
         }
         Relationships: []
       }
+      occurrence_photos: {
+        Row: {
+          created_at: string
+          id: string
+          occurrence_id: string
+          photo_url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          occurrence_id: string
+          photo_url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          occurrence_id?: string
+          photo_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "occurrence_photos_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       occurrences: {
         Row: {
           campaign_id: string

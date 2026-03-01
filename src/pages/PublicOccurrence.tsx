@@ -4,18 +4,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useOccurrenceMotives, useAddOccurrence } from "@/hooks/useOccurrences";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle2, Send, Camera, Package } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Send, Package, X, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
+import { compressImage } from "@/lib/compressImage";
+
+const MAX_PHOTOS = 3;
 
 const PublicOccurrence = () => {
   const { campaignId } = useParams<{ campaignId: string }>();
 
-  // Fetch campaign + client info
   const { data: campaign, isLoading: loadingCampaign } = useQuery({
     queryKey: ["public_campaign", campaignId],
     queryFn: async () => {
@@ -30,7 +31,6 @@ const PublicOccurrence = () => {
     enabled: !!campaignId,
   });
 
-  // Fetch enabled stores for campaign
   const { data: stores = [] } = useQuery({
     queryKey: ["public_stores", campaign?.client_id],
     queryFn: async () => {
@@ -45,7 +45,6 @@ const PublicOccurrence = () => {
     enabled: !!campaign?.client_id,
   });
 
-  // Fetch pieces for campaign
   const { data: pieces = [] } = useQuery({
     queryKey: ["public_pieces", campaignId],
     queryFn: async () => {
@@ -68,21 +67,38 @@ const PublicOccurrence = () => {
   const [pieceId, setPieceId] = useState("");
   const [motiveId, setMotiveId] = useState("");
   const [description, setDescription] = useState("");
-  const [photoUrl, setPhotoUrl] = useState("");
+  const [photos, setPhotos] = useState<{ url: string; preview: string }[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) { toast.error(`Máximo de ${MAX_PHOTOS} fotos.`); return; }
+    const toUpload = files.slice(0, remaining);
+
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `occ-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("occurrence-images").upload(path, file, { upsert: true });
-    if (error) { setUploading(false); toast.error("Erro ao enviar foto."); return; }
-    const { data: urlData } = supabase.storage.from("occurrence-images").getPublicUrl(path);
-    setPhotoUrl(urlData.publicUrl);
-    setUploading(false);
+    try {
+      for (const file of toUpload) {
+        const compressed = await compressImage(file, 1200, 0.7);
+        const path = `occ-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.jpg`;
+        const { error } = await supabase.storage.from("occurrence-images").upload(path, compressed, {
+          upsert: true,
+          contentType: "image/jpeg",
+        });
+        if (error) { toast.error("Erro ao enviar foto."); continue; }
+        const { data: urlData } = supabase.storage.from("occurrence-images").getPublicUrl(path);
+        setPhotos((prev) => [...prev, { url: urlData.publicUrl, preview: urlData.publicUrl }]);
+      }
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const removePhoto = (idx: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,14 +108,22 @@ const PublicOccurrence = () => {
       return;
     }
     try {
-      await addOccurrence.mutateAsync({
+      const occurrenceData = {
         campaign_id: campaignId,
         store_id: storeId,
         piece_id: pieceId,
         motive_id: motiveId,
         description: description || undefined,
-        photo_url: photoUrl || undefined,
-      });
+        photo_url: photos[0]?.url || undefined,
+      };
+      const occId = await addOccurrence.mutateAsync(occurrenceData);
+
+      // Save photos to occurrence_photos table if we got an ID back
+      if (occId && photos.length > 0) {
+        const photoRows = photos.map((p) => ({ occurrence_id: occId, photo_url: p.url }));
+        await supabase.from("occurrence_photos").insert(photoRows);
+      }
+
       setSubmitted(true);
     } catch {
       toast.error("Erro ao registrar ocorrência.");
@@ -110,7 +134,7 @@ const PublicOccurrence = () => {
     setPieceId("");
     setMotiveId("");
     setDescription("");
-    setPhotoUrl("");
+    setPhotos([]);
     setSubmitted(false);
   };
 
@@ -165,7 +189,6 @@ const PublicOccurrence = () => {
 
       <main className="max-w-lg mx-auto px-4 py-6">
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Store selector */}
           <div>
             <label className="text-sm font-medium text-foreground mb-1.5 block">Identifique sua loja *</label>
             <Select value={storeId} onValueChange={setStoreId}>
@@ -178,7 +201,6 @@ const PublicOccurrence = () => {
             </Select>
           </div>
 
-          {/* Piece selector */}
           <div>
             <label className="text-sm font-medium text-foreground mb-1.5 block">Peça *</label>
             <Select value={pieceId} onValueChange={setPieceId}>
@@ -200,7 +222,6 @@ const PublicOccurrence = () => {
             </Select>
           </div>
 
-          {/* Motive */}
           <div>
             <label className="text-sm font-medium text-foreground mb-1.5 block">Motivo *</label>
             <Select value={motiveId} onValueChange={setMotiveId}>
@@ -213,7 +234,6 @@ const PublicOccurrence = () => {
             </Select>
           </div>
 
-          {/* Description */}
           <div>
             <label className="text-sm font-medium text-foreground mb-1.5 block">Descrição (opcional)</label>
             <Textarea
@@ -224,23 +244,48 @@ const PublicOccurrence = () => {
             />
           </div>
 
-          {/* Photo upload */}
+          {/* Multi-photo upload */}
           <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">Foto (opcional)</label>
-            {photoUrl ? (
-              <div className="relative mb-2">
-                <img src={photoUrl} alt="Foto" className="w-full h-40 object-contain rounded-lg border border-border bg-muted/30" />
-                <Button type="button" size="sm" variant="destructive" className="absolute top-2 right-2" onClick={() => setPhotoUrl("")}>Remover</Button>
-              </div>
-            ) : (
-              <div className="relative">
-                <input type="file" accept="image/*" capture="environment" onChange={handlePhotoUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={uploading} />
-                <div className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20">
-                  <Camera className="w-5 h-5 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">{uploading ? "Enviando..." : "Tirar foto ou selecionar arquivo"}</span>
+            <label className="text-sm font-medium text-foreground mb-1.5 block">
+              Fotos (opcional · até {MAX_PHOTOS})
+            </label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {photos.map((photo, i) => (
+                <div key={i} className="relative w-24 h-24 rounded-lg border border-border overflow-hidden group">
+                  <img src={photo.preview} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
                 </div>
-              </div>
-            )}
+              ))}
+              {photos.length < MAX_PHOTOS && (
+                <div className="relative w-24 h-24 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20 flex items-center justify-center cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                    onChange={handlePhotoUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={uploading}
+                  />
+                  <div className="flex flex-col items-center gap-1">
+                    {uploading ? (
+                      <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
+                    ) : (
+                      <>
+                        <ImagePlus className="w-5 h-5 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground">Adicionar</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <Button type="submit" className="w-full" disabled={addOccurrence.isPending || !storeId || !pieceId || !motiveId}>

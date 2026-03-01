@@ -1,9 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import {
   useOccurrences, useUpdateOccurrenceStatus, useDeleteOccurrence,
   useCampaignEmails, useAddCampaignEmail, useDeleteCampaignEmail,
   useOccurrenceMotives, useAddOccurrenceMotive, useUpdateOccurrenceMotive, useDeleteOccurrenceMotive,
 } from "@/hooks/useOccurrences";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,7 @@ import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
 import OccurrencesDashboard from "./OccurrencesDashboard";
+import PhotoLightbox from "./PhotoLightbox";
 
 interface Props {
   campaignId: string;
@@ -61,11 +64,45 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
   const updateMotive = useUpdateOccurrenceMotive();
   const deleteMotive = useDeleteOccurrenceMotive();
 
+  // Fetch all photos for occurrences in this campaign
+  const occurrenceIds = useMemo(() => occurrences.map((o) => o.id), [occurrences]);
+  const { data: allPhotos = [] } = useQuery({
+    queryKey: ["occurrence_photos", campaignId],
+    queryFn: async () => {
+      if (occurrenceIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("occurrence_photos")
+        .select("*")
+        .in("occurrence_id", occurrenceIds);
+      if (error) throw error;
+      return data as { id: string; occurrence_id: string; photo_url: string }[];
+    },
+    enabled: occurrenceIds.length > 0,
+  });
+
+  const photosMap = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    allPhotos.forEach((p) => {
+      if (!map[p.occurrence_id]) map[p.occurrence_id] = [];
+      map[p.occurrence_id].push(p.photo_url);
+    });
+    // Also include legacy photo_url from occurrences table
+    occurrences.forEach((occ) => {
+      if (occ.photo_url && (!map[occ.id] || !map[occ.id].includes(occ.photo_url))) {
+        if (!map[occ.id]) map[occ.id] = [];
+        map[occ.id].unshift(occ.photo_url);
+      }
+    });
+    return map;
+  }, [allPhotos, occurrences]);
+
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newMotive, setNewMotive] = useState("");
-  const [viewPhoto, setViewPhoto] = useState<string | null>(null);
+  const [lightboxPhotos, setLightboxPhotos] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
 
   const handleDownloadQR = () => {
@@ -237,14 +274,25 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
                   <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{occ.description}</p>
                 )}
 
+                {/* Photo thumbnails */}
+                {(photosMap[occ.id]?.length ?? 0) > 0 && (
+                  <div className="flex gap-1.5 mt-3">
+                    {photosMap[occ.id].slice(0, 3).map((url, pi) => (
+                      <button
+                        key={pi}
+                        type="button"
+                        className="w-16 h-16 rounded-lg border border-border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all flex-shrink-0"
+                        onClick={() => { setLightboxPhotos(photosMap[occ.id]); setLightboxIndex(pi); setLightboxOpen(true); }}
+                      >
+                        <img src={url} alt={`Foto ${pi + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {/* Actions */}
                 {isAdmin && (
                   <div className="flex items-center justify-end gap-1 mt-3 pt-2 border-t border-border/50">
-                    {occ.photo_url && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewPhoto(occ.photo_url)}>
-                        <Eye className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -272,15 +320,13 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
         </div>
       )}
 
-      {/* Photo viewer */}
-      <Dialog open={!!viewPhoto} onOpenChange={(open) => !open && setViewPhoto(null)}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Foto da Ocorrência</DialogTitle>
-          </DialogHeader>
-          {viewPhoto && <img src={viewPhoto} alt="Ocorrência" className="w-full rounded-lg" />}
-        </DialogContent>
-      </Dialog>
+      {/* Photo lightbox */}
+      <PhotoLightbox
+        photos={lightboxPhotos}
+        initialIndex={lightboxIndex}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+      />
 
       {/* QR Code dialog */}
       <Dialog open={qrOpen} onOpenChange={setQrOpen}>
