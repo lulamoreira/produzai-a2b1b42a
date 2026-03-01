@@ -17,7 +17,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Package, Plus, Search, UserCircle, LogOut, Shield, Trash2, Download, Upload, Briefcase, ArrowRight, ArrowLeft, Sparkles, MessageSquare } from "lucide-react";
+import { Package, Plus, Search, UserCircle, LogOut, Shield, Trash2, Download, Upload, Briefcase, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { exportClients, parseClientsImport } from "@/lib/exportMultiClient";
 
@@ -97,9 +97,6 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => navigate("/chat")}>
-              <MessageSquare className="w-3.5 h-3.5" /> Chat
-            </Button>
             {isAdmin && (
               <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => navigate("/admin")}>
                 <Shield className="w-3.5 h-3.5" /> Admin
