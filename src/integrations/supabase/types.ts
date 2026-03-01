@@ -550,6 +550,39 @@ export type Database = {
           },
         ]
       }
+      occurrence_statuses: {
+        Row: {
+          active: boolean
+          color: string
+          created_at: string
+          id: string
+          is_default: boolean
+          label: string
+          order: number
+          value: string
+        }
+        Insert: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label: string
+          order?: number
+          value: string
+        }
+        Update: {
+          active?: boolean
+          color?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string
+          order?: number
+          value?: string
+        }
+        Relationships: []
+      }
       occurrences: {
         Row: {
           campaign_id: string
