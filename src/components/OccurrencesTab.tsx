@@ -3,6 +3,7 @@ import {
   useOccurrences, useUpdateOccurrenceStatus, useDeleteOccurrence,
   useCampaignEmails, useAddCampaignEmail, useDeleteCampaignEmail,
   useOccurrenceMotives, useAddOccurrenceMotive, useUpdateOccurrenceMotive, useDeleteOccurrenceMotive,
+  useOccurrenceStatuses, useAddOccurrenceStatus, useUpdateOccurrenceStatus2, useDeleteOccurrenceStatusItem,
 } from "@/hooks/useOccurrences";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
@@ -40,17 +41,6 @@ interface Props {
   canEdit?: boolean;
 }
 
-const statusColors: Record<string, string> = {
-  pending: "bg-warning/15 text-warning border-warning/30",
-  resolved: "bg-success/15 text-success border-success/30",
-  rejected: "bg-destructive/15 text-destructive border-destructive/30",
-};
-
-const statusLabels: Record<string, string> = {
-  pending: "Pendente",
-  resolved: "Resolvida",
-  rejected: "Rejeitada",
-};
 
 const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Props) => {
   const { isAdmin } = useUserRole();
@@ -58,6 +48,8 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Pr
   const { data: occurrences = [], isLoading } = useOccurrences(campaignId);
   const { data: motives = [] } = useOccurrenceMotives();
   const { data: emails = [] } = useCampaignEmails(campaignId);
+  const { data: statuses = [] } = useOccurrenceStatuses();
+  const activeStatuses = useMemo(() => statuses.filter((s) => s.active), [statuses]);
   const updateStatus = useUpdateOccurrenceStatus();
   const deleteOcc = useDeleteOccurrence();
   const addEmail = useAddCampaignEmail();
@@ -65,6 +57,17 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Pr
   const addMotive = useAddOccurrenceMotive();
   const updateMotive = useUpdateOccurrenceMotive();
   const deleteMotive = useDeleteOccurrenceMotive();
+  const addStatusItem = useAddOccurrenceStatus();
+  const updateStatusItem = useUpdateOccurrenceStatus2();
+  const deleteStatusItem = useDeleteOccurrenceStatusItem();
+
+  const getStatusLabel = (value: string) => {
+    return statuses.find((s) => s.value === value)?.label || value;
+  };
+  const getStatusColor = (value: string) => {
+    return statuses.find((s) => s.value === value)?.color || "#6366f1";
+  };
+  const defaultStatus = useMemo(() => statuses.find((s) => s.is_default)?.value || "pending", [statuses]);
 
   // Fetch all photos for occurrences in this campaign
   const occurrenceIds = useMemo(() => occurrences.map((o) => o.id), [occurrences]);
@@ -102,6 +105,9 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Pr
   const [qrOpen, setQrOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newMotive, setNewMotive] = useState("");
+  const [newStatusLabel, setNewStatusLabel] = useState("");
+  const [newStatusValue, setNewStatusValue] = useState("");
+  const [newStatusColor, setNewStatusColor] = useState("#6366f1");
   const [lightboxPhotos, setLightboxPhotos] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -197,7 +203,7 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Pr
 
       {/* Dashboard */}
       {!isLoading && occurrences.length > 0 && (
-        <OccurrencesDashboard occurrences={occurrences} stores={stores} pieces={pieces} motives={motives} />
+        <OccurrencesDashboard occurrences={occurrences} stores={stores} pieces={pieces} motives={motives} statuses={statuses} />
       )}
 
       {/* Occurrences list */}
@@ -237,19 +243,24 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Pr
                   </span>
                   {canEdit ? (
                     <Select
-                      value={occ.status || "pending"}
+                      value={occ.status || defaultStatus}
                       onValueChange={(val) => updateStatus.mutate({ id: occ.id, status: val, campaignId })}
                     >
                       <SelectTrigger className="w-[110px] h-6 text-[10px] border-0 bg-muted/50"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pending">Pendente</SelectItem>
-                        <SelectItem value="resolved">Resolvida</SelectItem>
-                        <SelectItem value="rejected">Rejeitada</SelectItem>
+                        {activeStatuses.map((s) => (
+                          <SelectItem key={s.id} value={s.value}>
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
+                              {s.label}
+                            </span>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   ) : (
-                    <Badge variant="outline" className={`text-[10px] px-2 py-0 ${statusColors[occ.status || "pending"]}`}>
-                      {statusLabels[occ.status || "pending"]}
+                    <Badge variant="outline" className="text-[10px] px-2 py-0" style={{ borderColor: getStatusColor(occ.status || defaultStatus), color: getStatusColor(occ.status || defaultStatus) }}>
+                      {getStatusLabel(occ.status || defaultStatus)}
                     </Badge>
                   )}
                 </div>
@@ -353,12 +364,13 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Pr
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Configurações de Ocorrências</DialogTitle>
-            <DialogDescription>Gerencie emails de notificação e motivos.</DialogDescription>
+            <DialogDescription>Gerencie emails, motivos e status.</DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="emails">
             <TabsList className="bg-muted/50">
               <TabsTrigger value="emails" className="gap-1.5"><Mail className="w-3.5 h-3.5" /> Emails</TabsTrigger>
               <TabsTrigger value="motives" className="gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Motivos</TabsTrigger>
+              <TabsTrigger value="statuses" className="gap-1.5"><CircleDot className="w-3.5 h-3.5" /> Status</TabsTrigger>
             </TabsList>
 
             <TabsContent value="emails" className="space-y-3 mt-4">
@@ -419,6 +431,79 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Pr
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancelar</AlertDialogCancel>
                           <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteMotive.mutate(m.id)}>
+                            SIM
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              ))}
+            </TabsContent>
+
+            <TabsContent value="statuses" className="space-y-3 mt-4">
+              <p className="text-xs text-muted-foreground">Gerencie os status disponíveis para as ocorrências.</p>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Nome (ex: Em análise)"
+                  value={newStatusLabel}
+                  onChange={(e) => setNewStatusLabel(e.target.value)}
+                  className="flex-1"
+                />
+                <Input
+                  placeholder="Valor (ex: analyzing)"
+                  value={newStatusValue}
+                  onChange={(e) => setNewStatusValue(e.target.value.toLowerCase().replace(/\s+/g, '_'))}
+                  className="w-[120px]"
+                />
+                <input
+                  type="color"
+                  value={newStatusColor}
+                  onChange={(e) => setNewStatusColor(e.target.value)}
+                  className="w-9 h-9 rounded-md border border-input cursor-pointer p-0.5"
+                />
+                <Button size="sm" onClick={() => {
+                  if (!newStatusLabel.trim() || !newStatusValue.trim()) { toast.error("Preencha nome e valor."); return; }
+                  addStatusItem.mutate({ label: newStatusLabel.trim(), value: newStatusValue.trim(), color: newStatusColor }, {
+                    onSuccess: () => { setNewStatusLabel(""); setNewStatusValue(""); setNewStatusColor("#6366f1"); },
+                    onError: (e) => toast.error(e.message),
+                  });
+                }} disabled={addStatusItem.isPending}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+              {statuses.map((s) => (
+                <div key={s.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
+                    <span className="text-sm font-medium">{s.label}</span>
+                    <span className="text-[10px] text-muted-foreground">({s.value})</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={s.color}
+                      onChange={(e) => updateStatusItem.mutate({ id: s.id, color: e.target.value })}
+                      className="w-7 h-7 rounded border border-input cursor-pointer p-0.5"
+                    />
+                    <Switch
+                      checked={s.active}
+                      onCheckedChange={(checked) => updateStatusItem.mutate({ id: s.id, active: checked })}
+                    />
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir status "{s.label}"?</AlertDialogTitle>
+                          <AlertDialogDescription>Ocorrências existentes com este status não serão afetadas.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteStatusItem.mutate(s.id)}>
                             SIM
                           </AlertDialogAction>
                         </AlertDialogFooter>

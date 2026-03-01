@@ -9,6 +9,17 @@ export type OccurrenceMotive = {
   created_at: string;
 };
 
+export type OccurrenceStatus = {
+  id: string;
+  label: string;
+  value: string;
+  color: string;
+  is_default: boolean;
+  order: number;
+  active: boolean;
+  created_at: string;
+};
+
 export type Occurrence = {
   id: string;
   campaign_id: string;
@@ -76,6 +87,54 @@ export function useDeleteOccurrenceMotive() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["occurrence_motives"] }),
+  });
+}
+
+// ─── Occurrence Statuses ─────────────────────────────────
+export function useOccurrenceStatuses() {
+  return useQuery({
+    queryKey: ["occurrence_statuses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("occurrence_statuses")
+        .select("*")
+        .order("order");
+      if (error) throw error;
+      return data as OccurrenceStatus[];
+    },
+  });
+}
+
+export function useAddOccurrenceStatus() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { label: string; value: string; color: string }) => {
+      const { error } = await supabase.from("occurrence_statuses").insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["occurrence_statuses"] }),
+  });
+}
+
+export function useUpdateOccurrenceStatus2() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...update }: { id: string; label?: string; value?: string; color?: string; active?: boolean; order?: number }) => {
+      const { error } = await supabase.from("occurrence_statuses").update(update).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["occurrence_statuses"] }),
+  });
+}
+
+export function useDeleteOccurrenceStatusItem() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("occurrence_statuses").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["occurrence_statuses"] }),
   });
 }
 

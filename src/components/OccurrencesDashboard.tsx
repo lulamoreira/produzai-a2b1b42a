@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Occurrence } from "@/hooks/useOccurrences";
 import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
-import type { OccurrenceMotive } from "@/hooks/useOccurrences";
+import type { OccurrenceMotive, OccurrenceStatus } from "@/hooks/useOccurrences";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle2, XCircle, Clock, TrendingUp, Store, Puzzle } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
@@ -11,13 +11,8 @@ interface Props {
   stores: ClientStore[];
   pieces: CampaignPiece[];
   motives: OccurrenceMotive[];
+  statuses?: OccurrenceStatus[];
 }
-
-const STATUS_CONFIG = {
-  pending: { label: "Pendentes", color: "hsl(38, 92%, 55%)", icon: Clock, gradient: "gradient-accent", glow: "shadow-glow-accent" },
-  resolved: { label: "Resolvidas", color: "hsl(152, 60%, 42%)", icon: CheckCircle2, gradient: "gradient-secondary", glow: "shadow-glow-secondary" },
-  rejected: { label: "Rejeitadas", color: "hsl(0, 72%, 55%)", icon: XCircle, gradient: "bg-destructive", glow: "" },
-};
 
 const CHART_COLORS = [
   "hsl(250, 80%, 60%)",
@@ -30,20 +25,30 @@ const CHART_COLORS = [
   "hsl(25, 90%, 55%)",
 ];
 
-const OccurrencesDashboard = ({ occurrences, stores, pieces, motives }: Props) => {
+const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses = [] }: Props) => {
+  const statusMap = useMemo(() => {
+    const map: Record<string, OccurrenceStatus> = {};
+    statuses.forEach((s) => { map[s.value] = s; });
+    return map;
+  }, [statuses]);
+
+  const defaultStatusValue = useMemo(() => statuses.find((s) => s.is_default)?.value || "pending", [statuses]);
+
   const stats = useMemo(() => {
     const total = occurrences.length;
-    const pending = occurrences.filter((o) => (o.status || "pending") === "pending").length;
-    const resolved = occurrences.filter((o) => o.status === "resolved").length;
-    const rejected = occurrences.filter((o) => o.status === "rejected").length;
-    return { total, pending, resolved, rejected };
-  }, [occurrences]);
+    const counts: Record<string, number> = {};
+    occurrences.forEach((o) => {
+      const val = o.status || defaultStatusValue;
+      counts[val] = (counts[val] || 0) + 1;
+    });
+    return { total, counts };
+  }, [occurrences, defaultStatusValue]);
 
-  const statusData = useMemo(() => [
-    { name: "Pendentes", value: stats.pending, color: STATUS_CONFIG.pending.color },
-    { name: "Resolvidas", value: stats.resolved, color: STATUS_CONFIG.resolved.color },
-    { name: "Rejeitadas", value: stats.rejected, color: STATUS_CONFIG.rejected.color },
-  ].filter((d) => d.value > 0), [stats]);
+  const statusData = useMemo(() =>
+    statuses
+      .filter((s) => (stats.counts[s.value] || 0) > 0)
+      .map((s) => ({ name: s.label, value: stats.counts[s.value] || 0, color: s.color })),
+    [statuses, stats]);
 
   const motiveData = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -86,7 +91,14 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives }: Props) =
 
   if (occurrences.length === 0) return null;
 
-  const resolutionRate = stats.total > 0 ? Math.round(((stats.resolved + stats.rejected) / stats.total) * 100) : 0;
+  // Non-default statuses count as "treated"
+  const treatedCount = Object.entries(stats.counts)
+    .filter(([key]) => key !== defaultStatusValue)
+    .reduce((sum, [, v]) => sum + v, 0);
+  const resolutionRate = stats.total > 0 ? Math.round((treatedCount / stats.total) * 100) : 0;
+
+  // Show up to 3 top statuses as stat cards + total
+  const topStatuses = statuses.slice(0, 3);
 
   return (
     <div className="space-y-5">
@@ -107,50 +119,21 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives }: Props) =
           </CardContent>
         </Card>
 
-        {/* Pending */}
-        <Card className="border-warning/20 bg-gradient-to-br from-warning/10 to-warning/5 overflow-hidden">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-accent flex items-center justify-center shadow-glow-accent flex-shrink-0">
-                <Clock className="w-5 h-5 text-white" />
+        {topStatuses.map((s) => (
+          <Card key={s.id} className="overflow-hidden" style={{ borderColor: `${s.color}33` }}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: s.color }}>
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{stats.counts[s.value] || 0}</p>
+                  <p className="text-[11px] text-muted-foreground">{s.label}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.pending}</p>
-                <p className="text-[11px] text-muted-foreground">Pendentes</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Resolved */}
-        <Card className="border-success/20 bg-gradient-to-br from-success/10 to-success/5 overflow-hidden">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-secondary flex items-center justify-center shadow-glow-secondary flex-shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.resolved}</p>
-                <p className="text-[11px] text-muted-foreground">Resolvidas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Resolution rate */}
-        <Card className="border-info/20 bg-gradient-to-br from-info/10 to-info/5 overflow-hidden">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-info flex items-center justify-center flex-shrink-0">
-                <TrendingUp className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{resolutionRate}%</p>
-                <p className="text-[11px] text-muted-foreground">Tratadas</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Charts row */}
