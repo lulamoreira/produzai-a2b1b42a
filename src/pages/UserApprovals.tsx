@@ -5,6 +5,7 @@ import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Shield, UserCheck, UserX, Clock, Trash2 } from "lucide-react";
+import AppHeader from "@/components/AppHeader";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -79,15 +80,12 @@ const UserApprovals = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate("/admin")}>
-            <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
-          </Button>
-          <Shield className="w-5 h-5 text-primary" />
-          <h1 className="text-lg font-bold text-foreground">Aprovação de Usuários</h1>
-        </div>
-      </header>
+      <AppHeader
+        backTo="/admin"
+        backLabel="Voltar"
+        title="Aprovação de Usuários"
+        showNav={false}
+      />
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex gap-4 mb-6 flex-wrap">

@@ -18,6 +18,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Package, Plus, Search, UserCircle, LogOut, Shield, Trash2, Download, Upload, Briefcase, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
+import AppHeader from "@/components/AppHeader";
 import { toast } from "sonner";
 import { exportClients, parseClientsImport } from "@/lib/exportMultiClient";
 
@@ -84,48 +85,12 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
-              <ArrowLeft className="w-4 h-4 mr-1" /> Agências
-            </Button>
-            <div>
-              <h1 className="text-lg font-bold text-foreground">Gestão de Campanhas</h1>
-              <p className="text-xs text-muted-foreground">{clients.length} cliente(s) cadastrado(s)</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {isAdmin && (
-              <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => navigate("/admin")}>
-                <Shield className="w-3.5 h-3.5" /> Admin
-              </Button>
-            )}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button size="sm" variant="ghost" className="gap-1.5 rounded-full px-3">
-                  <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">{user?.email?.charAt(0).toUpperCase()}</span>
-                  </div>
-                  <span className="hidden sm:inline text-xs max-w-[100px] truncate">{user?.email?.split("@")[0]}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem className="text-xs text-muted-foreground" disabled>{user?.email}</DropdownMenuItem>
-                <DropdownMenuItem className="text-xs" disabled>
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${isAdmin ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
-                    {isAdmin ? "Admin" : "Usuário"}
-                  </span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={signOut} className="text-destructive">
-                  <LogOut className="w-4 h-4 mr-2" /> Sair
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        backTo="/"
+        backLabel="Agências"
+        subtitle={`${clients.length} cliente(s) cadastrado(s)`}
+        maxWidth="max-w-6xl"
+      />
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         {/* Stats bar */}

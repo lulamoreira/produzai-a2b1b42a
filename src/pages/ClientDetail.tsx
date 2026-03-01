@@ -21,6 +21,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare } from "lucide-react";
+import AppHeader from "@/components/AppHeader";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -441,20 +442,13 @@ const ClientDetail = () => {
 
    return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/agency/${agencyId}`)}>
-            <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
-          </Button>
-          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary flex-shrink-0">
-            <span className="text-white font-bold text-lg">{client.name.charAt(0).toUpperCase()}</span>
-          </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">{client.name}</h1>
-            <p className="text-xs text-muted-foreground">{campaigns.length} campanha(s) · {stores.length} loja(s)</p>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        backTo={`/agency/${agencyId}`}
+        backLabel="Voltar"
+        title={client.name}
+        subtitle={`${campaigns.length} campanha(s) · ${stores.length} loja(s)`}
+        maxWidth="max-w-6xl"
+      />
 
       <main className="max-w-6xl mx-auto px-4 py-6">
         <Tabs defaultValue="campaigns">

@@ -29,6 +29,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle } from "lucide-react";
+import AppHeader from "@/components/AppHeader";
 import QuickMatrixEditor from "@/components/QuickMatrixEditor";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
@@ -450,22 +451,13 @@ const CampaignDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card sticky top-0 z-10">
-        <div className="max-w-[95vw] mx-auto px-4 py-3 flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}`)}>
-            <ArrowLeft className="w-4 h-4 mr-1" /> {client?.name || "Voltar"}
-          </Button>
-          <div className="w-10 h-10 rounded-xl gradient-secondary flex items-center justify-center shadow-glow-secondary flex-shrink-0">
-            <Package className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">{campaign.name}</h1>
-            <p className="text-xs text-muted-foreground">
-              {pieces.length} peça(s) · {stores.length} loja(s) · {totalPieces} unidade(s) total
-            </p>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        backTo={`/agency/${agencyId}/clients/${clientId}`}
+        backLabel={client?.name || "Voltar"}
+        title={campaign.name}
+        subtitle={`${pieces.length} peça(s) · ${stores.length} loja(s) · ${totalPieces} unidade(s) total`}
+        maxWidth="max-w-[95vw]"
+      />
 
       <main className="max-w-[95vw] mx-auto px-4 py-6">
         {/* Stats Cards */}
