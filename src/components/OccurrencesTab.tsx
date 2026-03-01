@@ -64,7 +64,7 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
   const [newMotive, setNewMotive] = useState("");
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
 
-  const publicLink = `${window.location.origin}/ocorrencias/${campaignId}`;
+  const publicLink = `https://harry2025.lovable.app/ocorrencias/${campaignId}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(publicLink);
