@@ -12,8 +12,13 @@ import {
   useUpdatePermissionCategory, useDeletePermissionCategory,
   type PermissionCategory,
 } from "@/hooks/usePermissionCategories";
+import { useAgencies } from "@/hooks/useAgencies";
+import {
+  useUserAgencyAccess, useAddUserAgencyAccess,
+  useUpdateUserAgencyAccess, useDeleteUserAgencyAccess,
+} from "@/hooks/useUserAgencyAccess";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Shield, ArrowLeft, Users, KeyRound, Plus, Trash2, Tags, Edit3, UserCheck, PauseCircle, PlayCircle, ChevronDown, ChevronRight } from "lucide-react";
+import { Shield, ArrowLeft, Users, KeyRound, Plus, Trash2, Tags, Edit3, UserCheck, PauseCircle, PlayCircle, ChevronDown, ChevronRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -86,15 +91,28 @@ const Admin = () => {
   const updateCategory = useUpdatePermissionCategory();
   const deleteCategory = useDeletePermissionCategory();
 
+  const { data: agencies = [] } = useAgencies();
+  const { data: allAgencyAccess = [] } = useUserAgencyAccess();
+  const addAgencyAccess = useAddUserAgencyAccess();
+  const updateAgencyAccess = useUpdateUserAgencyAccess();
+  const deleteAgencyAccess = useDeleteUserAgencyAccess();
+
   // Access dialog state
   const [accessDialogOpen, setAccessDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedClientId, setSelectedClientId] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
+  const [expandedAgencyUsers, setExpandedAgencyUsers] = useState<Set<string>>(new Set());
 
   // Multi-client add state
   const [multiClientSelections, setMultiClientSelections] = useState<Array<{ clientId: string; categoryId: string }>>([{ clientId: "", categoryId: "" }]);
+
+  // Agency access dialog state
+  const [agencyAccessDialogOpen, setAgencyAccessDialogOpen] = useState(false);
+  const [agencySelectedUserId, setAgencySelectedUserId] = useState("");
+  const [agencySelectedAgencyId, setAgencySelectedAgencyId] = useState("");
+  const [agencySelectedCategoryId, setAgencySelectedCategoryId] = useState("");
 
   // Category dialog state
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
@@ -141,8 +159,36 @@ const Admin = () => {
     setExpandedUsers(prev => new Set([...prev, selectedUserId]));
   };
 
+  const handleAddAgencyAccess = () => {
+    if (!agencySelectedUserId || !agencySelectedAgencyId || !agencySelectedCategoryId) return;
+    const existing = allAgencyAccess.find(a => a.user_id === agencySelectedUserId && a.agency_id === agencySelectedAgencyId);
+    if (existing) {
+      toast.error("Usuário já possui acesso a esta agência.");
+      return;
+    }
+    addAgencyAccess.mutate({
+      user_id: agencySelectedUserId,
+      agency_id: agencySelectedAgencyId,
+      category_id: agencySelectedCategoryId,
+    });
+    setAgencyAccessDialogOpen(false);
+    setAgencySelectedUserId("");
+    setAgencySelectedAgencyId("");
+    setAgencySelectedCategoryId("");
+    setExpandedAgencyUsers(prev => new Set([...prev, agencySelectedUserId]));
+  };
+
   const toggleExpandUser = (userId: string) => {
     setExpandedUsers(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
+
+  const toggleExpandAgencyUser = (userId: string) => {
+    setExpandedAgencyUsers(prev => {
       const next = new Set(prev);
       if (next.has(userId)) next.delete(userId);
       else next.add(userId);
@@ -204,9 +250,10 @@ const Admin = () => {
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         <Tabs defaultValue="users">
-          <TabsList className="mb-6 bg-card border border-border">
+          <TabsList className="mb-6 bg-card border border-border flex-wrap">
             <TabsTrigger value="users" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Users className="w-4 h-4" /> Usuários</TabsTrigger>
             <TabsTrigger value="categories" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Tags className="w-4 h-4" /> Roles</TabsTrigger>
+            <TabsTrigger value="agency_access" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Building2 className="w-4 h-4" /> Acesso por Agência</TabsTrigger>
             <TabsTrigger value="access" className="gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><KeyRound className="w-4 h-4" /> Acesso por Cliente</TabsTrigger>
           </TabsList>
 
@@ -407,6 +454,198 @@ const Admin = () => {
                 </div>
               </DialogContent>
             </Dialog>
+          </TabsContent>
+
+          {/* ─── Agency Access Tab ─── */}
+          <TabsContent value="agency_access">
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-base font-semibold text-foreground">Acessos por Agência</h2>
+              <Dialog open={agencyAccessDialogOpen} onOpenChange={(open) => {
+                setAgencyAccessDialogOpen(open);
+                if (!open) {
+                  setAgencySelectedUserId("");
+                  setAgencySelectedAgencyId("");
+                  setAgencySelectedCategoryId("");
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo Acesso</Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader><DialogTitle>Conceder Acesso a Agência</DialogTitle></DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1 block">Usuário</label>
+                      <Select value={agencySelectedUserId} onValueChange={setAgencySelectedUserId}>
+                        <SelectTrigger><SelectValue placeholder="Selecione o usuário" /></SelectTrigger>
+                        <SelectContent>
+                          {users.filter(u => u.role !== "admin").map(u => (
+                            <SelectItem key={u.user_id} value={u.user_id}>{u.display_name || u.user_id.slice(0, 8)}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1 block">Agência</label>
+                      <Select value={agencySelectedAgencyId} onValueChange={setAgencySelectedAgencyId}>
+                        <SelectTrigger><SelectValue placeholder="Selecione a agência" /></SelectTrigger>
+                        <SelectContent>
+                          {agencies.map(a => (
+                            <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground mb-1 block">Role</label>
+                      <Select value={agencySelectedCategoryId} onValueChange={setAgencySelectedCategoryId}>
+                        <SelectTrigger><SelectValue placeholder="Selecione o role" /></SelectTrigger>
+                        <SelectContent>
+                          {categories.map(cat => (
+                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button onClick={handleAddAgencyAccess} className="w-full" disabled={addAgencyAccess.isPending}>
+                      Conceder Acesso
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <p className="text-xs text-muted-foreground mb-4">
+              Ao conceder acesso a uma agência, o usuário terá acesso a <strong>todos os clientes</strong> dessa agência automaticamente (com o role selecionado).
+            </p>
+
+            {(() => {
+              const nonAdminUsers = users.filter(u => u.role !== "admin");
+              const usersWithAgencyAccess = nonAdminUsers.map(u => ({
+                ...u,
+                agencyAccesses: allAgencyAccess.filter(a => a.user_id === u.user_id),
+              }));
+
+              return usersWithAgencyAccess.length === 0 ? (
+                <p className="text-muted-foreground text-sm py-8 text-center">Nenhum usuário disponível.</p>
+              ) : (
+                <div className="space-y-2">
+                  {usersWithAgencyAccess.map(u => {
+                    const isExpanded = expandedAgencyUsers.has(u.user_id);
+                    return (
+                      <div key={u.user_id} className="border border-border rounded-lg bg-card overflow-hidden">
+                        <button
+                          onClick={() => toggleExpandAgencyUser(u.user_id)}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
+                        >
+                          {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground text-sm truncate">{u.display_name || "Sem nome"}</p>
+                            <p className="text-[11px] text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">
+                            {u.agencyAccesses.length} agência{u.agencyAccesses.length !== 1 ? "s" : ""}
+                          </Badge>
+                          {u.agencyAccesses.some(a => a.suspended) && (
+                            <Badge variant="outline" className="text-[10px] bg-yellow-500/10 text-yellow-700 border-yellow-500/30">
+                              Suspenso
+                            </Badge>
+                          )}
+                        </button>
+
+                        {isExpanded && (
+                          <div className="border-t border-border">
+                            {u.agencyAccesses.length === 0 ? (
+                              <p className="text-xs text-muted-foreground px-4 py-3 italic">Sem acesso a nenhuma agência.</p>
+                            ) : (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-xs">Agência</TableHead>
+                                    <TableHead className="text-xs">Role</TableHead>
+                                    <TableHead className="text-xs">Status</TableHead>
+                                    <TableHead className="text-xs text-right">Ações</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {u.agencyAccesses.map(a => {
+                                    const ag = agencies.find(ag => ag.id === a.agency_id);
+                                    return (
+                                      <TableRow key={a.id} className={a.suspended ? "opacity-50" : ""}>
+                                        <TableCell className="text-sm">{ag?.name || a.agency_id.slice(0, 8)}</TableCell>
+                                        <TableCell>
+                                          <Select
+                                            value={a.category_id || ""}
+                                            onValueChange={(val) => updateAgencyAccess.mutate({ id: a.id, category_id: val })}
+                                          >
+                                            <SelectTrigger className="w-[140px] h-7 text-xs"><SelectValue placeholder="Sem role" /></SelectTrigger>
+                                            <SelectContent>
+                                              {categories.map(cat => (
+                                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Badge variant="outline" className={`text-[10px] ${a.suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
+                                            {a.suspended ? "Suspenso" : "Ativo"}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                          <div className="flex items-center justify-end gap-1">
+                                            <Button
+                                              variant="ghost" size="icon" className="h-7 w-7"
+                                              title={a.suspended ? "Reativar" : "Suspender"}
+                                              onClick={() => updateAgencyAccess.mutate({ id: a.id, suspended: !a.suspended })}
+                                            >
+                                              {a.suspended ? <PlayCircle className="w-3.5 h-3.5 text-green-600" /> : <PauseCircle className="w-3.5 h-3.5 text-yellow-600" />}
+                                            </Button>
+                                            <AlertDialog>
+                                              <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                                </Button>
+                                              </AlertDialogTrigger>
+                                              <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                  <AlertDialogTitle>Remover acesso à agência "{ag?.name}"?</AlertDialogTitle>
+                                                  <AlertDialogDescription>O usuário perderá acesso a todos os clientes desta agência.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                  <AlertDialogAction onClick={() => deleteAgencyAccess.mutate(a.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">SIM, remover</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                              </AlertDialogContent>
+                                            </AlertDialog>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            )}
+                            <div className="px-4 py-2 border-t border-border">
+                              <Button
+                                variant="ghost" size="sm" className="text-xs gap-1"
+                                onClick={() => {
+                                  setAgencySelectedUserId(u.user_id);
+                                  setAgencySelectedAgencyId("");
+                                  setAgencySelectedCategoryId("");
+                                  setAgencyAccessDialogOpen(true);
+                                }}
+                              >
+                                <Plus className="w-3 h-3" /> Adicionar agência
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </TabsContent>
 
           {/* ─── Access Tab ─── */}
