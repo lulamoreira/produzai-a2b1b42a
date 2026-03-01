@@ -7,7 +7,8 @@ type PermissionKey =
   | "can_view_clients" | "can_edit_clients" | "can_delete_clients"
   | "can_view_campaigns" | "can_edit_campaigns" | "can_delete_campaigns"
   | "can_view_stores" | "can_edit_stores" | "can_delete_stores"
-  | "can_view_pieces" | "can_edit_pieces" | "can_delete_pieces";
+  | "can_view_pieces" | "can_edit_pieces" | "can_delete_pieces"
+  | "can_view_occurrences" | "can_edit_occurrences" | "can_delete_occurrences";
 
 export function useClientPermission(clientId?: string, permission?: PermissionKey) {
   const { user } = useAuth();

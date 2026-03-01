@@ -17,6 +17,9 @@ export type PermissionCategory = {
   can_view_pieces: boolean;
   can_edit_pieces: boolean;
   can_delete_pieces: boolean;
+  can_view_occurrences: boolean;
+  can_edit_occurrences: boolean;
+  can_delete_occurrences: boolean;
   created_at: string;
 };
 
