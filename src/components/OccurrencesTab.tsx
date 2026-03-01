@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
@@ -170,80 +170,105 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
           <p className="text-muted-foreground text-sm">Nenhuma ocorrência registrada.</p>
         </div>
       ) : (
-        <div className="border border-border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Loja</TableHead>
-                <TableHead>Peça</TableHead>
-                <TableHead>Motivo</TableHead>
-                <TableHead>Status</TableHead>
-                {isAdmin && <TableHead className="text-right">Ações</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {occurrences.map((occ) => (
-                <TableRow key={occ.id}>
-                  <TableCell className="text-xs whitespace-nowrap">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {occurrences.map((occ) => {
+            const motiveIdx = motives.findIndex((m) => m.id === occ.motive_id);
+            const MOTIVE_COLORS = [
+              "border-l-primary from-primary/8 to-primary/3",
+              "border-l-secondary from-secondary/8 to-secondary/3",
+              "border-l-accent from-accent/8 to-accent/3",
+              "border-l-info from-info/8 to-info/3",
+              "border-l-destructive from-destructive/8 to-destructive/3",
+              "border-l-[hsl(280,75%,55%)] from-[hsl(280,75%,55%)]/8 to-[hsl(280,75%,55%)]/3",
+              "border-l-success from-success/8 to-success/3",
+              "border-l-warning from-warning/8 to-warning/3",
+            ];
+            const motiveColor = motiveIdx >= 0 ? MOTIVE_COLORS[motiveIdx % MOTIVE_COLORS.length] : MOTIVE_COLORS[0];
+
+            return (
+              <div
+                key={occ.id}
+                className={`group bg-gradient-to-br ${motiveColor} border border-border border-l-4 rounded-xl p-4 hover:shadow-lg transition-all duration-200 relative`}
+              >
+                {/* Header: date + status */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
                     {occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}
-                  </TableCell>
-                  <TableCell className="text-sm">{getStoreName(occ.store_id)}</TableCell>
-                  <TableCell className="text-sm">{getPieceName(occ.piece_id)}</TableCell>
-                  <TableCell className="text-sm">{getMotiveName(occ.motive_id)}</TableCell>
-                  <TableCell>
-                    {isAdmin ? (
-                      <Select
-                        value={occ.status || "pending"}
-                        onValueChange={(val) => updateStatus.mutate({ id: occ.id, status: val, campaignId })}
-                      >
-                        <SelectTrigger className="w-[120px] h-7 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pendente</SelectItem>
-                          <SelectItem value="resolved">Resolvida</SelectItem>
-                          <SelectItem value="rejected">Rejeitada</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Badge variant="outline" className={statusColors[occ.status || "pending"]}>
-                        {statusLabels[occ.status || "pending"]}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  {isAdmin && (
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {occ.photo_url && (
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewPhoto(occ.photo_url)}>
-                            <Eye className="w-3.5 h-3.5" />
-                          </Button>
-                        )}
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir ocorrência?</AlertDialogTitle>
-                              <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteOcc.mutate({ id: occ.id, campaignId })}>
-                                SIM
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
+                  </span>
+                  {isAdmin ? (
+                    <Select
+                      value={occ.status || "pending"}
+                      onValueChange={(val) => updateStatus.mutate({ id: occ.id, status: val, campaignId })}
+                    >
+                      <SelectTrigger className="w-[110px] h-6 text-[10px] border-0 bg-muted/50"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pendente</SelectItem>
+                        <SelectItem value="resolved">Resolvida</SelectItem>
+                        <SelectItem value="rejected">Rejeitada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant="outline" className={`text-[10px] px-2 py-0 ${statusColors[occ.status || "pending"]}`}>
+                      {statusLabels[occ.status || "pending"]}
+                    </Badge>
                   )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                </div>
+
+                {/* Store + Piece */}
+                <div className="space-y-1.5 mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <Store className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm font-semibold text-foreground truncate">{getStoreName(occ.store_id)}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Puzzle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                    <span className="text-xs text-muted-foreground truncate">{getPieceName(occ.piece_id)}</span>
+                  </div>
+                </div>
+
+                {/* Motive badge */}
+                <Badge variant="secondary" className="text-[10px] font-medium mb-2">
+                  {getMotiveName(occ.motive_id)}
+                </Badge>
+
+                {/* Description */}
+                {occ.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{occ.description}</p>
+                )}
+
+                {/* Actions */}
+                {isAdmin && (
+                  <div className="flex items-center justify-end gap-1 mt-3 pt-2 border-t border-border/50">
+                    {occ.photo_url && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setViewPhoto(occ.photo_url)}>
+                        <Eye className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir ocorrência?</AlertDialogTitle>
+                          <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteOcc.mutate({ id: occ.id, campaignId })}>
+                            SIM
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
