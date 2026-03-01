@@ -106,7 +106,7 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-            <Route path="/ocorrencias-modulo" element={<ProtectedRoute><Ocorrencias /></ProtectedRoute>} />
+            <Route path="/ocorrencias-pascoa" element={<ProtectedRoute><Ocorrencias /></ProtectedRoute>} />
             <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
             <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
