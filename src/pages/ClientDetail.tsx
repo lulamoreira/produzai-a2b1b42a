@@ -6,7 +6,7 @@ import {
   useUpdateClient, useUpdateClientStore, fetchAddressByCep,
   type ClientStore,
 } from "@/hooks/useMultiClientData";
-import { useUserRole } from "@/hooks/useUserRole";
+import { useClientPermission } from "@/hooks/useClientPermission";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -94,7 +94,12 @@ function generateStoreCode(clientName: string, country: string, existingStores: 
 const ClientDetail = () => {
   const { agencyId, clientId } = useParams<{ agencyId: string; clientId: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useUserRole();
+  // Permission checks replace isAdmin for granular access control
+  const { hasPermission: canEditCampaigns } = useClientPermission(clientId, "can_edit_campaigns");
+  const { hasPermission: canDeleteCampaigns } = useClientPermission(clientId, "can_delete_campaigns");
+  const { hasPermission: canEditStores } = useClientPermission(clientId, "can_edit_stores");
+  const { hasPermission: canDeleteStores } = useClientPermission(clientId, "can_delete_stores");
+  const { hasPermission: canEditClients } = useClientPermission(clientId, "can_edit_clients");
   const { data: client, isLoading: loadingClient } = useClient(clientId);
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
   const { data: stores = [], isLoading: loadingStores } = useClientStores(clientId);
@@ -486,7 +491,7 @@ const ClientDetail = () => {
                   <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportCampaigns(campaigns, client.name)}>
                     <Download className="w-3 h-3" /> Exportar
                   </Button>
-                  {isAdmin && (
+                  {canEditCampaigns && (
                     <>
                       <label className="cursor-pointer">
                         <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
@@ -570,7 +575,7 @@ const ClientDetail = () => {
                             {new Date(c.created_at).toLocaleDateString("pt-BR")}
                           </p>
                         </div>
-                        {isAdmin && (
+                        {canDeleteCampaigns && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -628,7 +633,7 @@ const ClientDetail = () => {
                   <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportClientStores(stores, client.name)}>
                     <Download className="w-3 h-3" /> Exportar
                   </Button>
-                  {isAdmin && (
+                  {canEditStores && (
                     <>
                       <label className="cursor-pointer">
                         <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportFile} />
@@ -645,7 +650,7 @@ const ClientDetail = () => {
               </div>
             </div>
 
-            {isAdmin && (
+            {canEditClients && (
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
                   <DialogTrigger asChild>
@@ -753,7 +758,7 @@ const ClientDetail = () => {
                        <TableHead>Modelo</TableHead>
                        <TableHead>Telefone</TableHead>
                       <TableHead>Gerente</TableHead>
-                      {isAdmin && <TableHead className="text-right">Ações</TableHead>}
+                      {(canEditStores || canDeleteStores) && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -775,7 +780,7 @@ const ClientDetail = () => {
                         <TableCell className="text-xs">{s.store_model || "—"}</TableCell>
                         <TableCell className="text-xs">{s.phone ? formatPhone(s.phone) : "—"}</TableCell>
                         <TableCell className="text-xs">{s.manager_name || "—"}</TableCell>
-                        {isAdmin && (
+                        {(canEditStores || canDeleteStores) && (
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
                               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditStore(s)}>

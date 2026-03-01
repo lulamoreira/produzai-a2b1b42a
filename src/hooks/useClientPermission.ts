@@ -20,16 +20,43 @@ export function useClientPermission(clientId?: string, permission?: PermissionKe
       if (!user || !clientId || !permission) return false;
       if (isAdmin) return true;
 
-      const { data, error } = await supabase
+      // Check direct client access
+      const { data: clientAccess } = await supabase
         .from("user_client_access")
-        .select("category_id, permission_categories(*)")
+        .select("category_id, suspended, permission_categories(*)")
         .eq("user_id", user.id)
         .eq("client_id", clientId)
+        .eq("suspended", false)
         .maybeSingle();
 
-      if (error || !data?.permission_categories) return false;
-      const pc = data.permission_categories as Record<string, unknown>;
-      return !!pc[permission];
+      if (clientAccess?.permission_categories) {
+        const pc = clientAccess.permission_categories as Record<string, unknown>;
+        if (!!pc[permission]) return true;
+      }
+
+      // Check agency-level access (inherited)
+      const { data: client } = await supabase
+        .from("clients")
+        .select("agency_id")
+        .eq("id", clientId)
+        .single();
+
+      if (client?.agency_id) {
+        const { data: agencyAccess } = await supabase
+          .from("user_agency_access")
+          .select("category_id, suspended, permission_categories(*)")
+          .eq("user_id", user.id)
+          .eq("agency_id", client.agency_id)
+          .eq("suspended", false)
+          .maybeSingle();
+
+        if (agencyAccess?.permission_categories) {
+          const pc = agencyAccess.permission_categories as Record<string, unknown>;
+          if (!!pc[permission]) return true;
+        }
+      }
+
+      return false;
     },
     enabled: !!user && !!clientId && !!permission,
   });

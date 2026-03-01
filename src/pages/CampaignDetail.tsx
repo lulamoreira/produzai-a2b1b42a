@@ -9,7 +9,7 @@ import {
   useCampaignStoreStatus, useUpsertCampaignStoreStatus, useBulkUpsertCampaignStoreStatus,
   type CampaignPiece, type ClientStore,
 } from "@/hooks/useMultiClientData";
-import { useUserRole } from "@/hooks/useUserRole";
+
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,9 +38,12 @@ import OccurrencesTab from "@/components/OccurrencesTab";
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useUserRole();
+  // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaign } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canEditOccurrences } = useClientPermission(clientId, "can_edit_occurrences");
+  const { hasPermission: canEditPieces } = useClientPermission(clientId, "can_edit_pieces");
+  const { hasPermission: canDeletePieces } = useClientPermission(clientId, "can_delete_pieces");
+  const { hasPermission: canEditStores } = useClientPermission(clientId, "can_edit_stores");
   const { data: client } = useClient(clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: stores = [] } = useClientStores(clientId);
@@ -253,7 +256,7 @@ const CampaignDetail = () => {
   };
 
   const handleCellClick = (storeId: string, pieceId: string) => {
-    if (!isAdmin) return;
+    if (!canEditCampaign) return;
     const qty = qtyMap[`${storeId}-${pieceId}`] || 0;
     setEditingCell({ storeId, pieceId });
     setEditValue(String(qty));
@@ -555,7 +558,7 @@ const CampaignDetail = () => {
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           <span>Ativa</span>
-                          {isAdmin && (
+                          {canEditStores && (
                             <Switch
                               checked={allEnabled}
                               onCheckedChange={(checked) => {
@@ -618,7 +621,7 @@ const CampaignDetail = () => {
                                   upsertStoreStatus.mutate({ campaignId, storeId: store.id, enabled: checked });
                                 }
                               }}
-                              disabled={!isAdmin}
+                              disabled={!canEditStores}
                             />
                           </TableCell>
                           <TableCell className="text-center">
@@ -627,7 +630,7 @@ const CampaignDetail = () => {
                               onCheckedChange={(checked) => {
                                 updateClientStore.mutate({ id: store.id, auto_distribute: checked });
                               }}
-                              disabled={!isAdmin}
+                              disabled={!canEditStores}
                             />
                           </TableCell>
                           <TableCell className="text-center">
@@ -692,7 +695,7 @@ const CampaignDetail = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {isAdmin && (
+                      {canEditCampaign && (
                         <Button
                           size="sm"
                           className="text-xs gap-1 gradient-accent text-white border-0"
@@ -713,7 +716,7 @@ const CampaignDetail = () => {
                       <div className="text-center py-10">
                         <Package className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
                         <p className="text-sm text-muted-foreground">Nenhuma peça atribuída a esta loja.</p>
-                        {isAdmin && (
+                        {canEditCampaign && (
                           <Button size="sm" variant="outline" className="mt-3 text-xs gap-1" onClick={() => setAddPieceToStoreOpen(true)}>
                             <Plus className="w-3.5 h-3.5" /> Incluir primeira peça
                           </Button>
@@ -781,20 +784,20 @@ const CampaignDetail = () => {
                                 ) : (
                                   <button
                                     onClick={() => {
-                                      if (!isAdmin) return;
+                                      if (!canEditCampaign) return;
                                       setStoreEditingPieceId(p.id);
                                       setStoreEditQtyValue(String(p.quantity));
                                     }}
                                     className="flex items-center gap-1.5 text-sm font-bold text-foreground hover:text-primary transition-colors"
-                                    disabled={!isAdmin}
+                                    disabled={!canEditCampaign}
                                   >
                                     <Package className="w-3.5 h-3.5" />
                                     {p.quantity} un.
-                                    {isAdmin && <Edit3 className="w-3 h-3 text-muted-foreground" />}
+                                    {canEditCampaign && <Edit3 className="w-3 h-3 text-muted-foreground" />}
                                   </button>
                                 )}
 
-                                {isAdmin && (
+                                {canDeletePieces && (
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive">
@@ -918,7 +921,7 @@ const CampaignDetail = () => {
                 pieces={matrixPieces}
                 qtyMap={qtyMap}
                 campaignId={campaignId!}
-                isAdmin={isAdmin}
+                isAdmin={canEditCampaign}
                 onSaveBatch={async (changes) => {
                   for (const c of changes) {
                     await updateStorePiece.mutateAsync({
@@ -930,7 +933,7 @@ const CampaignDetail = () => {
               <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha")}>
                 <Download className="w-3.5 h-3.5" /> Exportar Matriz
               </Button>
-              {isAdmin && (
+              {canEditCampaign && (
                 <label className="cursor-pointer">
                   <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
                     const file = e.target.files?.[0];
@@ -1023,11 +1026,11 @@ const CampaignDetail = () => {
                                     className={`w-full h-8 text-sm rounded transition-colors ${
                                       qty > 0
                                         ? "bg-primary/10 text-primary font-semibold hover:bg-primary/20"
-                                        : isAdmin
+                                        : canEditCampaign
                                         ? "text-muted-foreground/40 hover:bg-muted"
                                         : "text-muted-foreground/40"
                                     }`}
-                                    disabled={!isAdmin}
+                                    disabled={!canEditCampaign}
                                   >
                                     {qty || "—"}
                                   </button>
@@ -1065,17 +1068,17 @@ const CampaignDetail = () => {
               <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha")}>
                 <Download className="w-3.5 h-3.5" /> Exportar
               </Button>
-              {isAdmin && (
+              {canEditPieces && (
                 <Button size="sm" variant="outline" className="text-xs gap-1" onClick={handleReviewPieceCodes}>
                   <Sparkles className="w-3.5 h-3.5" /> Revisar Códigos
                 </Button>
                )}
-              {isAdmin && (
+              {canEditPieces && (
                 <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setLocationDialogOpen(true)}>
                   <MapPin className="w-3.5 h-3.5" /> Localização na loja
                 </Button>
               )}
-              {isAdmin && (
+              {canEditPieces && (
                 <>
                 <label className="cursor-pointer">
                   <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
@@ -1142,7 +1145,7 @@ const CampaignDetail = () => {
                       <TableHead>Especificação</TableHead>
                       <TableHead>Instruções de Instalação</TableHead>
                       <TableHead className="text-center">Total distribuído</TableHead>
-                      {isAdmin && <TableHead className="w-[80px]">Ações</TableHead>}
+                      {(canEditPieces || canDeletePieces) && <TableHead className="w-[80px]">Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1162,7 +1165,7 @@ const CampaignDetail = () => {
                           <TableCell className="text-sm text-muted-foreground">{p.specification}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{p.installation_instructions}</TableCell>
                           <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
-                          {isAdmin && (
+                          {(canEditPieces || canDeletePieces) && (
                             <TableCell>
                               <div className="flex items-center gap-1">
                                 {(() => {
