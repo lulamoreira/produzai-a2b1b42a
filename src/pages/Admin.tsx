@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAdminUsers, useUpdateUserRole } from "@/hooks/useAdminUsers";
 import {
@@ -12,7 +13,7 @@ import {
   type PermissionCategory,
 } from "@/hooks/usePermissionCategories";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Shield, ArrowLeft, Users, KeyRound, Plus, Trash2, Tags, Edit3, UserCheck } from "lucide-react";
+import { Shield, ArrowLeft, Users, KeyRound, Plus, Trash2, Tags, Edit3, UserCheck, PauseCircle, PlayCircle, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -90,6 +91,10 @@ const Admin = () => {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedClientId, setSelectedClientId] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
+
+  // Multi-client add state
+  const [multiClientSelections, setMultiClientSelections] = useState<Array<{ clientId: string; categoryId: string }>>([{ clientId: "", categoryId: "" }]);
 
   // Category dialog state
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
@@ -111,18 +116,50 @@ const Admin = () => {
     updateRole.mutate({ userId, newRole });
   };
 
-  const handleAddAccess = () => {
-    if (!selectedUserId || !selectedClientId || !selectedCategoryId) return;
-    addAccess.mutate({
-      user_id: selectedUserId,
-      client_id: selectedClientId,
-      can_edit: false,
-      category_id: selectedCategoryId,
+  const handleAddMultiAccess = () => {
+    if (!selectedUserId) return;
+    const valid = multiClientSelections.filter(s => s.clientId && s.categoryId);
+    if (valid.length === 0) return;
+    // Check for existing accesses to avoid duplicates
+    const existingClientIds = allAccess.filter(a => a.user_id === selectedUserId).map(a => a.client_id);
+    const newEntries = valid.filter(s => !existingClientIds.includes(s.clientId));
+    if (newEntries.length === 0) {
+      toast.error("Usuário já possui acesso a todos os clientes selecionados.");
+      return;
+    }
+    newEntries.forEach(s => {
+      addAccess.mutate({
+        user_id: selectedUserId,
+        client_id: s.clientId,
+        can_edit: false,
+        category_id: s.categoryId,
+      });
     });
     setAccessDialogOpen(false);
     setSelectedUserId("");
-    setSelectedClientId("");
-    setSelectedCategoryId("");
+    setMultiClientSelections([{ clientId: "", categoryId: "" }]);
+    setExpandedUsers(prev => new Set([...prev, selectedUserId]));
+  };
+
+  const toggleExpandUser = (userId: string) => {
+    setExpandedUsers(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
+
+  const addClientRow = () => {
+    setMultiClientSelections(prev => [...prev, { clientId: "", categoryId: "" }]);
+  };
+
+  const updateClientRow = (index: number, field: "clientId" | "categoryId", value: string) => {
+    setMultiClientSelections(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row));
+  };
+
+  const removeClientRow = (index: number) => {
+    setMultiClientSelections(prev => prev.length > 1 ? prev.filter((_, i) => i !== index) : prev);
   };
 
   const openNewCategory = () => {
@@ -375,13 +412,19 @@ const Admin = () => {
           {/* ─── Access Tab ─── */}
           <TabsContent value="access">
             <div className="flex items-center gap-3 mb-4">
-              <h2 className="text-base font-semibold text-foreground">Acessos ({allAccess.length})</h2>
-              <Dialog open={accessDialogOpen} onOpenChange={setAccessDialogOpen}>
+              <h2 className="text-base font-semibold text-foreground">Acessos por Usuário</h2>
+              <Dialog open={accessDialogOpen} onOpenChange={(open) => {
+                setAccessDialogOpen(open);
+                if (!open) {
+                  setSelectedUserId("");
+                  setMultiClientSelections([{ clientId: "", categoryId: "" }]);
+                }
+              }}>
                 <DialogTrigger asChild>
                   <Button size="sm"><Plus className="w-4 h-4 mr-1" /> Novo Acesso</Button>
                 </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>Conceder Acesso</DialogTitle></DialogHeader>
+                <DialogContent className="max-w-lg">
+                  <DialogHeader><DialogTitle>Conceder Acesso a Clientes</DialogTitle></DialogHeader>
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium text-foreground mb-1 block">Usuário</label>
@@ -394,81 +437,174 @@ const Admin = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-1 block">Cliente</label>
-                      <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                        <SelectTrigger><SelectValue placeholder="Selecione o cliente" /></SelectTrigger>
-                        <SelectContent>
-                          {clients.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground block">Clientes e Roles</label>
+                      {multiClientSelections.map((row, idx) => (
+                        <div key={idx} className="flex items-center gap-2">
+                          <Select value={row.clientId} onValueChange={(val) => updateClientRow(idx, "clientId", val)}>
+                            <SelectTrigger className="flex-1"><SelectValue placeholder="Cliente" /></SelectTrigger>
+                            <SelectContent>
+                              {clients.map((c) => (
+                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select value={row.categoryId} onValueChange={(val) => updateClientRow(idx, "categoryId", val)}>
+                            <SelectTrigger className="w-[140px]"><SelectValue placeholder="Role" /></SelectTrigger>
+                            <SelectContent>
+                              {categories.map((cat) => (
+                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {multiClientSelections.length > 1 && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeClientRow(idx)}>
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button variant="outline" size="sm" onClick={addClientRow} className="w-full">
+                        <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar outro cliente
+                      </Button>
                     </div>
-                    <div>
-                      <label className="text-sm font-medium text-foreground mb-1 block">Role</label>
-                      <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-                        <SelectTrigger><SelectValue placeholder="Selecione o role" /></SelectTrigger>
-                        <SelectContent>
-                          {categories.map((cat) => (
-                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button onClick={handleAddAccess} className="w-full" disabled={addAccess.isPending}>Conceder</Button>
+
+                    <Button onClick={handleAddMultiAccess} className="w-full" disabled={addAccess.isPending}>
+                      Conceder Acesso
+                    </Button>
                   </div>
                 </DialogContent>
               </Dialog>
             </div>
 
-            {allAccess.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-8 text-center">Nenhum acesso configurado. Admins têm acesso total automaticamente.</p>
-            ) : (
-              <div className="border border-border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Usuário</TableHead>
-                      <TableHead>Cliente</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {allAccess.map((a) => {
-                      const u = users.find((u) => u.user_id === a.user_id);
-                      const c = clients.find((c) => c.id === a.client_id);
-                      const cat = categories.find((cat) => cat.id === a.category_id);
-                      return (
-                        <TableRow key={a.id}>
-                          <TableCell className="text-sm">{u?.display_name || a.user_id.slice(0, 8)}</TableCell>
-                          <TableCell className="text-sm">{c?.name || a.client_id.slice(0, 8)}</TableCell>
-                          <TableCell>
-                            <Select
-                              value={a.category_id || ""}
-                              onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: false, category_id: val })}
-                            >
-                              <SelectTrigger className="w-[160px] h-8 text-xs"><SelectValue placeholder="Sem categoria" /></SelectTrigger>
-                              <SelectContent>
-                                {categories.map((cat) => (
-                                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteAccess.mutate(a.id)}>
-                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
+            {(() => {
+              // Group accesses by user
+              const nonAdminUsers = users.filter(u => u.role !== "admin");
+              const usersWithAccess = nonAdminUsers.map(u => ({
+                ...u,
+                accesses: allAccess.filter(a => a.user_id === u.user_id),
+              }));
+
+              return usersWithAccess.length === 0 ? (
+                <p className="text-muted-foreground text-sm py-8 text-center">Nenhum usuário disponível. Admins têm acesso total automaticamente.</p>
+              ) : (
+                <div className="space-y-2">
+                  {usersWithAccess.map(u => {
+                    const isExpanded = expandedUsers.has(u.user_id);
+                    return (
+                      <div key={u.user_id} className="border border-border rounded-lg bg-card overflow-hidden">
+                        <button
+                          onClick={() => toggleExpandUser(u.user_id)}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
+                        >
+                          {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground text-sm truncate">{u.display_name || "Sem nome"}</p>
+                            <p className="text-[11px] text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">
+                            {u.accesses.length} cliente{u.accesses.length !== 1 ? "s" : ""}
+                          </Badge>
+                          {u.accesses.some(a => a.suspended) && (
+                            <Badge variant="outline" className="text-[10px] bg-yellow-500/10 text-yellow-700 border-yellow-500/30">
+                              Suspenso
+                            </Badge>
+                          )}
+                        </button>
+
+                        {isExpanded && (
+                          <div className="border-t border-border">
+                            {u.accesses.length === 0 ? (
+                              <p className="text-xs text-muted-foreground px-4 py-3 italic">Sem acesso a nenhum cliente.</p>
+                            ) : (
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-xs">Cliente</TableHead>
+                                    <TableHead className="text-xs">Role</TableHead>
+                                    <TableHead className="text-xs">Status</TableHead>
+                                    <TableHead className="text-xs text-right">Ações</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {u.accesses.map(a => {
+                                    const c = clients.find(c => c.id === a.client_id);
+                                    return (
+                                      <TableRow key={a.id} className={a.suspended ? "opacity-50" : ""}>
+                                        <TableCell className="text-sm">{c?.name || a.client_id.slice(0, 8)}</TableCell>
+                                        <TableCell>
+                                          <Select
+                                            value={a.category_id || ""}
+                                            onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: false, category_id: val })}
+                                          >
+                                            <SelectTrigger className="w-[140px] h-7 text-xs"><SelectValue placeholder="Sem role" /></SelectTrigger>
+                                            <SelectContent>
+                                              {categories.map(cat => (
+                                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </TableCell>
+                                        <TableCell>
+                                          <Badge variant="outline" className={`text-[10px] ${a.suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
+                                            {a.suspended ? "Suspenso" : "Ativo"}
+                                          </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                          <div className="flex items-center justify-end gap-1">
+                                            <Button
+                                              variant="ghost" size="icon" className="h-7 w-7"
+                                              title={a.suspended ? "Reativar" : "Suspender"}
+                                              onClick={() => updateAccess.mutate({ id: a.id, can_edit: a.can_edit, suspended: !a.suspended })}
+                                            >
+                                              {a.suspended ? <PlayCircle className="w-3.5 h-3.5 text-green-600" /> : <PauseCircle className="w-3.5 h-3.5 text-yellow-600" />}
+                                            </Button>
+                                            <AlertDialog>
+                                              <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                                </Button>
+                                              </AlertDialogTrigger>
+                                              <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                  <AlertDialogTitle>Remover acesso ao cliente "{c?.name}"?</AlertDialogTitle>
+                                                  <AlertDialogDescription>O usuário perderá todas as permissões neste cliente permanentemente.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                  <AlertDialogAction onClick={() => deleteAccess.mutate(a.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">SIM, remover</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                              </AlertDialogContent>
+                                            </AlertDialog>
+                                          </div>
+                                        </TableCell>
+                                      </TableRow>
+                                    );
+                                  })}
+                                </TableBody>
+                              </Table>
+                            )}
+                            <div className="px-4 py-2 border-t border-border">
+                              <Button
+                                variant="ghost" size="sm" className="text-xs gap-1"
+                                onClick={() => {
+                                  setSelectedUserId(u.user_id);
+                                  setMultiClientSelections([{ clientId: "", categoryId: "" }]);
+                                  setAccessDialogOpen(true);
+                                }}
+                              >
+                                <Plus className="w-3 h-3" /> Adicionar cliente
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </TabsContent>
         </Tabs>
       </main>
