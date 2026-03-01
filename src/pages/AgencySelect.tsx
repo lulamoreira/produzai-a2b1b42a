@@ -6,6 +6,7 @@ import {
   useAgencies, useAddAgency, useUpdateAgency, useDeleteAgency,
   validateAndUploadLogo, MAX_LOGO_SIZE_KB, MAX_LOGO_DIMENSION, MIN_LOGO_DIMENSION,
 } from "@/hooks/useAgencies";
+import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,10 +32,18 @@ const AgencySelect = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
-  const { data: agencies = [], isLoading } = useAgencies();
+  const { data: allAgencies = [], isLoading } = useAgencies();
+  const { data: agencyAccess = [], isLoading: loadingAccess } = useUserAgencyAccess();
   const addAgency = useAddAgency();
   const updateAgency = useUpdateAgency();
   const deleteAgency = useDeleteAgency();
+
+  // Non-admin users only see agencies they have access to (not suspended)
+  const agencies = isAdmin
+    ? allAgencies
+    : allAgencies.filter((ag) =>
+        agencyAccess.some((a) => a.agency_id === ag.id && !a.suspended)
+      );
 
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState(PRESET_COLORS[0]);
@@ -114,7 +123,7 @@ const AgencySelect = () => {
     setEditDialogOpen(true);
   };
 
-  if (isLoading) {
+  if (isLoading || loadingAccess) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-10 h-10 border-3 border-primary border-t-transparent rounded-full" />
