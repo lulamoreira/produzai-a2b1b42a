@@ -86,9 +86,12 @@ const Auth = () => {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && !forgotPassword && (
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Nome de exibição" value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="pl-10" required={!isLogin} />
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-foreground">Como você quer ser chamado?</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Ex: João, Maria..." value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="pl-10" required={!isLogin} />
+                </div>
               </div>
             )}
             <div className="relative">
