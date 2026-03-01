@@ -38,6 +38,7 @@ const MODULES = [
   { key: "campaigns", label: "Campanhas" },
   { key: "stores", label: "Lojas" },
   { key: "pieces", label: "Peças" },
+  { key: "occurrences", label: "Ocorrências" },
 ] as const;
 
 const PERMISSIONS = [
@@ -55,6 +56,7 @@ const defaultCategoryForm = (): Omit<PermissionCategory, "id" | "created_at"> =>
   can_view_campaigns: true, can_edit_campaigns: false, can_delete_campaigns: false,
   can_view_stores: true, can_edit_stores: false, can_delete_stores: false,
   can_view_pieces: true, can_edit_pieces: false, can_delete_pieces: false,
+  can_view_occurrences: true, can_edit_occurrences: false, can_delete_occurrences: false,
 });
 
 const getCategoryField = (form: any, perm: PermKey, mod: ModuleKey): boolean => {

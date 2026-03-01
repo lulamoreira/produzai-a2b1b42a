@@ -619,14 +619,17 @@ export type Database = {
         Row: {
           can_delete_campaigns: boolean
           can_delete_clients: boolean
+          can_delete_occurrences: boolean
           can_delete_pieces: boolean
           can_delete_stores: boolean
           can_edit_campaigns: boolean
           can_edit_clients: boolean
+          can_edit_occurrences: boolean
           can_edit_pieces: boolean
           can_edit_stores: boolean
           can_view_campaigns: boolean
           can_view_clients: boolean
+          can_view_occurrences: boolean
           can_view_pieces: boolean
           can_view_stores: boolean
           created_at: string
@@ -636,14 +639,17 @@ export type Database = {
         Insert: {
           can_delete_campaigns?: boolean
           can_delete_clients?: boolean
+          can_delete_occurrences?: boolean
           can_delete_pieces?: boolean
           can_delete_stores?: boolean
           can_edit_campaigns?: boolean
           can_edit_clients?: boolean
+          can_edit_occurrences?: boolean
           can_edit_pieces?: boolean
           can_edit_stores?: boolean
           can_view_campaigns?: boolean
           can_view_clients?: boolean
+          can_view_occurrences?: boolean
           can_view_pieces?: boolean
           can_view_stores?: boolean
           created_at?: string
@@ -653,14 +659,17 @@ export type Database = {
         Update: {
           can_delete_campaigns?: boolean
           can_delete_clients?: boolean
+          can_delete_occurrences?: boolean
           can_delete_pieces?: boolean
           can_delete_stores?: boolean
           can_edit_campaigns?: boolean
           can_edit_clients?: boolean
+          can_edit_occurrences?: boolean
           can_edit_pieces?: boolean
           can_edit_stores?: boolean
           can_view_campaigns?: boolean
           can_view_clients?: boolean
+          can_view_occurrences?: boolean
           can_view_pieces?: boolean
           can_view_stores?: boolean
           created_at?: string

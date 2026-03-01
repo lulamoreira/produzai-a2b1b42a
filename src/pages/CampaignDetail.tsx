@@ -39,6 +39,7 @@ const CampaignDetail = () => {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const { hasPermission: canEditCampaign } = useClientPermission(clientId, "can_edit_campaigns");
+  const { hasPermission: canEditOccurrences } = useClientPermission(clientId, "can_edit_occurrences");
   const { data: client } = useClient(clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: stores = [] } = useClientStores(clientId);
@@ -1218,7 +1219,7 @@ const CampaignDetail = () => {
 
           {/* ─── TAB: OCORRÊNCIAS ─── */}
           <TabsContent value="occurrences">
-            <OccurrencesTab campaignId={campaignId!} stores={stores} pieces={pieces} canEdit={canEditCampaign} />
+            <OccurrencesTab campaignId={campaignId!} stores={stores} pieces={pieces} canEdit={canEditOccurrences} />
           </TabsContent>
         </Tabs>
       </main>
