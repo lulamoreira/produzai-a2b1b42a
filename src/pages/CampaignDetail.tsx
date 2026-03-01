@@ -10,6 +10,7 @@ import {
   type CampaignPiece, type ClientStore,
 } from "@/hooks/useMultiClientData";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useClientPermission } from "@/hooks/useClientPermission";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,6 +38,7 @@ const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
+  const { hasPermission: canEditCampaign } = useClientPermission(clientId, "can_edit_campaigns");
   const { data: client } = useClient(clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: stores = [] } = useClientStores(clientId);
@@ -1216,7 +1218,7 @@ const CampaignDetail = () => {
 
           {/* ─── TAB: OCORRÊNCIAS ─── */}
           <TabsContent value="occurrences">
-            <OccurrencesTab campaignId={campaignId!} stores={stores} pieces={pieces} canEdit={isAdmin} />
+            <OccurrencesTab campaignId={campaignId!} stores={stores} pieces={pieces} canEdit={canEditCampaign} />
           </TabsContent>
         </Tabs>
       </main>
