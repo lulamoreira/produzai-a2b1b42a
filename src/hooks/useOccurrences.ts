@@ -30,6 +30,23 @@ export type Occurrence = {
   photo_url: string | null;
   status: string | null;
   created_at: string | null;
+  location_in_store: string | null;
+  actions_taken: string | null;
+  needs_reinstallation: boolean | null;
+  reinstallation_os: string | null;
+  reinstallation_datetime: string | null;
+  agency_observation: string | null;
+  expected_resolution_date: string | null;
+  resolved_date: string | null;
+};
+
+export type OccurrenceComment = {
+  id: string;
+  occurrence_id: string;
+  user_id: string | null;
+  user_display_name: string;
+  content: string;
+  created_at: string;
 };
 
 export type CampaignEmail = {
@@ -168,10 +185,8 @@ export function useAddOccurrence() {
     }): Promise<string | null> => {
       const { data: inserted, error } = await supabase.from("occurrences").insert(data).select("id").maybeSingle();
       if (error) {
-        // Fallback: insert without returning (anon may not have SELECT)
         const { error: err2 } = await supabase.from("occurrences").insert(data);
         if (err2) throw err2;
-        // Fire-and-forget notification
         supabase.functions.invoke("notify-occurrence", { body: { record: data } }).catch(console.error);
         return null;
       }
@@ -194,6 +209,18 @@ export function useUpdateOccurrenceStatus() {
   });
 }
 
+export function useUpdateOccurrenceFields() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, campaignId, ...fields }: { id: string; campaignId: string; [key: string]: unknown }) => {
+      const { error } = await supabase.from("occurrences").update(fields).eq("id", id);
+      if (error) throw error;
+      return campaignId;
+    },
+    onSuccess: (campaignId) => qc.invalidateQueries({ queryKey: ["occurrences", campaignId as string] }),
+  });
+}
+
 export function useDeleteOccurrence() {
   const qc = useQueryClient();
   return useMutation({
@@ -203,6 +230,44 @@ export function useDeleteOccurrence() {
       return campaignId;
     },
     onSuccess: (campaignId) => qc.invalidateQueries({ queryKey: ["occurrences", campaignId] }),
+  });
+}
+
+// ─── Occurrence Comments ─────────────────────────────────
+export function useOccurrenceComments(occurrenceId?: string) {
+  return useQuery({
+    queryKey: ["occurrence_comments", occurrenceId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("occurrence_comments")
+        .select("*")
+        .eq("occurrence_id", occurrenceId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data as OccurrenceComment[];
+    },
+    enabled: !!occurrenceId,
+  });
+}
+
+export function useAddOccurrenceComment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ occurrenceId, userId, displayName, content }: {
+      occurrenceId: string;
+      userId: string;
+      displayName: string;
+      content: string;
+    }) => {
+      const { error } = await supabase.from("occurrence_comments").insert({
+        occurrence_id: occurrenceId,
+        user_id: userId,
+        user_display_name: displayName,
+        content,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: ["occurrence_comments", vars.occurrenceId] }),
   });
 }
 

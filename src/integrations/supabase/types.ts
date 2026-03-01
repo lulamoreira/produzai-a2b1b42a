@@ -500,6 +500,41 @@ export type Database = {
           },
         ]
       }
+      occurrence_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          occurrence_id: string
+          user_display_name: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          occurrence_id: string
+          user_display_name: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          occurrence_id?: string
+          user_display_name?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "occurrence_comments_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "occurrences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       occurrence_motives: {
         Row: {
           active: boolean | null
@@ -523,18 +558,21 @@ export type Database = {
       }
       occurrence_photos: {
         Row: {
+          category: string
           created_at: string
           id: string
           occurrence_id: string
           photo_url: string
         }
         Insert: {
+          category?: string
           created_at?: string
           id?: string
           occurrence_id: string
           photo_url: string
         }
         Update: {
+          category?: string
           created_at?: string
           id?: string
           occurrence_id?: string
@@ -585,35 +623,59 @@ export type Database = {
       }
       occurrences: {
         Row: {
+          actions_taken: string | null
+          agency_observation: string | null
           campaign_id: string
           created_at: string | null
           description: string | null
+          expected_resolution_date: string | null
           id: string
+          location_in_store: string | null
           motive_id: string | null
+          needs_reinstallation: boolean | null
           photo_url: string | null
           piece_id: string
+          reinstallation_datetime: string | null
+          reinstallation_os: string | null
+          resolved_date: string | null
           status: string | null
           store_id: string
         }
         Insert: {
+          actions_taken?: string | null
+          agency_observation?: string | null
           campaign_id: string
           created_at?: string | null
           description?: string | null
+          expected_resolution_date?: string | null
           id?: string
+          location_in_store?: string | null
           motive_id?: string | null
+          needs_reinstallation?: boolean | null
           photo_url?: string | null
           piece_id: string
+          reinstallation_datetime?: string | null
+          reinstallation_os?: string | null
+          resolved_date?: string | null
           status?: string | null
           store_id: string
         }
         Update: {
+          actions_taken?: string | null
+          agency_observation?: string | null
           campaign_id?: string
           created_at?: string | null
           description?: string | null
+          expected_resolution_date?: string | null
           id?: string
+          location_in_store?: string | null
           motive_id?: string | null
+          needs_reinstallation?: boolean | null
           photo_url?: string | null
           piece_id?: string
+          reinstallation_datetime?: string | null
+          reinstallation_os?: string | null
+          resolved_date?: string | null
           status?: string | null
           store_id?: string
         }
