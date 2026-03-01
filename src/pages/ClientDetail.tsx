@@ -20,7 +20,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare } from "lucide-react";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -47,6 +47,7 @@ function encodeFieldLabel(name: string, type: FieldType): string {
   return type === "text" ? name.trim() : `${name.trim()}|${type}`;
 }
 import { toast } from "sonner";
+import ChatTabContent from "@/components/ChatTabContent";
 import * as XLSX from "xlsx";
 
 function formatCep(value: string): string {
@@ -460,6 +461,7 @@ const ClientDetail = () => {
           <TabsList className="mb-6 bg-card border border-border">
             <TabsTrigger value="campaigns" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Megaphone className="w-4 h-4" /> Campanhas</TabsTrigger>
             <TabsTrigger value="stores" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Store className="w-4 h-4" /> Lojas</TabsTrigger>
+            <TabsTrigger value="chat" className="gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><MessageSquare className="w-4 h-4" /> Chat</TabsTrigger>
           </TabsList>
 
           {/* ─── Campaigns Tab ─── */}
@@ -811,6 +813,11 @@ const ClientDetail = () => {
                 </Table>
               </div>
             )}
+          </TabsContent>
+
+          {/* ─── Chat Tab ─── */}
+          <TabsContent value="chat">
+            <ChatTabContent />
           </TabsContent>
         </Tabs>
       </main>
