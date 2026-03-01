@@ -50,7 +50,8 @@ export function useDisplayName() {
     enabled: !!user,
   });
 
-  return profile?.display_name || user?.email?.split("@")[0] || "";
+  const raw = profile?.display_name || user?.email?.split("@")[0] || "";
+  return raw.replace(/\b\w/g, (c) => c.toUpperCase()).replace(/(?<=\w)\w+/g, (c) => c.toLowerCase());
 }
 
 export default function AppHeader({
