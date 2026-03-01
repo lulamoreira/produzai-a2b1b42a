@@ -712,16 +712,19 @@ export type Database = {
       }
       permission_categories: {
         Row: {
+          can_delete_campaign_stores: boolean
           can_delete_campaigns: boolean
           can_delete_clients: boolean
           can_delete_occurrences: boolean
           can_delete_pieces: boolean
           can_delete_stores: boolean
+          can_edit_campaign_stores: boolean
           can_edit_campaigns: boolean
           can_edit_clients: boolean
           can_edit_occurrences: boolean
           can_edit_pieces: boolean
           can_edit_stores: boolean
+          can_view_campaign_stores: boolean
           can_view_campaigns: boolean
           can_view_clients: boolean
           can_view_occurrences: boolean
@@ -732,16 +735,19 @@ export type Database = {
           name: string
         }
         Insert: {
+          can_delete_campaign_stores?: boolean
           can_delete_campaigns?: boolean
           can_delete_clients?: boolean
           can_delete_occurrences?: boolean
           can_delete_pieces?: boolean
           can_delete_stores?: boolean
+          can_edit_campaign_stores?: boolean
           can_edit_campaigns?: boolean
           can_edit_clients?: boolean
           can_edit_occurrences?: boolean
           can_edit_pieces?: boolean
           can_edit_stores?: boolean
+          can_view_campaign_stores?: boolean
           can_view_campaigns?: boolean
           can_view_clients?: boolean
           can_view_occurrences?: boolean
@@ -752,16 +758,19 @@ export type Database = {
           name: string
         }
         Update: {
+          can_delete_campaign_stores?: boolean
           can_delete_campaigns?: boolean
           can_delete_clients?: boolean
           can_delete_occurrences?: boolean
           can_delete_pieces?: boolean
           can_delete_stores?: boolean
+          can_edit_campaign_stores?: boolean
           can_edit_campaigns?: boolean
           can_edit_clients?: boolean
           can_edit_occurrences?: boolean
           can_edit_pieces?: boolean
           can_edit_stores?: boolean
+          can_view_campaign_stores?: boolean
           can_view_campaigns?: boolean
           can_view_clients?: boolean
           can_view_occurrences?: boolean

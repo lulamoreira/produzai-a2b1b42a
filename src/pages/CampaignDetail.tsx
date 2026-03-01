@@ -44,7 +44,7 @@ const CampaignDetail = () => {
   const { hasPermission: canDeleteOccurrences } = useClientPermission(clientId, "can_delete_occurrences");
   const { hasPermission: canEditPieces } = useClientPermission(clientId, "can_edit_pieces");
   const { hasPermission: canDeletePieces } = useClientPermission(clientId, "can_delete_pieces");
-  const { hasPermission: canEditStores } = useClientPermission(clientId, "can_edit_stores");
+  const { hasPermission: canEditCampaignStores } = useClientPermission(clientId, "can_edit_campaign_stores");
   const { data: client } = useClient(clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: stores = [] } = useClientStores(clientId);
@@ -559,7 +559,7 @@ const CampaignDetail = () => {
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1.5">
                           <span>Ativa</span>
-                          {canEditStores && (
+                          {canEditCampaignStores && (
                             <Switch
                               checked={allEnabled}
                               onCheckedChange={(checked) => {
@@ -622,7 +622,7 @@ const CampaignDetail = () => {
                                   upsertStoreStatus.mutate({ campaignId, storeId: store.id, enabled: checked });
                                 }
                               }}
-                              disabled={!canEditStores}
+                              disabled={!canEditCampaignStores}
                             />
                           </TableCell>
                           <TableCell className="text-center">
@@ -631,7 +631,7 @@ const CampaignDetail = () => {
                               onCheckedChange={(checked) => {
                                 updateClientStore.mutate({ id: store.id, auto_distribute: checked });
                               }}
-                              disabled={!canEditStores}
+                              disabled={!canEditCampaignStores}
                             />
                           </TableCell>
                           <TableCell className="text-center">
@@ -696,7 +696,7 @@ const CampaignDetail = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {canEditStores && (
+                      {canEditCampaignStores && (
                         <Button
                           size="sm"
                           className="text-xs gap-1 gradient-accent text-white border-0"
@@ -717,7 +717,7 @@ const CampaignDetail = () => {
                       <div className="text-center py-10">
                         <Package className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
                         <p className="text-sm text-muted-foreground">Nenhuma peça atribuída a esta loja.</p>
-                        {canEditStores && (
+                        {canEditCampaignStores && (
                           <Button size="sm" variant="outline" className="mt-3 text-xs gap-1" onClick={() => setAddPieceToStoreOpen(true)}>
                             <Plus className="w-3.5 h-3.5" /> Incluir primeira peça
                           </Button>
@@ -785,20 +785,20 @@ const CampaignDetail = () => {
                                 ) : (
                                   <button
                                     onClick={() => {
-                                      if (!canEditStores) return;
+                                      if (!canEditCampaignStores) return;
                                       setStoreEditingPieceId(p.id);
                                       setStoreEditQtyValue(String(p.quantity));
                                     }}
                                     className="flex items-center gap-1.5 text-sm font-bold text-foreground hover:text-primary transition-colors"
-                                    disabled={!canEditStores}
+                                    disabled={!canEditCampaignStores}
                                   >
                                     <Package className="w-3.5 h-3.5" />
                                     {p.quantity} un.
-                                    {canEditStores && <Edit3 className="w-3 h-3 text-muted-foreground" />}
+                                    {canEditCampaignStores && <Edit3 className="w-3 h-3 text-muted-foreground" />}
                                   </button>
                                 )}
 
-                                {canEditStores && (
+                                {canEditCampaignStores && (
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive">

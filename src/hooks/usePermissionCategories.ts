@@ -14,6 +14,9 @@ export type PermissionCategory = {
   can_view_stores: boolean;
   can_edit_stores: boolean;
   can_delete_stores: boolean;
+  can_view_campaign_stores: boolean;
+  can_edit_campaign_stores: boolean;
+  can_delete_campaign_stores: boolean;
   can_view_pieces: boolean;
   can_edit_pieces: boolean;
   can_delete_pieces: boolean;
