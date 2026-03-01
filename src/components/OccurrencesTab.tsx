@@ -37,6 +37,7 @@ interface Props {
   campaignId: string;
   stores: ClientStore[];
   pieces: CampaignPiece[];
+  canEdit?: boolean;
 }
 
 const statusColors: Record<string, string> = {
@@ -51,8 +52,9 @@ const statusLabels: Record<string, string> = {
   rejected: "Rejeitada",
 };
 
-const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
+const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Props) => {
   const { isAdmin } = useUserRole();
+  const canEdit = canEditProp ?? isAdmin;
   const { data: occurrences = [], isLoading } = useOccurrences(campaignId);
   const { data: motives = [] } = useOccurrenceMotives();
   const { data: emails = [] } = useCampaignEmails(campaignId);
@@ -185,7 +187,7 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
             <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Abrir formulário
           </Button>
         </a>
-        {isAdmin && (
+        {canEdit && (
           <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
             <Settings className="w-3.5 h-3.5 mr-1.5" /> Configurar
           </Button>
@@ -233,7 +235,7 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
                     <Calendar className="w-3 h-3" />
                     {occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}
                   </span>
-                  {isAdmin ? (
+                  {canEdit ? (
                     <Select
                       value={occ.status || "pending"}
                       onValueChange={(val) => updateStatus.mutate({ id: occ.id, status: val, campaignId })}
@@ -291,7 +293,7 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
                 )}
 
                 {/* Actions */}
-                {isAdmin && (
+                {canEdit && (
                   <div className="flex items-center justify-end gap-1 mt-3 pt-2 border-t border-border/50">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
