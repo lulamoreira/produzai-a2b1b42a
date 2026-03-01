@@ -852,6 +852,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_agency_access: {
+        Row: {
+          agency_id: string
+          can_edit: boolean
+          category_id: string | null
+          created_at: string
+          id: string
+          suspended: boolean
+          user_id: string
+        }
+        Insert: {
+          agency_id: string
+          can_edit?: boolean
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          suspended?: boolean
+          user_id: string
+        }
+        Update: {
+          agency_id?: string
+          can_edit?: boolean
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          suspended?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_agency_access_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_agency_access_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "permission_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_client_access: {
         Row: {
           can_edit: boolean
