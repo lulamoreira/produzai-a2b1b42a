@@ -30,11 +30,35 @@ const PRESET_COLORS = [
   "#06b6d4", "#3b82f6", "#1e293b", "#64748b",
 ];
 
+const getGreeting = () => {
+  const h = new Date().getHours();
+  if (h < 12) return "Bom dia";
+  if (h < 18) return "Boa tarde";
+  return "Boa noite";
+};
+
 const AgencySelect = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const { data: allAgencies = [], isLoading } = useAgencies();
+
+  // Fetch user's display_name from profile
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const displayName = profile?.display_name || user?.email?.split("@")[0] || "";
   const { data: agencyAccess = [], isLoading: loadingAccess } = useUserAgencyAccess();
   const addAgency = useAddAgency();
   const updateAgency = useUpdateAgency();
@@ -217,7 +241,7 @@ const AgencySelect = () => {
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-foreground">Gestão de Campanhas</h1>
+              <h1 className="text-lg font-bold text-foreground">{getGreeting()}, {displayName}!</h1>
               <p className="text-xs text-muted-foreground">Selecione uma agência</p>
             </div>
           </div>
@@ -234,9 +258,9 @@ const AgencySelect = () => {
               <DropdownMenuTrigger asChild>
                 <Button size="sm" variant="ghost" className="gap-1.5 rounded-full px-3">
                   <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center">
-                    <span className="text-xs font-bold text-white">{user?.email?.charAt(0).toUpperCase()}</span>
+                    <span className="text-xs font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
                   </div>
-                  <span className="hidden sm:inline text-xs max-w-[100px] truncate">{user?.email?.split("@")[0]}</span>
+                  <span className="hidden sm:inline text-xs max-w-[120px] truncate">{displayName}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
