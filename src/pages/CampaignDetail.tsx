@@ -696,7 +696,7 @@ const CampaignDetail = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {canEditCampaign && (
+                      {canEditStores && (
                         <Button
                           size="sm"
                           className="text-xs gap-1 gradient-accent text-white border-0"
@@ -717,7 +717,7 @@ const CampaignDetail = () => {
                       <div className="text-center py-10">
                         <Package className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
                         <p className="text-sm text-muted-foreground">Nenhuma peça atribuída a esta loja.</p>
-                        {canEditCampaign && (
+                        {canEditStores && (
                           <Button size="sm" variant="outline" className="mt-3 text-xs gap-1" onClick={() => setAddPieceToStoreOpen(true)}>
                             <Plus className="w-3.5 h-3.5" /> Incluir primeira peça
                           </Button>
@@ -785,20 +785,20 @@ const CampaignDetail = () => {
                                 ) : (
                                   <button
                                     onClick={() => {
-                                      if (!canEditCampaign) return;
+                                      if (!canEditStores) return;
                                       setStoreEditingPieceId(p.id);
                                       setStoreEditQtyValue(String(p.quantity));
                                     }}
                                     className="flex items-center gap-1.5 text-sm font-bold text-foreground hover:text-primary transition-colors"
-                                    disabled={!canEditCampaign}
+                                    disabled={!canEditStores}
                                   >
                                     <Package className="w-3.5 h-3.5" />
                                     {p.quantity} un.
-                                    {canEditCampaign && <Edit3 className="w-3 h-3 text-muted-foreground" />}
+                                    {canEditStores && <Edit3 className="w-3 h-3 text-muted-foreground" />}
                                   </button>
                                 )}
 
-                                {canDeletePieces && (
+                                {canEditStores && (
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive">
