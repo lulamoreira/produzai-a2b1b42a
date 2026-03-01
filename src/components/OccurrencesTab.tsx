@@ -28,6 +28,7 @@ import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, Q
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
+import OccurrencesDashboard from "./OccurrencesDashboard";
 
 interface Props {
   campaignId: string;
@@ -154,6 +155,11 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
         )}
         <span className="ml-auto text-sm text-muted-foreground">{occurrences.length} ocorrência(s)</span>
       </div>
+
+      {/* Dashboard */}
+      {!isLoading && occurrences.length > 0 && (
+        <OccurrencesDashboard occurrences={occurrences} stores={stores} pieces={pieces} motives={motives} />
+      )}
 
       {/* Occurrences list */}
       {isLoading ? (
