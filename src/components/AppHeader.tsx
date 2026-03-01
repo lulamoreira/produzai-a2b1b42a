@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
+import { capitalizeName } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -51,7 +52,7 @@ export function useDisplayName() {
   });
 
   const raw = profile?.display_name || user?.email?.split("@")[0] || "";
-  return raw.replace(/\b\w/g, (c) => c.toUpperCase()).replace(/(?<=\w)\w+/g, (c) => c.toLowerCase());
+  return capitalizeName(raw);
 }
 
 export default function AppHeader({

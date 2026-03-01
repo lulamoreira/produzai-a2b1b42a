@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { capitalizeName } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAdminUsers, useUpdateUserRole } from "@/hooks/useAdminUsers";
 import {
@@ -282,7 +283,7 @@ const Admin = () => {
                       return (
                       <TableRow key={u.user_id}>
                         <TableCell>
-                          <p className="font-medium text-foreground text-sm">{u.display_name || "Sem nome"}</p>
+                          <p className="font-medium text-foreground text-sm">{capitalizeName(u.display_name) || "Sem nome"}</p>
                           <p className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
                         </TableCell>
                         <TableCell>
@@ -483,7 +484,7 @@ const Admin = () => {
                         <SelectTrigger><SelectValue placeholder="Selecione o usuário" /></SelectTrigger>
                         <SelectContent>
                           {users.filter(u => u.role !== "admin").map(u => (
-                            <SelectItem key={u.user_id} value={u.user_id}>{u.display_name || u.user_id.slice(0, 8)}</SelectItem>
+                            <SelectItem key={u.user_id} value={u.user_id}>{capitalizeName(u.display_name) || u.user_id.slice(0, 8)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -543,7 +544,7 @@ const Admin = () => {
                         >
                           {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-foreground text-sm truncate">{u.display_name || "Sem nome"}</p>
+                            <p className="font-medium text-foreground text-sm truncate">{capitalizeName(u.display_name) || "Sem nome"}</p>
                             <p className="text-[11px] text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
                           </div>
                           <Badge variant="outline" className="text-[10px]">
@@ -674,7 +675,7 @@ const Admin = () => {
                         <SelectTrigger><SelectValue placeholder="Selecione o usuário" /></SelectTrigger>
                         <SelectContent>
                           {users.filter((u) => u.role !== "admin").map((u) => (
-                            <SelectItem key={u.user_id} value={u.user_id}>{u.display_name || u.user_id.slice(0, 8)}</SelectItem>
+                            <SelectItem key={u.user_id} value={u.user_id}>{capitalizeName(u.display_name) || u.user_id.slice(0, 8)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -742,7 +743,7 @@ const Admin = () => {
                         >
                           {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-foreground text-sm truncate">{u.display_name || "Sem nome"}</p>
+                            <p className="font-medium text-foreground text-sm truncate">{capitalizeName(u.display_name) || "Sem nome"}</p>
                             <p className="text-[11px] text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
                           </div>
                           <Badge variant="outline" className="text-[10px]">

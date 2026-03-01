@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { capitalizeName } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useConversations,
@@ -131,7 +132,7 @@ const Chat = () => {
                     className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors flex items-center gap-2"
                   >
                     <UserCircle className="w-4 h-4 text-muted-foreground" />
-                    {u.display_name || "Usuário"}
+                    {capitalizeName(u.display_name) || "Usuário"}
                   </button>
                 ))}
                 {allUsers.length === 0 && (
@@ -163,7 +164,7 @@ const Chat = () => {
                   }`}
                 >
                   <p className="text-sm font-medium text-foreground truncate">
-                    {conv.other_user?.display_name || "Usuário"}
+                    {capitalizeName(conv.other_user?.display_name) || "Usuário"}
                   </p>
                   {conv.last_message && (
                     <p className="text-xs text-muted-foreground truncate mt-0.5">
@@ -196,7 +197,7 @@ const Chat = () => {
                 </Button>
                 <UserCircle className="w-5 h-5 text-muted-foreground" />
                 <span className="font-medium text-sm">
-                  {selectedConv?.other_user?.display_name || "Usuário"}
+                  {capitalizeName(selectedConv?.other_user?.display_name) || "Usuário"}
                 </span>
               </div>
 

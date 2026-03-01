@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { capitalizeName } from "@/lib/utils";
 import { useAllUsersApproval, useUpdateApprovalStatus, type ApprovalStatus } from "@/hooks/useUserApproval";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
@@ -136,7 +137,7 @@ const UserApprovals = () => {
                       }
                     >
                       <TableCell>
-                        <p className="font-medium text-foreground text-sm">{u.display_name || "Sem nome"}</p>
+                        <p className="font-medium text-foreground text-sm">{capitalizeName(u.display_name) || "Sem nome"}</p>
                         <p className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
