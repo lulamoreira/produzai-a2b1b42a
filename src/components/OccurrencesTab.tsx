@@ -306,6 +306,11 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Pr
                 {/* Share & Actions Footer */}
                 <div className="flex items-center justify-between gap-1 mt-3 pt-2 border-t border-border/50">
                   <div className="flex items-center gap-1">
+                    <a href={`https://harry2025.lovable.app/ocorrencia/${occ.id}`} target="_blank" rel="noopener noreferrer">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Ver página pública">
+                        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                      </Button>
+                    </a>
                     <Button
                       variant="ghost"
                       size="icon"
