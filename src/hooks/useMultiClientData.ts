@@ -7,6 +7,7 @@ import { toast } from "sonner";
 export type Client = {
   id: string;
   name: string;
+  agency_id: string;
   custom_field_1_label: string | null;
   custom_field_2_label: string | null;
   custom_field_3_label: string | null;
