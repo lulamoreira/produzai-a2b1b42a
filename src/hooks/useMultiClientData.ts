@@ -79,6 +79,7 @@ export type UserClientAccess = {
   client_id: string;
   can_edit: boolean;
   category_id: string | null;
+  suspended: boolean;
   created_at: string;
 };
 
@@ -421,9 +422,10 @@ export function useAddUserClientAccess() {
 export function useUpdateUserClientAccess() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, can_edit, category_id }: { id: string; can_edit: boolean; category_id?: string }) => {
+    mutationFn: async ({ id, can_edit, category_id, suspended }: { id: string; can_edit: boolean; category_id?: string; suspended?: boolean }) => {
       const updateData: any = { can_edit };
       if (category_id !== undefined) updateData.category_id = category_id;
+      if (suspended !== undefined) updateData.suspended = suspended;
       const { error } = await supabase.from("user_client_access").update(updateData).eq("id", id);
       if (error) throw error;
     },

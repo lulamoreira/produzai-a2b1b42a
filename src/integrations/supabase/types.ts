@@ -859,6 +859,7 @@ export type Database = {
           client_id: string
           created_at: string
           id: string
+          suspended: boolean
           user_id: string
         }
         Insert: {
@@ -867,6 +868,7 @@ export type Database = {
           client_id: string
           created_at?: string
           id?: string
+          suspended?: boolean
           user_id: string
         }
         Update: {
@@ -875,6 +877,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           id?: string
+          suspended?: boolean
           user_id?: string
         }
         Relationships: [
