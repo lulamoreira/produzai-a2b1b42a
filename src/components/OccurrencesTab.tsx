@@ -8,6 +8,8 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
+import { useCampaignPieceLocations } from "@/hooks/useMultiClientData";
+import OccurrenceDetailFields from "./OccurrenceDetailFields";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,6 +50,7 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp, canD
   const canEdit = canEditProp ?? isAdmin;
   const canDelete = canDeleteProp ?? isAdmin;
   const { data: occurrences = [], isLoading } = useOccurrences(campaignId);
+  const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: motives = [] } = useOccurrenceMotives();
   const { data: emails = [] } = useCampaignEmails(campaignId);
   const { data: statuses = [] } = useOccurrenceStatuses();
@@ -305,7 +308,15 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp, canD
                   </div>
                 )}
 
-                {/* Share & Actions Footer */}
+                {/* Detail fields (all 9 new fields) */}
+                <OccurrenceDetailFields
+                  occ={occ}
+                  campaignId={campaignId}
+                  pieceLocations={pieceLocations}
+                  canEdit={canEdit}
+                />
+
+
                 <div className="flex items-center justify-between gap-1 mt-3 pt-2 border-t border-border/50">
                   <div className="flex items-center gap-1">
                     <a href={`https://harry2025.lovable.app/ocorrencia/${occ.id}`} target="_blank" rel="noopener noreferrer">
