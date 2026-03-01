@@ -783,26 +783,30 @@ const ClientDetail = () => {
                         {(canEditStores || canDeleteStores) && (
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditStore(s)}>
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Excluir loja?</AlertDialogTitle>
-                                    <AlertDialogDescription>A loja será removida de todas as campanhas.</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deleteStore.mutate(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              {canEditStores && (
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditStore(s)}>
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                              {canDeleteStores && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir loja?</AlertDialogTitle>
+                                      <AlertDialogDescription>A loja será removida de todas as campanhas.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => deleteStore.mutate(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
                             </div>
                           </TableCell>
                         )}
