@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useUserApprovalStatus } from "@/hooks/useUserApproval";
 import { useUserRole } from "@/hooks/useUserRole";
 import { PendingUsersAlert } from "@/components/PendingUsersAlert";
+import { NameConfirmDialog } from "@/components/NameConfirmDialog";
 import AgencySelect from "./pages/AgencySelect";
 import Dashboard from "./pages/Dashboard";
 import ClientDetail from "./pages/ClientDetail";
@@ -66,6 +67,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return (
     <>
       <PendingUsersAlert />
+      <NameConfirmDialog />
       {children}
     </>
   );
