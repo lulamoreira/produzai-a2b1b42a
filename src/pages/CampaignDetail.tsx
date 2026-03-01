@@ -1216,7 +1216,7 @@ const CampaignDetail = () => {
 
           {/* ─── TAB: OCORRÊNCIAS ─── */}
           <TabsContent value="occurrences">
-            <OccurrencesTab campaignId={campaignId!} stores={stores} pieces={pieces} />
+            <OccurrencesTab campaignId={campaignId!} stores={stores} pieces={pieces} canEdit={isAdmin} />
           </TabsContent>
         </Tabs>
       </main>
