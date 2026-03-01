@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
@@ -303,9 +303,32 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Pr
                   </div>
                 )}
 
-                {/* Actions */}
-                {canEdit && (
-                  <div className="flex items-center justify-end gap-1 mt-3 pt-2 border-t border-border/50">
+                {/* Share & Actions Footer */}
+                <div className="flex items-center justify-between gap-1 mt-3 pt-2 border-t border-border/50">
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      title="Copiar link"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`https://harry2025.lovable.app/ocorrencia/${occ.id}`);
+                        toast.success("Link copiado!");
+                      }}
+                    >
+                      <Link2 className="w-3.5 h-3.5 text-primary" />
+                    </Button>
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(`Ocorrência: https://harry2025.lovable.app/ocorrencia/${occ.id}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Enviar por WhatsApp">
+                        <MessageCircle className="w-3.5 h-3.5 text-success" />
+                      </Button>
+                    </a>
+                  </div>
+                  {canEdit && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -325,8 +348,8 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Pr
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             );
           })}

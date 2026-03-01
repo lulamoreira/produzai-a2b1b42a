@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 import Admin from "./pages/Admin";
 import UserApprovals from "./pages/UserApprovals";
 import PublicOccurrence from "./pages/PublicOccurrence";
+import PublicOccurrenceDetail from "./pages/PublicOccurrenceDetail";
 import Chat from "./pages/Chat";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,7 @@ const App = () => (
             <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
+            <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
             <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
