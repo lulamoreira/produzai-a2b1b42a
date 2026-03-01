@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   useOccurrences, useUpdateOccurrenceStatus, useDeleteOccurrence,
   useCampaignEmails, useAddCampaignEmail, useDeleteCampaignEmail,
@@ -24,8 +24,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download } from "lucide-react";
 import { toast } from "sonner";
+import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
 
 interface Props {
@@ -60,9 +61,30 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
   const deleteMotive = useDeleteOccurrenceMotive();
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newMotive, setNewMotive] = useState("");
   const [viewPhoto, setViewPhoto] = useState<string | null>(null);
+  const qrRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadQR = () => {
+    const svg = qrRef.current?.querySelector("svg");
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = 512;
+      canvas.height = 512;
+      ctx?.drawImage(img, 0, 0, 512, 512);
+      const a = document.createElement("a");
+      a.download = `qrcode-ocorrencias-${campaignId}.png`;
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+  };
 
   const publicLink = `https://harry2025.lovable.app/ocorrencias/${campaignId}`;
 
@@ -116,6 +138,9 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" onClick={handleCopyLink}>
           <Copy className="w-3.5 h-3.5 mr-1.5" /> Copiar link público
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => setQrOpen(true)}>
+          <QrCode className="w-3.5 h-3.5 mr-1.5" /> QR Code
         </Button>
         <a href={publicLink} target="_blank" rel="noopener noreferrer">
           <Button variant="outline" size="sm">
@@ -223,6 +248,24 @@ const OccurrencesTab = ({ campaignId, stores, pieces }: Props) => {
             <DialogTitle>Foto da Ocorrência</DialogTitle>
           </DialogHeader>
           {viewPhoto && <img src={viewPhoto} alt="Ocorrência" className="w-full rounded-lg" />}
+        </DialogContent>
+      </Dialog>
+
+      {/* QR Code dialog */}
+      <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+        <DialogContent className="sm:max-w-xs">
+          <DialogHeader>
+            <DialogTitle>QR Code - Ocorrências</DialogTitle>
+            <DialogDescription>Escaneie para abrir o formulário público.</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div ref={qrRef} className="bg-white p-4 rounded-xl">
+              <QRCodeSVG value={publicLink} size={200} level="M" />
+            </div>
+            <Button variant="outline" size="sm" onClick={handleDownloadQR}>
+              <Download className="w-3.5 h-3.5 mr-1.5" /> Baixar PNG
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 
