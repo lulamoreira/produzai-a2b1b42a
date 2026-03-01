@@ -71,6 +71,12 @@ const getCategoryField = (form: any, perm: PermKey, mod: ModuleKey): boolean => 
   return form[`can_${perm}_${mod}`] ?? false;
 };
 
+const categoryHasEditPermission = (categoryId: string, cats: PermissionCategory[]): boolean => {
+  const cat = cats.find(c => c.id === categoryId);
+  if (!cat) return false;
+  return cat.can_edit_clients || cat.can_edit_campaigns || cat.can_edit_stores || cat.can_edit_pieces || cat.can_edit_occurrences;
+};
+
 const setCategoryField = (form: any, perm: PermKey, mod: ModuleKey, val: boolean) => {
   return { ...form, [`can_${perm}_${mod}`]: val };
 };
@@ -157,7 +163,7 @@ const Admin = () => {
       addAccess.mutate({
         user_id: selectedUserId,
         client_id: s.clientId,
-        can_edit: false,
+        can_edit: categoryHasEditPermission(s.categoryId, categories),
         category_id: s.categoryId,
       });
     });
@@ -178,6 +184,7 @@ const Admin = () => {
       user_id: agencySelectedUserId,
       agency_id: agencySelectedAgencyId,
       category_id: agencySelectedCategoryId,
+      can_edit: categoryHasEditPermission(agencySelectedCategoryId, categories),
     });
     setAgencyAccessDialogOpen(false);
     setAgencySelectedUserId("");
@@ -298,7 +305,7 @@ const Admin = () => {
                                     <span className="text-xs text-muted-foreground min-w-[80px] truncate">{getClientLabel(c)}</span>
                                     <Select
                                       value={a.category_id || ""}
-                                      onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: false, category_id: val })}
+onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: categoryHasEditPermission(val, categories), category_id: val })}
                                     >
                                       <SelectTrigger className="w-[140px] h-7 text-xs"><SelectValue placeholder="Sem role" /></SelectTrigger>
                                       <SelectContent>
@@ -580,7 +587,7 @@ const Admin = () => {
                                         <TableCell>
                                           <Select
                                             value={a.category_id || ""}
-                                            onValueChange={(val) => updateAgencyAccess.mutate({ id: a.id, category_id: val })}
+                                            onValueChange={(val) => updateAgencyAccess.mutate({ id: a.id, category_id: val, can_edit: categoryHasEditPermission(val, categories) })}
                                           >
                                             <SelectTrigger className="w-[140px] h-7 text-xs"><SelectValue placeholder="Sem role" /></SelectTrigger>
                                             <SelectContent>
@@ -779,7 +786,7 @@ const Admin = () => {
                                         <TableCell>
                                           <Select
                                             value={a.category_id || ""}
-                                            onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: false, category_id: val })}
+                                            onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: categoryHasEditPermission(val, categories), category_id: val })}
                                           >
                                             <SelectTrigger className="w-[140px] h-7 text-xs"><SelectValue placeholder="Sem role" /></SelectTrigger>
                                             <SelectContent>
