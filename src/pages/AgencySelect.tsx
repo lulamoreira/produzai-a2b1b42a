@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import {
@@ -7,6 +8,7 @@ import {
   validateAndUploadLogo, MAX_LOGO_SIZE_KB, MAX_LOGO_DIMENSION, MIN_LOGO_DIMENSION,
 } from "@/hooks/useAgencies";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -38,12 +40,31 @@ const AgencySelect = () => {
   const updateAgency = useUpdateAgency();
   const deleteAgency = useDeleteAgency();
 
-  // Non-admin users only see agencies they have access to (not suspended)
+  // Fetch client-level access to derive agency visibility
+  const { data: clientAccess = [], isLoading: loadingClientAccess } = useQuery({
+    queryKey: ["user_client_access_agencies", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("user_client_access")
+        .select("client_id, suspended, clients(agency_id)")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return data as { client_id: string; suspended: boolean; clients: { agency_id: string } | null }[];
+    },
+    enabled: !!user && !isAdmin,
+  });
+
+  // Non-admin users see agencies if they have direct agency access OR access to any client in that agency
   const agencies = isAdmin
     ? allAgencies
-    : allAgencies.filter((ag) =>
-        agencyAccess.some((a) => a.agency_id === ag.id && !a.suspended)
-      );
+    : allAgencies.filter((ag) => {
+        const hasAgencyAccess = agencyAccess.some((a) => a.agency_id === ag.id && !a.suspended);
+        const hasClientInAgency = clientAccess.some(
+          (ca) => ca.clients?.agency_id === ag.id && !ca.suspended
+        );
+        return hasAgencyAccess || hasClientInAgency;
+      });
 
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState(PRESET_COLORS[0]);
@@ -123,7 +144,7 @@ const AgencySelect = () => {
     setEditDialogOpen(true);
   };
 
-  if (isLoading || loadingAccess) {
+  if (isLoading || loadingAccess || loadingClientAccess) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-10 h-10 border-3 border-primary border-t-transparent rounded-full" />
