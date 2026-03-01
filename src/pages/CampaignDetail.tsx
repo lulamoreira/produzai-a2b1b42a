@@ -41,6 +41,7 @@ const CampaignDetail = () => {
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaign } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canEditOccurrences } = useClientPermission(clientId, "can_edit_occurrences");
+  const { hasPermission: canDeleteOccurrences } = useClientPermission(clientId, "can_delete_occurrences");
   const { hasPermission: canEditPieces } = useClientPermission(clientId, "can_edit_pieces");
   const { hasPermission: canDeletePieces } = useClientPermission(clientId, "can_delete_pieces");
   const { hasPermission: canEditStores } = useClientPermission(clientId, "can_edit_stores");
@@ -1168,7 +1169,7 @@ const CampaignDetail = () => {
                           {(canEditPieces || canDeletePieces) && (
                             <TableCell>
                               <div className="flex items-center gap-1">
-                                {(() => {
+                                {canEditPieces && (() => {
                                   const autoStores = stores.filter(s => s.auto_distribute);
                                   const targetStores = p.store_category === "Outras" || !p.store_category
                                     ? autoStores
@@ -1180,26 +1181,30 @@ const CampaignDetail = () => {
                                     </Button>
                                   );
                                 })()}
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditPiece(p)}>
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Excluir peça?</AlertDialogTitle>
-                                      <AlertDialogDescription>A peça será removida de todas as lojas desta campanha.</AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => deletePiece.mutate(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                                {canEditPieces && (
+                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditPiece(p)}>
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </Button>
+                                )}
+                                {canDeletePieces && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Excluir peça?</AlertDialogTitle>
+                                        <AlertDialogDescription>A peça será removida de todas as lojas desta campanha.</AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => deletePiece.mutate(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
                               </div>
                             </TableCell>
                           )}
@@ -1214,7 +1219,7 @@ const CampaignDetail = () => {
 
           {/* ─── TAB: OCORRÊNCIAS ─── */}
           <TabsContent value="occurrences">
-            <OccurrencesTab campaignId={campaignId!} stores={stores} pieces={pieces} canEdit={canEditOccurrences} />
+            <OccurrencesTab campaignId={campaignId!} stores={stores} pieces={pieces} canEdit={canEditOccurrences} canDelete={canDeleteOccurrences} />
           </TabsContent>
         </Tabs>
       </main>

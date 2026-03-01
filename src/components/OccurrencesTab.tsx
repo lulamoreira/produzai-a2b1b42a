@@ -39,12 +39,14 @@ interface Props {
   stores: ClientStore[];
   pieces: CampaignPiece[];
   canEdit?: boolean;
+  canDelete?: boolean;
 }
 
 
-const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Props) => {
+const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp, canDelete: canDeleteProp }: Props) => {
   const { isAdmin } = useUserRole();
   const canEdit = canEditProp ?? isAdmin;
+  const canDelete = canDeleteProp ?? isAdmin;
   const { data: occurrences = [], isLoading } = useOccurrences(campaignId);
   const { data: motives = [] } = useOccurrenceMotives();
   const { data: emails = [] } = useCampaignEmails(campaignId);
@@ -333,7 +335,7 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp }: Pr
                       </Button>
                     </a>
                   </div>
-                  {canEdit && (
+                  {canDelete && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-7 w-7">
