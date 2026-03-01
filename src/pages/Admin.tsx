@@ -97,6 +97,12 @@ const Admin = () => {
   const updateAgencyAccess = useUpdateUserAgencyAccess();
   const deleteAgencyAccess = useDeleteUserAgencyAccess();
 
+  const getClientLabel = (client: { name: string; agency_id?: string } | undefined) => {
+    if (!client) return "—";
+    const ag = agencies.find(a => a.id === (client as any).agency_id);
+    return ag ? `${ag.name} / ${client.name}` : client.name;
+  };
+
   // Access dialog state
   const [accessDialogOpen, setAccessDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
@@ -291,7 +297,7 @@ const Admin = () => {
                                 const c = clients.find((c) => c.id === a.client_id);
                                 return (
                                   <div key={a.id} className="flex items-center gap-2">
-                                    <span className="text-xs text-muted-foreground min-w-[80px] truncate">{c?.name || "—"}</span>
+                                    <span className="text-xs text-muted-foreground min-w-[80px] truncate">{getClientLabel(c)}</span>
                                     <Select
                                       value={a.category_id || ""}
                                       onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: false, category_id: val })}
@@ -685,7 +691,7 @@ const Admin = () => {
                             <SelectTrigger className="flex-1"><SelectValue placeholder="Cliente" /></SelectTrigger>
                             <SelectContent>
                               {clients.map((c) => (
-                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                <SelectItem key={c.id} value={c.id}>{getClientLabel(c)}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -771,7 +777,7 @@ const Admin = () => {
                                     const c = clients.find(c => c.id === a.client_id);
                                     return (
                                       <TableRow key={a.id} className={a.suspended ? "opacity-50" : ""}>
-                                        <TableCell className="text-sm">{c?.name || a.client_id.slice(0, 8)}</TableCell>
+                                        <TableCell className="text-sm">{getClientLabel(c)}</TableCell>
                                         <TableCell>
                                           <Select
                                             value={a.category_id || ""}
@@ -807,7 +813,7 @@ const Admin = () => {
                                               </AlertDialogTrigger>
                                               <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                  <AlertDialogTitle>Remover acesso ao cliente "{c?.name}"?</AlertDialogTitle>
+                                                  <AlertDialogTitle>Remover acesso ao cliente "{getClientLabel(c)}"?</AlertDialogTitle>
                                                   <AlertDialogDescription>O usuário perderá todas as permissões neste cliente permanentemente.</AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
