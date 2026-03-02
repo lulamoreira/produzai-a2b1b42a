@@ -139,6 +139,7 @@ const ClientDetail = () => {
   const [storeDialogOpen, setStoreDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [storeSearch, setStoreSearch] = useState("");
+  const [storeStateFilter, setStoreStateFilter] = useState("");
   const [storeModelDialogOpen, setStoreModelDialogOpen] = useState(false);
   const [newModelName, setNewModelName] = useState("");
   const [enriching, setEnriching] = useState(false);
@@ -395,12 +396,16 @@ const ClientDetail = () => {
     setSettingsOpen(false);
   };
 
+  const storeStates = Array.from(new Set(stores.map((s) => s.state).filter(Boolean) as string[])).sort();
+
   const filteredStores = stores
-    .filter((s) =>
-      s.name.toLowerCase().includes(storeSearch.toLowerCase()) ||
-      s.nickname?.toLowerCase().includes(storeSearch.toLowerCase()) ||
-      s.city?.toLowerCase().includes(storeSearch.toLowerCase())
-    )
+    .filter((s) => {
+      if (storeStateFilter && storeStateFilter !== "all" && s.state !== storeStateFilter) return false;
+      const q = storeSearch.toLowerCase();
+      return !q || s.name.toLowerCase().includes(q) ||
+        s.nickname?.toLowerCase().includes(q) ||
+        s.city?.toLowerCase().includes(q);
+    })
     .sort((a, b) => {
       const stateA = (a.state || "").localeCompare(b.state || "");
       if (stateA !== 0) return stateA;
@@ -744,8 +749,19 @@ const ClientDetail = () => {
                 <div className="w-10 h-10 rounded-lg bg-info flex items-center justify-center">
                   <Search className="w-5 h-5 text-white" />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 flex gap-2">
                   <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
+                  <Select value={storeStateFilter} onValueChange={setStoreStateFilter}>
+                    <SelectTrigger className="h-8 text-xs w-[120px] shrink-0">
+                      <SelectValue placeholder="UF" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      {storeStates.map((uf) => (
+                        <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="card-kpi col-span-2 sm:col-span-1">
