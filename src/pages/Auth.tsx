@@ -96,7 +96,7 @@ const Auth = () => {
           <p className="text-white/80 text-sm font-medium uppercase tracking-widest mb-2">
             {slides[currentSlide].label}
           </p>
-          <h2 className="text-white text-3xl font-display font-bold leading-tight">Controle materiais, prazos e instalações sem perder nada.
+          <h2 className="text-white text-3xl font-display font-bold leading-tight">Transforme ideias em produção com organização e clareza.
             <br />criativa em um só lugar.
           </h2>
           {/* Dots */}
