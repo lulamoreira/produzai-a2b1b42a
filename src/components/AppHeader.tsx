@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useUserPermissionLevel } from "@/hooks/useUserPermissionLevel";
 import { supabase } from "@/integrations/supabase/client";
 import { capitalizeName } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -66,6 +67,7 @@ export default function AppHeader({
 }: AppHeaderProps) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
+  const { isMasterOrEditor } = useUserPermissionLevel();
   const navigate = useNavigate();
   const displayName = useDisplayName();
 
@@ -99,7 +101,7 @@ export default function AppHeader({
                 <MessageSquare className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline text-xs">Chat</span>
               </Button>
-              {isAdmin && (
+              {(isAdmin || isMasterOrEditor) && (
                 <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1" onClick={() => navigate("/admin")}>
                   <Shield className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline text-xs">Admin</span>
