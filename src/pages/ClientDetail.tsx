@@ -735,58 +735,42 @@ const ClientDetail = () => {
           {/* ─── Stores Tab ─── */}
           <TabsContent value="stores">
             {/* Stats + Actions */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-              <div className="card-kpi flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center shadow-glow-secondary">
-                  <Store className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{stores.length}</p>
-                  <p className="text-[11px] text-muted-foreground">Lojas</p>
-                </div>
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <span className="text-sm font-semibold text-foreground">{stores.length} lojas</span>
+              <div className="flex-1 min-w-[120px] max-w-xs">
+                <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
               </div>
-              <div className="card-kpi flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-info flex items-center justify-center">
-                  <Search className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1 flex gap-2">
-                  <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
-                  <Select value={storeStateFilter} onValueChange={setStoreStateFilter}>
-                    <SelectTrigger className="h-8 text-xs w-[120px] shrink-0">
-                      <SelectValue placeholder="UF" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos</SelectItem>
-                      {storeStates.map((uf) => (
-                        <SelectItem key={uf} value={uf}>{uf}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="card-kpi col-span-2 sm:col-span-1">
-                <p className="text-xs font-semibold text-foreground mb-2">Ações</p>
-                <div className="flex flex-wrap gap-1.5">
-                  <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportClientStores(stores, client.name)}>
-                    <Download className="w-3 h-3" /> Exportar
-                  </Button>
-                  {canEditStores && (
-                    <>
-                      <label className="cursor-pointer">
-                        <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportFile} />
-                        <Button size="sm" variant="outline" className="text-xs h-7 gap-1" asChild>
-                          <span><Upload className="w-3 h-3" /> Importar</span>
-                        </Button>
-                      </label>
-                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleReviewStoreCodes}>
-                        <Sparkles className="w-3 h-3" /> Códigos
+              <Select value={storeStateFilter} onValueChange={setStoreStateFilter}>
+                <SelectTrigger className="h-8 text-xs w-[100px]">
+                  <SelectValue placeholder="UF" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {storeStates.map((uf) => (
+                    <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex flex-wrap gap-1.5 ml-auto">
+                <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportClientStores(stores, client.name)}>
+                  <Download className="w-3 h-3" /> Exportar
+                </Button>
+                {canEditStores && (
+                  <>
+                    <label className="cursor-pointer">
+                      <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportFile} />
+                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" asChild>
+                        <span><Upload className="w-3 h-3" /> Importar</span>
                       </Button>
-                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleEnrichStores} disabled={enriching}>
-                        <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "Atualizando..." : "Enriquecer"}
-                      </Button>
-                    </>
-                  )}
-                </div>
+                    </label>
+                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleReviewStoreCodes}>
+                      <Sparkles className="w-3 h-3" /> Códigos
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleEnrichStores} disabled={enriching}>
+                      <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "Atualizando..." : "Enriquecer"}
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
