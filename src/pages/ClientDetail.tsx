@@ -473,8 +473,8 @@ const ClientDetail = () => {
           <TabsContent value="campaigns">
             {/* Stats cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-              <div className="bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
+              <div className="card-kpi flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center shadow-glow-primary">
                   <Megaphone className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -482,8 +482,8 @@ const ClientDetail = () => {
                   <p className="text-[11px] text-muted-foreground">Campanhas</p>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center">
+              <div className="card-kpi flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center shadow-glow-secondary">
                   <Store className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -491,7 +491,7 @@ const ClientDetail = () => {
                   <p className="text-[11px] text-muted-foreground">Lojas</p>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 rounded-xl p-4 col-span-2 sm:col-span-1">
+              <div className="card-kpi col-span-2 sm:col-span-1">
                 <p className="text-xs font-semibold text-foreground mb-2">Ações</p>
                 <div className="flex flex-wrap gap-1.5">
                   <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportCampaigns(campaigns, client.name)}>
@@ -568,7 +568,7 @@ const ClientDetail = () => {
                   return (
                     <div
                       key={c.id}
-                      className={`group bg-gradient-to-br ${CAMP_COLORS[cidx]} border rounded-xl p-4 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden`}
+                      className="group card-item hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden"
                       onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
                     >
                       <div className="flex items-start gap-3">
@@ -616,8 +616,8 @@ const ClientDetail = () => {
           <TabsContent value="stores">
             {/* Stats + Actions */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
-              <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center">
+              <div className="card-kpi flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center shadow-glow-secondary">
                   <Store className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -625,7 +625,7 @@ const ClientDetail = () => {
                   <p className="text-[11px] text-muted-foreground">Lojas</p>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-info/10 to-info/5 border border-info/20 rounded-xl p-4 flex items-center gap-3">
+              <div className="card-kpi flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-info flex items-center justify-center">
                   <Search className="w-5 h-5 text-white" />
                 </div>
@@ -633,7 +633,7 @@ const ClientDetail = () => {
                   <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 rounded-xl p-4 col-span-2 sm:col-span-1">
+              <div className="card-kpi col-span-2 sm:col-span-1">
                 <p className="text-xs font-semibold text-foreground mb-2">Ações</p>
                 <div className="flex flex-wrap gap-1.5">
                   <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportClientStores(stores, client.name)}>
