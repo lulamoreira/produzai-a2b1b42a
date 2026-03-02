@@ -282,17 +282,23 @@ const ClientDetail = () => {
           toast.error("Nenhuma loja encontrada na planilha.");
           return;
         }
-        const existingNames = new Set(stores.map(s => s.name.toLowerCase()));
-        const newStores = mapped.filter(item => !existingNames.has(item.name.toLowerCase()));
-        if (newStores.length === 0) {
-          toast.info(`Nenhuma loja nova encontrada. ${mapped.length} já existente(s) foram ignoradas.`);
-          return;
+        const existingByName = new Map(stores.map(s => [s.name.toLowerCase(), s]));
+        let added = 0;
+        let updated = 0;
+        for (const item of mapped) {
+          const existing = existingByName.get(item.name.toLowerCase());
+          if (existing) {
+            await updateStore.mutateAsync({ id: existing.id, ...item });
+            updated++;
+          } else {
+            await addStore.mutateAsync(item);
+            added++;
+          }
         }
-        for (const item of newStores) {
-          await addStore.mutateAsync(item);
-        }
-        const skipped = mapped.length - newStores.length;
-        toast.success(`${newStores.length} loja(s) adicionada(s)${skipped > 0 ? `, ${skipped} já existente(s) ignorada(s)` : ""}!`);
+        const parts: string[] = [];
+        if (added > 0) parts.push(`${added} adicionada(s)`);
+        if (updated > 0) parts.push(`${updated} atualizada(s)`);
+        toast.success(`${parts.join(", ")}!`);
       } catch {
         toast.error("Erro ao ler a planilha.");
       }

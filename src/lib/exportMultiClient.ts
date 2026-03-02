@@ -82,7 +82,7 @@ export function exportClientStores(stores: ClientStore[], clientName: string) {
     "Estado": s.state || "",
     "País": s.country || "",
     "Telefone": s.phone || "",
-    "E-mail": (s as any).email || "",
+    "E-mail": s.email || "",
     "Gerente": s.manager_name || "",
     "Modelo de Loja": s.store_model || "",
     "Código da Loja": s.store_code || "",
