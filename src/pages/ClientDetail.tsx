@@ -396,11 +396,11 @@ const ClientDetail = () => {
     setSettingsOpen(false);
   };
 
-  const storeStates = Array.from(new Set(stores.map((s) => s.state).filter(Boolean) as string[])).sort();
+  const storeStates = Array.from(new Set(stores.map((s) => s.state?.trim()).filter(Boolean) as string[])).sort();
 
   const filteredStores = stores
     .filter((s) => {
-      if (storeStateFilter && storeStateFilter !== "all" && s.state !== storeStateFilter) return false;
+      if (storeStateFilter && storeStateFilter !== "all" && s.state?.trim() !== storeStateFilter) return false;
       const q = storeSearch.toLowerCase();
       return !q || s.name.toLowerCase().includes(q) ||
         s.nickname?.toLowerCase().includes(q) ||

@@ -124,7 +124,7 @@ const CampaignDetail = () => {
 
   // Unique cities, states, store_categories from pieces
   const uniqueCities = useMemo(() => [...new Set(stores.map((s) => s.city).filter(Boolean))].sort() as string[], [stores]);
-  const uniqueStates = useMemo(() => [...new Set(stores.map((s) => s.state).filter(Boolean))].sort() as string[], [stores]);
+  const uniqueStates = useMemo(() => [...new Set(stores.map((s) => s.state?.trim()).filter(Boolean))].sort() as string[], [stores]);
   const uniqueStoreCategories = useMemo(() => [...new Set(pieces.map((p) => p.store_category).filter(Boolean))].sort() as string[], [pieces]);
 
   const filteredStores = useMemo(() => {
@@ -133,7 +133,7 @@ const CampaignDetail = () => {
         s.name.toLowerCase().includes(storeSearch.toLowerCase()) ||
         s.nickname?.toLowerCase().includes(storeSearch.toLowerCase());
       const matchesCity = cityFilter === "__all__" || s.city === cityFilter;
-      const matchesState = stateFilter === "__all__" || s.state === stateFilter;
+      const matchesState = stateFilter === "__all__" || s.state?.trim() === stateFilter;
       // Store category filter: show stores that have pieces with matching store_category
       const matchesStoreCategory = storeCategoryFilter === "__all__" || true; // applied on matrix level
       return matchesSearch && matchesCity && matchesState && matchesStoreCategory;
