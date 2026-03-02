@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   useClient, useCampaigns, useAddCampaign, useDeleteCampaign,
   useClientStores, useAddClientStore, useImportClientStores, useDeleteClientStore,
-  useUpdateClient, useUpdateClientStore, fetchAddressByCep,
+  useUpdateClient, useUpdateClientStore, fetchAddressByCep, fetchCnpjData,
   useClientStoreModels, useAddClientStoreModel, useDeleteClientStoreModel,
   type ClientStore,
 } from "@/hooks/useMultiClientData";
@@ -21,7 +21,8 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import AppHeader from "@/components/AppHeader";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -123,6 +124,8 @@ const ClientDetail = () => {
   const [storeSearch, setStoreSearch] = useState("");
   const [storeModelDialogOpen, setStoreModelDialogOpen] = useState(false);
   const [newModelName, setNewModelName] = useState("");
+  const [enriching, setEnriching] = useState(false);
+  const [enrichProgress, setEnrichProgress] = useState({ current: 0, total: 0 });
 
   // Store form
   const [storeForm, setStoreForm] = useState({ ...emptyStoreForm });
@@ -247,6 +250,65 @@ const ClientDetail = () => {
       count++;
     }
     toast.success(`${count} loja(s) receberam código automaticamente.`);
+  };
+
+  const handleEnrichStores = async () => {
+    if (enriching || stores.length === 0) return;
+    setEnriching(true);
+    const total = stores.length;
+    setEnrichProgress({ current: 0, total });
+    let updatedCount = 0;
+
+    for (let i = 0; i < stores.length; i++) {
+      const store = stores[i];
+      setEnrichProgress({ current: i + 1, total });
+      const updates: Record<string, string> = {};
+
+      // 1. CNPJ lookup for Inscrição Estadual
+      if (store.cnpj && !store.state_registration) {
+        try {
+          const cnpjData = await fetchCnpjData(store.cnpj);
+          if (cnpjData) {
+            const activeIE = cnpjData.inscricoes_estaduais?.find((ie) => ie.ativo);
+            if (activeIE?.inscricao_estadual) {
+              updates.state_registration = activeIE.inscricao_estadual;
+            }
+          }
+        } catch { /* skip */ }
+      }
+
+      // 2. CEP lookup for address fields
+      if (store.zip_code && (!store.street || !store.city || !store.state || !store.neighborhood)) {
+        try {
+          const address = await fetchAddressByCep(store.zip_code);
+          if (address) {
+            if (!store.street && address.street) updates.street = address.street;
+            if (!store.neighborhood && address.neighborhood) updates.neighborhood = address.neighborhood;
+            if (!store.city && address.city) updates.city = address.city;
+            if (!store.state && address.state) updates.state = address.state;
+          }
+        } catch { /* skip */ }
+      }
+
+      if (Object.keys(updates).length > 0) {
+        try {
+          await updateStore.mutateAsync({ id: store.id, ...updates } as any);
+          updatedCount++;
+        } catch { /* skip */ }
+      }
+
+      // Small delay to avoid rate limiting
+      if (i < stores.length - 1) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
+    }
+
+    setEnriching(false);
+    if (updatedCount > 0) {
+      toast.success(`${updatedCount} loja(s) atualizada(s) com dados de CNPJ/CEP!`);
+    } else {
+      toast.info("Nenhuma loja precisou de atualização (dados já preenchidos ou não encontrados).");
+    }
   };
 
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -683,11 +745,24 @@ const ClientDetail = () => {
                       <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleReviewStoreCodes}>
                         <Sparkles className="w-3 h-3" /> Códigos
                       </Button>
+                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleEnrichStores} disabled={enriching}>
+                        <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "Atualizando..." : "Enriquecer"}
+                      </Button>
                     </>
                   )}
                 </div>
               </div>
             </div>
+
+            {enriching && (
+              <div className="mb-4 space-y-1">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Enriquecendo lojas... ({enrichProgress.current}/{enrichProgress.total})</span>
+                  <span>{Math.round((enrichProgress.current / enrichProgress.total) * 100)}%</span>
+                </div>
+                <Progress value={(enrichProgress.current / enrichProgress.total) * 100} className="h-2" />
+              </div>
+            )}
 
             {canEditClients && (
               <div className="flex flex-wrap items-center gap-2 mb-4">
