@@ -616,13 +616,23 @@ export async function fetchAddressByCep(cep: string) {
 
 // ─── CNPJ Lookup ─────────────────────────────────────────
 
-export async function fetchCnpjData(cnpj: string) {
-  const clean = cnpj.replace(/\D/g, "");
-  if (clean.length !== 14) return null;
+// Calculate CNPJ check digits for a 12-digit base
+function calcCnpjCheckDigits(base12: string): string {
+  const weights1 = [5,4,3,2,9,8,7,6,5,4,3,2];
+  const weights2 = [6,5,4,3,2,9,8,7,6,5,4,3,2];
+  let sum = 0;
+  for (let i = 0; i < 12; i++) sum += parseInt(base12[i]) * weights1[i];
+  const d1 = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  const base13 = base12 + d1;
+  sum = 0;
+  for (let i = 0; i < 13; i++) sum += parseInt(base13[i]) * weights2[i];
+  const d2 = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  return base13 + d2;
+}
 
-  // Try BrasilAPI first (public, no auth needed)
+async function fetchBrasilApi(cnpj14: string) {
   try {
-    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${clean}`);
+    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj14}`);
     if (res.ok) {
       const data = await res.json();
       if (data.razao_social !== undefined) {
@@ -644,33 +654,57 @@ export async function fetchCnpjData(cnpj: string) {
         };
       }
     }
-  } catch { /* fallback below */ }
-
-  // Fallback: try ReceitaWS
-  try {
-    const res = await fetch(`https://receitaws.com.br/v1/cnpj/${clean}`, {
-      headers: { Accept: "application/json" },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.status !== "ERROR" && data.nome) {
-        return {
-          razao_social: data.nome || "",
-          nome_fantasia: data.fantasia || "",
-          inscricoes_estaduais: [] as Array<{ inscricao_estadual: string; ativo: boolean }>,
-          street: data.logradouro || "",
-          number: data.numero || "",
-          complement: data.complemento || "",
-          neighborhood: data.bairro || "",
-          city: data.municipio || "",
-          state: data.uf || "",
-          zip_code: data.cep || "",
-        };
-      }
-    }
   } catch { /* skip */ }
-
   return null;
+}
+
+export async function fetchCnpjData(cnpj: string) {
+  const clean = cnpj.replace(/\D/g, "");
+  if (clean.length !== 14) return null;
+
+  // Try BrasilAPI first
+  const result = await fetchBrasilApi(clean);
+  if (!result) {
+    // Fallback: try ReceitaWS
+    try {
+      const res = await fetch(`https://receitaws.com.br/v1/cnpj/${clean}`, {
+        headers: { Accept: "application/json" },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.status !== "ERROR" && data.nome) {
+          return {
+            razao_social: data.nome || "",
+            nome_fantasia: data.fantasia || "",
+            inscricoes_estaduais: [] as Array<{ inscricao_estadual: string; ativo: boolean }>,
+            street: data.logradouro || "",
+            number: data.numero || "",
+            complement: data.complemento || "",
+            neighborhood: data.bairro || "",
+            city: data.municipio || "",
+            state: data.uf || "",
+            zip_code: data.cep || "",
+          };
+        }
+      }
+    } catch { /* skip */ }
+    return null;
+  }
+
+  // If IE is empty and this is a FILIAL, try fetching from MATRIZ
+  const hasIE = result.inscricoes_estaduais.some((ie) => ie.inscricao_estadual);
+  const branchCode = clean.substring(8, 12); // 0001 = matriz
+  if (!hasIE && branchCode !== "0001") {
+    const matrizBase = clean.substring(0, 8) + "0001";
+    const matrizCnpj = calcCnpjCheckDigits(matrizBase);
+    console.log(`Filial sem IE, buscando matriz: ${matrizCnpj}`);
+    const matrizData = await fetchBrasilApi(matrizCnpj);
+    if (matrizData && matrizData.inscricoes_estaduais.length > 0) {
+      result.inscricoes_estaduais = matrizData.inscricoes_estaduais;
+    }
+  }
+
+  return result;
 }
 
 // ─── Client Store Models ─────────────────────────────────
