@@ -6,6 +6,7 @@ import { capitalizeName } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAdminUsers, useUpdateUserRole } from "@/hooks/useAdminUsers";
+import { useUserPermissionLevel } from "@/hooks/useUserPermissionLevel";
 import {
   useClients, useUserClientAccess, useAddUserClientAccess,
   useUpdateUserClientAccess, useDeleteUserClientAccess,
@@ -89,6 +90,7 @@ const setCategoryField = (form: any, perm: PermKey, mod: ModuleKey, val: boolean
 const Admin = () => {
   const { user } = useAuth();
   const { isAdmin, isLoading: loadingRole } = useUserRole();
+  const { isMasterOrEditor, isLoading: loadingPermLevel } = useUserPermissionLevel();
   const { data: users = [], isLoading: loadingUsers } = useAdminUsers();
   const updateRole = useUpdateUserRole();
   const navigate = useNavigate();
@@ -159,7 +161,7 @@ const Admin = () => {
     setEditNameValue("");
   };
 
-  if (loadingRole) {
+  if (loadingRole || loadingPermLevel) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-10 h-10 border-3 border-primary border-t-transparent rounded-full" />
@@ -167,7 +169,7 @@ const Admin = () => {
     );
   }
 
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdmin && !isMasterOrEditor) return <Navigate to="/" replace />;
 
   const handleRoleChange = (userId: string, newRole: AppRole) => {
     if (userId === user?.id) return;
@@ -289,9 +291,13 @@ const Admin = () => {
         <Tabs defaultValue="users">
           <TabsList className="mb-6 bg-card border border-border flex-wrap">
             <TabsTrigger value="users" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Users className="w-4 h-4" /> Usuários</TabsTrigger>
-            <TabsTrigger value="categories" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Tags className="w-4 h-4" /> Roles</TabsTrigger>
-            <TabsTrigger value="agency_access" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Building2 className="w-4 h-4" /> Acesso por Agência</TabsTrigger>
-            <TabsTrigger value="access" className="gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><KeyRound className="w-4 h-4" /> Acesso por Cliente</TabsTrigger>
+            {isAdmin && (
+              <>
+                <TabsTrigger value="categories" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Tags className="w-4 h-4" /> Roles</TabsTrigger>
+                <TabsTrigger value="agency_access" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Building2 className="w-4 h-4" /> Acesso por Agência</TabsTrigger>
+                <TabsTrigger value="access" className="gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><KeyRound className="w-4 h-4" /> Acesso por Cliente</TabsTrigger>
+              </>
+            )}
           </TabsList>
 
           {/* ─── Users Tab ─── */}
@@ -305,8 +311,8 @@ const Admin = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Usuário</TableHead>
-                      <TableHead>Role / Cliente</TableHead>
-                      <TableHead className="text-right">Tipo</TableHead>
+                      {isAdmin && <TableHead>Role / Cliente</TableHead>}
+                      {isAdmin && <TableHead className="text-right">Tipo</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -340,6 +346,7 @@ const Admin = () => {
                           )}
                           <p className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
                         </TableCell>
+                        {isAdmin && (
                         <TableCell>
                           {u.role === "admin" ? (
                             <Badge variant="default" className="text-[10px] uppercase">Admin</Badge>
@@ -369,6 +376,8 @@ onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: categoryHasEdi
                             <span className="text-xs text-muted-foreground italic">Sem acesso</span>
                           )}
                         </TableCell>
+                        )}
+                        {isAdmin && (
                         <TableCell className="text-right">
                           {u.user_id === user?.id ? (
                             <span className="text-xs text-muted-foreground italic">Você</span>
@@ -382,6 +391,7 @@ onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: categoryHasEdi
                             </Select>
                           )}
                         </TableCell>
+                        )}
                       </TableRow>
                       );
                     })}
