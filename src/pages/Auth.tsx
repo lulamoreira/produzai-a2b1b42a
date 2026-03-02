@@ -68,8 +68,8 @@ const Auth = () => {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-primary/20">
             <Package className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Gestão de Campanhas</h1>
-          <p className="text-sm text-muted-foreground mt-1">Plataforma de gestão multi-cliente</p>
+          <h1 className="text-2xl font-display font-bold text-foreground">Posso Produzir</h1>
+          <p className="text-sm text-muted-foreground mt-1">Plataforma de produção para agências</p>
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
