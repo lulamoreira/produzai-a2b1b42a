@@ -124,7 +124,19 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp, canD
   const [lightboxPhotos, setLightboxPhotos] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const qrRef = useRef<HTMLDivElement>(null);
+
+  const toggleStatus = (value: string) => {
+    setSelectedStatuses((prev) =>
+      prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
+    );
+  };
+
+  const filteredOccurrences = useMemo(() => {
+    if (selectedStatuses.length === 0) return occurrences;
+    return occurrences.filter((occ) => selectedStatuses.includes(occ.status || defaultStatus));
+  }, [occurrences, selectedStatuses, defaultStatus]);
 
   const handleDownloadQR = () => {
     const svg = qrRef.current?.querySelector("svg");
@@ -211,12 +223,39 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp, canD
             <Settings className="w-3.5 h-3.5 mr-1.5" /> Configurar
           </Button>
         )}
-        <span className="ml-auto text-sm text-muted-foreground">{occurrences.length} ocorrência(s)</span>
+        <span className="ml-auto text-sm text-muted-foreground">{filteredOccurrences.length} de {occurrences.length} ocorrência(s)</span>
       </div>
 
       {/* Dashboard */}
+      {/* Status filter buttons */}
       {!isLoading && occurrences.length > 0 && (
-        <OccurrencesDashboard occurrences={occurrences} stores={stores} pieces={pieces} motives={motives} statuses={statuses} />
+        <div className="flex flex-wrap gap-1.5">
+          <Button
+            variant={selectedStatuses.length === 0 ? "default" : "outline"}
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => setSelectedStatuses([])}
+          >
+            Todos
+          </Button>
+          {activeStatuses.map((s) => (
+            <Button
+              key={s.id}
+              variant={selectedStatuses.includes(s.value) ? "default" : "outline"}
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              style={selectedStatuses.includes(s.value) ? { backgroundColor: s.color, borderColor: s.color, color: '#fff' } : { borderColor: s.color, color: s.color }}
+              onClick={() => toggleStatus(s.value)}
+            >
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedStatuses.includes(s.value) ? '#fff' : s.color }} />
+              {s.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {!isLoading && occurrences.length > 0 && (
+        <OccurrencesDashboard occurrences={filteredOccurrences} stores={stores} pieces={pieces} motives={motives} statuses={statuses} />
       )}
 
       {/* Occurrences list */}
@@ -229,7 +268,7 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp, canD
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {occurrences.map((occ) => {
+          {filteredOccurrences.map((occ) => {
             const motiveIdx = motives.findIndex((m) => m.id === occ.motive_id);
             const MOTIVE_COLORS = [
               "border-l-primary from-primary/8 to-primary/3",
