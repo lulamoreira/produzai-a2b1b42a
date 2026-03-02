@@ -323,6 +323,18 @@ export function useUpdateCampaignPiece() {
   });
 }
 
+export function useUpdateCampaignPieceImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ pieceId, imageUrl }: { pieceId: string; imageUrl: string | null }) => {
+      const { error } = await supabase.from("campaign_pieces").update({ image_url: imageUrl }).eq("id", pieceId);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_pieces"] }); toast.success("Imagem atualizada!"); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
 export function useDeleteCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({

@@ -30,6 +30,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle } from "lucide-react";
+import PieceThumbnail from "@/components/PieceThumbnail";
+import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import AppHeader from "@/components/AppHeader";
 import QuickMatrixEditor from "@/components/QuickMatrixEditor";
 import { toast } from "sonner";
@@ -681,6 +683,7 @@ const CampaignDetail = () => {
                               <div className="flex items-start justify-between mb-2">
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 mb-1">
+                                    <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
                                     <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                                       #{p.code}
                                     </span>
@@ -925,6 +928,7 @@ const CampaignDetail = () => {
                       {matrixPieces.map((p) => (
                         <TableHead key={p.id} className="text-center min-w-[100px]">
                           <div className="flex flex-col items-center gap-0.5">
+                            <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
                             <span className="text-xs font-bold">{p.code}</span>
                             <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{p.name}</span>
                             {p.store_category && (
@@ -1102,7 +1106,12 @@ const CampaignDetail = () => {
                       const pieceTotal = stores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
                       return (
                         <TableRow key={p.id}>
-                          <TableCell className="font-bold text-primary">{p.code}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <PieceThumbnail imageUrl={p.image_url} name={p.name} />
+                              <span className="font-bold text-primary">{p.code}</span>
+                            </div>
+                          </TableCell>
                           <TableCell className="text-muted-foreground">{p.category}</TableCell>
                           <TableCell className="font-medium">{p.name}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{p.size || "—"}</TableCell>
@@ -1117,6 +1126,9 @@ const CampaignDetail = () => {
                           {(canEditPieces || canDeletePieces) && (
                             <TableCell>
                               <div className="flex items-center gap-1">
+                                {canEditPieces && (
+                                  <CampaignPieceImageUpload piece={p} canEdit={canEditPieces} />
+                                )}
                                 {canEditPieces && (() => {
                                   const autoStores = stores.filter(s => s.auto_distribute);
                                   const targetStores = p.store_category === "Todas" || !p.store_category

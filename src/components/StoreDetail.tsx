@@ -9,6 +9,7 @@ import {
   useDeletePiece,
 } from "@/hooks/useStoreData";
 import PieceImageUpload from "@/components/PieceImageUpload";
+import PieceThumbnail from "@/components/PieceThumbnail";
 import ChangeLogPanel from "@/components/ChangeLogPanel";
 import { exportSingleStore } from "@/lib/exportExcel";
 import {
@@ -308,8 +309,8 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
                   key={piece.id}
                   className="px-4 py-3 flex items-center gap-3 hover:bg-card/50 transition-colors"
                 >
-                  <PieceImageUpload piece={piece} />
-
+                  <PieceThumbnail imageUrl={piece.image_url} name={piece.name} />
+                  {isAdmin && <PieceImageUpload piece={piece} />}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">
                       {piece.name}
