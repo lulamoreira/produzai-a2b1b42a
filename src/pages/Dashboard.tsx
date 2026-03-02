@@ -95,8 +95,8 @@ const Dashboard = () => {
       <main className="max-w-6xl mx-auto px-4 py-8">
         {/* Stats bar */}
         <div className="grid grid-cols-2 gap-3 mb-8">
-          <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center">
+          <div className="card-kpi flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center shadow-glow-primary">
               <Briefcase className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -104,7 +104,7 @@ const Dashboard = () => {
               <p className="text-[11px] text-muted-foreground">Clientes</p>
             </div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3 col-span-1 sm:col-span-1">
+          <div className="card-kpi col-span-1 sm:col-span-1">
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground mb-1">Ações rápidas</p>
               <div className="flex gap-2">
@@ -196,7 +196,7 @@ const Dashboard = () => {
               return (
                 <div
                   key={client.id}
-                  className={`group bg-gradient-to-br ${CARD_COLORS[colorIdx]} border rounded-xl p-5 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden`}
+                  className="group card-item hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden p-5"
                   onClick={() => navigate(`/agency/${agencyId}/clients/${client.id}`)}
                 >
                   <div className="flex items-start justify-between">
