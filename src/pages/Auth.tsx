@@ -121,11 +121,11 @@ const Auth = () => {
           <div className="text-center mb-8">
             <img
               src="/favicon.png"
-              alt="Posso Produzir?"
+              alt="ProduzAI"
               className="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-xl shadow-primary/20" />
 
             <h1 className="text-3xl font-display font-bold text-foreground">
-              Posso Produzir?
+              ProduzAI
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Controle de produção criativa
