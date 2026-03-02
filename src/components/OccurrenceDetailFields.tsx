@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import {
   MapPin, Wrench, RotateCcw, FileText, Building2, CalendarClock, CalendarCheck,
-  MessageSquare, ImagePlus, Send, ChevronUp, ChevronDown, CalendarIcon,
+  MessageSquare, ImagePlus, Send, ChevronUp, ChevronDown, CalendarIcon, User, Phone, Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
@@ -46,6 +46,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit }: Pr
 
   // Local state for actions_taken scrolling
   const [actionsExpanded, setActionsExpanded] = useState(false);
+  const [reporterOpen, setReporterOpen] = useState(false);
 
   // Comment input
   const [commentText, setCommentText] = useState("");
@@ -133,6 +134,87 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit }: Pr
 
   return (
     <div className="space-y-3 mt-3 pt-3 border-t border-border/50">
+      {/* 0 - Dados do Lojista */}
+      <div className="rounded-lg border border-border overflow-hidden">
+        <button
+          type="button"
+          className="w-full flex items-center justify-between px-3 py-2 bg-muted/40 hover:bg-muted/60 transition-colors"
+          onClick={() => setReporterOpen(!reporterOpen)}
+        >
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+            <User className="w-3 h-3" /> Dados do Lojista
+          </span>
+          {reporterOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+        </button>
+        {reporterOpen && (
+          <div className="p-3 space-y-2 bg-card">
+            {/* Nome */}
+            <div>
+              <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                <User className="w-3 h-3" /> Nome
+              </label>
+              {canEdit ? (
+                <Input
+                  className="h-7 text-xs"
+                  value={occ.reporter_name || ""}
+                  onChange={(e) => handleFieldUpdate("reporter_name", e.target.value)}
+                  placeholder="Nome do lojista..."
+                />
+              ) : (
+                <span className="text-xs font-medium">{occ.reporter_name || "—"}</span>
+              )}
+            </div>
+            {/* Telefone */}
+            <div>
+              <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                <Phone className="w-3 h-3" /> WhatsApp
+              </label>
+              {canEdit ? (
+                <div className="flex gap-1.5">
+                  <Input
+                    className="h-7 text-xs w-16"
+                    value={occ.reporter_phone_ddd || ""}
+                    onChange={(e) => handleFieldUpdate("reporter_phone_ddd", e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    placeholder="DDD"
+                    maxLength={2}
+                  />
+                  <Input
+                    className="h-7 text-xs flex-1"
+                    value={occ.reporter_phone_number || ""}
+                    onChange={(e) => handleFieldUpdate("reporter_phone_number", e.target.value.replace(/\D/g, "").slice(0, 9))}
+                    placeholder="Número"
+                    maxLength={9}
+                  />
+                </div>
+              ) : (
+                <span className="text-xs font-medium">
+                  {occ.reporter_phone_ddd && occ.reporter_phone_number
+                    ? `(${occ.reporter_phone_ddd}) ${occ.reporter_phone_number}`
+                    : "—"}
+                </span>
+              )}
+            </div>
+            {/* Email */}
+            <div>
+              <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                <Mail className="w-3 h-3" /> E-mail da Loja
+              </label>
+              {canEdit ? (
+                <Input
+                  className="h-7 text-xs"
+                  type="email"
+                  value={occ.reporter_email || ""}
+                  onChange={(e) => handleFieldUpdate("reporter_email", e.target.value)}
+                  placeholder="email@loja.com"
+                />
+              ) : (
+                <span className="text-xs font-medium">{occ.reporter_email || "—"}</span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* 1 - Localização na Loja */}
       <div>
         <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
