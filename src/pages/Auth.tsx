@@ -65,9 +65,7 @@ const Auth = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-primary/20">
-            <Package className="w-8 h-8 text-primary-foreground" />
-          </div>
+          <img src="/favicon.png" alt="Posso Produzir" className="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-xl shadow-primary/20" />
           <h1 className="text-2xl font-display font-bold text-foreground">Posso Produzir</h1>
           <p className="text-sm text-muted-foreground mt-1">Plataforma de produção para agências</p>
         </div>
