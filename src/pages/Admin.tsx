@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { BackupRestorePanel } from "@/components/BackupRestorePanel";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -22,7 +23,7 @@ import {
   useUpdateUserAgencyAccess, useDeleteUserAgencyAccess,
 } from "@/hooks/useUserAgencyAccess";
 import { Navigate, useNavigate } from "react-router-dom";
-import { Shield, ArrowLeft, Users, KeyRound, Plus, Trash2, Tags, Edit3, UserCheck, PauseCircle, PlayCircle, ChevronDown, ChevronRight, Building2 } from "lucide-react";
+import { Shield, ArrowLeft, Users, KeyRound, Plus, Trash2, Tags, Edit3, UserCheck, PauseCircle, PlayCircle, ChevronDown, ChevronRight, Building2, Download, Upload, Database } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -296,6 +297,7 @@ const Admin = () => {
                 <TabsTrigger value="categories" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Tags className="w-4 h-4" /> Roles</TabsTrigger>
                 <TabsTrigger value="agency_access" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Building2 className="w-4 h-4" /> Acesso por Agência</TabsTrigger>
                 <TabsTrigger value="access" className="gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><KeyRound className="w-4 h-4" /> Acesso por Cliente</TabsTrigger>
+                <TabsTrigger value="backup" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Database className="w-4 h-4" /> Backup</TabsTrigger>
               </>
             )}
           </TabsList>
@@ -923,6 +925,13 @@ onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: categoryHasEdi
               );
             })()}
           </TabsContent>
+
+          {/* ─── Backup Tab ─── */}
+          {isAdmin && (
+          <TabsContent value="backup">
+            <BackupRestorePanel />
+          </TabsContent>
+          )}
         </Tabs>
       </main>
     </div>

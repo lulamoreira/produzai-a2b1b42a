@@ -2,3 +2,6 @@ project_id = "dryngkjeerlssebnpymb"
 
 [functions.cnpj-lookup]
 verify_jwt = false
+
+[functions.backup-restore]
+verify_jwt = false
