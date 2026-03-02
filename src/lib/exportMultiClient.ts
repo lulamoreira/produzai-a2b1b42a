@@ -112,17 +112,20 @@ export function exportCampaignPieces(pieces: CampaignPiece[], campaignName: stri
     "Nome": p.name,
     "Medidas": p.size,
     "Modelo de Loja": p.store_category || "",
+    "Especificação": p.specification || "",
+    "Instruções de Instalação": p.installation_instructions || "",
   }));
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{
     "Código": "", "Localização na Loja": "", "Nome": "", "Medidas": "", "Modelo de Loja": "",
+    "Especificação": "", "Instruções de Instalação": "",
   }]);
-  ws["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }];
+  ws["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }];
   XLSX.utils.book_append_sheet(wb, ws, "Peças");
   XLSX.writeFile(wb, `Pecas_${campaignName.replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
 }
 
-export function parsePiecesImport(file: File): Promise<Array<{ code: number; category: string; name: string; size: string; store_category?: string }>> {
+export function parsePiecesImport(file: File): Promise<Array<{ code: number; category: string; name: string; size: string; store_category?: string; specification?: string; installation_instructions?: string }>> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (evt) => {
@@ -136,6 +139,8 @@ export function parsePiecesImport(file: File): Promise<Array<{ code: number; cat
           name: r["Nome"] || r["nome"] || r["name"] || "",
           size: r["Medidas"] || r["medidas"] || r["size"] || "",
           store_category: r["Modelo de Loja"] || r["Categoria de Loja"] || r["categoria_loja"] || r["store_category"] || undefined,
+          specification: r["Especificação"] || r["especificacao"] || r["specification"] || undefined,
+          installation_instructions: r["Instruções de Instalação"] || r["instrucoes_instalacao"] || r["installation_instructions"] || undefined,
         })).filter((p) => p.name && p.code > 0);
         resolve(mapped);
       } catch { reject(new Error("Erro ao ler planilha.")); }
