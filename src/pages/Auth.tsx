@@ -94,10 +94,10 @@ const Auth = () => {
         {/* Bottom content */}
         <div className="absolute bottom-0 left-0 right-0 p-10 z-10">
           <p className="text-white/80 text-sm font-medium uppercase tracking-widest mb-2">
-            {slides[currentSlide].label}
+            <span>{slides[currentSlide].label}</span>
           </p>
           <h2 className="text-white text-3xl font-display font-bold leading-tight">
-            {slides[currentSlide].subtitle}
+            <span>{slides[currentSlide].subtitle}</span>
           </h2>
           {/* Dots */}
           <div className="flex gap-2 mt-6">
