@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { capitalizeName } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAdminUsers, useUpdateUserRole } from "@/hooks/useAdminUsers";
 import {
   useClients, useUserClientAccess, useAddUserClientAccess,
@@ -90,6 +92,7 @@ const Admin = () => {
   const { data: users = [], isLoading: loadingUsers } = useAdminUsers();
   const updateRole = useUpdateUserRole();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: clients = [] } = useClients();
   const { data: allAccess = [] } = useUserClientAccess();
@@ -135,6 +138,26 @@ const Admin = () => {
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<PermissionCategory | null>(null);
   const [categoryForm, setCategoryForm] = useState(defaultCategoryForm());
+
+  // Edit display name state
+  const [editingNameUserId, setEditingNameUserId] = useState<string | null>(null);
+  const [editNameValue, setEditNameValue] = useState("");
+
+  const handleSaveDisplayName = async () => {
+    if (!editingNameUserId || !editNameValue.trim()) return;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ display_name: editNameValue.trim() })
+      .eq("user_id", editingNameUserId);
+    if (error) {
+      toast.error("Erro ao atualizar nome.");
+    } else {
+      toast.success("Nome atualizado!");
+      queryClient.invalidateQueries({ queryKey: ["admin_users_list"] });
+    }
+    setEditingNameUserId(null);
+    setEditNameValue("");
+  };
 
   if (loadingRole) {
     return (
@@ -293,7 +316,28 @@ const Admin = () => {
                       return (
                       <TableRow key={u.user_id}>
                         <TableCell>
-                          <p className="font-medium text-foreground text-sm">{capitalizeName(u.display_name) || "Sem nome"}</p>
+                          {editingNameUserId === u.user_id ? (
+                            <div className="flex items-center gap-1">
+                              <Input
+                                className="h-7 text-sm w-40"
+                                value={editNameValue}
+                                onChange={(e) => setEditNameValue(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter") handleSaveDisplayName(); if (e.key === "Escape") setEditingNameUserId(null); }}
+                                autoFocus
+                              />
+                              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={handleSaveDisplayName}>OK</Button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 group">
+                              <p className="font-medium text-foreground text-sm">{capitalizeName(u.display_name) || "Sem nome"}</p>
+                              <button
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => { setEditingNameUserId(u.user_id); setEditNameValue(u.display_name || ""); }}
+                              >
+                                <Edit3 className="w-3 h-3 text-muted-foreground hover:text-foreground" />
+                              </button>
+                            </div>
+                          )}
                           <p className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
                         </TableCell>
                         <TableCell>
