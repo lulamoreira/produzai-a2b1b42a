@@ -11,10 +11,10 @@ import authBg2 from "@/assets/auth-bg-2.jpg";
 import authBg3 from "@/assets/auth-bg-3.jpg";
 
 const slides = [
-  { src: authBg1, label: "Produção Gráfica" },
-  { src: authBg2, label: "Planejamento Criativo" },
-  { src: authBg3, label: "Montagem de Vitrines" },
-];
+{ src: authBg1, label: "Produção Gráfica" },
+{ src: authBg2, label: "Planejamento Criativo" },
+{ src: authBg3, label: "Montagem de Vitrines" }];
+
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -40,11 +40,11 @@ const Auth = () => {
 
     if (forgotPassword) {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}/reset-password`
       });
       setLoading(false);
-      if (error) toast.error(error.message);
-      else {
+      if (error) toast.error(error.message);else
+      {
         toast.success("Email de recuperação enviado! Verifique sua caixa de entrada.");
         setForgotPassword(false);
       }
@@ -54,20 +54,20 @@ const Auth = () => {
     if (isLogin) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       setLoading(false);
-      if (error) toast.error("Email ou senha incorretos.");
-      else navigate("/");
+      if (error) toast.error("Email ou senha incorretos.");else
+      navigate("/");
     } else {
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { display_name: displayName },
-          emailRedirectTo: window.location.origin,
-        },
+          emailRedirectTo: window.location.origin
+        }
       });
       setLoading(false);
-      if (error) toast.error(error.message);
-      else toast.success("Conta criada! Verifique seu email para confirmar.");
+      if (error) toast.error(error.message);else
+      toast.success("Conta criada! Verifique seu email para confirmar.");
     }
   };
 
@@ -75,41 +75,41 @@ const Auth = () => {
     <div className="min-h-screen flex">
       {/* Left — Image carousel (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {slides.map((slide, i) => (
-          <div
-            key={i}
-            className="absolute inset-0 transition-opacity duration-1000"
-            style={{ opacity: currentSlide === i ? 1 : 0 }}
-          >
+        {slides.map((slide, i) =>
+        <div
+          key={i}
+          className="absolute inset-0 transition-opacity duration-1000"
+          style={{ opacity: currentSlide === i ? 1 : 0 }}>
+
             <img
-              src={slide.src}
-              alt={slide.label}
-              className="w-full h-full object-cover"
-            />
+            src={slide.src}
+            alt={slide.label}
+            className="w-full h-full object-cover" />
+
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           </div>
-        ))}
+        )}
 
         {/* Bottom content */}
         <div className="absolute bottom-0 left-0 right-0 p-10 z-10">
           <p className="text-white/80 text-sm font-medium uppercase tracking-widest mb-2">
             {slides[currentSlide].label}
           </p>
-          <h2 className="text-white text-3xl font-display font-bold leading-tight">
-            Gerencie toda a produção<br />criativa em um só lugar.
+          <h2 className="text-white text-3xl font-display font-bold leading-tight">Controle materiais, prazos e instalações sem perder nada.
+            <br />criativa em um só lugar.
           </h2>
           {/* Dots */}
           <div className="flex gap-2 mt-6">
-            {slides.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentSlide(i)}
-                className={`h-1.5 rounded-full transition-all duration-500 ${
-                  currentSlide === i ? "w-8 bg-white" : "w-3 bg-white/40"
-                }`}
-              />
-            ))}
+            {slides.map((_, i) =>
+            <button
+              key={i}
+              onClick={() => setCurrentSlide(i)}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+              currentSlide === i ? "w-8 bg-white" : "w-3 bg-white/40"}`
+              } />
+
+            )}
           </div>
         </div>
       </div>
@@ -122,8 +122,8 @@ const Auth = () => {
             <img
               src="/favicon.png"
               alt="Posso Produzir?"
-              className="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-xl shadow-primary/20"
-            />
+              className="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-xl shadow-primary/20" />
+
             <h1 className="text-3xl font-display font-bold text-foreground">
               Posso Produzir?
             </h1>
@@ -138,31 +138,31 @@ const Auth = () => {
               {forgotPassword ? "Recuperar Senha" : isLogin ? "Entrar" : "Criar Conta"}
             </h2>
             <p className="text-sm text-muted-foreground mb-6">
-              {forgotPassword
-                ? "Informe seu email para receber o link de recuperação"
-                : isLogin
-                ? "Acesse a plataforma de gestão"
-                : "Crie sua conta para acessar"}
+              {forgotPassword ?
+              "Informe seu email para receber o link de recuperação" :
+              isLogin ?
+              "Acesse a plataforma de gestão" :
+              "Crie sua conta para acessar"}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && !forgotPassword && (
-                <div className="space-y-1">
+              {!isLogin && !forgotPassword &&
+              <div className="space-y-1">
                   <label className="text-sm font-medium text-foreground">
                     Como você quer ser chamado?
                   </label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Ex: João, Maria..."
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      className="pl-10"
-                      required={!isLogin}
-                    />
+                    placeholder="Ex: João, Maria..."
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    className="pl-10"
+                    required={!isLogin} />
+
                   </div>
                 </div>
-              )}
+              }
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -171,43 +171,43 @@ const Auth = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
-                  required
-                />
+                  required />
+
               </div>
-              {!forgotPassword && (
-                <div className="relative">
+              {!forgotPassword &&
+              <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Senha"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10"
-                    required
-                    minLength={6}
-                  />
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10 pr-10"
+                  required
+                  minLength={6} />
+
                   <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-              )}
+              }
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading
-                  ? "Aguarde..."
-                  : forgotPassword
-                  ? "Enviar Link"
-                  : isLogin
-                  ? "Entrar"
-                  : "Criar Conta"}
+                {loading ?
+                "Aguarde..." :
+                forgotPassword ?
+                "Enviar Link" :
+                isLogin ?
+                "Entrar" :
+                "Criar Conta"}
               </Button>
             </form>
 
-            {!forgotPassword && (
-              <>
+            {!forgotPassword &&
+            <>
                 <div className="relative my-4">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-border" />
@@ -217,17 +217,17 @@ const Auth = () => {
                   </div>
                 </div>
                 <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full gap-2"
-                  disabled={loading}
-                  onClick={async () => {
-                    const { error } = await lovable.auth.signInWithOAuth("google", {
-                      redirect_uri: window.location.origin,
-                    });
-                    if (error) toast.error("Erro ao conectar com Google.");
-                  }}
-                >
+                type="button"
+                variant="outline"
+                className="w-full gap-2"
+                disabled={loading}
+                onClick={async () => {
+                  const { error } = await lovable.auth.signInWithOAuth("google", {
+                    redirect_uri: window.location.origin
+                  });
+                  if (error) toast.error("Erro ao conectar com Google.");
+                }}>
+
                   <svg className="w-4 h-4" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
                     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -237,42 +237,42 @@ const Auth = () => {
                   Continuar com Google
                 </Button>
               </>
-            )}
+            }
 
             <div className="mt-4 space-y-2 text-center">
-              {!forgotPassword && isLogin && (
-                <button
-                  onClick={() => setForgotPassword(true)}
-                  className="text-sm text-primary hover:underline"
-                >
+              {!forgotPassword && isLogin &&
+              <button
+                onClick={() => setForgotPassword(true)}
+                className="text-sm text-primary hover:underline">
+
                   Esqueci minha senha
                 </button>
-              )}
+              }
               <div>
                 <button
                   onClick={() => {
                     setIsLogin(!isLogin);
                     setForgotPassword(false);
                   }}
-                  className="text-sm text-muted-foreground hover:text-foreground"
-                >
+                  className="text-sm text-muted-foreground hover:text-foreground">
+
                   {isLogin ? "Não tem conta? Cadastre-se" : "Já tem conta? Entrar"}
                 </button>
               </div>
-              {forgotPassword && (
-                <button
-                  onClick={() => setForgotPassword(false)}
-                  className="text-sm text-muted-foreground hover:text-foreground"
-                >
+              {forgotPassword &&
+              <button
+                onClick={() => setForgotPassword(false)}
+                className="text-sm text-muted-foreground hover:text-foreground">
+
                   Voltar ao login
                 </button>
-              )}
+              }
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Auth;
