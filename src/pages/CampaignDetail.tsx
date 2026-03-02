@@ -42,6 +42,7 @@ const CampaignDetail = () => {
   const { hasPermission: canEditCampaign } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canEditOccurrences } = useClientPermission(clientId, "can_edit_occurrences");
   const { hasPermission: canDeleteOccurrences } = useClientPermission(clientId, "can_delete_occurrences");
+  const { hasPermission: canEditReporterData } = useClientPermission(clientId, "can_edit_reporter_data");
   const { hasPermission: canEditPieces } = useClientPermission(clientId, "can_edit_pieces");
   const { hasPermission: canDeletePieces } = useClientPermission(clientId, "can_delete_pieces");
   const { hasPermission: canEditCampaignStores } = useClientPermission(clientId, "can_edit_campaign_stores");
@@ -1219,7 +1220,7 @@ const CampaignDetail = () => {
 
           {/* ─── TAB: OCORRÊNCIAS ─── */}
           <TabsContent value="occurrences">
-            <OccurrencesTab campaignId={campaignId!} stores={stores} pieces={pieces} canEdit={canEditOccurrences} canDelete={canDeleteOccurrences} />
+            <OccurrencesTab campaignId={campaignId!} clientId={clientId} stores={stores} pieces={pieces} canEdit={canEditOccurrences} canDelete={canDeleteOccurrences} canEditReporter={canEditReporterData} />
           </TabsContent>
         </Tabs>
       </main>

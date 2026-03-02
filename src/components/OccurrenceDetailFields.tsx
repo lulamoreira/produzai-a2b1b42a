@@ -13,6 +13,7 @@ import {
 } from "@/hooks/useOccurrences";
 import type { CampaignPiece } from "@/hooks/useMultiClientData";
 import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -35,9 +36,10 @@ interface Props {
   campaignId: string;
   pieceLocations: { id: string; name: string }[];
   canEdit: boolean;
+  canEditReporter?: boolean;
 }
 
-const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit }: Props) => {
+const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canEditReporter = false }: Props) => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const updateFields = useUpdateOccurrenceFields();
@@ -47,6 +49,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit }: Pr
   // Local state for actions_taken scrolling
   const [actionsExpanded, setActionsExpanded] = useState(false);
   const [reporterOpen, setReporterOpen] = useState(false);
+  const [reporterEditing, setReporterEditing] = useState(false);
 
   // Comment input
   const [commentText, setCommentText] = useState("");
@@ -148,30 +151,79 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit }: Pr
         </button>
         {reporterOpen && (
           <div className="p-3 space-y-2 bg-card">
+            {canEditReporter && (
+              <div className="flex justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-[10px] gap-1 px-2"
+                  onClick={() => setReporterEditing(!reporterEditing)}
+                >
+                  <Pencil className="w-3 h-3" />
+                  {reporterEditing ? "Concluir" : "Editar"}
+                </Button>
+              </div>
+            )}
             {/* Nome */}
             <div>
               <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
                 <User className="w-3 h-3" /> Nome
               </label>
-              <span className="text-xs font-medium">{occ.reporter_name || "—"}</span>
+              {reporterEditing ? (
+                <Input
+                  className="h-7 text-xs"
+                  value={occ.reporter_name || ""}
+                  onChange={(e) => handleFieldUpdate("reporter_name", e.target.value)}
+                  placeholder="Nome do lojista..."
+                />
+              ) : (
+                <span className="text-xs font-medium">{occ.reporter_name || "—"}</span>
+              )}
             </div>
             {/* Telefone */}
             <div>
               <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
                 <Phone className="w-3 h-3" /> WhatsApp
               </label>
-              <span className="text-xs font-medium">
-                {occ.reporter_phone_ddd && occ.reporter_phone_number
-                  ? `(${occ.reporter_phone_ddd}) ${occ.reporter_phone_number}`
-                  : "—"}
-              </span>
+              {reporterEditing ? (
+                <div className="flex gap-1.5">
+                  <Input
+                    className="h-7 text-xs w-16"
+                    value={occ.reporter_phone_ddd || ""}
+                    onChange={(e) => handleFieldUpdate("reporter_phone_ddd", e.target.value)}
+                    placeholder="DDD"
+                    maxLength={2}
+                  />
+                  <Input
+                    className="h-7 text-xs flex-1"
+                    value={occ.reporter_phone_number || ""}
+                    onChange={(e) => handleFieldUpdate("reporter_phone_number", e.target.value)}
+                    placeholder="Número"
+                  />
+                </div>
+              ) : (
+                <span className="text-xs font-medium">
+                  {occ.reporter_phone_ddd && occ.reporter_phone_number
+                    ? `(${occ.reporter_phone_ddd}) ${occ.reporter_phone_number}`
+                    : "—"}
+                </span>
+              )}
             </div>
             {/* Email */}
             <div>
               <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
                 <Mail className="w-3 h-3" /> E-mail da Loja
               </label>
-              <span className="text-xs font-medium">{occ.reporter_email || "—"}</span>
+              {reporterEditing ? (
+                <Input
+                  className="h-7 text-xs"
+                  value={occ.reporter_email || ""}
+                  onChange={(e) => handleFieldUpdate("reporter_email", e.target.value)}
+                  placeholder="email@loja.com"
+                />
+              ) : (
+                <span className="text-xs font-medium">{occ.reporter_email || "—"}</span>
+              )}
             </div>
           </div>
         )}

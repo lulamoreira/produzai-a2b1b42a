@@ -735,6 +735,7 @@ export type Database = {
           can_edit_clients: boolean
           can_edit_occurrences: boolean
           can_edit_pieces: boolean
+          can_edit_reporter_data: boolean
           can_edit_stores: boolean
           can_view_campaign_stores: boolean
           can_view_campaigns: boolean
@@ -758,6 +759,7 @@ export type Database = {
           can_edit_clients?: boolean
           can_edit_occurrences?: boolean
           can_edit_pieces?: boolean
+          can_edit_reporter_data?: boolean
           can_edit_stores?: boolean
           can_view_campaign_stores?: boolean
           can_view_campaigns?: boolean
@@ -781,6 +783,7 @@ export type Database = {
           can_edit_clients?: boolean
           can_edit_occurrences?: boolean
           can_edit_pieces?: boolean
+          can_edit_reporter_data?: boolean
           can_edit_stores?: boolean
           can_view_campaign_stores?: boolean
           can_view_campaigns?: boolean
