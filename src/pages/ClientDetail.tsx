@@ -53,6 +53,23 @@ function encodeFieldLabel(name: string, type: FieldType): string {
 import { toast } from "sonner";
 import ChatTabContent from "@/components/ChatTabContent";
 import * as XLSX from "xlsx";
+import { capitalizeName } from "@/lib/utils";
+
+/** Auto-capitalize text fields of a store form (excludes state, store_model, email, cnpj, codes) */
+function capitalizeStoreFields<T extends Record<string, any>>(data: T): T {
+  const CAPITALIZE_KEYS = [
+    "name", "nickname", "street", "complement", "neighborhood", "city",
+    "manager_name", "country", "observations",
+    "custom_field_1", "custom_field_2", "custom_field_3", "custom_field_4", "custom_field_5",
+  ];
+  const result = { ...data };
+  for (const key of CAPITALIZE_KEYS) {
+    if (key in result && typeof result[key] === "string" && result[key]) {
+      (result as any)[key] = capitalizeName(result[key]);
+    }
+  }
+  return result;
+}
 
 function formatCep(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 8);
@@ -179,7 +196,7 @@ const ClientDetail = () => {
   const handleAddStore = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientId) return;
-    const formData = { ...storeForm };
+    const formData = capitalizeStoreFields({ ...storeForm });
     if (!formData.store_code && client) {
       formData.store_code = generateStoreCode(client.name, formData.country, stores);
     }
@@ -222,7 +239,7 @@ const ClientDetail = () => {
   const handleEditStore = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editStoreId) return;
-    const formData = { ...editStoreForm };
+    const formData = capitalizeStoreFields({ ...editStoreForm });
     if (!formData.store_code && client) {
       formData.store_code = generateStoreCode(client.name, formData.country, stores);
     }
@@ -292,7 +309,8 @@ const ClientDetail = () => {
 
       if (Object.keys(updates).length > 0) {
         try {
-          await updateStore.mutateAsync({ id: store.id, ...updates } as any);
+          const capitalizedUpdates = capitalizeStoreFields(updates);
+          await updateStore.mutateAsync({ id: store.id, ...capitalizedUpdates } as any);
           updatedCount++;
         } catch { /* skip */ }
       }
@@ -347,7 +365,8 @@ const ClientDetail = () => {
         const existingByName = new Map(stores.map(s => [s.name.toLowerCase(), s]));
         let added = 0;
         let updated = 0;
-        for (const item of mapped) {
+        for (const rawItem of mapped) {
+          const item = capitalizeStoreFields(rawItem);
           const existing = existingByName.get(item.name.toLowerCase());
           if (existing) {
             await updateStore.mutateAsync({ id: existing.id, ...item });
