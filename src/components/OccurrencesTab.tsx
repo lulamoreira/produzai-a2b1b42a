@@ -159,7 +159,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
   };
 
-  const publicLink = `https://harry2025.lovable.app/ocorrencias/${campaignId}`;
+  const publicLink = `https://produzai.lovable.app/ocorrencias/${campaignId}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(publicLink);
@@ -369,7 +369,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
 
                 <div className="flex items-center justify-between gap-1 mt-3 pt-2 border-t border-border/50">
                   <div className="flex items-center gap-1">
-                    <a href={`https://harry2025.lovable.app/ocorrencia/${occ.id}`} target="_blank" rel="noopener noreferrer">
+                    <a href={`https://produzai.lovable.app/ocorrencia/${occ.id}`} target="_blank" rel="noopener noreferrer">
                       <Button variant="ghost" size="icon" className="h-7 w-7" title="Ver página pública">
                         <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                       </Button>
@@ -380,14 +380,14 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                       className="h-7 w-7"
                       title="Copiar link"
                       onClick={() => {
-                        navigator.clipboard.writeText(`https://harry2025.lovable.app/ocorrencia/${occ.id}`);
+                        navigator.clipboard.writeText(`https://produzai.lovable.app/ocorrencia/${occ.id}`);
                         toast.success("Link copiado!");
                       }}
                     >
                       <Link2 className="w-3.5 h-3.5 text-primary" />
                     </Button>
                     <a
-                      href={`https://wa.me/${occ.reporter_phone_ddd && occ.reporter_phone_number ? `55${occ.reporter_phone_ddd}${occ.reporter_phone_number}` : ''}?text=${encodeURIComponent(`Ocorrência: https://harry2025.lovable.app/ocorrencia/${occ.id}`)}`}
+                      href={`https://wa.me/${occ.reporter_phone_ddd && occ.reporter_phone_number ? `55${occ.reporter_phone_ddd}${occ.reporter_phone_number}` : ''}?text=${encodeURIComponent(`Ocorrência: https://produzai.lovable.app/ocorrencia/${occ.id}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
