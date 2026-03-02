@@ -68,6 +68,10 @@ function capitalizeStoreFields<T extends Record<string, any>>(data: T): T {
       (result as any)[key] = capitalizeName(result[key]);
     }
   }
+  // Trim state field to avoid duplicate entries (e.g. "SP" vs "SP ")
+  if ("state" in result && typeof result["state"] === "string") {
+    (result as any)["state"] = result["state"].trim().toUpperCase();
+  }
   return result;
 }
 
