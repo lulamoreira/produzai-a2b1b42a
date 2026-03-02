@@ -70,7 +70,7 @@ const emptyStoreForm = {
   name: "", nickname: "", cnpj: "", state_registration: "",
   zip_code: "", street: "", number: "", complement: "", neighborhood: "",
   city: "", state: "", phone: "", manager_name: "",
-  store_model: "", country: "", store_code: "",
+  store_model: "", country: "", store_code: "", email: "",
   custom_field_1: "", custom_field_2: "", custom_field_3: "", custom_field_4: "", custom_field_5: "",
   observations: "",
 };
@@ -205,6 +205,7 @@ const ClientDetail = () => {
       store_model: store.store_model || "",
       country: store.country || "",
       store_code: store.store_code || "",
+      email: (store as any).email || "",
       custom_field_1: store.custom_field_1 || "",
       custom_field_2: store.custom_field_2 || "",
       custom_field_3: store.custom_field_3 || "",
@@ -275,6 +276,7 @@ const ClientDetail = () => {
           country: r["país"] || r["País"] || r["pais"] || r["country"] || null,
           store_model: r["modelo de loja"] || r["Modelo de Loja"] || r["store_model"] || null,
           store_code: r["código da loja"] || r["Código da Loja"] || r["store_code"] || null,
+          email: r["email"] || r["Email"] || r["E-mail"] || r["e-mail"] || null,
         })).filter((s) => s.name);
         if (mapped.length === 0) {
           toast.error("Nenhuma loja encontrada na planilha.");
@@ -403,6 +405,10 @@ const ClientDetail = () => {
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Gerente Responsável</label>
           <Input value={form.manager_name} onChange={(e) => setForm((f) => ({ ...f, manager_name: e.target.value }))} />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">E-mail</label>
+          <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="email@exemplo.com" />
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
@@ -784,6 +790,7 @@ const ClientDetail = () => {
                        <TableHead>UF</TableHead>
                        <TableHead>Modelo</TableHead>
                        <TableHead>Telefone</TableHead>
+                      <TableHead>E-mail</TableHead>
                       <TableHead>Gerente</TableHead>
                       {(canEditStores || canDeleteStores) && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
@@ -807,6 +814,7 @@ const ClientDetail = () => {
                         <TableCell>{s.state || "—"}</TableCell>
                         <TableCell className="text-xs">{s.store_model || "—"}</TableCell>
                         <TableCell className="text-xs">{s.phone ? formatPhone(s.phone) : "—"}</TableCell>
+                        <TableCell className="text-xs">{(s as any).email || "—"}</TableCell>
                         <TableCell className="text-xs">{s.manager_name || "—"}</TableCell>
                         {(canEditStores || canDeleteStores) && (
                           <TableCell className="text-right">

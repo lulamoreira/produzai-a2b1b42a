@@ -404,6 +404,7 @@ export type Database = {
           custom_field_3: string | null
           custom_field_4: string | null
           custom_field_5: string | null
+          email: string | null
           id: string
           manager_name: string | null
           name: string
@@ -432,6 +433,7 @@ export type Database = {
           custom_field_3?: string | null
           custom_field_4?: string | null
           custom_field_5?: string | null
+          email?: string | null
           id?: string
           manager_name?: string | null
           name: string
@@ -460,6 +462,7 @@ export type Database = {
           custom_field_3?: string | null
           custom_field_4?: string | null
           custom_field_5?: string | null
+          email?: string | null
           id?: string
           manager_name?: string | null
           name?: string

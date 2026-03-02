@@ -82,6 +82,7 @@ export function exportClientStores(stores: ClientStore[], clientName: string) {
     "Estado": s.state || "",
     "País": s.country || "",
     "Telefone": s.phone || "",
+    "E-mail": (s as any).email || "",
     "Gerente": s.manager_name || "",
     "Modelo de Loja": s.store_model || "",
     "Código da Loja": s.store_code || "",
@@ -90,13 +91,13 @@ export function exportClientStores(stores: ClientStore[], clientName: string) {
   const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{
     "Nome": "", "Apelido": "", "CNPJ": "", "Inscrição Estadual": "",
     "CEP": "", "Rua": "", "Número": "", "Complemento": "", "Bairro": "",
-    "Cidade": "", "Estado": "", "País": "", "Telefone": "", "Gerente": "",
+    "Cidade": "", "Estado": "", "País": "", "Telefone": "", "E-mail": "", "Gerente": "",
     "Modelo de Loja": "", "Código da Loja": "",
   }]);
   ws["!cols"] = [
     { wch: 30 }, { wch: 20 }, { wch: 18 }, { wch: 18 },
     { wch: 10 }, { wch: 30 }, { wch: 8 }, { wch: 15 }, { wch: 20 },
-    { wch: 20 }, { wch: 5 }, { wch: 15 }, { wch: 15 }, { wch: 20 },
+    { wch: 20 }, { wch: 5 }, { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 20 },
     { wch: 18 }, { wch: 15 },
   ];
   XLSX.utils.book_append_sheet(wb, ws, "Lojas");
