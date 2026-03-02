@@ -1142,8 +1142,8 @@ const CampaignDetail = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[80px]">Código</TableHead>
-                      <TableHead>Nome</TableHead>
                       <TableHead>Localização na Loja</TableHead>
+                      <TableHead>Nome</TableHead>
                       <TableHead>Medidas</TableHead>
                       <TableHead>Modelo de Loja</TableHead>
                       <TableHead>Especificação</TableHead>
@@ -1158,8 +1158,8 @@ const CampaignDetail = () => {
                       return (
                         <TableRow key={p.id}>
                           <TableCell className="font-bold text-primary">{p.code}</TableCell>
-                          <TableCell className="font-medium">{p.name}</TableCell>
                           <TableCell className="text-muted-foreground">{p.category}</TableCell>
+                          <TableCell className="font-medium">{p.name}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{p.size || "—"}</TableCell>
                           <TableCell>
                             {p.store_category ? (
