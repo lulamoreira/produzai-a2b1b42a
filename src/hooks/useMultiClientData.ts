@@ -602,6 +602,41 @@ export async function fetchAddressByCep(cep: string) {
   }
 }
 
+// ─── CNPJ Lookup ─────────────────────────────────────────
+
+export async function fetchCnpjData(cnpj: string) {
+  const clean = cnpj.replace(/\D/g, "");
+  if (clean.length !== 14) return null;
+  try {
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cnpj-lookup?cnpj=${clean}`;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData?.session?.access_token;
+    const response = await fetch(url, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      },
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (data.error) return null;
+    return data as {
+      razao_social: string;
+      nome_fantasia: string;
+      inscricoes_estaduais: Array<{ inscricao_estadual: string; ativo: boolean }>;
+      street: string;
+      number: string;
+      complement: string;
+      neighborhood: string;
+      city: string;
+      state: string;
+      zip_code: string;
+    };
+  } catch {
+    return null;
+  }
+}
+
 // ─── Client Store Models ─────────────────────────────────
 
 export type ClientStoreModel = {
