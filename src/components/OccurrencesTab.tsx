@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
@@ -54,6 +54,14 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp, canD
   const { data: motives = [] } = useOccurrenceMotives();
   const { data: emails = [] } = useCampaignEmails(campaignId);
   const { data: statuses = [] } = useOccurrenceStatuses();
+  const { data: campaignInfo } = useQuery({
+    queryKey: ["campaign_info", campaignId],
+    queryFn: async () => {
+      const { data } = await supabase.from("campaigns").select("name").eq("id", campaignId).maybeSingle();
+      return data;
+    },
+    enabled: !!campaignId,
+  });
   const activeStatuses = useMemo(() => statuses.filter((s) => s.active), [statuses]);
   const updateStatus = useUpdateOccurrenceStatus();
   const deleteOcc = useDeleteOccurrence();
@@ -337,14 +345,25 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp, canD
                       <Link2 className="w-3.5 h-3.5 text-primary" />
                     </Button>
                     <a
-                      href={`https://wa.me/?text=${encodeURIComponent(`Ocorrência: https://harry2025.lovable.app/ocorrencia/${occ.id}`)}`}
+                      href={`https://wa.me/${occ.reporter_phone_ddd && occ.reporter_phone_number ? `55${occ.reporter_phone_ddd}${occ.reporter_phone_number}` : ''}?text=${encodeURIComponent(`Ocorrência: https://harry2025.lovable.app/ocorrencia/${occ.id}`)}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Enviar por WhatsApp">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Enviar link de acompanhamento via WhatsApp">
                         <MessageCircle className="w-3.5 h-3.5 text-success" />
                       </Button>
                     </a>
+                    {occ.reporter_phone_ddd && occ.reporter_phone_number && (
+                      <a
+                        href={`https://wa.me/55${occ.reporter_phone_ddd}${occ.reporter_phone_number}?text=${encodeURIComponent(`Olá, tudo bem? Gostaríamos de falar sobre a sua ocorrência #${occ.id.slice(0, 8)} da Campanha "${campaignInfo?.name || ''}", registrada em: ${occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy 'às' HH:mm") : '—'}.`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Falar com o lojista via WhatsApp">
+                          <Phone className="w-3.5 h-3.5 text-primary" />
+                        </Button>
+                      </a>
+                    )}
                   </div>
                   {canDelete && (
                     <AlertDialog>

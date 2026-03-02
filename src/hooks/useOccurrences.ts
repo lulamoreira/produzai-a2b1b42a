@@ -38,6 +38,10 @@ export type Occurrence = {
   agency_observation: string | null;
   expected_resolution_date: string | null;
   resolved_date: string | null;
+  reporter_name: string | null;
+  reporter_phone_ddd: string | null;
+  reporter_phone_number: string | null;
+  reporter_email: string | null;
 };
 
 export type OccurrenceComment = {
