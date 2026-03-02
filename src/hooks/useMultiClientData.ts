@@ -619,34 +619,58 @@ export async function fetchAddressByCep(cep: string) {
 export async function fetchCnpjData(cnpj: string) {
   const clean = cnpj.replace(/\D/g, "");
   if (clean.length !== 14) return null;
+
+  // Try BrasilAPI first (public, no auth needed)
   try {
-    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cnpj-lookup?cnpj=${clean}`;
-    const { data: sessionData } = await supabase.auth.getSession();
-    const token = sessionData?.session?.access_token;
-    const response = await fetch(url, {
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      },
+    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${clean}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.razao_social !== undefined) {
+        const ieList = (data.inscricoes_estaduais || []).map((ie: any) => ({
+          inscricao_estadual: ie.inscricao_estadual || ie,
+          ativo: ie.ativo !== undefined ? ie.ativo : true,
+        }));
+        return {
+          razao_social: data.razao_social || "",
+          nome_fantasia: data.nome_fantasia || "",
+          inscricoes_estaduais: ieList,
+          street: data.logradouro || "",
+          number: data.numero || "",
+          complement: data.complemento || "",
+          neighborhood: data.bairro || "",
+          city: data.municipio || "",
+          state: data.uf || "",
+          zip_code: data.cep || "",
+        };
+      }
+    }
+  } catch { /* fallback below */ }
+
+  // Fallback: try ReceitaWS
+  try {
+    const res = await fetch(`https://receitaws.com.br/v1/cnpj/${clean}`, {
+      headers: { Accept: "application/json" },
     });
-    if (!response.ok) return null;
-    const data = await response.json();
-    if (data.error) return null;
-    return data as {
-      razao_social: string;
-      nome_fantasia: string;
-      inscricoes_estaduais: Array<{ inscricao_estadual: string; ativo: boolean }>;
-      street: string;
-      number: string;
-      complement: string;
-      neighborhood: string;
-      city: string;
-      state: string;
-      zip_code: string;
-    };
-  } catch {
-    return null;
-  }
+    if (res.ok) {
+      const data = await res.json();
+      if (data.status !== "ERROR" && data.nome) {
+        return {
+          razao_social: data.nome || "",
+          nome_fantasia: data.fantasia || "",
+          inscricoes_estaduais: [] as Array<{ inscricao_estadual: string; ativo: boolean }>,
+          street: data.logradouro || "",
+          number: data.numero || "",
+          complement: data.complemento || "",
+          neighborhood: data.bairro || "",
+          city: data.municipio || "",
+          state: data.uf || "",
+          zip_code: data.cep || "",
+        };
+      }
+    }
+  } catch { /* skip */ }
+
+  return null;
 }
 
 // ─── Client Store Models ─────────────────────────────────

@@ -1,7 +1,16 @@
 project_id = "dryngkjeerlssebnpymb"
 
-[functions.cnpj-lookup]
+[functions.cnpjlookup]
 verify_jwt = false
 
 [functions.backup-restore]
+verify_jwt = false
+
+[functions.cep-lookup]
+verify_jwt = false
+
+[functions.delete-user]
+verify_jwt = false
+
+[functions.notify-occurrence]
 verify_jwt = false

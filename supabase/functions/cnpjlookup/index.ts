@@ -21,7 +21,6 @@ async function fetchCnpj(cnpj: string) {
 
       // BrasilAPI format
       if (data.razao_social !== undefined && data.descricao_identificador_matriz_filial !== undefined) {
-        // Normalize inscricoes_estaduais to [{inscricao_estadual, ativo}]
         const ieList = (data.inscricoes_estaduais || []).map((ie: any) => ({
           inscricao_estadual: ie.inscricao_estadual || ie,
           ativo: ie.ativo !== undefined ? ie.ativo : true,
