@@ -25,6 +25,7 @@ import AppHeader from "@/components/AppHeader";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { getStateColor } from "@/lib/stateColors";
 
 // Helper to parse "Label|type" format from custom field labels
 const FIELD_TYPES = [
@@ -772,7 +773,8 @@ const ClientDetail = () => {
                         <TableCell className="font-medium">
                           <button
                             type="button"
-                            className="text-left hover:text-primary hover:underline underline-offset-2 transition-colors cursor-pointer"
+                            className="text-left hover:underline underline-offset-2 transition-colors cursor-pointer px-2 py-0.5 rounded-md"
+                            style={{ backgroundColor: getStateColor(s.state).bg, color: getStateColor(s.state).text }}
                             onClick={() => handleOpenEditStore(s)}
                           >
                             {s.name}
