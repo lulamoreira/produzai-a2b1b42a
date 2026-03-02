@@ -18,6 +18,7 @@ const MAX_PHOTOS = 3;
 type OccurrenceEntry = {
   pieceId: string;
   motiveId: string;
+  locationInStore: string;
   description: string;
   photos: { url: string; preview: string }[];
 };
@@ -25,6 +26,7 @@ type OccurrenceEntry = {
 const emptyEntry = (): OccurrenceEntry => ({
   pieceId: "",
   motiveId: "",
+  locationInStore: "",
   description: "",
   photos: [],
 });
@@ -68,6 +70,20 @@ const PublicOccurrence = () => {
         .select("id, name, code, image_url")
         .eq("campaign_id", campaignId!)
         .order("code");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!campaignId,
+  });
+
+  const { data: locations = [] } = useQuery({
+    queryKey: ["public_locations", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_piece_locations")
+        .select("id, name")
+        .eq("campaign_id", campaignId!)
+        .order("name");
       if (error) throw error;
       return data;
     },
@@ -152,6 +168,7 @@ const PublicOccurrence = () => {
           piece_id: entry.pieceId,
           motive_id: entry.motiveId,
           description: entry.description || undefined,
+          location_in_store: entry.locationInStore || undefined,
           photo_url: entry.photos[0]?.url || undefined,
           reporter_name: reporterName.trim(),
           reporter_phone_ddd: phoneDDD.trim(),
@@ -345,6 +362,20 @@ const PublicOccurrence = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {locations.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Localização na Loja</label>
+                  <Select value={entry.locationInStore} onValueChange={(v) => updateEntry(idx, { locationInStore: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a localização" /></SelectTrigger>
+                    <SelectContent>
+                      {locations.map((loc) => (
+                        <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">Descrição (opcional)</label>

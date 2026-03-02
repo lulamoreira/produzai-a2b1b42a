@@ -153,63 +153,25 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit }: Pr
               <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
                 <User className="w-3 h-3" /> Nome
               </label>
-              {canEdit ? (
-                <Input
-                  className="h-7 text-xs"
-                  value={occ.reporter_name || ""}
-                  onChange={(e) => handleFieldUpdate("reporter_name", e.target.value)}
-                  placeholder="Nome do lojista..."
-                />
-              ) : (
-                <span className="text-xs font-medium">{occ.reporter_name || "—"}</span>
-              )}
+              <span className="text-xs font-medium">{occ.reporter_name || "—"}</span>
             </div>
             {/* Telefone */}
             <div>
               <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
                 <Phone className="w-3 h-3" /> WhatsApp
               </label>
-              {canEdit ? (
-                <div className="flex gap-1.5">
-                  <Input
-                    className="h-7 text-xs w-16"
-                    value={occ.reporter_phone_ddd || ""}
-                    onChange={(e) => handleFieldUpdate("reporter_phone_ddd", e.target.value.replace(/\D/g, "").slice(0, 2))}
-                    placeholder="DDD"
-                    maxLength={2}
-                  />
-                  <Input
-                    className="h-7 text-xs flex-1"
-                    value={occ.reporter_phone_number || ""}
-                    onChange={(e) => handleFieldUpdate("reporter_phone_number", e.target.value.replace(/\D/g, "").slice(0, 9))}
-                    placeholder="Número"
-                    maxLength={9}
-                  />
-                </div>
-              ) : (
-                <span className="text-xs font-medium">
-                  {occ.reporter_phone_ddd && occ.reporter_phone_number
-                    ? `(${occ.reporter_phone_ddd}) ${occ.reporter_phone_number}`
-                    : "—"}
-                </span>
-              )}
+              <span className="text-xs font-medium">
+                {occ.reporter_phone_ddd && occ.reporter_phone_number
+                  ? `(${occ.reporter_phone_ddd}) ${occ.reporter_phone_number}`
+                  : "—"}
+              </span>
             </div>
             {/* Email */}
             <div>
               <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
                 <Mail className="w-3 h-3" /> E-mail da Loja
               </label>
-              {canEdit ? (
-                <Input
-                  className="h-7 text-xs"
-                  type="email"
-                  value={occ.reporter_email || ""}
-                  onChange={(e) => handleFieldUpdate("reporter_email", e.target.value)}
-                  placeholder="email@loja.com"
-                />
-              ) : (
-                <span className="text-xs font-medium">{occ.reporter_email || "—"}</span>
-              )}
+              <span className="text-xs font-medium">{occ.reporter_email || "—"}</span>
             </div>
           </div>
         )}
