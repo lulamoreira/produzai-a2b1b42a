@@ -4,15 +4,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useOccurrenceMotives, useAddOccurrence } from "@/hooks/useOccurrences";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle2, Send, Package, X, ImagePlus } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Send, Package, X, ImagePlus, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 
 const MAX_PHOTOS = 3;
+
+type OccurrenceEntry = {
+  pieceId: string;
+  motiveId: string;
+  description: string;
+  photos: { url: string; preview: string }[];
+};
+
+const emptyEntry = (): OccurrenceEntry => ({
+  pieceId: "",
+  motiveId: "",
+  description: "",
+  photos: [],
+});
 
 const PublicOccurrence = () => {
   const { campaignId } = useParams<{ campaignId: string }>();
@@ -63,23 +78,39 @@ const PublicOccurrence = () => {
   const activeMotives = useMemo(() => motives.filter((m) => m.active), [motives]);
   const addOccurrence = useAddOccurrence();
 
+  // Reporter info (shared)
   const [storeId, setStoreId] = useState("");
-  const [pieceId, setPieceId] = useState("");
-  const [motiveId, setMotiveId] = useState("");
-  const [description, setDescription] = useState("");
-  const [photos, setPhotos] = useState<{ url: string; preview: string }[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [reporterName, setReporterName] = useState("");
+  const [phoneDDD, setPhoneDDD] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [reporterEmail, setReporterEmail] = useState("");
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Multiple occurrences
+  const [entries, setEntries] = useState<OccurrenceEntry[]>([emptyEntry()]);
+  const [uploading, setUploading] = useState<number | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const updateEntry = (idx: number, patch: Partial<OccurrenceEntry>) => {
+    setEntries((prev) => prev.map((e, i) => (i === idx ? { ...e, ...patch } : e)));
+  };
+
+  const removeEntry = (idx: number) => {
+    if (entries.length <= 1) return;
+    setEntries((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handlePhotoUpload = async (entryIdx: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-    const remaining = MAX_PHOTOS - photos.length;
+    const entry = entries[entryIdx];
+    const remaining = MAX_PHOTOS - entry.photos.length;
     if (remaining <= 0) { toast.error(`Máximo de ${MAX_PHOTOS} fotos.`); return; }
     const toUpload = files.slice(0, remaining);
 
-    setUploading(true);
+    setUploading(entryIdx);
     try {
+      const newPhotos: { url: string; preview: string }[] = [];
       for (const file of toUpload) {
         const compressed = await compressImage(file, 1200, 0.7);
         const path = `occ-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.jpg`;
@@ -89,52 +120,60 @@ const PublicOccurrence = () => {
         });
         if (error) { toast.error("Erro ao enviar foto."); continue; }
         const { data: urlData } = supabase.storage.from("occurrence-images").getPublicUrl(path);
-        setPhotos((prev) => [...prev, { url: urlData.publicUrl, preview: urlData.publicUrl }]);
+        newPhotos.push({ url: urlData.publicUrl, preview: urlData.publicUrl });
       }
+      updateEntry(entryIdx, { photos: [...entry.photos, ...newPhotos] });
     } finally {
-      setUploading(false);
+      setUploading(null);
       e.target.value = "";
     }
   };
 
-  const removePhoto = (idx: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== idx));
+  const removePhoto = (entryIdx: number, photoIdx: number) => {
+    const entry = entries[entryIdx];
+    updateEntry(entryIdx, { photos: entry.photos.filter((_, i) => i !== photoIdx) });
   };
+
+  const allEntriesValid = entries.every((e) => e.pieceId && e.motiveId);
+  const reporterValid = storeId && reporterName.trim() && phoneDDD.trim() && phoneNumber.trim() && reporterEmail.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!campaignId || !storeId || !pieceId || !motiveId) {
+    if (!campaignId || !reporterValid || !allEntriesValid) {
       toast.error("Preencha todos os campos obrigatórios.");
       return;
     }
+    setSubmitting(true);
     try {
-      const occurrenceData = {
-        campaign_id: campaignId,
-        store_id: storeId,
-        piece_id: pieceId,
-        motive_id: motiveId,
-        description: description || undefined,
-        photo_url: photos[0]?.url || undefined,
-      };
-      const occId = await addOccurrence.mutateAsync(occurrenceData);
-
-      // Save photos to occurrence_photos table if we got an ID back
-      if (occId && photos.length > 0) {
-        const photoRows = photos.map((p) => ({ occurrence_id: occId, photo_url: p.url }));
-        await supabase.from("occurrence_photos").insert(photoRows);
+      for (const entry of entries) {
+        const occurrenceData = {
+          campaign_id: campaignId,
+          store_id: storeId,
+          piece_id: entry.pieceId,
+          motive_id: entry.motiveId,
+          description: entry.description || undefined,
+          photo_url: entry.photos[0]?.url || undefined,
+          reporter_name: reporterName.trim(),
+          reporter_phone_ddd: phoneDDD.trim(),
+          reporter_phone_number: phoneNumber.trim(),
+          reporter_email: reporterEmail.trim(),
+        };
+        const occId = await addOccurrence.mutateAsync(occurrenceData);
+        if (occId && entry.photos.length > 0) {
+          const photoRows = entry.photos.map((p) => ({ occurrence_id: occId, photo_url: p.url }));
+          await supabase.from("occurrence_photos").insert(photoRows);
+        }
       }
-
       setSubmitted(true);
     } catch {
       toast.error("Erro ao registrar ocorrência.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleNew = () => {
-    setPieceId("");
-    setMotiveId("");
-    setDescription("");
-    setPhotos([]);
+    setEntries([emptyEntry()]);
     setSubmitted(false);
   };
 
@@ -167,9 +206,11 @@ const PublicOccurrence = () => {
           <div className="w-16 h-16 rounded-full bg-success/15 flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="w-8 h-8 text-success" />
           </div>
-          <h1 className="text-xl font-bold text-foreground mb-2">Ocorrência Registrada!</h1>
-          <p className="text-sm text-muted-foreground mb-6">Sua ocorrência foi enviada com sucesso. A equipe será notificada.</p>
-          <Button onClick={handleNew}>Registrar outra ocorrência</Button>
+          <h1 className="text-xl font-bold text-foreground mb-2">
+            {entries.length > 1 ? `${entries.length} Ocorrências Registradas!` : "Ocorrência Registrada!"}
+          </h1>
+          <p className="text-sm text-muted-foreground mb-6">Suas ocorrências foram enviadas com sucesso. A equipe será notificada.</p>
+          <Button onClick={handleNew}>Registrar novas ocorrências</Button>
         </div>
       </div>
     );
@@ -189,107 +230,189 @@ const PublicOccurrence = () => {
 
       <main className="max-w-lg mx-auto px-4 py-6">
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">Identifique sua loja *</label>
-            <Select value={storeId} onValueChange={setStoreId}>
-              <SelectTrigger><SelectValue placeholder="Selecione pelo apelido da loja" /></SelectTrigger>
-              <SelectContent>
-                {stores.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>{s.nickname || s.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* ── Dados do Lojista (compartilhados) ── */}
+          <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+            <h2 className="text-sm font-semibold text-foreground">Seus dados</h2>
 
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">Peça *</label>
-            <Select value={pieceId} onValueChange={setPieceId}>
-              <SelectTrigger><SelectValue placeholder="Selecione a peça" /></SelectTrigger>
-              <SelectContent>
-                {pieces.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    <div className="flex items-center gap-2">
-                      {p.image_url ? (
-                        <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
-                      ) : (
-                        <Package className="w-4 h-4 text-muted-foreground" />
-                      )}
-                      <span>{p.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Identifique sua loja *</label>
+              <Select value={storeId} onValueChange={setStoreId}>
+                <SelectTrigger><SelectValue placeholder="Selecione pelo apelido da loja" /></SelectTrigger>
+                <SelectContent>
+                  {stores.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>{s.nickname || s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">Motivo *</label>
-            <Select value={motiveId} onValueChange={setMotiveId}>
-              <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
-              <SelectContent>
-                {activeMotives.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>{m.description}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Seu nome *</label>
+              <Input
+                value={reporterName}
+                onChange={(e) => setReporterName(e.target.value)}
+                placeholder="Nome completo"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">Descrição (opcional)</label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descreva o problema em detalhes..."
-              rows={3}
-            />
-          </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">WhatsApp *</label>
+              <div className="flex gap-2">
+                <Input
+                  value={phoneDDD}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, "").slice(0, 2);
+                    setPhoneDDD(v);
+                  }}
+                  placeholder="DDD"
+                  className="w-20 text-center"
+                  inputMode="numeric"
+                  maxLength={2}
+                  required
+                />
+                <Input
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    const v = e.target.value.replace(/\D/g, "").slice(0, 9);
+                    setPhoneNumber(v);
+                  }}
+                  placeholder="Número"
+                  className="flex-1"
+                  inputMode="numeric"
+                  maxLength={9}
+                  required
+                />
+              </div>
+            </div>
 
-          {/* Multi-photo upload */}
-          <div>
-            <label className="text-sm font-medium text-foreground mb-1.5 block">
-              Fotos (opcional · até {MAX_PHOTOS})
-            </label>
-            <div className="flex flex-wrap gap-2 mb-2">
-              {photos.map((photo, i) => (
-                <div key={i} className="relative w-24 h-24 rounded-lg border border-border overflow-hidden group">
-                  <img src={photo.preview} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(i)}
-                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-              {photos.length < MAX_PHOTOS && (
-                <div className="relative w-24 h-24 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20 flex items-center justify-center cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    multiple
-                    onChange={handlePhotoUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    disabled={uploading}
-                  />
-                  <div className="flex flex-col items-center gap-1">
-                    {uploading ? (
-                      <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
-                    ) : (
-                      <>
-                        <ImagePlus className="w-5 h-5 text-muted-foreground" />
-                        <span className="text-[10px] text-muted-foreground">Adicionar</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">E-mail da loja *</label>
+              <Input
+                type="email"
+                value={reporterEmail}
+                onChange={(e) => setReporterEmail(e.target.value)}
+                placeholder="email@daloja.com.br"
+                required
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">Informe o e-mail da loja, não o pessoal.</p>
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={addOccurrence.isPending || !storeId || !pieceId || !motiveId}>
-            <Send className="w-4 h-4 mr-2" /> Enviar Ocorrência
+          {/* ── Ocorrências ── */}
+          {entries.map((entry, idx) => (
+            <div key={idx} className="rounded-xl border border-border bg-card p-4 space-y-4 relative">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-foreground">
+                  Ocorrência {entries.length > 1 ? `${idx + 1}` : ""}
+                </h2>
+                {entries.length > 1 && (
+                  <button type="button" onClick={() => removeEntry(idx)} className="text-destructive hover:text-destructive/80 transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Peça *</label>
+                <Select value={entry.pieceId} onValueChange={(v) => updateEntry(idx, { pieceId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a peça" /></SelectTrigger>
+                  <SelectContent>
+                    {pieces.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        <div className="flex items-center gap-2">
+                          {p.image_url ? (
+                            <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
+                          ) : (
+                            <Package className="w-4 h-4 text-muted-foreground" />
+                          )}
+                          <span>{p.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Motivo *</label>
+                <Select value={entry.motiveId} onValueChange={(v) => updateEntry(idx, { motiveId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione o motivo" /></SelectTrigger>
+                  <SelectContent>
+                    {activeMotives.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>{m.description}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Descrição (opcional)</label>
+                <Textarea
+                  value={entry.description}
+                  onChange={(e) => updateEntry(idx, { description: e.target.value })}
+                  placeholder="Descreva o problema em detalhes..."
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">
+                  Fotos (opcional · até {MAX_PHOTOS})
+                </label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {entry.photos.map((photo, i) => (
+                    <div key={i} className="relative w-24 h-24 rounded-lg border border-border overflow-hidden group">
+                      <img src={photo.preview} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(idx, i)}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {entry.photos.length < MAX_PHOTOS && (
+                    <div className="relative w-24 h-24 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20 flex items-center justify-center cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        multiple
+                        onChange={(e) => handlePhotoUpload(idx, e)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        disabled={uploading === idx}
+                      />
+                      <div className="flex flex-col items-center gap-1">
+                        {uploading === idx ? (
+                          <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full" />
+                        ) : (
+                          <>
+                            <ImagePlus className="w-5 h-5 text-muted-foreground" />
+                            <span className="text-[10px] text-muted-foreground">Adicionar</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={() => setEntries((prev) => [...prev, emptyEntry()])}
+          >
+            <Plus className="w-4 h-4 mr-2" /> Acrescentar mais uma ocorrência
+          </Button>
+
+          <Button type="submit" className="w-full" disabled={submitting || !reporterValid || !allEntriesValid}>
+            <Send className="w-4 h-4 mr-2" />
+            Enviar {entries.length > 1 ? `${entries.length} Ocorrências` : "Ocorrência"}
           </Button>
         </form>
       </main>

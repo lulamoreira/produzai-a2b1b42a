@@ -182,6 +182,10 @@ export function useAddOccurrence() {
       motive_id: string;
       description?: string;
       photo_url?: string;
+      reporter_name?: string;
+      reporter_phone_ddd?: string;
+      reporter_phone_number?: string;
+      reporter_email?: string;
     }): Promise<string | null> => {
       const { data: inserted, error } = await supabase.from("occurrences").insert(data).select("id").maybeSingle();
       if (error) {

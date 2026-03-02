@@ -637,6 +637,10 @@ export type Database = {
           piece_id: string
           reinstallation_datetime: string | null
           reinstallation_os: string | null
+          reporter_email: string | null
+          reporter_name: string | null
+          reporter_phone_ddd: string | null
+          reporter_phone_number: string | null
           resolved_date: string | null
           status: string | null
           store_id: string
@@ -656,6 +660,10 @@ export type Database = {
           piece_id: string
           reinstallation_datetime?: string | null
           reinstallation_os?: string | null
+          reporter_email?: string | null
+          reporter_name?: string | null
+          reporter_phone_ddd?: string | null
+          reporter_phone_number?: string | null
           resolved_date?: string | null
           status?: string | null
           store_id: string
@@ -675,6 +683,10 @@ export type Database = {
           piece_id?: string
           reinstallation_datetime?: string | null
           reinstallation_os?: string | null
+          reporter_email?: string | null
+          reporter_name?: string | null
+          reporter_phone_ddd?: string | null
+          reporter_phone_number?: string | null
           resolved_date?: string | null
           status?: string | null
           store_id?: string
