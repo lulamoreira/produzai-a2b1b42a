@@ -73,41 +73,43 @@ export default function AppHeader({
 
   return (
     <header className="border-b border-border bg-card sticky top-0 z-10">
-      <div className={`${maxWidth} mx-auto px-4 py-3 flex items-center justify-between gap-3`}>
-        <div className="flex items-center gap-3 min-w-0">
+      <div className={`${maxWidth} mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2`}>
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           {backTo && (
-            <Button variant="ghost" size="sm" onClick={() => navigate(backTo)}>
-              <ArrowLeft className="w-4 h-4 mr-1" /> {backLabel || "Voltar"}
+            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => navigate(backTo)}>
+              <ArrowLeft className="w-4 h-4" />
             </Button>
           )}
           <div className="min-w-0">
-            <h1 className="text-lg font-bold text-foreground truncate">
+            <h1 className="text-sm sm:text-lg font-bold text-foreground truncate">
               {title || greeting}
             </h1>
             {subtitle && (
-              <p className="text-xs text-muted-foreground">{subtitle}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{subtitle}</p>
             )}
           </div>
         </div>
 
         {children}
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {showNav && (
             <>
-              <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => navigate("/chat")}>
-                <MessageSquare className="w-3.5 h-3.5" /> Chat
+              <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1" onClick={() => navigate("/chat")}>
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline text-xs">Chat</span>
               </Button>
               {isAdmin && (
-                <Button size="sm" variant="outline" className="gap-1 text-xs" onClick={() => navigate("/admin")}>
-                  <Shield className="w-3.5 h-3.5" /> Admin
+                <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1" onClick={() => navigate("/admin")}>
+                  <Shield className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline text-xs">Admin</span>
                 </Button>
               )}
             </>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="ghost" className="gap-1.5 rounded-full px-3">
+              <Button size="sm" variant="ghost" className="gap-1.5 rounded-full px-1.5 sm:px-3">
                 <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center">
                   <span className="text-xs font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
                 </div>

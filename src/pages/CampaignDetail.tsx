@@ -390,45 +390,47 @@ const CampaignDetail = () => {
 
   // ─── Store filters bar ─────────────────────────────────
   const renderStoreFilters = () => (
-    <div className="flex flex-wrap items-center gap-3 mb-4">
-      <div className="relative flex-1 min-w-[200px] max-w-xs">
+    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3 mb-4">
+      <div className="relative flex-1 min-w-0 sm:min-w-[200px] sm:max-w-xs">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="pl-10" />
       </div>
-      {uniqueStates.length > 0 && (
-        <Select value={stateFilter} onValueChange={setStateFilter}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Todos estados</SelectItem>
-            {uniqueStates.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      )}
-      {uniqueCities.length > 0 && (
-        <Select value={cityFilter} onValueChange={setCityFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Cidade" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Todas cidades</SelectItem>
-            {uniqueCities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      )}
-      {uniqueStoreCategories.length > 0 && (
-        <Select value={storeCategoryFilter} onValueChange={setStoreCategoryFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Cat. de Loja" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">Todas categorias</SelectItem>
-            {uniqueStoreCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      )}
-      <span className="text-sm text-muted-foreground">{filteredStores.length} loja(s)</span>
+      <div className="flex flex-wrap gap-2">
+        {uniqueStates.length > 0 && (
+          <Select value={stateFilter} onValueChange={setStateFilter}>
+            <SelectTrigger className="w-[120px] sm:w-[140px]">
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todos estados</SelectItem>
+              {uniqueStates.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+        {uniqueCities.length > 0 && (
+          <Select value={cityFilter} onValueChange={setCityFilter}>
+            <SelectTrigger className="w-[140px] sm:w-[180px]">
+              <SelectValue placeholder="Cidade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas cidades</SelectItem>
+              {uniqueCities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+        {uniqueStoreCategories.length > 0 && (
+          <Select value={storeCategoryFilter} onValueChange={setStoreCategoryFilter}>
+            <SelectTrigger className="w-[140px] sm:w-[180px]">
+              <SelectValue placeholder="Cat. de Loja" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas categorias</SelectItem>
+              {uniqueStoreCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+      <span className="text-xs sm:text-sm text-muted-foreground">{filteredStores.length} loja(s)</span>
     </div>
   );
 
@@ -464,7 +466,7 @@ const CampaignDetail = () => {
         maxWidth="max-w-[95vw]"
       />
 
-      <main className="max-w-[95vw] mx-auto px-4 py-6">
+      <main className="max-w-[95vw] mx-auto px-2 sm:px-4 py-4 sm:py-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4 flex items-center gap-3">
@@ -488,11 +490,11 @@ const CampaignDetail = () => {
         </div>
 
         <Tabs defaultValue="stores">
-          <TabsList className="mb-6 bg-card border border-border">
-            <TabsTrigger value="stores" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Store className="w-4 h-4" /> Lojas</TabsTrigger>
-            <TabsTrigger value="matrix" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Grid3X3 className="w-4 h-4" /> Matriz</TabsTrigger>
-            <TabsTrigger value="pieces" className="gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><LayoutList className="w-4 h-4" /> Peças</TabsTrigger>
-            <TabsTrigger value="occurrences" className="gap-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive"><AlertTriangle className="w-4 h-4" /> Ocorrências</TabsTrigger>
+          <TabsList className="mb-6 bg-card border border-border w-full overflow-x-auto flex justify-start">
+            <TabsTrigger value="stores" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Store className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Lojas</span></TabsTrigger>
+            <TabsTrigger value="matrix" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Grid3X3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Matriz</span></TabsTrigger>
+            <TabsTrigger value="pieces" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><LayoutList className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Peças</span></TabsTrigger>
+            <TabsTrigger value="occurrences" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive"><AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Ocorrências</span></TabsTrigger>
           </TabsList>
 
           {/* ─── TAB: LOJAS ─── */}
@@ -550,8 +552,8 @@ const CampaignDetail = () => {
                 <p className="text-muted-foreground text-sm">Nenhuma loja encontrada.</p>
               </div>
             ) : (
-              <div className="border border-border rounded-lg overflow-hidden">
-                <Table>
+              <div className="border border-border rounded-lg overflow-x-auto">
+                <Table className="min-w-[700px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Loja</TableHead>
