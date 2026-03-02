@@ -67,6 +67,7 @@ const defaultCategoryForm = (): Omit<PermissionCategory, "id" | "created_at"> =>
   can_view_campaign_stores: true, can_edit_campaign_stores: false, can_delete_campaign_stores: false,
   can_view_pieces: true, can_edit_pieces: false, can_delete_pieces: false,
   can_view_occurrences: true, can_edit_occurrences: false, can_delete_occurrences: false,
+  can_edit_reporter_data: false,
 });
 
 const getCategoryField = (form: any, perm: PermKey, mod: ModuleKey): boolean => {
@@ -460,6 +461,16 @@ onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: categoryHasEdi
                         ))}
                       </TableBody>
                     </Table>
+                  </div>
+                  {/* Permissão especial: Editar Dados do Lojista */}
+                  <div className="flex items-center gap-3 pt-2 border-t border-border">
+                    <Checkbox
+                      checked={!!categoryForm.can_edit_reporter_data}
+                      onCheckedChange={(checked) =>
+                        setCategoryForm((f) => ({ ...f, can_edit_reporter_data: !!checked }))
+                      }
+                    />
+                    <label className="text-sm font-medium">Editar Dados do Lojista (Ocorrências)</label>
                   </div>
                    <Button onClick={handleSaveCategory} className="w-full" disabled={addCategory.isPending || updateCategory.isPending}>
                     {editingCategory ? "Salvar" : "Criar Role"}

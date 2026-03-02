@@ -38,14 +38,16 @@ import PhotoLightbox from "./PhotoLightbox";
 
 interface Props {
   campaignId: string;
+  clientId?: string;
   stores: ClientStore[];
   pieces: CampaignPiece[];
   canEdit?: boolean;
   canDelete?: boolean;
+  canEditReporter?: boolean;
 }
 
 
-const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp, canDelete: canDeleteProp }: Props) => {
+const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEditProp, canDelete: canDeleteProp, canEditReporter: canEditReporterProp }: Props) => {
   const { isAdmin } = useUserRole();
   const canEdit = canEditProp ?? isAdmin;
   const canDelete = canDeleteProp ?? isAdmin;
@@ -361,6 +363,7 @@ const OccurrencesTab = ({ campaignId, stores, pieces, canEdit: canEditProp, canD
                   campaignId={campaignId}
                   pieceLocations={pieceLocations}
                   canEdit={canEdit}
+                  canEditReporter={canEditReporterProp}
                 />
 
 

@@ -23,6 +23,7 @@ export type PermissionCategory = {
   can_view_occurrences: boolean;
   can_edit_occurrences: boolean;
   can_delete_occurrences: boolean;
+  can_edit_reporter_data: boolean;
   created_at: string;
 };
 
