@@ -137,6 +137,10 @@ const CampaignDetail = () => {
       // Store category filter: show stores that have pieces with matching store_category
       const matchesStoreCategory = storeCategoryFilter === "__all__" || true; // applied on matrix level
       return matchesSearch && matchesCity && matchesState && matchesStoreCategory;
+    }).sort((a, b) => {
+      const stateComp = (a.state || "").localeCompare(b.state || "");
+      if (stateComp !== 0) return stateComp;
+      return a.name.localeCompare(b.name);
     });
   }, [stores, storeSearch, cityFilter, stateFilter, storeCategoryFilter]);
 
