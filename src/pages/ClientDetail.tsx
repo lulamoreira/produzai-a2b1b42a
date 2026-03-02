@@ -273,18 +273,17 @@ const ClientDetail = () => {
           toast.error("Nenhuma loja encontrada na planilha.");
           return;
         }
-        let added = 0, updated = 0;
-        for (const item of mapped) {
-          const existing = stores.find(s => s.name.toLowerCase() === item.name.toLowerCase());
-          if (existing) {
-            await updateStore.mutateAsync({ id: existing.id, ...item });
-            updated++;
-          } else {
-            await addStore.mutateAsync(item);
-            added++;
-          }
+        const existingNames = new Set(stores.map(s => s.name.toLowerCase()));
+        const newStores = mapped.filter(item => !existingNames.has(item.name.toLowerCase()));
+        if (newStores.length === 0) {
+          toast.info(`Nenhuma loja nova encontrada. ${mapped.length} já existente(s) foram ignoradas.`);
+          return;
         }
-        toast.success(`${added} adicionada(s), ${updated} atualizada(s)!`);
+        for (const item of newStores) {
+          await addStore.mutateAsync(item);
+        }
+        const skipped = mapped.length - newStores.length;
+        toast.success(`${newStores.length} loja(s) adicionada(s)${skipped > 0 ? `, ${skipped} já existente(s) ignorada(s)` : ""}!`);
       } catch {
         toast.error("Erro ao ler a planilha.");
       }
@@ -299,11 +298,17 @@ const ClientDetail = () => {
     setSettingsOpen(false);
   };
 
-  const filteredStores = stores.filter((s) =>
-    s.name.toLowerCase().includes(storeSearch.toLowerCase()) ||
-    s.nickname?.toLowerCase().includes(storeSearch.toLowerCase()) ||
-    s.city?.toLowerCase().includes(storeSearch.toLowerCase())
-  );
+  const filteredStores = stores
+    .filter((s) =>
+      s.name.toLowerCase().includes(storeSearch.toLowerCase()) ||
+      s.nickname?.toLowerCase().includes(storeSearch.toLowerCase()) ||
+      s.city?.toLowerCase().includes(storeSearch.toLowerCase())
+    )
+    .sort((a, b) => {
+      const stateA = (a.state || "").localeCompare(b.state || "");
+      if (stateA !== 0) return stateA;
+      return a.name.localeCompare(b.name);
+    });
 
   const customFieldLabelsRaw = [
     client?.custom_field_1_label,
