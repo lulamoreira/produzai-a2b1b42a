@@ -11,9 +11,9 @@ import authBg2 from "@/assets/auth-bg-2.jpg";
 import authBg3 from "@/assets/auth-bg-3.jpg";
 
 const slides = [
-{ src: authBg1, label: "Produção Gráfica" },
-{ src: authBg2, label: "Planejamento Criativo" },
-{ src: authBg3, label: "Montagem de Vitrines" }];
+{ src: authBg1, label: "Produção Gráfica", subtitle: "Controle fornecedores, prazos e materiais com segurança." },
+{ src: authBg2, label: "Planejamento Criativo", subtitle: "Transforme ideias em produção com organização e clareza." },
+{ src: authBg3, label: "Montagem de Vitrines", subtitle: "Gerencie instalações e materiais em todas as lojas." }];
 
 
 const Auth = () => {
@@ -96,8 +96,8 @@ const Auth = () => {
           <p className="text-white/80 text-sm font-medium uppercase tracking-widest mb-2">
             {slides[currentSlide].label}
           </p>
-          <h2 className="text-white text-3xl font-display font-bold leading-tight">Transforme ideias em produção com organização e clareza.
-            <br />criativa em um só lugar.
+          <h2 className="text-white text-3xl font-display font-bold leading-tight">
+            {slides[currentSlide].subtitle}
           </h2>
           {/* Dots */}
           <div className="flex gap-2 mt-6">
