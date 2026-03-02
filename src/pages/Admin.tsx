@@ -321,6 +321,39 @@ const Admin = () => {
                     {users.map((u) => {
                       const userAccesses = allAccess.filter((a) => a.user_id === u.user_id);
 
+                      // Master/Editor can only edit names of non-admin users in the same agency
+                      const canEditName = isAdmin
+                        ? true
+                        : isMasterOrEditor && u.role !== "admin" && (() => {
+                            // Get current user's agency IDs (from agency access)
+                            const myAgencyIds = allAgencyAccess
+                              .filter((a) => a.user_id === user?.id)
+                              .map((a) => a.agency_id);
+                            // Get current user's agency IDs via client access
+                            const myClientAgencyIds = allAccess
+                              .filter((a) => a.user_id === user?.id)
+                              .map((a) => {
+                                const c = clients.find((c) => c.id === a.client_id);
+                                return c?.agency_id;
+                              })
+                              .filter(Boolean);
+                            const allMyAgencyIds = [...new Set([...myAgencyIds, ...myClientAgencyIds])];
+                            if (allMyAgencyIds.length === 0) return false;
+                            // Check if target user shares any agency
+                            const targetAgencyIds = allAgencyAccess
+                              .filter((a) => a.user_id === u.user_id)
+                              .map((a) => a.agency_id);
+                            const targetClientAgencyIds = allAccess
+                              .filter((a) => a.user_id === u.user_id)
+                              .map((a) => {
+                                const c = clients.find((c) => c.id === a.client_id);
+                                return c?.agency_id;
+                              })
+                              .filter(Boolean);
+                            const allTargetAgencyIds = [...new Set([...targetAgencyIds, ...targetClientAgencyIds])];
+                            return allMyAgencyIds.some((id) => allTargetAgencyIds.includes(id));
+                          })();
+
                       return (
                       <TableRow key={u.user_id}>
                         <TableCell>
@@ -338,12 +371,14 @@ const Admin = () => {
                           ) : (
                             <div className="flex items-center gap-1 group">
                               <p className="font-medium text-foreground text-sm">{capitalizeName(u.display_name) || "Sem nome"}</p>
+                              {canEditName && (
                               <button
                                 className="opacity-0 group-hover:opacity-100 transition-opacity"
                                 onClick={() => { setEditingNameUserId(u.user_id); setEditNameValue(u.display_name || ""); }}
                               >
                                 <Edit3 className="w-3 h-3 text-muted-foreground hover:text-foreground" />
                               </button>
+                              )}
                             </div>
                           )}
                           <p className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
