@@ -66,7 +66,7 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img src="/favicon.png" alt="Posso Produzir" className="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-xl shadow-primary/20" />
-          <h1 className="text-2xl font-display font-bold text-foreground">Posso Produzir</h1>
+          <h1 className="text-2xl font-display font-bold text-foreground">Posso Produzir?</h1>
           <p className="text-sm text-muted-foreground mt-1">Plataforma de produção para agências</p>
         </div>
 
