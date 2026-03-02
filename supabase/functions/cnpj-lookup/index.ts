@@ -21,10 +21,15 @@ async function fetchCnpj(cnpj: string) {
 
       // BrasilAPI format
       if (data.razao_social !== undefined && data.descricao_identificador_matriz_filial !== undefined) {
+        // Normalize inscricoes_estaduais to [{inscricao_estadual, ativo}]
+        const ieList = (data.inscricoes_estaduais || []).map((ie: any) => ({
+          inscricao_estadual: ie.inscricao_estadual || ie,
+          ativo: ie.ativo !== undefined ? ie.ativo : true,
+        }));
         return {
           razao_social: data.razao_social || "",
           nome_fantasia: data.nome_fantasia || "",
-          inscricoes_estaduais: data.inscricoes_estaduais || [],
+          inscricoes_estaduais: ieList,
           street: data.logradouro || "",
           number: data.numero || "",
           complement: data.complemento || "",
