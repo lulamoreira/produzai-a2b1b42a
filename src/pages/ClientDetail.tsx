@@ -4,6 +4,7 @@ import {
   useClient, useCampaigns, useAddCampaign, useDeleteCampaign,
   useClientStores, useAddClientStore, useImportClientStores, useDeleteClientStore,
   useUpdateClient, useUpdateClientStore, fetchAddressByCep,
+  useClientStoreModels, useAddClientStoreModel, useDeleteClientStoreModel,
   type ClientStore,
 } from "@/hooks/useMultiClientData";
 import { useClientPermission } from "@/hooks/useClientPermission";
@@ -20,7 +21,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -111,12 +112,17 @@ const ClientDetail = () => {
   const deleteStore = useDeleteClientStore();
   const updateClient = useUpdateClient();
   const updateStore = useUpdateClientStore();
+  const { data: storeModels = [] } = useClientStoreModels(clientId);
+  const addStoreModel = useAddClientStoreModel();
+  const deleteStoreModel = useDeleteClientStoreModel();
 
   const [campaignName, setCampaignName] = useState("");
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
   const [storeDialogOpen, setStoreDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [storeSearch, setStoreSearch] = useState("");
+  const [storeModelDialogOpen, setStoreModelDialogOpen] = useState(false);
+  const [newModelName, setNewModelName] = useState("");
 
   // Store form
   const [storeForm, setStoreForm] = useState({ ...emptyStoreForm });
@@ -404,7 +410,22 @@ const ClientDetail = () => {
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
-          <Input value={form.store_model} onChange={(e) => setForm((f) => ({ ...f, store_model: e.target.value }))} placeholder="Ex: Premium" />
+          <div className="flex gap-1">
+            <Select value={form.store_model || ""} onValueChange={(val) => setForm((f) => ({ ...f, store_model: val === "__none__" ? "" : val }))}>
+              <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">Nenhum</SelectItem>
+                {storeModels.map((m) => (
+                  <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {canEditStores && (
+              <Button type="button" variant="outline" size="icon" className="shrink-0 h-9 w-9" onClick={() => setStoreModelDialogOpen(true)} title="Gerenciar modelos">
+                <Tag className="w-3.5 h-3.5" />
+              </Button>
+            )}
+          </div>
         </div>
         <div className="col-span-2">
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Código da Loja</label>
@@ -831,6 +852,51 @@ const ClientDetail = () => {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* ─── Store Models Management Dialog ─── */}
+      <Dialog open={storeModelDialogOpen} onOpenChange={setStoreModelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gerenciar Modelos de Loja</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            if (!clientId || !newModelName.trim()) return;
+            await addStoreModel.mutateAsync({ client_id: clientId, name: newModelName.trim() });
+            setNewModelName("");
+          }} className="flex gap-2">
+            <Input value={newModelName} onChange={(e) => setNewModelName(e.target.value)} placeholder="Nome do modelo" className="flex-1" />
+            <Button type="submit" size="sm" disabled={addStoreModel.isPending || !newModelName.trim()}>
+              <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar
+            </Button>
+          </form>
+          <div className="space-y-1 max-h-60 overflow-y-auto">
+            {storeModels.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhum modelo cadastrado.</p>}
+            {storeModels.map((m) => (
+              <div key={m.id} className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50">
+                <span className="text-sm">{m.name}</span>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir modelo?</AlertDialogTitle>
+                      <AlertDialogDescription>O modelo "{m.name}" será removido. Lojas que usam este modelo não serão alteradas.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteStoreModel.mutate(m.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

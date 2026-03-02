@@ -600,3 +600,53 @@ export async function fetchAddressByCep(cep: string) {
     return null;
   }
 }
+
+// ─── Client Store Models ─────────────────────────────────
+
+export type ClientStoreModel = {
+  id: string;
+  client_id: string;
+  name: string;
+  created_at: string;
+};
+
+export function useClientStoreModels(clientId: string | undefined) {
+  return useQuery({
+    queryKey: ["client_store_models", clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      const { data, error } = await supabase
+        .from("client_store_models")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("name");
+      if (error) throw error;
+      return data as ClientStoreModel[];
+    },
+    enabled: !!clientId,
+  });
+}
+
+export function useAddClientStoreModel() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (model: { client_id: string; name: string }) => {
+      const { error } = await supabase.from("client_store_models").insert(model);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["client_store_models"] }); toast.success("Modelo adicionado!"); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useDeleteClientStoreModel() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("client_store_models").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["client_store_models"] }); toast.success("Modelo removido!"); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
