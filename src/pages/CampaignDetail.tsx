@@ -7,6 +7,7 @@ import {
   useCampaignPieceLocations, useAddCampaignPieceLocation, useDeleteCampaignPieceLocation,
   useUpdateClientStore,
   useCampaignStoreStatus, useUpsertCampaignStoreStatus, useBulkUpsertCampaignStoreStatus,
+  useClientStoreModels,
   type CampaignPiece, type ClientStore,
 } from "@/hooks/useMultiClientData";
 
@@ -49,6 +50,7 @@ const CampaignDetail = () => {
   const { data: client } = useClient(clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: stores = [] } = useClientStores(clientId);
+  const { data: clientStoreModels = [] } = useClientStoreModels(clientId);
   const { data: pieces = [], isLoading: loadingPieces } = useCampaignPieces(campaignId);
   const { data: storePieces = [] } = useCampaignStorePieces(campaignId);
   const addPiece = useAddCampaignPiece();
@@ -172,10 +174,6 @@ const CampaignDetail = () => {
     return { prefix: campaignPrefix, seq, full: `${campaignPrefix}${String(seq).padStart(4, "0")}` };
   }, [pieces, campaign]);
 
-  const uniqueStoreModels = useMemo(() => 
-    [...new Set(stores.map((s) => s.store_model).filter(Boolean))].sort() as string[], 
-    [stores]
-  );
 
   const handleAddPiece = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -279,9 +277,9 @@ const CampaignDetail = () => {
   const handleDistributePiece = async (piece: CampaignPiece) => {
     if (!campaignId) return;
     const autoStores = stores.filter(s => s.auto_distribute && isStoreEnabled(s.id));
-    const targetStores = piece.store_category === "Outras" || !piece.store_category
+    const targetStores = piece.store_category === "Todas" || !piece.store_category
       ? autoStores
-      : autoStores.filter(s => s.store_model === piece.store_category || s.store_model === "Outras" || !s.store_model);
+      : autoStores.filter(s => s.store_model === piece.store_category);
     
     // Check if piece is already distributed (any target store has it)
     const assignedStores = targetStores.filter(s => qtyMap[`${s.id}-${piece.id}`]);
@@ -354,28 +352,15 @@ const CampaignDetail = () => {
       </div>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
-        {uniqueStoreModels.length > 0 ? (
-          <Select value={form.store_category} onValueChange={(val) => setForm((f) => ({ ...f, store_category: val }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o modelo" />
-            </SelectTrigger>
-            <SelectContent>
-              {uniqueStoreModels.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-              {!uniqueStoreModels.includes("Outras") && (
-                <SelectItem value="Outras">Outras</SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        ) : (
-          <Select value={form.store_category} onValueChange={(val) => setForm((f) => ({ ...f, store_category: val }))}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o modelo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Outras">Outras</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
+        <Select value={form.store_category || "Todas"} onValueChange={(val) => setForm((f) => ({ ...f, store_category: val }))}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione o modelo" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Todas">Todas</SelectItem>
+            {clientStoreModels.map((m) => <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Especificação</label>
@@ -659,11 +644,12 @@ const CampaignDetail = () => {
             {selectedStoreId && (() => {
               const selectedStore = stores.find(s => s.id === selectedStoreId);
               if (!selectedStore) return null;
-              // Filter pieces by store model compatibility: same model + "Outras"
+              // Filter pieces by store model compatibility: same model + "Todas"
               const storeModel = selectedStore.store_model;
               const compatiblePieces = pieces.filter(p => {
-                if (!storeModel || !p.store_category) return true;
-                return p.store_category === storeModel || p.store_category === "Outras";
+                if (!p.store_category || p.store_category === "Todas") return true;
+                if (!storeModel) return true;
+                return p.store_category === storeModel;
               });
               const storePiecesForStore = compatiblePieces.map(p => ({
                 ...p,
@@ -1174,9 +1160,9 @@ const CampaignDetail = () => {
                               <div className="flex items-center gap-1">
                                 {canEditPieces && (() => {
                                   const autoStores = stores.filter(s => s.auto_distribute);
-                                  const targetStores = p.store_category === "Outras" || !p.store_category
+                                  const targetStores = p.store_category === "Todas" || !p.store_category
                                     ? autoStores
-                                    : autoStores.filter(s => s.store_model === p.store_category || s.store_model === "Outras" || !s.store_model);
+                                    : autoStores.filter(s => s.store_model === p.store_category);
                                   const isDistributed = targetStores.some(s => qtyMap[`${s.id}-${p.id}`]);
                                   return (
                                     <Button variant="ghost" size="icon" className="h-7 w-7" title={isDistributed ? "Remover de todas as lojas" : "Distribuir para lojas compatíveis"} onClick={() => handleDistributePiece(p)}>
