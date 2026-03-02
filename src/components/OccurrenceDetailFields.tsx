@@ -182,23 +182,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit }: Pr
         <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
           <MapPin className="w-3 h-3" /> Localização na Loja
         </label>
-        {canEdit ? (
-          <Select
-            value={occ.location_in_store || ""}
-            onValueChange={(val) => handleFieldUpdate("location_in_store", val)}
-          >
-            <SelectTrigger className="h-7 text-xs">
-              <SelectValue placeholder="Selecione..." />
-            </SelectTrigger>
-            <SelectContent>
-              {pieceLocations.map((loc) => (
-                <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <span className="text-xs">{occ.location_in_store || "—"}</span>
-        )}
+        <span className="text-xs">{occ.location_in_store || "—"}</span>
       </div>
 
       {/* 2 - Ações Tomadas */}
