@@ -1,21 +1,24 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useUpdatePieceImage, type Piece } from "@/hooks/useStoreData";
+import { useUpdateCampaignPieceImage } from "@/hooks/useMultiClientData";
 import { compressImage } from "@/lib/compressImage";
 import { Image, Upload, Link, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import type { CampaignPiece } from "@/hooks/useMultiClientData";
 
-interface PieceImageUploadProps {
-  piece: Piece;
+interface Props {
+  piece: CampaignPiece;
+  canEdit?: boolean;
 }
 
-const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
+const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
   const [open, setOpen] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [uploading, setUploading] = useState(false);
-  const updateImage = useUpdatePieceImage();
+  const updateImage = useUpdateCampaignPieceImage();
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -24,7 +27,7 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
     setUploading(true);
     try {
       const compressed = await compressImage(file, 800, 0.6);
-      const path = `piece-${piece.id}-${Date.now()}.jpg`;
+      const path = `campaign-piece-${piece.id}-${Date.now()}.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from("piece-images")
@@ -35,8 +38,8 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
       const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
       await updateImage.mutateAsync({ pieceId: piece.id, imageUrl: urlData.publicUrl });
       setOpen(false);
-    } catch {
-      // silently fail
+    } catch (err: any) {
+      toast.error("Erro ao enviar imagem: " + err.message);
     } finally {
       setUploading(false);
     }
@@ -54,16 +57,14 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
     setOpen(false);
   };
 
+  if (!canEdit) return null;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="relative group w-10 h-10 rounded-lg border border-border bg-muted/50 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors shrink-0">
-          {piece.image_url ? (
-            <img src={piece.image_url} alt={piece.name} className="w-full h-full object-cover" />
-          ) : (
-            <Image className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          )}
-        </button>
+        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Gerenciar imagem">
+          <Image className="w-3.5 h-3.5 text-muted-foreground" />
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -102,7 +103,7 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
                 <div className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20">
                   <Upload className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    {uploading ? "Enviando..." : "Clique ou arraste um arquivo"}
+                    {uploading ? "Comprimindo e enviando..." : "Clique ou arraste (será comprimida)"}
                   </span>
                 </div>
               </div>
@@ -135,4 +136,4 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
   );
 };
 
-export default PieceImageUpload;
+export default CampaignPieceImageUpload;

@@ -5,6 +5,7 @@ import {
 } from "@/components/ui/table";
 import { Edit3, Save, X, Undo2 } from "lucide-react";
 import { toast } from "sonner";
+import PieceThumbnail from "@/components/PieceThumbnail";
 import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 
 interface QuickMatrixEditorProps {
@@ -194,6 +195,7 @@ const QuickMatrixEditor = ({
                 {pieces.map((p) => (
                   <TableHead key={p.id} className="text-center min-w-[80px]">
                     <div className="flex flex-col items-center gap-0.5">
+                      <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
                       <span className="text-xs font-bold">{p.code}</span>
                       <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">{p.name}</span>
                     </div>
