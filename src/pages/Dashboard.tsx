@@ -92,7 +92,7 @@ const Dashboard = () => {
         maxWidth="max-w-6xl"
       />
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
         {/* Stats bar */}
         <div className="grid grid-cols-2 gap-3 mb-8">
           <div className="card-kpi flex items-center gap-3">
