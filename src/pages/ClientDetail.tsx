@@ -286,7 +286,8 @@ const ClientDetail = () => {
         try {
           const cnpjData = await fetchCnpjData(store.cnpj);
           if (cnpjData) {
-            const activeIE = cnpjData.inscricoes_estaduais?.find((ie) => ie.ativo);
+            const ieList = cnpjData.inscricoes_estaduais || [];
+            const activeIE = ieList.find((ie) => ie.ativo) || ieList[0];
             if (activeIE?.inscricao_estadual) {
               updates.state_registration = activeIE.inscricao_estadual;
             }
