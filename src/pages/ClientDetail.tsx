@@ -511,25 +511,18 @@ const ClientDetail = () => {
           <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
           <Input value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} placeholder="Ex: Brasil" />
         </div>
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
-          <div className="flex gap-1">
-            <Select value={form.store_model || ""} onValueChange={(val) => setForm((f) => ({ ...f, store_model: val === "__none__" ? "" : val }))}>
-              <SelectTrigger className="flex-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">Nenhum</SelectItem>
-                {storeModels.map((m) => (
-                  <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {canEditStores && (
-              <Button type="button" variant="outline" size="icon" className="shrink-0 h-9 w-9" onClick={() => setStoreModelDialogOpen(true)} title="Gerenciar modelos">
-                <Tag className="w-3.5 h-3.5" />
-              </Button>
-            )}
-          </div>
-        </div>
+         <div>
+           <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
+           <Select value={form.store_model || ""} onValueChange={(val) => setForm((f) => ({ ...f, store_model: val === "__none__" ? "" : val }))}>
+             <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+             <SelectContent>
+               <SelectItem value="__none__">Nenhum</SelectItem>
+               {storeModels.map((m) => (
+                 <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
+               ))}
+             </SelectContent>
+           </Select>
+         </div>
         <div className="col-span-2">
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Código da Loja</label>
           <Input value={form.store_code} onChange={(e) => setForm((f) => ({ ...f, store_code: e.target.value }))} placeholder="Gerado automaticamente" />
@@ -770,9 +763,12 @@ const ClientDetail = () => {
                     <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleReviewStoreCodes}>
                       <Sparkles className="w-3 h-3" /> Códigos
                     </Button>
-                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleEnrichStores} disabled={enriching}>
-                      <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "Atualizando..." : "Enriquecer"}
-                    </Button>
+                     <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleEnrichStores} disabled={enriching}>
+                       <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "Atualizando..." : "Enriquecer"}
+                     </Button>
+                     <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setStoreModelDialogOpen(true)}>
+                       <Tag className="w-3 h-3" /> Modelos
+                     </Button>
                   </>
                 )}
               </div>
