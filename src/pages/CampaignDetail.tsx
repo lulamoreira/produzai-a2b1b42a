@@ -920,7 +920,7 @@ const CampaignDetail = () => {
                   }
                 }}
               />
-              <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces)}>
+              <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces)}>
                 <Download className="w-3.5 h-3.5" /> Exportar Matriz
               </Button>
               {canEditCampaign && (
