@@ -159,12 +159,13 @@ export function exportMatrix(
   campaignName: string,
   kits: CampaignKit[] = [],
   kitPieces: CampaignKitPiece[] = [],
+  allPieces: CampaignPiece[] = [],
 ) {
   const qtyMap: Record<string, number> = {};
   storePieces.forEach((sp) => { qtyMap[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
 
-  // Build piece map for lookups
-  const pieceMap = new Map(pieces.map(p => [p.id, p]));
+  // Build piece map from ALL pieces (including kit_only) for kit sheet lookups
+  const pieceMap = new Map((allPieces.length > 0 ? allPieces : pieces).map(p => [p.id, p]));
 
   const rows = stores.map((store) => {
     const row: Record<string, string | number> = {
