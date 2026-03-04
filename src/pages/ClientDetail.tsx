@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import AppHeader from "@/components/AppHeader";
+
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -569,14 +569,13 @@ const ClientDetail = () => {
   );
 
    return (
-    <div className="min-h-screen bg-background">
-      <AppHeader
-        backTo={`/agency/${agencyId}`}
-        backLabel="Voltar"
-        title={client.name}
-        subtitle={`${campaigns.length} campanha(s) · ${stores.length} loja(s)`}
-        maxWidth="max-w-6xl"
-      />
+    <div className="bg-background">
+      <div className="max-w-6xl mx-auto px-2 sm:px-4 pt-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-foreground">{client.name}</h1>
+          <p className="text-xs text-muted-foreground">{campaigns.length} campanha(s) · {stores.length} loja(s)</p>
+        </div>
+      </div>
 
       <main className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
         <Tabs defaultValue="campaigns">
