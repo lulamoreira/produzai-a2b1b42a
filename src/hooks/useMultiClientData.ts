@@ -65,6 +65,7 @@ export type CampaignPiece = {
   specification: string;
   installation_instructions: string;
   kit_only: boolean;
+  display_order: number;
   created_at: string;
 };
 
@@ -73,6 +74,7 @@ export type CampaignKit = {
   campaign_id: string;
   name: string;
   code: number;
+  display_order: number;
   image_url: string | null;
   created_at: string;
 };
@@ -309,7 +311,7 @@ export function useCampaignPieces(campaignId: string | undefined) {
         .from("campaign_pieces")
         .select("*")
         .eq("campaign_id", campaignId)
-        .order("code");
+        .order("display_order");
       if (error) throw error;
       return data as CampaignPiece[];
     },
@@ -320,7 +322,7 @@ export function useCampaignPieces(campaignId: string | undefined) {
 export function useAddCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (piece: { campaign_id: string; code: number; category: string; name: string; size: string; store_category?: string; image_url?: string; specification?: string; installation_instructions?: string; kit_only?: boolean }) => {
+    mutationFn: async (piece: { campaign_id: string; code: number; category: string; name: string; size: string; store_category?: string; image_url?: string; specification?: string; installation_instructions?: string; kit_only?: boolean; display_order?: number }) => {
       const { error } = await supabase.from("campaign_pieces").insert(piece);
       if (error) throw error;
     },
@@ -786,7 +788,7 @@ export function useCampaignKits(campaignId: string | undefined) {
         .from("campaign_kits")
         .select("*")
         .eq("campaign_id", campaignId)
-        .order("code");
+        .order("display_order");
       if (error) throw error;
       return data as CampaignKit[];
     },
@@ -797,7 +799,7 @@ export function useCampaignKits(campaignId: string | undefined) {
 export function useAddCampaignKit() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (kit: { campaign_id: string; name: string; code: number }) => {
+    mutationFn: async (kit: { campaign_id: string; name: string; code: number; display_order?: number }) => {
       const { data, error } = await supabase.from("campaign_kits").insert(kit).select().single();
       if (error) throw error;
       return data as CampaignKit;

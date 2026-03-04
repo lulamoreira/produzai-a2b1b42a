@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -33,7 +33,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import AppHeader from "@/components/AppHeader";
@@ -44,6 +44,7 @@ import OccurrencesTab from "@/components/OccurrencesTab";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 import SchedulingTab from "@/components/SchedulingTab";
 import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaignDialog";
+import SortablePiecesTable from "@/components/SortablePiecesTable";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -217,6 +218,7 @@ const CampaignDetail = () => {
     if (pieceForm.store_category) {
       localStorage.setItem("last_store_category", pieceForm.store_category);
     }
+    const maxOrder = pieces.length > 0 ? Math.max(...pieces.map(p => p.display_order)) : 0;
     await addPiece.mutateAsync({
       campaign_id: campaignId,
       code,
@@ -227,6 +229,7 @@ const CampaignDetail = () => {
       specification: pieceForm.specification,
       installation_instructions: pieceForm.installation_instructions,
       kit_only: pieceForm.kit_only,
+      display_order: maxOrder + 1,
     });
     setPieceForm({
       code: "", category: "", name: "",
@@ -339,6 +342,58 @@ const CampaignDetail = () => {
         });
       }
       toast.success(`Peça distribuída para ${targetStores.length} loja(s)!`);
+    }
+  };
+
+  // ─── Reorder pieces (drag & drop) ─────────────────────
+  const handleReorderPieces = useCallback(async (reorderedPieces: CampaignPiece[]) => {
+    for (let i = 0; i < reorderedPieces.length; i++) {
+      const piece = reorderedPieces[i];
+      if (piece.display_order !== i + 1) {
+        await supabase.from("campaign_pieces").update({ display_order: i + 1 }).eq("id", piece.id);
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+  }, [queryClient]);
+
+  // ─── Recodificar (rewrite codes sequentially) ─────────
+  const handleRecodificar = async () => {
+    const allItems: { type: "piece" | "kit"; id: string; display_order: number }[] = [
+      ...visiblePieces.map(p => ({ type: "piece" as const, id: p.id, display_order: p.display_order })),
+      ...kits.map(k => ({ type: "kit" as const, id: k.id, display_order: k.display_order })),
+    ].sort((a, b) => a.display_order - b.display_order);
+
+    let code = 1;
+    let count = 0;
+    for (const item of allItems) {
+      if (item.type === "piece") {
+        const piece = visiblePieces.find(p => p.id === item.id);
+        if (piece && piece.code !== code) {
+          await supabase.from("campaign_pieces").update({ code }).eq("id", item.id);
+          count++;
+        }
+      } else {
+        const kit = kits.find(k => k.id === item.id);
+        if (kit && kit.code !== code) {
+          await supabase.from("campaign_kits").update({ code }).eq("id", item.id);
+          count++;
+        }
+      }
+      code++;
+    }
+    for (const p of kitOnlyPieces) {
+      if (p.code !== code) {
+        await supabase.from("campaign_pieces").update({ code }).eq("id", p.id);
+        count++;
+      }
+      code++;
+    }
+    queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+    queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
+    if (count > 0) {
+      toast.success(`${count} código(s) atualizado(s) sequencialmente!`);
+    } else {
+      toast.info("Os códigos já estão em ordem sequencial.");
     }
   };
 
@@ -1163,9 +1218,14 @@ const CampaignDetail = () => {
                 <Download className="w-3.5 h-3.5" /> Exportar
               </Button>
               {canEditPieces && (
+                <>
                 <Button size="sm" variant="outline" className="text-xs gap-1" onClick={handleReviewPieceCodes}>
                   <Sparkles className="w-3.5 h-3.5" /> Revisar Códigos
                 </Button>
+                <Button size="sm" variant="outline" className="text-xs gap-1" onClick={handleRecodificar}>
+                  <RefreshCw className="w-3.5 h-3.5" /> Recodificar
+                </Button>
+                </>
                )}
               {canEditPieces && (
                 <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setLocationDialogOpen(true)}>
@@ -1272,114 +1332,18 @@ const CampaignDetail = () => {
                 <p className="text-muted-foreground text-sm">Nenhuma peça cadastrada nesta campanha.</p>
               </div>
             ) : visiblePieces.length > 0 && (
-              <div className="border border-border rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[80px]">Código</TableHead>
-                      <TableHead>Localização na Loja</TableHead>
-                      <TableHead>Nome</TableHead>
-                      <TableHead>Medidas</TableHead>
-                      <TableHead>Modelo de Loja</TableHead>
-                      <TableHead>Especificação</TableHead>
-                      <TableHead>Instruções de Instalação</TableHead>
-                      <TableHead className="text-center">Total distribuído</TableHead>
-                      {(canEditPieces || canDeletePieces) && <TableHead className="w-[80px]">Ações</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {visiblePieces.map((p) => {
-                      const pieceTotal = stores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
-                      return (
-                        <TableRow key={p.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <PieceThumbnail imageUrl={p.image_url} name={p.name} />
-                              <span className="font-bold text-primary">{p.code}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">{p.category}</TableCell>
-                          <TableCell>
-                            <button
-                              className="font-medium text-left hover:text-primary hover:underline transition-colors"
-                              onClick={() => handleOpenEditPiece(p)}
-                            >
-                              {p.name}
-                            </button>
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{p.size || "—"}</TableCell>
-                          <TableCell>
-                            {p.store_category ? (
-                              <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{p.store_category}</span>
-                            ) : "—"}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{p.specification}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{p.installation_instructions}</TableCell>
-                          <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
-                          {(canEditPieces || canDeletePieces) && (
-                            <TableCell>
-                              <div className="flex items-center gap-1">
-                                {canEditPieces && (
-                                  <CampaignPieceImageUpload piece={p} canEdit={canEditPieces} />
-                                )}
-                                {canEditPieces && (() => {
-                                  const autoStores = stores.filter(s => s.auto_distribute);
-                                  const targetStores = p.store_category === "Todas" || !p.store_category
-                                    ? autoStores
-                                    : autoStores.filter(s => s.store_model === p.store_category);
-                                  const isDistributed = targetStores.some(s => qtyMap[`${s.id}-${p.id}`]);
-                                  return (
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" title={isDistributed ? "Remover de todas as lojas" : "Distribuir para lojas compatíveis"} onClick={() => handleDistributePiece(p)}>
-                                      <CheckSquare className={`w-3.5 h-3.5 ${isDistributed ? "text-primary" : "text-muted-foreground"}`} />
-                                    </Button>
-                                  );
-                                })()}
-                                {canEditPieces && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    title="Marcar como peça para kit"
-                                    onClick={async () => {
-                                      await updatePiece.mutateAsync({ id: p.id, kit_only: true });
-                                    }}
-                                  >
-                                    <Package className="w-3.5 h-3.5 text-muted-foreground" />
-                                  </Button>
-                                )}
-                                {canEditPieces && (
-                                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditPiece(p)}>
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                  </Button>
-                                )}
-                                {canDeletePieces && (
-                                  <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-7 w-7">
-                                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                      </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                        <AlertDialogTitle>Excluir peça?</AlertDialogTitle>
-                                        <AlertDialogDescription>A peça será removida de todas as lojas desta campanha.</AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => deletePiece.mutate(p.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
-                                      </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                  </AlertDialog>
-                                )}
-                              </div>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
+              <SortablePiecesTable
+                pieces={visiblePieces}
+                stores={stores}
+                qtyMap={qtyMap}
+                canEditPieces={canEditPieces}
+                canDeletePieces={canDeletePieces}
+                onEdit={handleOpenEditPiece}
+                onDelete={(id) => deletePiece.mutate(id)}
+                onDistribute={handleDistributePiece}
+                onMarkKitOnly={async (p) => { await updatePiece.mutateAsync({ id: p.id, kit_only: true }); }}
+                onReorder={handleReorderPieces}
+              />
             )}
           </TabsContent>
 

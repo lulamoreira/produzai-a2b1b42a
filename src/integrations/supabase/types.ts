@@ -82,6 +82,7 @@ export type Database = {
           campaign_id: string
           code: number
           created_at: string
+          display_order: number
           id: string
           image_url: string | null
           name: string
@@ -90,6 +91,7 @@ export type Database = {
           campaign_id: string
           code: number
           created_at?: string
+          display_order?: number
           id?: string
           image_url?: string | null
           name: string
@@ -98,6 +100,7 @@ export type Database = {
           campaign_id?: string
           code?: number
           created_at?: string
+          display_order?: number
           id?: string
           image_url?: string | null
           name?: string
@@ -176,6 +179,7 @@ export type Database = {
           category: string
           code: number
           created_at: string
+          display_order: number
           id: string
           image_url: string | null
           installation_instructions: string
@@ -190,6 +194,7 @@ export type Database = {
           category: string
           code: number
           created_at?: string
+          display_order?: number
           id?: string
           image_url?: string | null
           installation_instructions?: string
@@ -204,6 +209,7 @@ export type Database = {
           category?: string
           code?: number
           created_at?: string
+          display_order?: number
           id?: string
           image_url?: string | null
           installation_instructions?: string
