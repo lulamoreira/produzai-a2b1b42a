@@ -1362,7 +1362,7 @@ const CampaignDetail = () => {
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-accent/15 text-accent-foreground">
                 {visiblePieces.length + kits.length} peça(s)
               </span>
-              <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha")}>
+              <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces)}>
                 <Download className="w-3.5 h-3.5" /> Exportar
               </Button>
               {canEditPieces && (
