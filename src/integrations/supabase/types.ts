@@ -223,6 +223,57 @@ export type Database = {
           },
         ]
       }
+      campaign_schedules: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          installation_os: string | null
+          installation_preference: string | null
+          scheduled_date: string | null
+          scheduled_time: string | null
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          installation_os?: string | null
+          installation_preference?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          installation_os?: string | null
+          installation_preference?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_schedules_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_schedules_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_store_pieces: {
         Row: {
           campaign_id: string
