@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -963,14 +964,17 @@ const CampaignDetail = () => {
                       <TableHead className="sticky left-0 bg-card z-[5] min-w-[180px]">Loja</TableHead>
                       {matrixPieces.map((p) => (
                         <TableHead key={p.id} className="text-center min-w-[100px]">
-                          <div className="flex flex-col items-center gap-0.5">
+                          <button
+                            className="flex flex-col items-center gap-0.5 w-full hover:opacity-80 transition-opacity"
+                            onClick={() => handleOpenEditPiece(p)}
+                          >
                             <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
                             <span className="text-xs font-bold">{p.code}</span>
                             <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{p.name}</span>
                             {p.store_category && (
                               <span className="text-[9px] bg-accent text-accent-foreground px-1 rounded">{p.store_category}</span>
                             )}
-                          </div>
+                          </button>
                         </TableHead>
                       ))}
                       {matrixKits.map((kit) => (
@@ -1274,7 +1278,14 @@ const CampaignDetail = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-muted-foreground">{p.category}</TableCell>
-                          <TableCell className="font-medium">{p.name}</TableCell>
+                          <TableCell>
+                            <button
+                              className="font-medium text-left hover:text-primary hover:underline transition-colors"
+                              onClick={() => handleOpenEditPiece(p)}
+                            >
+                              {p.name}
+                            </button>
+                          </TableCell>
                           <TableCell className="text-sm text-muted-foreground">{p.size || "—"}</TableCell>
                           <TableCell>
                             {p.store_category ? (
@@ -1360,11 +1371,65 @@ const CampaignDetail = () => {
 
       {/* Edit Piece Dialog */}
       <Dialog open={editPieceDialogOpen} onOpenChange={setEditPieceDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Peça</DialogTitle>
             <DialogDescription>Altere os dados da peça.</DialogDescription>
           </DialogHeader>
+          {/* Image management */}
+          {editPieceForm.id && (() => {
+            const currentPiece = pieces.find(p => p.id === editPieceForm.id);
+            if (!currentPiece) return null;
+            return (
+              <div className="space-y-2">
+                {currentPiece.image_url ? (
+                  <div className="relative">
+                    <img src={currentPiece.image_url} alt={currentPiece.name} className="w-full h-40 object-contain rounded-lg border border-border bg-muted/30" />
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="absolute top-2 right-2 h-7 text-xs"
+                      onClick={async () => {
+                        await updatePiece.mutateAsync({ id: editPieceForm.id, image_url: null });
+                        toast.success("Imagem removida!");
+                      }}
+                    >
+                      <X className="w-3 h-3 mr-1" /> Remover
+                    </Button>
+                  </div>
+                ) : null}
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const { compressImage } = await import("@/lib/compressImage");
+                          const compressed = await compressImage(file, 800, 0.6);
+                          const path = `campaign-piece-${editPieceForm.id}-${Date.now()}.jpg`;
+                          const { error } = await supabase.storage.from("piece-images").upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
+                          if (error) throw error;
+                          const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
+                          await updatePiece.mutateAsync({ id: editPieceForm.id, image_url: urlData.publicUrl });
+                          toast.success("Imagem atualizada!");
+                        } catch (err: any) {
+                          toast.error("Erro: " + err.message);
+                        }
+                      }}
+                    />
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20 text-xs text-muted-foreground cursor-pointer">
+                      <Upload className="w-3.5 h-3.5" />
+                      {currentPiece.image_url ? "Trocar foto" : "Adicionar foto"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
           <form onSubmit={handleEditPiece} className="space-y-3">
             {renderPieceFormFields(editPieceForm, setEditPieceForm as any)}
             <Button type="submit" className="w-full" disabled={updatePiece.isPending}>Salvar</Button>
