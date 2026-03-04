@@ -89,11 +89,11 @@ export default function AppHeader({
             </Button>
           )}
           <div className="min-w-0">
-            <h1 className="text-sm sm:text-lg font-bold text-foreground truncate">
+            <h1 className="text-sm sm:text-lg font-bold truncate">
               {title || greeting}
             </h1>
             {subtitle && (
-              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{subtitle}</p>
+              <p className="text-[10px] sm:text-xs truncate opacity-80">{subtitle}</p>
             )}
           </div>
         </div>
