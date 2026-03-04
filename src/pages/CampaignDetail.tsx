@@ -583,10 +583,7 @@ const CampaignDetail = () => {
         title={campaign.name}
         subtitle={`${visiblePieces.length + kits.length} peça(s) · ${stores.length} loja(s) · ${totalPieces} unidade(s) total`}
         maxWidth="max-w-[95vw]"
-        bgStyle={{
-          background: `linear-gradient(135deg, ${agencyColor}22 0%, ${agencyColor}08 100%)`,
-          borderBottomColor: `${agencyColor}30`,
-        }}
+        bgClass="bg-[#1e3a5f] text-white border-[#1e3a5f]"
       />
 
       <main className="max-w-[95vw] mx-auto px-2 sm:px-4 py-4 sm:py-6">
