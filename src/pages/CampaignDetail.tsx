@@ -651,7 +651,7 @@ const CampaignDetail = () => {
             <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
               <div className="card-kpi flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
                   <Store className="w-5 h-5 text-primary-foreground" />
@@ -699,15 +699,15 @@ const CampaignDetail = () => {
         {/* ─── SECTION VIEW: Show active section with Home button ─── */}
         {activeSection && (
           <>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setActiveSection(null)}
-                className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+                className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 flex-shrink-0"
               >
                 <Home className="w-4 h-4" />
-                Início
+                <span className="hidden sm:inline">Início</span>
               </Button>
               <div className="flex gap-1 overflow-x-auto">
                 {[
@@ -722,10 +722,11 @@ const CampaignDetail = () => {
                     variant={activeSection === key ? "default" : "ghost"}
                     size="sm"
                     onClick={() => setActiveSection(key)}
-                    className="gap-1 text-xs whitespace-nowrap"
+                    className="gap-1 text-[10px] sm:text-xs whitespace-nowrap flex-shrink-0"
                   >
-                    <Icon className="w-3.5 h-3.5" />
-                    {label}
+                    <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    <span className="hidden sm:inline">{label}</span>
+                    <span className="sm:hidden">{label.slice(0, 4)}</span>
                   </Button>
                 ))}
               </div>
@@ -873,22 +874,24 @@ const CampaignDetail = () => {
               return (
                 <div className="mt-6 border border-border rounded-xl bg-card overflow-hidden">
                   {/* Header */}
-                  <div className="bg-gradient-to-r from-secondary/10 to-primary/10 px-5 py-4 flex items-center justify-between border-b border-border">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center shadow-glow-secondary">
+                  <div className="bg-gradient-to-r from-secondary/10 to-primary/10 px-3 sm:px-5 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center shadow-glow-secondary flex-shrink-0">
                         <Store className="w-5 h-5 text-white" />
                       </div>
-                      <div>
-                        <h3 className="font-bold text-foreground text-lg">{selectedStore.name}</h3>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />
-                          {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ") || "Sem localização"}
-                          {selectedStore.store_model && ` · Modelo: ${selectedStore.store_model}`}
-                          {" · "}{assignedPieces.length} peça(s) · {totalQty} unidade(s)
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-foreground text-base sm:text-lg truncate">{selectedStore.name}</h3>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 truncate">
+                          <MapPin className="w-3 h-3 flex-shrink-0" />
+                          <span className="truncate">
+                            {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ") || "Sem localização"}
+                            {selectedStore.store_model && ` · ${selectedStore.store_model}`}
+                            {" · "}{assignedPieces.length} peça(s) · {totalQty} un.
+                          </span>
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto">
                       {canEditCampaignStores && (
                         <Button
                           size="sm"
@@ -1110,7 +1113,7 @@ const CampaignDetail = () => {
 
           {activeSection === "matrix" && (<>
             {renderStoreFilters()}
-            <div className="flex flex-wrap items-center gap-2 mb-4">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
               <QuickMatrixEditor
                 stores={activeFilteredStores}
                 pieces={matrixPieces}
@@ -1358,26 +1361,26 @@ const CampaignDetail = () => {
 
           {/* ─── SECTION: PEÇAS ─── */}
           {activeSection === "pieces" && (<>
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              <span className="px-3 py-1 rounded-full text-xs font-bold bg-accent/15 text-accent-foreground">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
+              <span className="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-accent/15 text-accent-foreground">
                 {visiblePieces.length + kits.length} peça(s)
               </span>
-              <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces)}>
-                <Download className="w-3.5 h-3.5" /> Exportar
+              <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces)}>
+                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Exportar
               </Button>
               {canEditPieces && (
                 <>
-                <Button size="sm" variant="outline" className="text-xs gap-1" onClick={handleReviewPieceCodes}>
-                  <Sparkles className="w-3.5 h-3.5" /> Revisar Códigos
+                <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={handleReviewPieceCodes}>
+                  <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Revisar</span> Códigos
                 </Button>
-                <Button size="sm" variant="outline" className="text-xs gap-1" onClick={handleRecodificar}>
-                  <RefreshCw className="w-3.5 h-3.5" /> Recodificar
+                <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={handleRecodificar}>
+                  <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Recodificar
                 </Button>
                 </>
                )}
               {canEditPieces && (
-                <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setLocationDialogOpen(true)}>
-                  <MapPin className="w-3.5 h-3.5" /> Localização na loja
+                <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setLocationDialogOpen(true)}>
+                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Localização na</span> loja
                 </Button>
               )}
               {canEditPieces && (
@@ -1404,20 +1407,20 @@ const CampaignDetail = () => {
                     } catch { toast.error("Erro ao importar."); }
                     e.target.value = "";
                   }} />
-                  <Button size="sm" variant="outline" className="text-xs gap-1" asChild>
-                    <span><Upload className="w-3.5 h-3.5" /> Importar</span>
+                  <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" asChild>
+                    <span><Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Importar</span>
                   </Button>
                 </label>
-                <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setImportPiecesDialogOpen(true)}>
-                  <Copy className="w-3.5 h-3.5" /> De outra campanha
+                <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setImportPiecesDialogOpen(true)}>
+                  <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">De outra</span> campanha
                 </Button>
                 <Dialog open={pieceDialogOpen} onOpenChange={setPieceDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm" className="text-xs gap-1 gradient-accent text-white border-0">
-                      <Plus className="w-3.5 h-3.5" /> Nova Peça
+                    <Button size="sm" className="text-[10px] sm:text-xs gap-1 gradient-accent text-white border-0">
+                      <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Nova Peça
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Nova Peça</DialogTitle>
                       <DialogDescription>Preencha os dados da peça para adicioná-la à campanha.</DialogDescription>
@@ -1428,8 +1431,8 @@ const CampaignDetail = () => {
                     </form>
                   </DialogContent>
                 </Dialog>
-                <Button size="sm" className="text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
-                  <Package className="w-3.5 h-3.5" /> Novo Kit
+                <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
+                  <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Novo Kit
                 </Button>
                 </>
               )}

@@ -292,7 +292,7 @@ const Admin = () => {
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         <Tabs defaultValue="users">
-          <TabsList className="mb-6 bg-card border border-border flex-wrap">
+          <TabsList className="mb-6 bg-card border border-border flex-wrap overflow-x-auto w-full justify-start">
             <TabsTrigger value="users" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Users className="w-4 h-4" /> Usuários</TabsTrigger>
             {isAdmin && (
               <>
@@ -310,8 +310,8 @@ const Admin = () => {
             {loadingUsers ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
             ) : (
-              <div className="border border-border rounded-lg overflow-hidden">
-                <Table>
+              <div className="border border-border rounded-lg overflow-x-auto">
+                <Table className="min-w-[500px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Usuário</TableHead>
