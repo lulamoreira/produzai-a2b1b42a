@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 import { useParams, useNavigate } from "react-router-dom";
@@ -86,7 +86,19 @@ const CampaignDetail = () => {
   const deleteKitPiece = useDeleteCampaignKitPiece();
   const updateKitPiece = useUpdateCampaignKitPiece();
 
-  // Campaign store enabled map (default true if no record exists)
+  // Fetch agency color for header gradient
+  const { data: agency } = useQuery({
+    queryKey: ["agency", agencyId],
+    queryFn: async () => {
+      if (!agencyId) return null;
+      const { data } = await supabase.from("agencies").select("color").eq("id", agencyId).maybeSingle();
+      return data;
+    },
+    enabled: !!agencyId,
+  });
+  const agencyColor = agency?.color || "#6366f1";
+
+
   const storeEnabledMap = useMemo(() => {
     const map: Record<string, boolean> = {};
     campaignStoreStatus.forEach((s) => { map[s.store_id] = s.enabled; });
@@ -571,6 +583,10 @@ const CampaignDetail = () => {
         title={campaign.name}
         subtitle={`${visiblePieces.length + kits.length} peça(s) · ${stores.length} loja(s) · ${totalPieces} unidade(s) total`}
         maxWidth="max-w-[95vw]"
+        bgStyle={{
+          background: `linear-gradient(135deg, ${agencyColor}22 0%, ${agencyColor}08 100%)`,
+          borderBottomColor: `${agencyColor}30`,
+        }}
       />
 
       <main className="max-w-[95vw] mx-auto px-2 sm:px-4 py-4 sm:py-6">
