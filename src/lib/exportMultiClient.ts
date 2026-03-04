@@ -106,7 +106,13 @@ export function exportClientStores(stores: ClientStore[], clientName: string) {
 
 // ─── Campaign Pieces ────────────────────────────────────
 
-export function exportCampaignPieces(pieces: CampaignPiece[], campaignName: string) {
+export function exportCampaignPieces(
+  pieces: CampaignPiece[],
+  campaignName: string,
+  kits: CampaignKit[] = [],
+  kitPieces: CampaignKitPiece[] = [],
+  allPieces: CampaignPiece[] = [],
+) {
   const rows = pieces.map((p) => ({
     "Código": p.code,
     "Localização na Loja": p.category,
@@ -123,6 +129,31 @@ export function exportCampaignPieces(pieces: CampaignPiece[], campaignName: stri
   }]);
   ws["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }];
   XLSX.utils.book_append_sheet(wb, ws, "Peças");
+
+  // Kit detail sheets
+  const pieceMap = new Map((allPieces.length > 0 ? allPieces : pieces).map(p => [p.id, p]));
+  kits.forEach((kit) => {
+    const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
+    const kitRows = kpForKit.map(kp => {
+      const piece = pieceMap.get(kp.piece_id);
+      return {
+        "Código": piece?.code || 0,
+        "Localização na Loja": piece?.category || "",
+        "Nome": piece?.name || "",
+        "Medidas": piece?.size || "",
+        "Modelo de Loja": piece?.store_category || "",
+        "Especificação": piece?.specification || "",
+        "Instruções de Instalação": piece?.installation_instructions || "",
+        "Qtd no Kit": kp.quantity || 1,
+      };
+    });
+    if (kitRows.length > 0) {
+      const kitWs = XLSX.utils.json_to_sheet(kitRows);
+      kitWs["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }, { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, kitWs, `Kit ${kit.code} - ${kit.name}`.slice(0, 31));
+    }
+  });
+
   XLSX.writeFile(wb, `Pecas_${campaignName.replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
 }
 
