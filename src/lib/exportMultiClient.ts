@@ -181,8 +181,10 @@ export function exportMatrix(
       total += qty;
     });
 
-    // Kit columns
-    kits.forEach((kit) => {
+    // Kit columns with sequential codes after pieces
+    const maxPieceCode = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;
+    kits.forEach((kit, idx) => {
+      const kitSeqCode = maxPieceCode + idx + 1;
       const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
       const kitQty = kpForKit.length > 0
         ? Math.min(...kpForKit.map(kp => {
@@ -190,7 +192,7 @@ export function exportMatrix(
             return Math.floor(storeQty / (kp.quantity || 1));
           }))
         : 0;
-      row[`KIT ${kit.code} - ${kit.name}`] = kitQty;
+      row[`${kitSeqCode} - ${kit.name}`] = kitQty;
     });
 
     row["Total"] = total;
@@ -202,7 +204,9 @@ export function exportMatrix(
   XLSX.utils.book_append_sheet(wb, ws, "Matriz");
 
   // Individual kit sheets
-  kits.forEach((kit) => {
+  const maxPieceCodeForSheets = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;
+  kits.forEach((kit, idx) => {
+    const kitSeqCode = maxPieceCodeForSheets + idx + 1;
     const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
     const kitRows = kpForKit.map(kp => {
       const piece = pieceMap.get(kp.piece_id);
@@ -217,7 +221,7 @@ export function exportMatrix(
     if (kitRows.length > 0) {
       const kitWs = XLSX.utils.json_to_sheet(kitRows);
       kitWs["!cols"] = [{ wch: 8 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 12 }];
-      XLSX.utils.book_append_sheet(wb, kitWs, `Kit ${kit.code} - ${kit.name}`.slice(0, 31));
+      XLSX.utils.book_append_sheet(wb, kitWs, `Kit ${kitSeqCode} - ${kit.name}`.slice(0, 31));
     }
   });
 

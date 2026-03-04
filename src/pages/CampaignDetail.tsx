@@ -497,7 +497,7 @@ const CampaignDetail = () => {
         backTo={`/agency/${agencyId}/clients/${clientId}`}
         backLabel={client?.name || "Voltar"}
         title={campaign.name}
-        subtitle={`${pieces.length} peça(s) · ${stores.length} loja(s) · ${totalPieces} unidade(s) total`}
+        subtitle={`${visiblePieces.length + kits.length} peça(s) · ${stores.length} loja(s) · ${totalPieces} unidade(s) total`}
         maxWidth="max-w-[95vw]"
       />
 
@@ -518,7 +518,7 @@ const CampaignDetail = () => {
               <LayoutList className="w-5 h-5 text-white" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{pieces.length}</p>
+              <p className="text-2xl font-bold text-foreground">{visiblePieces.length + kits.length}</p>
               <p className="text-[11px] text-muted-foreground">Peças cadastradas</p>
             </div>
           </div>
@@ -630,7 +630,7 @@ const CampaignDetail = () => {
                           </TableCell>
                           <TableCell className="text-center">
                             <span className={`text-sm font-medium ${stats.pieceCount > 0 ? "text-primary" : "text-muted-foreground"}`}>
-                              {stats.pieceCount} / {pieces.length}
+                              {stats.pieceCount} / {visiblePieces.length + kits.length}
                             </span>
                           </TableCell>
                           <TableCell className="text-center">
@@ -985,17 +985,21 @@ const CampaignDetail = () => {
                           </button>
                         </TableHead>
                       ))}
-                      {matrixKits.map((kit) => (
-                        <TableHead key={`kit-${kit.id}`} className="text-center min-w-[100px]">
-                          <button onClick={() => setViewKitDetail(kit)} className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
-                            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                              <Package className="w-4 h-4 text-primary" />
-                            </div>
-                            <span className="text-[10px] font-bold text-primary">KIT</span>
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{kit.name}</span>
-                          </button>
-                        </TableHead>
-                      ))}
+                      {matrixKits.map((kit, idx) => {
+                        const maxPieceCode = matrixPieces.length > 0 ? Math.max(...matrixPieces.map(p => p.code)) : 0;
+                        const kitSeqCode = maxPieceCode + idx + 1;
+                        return (
+                          <TableHead key={`kit-${kit.id}`} className="text-center min-w-[100px]">
+                            <button onClick={() => setViewKitDetail(kit)} className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
+                              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                                <Package className="w-4 h-4 text-primary" />
+                              </div>
+                              <span className="text-xs font-bold text-primary">{kitSeqCode}</span>
+                              <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{kit.name}</span>
+                            </button>
+                          </TableHead>
+                        );
+                      })}
                       <TableHead className="text-center font-bold">Total</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -1153,7 +1157,7 @@ const CampaignDetail = () => {
           <TabsContent value="pieces">
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-accent/15 text-accent-foreground">
-                {pieces.length} peça(s)
+                {visiblePieces.length + kits.length} peça(s)
               </span>
               <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha")}>
                 <Download className="w-3.5 h-3.5" /> Exportar
