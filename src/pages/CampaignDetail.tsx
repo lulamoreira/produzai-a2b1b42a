@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 import { useParams, useNavigate } from "react-router-dom";
@@ -47,6 +48,7 @@ import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaig
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaign } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canEditOccurrences } = useClientPermission(clientId, "can_edit_occurrences");
@@ -1603,8 +1605,10 @@ const CampaignDetail = () => {
                 }
               }
 
-              // Invalidate queries
-
+              // Invalidate queries to refresh UI
+              await queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+              await queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
+              await queryClient.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
               const parts = [];
               if (pieceCount > 0) parts.push(`${pieceCount} peça(s)`);
               if (kitCount > 0) parts.push(`${kitCount} kit(s)`);
