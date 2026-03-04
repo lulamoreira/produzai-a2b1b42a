@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel,
 } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle2, Send, Package, X, ImagePlus, Plus, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Send, Package, X, ImagePlus, Plus, Trash2, Boxes } from "lucide-react";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 
@@ -67,6 +67,20 @@ const PublicOccurrence = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("campaign_pieces")
+        .select("id, name, code, image_url, kit_only")
+        .eq("campaign_id", campaignId!)
+        .order("code");
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!campaignId,
+  });
+
+  const { data: kits = [] } = useQuery({
+    queryKey: ["public_kits", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_kits")
         .select("id, name, code, image_url")
         .eq("campaign_id", campaignId!)
         .order("code");
@@ -75,6 +89,35 @@ const PublicOccurrence = () => {
     },
     enabled: !!campaignId,
   });
+
+  const { data: kitPieces = [] } = useQuery({
+    queryKey: ["public_kit_pieces", campaignId],
+    queryFn: async () => {
+      const kitIds = kits.map((k) => k.id);
+      if (kitIds.length === 0) return [];
+      const { data, error } = await supabase
+        .from("campaign_kit_pieces")
+        .select("kit_id, piece_id")
+        .in("kit_id", kitIds);
+      if (error) throw error;
+      return data;
+    },
+    enabled: kits.length > 0,
+  });
+
+  // Build grouped piece list: standalone pieces + kits with sub-pieces
+  const groupedPieceOptions = useMemo(() => {
+    const kitPieceIds = new Set(kitPieces.map((kp) => kp.piece_id));
+    const standalonePieces = pieces.filter((p) => !p.kit_only && !kitPieceIds.has(p.id));
+
+    const kitGroups = kits.map((kit) => {
+      const memberPieceIds = kitPieces.filter((kp) => kp.kit_id === kit.id).map((kp) => kp.piece_id);
+      const memberPieces = pieces.filter((p) => memberPieceIds.includes(p.id));
+      return { kit, memberPieces };
+    });
+
+    return { standalonePieces, kitGroups };
+  }, [pieces, kits, kitPieces]);
 
   const { data: locations = [] } = useQuery({
     queryKey: ["public_locations", campaignId],
@@ -335,17 +378,42 @@ const PublicOccurrence = () => {
                 <Select value={entry.pieceId} onValueChange={(v) => updateEntry(idx, { pieceId: v })}>
                   <SelectTrigger><SelectValue placeholder="Selecione a peça" /></SelectTrigger>
                   <SelectContent>
-                    {pieces.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <div className="flex items-center gap-2">
-                          {p.image_url ? (
-                            <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
-                          ) : (
-                            <Package className="w-4 h-4 text-muted-foreground" />
-                          )}
-                          <span>{p.name}</span>
-                        </div>
-                      </SelectItem>
+                    {groupedPieceOptions.standalonePieces.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel className="text-xs text-muted-foreground">Peças avulsas</SelectLabel>
+                        {groupedPieceOptions.standalonePieces.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            <div className="flex items-center gap-2">
+                              {p.image_url ? (
+                                <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
+                              ) : (
+                                <Package className="w-4 h-4 text-muted-foreground" />
+                              )}
+                              <span>{p.code} - {p.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
+                    {groupedPieceOptions.kitGroups.map((group) => (
+                      <SelectGroup key={group.kit.id}>
+                        <SelectLabel className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+                          <Boxes className="w-3.5 h-3.5" />
+                          Kit {group.kit.code} - {group.kit.name}
+                        </SelectLabel>
+                        {group.memberPieces.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            <div className="flex items-center gap-2 pl-2">
+                              {p.image_url ? (
+                                <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
+                              ) : (
+                                <Package className="w-4 h-4 text-muted-foreground" />
+                              )}
+                              <span className="text-sm">{p.code} - {p.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
                     ))}
                   </SelectContent>
                 </Select>
