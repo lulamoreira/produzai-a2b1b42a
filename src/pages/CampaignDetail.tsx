@@ -549,14 +549,19 @@ const CampaignDetail = () => {
   }
 
   // ─── Filtered pieces for matrix (by store_category) ───
-
-  // ─── Filtered pieces for matrix (by store_category) ───
   const matrixPieces = storeCategoryFilter === "__all__"
     ? visiblePieces
     : visiblePieces.filter((p) => p.store_category === storeCategoryFilter);
 
   // Kits appear as virtual columns in the matrix
   const matrixKits = kits;
+
+  // Unified matrix columns sorted by display_order (same as pieces table)
+  type MatrixCol = { type: "piece"; data: CampaignPiece } | { type: "kit"; data: CampaignKit };
+  const matrixColumns: MatrixCol[] = [
+    ...matrixPieces.map(p => ({ type: "piece" as const, data: p, display_order: p.display_order })),
+    ...matrixKits.map(k => ({ type: "kit" as const, data: k, display_order: k.display_order })),
+  ].sort((a, b) => a.display_order - b.display_order);
 
   return (
     <div className="min-h-screen bg-background">
@@ -1092,22 +1097,26 @@ const CampaignDetail = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="sticky left-0 bg-card z-[5] min-w-[180px]">Loja</TableHead>
-                      {matrixPieces.map((p) => (
-                        <TableHead key={p.id} className="text-center min-w-[100px]">
-                          <button
-                            className="flex flex-col items-center gap-0.5 w-full hover:opacity-80 transition-opacity"
-                            onClick={() => handleOpenEditPiece(p)}
-                          >
-                            <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
-                            <span className="text-xs font-bold">{p.code}</span>
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{p.name}</span>
-                            {p.store_category && (
-                              <span className="text-[9px] bg-accent text-accent-foreground px-1 rounded">{p.store_category}</span>
-                            )}
-                          </button>
-                        </TableHead>
-                      ))}
-                      {matrixKits.map((kit) => {
+                      {matrixColumns.map((col) => {
+                        if (col.type === "piece") {
+                          const p = col.data;
+                          return (
+                            <TableHead key={p.id} className="text-center min-w-[100px]">
+                              <button
+                                className="flex flex-col items-center gap-0.5 w-full hover:opacity-80 transition-opacity"
+                                onClick={() => handleOpenEditPiece(p)}
+                              >
+                                <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
+                                <span className="text-xs font-bold">{p.code}</span>
+                                <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{p.name}</span>
+                                {p.store_category && (
+                                  <span className="text-[9px] bg-accent text-accent-foreground px-1 rounded">{p.store_category}</span>
+                                )}
+                              </button>
+                            </TableHead>
+                          );
+                        }
+                        const kit = col.data;
                         return (
                           <TableHead key={`kit-${kit.id}`} className="text-center min-w-[100px]">
                             <button onClick={() => setViewKitDetail(kit)} className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
@@ -1139,45 +1148,46 @@ const CampaignDetail = () => {
                               )}
                             </div>
                           </TableCell>
-                          {matrixPieces.map((p) => {
-                            const key = `${store.id}-${p.id}`;
-                            const qty = qtyMap[key] || 0;
-                            const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === p.id;
-                            return (
-                              <TableCell key={p.id} className="text-center p-1">
-                                {isEditing ? (
-                                  <Input
-                                    type="number"
-                                    min={0}
-                                    value={editValue}
-                                    onChange={(e) => setEditValue(e.target.value)}
-                                    onBlur={handleCellSave}
-                                    onKeyDown={(e) => { if (e.key === "Enter") handleCellSave(); if (e.key === "Escape") setEditingCell(null); }}
-                                    className="w-16 h-8 text-center mx-auto text-sm"
-                                    autoFocus
-                                  />
-                                ) : (
-                                  <button
-                                    onClick={() => handleCellClick(store.id, p.id)}
-                                    className={`w-full h-8 text-sm rounded transition-colors ${
-                                      qty > 0
-                                        ? "bg-primary/10 text-primary font-semibold hover:bg-primary/20"
-                                        : canEditCampaign
-                                        ? "text-muted-foreground/40 hover:bg-muted"
-                                        : "text-muted-foreground/40"
-                                    }`}
-                                    disabled={!canEditCampaign}
-                                  >
-                                    {qty || "—"}
-                                  </button>
-                                )}
-                              </TableCell>
-                            );
-                          })}
-                          {/* Kit columns - show kit quantity considering piece quantities */}
-                          {matrixKits.map((kit) => {
+                          {matrixColumns.map((col) => {
+                            if (col.type === "piece") {
+                              const p = col.data;
+                              const key = `${store.id}-${p.id}`;
+                              const qty = qtyMap[key] || 0;
+                              const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === p.id;
+                              return (
+                                <TableCell key={p.id} className="text-center p-1">
+                                  {isEditing ? (
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      value={editValue}
+                                      onChange={(e) => setEditValue(e.target.value)}
+                                      onBlur={handleCellSave}
+                                      onKeyDown={(e) => { if (e.key === "Enter") handleCellSave(); if (e.key === "Escape") setEditingCell(null); }}
+                                      className="w-16 h-8 text-center mx-auto text-sm"
+                                      autoFocus
+                                    />
+                                  ) : (
+                                    <button
+                                      onClick={() => handleCellClick(store.id, p.id)}
+                                      className={`w-full h-8 text-sm rounded transition-colors ${
+                                        qty > 0
+                                          ? "bg-primary/10 text-primary font-semibold hover:bg-primary/20"
+                                          : canEditCampaign
+                                          ? "text-muted-foreground/40 hover:bg-muted"
+                                          : "text-muted-foreground/40"
+                                      }`}
+                                      disabled={!canEditCampaign}
+                                    >
+                                      {qty || "—"}
+                                    </button>
+                                  )}
+                                </TableCell>
+                              );
+                            }
+                            // Kit column
+                            const kit = col.data;
                             const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
-                            // Kit qty = min(storeQty / kitPieceQty) across all kit pieces
                             const kitQty = kitPiecesForKit.length > 0
                               ? Math.min(...kitPiecesForKit.map(kp => {
                                   const storeQty = qtyMap[`${store.id}-${kp.piece_id}`] || 0;
@@ -1246,11 +1256,13 @@ const CampaignDetail = () => {
                     {/* Totals row */}
                     <TableRow className="bg-muted/50 font-bold">
                       <TableCell className="sticky left-0 bg-muted/50 z-[5]">Total</TableCell>
-                      {matrixPieces.map((p) => {
-                        const pieceTotal = filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
-                        return <TableCell key={p.id} className="text-center text-sm">{pieceTotal}</TableCell>;
-                      })}
-                      {matrixKits.map((kit) => {
+                      {matrixColumns.map((col) => {
+                        if (col.type === "piece") {
+                          const p = col.data;
+                          const pieceTotal = filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
+                          return <TableCell key={p.id} className="text-center text-sm">{pieceTotal}</TableCell>;
+                        }
+                        const kit = col.data;
                         const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
                         const kitTotal = kitPiecesForKit.length > 0
                           ? filteredStores.reduce((total, st) => {
