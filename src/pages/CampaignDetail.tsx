@@ -1316,6 +1316,7 @@ const CampaignDetail = () => {
                             </div>
                           )}
                           <div>
+                            <span className="text-xs text-primary font-bold mr-1.5">{kit.code}</span>
                             <span className="font-bold text-foreground text-sm">{kit.name}</span>
                             <span className="text-[10px] text-primary font-bold ml-2">KIT</span>
                           </div>
