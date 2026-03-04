@@ -22,18 +22,11 @@ import AppHeader from "@/components/AppHeader";
 import { toast } from "sonner";
 import { exportClients, parseClientsImport } from "@/lib/exportMultiClient";
 
-const CARD_COLORS = [
-  "from-primary/10 to-primary/5 border-primary/20",
-  "from-secondary/10 to-secondary/5 border-secondary/20",
-  "from-accent/10 to-accent/5 border-accent/20",
-  "from-info/10 to-info/5 border-info/20",
-];
-
 const ICON_COLORS = [
-  "gradient-primary",
-  "gradient-secondary",
-  "gradient-accent",
-  "bg-info",
+  "bg-primary",
+  "bg-primary/80",
+  "bg-primary/60",
+  "bg-primary/70",
 ];
 
 const Dashboard = () => {
@@ -96,8 +89,8 @@ const Dashboard = () => {
         {/* Stats bar */}
         <div className="grid grid-cols-2 gap-3 mb-8">
           <div className="card-kpi flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center shadow-glow-primary">
-              <Briefcase className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+              <Briefcase className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">{clients.length}</p>
@@ -155,7 +148,7 @@ const Dashboard = () => {
           {isAdmin && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="gradient-primary shadow-glow-primary text-white border-0 gap-1">
+                <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1">
                   <Plus className="w-4 h-4" /> Novo Cliente
                 </Button>
               </DialogTrigger>
@@ -166,7 +159,7 @@ const Dashboard = () => {
                     <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome do cliente</label>
                     <Input placeholder="Ex: Empresa XPTO" value={newName} onChange={(e) => setNewName(e.target.value)} required />
                   </div>
-                  <Button type="submit" className="w-full gradient-primary text-white border-0" disabled={addClient.isPending}>
+                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addClient.isPending}>
                     {addClient.isPending ? "Criando..." : "Criar Cliente"}
                   </Button>
                 </form>
@@ -178,7 +171,7 @@ const Dashboard = () => {
         {/* Client cards */}
         {filtered.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-20 h-20 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-glow-primary">
+            <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
               <Briefcase className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">
@@ -191,7 +184,7 @@ const Dashboard = () => {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((client, i) => {
-              const colorIdx = i % CARD_COLORS.length;
+               const colorIdx = i % ICON_COLORS.length;
               const clientCampaignCount = campaignCounts[client.id] || 0;
               return (
                 <div
@@ -201,8 +194,8 @@ const Dashboard = () => {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`w-11 h-11 rounded-xl ${ICON_COLORS[colorIdx]} flex items-center justify-center shadow-lg flex-shrink-0`}>
-                        <span className="text-white font-bold text-lg">{client.name.charAt(0).toUpperCase()}</span>
+                      <div className={`w-11 h-11 rounded-xl ${ICON_COLORS[colorIdx]} flex items-center justify-center flex-shrink-0`}>
+                        <span className="text-primary-foreground font-bold text-lg">{client.name.charAt(0).toUpperCase()}</span>
                       </div>
                       <div>
                         <h3 className="font-bold text-foreground text-base group-hover:text-primary transition-colors">{client.name}</h3>

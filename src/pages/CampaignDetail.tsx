@@ -594,18 +594,18 @@ const CampaignDetail = () => {
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center">
-                  <Store className="w-5 h-5 text-white" />
+              <div className="card-kpi flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                  <Store className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{stores.length}</p>
                   <p className="text-[11px] text-muted-foreground">Lojas cadastradas</p>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 rounded-xl p-4 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg gradient-accent flex items-center justify-center">
-                  <LayoutList className="w-5 h-5 text-white" />
+              <div className="card-kpi flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/80 flex items-center justify-center">
+                  <LayoutList className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{visiblePieces.length + kits.length}</p>
@@ -617,19 +617,19 @@ const CampaignDetail = () => {
             {/* Navigation Buttons */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {[
-                { key: "stores", label: "Lojas", icon: Store, gradient: "from-secondary to-secondary/80", bg: "bg-secondary/10 border-secondary/30 hover:bg-secondary/20" },
-                { key: "matrix", label: "Matriz", icon: Grid3X3, gradient: "from-primary to-primary/80", bg: "bg-primary/10 border-primary/30 hover:bg-primary/20" },
-                { key: "pieces", label: "Peças", icon: LayoutList, gradient: "from-accent to-accent/80", bg: "bg-accent/10 border-accent/30 hover:bg-accent/20" },
-                { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, gradient: "from-destructive to-destructive/80", bg: "bg-destructive/10 border-destructive/30 hover:bg-destructive/20" },
-                { key: "scheduling", label: "Agendamento", icon: CalendarDays, gradient: "from-primary to-primary/80", bg: "bg-primary/10 border-primary/30 hover:bg-primary/20" },
-              ].map(({ key, label, icon: Icon, gradient, bg }) => (
+                { key: "stores", label: "Lojas", icon: Store },
+                { key: "matrix", label: "Matriz", icon: Grid3X3 },
+                { key: "pieces", label: "Peças", icon: LayoutList },
+                { key: "occurrences", label: "Ocorrências", icon: AlertTriangle },
+                { key: "scheduling", label: "Agendamento", icon: CalendarDays },
+              ].map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   onClick={() => setActiveSection(key)}
-                  className={`${bg} border rounded-xl p-5 flex flex-col items-center gap-3 transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer`}
+                  className="bg-primary/5 border border-primary/20 hover:bg-primary/10 rounded-xl p-5 flex flex-col items-center gap-3 transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer"
                 >
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}>
-                    <Icon className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-md">
+                    <Icon className="w-6 h-6 text-primary-foreground" />
                   </div>
                   <span className="font-bold text-sm text-foreground">{label}</span>
                 </button>
