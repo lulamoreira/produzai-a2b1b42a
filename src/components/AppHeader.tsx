@@ -103,14 +103,14 @@ export default function AppHeader({
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {showNav && (
             <>
-              <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 border-white/20 text-white hover:bg-white/10 hover:text-white" onClick={() => navigate("/chat")}>
+              <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]" onClick={() => navigate("/chat")}>
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline text-xs">Chat</span>
+                <span className="hidden sm:inline text-xs font-semibold">Chat</span>
               </Button>
               {(isAdmin || isMasterOrEditor) && (
-                <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 border-white/20 text-white hover:bg-white/10 hover:text-white" onClick={() => navigate("/admin")}>
+                <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]" onClick={() => navigate("/admin")}>
                   <Shield className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline text-xs">Admin</span>
+                  <span className="hidden sm:inline text-xs font-semibold">Admin</span>
                 </Button>
               )}
             </>
