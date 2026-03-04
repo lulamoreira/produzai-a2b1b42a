@@ -81,6 +81,7 @@ export type CampaignKitPiece = {
   id: string;
   kit_id: string;
   piece_id: string;
+  quantity: number;
   created_at: string;
 };
 
@@ -862,8 +863,24 @@ export function useCampaignKitPieces(campaignId: string | undefined) {
 export function useAddCampaignKitPiece() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (kitPiece: { kit_id: string; piece_id: string }) => {
-      const { error } = await supabase.from("campaign_kit_pieces").insert(kitPiece);
+    mutationFn: async (kitPiece: { kit_id: string; piece_id: string; quantity?: number }) => {
+      const { error } = await supabase.from("campaign_kit_pieces").insert({
+        kit_id: kitPiece.kit_id,
+        piece_id: kitPiece.piece_id,
+        quantity: kitPiece.quantity ?? 1,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] }); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useUpdateCampaignKitPiece() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, quantity }: { id: string; quantity: number }) => {
+      const { error } = await supabase.from("campaign_kit_pieces").update({ quantity }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] }); },

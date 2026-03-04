@@ -8,7 +8,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Package, Edit3, Upload, Link, X, Image } from "lucide-react";
+import { Plus, Trash2, Package, Edit3, Upload, Link, X, Image, Minus } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import { supabase } from "@/integrations/supabase/client";
 import { compressImage } from "@/lib/compressImage";
@@ -258,15 +258,16 @@ interface KitDetailDialogProps {
   canEdit?: boolean;
   onDeleteKitPiece?: (id: string) => void;
   onDeleteKit?: (id: string) => void;
-  onAddKitPiece?: (kitPiece: { kit_id: string; piece_id: string }) => Promise<void>;
+  onAddKitPiece?: (kitPiece: { kit_id: string; piece_id: string; quantity?: number }) => Promise<void>;
   onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null }) => Promise<CampaignKit>;
   onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
   onDeletePiece?: (id: string) => void;
+  onUpdateKitPiece?: (update: { id: string; quantity: number }) => Promise<void>;
 }
 
 export function KitDetailDialog({
   open, onOpenChange, kit, kitPieces, allPieces, canEdit,
-  onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece,
+  onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece,
 }: KitDetailDialogProps) {
   const [editingPieceId, setEditingPieceId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
@@ -481,6 +482,45 @@ export function KitDetailDialog({
                     <p className="text-[11px] text-muted-foreground">{p.category} · {p.size || "—"}</p>
                     <p className="text-[10px] text-muted-foreground">{p.specification}</p>
                   </div>
+                  {/* Quantity control */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {canEdit && onUpdateKitPiece ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => {
+                            if (kp.quantity > 1) onUpdateKitPiece({ id: kp.id, quantity: kp.quantity - 1 });
+                          }}
+                          disabled={kp.quantity <= 1}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={kp.quantity}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 1;
+                            onUpdateKitPiece({ id: kp.id, quantity: Math.max(1, val) });
+                          }}
+                          className="w-12 h-7 text-center text-xs p-0"
+                        />
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => onUpdateKitPiece({ id: kp.id, quantity: kp.quantity + 1 })}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                        <span className="text-[10px] text-muted-foreground">un.</span>
+                      </>
+                    ) : (
+                      <span className="text-xs font-semibold text-foreground bg-muted px-2 py-1 rounded">{kp.quantity} un.</span>
+                    )}
+                  </div>
                   {canEdit && (
                     <div className="flex items-center gap-1">
                       {onUpdatePiece && (
@@ -507,7 +547,6 @@ export function KitDetailDialog({
                               <AlertDialogAction
                                 onClick={() => {
                                   onDeleteKitPiece(kp.id);
-                                  // Piece stays as kit_only, available for other kits
                                 }}
                                 className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
                               >
