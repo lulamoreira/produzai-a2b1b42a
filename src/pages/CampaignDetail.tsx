@@ -440,6 +440,58 @@ const CampaignDetail = () => {
         </div>
         <Switch checked={form.kit_only} onCheckedChange={(checked) => setForm((f) => ({ ...f, kit_only: checked }))} />
       </div>
+      {/* Image upload */}
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Foto da peça</label>
+        {form.image_url ? (
+          <div className="relative">
+            <img src={form.image_url} alt="Preview" className="w-full h-36 object-contain rounded-lg border border-border bg-muted/30" />
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              className="absolute top-2 right-2 h-7 px-2"
+              onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
+            >
+              <X className="w-3 h-3 mr-1" /> Remover
+            </Button>
+          </div>
+        ) : (
+          <div className="relative">
+            <input
+              type="file"
+              accept="image/*"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              disabled={pieceImageUploading}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setPieceImageUploading(true);
+                try {
+                  const { compressImage } = await import("@/lib/compressImage");
+                  const compressed = await compressImage(file, 800, 0.6);
+                  const path = `campaign-piece-new-${Date.now()}.jpg`;
+                  const { error } = await supabase.storage.from("piece-images").upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
+                  if (error) throw error;
+                  const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
+                  setForm((f) => ({ ...f, image_url: urlData.publicUrl }));
+                  toast.success("Imagem enviada com sucesso");
+                } catch (err: any) {
+                  toast.error("Erro ao enviar imagem: " + err.message);
+                } finally {
+                  setPieceImageUploading(false);
+                }
+              }}
+            />
+            <div className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20">
+              <Upload className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                {pieceImageUploading ? "Comprimindo e enviando..." : "Clique ou arraste (será comprimida)"}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Código</label>
         <Input type="number" value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} placeholder={nextPieceCode.full} />
@@ -499,58 +551,6 @@ const CampaignDetail = () => {
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Instruções de Instalação</label>
         <Input value={form.installation_instructions} onChange={(e) => setForm((f) => ({ ...f, installation_instructions: e.target.value }))} />
-      </div>
-      {/* Image upload */}
-      <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Foto da peça</label>
-        {form.image_url ? (
-          <div className="relative">
-            <img src={form.image_url} alt="Preview" className="w-full h-36 object-contain rounded-lg border border-border bg-muted/30" />
-            <Button
-              type="button"
-              size="sm"
-              variant="destructive"
-              className="absolute top-2 right-2 h-7 px-2"
-              onClick={() => setForm((f) => ({ ...f, image_url: "" }))}
-            >
-              <X className="w-3 h-3 mr-1" /> Remover
-            </Button>
-          </div>
-        ) : (
-          <div className="relative">
-            <input
-              type="file"
-              accept="image/*"
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              disabled={pieceImageUploading}
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                setPieceImageUploading(true);
-                try {
-                  const { compressImage } = await import("@/lib/compressImage");
-                  const compressed = await compressImage(file, 800, 0.6);
-                  const path = `campaign-piece-new-${Date.now()}.jpg`;
-                  const { error } = await supabase.storage.from("piece-images").upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
-                  if (error) throw error;
-                  const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
-                  setForm((f) => ({ ...f, image_url: urlData.publicUrl }));
-                  toast.success("Imagem enviada com sucesso");
-                } catch (err: any) {
-                  toast.error("Erro ao enviar imagem: " + err.message);
-                } finally {
-                  setPieceImageUploading(false);
-                }
-              }}
-            />
-            <div className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20">
-              <Upload className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {pieceImageUploading ? "Comprimindo e enviando..." : "Clique ou arraste (será comprimida)"}
-              </span>
-            </div>
-          </div>
-        )}
       </div>
     </>
   );
