@@ -1298,6 +1298,19 @@ const CampaignDetail = () => {
                                   );
                                 })()}
                                 {canEditPieces && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    title="Marcar como peça para kit"
+                                    onClick={async () => {
+                                      await updatePiece.mutateAsync({ id: p.id, kit_only: true });
+                                    }}
+                                  >
+                                    <Package className="w-3.5 h-3.5 text-muted-foreground" />
+                                  </Button>
+                                )}
+                                {canEditPieces && (
                                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditPiece(p)}>
                                     <Edit3 className="w-3.5 h-3.5" />
                                   </Button>
