@@ -261,6 +261,7 @@ const CampaignDetail = () => {
       store_category: editPieceForm.store_category || null,
       specification: editPieceForm.specification,
       installation_instructions: editPieceForm.installation_instructions,
+      kit_only: editPieceForm.kit_only,
     });
     setEditPieceDialogOpen(false);
   };
