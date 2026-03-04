@@ -32,7 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import AppHeader from "@/components/AppHeader";
@@ -42,6 +42,7 @@ import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImpor
 import OccurrencesTab from "@/components/OccurrencesTab";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 import SchedulingTab from "@/components/SchedulingTab";
+import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaignDialog";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -96,6 +97,7 @@ const CampaignDetail = () => {
 
   // ─── Kit dialogs ───────────────────────────────────────
   const [createKitDialogOpen, setCreateKitDialogOpen] = useState(false);
+  const [importPiecesDialogOpen, setImportPiecesDialogOpen] = useState(false);
   const [viewKitDetail, setViewKitDetail] = useState<CampaignKit | null>(null);
 
   // ─── Piece dialogs ─────────────────────────────────────
@@ -1192,6 +1194,9 @@ const CampaignDetail = () => {
                     <span><Upload className="w-3.5 h-3.5" /> Importar</span>
                   </Button>
                 </label>
+                <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setImportPiecesDialogOpen(true)}>
+                  <Copy className="w-3.5 h-3.5" /> De outra campanha
+                </Button>
                 <Dialog open={pieceDialogOpen} onOpenChange={setPieceDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="text-xs gap-1 gradient-accent text-white border-0">
@@ -1542,6 +1547,29 @@ const CampaignDetail = () => {
         onDeletePiece={(id) => deletePiece.mutate(id)}
         onUpdateKitPiece={async (update) => { await updateKitPiece.mutateAsync(update); }}
       />
+
+      {/* Import Pieces from Campaign Dialog */}
+      {clientId && campaignId && (
+        <ImportPiecesFromCampaignDialog
+          open={importPiecesDialogOpen}
+          onOpenChange={setImportPiecesDialogOpen}
+          clientId={clientId}
+          currentCampaignId={campaignId}
+          existingPieces={pieces}
+          onImport={async (piecesToImport) => {
+            try {
+              let count = 0;
+              for (const p of piecesToImport) {
+                await addPiece.mutateAsync(p as any);
+                count++;
+              }
+              toast.success(`${count} peça(s) importada(s) com sucesso!`);
+            } catch {
+              toast.error("Erro ao importar peças.");
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
