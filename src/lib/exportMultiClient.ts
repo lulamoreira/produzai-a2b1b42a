@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import type { Client, ClientStore, Campaign, CampaignPiece, CampaignStorePiece } from "@/hooks/useMultiClientData";
+import type { Client, ClientStore, Campaign, CampaignPiece, CampaignStorePiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
 
 // ─── Clients ────────────────────────────────────────────
 
@@ -150,16 +150,21 @@ export function parsePiecesImport(file: File): Promise<Array<{ code: number; cat
   });
 }
 
-// ─── Matrix (Store x Pieces) ────────────────────────────
+// ─── Matrix (Store x Pieces + Kits) ─────────────────────
 
 export function exportMatrix(
   stores: ClientStore[],
   pieces: CampaignPiece[],
   storePieces: CampaignStorePiece[],
   campaignName: string,
+  kits: CampaignKit[] = [],
+  kitPieces: CampaignKitPiece[] = [],
 ) {
   const qtyMap: Record<string, number> = {};
   storePieces.forEach((sp) => { qtyMap[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
+
+  // Build piece map for lookups
+  const pieceMap = new Map(pieces.map(p => [p.id, p]));
 
   const rows = stores.map((store) => {
     const row: Record<string, string | number> = {
@@ -174,6 +179,19 @@ export function exportMatrix(
       row[`${p.code} - ${p.name}`] = qty;
       total += qty;
     });
+
+    // Kit columns
+    kits.forEach((kit) => {
+      const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
+      const kitQty = kpForKit.length > 0
+        ? Math.min(...kpForKit.map(kp => {
+            const storeQty = qtyMap[`${store.id}-${kp.piece_id}`] || 0;
+            return Math.floor(storeQty / (kp.quantity || 1));
+          }))
+        : 0;
+      row[`KIT ${kit.code} - ${kit.name}`] = kitQty;
+    });
+
     row["Total"] = total;
     return row;
   });
@@ -181,6 +199,27 @@ export function exportMatrix(
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb, ws, "Matriz");
+
+  // Individual kit sheets
+  kits.forEach((kit) => {
+    const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
+    const kitRows = kpForKit.map(kp => {
+      const piece = pieceMap.get(kp.piece_id);
+      return {
+        "Código": piece?.code || 0,
+        "Nome": piece?.name || "",
+        "Medidas": piece?.size || "",
+        "Localização": piece?.category || "",
+        "Qtd no Kit": kp.quantity || 1,
+      };
+    });
+    if (kitRows.length > 0) {
+      const kitWs = XLSX.utils.json_to_sheet(kitRows);
+      kitWs["!cols"] = [{ wch: 8 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, kitWs, `Kit ${kit.code} - ${kit.name}`.slice(0, 31));
+    }
+  });
+
   XLSX.writeFile(wb, `Matriz_${campaignName.replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
 }
 
