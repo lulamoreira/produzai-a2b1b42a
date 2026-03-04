@@ -44,7 +44,7 @@ import OccurrencesTab from "@/components/OccurrencesTab";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 import SchedulingTab from "@/components/SchedulingTab";
 import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaignDialog";
-import SortablePiecesTable from "@/components/SortablePiecesTable";
+import SortablePiecesTable, { type UnifiedRow } from "@/components/SortablePiecesTable";
 import SupportMaterialsSection from "@/components/SupportMaterialsSection";
 
 const CampaignDetail = () => {
@@ -349,15 +349,23 @@ const CampaignDetail = () => {
     }
   };
 
-  // ─── Reorder pieces (drag & drop) ─────────────────────
-  const handleReorderPieces = useCallback(async (reorderedPieces: CampaignPiece[]) => {
-    for (let i = 0; i < reorderedPieces.length; i++) {
-      const piece = reorderedPieces[i];
-      if (piece.display_order !== i + 1) {
-        await supabase.from("campaign_pieces").update({ display_order: i + 1 }).eq("id", piece.id);
+  // ─── Reorder pieces & kits (drag & drop) ───────────────
+  const handleReorderUnified = useCallback(async (reorderedRows: UnifiedRow[]) => {
+    for (let i = 0; i < reorderedRows.length; i++) {
+      const row = reorderedRows[i];
+      const newOrder = i + 1;
+      if (row.type === "piece") {
+        if (row.data.display_order !== newOrder) {
+          await supabase.from("campaign_pieces").update({ display_order: newOrder }).eq("id", row.data.id);
+        }
+      } else {
+        if (row.data.display_order !== newOrder) {
+          await supabase.from("campaign_kits").update({ display_order: newOrder }).eq("id", row.data.id);
+        }
       }
     }
     queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+    queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
   }, [queryClient]);
 
   // ─── Recodificar (rewrite codes sequentially) ─────────
@@ -1344,54 +1352,17 @@ const CampaignDetail = () => {
               )}
             </div>
 
-            {/* Kits section */}
-            {kits.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-                  <Package className="w-4 h-4 text-primary" /> Kits ({kits.length})
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {kits.map((kit) => {
-                    const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
-                    const kitPieceDetails = kitPiecesForKit.map(kp => pieces.find(p => p.id === kp.piece_id)).filter(Boolean);
-                    return (
-                      <button
-                        key={kit.id}
-                        onClick={() => setViewKitDetail(kit)}
-                        className="text-left p-4 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 hover:border-primary/50 hover:shadow-md transition-all"
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          {kit.image_url ? (
-                            <img src={kit.image_url} alt={kit.name} className="w-8 h-8 rounded-lg object-cover border border-primary/20" />
-                          ) : (
-                            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                              <Package className="w-4 h-4 text-primary" />
-                            </div>
-                          )}
-                          <div>
-                            <span className="text-xs text-primary font-bold mr-1.5">{kit.code}</span>
-                            <span className="font-bold text-foreground text-sm">{kit.name}</span>
-                            <span className="text-[10px] text-primary font-bold ml-2">KIT</span>
-                          </div>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          {kitPieceDetails.length} peça(s): {kitPieceDetails.map(p => p!.name).join(", ") || "Nenhuma"}
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
             {visiblePieces.length === 0 && kits.length === 0 ? (
               <div className="text-center py-16">
                 <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-muted-foreground text-sm">Nenhuma peça cadastrada nesta campanha.</p>
               </div>
-            ) : visiblePieces.length > 0 && (
+            ) : (
               <SortablePiecesTable
                 pieces={visiblePieces}
+                kits={kits}
+                kitPieces={kitPieces}
+                allPieces={pieces}
                 stores={stores}
                 qtyMap={qtyMap}
                 canEditPieces={canEditPieces}
@@ -1400,7 +1371,9 @@ const CampaignDetail = () => {
                 onDelete={(id) => deletePiece.mutate(id)}
                 onDistribute={handleDistributePiece}
                 onMarkKitOnly={async (p) => { await updatePiece.mutateAsync({ id: p.id, kit_only: true }); }}
-                onReorder={handleReorderPieces}
+                onKitClick={(kit) => setViewKitDetail(kit)}
+                onDeleteKit={(id) => deleteKit.mutate(id)}
+                onReorder={handleReorderUnified}
               />
             )}
           </>)}
