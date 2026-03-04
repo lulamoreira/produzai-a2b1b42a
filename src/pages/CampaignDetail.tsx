@@ -45,6 +45,7 @@ import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 import SchedulingTab from "@/components/SchedulingTab";
 import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaignDialog";
 import SortablePiecesTable from "@/components/SortablePiecesTable";
+import SupportMaterialsSection from "@/components/SupportMaterialsSection";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -557,6 +558,9 @@ const CampaignDetail = () => {
       />
 
       <main className="max-w-[95vw] mx-auto px-2 sm:px-4 py-4 sm:py-6">
+        {/* Material de Apoio */}
+        <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
+
         {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4 flex items-center gap-3">

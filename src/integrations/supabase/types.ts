@@ -365,6 +365,47 @@ export type Database = {
           },
         ]
       }
+      campaign_support_materials: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          display_order: number
+          file_name: string | null
+          file_type: string | null
+          file_url: string | null
+          id: string
+          title: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          display_order?: number
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          title?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          display_order?: number
+          file_name?: string | null
+          file_type?: string | null
+          file_url?: string | null
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_support_materials_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           client_id: string
