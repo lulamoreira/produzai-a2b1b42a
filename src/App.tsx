@@ -8,6 +8,7 @@ import { useUserApprovalStatus } from "@/hooks/useUserApproval";
 import { useUserRole } from "@/hooks/useUserRole";
 import { PendingUsersAlert } from "@/components/PendingUsersAlert";
 import { NameConfirmDialog } from "@/components/NameConfirmDialog";
+import AppLayout from "@/components/AppLayout";
 import AgencySelect from "./pages/AgencySelect";
 import Dashboard from "./pages/Dashboard";
 import ClientDetail from "./pages/ClientDetail";
@@ -65,11 +66,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <>
+    <AppLayout>
       <PendingUsersAlert />
       <NameConfirmDialog />
       {children}
-    </>
+    </AppLayout>
   );
 };
 

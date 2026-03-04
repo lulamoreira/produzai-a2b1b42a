@@ -24,7 +24,7 @@ import {
 } from "@/hooks/useUserAgencyAccess";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Shield, ArrowLeft, Users, KeyRound, Plus, Trash2, Tags, Edit3, UserCheck, PauseCircle, PlayCircle, ChevronDown, ChevronRight, Building2, Download, Upload, Database } from "lucide-react";
-import AppHeader from "@/components/AppHeader";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -278,19 +278,15 @@ const Admin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader
-        backTo="/"
-        backLabel="Voltar"
-        title="Painel de Administração"
-        showNav={false}
-      >
-        <Button variant="outline" size="sm" className="ml-auto gap-1.5" onClick={() => navigate("/approvals")}>
+    <div className="bg-background">
+      <div className="max-w-5xl mx-auto px-4 pt-4 flex items-center justify-between">
+        <h1 className="text-lg font-bold text-foreground">Painel de Administração</h1>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate("/approvals")}>
           <UserCheck className="w-4 h-4" /> Aprovações
         </Button>
-      </AppHeader>
+      </div>
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="max-w-5xl mx-auto px-4 py-6">
         <Tabs defaultValue="users">
           <TabsList className="mb-6 bg-card border border-border flex-wrap">
             <TabsTrigger value="users" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Users className="w-4 h-4" /> Usuários</TabsTrigger>
