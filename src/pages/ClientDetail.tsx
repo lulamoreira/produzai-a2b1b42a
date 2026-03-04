@@ -673,11 +673,18 @@ const ClientDetail = () => {
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {campaigns.map((c) => {
+                {campaigns.map((c, i) => {
+                  const CAMP_BG = [
+                    "bg-primary",
+                    "bg-primary/85",
+                    "bg-primary/70",
+                    "bg-primary/55",
+                  ];
+                  const bgClass = CAMP_BG[i % CAMP_BG.length];
                   return (
                     <div
                       key={c.id}
-                      className="group rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden bg-primary text-primary-foreground shadow-sm hover:shadow-lg"
+                      className={`group rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden ${bgClass} text-primary-foreground shadow-sm hover:shadow-lg`}
                       onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
                     >
                       <div className="flex items-start gap-3">
