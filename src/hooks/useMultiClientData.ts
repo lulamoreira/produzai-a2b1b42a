@@ -73,6 +73,7 @@ export type CampaignKit = {
   campaign_id: string;
   name: string;
   code: number;
+  image_url: string | null;
   created_at: string;
 };
 
@@ -817,6 +818,20 @@ export function useDeleteCampaignKit() {
       qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
       toast.success("Kit removido!");
     },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useUpdateCampaignKit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (kit: { id: string; name?: string; image_url?: string | null }) => {
+      const { id, ...updates } = kit;
+      const { data, error } = await supabase.from("campaign_kits").update(updates).eq("id", id).select().single();
+      if (error) throw error;
+      return data as CampaignKit;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_kits"] }); },
     onError: (e) => toast.error("Erro: " + e.message),
   });
 }

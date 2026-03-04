@@ -1,0 +1,1 @@
+ALTER TABLE public.campaign_kits ADD COLUMN image_url text;

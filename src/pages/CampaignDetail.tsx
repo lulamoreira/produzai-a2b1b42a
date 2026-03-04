@@ -8,7 +8,7 @@ import {
   useUpdateClientStore,
   useCampaignStoreStatus, useUpsertCampaignStoreStatus, useBulkUpsertCampaignStoreStatus,
   useClientStoreModels,
-  useCampaignKits, useAddCampaignKit, useDeleteCampaignKit,
+  useCampaignKits, useAddCampaignKit, useDeleteCampaignKit, useUpdateCampaignKit,
   useCampaignKitPieces, useAddCampaignKitPiece, useDeleteCampaignKitPiece,
   type CampaignPiece, type ClientStore, type CampaignKit,
 } from "@/hooks/useMultiClientData";
@@ -73,6 +73,7 @@ const CampaignDetail = () => {
   const { data: kitPieces = [] } = useCampaignKitPieces(campaignId);
   const addKit = useAddCampaignKit();
   const deleteKit = useDeleteCampaignKit();
+  const updateKit = useUpdateCampaignKit();
   const addKitPiece = useAddCampaignKitPiece();
   const deleteKitPiece = useDeleteCampaignKitPiece();
 
@@ -1218,9 +1219,13 @@ const CampaignDetail = () => {
                         className="text-left p-4 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 hover:border-primary/50 hover:shadow-md transition-all"
                       >
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                            <Package className="w-4 h-4 text-primary" />
-                          </div>
+                          {kit.image_url ? (
+                            <img src={kit.image_url} alt={kit.name} className="w-8 h-8 rounded-lg object-cover border border-primary/20" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                              <Package className="w-4 h-4 text-primary" />
+                            </div>
+                          )}
                           <div>
                             <span className="font-bold text-foreground text-sm">{kit.name}</span>
                             <span className="text-[10px] text-primary font-bold ml-2">KIT</span>
@@ -1433,6 +1438,7 @@ const CampaignDetail = () => {
           existingKits={kits}
           onCreateKit={async (kit) => await addKit.mutateAsync(kit)}
           onAddKitPiece={async (kp) => await addKitPiece.mutateAsync(kp)}
+          onUpdateKit={async (kit) => await updateKit.mutateAsync(kit)}
         />
       )}
 
@@ -1446,6 +1452,10 @@ const CampaignDetail = () => {
         canEdit={canEditPieces}
         onDeleteKitPiece={(id) => deleteKitPiece.mutate(id)}
         onDeleteKit={(id) => deleteKit.mutate(id)}
+        onAddKitPiece={async (kp) => await addKitPiece.mutateAsync(kp)}
+        onUpdateKit={async (kit) => await updateKit.mutateAsync(kit)}
+        onUpdatePiece={async (piece) => { await updatePiece.mutateAsync(piece as any); }}
+        onDeletePiece={(id) => deletePiece.mutate(id)}
       />
     </div>
   );
