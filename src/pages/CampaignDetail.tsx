@@ -8,7 +8,9 @@ import {
   useUpdateClientStore,
   useCampaignStoreStatus, useUpsertCampaignStoreStatus, useBulkUpsertCampaignStoreStatus,
   useClientStoreModels,
-  type CampaignPiece, type ClientStore,
+  useCampaignKits, useAddCampaignKit, useDeleteCampaignKit,
+  useCampaignKitPieces, useAddCampaignKitPiece, useDeleteCampaignKitPiece,
+  type CampaignPiece, type ClientStore, type CampaignKit,
 } from "@/hooks/useMultiClientData";
 
 import { useClientPermission } from "@/hooks/useClientPermission";
@@ -37,6 +39,7 @@ import QuickMatrixEditor from "@/components/QuickMatrixEditor";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
 import OccurrencesTab from "@/components/OccurrencesTab";
+import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -66,6 +69,12 @@ const CampaignDetail = () => {
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const upsertStoreStatus = useUpsertCampaignStoreStatus();
   const bulkUpsertStoreStatus = useBulkUpsertCampaignStoreStatus();
+  const { data: kits = [] } = useCampaignKits(campaignId);
+  const { data: kitPieces = [] } = useCampaignKitPieces(campaignId);
+  const addKit = useAddCampaignKit();
+  const deleteKit = useDeleteCampaignKit();
+  const addKitPiece = useAddCampaignKitPiece();
+  const deleteKitPiece = useDeleteCampaignKitPiece();
 
   // Campaign store enabled map (default true if no record exists)
   const storeEnabledMap = useMemo(() => {
@@ -80,6 +89,10 @@ const CampaignDetail = () => {
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [newLocationName, setNewLocationName] = useState("");
 
+  // ─── Kit dialogs ───────────────────────────────────────
+  const [createKitDialogOpen, setCreateKitDialogOpen] = useState(false);
+  const [viewKitDetail, setViewKitDetail] = useState<CampaignKit | null>(null);
+
   // ─── Piece dialogs ─────────────────────────────────────
   const [pieceDialogOpen, setPieceDialogOpen] = useState(false);
   const [pieceForm, setPieceForm] = useState({
@@ -88,6 +101,7 @@ const CampaignDetail = () => {
     store_category: typeof window !== "undefined" ? localStorage.getItem("last_store_category") || "" : "",
     specification: "Vide Book/Manual",
     installation_instructions: "Sem informações específicas",
+    kit_only: false,
   });
   const [editPieceDialogOpen, setEditPieceDialogOpen] = useState(false);
   const [editPieceForm, setEditPieceForm] = useState({
@@ -96,6 +110,7 @@ const CampaignDetail = () => {
     store_category: "",
     specification: "Vide Book/Manual",
     installation_instructions: "Sem informações específicas",
+    kit_only: false,
   });
 
   // ─── Store filters ─────────────────────────────────────
@@ -149,6 +164,10 @@ const CampaignDetail = () => {
   const allEnabled = useMemo(() => filteredStores.every(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
   const activeFilteredStores = useMemo(() => filteredStores.filter(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
 
+  // ─── Filtered pieces: exclude kit_only from normal views ─
+  const visiblePieces = useMemo(() => pieces.filter(p => !p.kit_only), [pieces]);
+  const kitOnlyPieces = useMemo(() => pieces.filter(p => p.kit_only), [pieces]);
+
   // For each store, compute total pieces assigned in this campaign
   const storeStats = useMemo(() => {
     const stats: Record<string, { totalQty: number; pieceCount: number }> = {};
@@ -198,6 +217,7 @@ const CampaignDetail = () => {
       store_category: pieceForm.store_category || undefined,
       specification: pieceForm.specification,
       installation_instructions: pieceForm.installation_instructions,
+      kit_only: pieceForm.kit_only,
     });
     setPieceForm({
       code: "", category: "", name: "",
@@ -205,6 +225,7 @@ const CampaignDetail = () => {
       store_category: pieceForm.store_category,
       specification: "Vide Book/Manual",
       installation_instructions: "Sem informações específicas",
+      kit_only: false,
     });
     setPieceDialogOpen(false);
   };
@@ -222,6 +243,7 @@ const CampaignDetail = () => {
       store_category: piece.store_category || "",
       specification: piece.specification || "Vide Book/Manual",
       installation_instructions: piece.installation_instructions || "Sem informações específicas",
+      kit_only: piece.kit_only || false,
     });
     setEditPieceDialogOpen(true);
   };
@@ -316,6 +338,13 @@ const CampaignDetail = () => {
     setForm: React.Dispatch<React.SetStateAction<typeof pieceForm>>,
   ) => (
     <>
+      <div className="flex items-center justify-between p-3 rounded-lg border border-primary/20 bg-primary/5">
+        <div>
+          <label className="text-xs font-medium text-foreground">Peça para Kit</label>
+          <p className="text-[10px] text-muted-foreground">Ative para usar esta peça exclusivamente em kits</p>
+        </div>
+        <Switch checked={form.kit_only} onCheckedChange={(checked) => setForm((f) => ({ ...f, kit_only: checked }))} />
+      </div>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Código</label>
         <Input type="number" value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} placeholder={nextPieceCode.full} />
@@ -443,9 +472,14 @@ const CampaignDetail = () => {
   }
 
   // ─── Filtered pieces for matrix (by store_category) ───
+
+  // ─── Filtered pieces for matrix (by store_category) ───
   const matrixPieces = storeCategoryFilter === "__all__"
-    ? pieces
-    : pieces.filter((p) => p.store_category === storeCategoryFilter);
+    ? visiblePieces
+    : visiblePieces.filter((p) => p.store_category === storeCategoryFilter);
+
+  // Kits appear as virtual columns in the matrix
+  const matrixKits = kits;
 
   return (
     <div className="min-h-screen bg-background">
@@ -607,7 +641,7 @@ const CampaignDetail = () => {
               if (!selectedStore) return null;
               // Filter pieces by store model compatibility: same model + "Todas"
               const storeModel = selectedStore.store_model;
-              const compatiblePieces = pieces.filter(p => {
+              const compatiblePieces = visiblePieces.filter(p => {
                 if (!p.store_category || p.store_category === "Todas") return true;
                 if (!storeModel) return true;
                 return p.store_category === storeModel;
@@ -937,6 +971,17 @@ const CampaignDetail = () => {
                           </div>
                         </TableHead>
                       ))}
+                      {matrixKits.map((kit) => (
+                        <TableHead key={`kit-${kit.id}`} className="text-center min-w-[100px]">
+                          <button onClick={() => setViewKitDetail(kit)} className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
+                            <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                              <Package className="w-4 h-4 text-primary" />
+                            </div>
+                            <span className="text-[10px] font-bold text-primary">KIT</span>
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{kit.name}</span>
+                          </button>
+                        </TableHead>
+                      ))}
                       <TableHead className="text-center font-bold">Total</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -991,6 +1036,68 @@ const CampaignDetail = () => {
                               </TableCell>
                             );
                           })}
+                          {/* Kit columns - show kit quantity (based on first kit piece in store) */}
+                          {matrixKits.map((kit) => {
+                            const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
+                            // Kit qty = minimum qty among all kit pieces for this store (they should all be equal)
+                            const kitQty = kitPiecesForKit.length > 0
+                              ? Math.min(...kitPiecesForKit.map(kp => qtyMap[`${store.id}-${kp.piece_id}`] || 0))
+                              : 0;
+                            const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === `kit-${kit.id}`;
+                            return (
+                              <TableCell key={`kit-${kit.id}`} className="text-center p-1 bg-primary/5">
+                                {isEditing ? (
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    value={editValue}
+                                    onChange={(e) => setEditValue(e.target.value)}
+                                    onBlur={async () => {
+                                      const qty = Math.max(0, parseInt(editValue) || 0);
+                                      if (campaignId) {
+                                        for (const kp of kitPiecesForKit) {
+                                          await updateStorePiece.mutateAsync({ campaignId, storeId: store.id, pieceId: kp.piece_id, quantity: qty });
+                                        }
+                                      }
+                                      setEditingCell(null);
+                                    }}
+                                    onKeyDown={async (e) => {
+                                      if (e.key === "Enter") {
+                                        const qty = Math.max(0, parseInt(editValue) || 0);
+                                        if (campaignId) {
+                                          for (const kp of kitPiecesForKit) {
+                                            await updateStorePiece.mutateAsync({ campaignId, storeId: store.id, pieceId: kp.piece_id, quantity: qty });
+                                          }
+                                        }
+                                        setEditingCell(null);
+                                      }
+                                      if (e.key === "Escape") setEditingCell(null);
+                                    }}
+                                    className="w-16 h-8 text-center mx-auto text-sm"
+                                    autoFocus
+                                  />
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      if (!canEditCampaign) return;
+                                      setEditingCell({ storeId: store.id, pieceId: `kit-${kit.id}` });
+                                      setEditValue(String(kitQty));
+                                    }}
+                                    className={`w-full h-8 text-sm rounded transition-colors ${
+                                      kitQty > 0
+                                        ? "bg-primary/15 text-primary font-semibold hover:bg-primary/25"
+                                        : canEditCampaign
+                                        ? "text-muted-foreground/40 hover:bg-muted"
+                                        : "text-muted-foreground/40"
+                                    }`}
+                                    disabled={!canEditCampaign}
+                                  >
+                                    {kitQty || "—"}
+                                  </button>
+                                )}
+                              </TableCell>
+                            );
+                          })}
                           <TableCell className="text-center font-bold text-sm">{storeTotal}</TableCell>
                         </TableRow>
                       );
@@ -1001,6 +1108,16 @@ const CampaignDetail = () => {
                       {matrixPieces.map((p) => {
                         const pieceTotal = filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
                         return <TableCell key={p.id} className="text-center text-sm">{pieceTotal}</TableCell>;
+                      })}
+                      {matrixKits.map((kit) => {
+                        const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
+                        const kitTotal = kitPiecesForKit.length > 0
+                          ? filteredStores.reduce((total, st) => {
+                              const minQty = Math.min(...kitPiecesForKit.map(kp => qtyMap[`${st.id}-${kp.piece_id}`] || 0));
+                              return total + minQty;
+                            }, 0)
+                          : 0;
+                        return <TableCell key={`kit-total-${kit.id}`} className="text-center text-sm">{kitTotal}</TableCell>;
                       })}
                       <TableCell className="text-center text-sm text-primary">
                         {matrixPieces.reduce((total, p) => total + filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0), 0)}
@@ -1076,16 +1193,54 @@ const CampaignDetail = () => {
                     </form>
                   </DialogContent>
                 </Dialog>
+                <Button size="sm" className="text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
+                  <Package className="w-3.5 h-3.5" /> Novo Kit
+                </Button>
                 </>
               )}
             </div>
 
-            {pieces.length === 0 ? (
+            {/* Kits section */}
+            {kits.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-primary" /> Kits ({kits.length})
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {kits.map((kit) => {
+                    const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
+                    const kitPieceDetails = kitPiecesForKit.map(kp => pieces.find(p => p.id === kp.piece_id)).filter(Boolean);
+                    return (
+                      <button
+                        key={kit.id}
+                        onClick={() => setViewKitDetail(kit)}
+                        className="text-left p-4 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 hover:border-primary/50 hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                            <Package className="w-4 h-4 text-primary" />
+                          </div>
+                          <div>
+                            <span className="font-bold text-foreground text-sm">{kit.name}</span>
+                            <span className="text-[10px] text-primary font-bold ml-2">KIT</span>
+                          </div>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          {kitPieceDetails.length} peça(s): {kitPieceDetails.map(p => p!.name).join(", ") || "Nenhuma"}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {visiblePieces.length === 0 && kits.length === 0 ? (
               <div className="text-center py-16">
                 <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-muted-foreground text-sm">Nenhuma peça cadastrada nesta campanha.</p>
               </div>
-            ) : (
+            ) : visiblePieces.length > 0 && (
               <div className="border border-border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
@@ -1102,7 +1257,7 @@ const CampaignDetail = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pieces.map((p) => {
+                    {visiblePieces.map((p) => {
                       const pieceTotal = stores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
                       return (
                         <TableRow key={p.id}>
@@ -1253,6 +1408,31 @@ const CampaignDetail = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create Kit Dialog */}
+      {campaignId && (
+        <CreateKitDialog
+          open={createKitDialogOpen}
+          onOpenChange={setCreateKitDialogOpen}
+          campaignId={campaignId}
+          kitOnlyPieces={kitOnlyPieces}
+          existingKits={kits}
+          onCreateKit={async (kit) => await addKit.mutateAsync(kit)}
+          onAddKitPiece={async (kp) => await addKitPiece.mutateAsync(kp)}
+        />
+      )}
+
+      {/* Kit Detail Dialog */}
+      <KitDetailDialog
+        open={!!viewKitDetail}
+        onOpenChange={(open) => { if (!open) setViewKitDetail(null); }}
+        kit={viewKitDetail}
+        kitPieces={kitPieces}
+        allPieces={pieces}
+        canEdit={canEditPieces}
+        onDeleteKitPiece={(id) => deleteKitPiece.mutate(id)}
+        onDeleteKit={(id) => deleteKit.mutate(id)}
+      />
     </div>
   );
 };
