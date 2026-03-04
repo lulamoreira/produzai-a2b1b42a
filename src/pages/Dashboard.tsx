@@ -87,7 +87,7 @@ const Dashboard = () => {
 
       <main className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
         {/* Stats bar */}
-        <div className="grid grid-cols-2 gap-3 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
           <div className="card-kpi flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
               <Briefcase className="w-5 h-5 text-primary-foreground" />
@@ -100,7 +100,7 @@ const Dashboard = () => {
           <div className="card-kpi col-span-1 sm:col-span-1">
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground mb-1">Ações rápidas</p>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => exportClients(clients)}>
                   <Download className="w-3.5 h-3.5 mr-1" /> Exportar
                 </Button>

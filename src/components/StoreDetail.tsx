@@ -307,19 +307,19 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
               {items.map(({ piece, qty }) => (
                 <div
                   key={piece.id}
-                  className="px-4 py-3 flex items-center gap-3 hover:bg-card/50 transition-colors"
+                  className="px-3 sm:px-4 py-3 flex items-center gap-2 sm:gap-3 hover:bg-card/50 transition-colors"
                 >
                   <PieceThumbnail imageUrl={piece.image_url} name={piece.name} />
                   {isAdmin && <PieceImageUpload piece={piece} />}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <p className="text-xs sm:text-sm font-medium text-foreground truncate">
                       {piece.name}
                     </p>
-                    <p className="text-xs text-muted-foreground">{piece.size}</p>
-                    <p className="text-xs text-muted-foreground truncate" title={piece.specification}>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">{piece.size}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate hidden sm:block" title={piece.specification}>
                       📋 {piece.specification}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate" title={piece.installation_instructions}>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate hidden sm:block" title={piece.installation_instructions}>
                       🔧 {piece.installation_instructions}
                     </p>
                   </div>

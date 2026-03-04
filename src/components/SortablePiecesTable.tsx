@@ -319,9 +319,9 @@ export default function SortablePiecesTable({
   };
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
+    <div className="border border-border rounded-lg overflow-x-auto">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <Table>
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow>
               {canEditPieces && <TableHead className="w-8" />}
