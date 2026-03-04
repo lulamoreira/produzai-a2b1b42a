@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Plus, Upload, Trash2, FileText, Image, File, Download, Pencil, Check, X } from "lucide-react";
+import { Plus, Upload, Trash2, FileText, Image, File, Download, Pencil, Check, X, ExternalLink } from "lucide-react";
 
 const CARD_GRADIENTS = [
   "from-primary/15 to-primary/5 border-primary/25",
@@ -243,6 +243,14 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
                           href={mat.file_url}
                           target="_blank"
                           rel="noopener noreferrer"
+                          className="w-7 h-7 rounded-md bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
+                          title="Abrir arquivo"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 text-foreground" />
+                        </a>
+                        <a
+                          href={mat.file_url}
+                          download={mat.file_name || "arquivo"}
                           className="w-7 h-7 rounded-md bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
                           title="Download"
                         >
