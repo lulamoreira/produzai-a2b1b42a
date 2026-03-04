@@ -80,11 +80,11 @@ export default function AppHeader({
   const greeting = `${getGreeting()}, ${displayName}!`;
 
   return (
-    <header className={`border-b border-border sticky top-0 z-10 ${bgClass || "bg-card"}`} style={bgStyle}>
+    <header className={`border-b border-white/10 sticky top-0 z-10 ${bgClass || "bg-gradient-to-r from-[#1e3a5f] to-[#5b3f8f]"} text-white`} style={bgStyle}>
       <div className={`${maxWidth} mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2`}>
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {backTo && (
-            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => navigate(backTo)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white" onClick={() => navigate(backTo)}>
               <ArrowLeft className="w-4 h-4" />
             </Button>
           )}
@@ -103,12 +103,12 @@ export default function AppHeader({
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {showNav && (
             <>
-              <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1" onClick={() => navigate("/chat")}>
+              <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 border-white/20 text-white hover:bg-white/10 hover:text-white" onClick={() => navigate("/chat")}>
                 <MessageSquare className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline text-xs">Chat</span>
               </Button>
               {(isAdmin || isMasterOrEditor) && (
-                <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1" onClick={() => navigate("/admin")}>
+                <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 border-white/20 text-white hover:bg-white/10 hover:text-white" onClick={() => navigate("/admin")}>
                   <Shield className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline text-xs">Admin</span>
                 </Button>
@@ -117,8 +117,8 @@ export default function AppHeader({
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="ghost" className="gap-1.5 rounded-full px-1.5 sm:px-3">
-                <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center">
+              <Button size="sm" variant="ghost" className="gap-1.5 rounded-full px-1.5 sm:px-3 text-white hover:bg-white/10 hover:text-white">
+                <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
                   <span className="text-xs font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
                 </div>
                 <span className="hidden sm:inline text-xs max-w-[120px] truncate">{displayName}</span>
