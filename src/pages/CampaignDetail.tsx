@@ -10,7 +10,7 @@ import {
   useCampaignStoreStatus, useUpsertCampaignStoreStatus, useBulkUpsertCampaignStoreStatus,
   useClientStoreModels,
   useCampaignKits, useAddCampaignKit, useDeleteCampaignKit, useUpdateCampaignKit,
-  useCampaignKitPieces, useAddCampaignKitPiece, useDeleteCampaignKitPiece,
+  useCampaignKitPieces, useAddCampaignKitPiece, useDeleteCampaignKitPiece, useUpdateCampaignKitPiece,
   type CampaignPiece, type ClientStore, type CampaignKit,
 } from "@/hooks/useMultiClientData";
 
@@ -77,6 +77,7 @@ const CampaignDetail = () => {
   const updateKit = useUpdateCampaignKit();
   const addKitPiece = useAddCampaignKitPiece();
   const deleteKitPiece = useDeleteCampaignKitPiece();
+  const updateKitPiece = useUpdateCampaignKitPiece();
 
   // Campaign store enabled map (default true if no record exists)
   const storeEnabledMap = useMemo(() => {
@@ -1042,12 +1043,15 @@ const CampaignDetail = () => {
                               </TableCell>
                             );
                           })}
-                          {/* Kit columns - show kit quantity (based on first kit piece in store) */}
+                          {/* Kit columns - show kit quantity considering piece quantities */}
                           {matrixKits.map((kit) => {
                             const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
-                            // Kit qty = minimum qty among all kit pieces for this store (they should all be equal)
+                            // Kit qty = min(storeQty / kitPieceQty) across all kit pieces
                             const kitQty = kitPiecesForKit.length > 0
-                              ? Math.min(...kitPiecesForKit.map(kp => qtyMap[`${store.id}-${kp.piece_id}`] || 0))
+                              ? Math.min(...kitPiecesForKit.map(kp => {
+                                  const storeQty = qtyMap[`${store.id}-${kp.piece_id}`] || 0;
+                                  return Math.floor(storeQty / (kp.quantity || 1));
+                                }))
                               : 0;
                             const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === `kit-${kit.id}`;
                             return (
@@ -1062,7 +1066,7 @@ const CampaignDetail = () => {
                                       const qty = Math.max(0, parseInt(editValue) || 0);
                                       if (campaignId) {
                                         for (const kp of kitPiecesForKit) {
-                                          await updateStorePiece.mutateAsync({ campaignId, storeId: store.id, pieceId: kp.piece_id, quantity: qty });
+                                          await updateStorePiece.mutateAsync({ campaignId, storeId: store.id, pieceId: kp.piece_id, quantity: qty * (kp.quantity || 1) });
                                         }
                                       }
                                       setEditingCell(null);
@@ -1072,7 +1076,7 @@ const CampaignDetail = () => {
                                         const qty = Math.max(0, parseInt(editValue) || 0);
                                         if (campaignId) {
                                           for (const kp of kitPiecesForKit) {
-                                            await updateStorePiece.mutateAsync({ campaignId, storeId: store.id, pieceId: kp.piece_id, quantity: qty });
+                                            await updateStorePiece.mutateAsync({ campaignId, storeId: store.id, pieceId: kp.piece_id, quantity: qty * (kp.quantity || 1) });
                                           }
                                         }
                                         setEditingCell(null);
@@ -1119,7 +1123,10 @@ const CampaignDetail = () => {
                         const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
                         const kitTotal = kitPiecesForKit.length > 0
                           ? filteredStores.reduce((total, st) => {
-                              const minQty = Math.min(...kitPiecesForKit.map(kp => qtyMap[`${st.id}-${kp.piece_id}`] || 0));
+                              const minQty = Math.min(...kitPiecesForKit.map(kp => {
+                                const storeQty = qtyMap[`${st.id}-${kp.piece_id}`] || 0;
+                                return Math.floor(storeQty / (kp.quantity || 1));
+                              }));
                               return total + minQty;
                             }, 0)
                           : 0;
@@ -1521,6 +1528,7 @@ const CampaignDetail = () => {
         onUpdateKit={async (kit) => await updateKit.mutateAsync(kit)}
         onUpdatePiece={async (piece) => { await updatePiece.mutateAsync(piece as any); }}
         onDeletePiece={(id) => deletePiece.mutate(id)}
+        onUpdateKitPiece={async (update) => { await updateKitPiece.mutateAsync(update); }}
       />
     </div>
   );

@@ -1,0 +1,1 @@
+ALTER TABLE public.campaign_kit_pieces ADD COLUMN quantity integer NOT NULL DEFAULT 1;
