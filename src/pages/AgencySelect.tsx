@@ -247,7 +247,7 @@ const AgencySelect = () => {
           {isAdmin && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="gradient-primary shadow-glow-primary text-white border-0 gap-1">
+                <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1">
                   <Plus className="w-4 h-4" /> Nova Agência
                 </Button>
               </DialogTrigger>
@@ -264,7 +264,7 @@ const AgencySelect = () => {
                     onFileSelect={(f) => handleLogoSelect(f, false)}
                     fileInputRef={fileRef as React.RefObject<HTMLInputElement>}
                   />
-                  <Button type="submit" className="w-full gradient-primary text-white border-0" disabled={addAgency.isPending || uploading}>
+                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addAgency.isPending || uploading}>
                     {uploading ? "Enviando..." : addAgency.isPending ? "Criando..." : "Criar Agência"}
                   </Button>
                 </form>
@@ -290,7 +290,7 @@ const AgencySelect = () => {
                   onFileSelect={(f) => handleLogoSelect(f, true)}
                   fileInputRef={editFileRef as React.RefObject<HTMLInputElement>}
                 />
-                <Button type="submit" className="w-full gradient-primary text-white border-0" disabled={uploading}>
+                <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={uploading}>
                   {uploading ? "Salvando..." : "Salvar Alterações"}
                 </Button>
               </form>
@@ -300,7 +300,7 @@ const AgencySelect = () => {
 
         {agencies.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-20 h-20 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 shadow-glow-primary">
+            <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-4">
               <Building2 className="w-10 h-10 text-white" />
             </div>
             <h3 className="text-xl font-bold text-foreground mb-2">Nenhuma agência cadastrada</h3>

@@ -591,8 +591,8 @@ const ClientDetail = () => {
             {/* Stats cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
               <div className="card-kpi flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg gradient-primary flex items-center justify-center shadow-glow-primary">
-                  <Megaphone className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                  <Megaphone className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{campaigns.length}</p>
@@ -600,8 +600,8 @@ const ClientDetail = () => {
                 </div>
               </div>
               <div className="card-kpi flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center shadow-glow-secondary">
-                  <Store className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-lg bg-primary/80 flex items-center justify-center">
+                  <Store className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{stores.length}</p>
@@ -641,7 +641,7 @@ const ClientDetail = () => {
                       </label>
                       <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
                         <DialogTrigger asChild>
-                          <Button size="sm" className="text-xs h-7 gap-1 gradient-primary text-white border-0">
+                          <Button size="sm" className="text-xs h-7 gap-1 bg-primary text-primary-foreground hover:bg-primary/90">
                             <Plus className="w-3 h-3" /> Nova
                           </Button>
                         </DialogTrigger>
@@ -652,7 +652,7 @@ const ClientDetail = () => {
                               <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da campanha *</label>
                               <Input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
                             </div>
-                            <Button type="submit" className="w-full gradient-primary text-white border-0" disabled={addCampaign.isPending}>Criar</Button>
+                            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>Criar</Button>
                           </form>
                         </DialogContent>
                       </Dialog>
@@ -666,43 +666,35 @@ const ClientDetail = () => {
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
             ) : campaigns.length === 0 ? (
               <div className="text-center py-16">
-                <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-3 shadow-glow-primary">
+                <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-3">
                   <Megaphone className="w-8 h-8 text-white" />
                 </div>
                 <p className="text-muted-foreground text-sm">Nenhuma campanha cadastrada.</p>
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {campaigns.map((c, i) => {
-                  const CAMP_COLORS = [
-                    "from-primary/10 to-primary/5 border-primary/20",
-                    "from-secondary/10 to-secondary/5 border-secondary/20",
-                    "from-accent/10 to-accent/5 border-accent/20",
-                    "from-info/10 to-info/5 border-info/20",
-                  ];
-                  const CAMP_ICONS = ["gradient-primary", "gradient-secondary", "gradient-accent", "bg-info"];
-                  const cidx = i % CAMP_COLORS.length;
+                {campaigns.map((c) => {
                   return (
                     <div
                       key={c.id}
-                      className="group card-item hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden"
+                      className="group rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden bg-primary text-primary-foreground shadow-sm hover:shadow-lg"
                       onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
                     >
                       <div className="flex items-start gap-3">
-                        <div className={`w-9 h-9 rounded-lg ${CAMP_ICONS[cidx]} flex items-center justify-center shadow-md flex-shrink-0`}>
-                          <Megaphone className="w-4 h-4 text-white" />
+                        <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+                          <Megaphone className="w-4 h-4 text-primary-foreground" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-foreground text-sm group-hover:text-primary transition-colors truncate">{c.name}</h3>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                          <h3 className="font-bold text-primary-foreground text-sm truncate">{c.name}</h3>
+                          <p className="text-[11px] text-primary-foreground/70 mt-0.5">
                             {new Date(c.created_at).toLocaleDateString("pt-BR")}
                           </p>
                         </div>
                         {canDeleteCampaigns && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 flex-shrink-0 text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10" onClick={(e) => e.stopPropagation()}>
+                                <Trash2 className="w-3.5 h-3.5" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent onClick={(e) => e.stopPropagation()}>
@@ -718,7 +710,7 @@ const ClientDetail = () => {
                           </AlertDialog>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                      <div className="flex items-center gap-1 mt-3 text-xs text-primary-foreground/70">
                         <span>Acessar</span>
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                       </div>
