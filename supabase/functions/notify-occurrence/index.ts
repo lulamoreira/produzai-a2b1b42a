@@ -6,6 +6,25 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function escapeHtml(unsafe: string | null | undefined): string {
+  if (!unsafe) return "—";
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function isValidUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -18,7 +37,7 @@ serve(async (req) => {
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
       console.error("RESEND_API_KEY is not configured");
-      return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), {
+      return new Response(JSON.stringify({ error: "Email service not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -48,26 +67,35 @@ serve(async (req) => {
     const store = storeRes.data;
     const piece = pieceRes.data;
     const motive = motiveRes.data;
-    const clientName = (campaign as any)?.clients?.name || "—";
-    const storeName = store?.nickname || store?.name || "—";
+    const clientName = escapeHtml((campaign as any)?.clients?.name);
+    const storeName = escapeHtml(store?.nickname || store?.name);
+    const campaignName = escapeHtml(campaign?.name);
+    const pieceName = escapeHtml(piece?.name);
+    const motiveDesc = escapeHtml(motive?.description);
+    const description = escapeHtml(record.description);
     const date = new Date(record.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
     const subject = `Nova Ocorrência - ${campaign?.name || "Campanha"}`;
+    
+    const photoHtml = record.photo_url && isValidUrl(record.photo_url)
+      ? `<div style="margin-top: 15px;"><p style="font-weight: bold; color: #555;">📷 Foto:</p><img src="${escapeHtml(record.photo_url)}" style="max-width: 100%; border-radius: 8px;" /></div>`
+      : "";
+
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #e74c3c; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">
           ⚠️ Nova Ocorrência Registrada
         </h2>
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-          <tr><td style="padding: 8px; font-weight: bold; color: #555;">📅 Data</td><td style="padding: 8px;">${date}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold; color: #555;">📅 Data</td><td style="padding: 8px;">${escapeHtml(date)}</td></tr>
           <tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold; color: #555;">🏢 Cliente</td><td style="padding: 8px;">${clientName}</td></tr>
-          <tr><td style="padding: 8px; font-weight: bold; color: #555;">📋 Campanha</td><td style="padding: 8px;">${campaign?.name || "—"}</td></tr>
+          <tr><td style="padding: 8px; font-weight: bold; color: #555;">📋 Campanha</td><td style="padding: 8px;">${campaignName}</td></tr>
           <tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold; color: #555;">🏪 Loja</td><td style="padding: 8px;">${storeName}</td></tr>
-          <tr><td style="padding: 8px; font-weight: bold; color: #555;">📦 Peça</td><td style="padding: 8px;">${piece?.name || "—"}</td></tr>
-          <tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold; color: #555;">⚠️ Motivo</td><td style="padding: 8px;">${motive?.description || "—"}</td></tr>
-          ${record.description ? `<tr><td style="padding: 8px; font-weight: bold; color: #555;">📝 Descrição</td><td style="padding: 8px;">${record.description}</td></tr>` : ""}
+          <tr><td style="padding: 8px; font-weight: bold; color: #555;">📦 Peça</td><td style="padding: 8px;">${pieceName}</td></tr>
+          <tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold; color: #555;">⚠️ Motivo</td><td style="padding: 8px;">${motiveDesc}</td></tr>
+          ${record.description ? `<tr><td style="padding: 8px; font-weight: bold; color: #555;">📝 Descrição</td><td style="padding: 8px;">${description}</td></tr>` : ""}
         </table>
-        ${record.photo_url ? `<div style="margin-top: 15px;"><p style="font-weight: bold; color: #555;">📷 Foto:</p><img src="${record.photo_url}" style="max-width: 100%; border-radius: 8px;" /></div>` : ""}
+        ${photoHtml}
         <p style="margin-top: 20px; font-size: 12px; color: #999;">Este é um email automático do sistema de gestão de ocorrências.</p>
       </div>
     `.trim();
@@ -89,21 +117,21 @@ serve(async (req) => {
     const resendData = await resendRes.json();
 
     if (!resendRes.ok) {
-      console.error("Resend API error:", resendData);
-      return new Response(JSON.stringify({ error: "Failed to send email", details: resendData }), {
+      console.error("Resend API error:", { statusCode: resendRes.status });
+      return new Response(JSON.stringify({ error: "Failed to send email" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log("Email sent successfully:", resendData);
+    console.log("Email sent successfully:", { messageId: resendData.id });
 
     return new Response(
-      JSON.stringify({ success: true, message: `Email sent to ${emails.length} recipient(s)`, resendId: resendData.id }),
+      JSON.stringify({ success: true, message: `Email sent to ${emails.length} recipient(s)` }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
-    console.error("Error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error("Error in notify-occurrence:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
