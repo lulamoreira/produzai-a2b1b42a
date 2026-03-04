@@ -288,13 +288,13 @@ export function KitDetailDialog({
 
   const startEditPiece = (p: CampaignPiece) => {
     setEditingPieceId(p.id);
-    const [w, l, h] = (p.size || "").split(" x ");
+    const [w, h, l] = (p.size || "").split(" x ");
     setEditForm({
       name: p.name,
       category: p.category,
       width: w || "",
-      length: l || "",
       height: h || "",
+      length: l || "",
       store_category: p.store_category || "",
       specification: p.specification || "",
       installation_instructions: p.installation_instructions || "",
@@ -303,7 +303,7 @@ export function KitDetailDialog({
 
   const saveEditPiece = async () => {
     if (!editingPieceId || !onUpdatePiece) return;
-    const size = [editForm.width, editForm.length, editForm.height].filter(Boolean).join(" x ");
+    const size = [editForm.width, editForm.height, editForm.length].filter(Boolean).join(" x ");
     await onUpdatePiece({
       id: editingPieceId,
       name: editForm.name,
