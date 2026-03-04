@@ -8,9 +8,96 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, X, Trash2, Package } from "lucide-react";
+import { Plus, Trash2, Package, Edit3, Upload, Link, X, Image } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
+import { supabase } from "@/integrations/supabase/client";
+import { compressImage } from "@/lib/compressImage";
+import { toast } from "sonner";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
+
+// ─── Kit Image Upload (inline) ───────────────────────────
+
+function KitImageSection({
+  imageUrl,
+  kitId,
+  kitName,
+  canEdit,
+  onImageUpdated,
+}: {
+  imageUrl: string | null;
+  kitId: string;
+  kitName: string;
+  canEdit: boolean;
+  onImageUpdated: (url: string | null) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const [showUrlInput, setShowUrlInput] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const compressed = await compressImage(file, 800, 0.6);
+      const path = `kit-${kitId}-${Date.now()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from("piece-images")
+        .upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
+      onImageUpdated(urlData.publicUrl);
+    } catch (err: any) {
+      toast.error("Erro ao enviar imagem: " + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleUrlSubmit = () => {
+    if (!urlInput.trim()) return;
+    onImageUpdated(urlInput.trim());
+    setUrlInput("");
+    setShowUrlInput(false);
+  };
+
+  return (
+    <div className="space-y-2">
+      {imageUrl ? (
+        <div className="relative">
+          <img src={imageUrl} alt={kitName} className="w-full h-32 object-contain rounded-lg border border-border bg-muted/30" />
+          {canEdit && (
+            <Button size="sm" variant="destructive" className="absolute top-1 right-1 h-6 text-[10px] px-2" onClick={() => onImageUpdated(null)}>
+              <X className="w-3 h-3 mr-1" /> Remover
+            </Button>
+          )}
+        </div>
+      ) : canEdit ? (
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <input type="file" accept="image/*" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={uploading} />
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20 text-xs text-muted-foreground">
+              <Upload className="w-3.5 h-3.5" />
+              {uploading ? "Enviando..." : "Foto do kit"}
+            </div>
+          </div>
+          {!showUrlInput ? (
+            <Button size="sm" variant="outline" className="text-xs h-auto" onClick={() => setShowUrlInput(true)}>
+              <Link className="w-3 h-3" />
+            </Button>
+          ) : (
+            <div className="flex gap-1 flex-1">
+              <Input placeholder="URL" value={urlInput} onChange={(e) => setUrlInput(e.target.value)} className="h-8 text-xs" />
+              <Button size="sm" className="h-8 text-xs" onClick={handleUrlSubmit} disabled={!urlInput.trim()}>OK</Button>
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// ─── Create Kit Dialog ───────────────────────────────────
 
 interface CreateKitDialogProps {
   open: boolean;
@@ -20,14 +107,15 @@ interface CreateKitDialogProps {
   existingKits: CampaignKit[];
   onCreateKit: (kit: { campaign_id: string; name: string; code: number }) => Promise<CampaignKit>;
   onAddKitPiece: (kitPiece: { kit_id: string; piece_id: string }) => Promise<void>;
+  onUpdateKit: (kit: { id: string; image_url?: string | null }) => Promise<CampaignKit>;
 }
 
 export function CreateKitDialog({
-  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, onCreateKit, onAddKitPiece,
+  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, onCreateKit, onAddKitPiece, onUpdateKit,
 }: CreateKitDialogProps) {
   const [step, setStep] = useState<"name" | "pieces">("name");
   const [kitName, setKitName] = useState("");
-  const [createdKitId, setCreatedKitId] = useState<string | null>(null);
+  const [createdKit, setCreatedKit] = useState<CampaignKit | null>(null);
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -41,7 +129,7 @@ export function CreateKitDialog({
     setSaving(true);
     try {
       const kit = await onCreateKit({ campaign_id: campaignId, name: kitName.trim(), code: nextCode });
-      setCreatedKitId(kit.id);
+      setCreatedKit(kit);
       setStep("pieces");
     } finally {
       setSaving(false);
@@ -49,15 +137,15 @@ export function CreateKitDialog({
   };
 
   const handleAddPiece = async (pieceId: string) => {
-    if (!createdKitId) return;
-    await onAddKitPiece({ kit_id: createdKitId, piece_id: pieceId });
+    if (!createdKit) return;
+    await onAddKitPiece({ kit_id: createdKit.id, piece_id: pieceId });
     setSelectedPieceIds(prev => [...prev, pieceId]);
   };
 
   const handleClose = () => {
     setStep("name");
     setKitName("");
-    setCreatedKitId(null);
+    setCreatedKit(null);
     setSelectedPieceIds([]);
     onOpenChange(false);
   };
@@ -72,7 +160,7 @@ export function CreateKitDialog({
           <DialogDescription>
             {step === "name"
               ? "Dê um nome ao kit de peças."
-              : "Selecione as peças que compõem este kit."}
+              : "Selecione as peças e adicione uma foto ao kit."}
           </DialogDescription>
         </DialogHeader>
 
@@ -94,6 +182,20 @@ export function CreateKitDialog({
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Kit image */}
+            {createdKit && (
+              <KitImageSection
+                imageUrl={createdKit.image_url}
+                kitId={createdKit.id}
+                kitName={kitName}
+                canEdit
+                onImageUpdated={async (url) => {
+                  const updated = await onUpdateKit({ id: createdKit.id, image_url: url });
+                  setCreatedKit(updated);
+                }}
+              />
+            )}
+
             {selectedPieceIds.length > 0 && (
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">Peças incluídas</label>
@@ -145,6 +247,8 @@ export function CreateKitDialog({
   );
 }
 
+// ─── Kit Detail Dialog (full editing) ────────────────────
+
 interface KitDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -154,11 +258,22 @@ interface KitDetailDialogProps {
   canEdit?: boolean;
   onDeleteKitPiece?: (id: string) => void;
   onDeleteKit?: (id: string) => void;
+  onAddKitPiece?: (kitPiece: { kit_id: string; piece_id: string }) => Promise<void>;
+  onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null }) => Promise<CampaignKit>;
+  onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
+  onDeletePiece?: (id: string) => void;
 }
 
 export function KitDetailDialog({
-  open, onOpenChange, kit, kitPieces, allPieces, canEdit, onDeleteKitPiece, onDeleteKit,
+  open, onOpenChange, kit, kitPieces, allPieces, canEdit,
+  onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece,
 }: KitDetailDialogProps) {
+  const [editingPieceId, setEditingPieceId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
+  const [showAddPieces, setShowAddPieces] = useState(false);
+  const [editingKitName, setEditingKitName] = useState(false);
+  const [kitNameInput, setKitNameInput] = useState("");
+
   if (!kit) return null;
 
   const piecesInKit = kitPieces
@@ -166,23 +281,195 @@ export function KitDetailDialog({
     .map(kp => ({ ...kp, piece: allPieces.find(p => p.id === kp.piece_id) }))
     .filter(kp => kp.piece);
 
+  const kitOnlyPiecesNotInKit = allPieces.filter(
+    p => p.kit_only && !piecesInKit.some(kp => kp.piece_id === p.id)
+  );
+
+  const startEditPiece = (p: CampaignPiece) => {
+    setEditingPieceId(p.id);
+    const [w, l, h] = (p.size || "").split(" x ");
+    setEditForm({
+      name: p.name,
+      category: p.category,
+      width: w || "",
+      length: l || "",
+      height: h || "",
+      store_category: p.store_category || "",
+      specification: p.specification || "",
+      installation_instructions: p.installation_instructions || "",
+    });
+  };
+
+  const saveEditPiece = async () => {
+    if (!editingPieceId || !onUpdatePiece) return;
+    const size = [editForm.width, editForm.length, editForm.height].filter(Boolean).join(" x ");
+    await onUpdatePiece({
+      id: editingPieceId,
+      name: editForm.name,
+      category: editForm.category,
+      size,
+      store_category: editForm.store_category || null,
+      specification: editForm.specification,
+      installation_instructions: editForm.installation_instructions,
+    });
+    setEditingPieceId(null);
+    toast.success("Peça atualizada!");
+  };
+
+  const handlePieceImageUpload = async (pieceId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !onUpdatePiece) return;
+    try {
+      const compressed = await compressImage(file, 800, 0.6);
+      const path = `campaign-piece-${pieceId}-${Date.now()}.jpg`;
+      const { error } = await supabase.storage.from("piece-images").upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
+      if (error) throw error;
+      const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
+      await onUpdatePiece({ id: pieceId, image_url: urlData.publicUrl });
+      toast.success("Imagem atualizada!");
+    } catch (err: any) {
+      toast.error("Erro: " + err.message);
+    }
+  };
+
+  const handleRemovePieceImage = async (pieceId: string) => {
+    if (!onUpdatePiece) return;
+    await onUpdatePiece({ id: pieceId, image_url: null });
+    toast.success("Imagem removida!");
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditingPieceId(null); setShowAddPieces(false); setEditingKitName(false); } onOpenChange(v); }}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5 text-primary" />
-            Kit: {kit.name}
+            {editingKitName && canEdit && onUpdateKit ? (
+              <div className="flex items-center gap-2 flex-1">
+                <Input
+                  value={kitNameInput}
+                  onChange={(e) => setKitNameInput(e.target.value)}
+                  className="h-8 text-sm"
+                  autoFocus
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter" && kitNameInput.trim()) {
+                      await onUpdateKit({ id: kit.id, name: kitNameInput.trim() });
+                      setEditingKitName(false);
+                      toast.success("Nome atualizado!");
+                    }
+                  }}
+                />
+                <Button size="sm" className="h-8 text-xs" onClick={async () => {
+                  if (kitNameInput.trim()) {
+                    await onUpdateKit({ id: kit.id, name: kitNameInput.trim() });
+                    setEditingKitName(false);
+                    toast.success("Nome atualizado!");
+                  }
+                }}>Salvar</Button>
+              </div>
+            ) : (
+              <span className="flex items-center gap-2">
+                Kit: {kit.name}
+                {canEdit && onUpdateKit && (
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setKitNameInput(kit.name); setEditingKitName(true); }}>
+                    <Edit3 className="w-3 h-3" />
+                  </Button>
+                )}
+              </span>
+            )}
           </DialogTitle>
           <DialogDescription>{piecesInKit.length} peça(s) neste kit</DialogDescription>
         </DialogHeader>
 
+        {/* Kit image */}
+        {canEdit && onUpdateKit && (
+          <KitImageSection
+            imageUrl={kit.image_url}
+            kitId={kit.id}
+            kitName={kit.name}
+            canEdit={canEdit}
+            onImageUpdated={async (url) => {
+              await onUpdateKit({ id: kit.id, image_url: url });
+            }}
+          />
+        )}
+        {!canEdit && kit.image_url && (
+          <img src={kit.image_url} alt={kit.name} className="w-full h-32 object-contain rounded-lg border border-border bg-muted/30" />
+        )}
+
+        {/* Pieces list */}
         {piecesInKit.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">Nenhuma peça neste kit.</p>
         ) : (
-          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+          <div className="space-y-2 max-h-[350px] overflow-y-auto">
             {piecesInKit.map(kp => {
               const p = kp.piece!;
+              const isEditing = editingPieceId === p.id;
+
+              if (isEditing && canEdit && onUpdatePiece) {
+                return (
+                  <div key={kp.id} className="p-3 rounded-lg border-2 border-primary/30 bg-primary/5 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Nome</label>
+                        <Input value={editForm.name} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} className="h-7 text-xs" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Localização na Loja</label>
+                        <Input value={editForm.category} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className="h-7 text-xs" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Largura</label>
+                        <Input value={editForm.width} onChange={(e) => setEditForm(f => ({ ...f, width: e.target.value }))} className="h-7 text-xs" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Comprimento</label>
+                        <Input value={editForm.length} onChange={(e) => setEditForm(f => ({ ...f, length: e.target.value }))} className="h-7 text-xs" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Altura</label>
+                        <Input value={editForm.height} onChange={(e) => setEditForm(f => ({ ...f, height: e.target.value }))} className="h-7 text-xs" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Modelo de Loja</label>
+                      <Input value={editForm.store_category} onChange={(e) => setEditForm(f => ({ ...f, store_category: e.target.value }))} className="h-7 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Especificação</label>
+                      <Input value={editForm.specification} onChange={(e) => setEditForm(f => ({ ...f, specification: e.target.value }))} className="h-7 text-xs" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground">Instruções de Instalação</label>
+                      <Input value={editForm.installation_instructions} onChange={(e) => setEditForm(f => ({ ...f, installation_instructions: e.target.value }))} className="h-7 text-xs" />
+                    </div>
+                    {/* Piece image in edit mode */}
+                    <div className="flex items-center gap-2">
+                      {p.image_url && (
+                        <div className="relative">
+                          <img src={p.image_url} alt={p.name} className="w-16 h-16 object-contain rounded border border-border" />
+                          <button onClick={() => handleRemovePieceImage(p.id)} className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 flex items-center justify-center">
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </div>
+                      )}
+                      <div className="relative">
+                        <input type="file" accept="image/*" onChange={(e) => handlePieceImageUpload(p.id, e)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                        <div className="flex items-center gap-1 px-2 py-1 rounded border border-dashed border-border text-[10px] text-muted-foreground hover:border-primary/50">
+                          <Image className="w-3 h-3" /> {p.image_url ? "Trocar" : "Foto"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" className="text-xs flex-1" onClick={saveEditPiece}>Salvar</Button>
+                      <Button size="sm" variant="outline" className="text-xs" onClick={() => setEditingPieceId(null)}>Cancelar</Button>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div key={kp.id} className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border bg-muted/30">
                   <PieceThumbnail imageUrl={p.image_url} name={p.name} />
@@ -194,10 +481,54 @@ export function KitDetailDialog({
                     <p className="text-[11px] text-muted-foreground">{p.category} · {p.size || "—"}</p>
                     <p className="text-[10px] text-muted-foreground">{p.specification}</p>
                   </div>
-                  {canEdit && onDeleteKitPiece && (
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive" onClick={() => onDeleteKitPiece(kp.id)}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
+                  {canEdit && (
+                    <div className="flex items-center gap-1">
+                      {onUpdatePiece && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditPiece(p)} title="Editar peça">
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      {onDeleteKitPiece && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive" title="Remover do kit">
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remover "{p.name}" do kit?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                O que deseja fazer com esta peça?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => {
+                                  onDeleteKitPiece(kp.id);
+                                  // Piece stays as kit_only, available for other kits
+                                }}
+                                className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                              >
+                                Manter peça (disponível para kits)
+                              </AlertDialogAction>
+                              {onDeletePiece && (
+                                <AlertDialogAction
+                                  onClick={() => {
+                                    onDeleteKitPiece(kp.id);
+                                    onDeletePiece(p.id);
+                                  }}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Excluir peça permanentemente
+                                </AlertDialogAction>
+                              )}
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   )}
                 </div>
               );
@@ -205,6 +536,39 @@ export function KitDetailDialog({
           </div>
         )}
 
+        {/* Add more pieces */}
+        {canEdit && onAddKitPiece && (
+          <div>
+            {!showAddPieces ? (
+              <Button variant="outline" size="sm" className="w-full text-xs gap-1" onClick={() => setShowAddPieces(true)}>
+                <Plus className="w-3 h-3" /> Incluir mais peças
+              </Button>
+            ) : (
+              <div className="space-y-1 max-h-[200px] overflow-y-auto border border-border rounded-lg p-2">
+                <label className="text-xs font-medium text-muted-foreground">Peças disponíveis</label>
+                {kitOnlyPiecesNotInKit.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-3">Nenhuma peça disponível.</p>
+                ) : (
+                  kitOnlyPiecesNotInKit.map(p => (
+                    <div key={p.id} className="flex items-center justify-between px-2 py-1.5 rounded border border-border hover:bg-muted/50">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
+                        <span className="text-xs font-bold text-primary">#{p.code}</span>
+                        <span className="text-xs truncate">{p.name}</span>
+                      </div>
+                      <Button size="sm" variant="outline" className="text-[10px] h-6 gap-1" onClick={async () => { await onAddKitPiece({ kit_id: kit.id, piece_id: p.id }); }}>
+                        <Plus className="w-2.5 h-2.5" /> Incluir
+                      </Button>
+                    </div>
+                  ))
+                )}
+                <Button variant="ghost" size="sm" className="w-full text-xs mt-1" onClick={() => setShowAddPieces(false)}>Fechar</Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Delete kit */}
         {canEdit && onDeleteKit && (
           <div className="pt-2 border-t border-border">
             <AlertDialog>
