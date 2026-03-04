@@ -38,6 +38,74 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_kit_pieces: {
+        Row: {
+          created_at: string
+          id: string
+          kit_id: string
+          piece_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kit_id: string
+          piece_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kit_id?: string
+          piece_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_kit_pieces_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_kit_pieces_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_pieces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_kits: {
+        Row: {
+          campaign_id: string
+          code: number
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          campaign_id: string
+          code: number
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          campaign_id?: string
+          code?: number
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_kits_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_notification_emails: {
         Row: {
           campaign_id: string
@@ -105,6 +173,7 @@ export type Database = {
           id: string
           image_url: string | null
           installation_instructions: string
+          kit_only: boolean
           name: string
           size: string
           specification: string
@@ -118,6 +187,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           installation_instructions?: string
+          kit_only?: boolean
           name: string
           size: string
           specification?: string
@@ -131,6 +201,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           installation_instructions?: string
+          kit_only?: boolean
           name?: string
           size?: string
           specification?: string

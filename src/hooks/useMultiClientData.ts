@@ -64,6 +64,22 @@ export type CampaignPiece = {
   image_url: string | null;
   specification: string;
   installation_instructions: string;
+  kit_only: boolean;
+  created_at: string;
+};
+
+export type CampaignKit = {
+  id: string;
+  campaign_id: string;
+  name: string;
+  code: number;
+  created_at: string;
+};
+
+export type CampaignKitPiece = {
+  id: string;
+  kit_id: string;
+  piece_id: string;
   created_at: string;
 };
 
@@ -302,7 +318,7 @@ export function useCampaignPieces(campaignId: string | undefined) {
 export function useAddCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (piece: { campaign_id: string; code: number; category: string; name: string; size: string; store_category?: string; image_url?: string; specification?: string; installation_instructions?: string }) => {
+    mutationFn: async (piece: { campaign_id: string; code: number; category: string; name: string; size: string; store_category?: string; image_url?: string; specification?: string; installation_instructions?: string; kit_only?: boolean }) => {
       const { error } = await supabase.from("campaign_pieces").insert(piece);
       if (error) throw error;
     },
@@ -753,6 +769,101 @@ export function useDeleteClientStoreModel() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["client_store_models"] }); toast.success("Modelo removido!"); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+// ─── Campaign Kits ───────────────────────────────────────
+
+export function useCampaignKits(campaignId: string | undefined) {
+  return useQuery({
+    queryKey: ["campaign_kits", campaignId],
+    queryFn: async () => {
+      if (!campaignId) return [];
+      const { data, error } = await supabase
+        .from("campaign_kits")
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .order("code");
+      if (error) throw error;
+      return data as CampaignKit[];
+    },
+    enabled: !!campaignId,
+  });
+}
+
+export function useAddCampaignKit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (kit: { campaign_id: string; name: string; code: number }) => {
+      const { data, error } = await supabase.from("campaign_kits").insert(kit).select().single();
+      if (error) throw error;
+      return data as CampaignKit;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_kits"] }); toast.success("Kit criado!"); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useDeleteCampaignKit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("campaign_kits").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign_kits"] });
+      qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
+      toast.success("Kit removido!");
+    },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useCampaignKitPieces(campaignId: string | undefined) {
+  return useQuery({
+    queryKey: ["campaign_kit_pieces", campaignId],
+    queryFn: async () => {
+      if (!campaignId) return [];
+      // Get all kit IDs for the campaign first
+      const { data: kits } = await supabase
+        .from("campaign_kits")
+        .select("id")
+        .eq("campaign_id", campaignId);
+      if (!kits || kits.length === 0) return [];
+      const kitIds = kits.map(k => k.id);
+      const { data, error } = await supabase
+        .from("campaign_kit_pieces")
+        .select("*")
+        .in("kit_id", kitIds);
+      if (error) throw error;
+      return data as CampaignKitPiece[];
+    },
+    enabled: !!campaignId,
+  });
+}
+
+export function useAddCampaignKitPiece() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (kitPiece: { kit_id: string; piece_id: string }) => {
+      const { error } = await supabase.from("campaign_kit_pieces").insert(kitPiece);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] }); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useDeleteCampaignKitPiece() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("campaign_kit_pieces").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] }); },
     onError: (e) => toast.error("Erro: " + e.message),
   });
 }
