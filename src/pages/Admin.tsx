@@ -52,6 +52,7 @@ const MODULES = [
   { key: "campaign_stores", label: "Lojas (Campanhas)" },
   { key: "pieces", label: "Peças" },
   { key: "occurrences", label: "Ocorrências" },
+  { key: "schedules", label: "Agendamento" },
 ] as const;
 
 const PERMISSIONS = [
@@ -71,6 +72,7 @@ const defaultCategoryForm = (): Omit<PermissionCategory, "id" | "created_at"> =>
   can_view_campaign_stores: true, can_edit_campaign_stores: false, can_delete_campaign_stores: false,
   can_view_pieces: true, can_edit_pieces: false, can_delete_pieces: false,
   can_view_occurrences: true, can_edit_occurrences: false, can_delete_occurrences: false,
+  can_view_schedules: true, can_edit_schedules: false, can_delete_schedules: false,
   can_edit_reporter_data: false,
 });
 
@@ -81,7 +83,7 @@ const getCategoryField = (form: any, perm: PermKey, mod: ModuleKey): boolean => 
 const categoryHasEditPermission = (categoryId: string, cats: PermissionCategory[]): boolean => {
   const cat = cats.find(c => c.id === categoryId);
   if (!cat) return false;
-  return cat.can_edit_clients || cat.can_edit_campaigns || cat.can_edit_stores || cat.can_edit_campaign_stores || cat.can_edit_pieces || cat.can_edit_occurrences;
+  return cat.can_edit_clients || cat.can_edit_campaigns || cat.can_edit_stores || cat.can_edit_campaign_stores || cat.can_edit_pieces || cat.can_edit_occurrences || cat.can_edit_schedules;
 };
 
 const setCategoryField = (form: any, perm: PermKey, mod: ModuleKey, val: boolean) => {

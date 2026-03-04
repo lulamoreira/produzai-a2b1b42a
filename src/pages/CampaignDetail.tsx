@@ -54,6 +54,7 @@ const CampaignDetail = () => {
   const { hasPermission: canEditPieces } = useClientPermission(clientId, "can_edit_pieces");
   const { hasPermission: canDeletePieces } = useClientPermission(clientId, "can_delete_pieces");
   const { hasPermission: canEditCampaignStores } = useClientPermission(clientId, "can_edit_campaign_stores");
+  const { hasPermission: canEditSchedules } = useClientPermission(clientId, "can_edit_schedules");
   const { data: client } = useClient(clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: stores = [] } = useClientStores(clientId);
@@ -1381,7 +1382,7 @@ const CampaignDetail = () => {
             <SchedulingTab
               campaignId={campaignId!}
               stores={stores.filter((s) => isStoreEnabled(s.id))}
-              canEdit={canEditCampaign}
+              canEdit={canEditSchedules}
             />
           </TabsContent>
         </Tabs>
