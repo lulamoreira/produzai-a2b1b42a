@@ -32,7 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import AppHeader from "@/components/AppHeader";
@@ -41,6 +41,7 @@ import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
 import OccurrencesTab from "@/components/OccurrencesTab";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
+import SchedulingTab from "@/components/SchedulingTab";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -524,6 +525,7 @@ const CampaignDetail = () => {
             <TabsTrigger value="matrix" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Grid3X3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Matriz</span></TabsTrigger>
             <TabsTrigger value="pieces" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><LayoutList className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Peças</span></TabsTrigger>
             <TabsTrigger value="occurrences" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive"><AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Ocorrências</span></TabsTrigger>
+            <TabsTrigger value="scheduling" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Agendamento</span></TabsTrigger>
           </TabsList>
 
           {/* ─── TAB: LOJAS ─── */}
@@ -1372,6 +1374,15 @@ const CampaignDetail = () => {
           {/* ─── TAB: OCORRÊNCIAS ─── */}
           <TabsContent value="occurrences">
             <OccurrencesTab campaignId={campaignId!} clientId={clientId} stores={stores} pieces={pieces} canEdit={canEditOccurrences} canDelete={canDeleteOccurrences} canEditReporter={canEditReporterData} />
+          </TabsContent>
+
+          {/* ─── TAB: AGENDAMENTO ─── */}
+          <TabsContent value="scheduling">
+            <SchedulingTab
+              campaignId={campaignId!}
+              stores={stores.filter((s) => isStoreEnabled(s.id))}
+              canEdit={canEditCampaign}
+            />
           </TabsContent>
         </Tabs>
       </main>
