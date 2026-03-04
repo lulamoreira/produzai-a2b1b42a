@@ -31,8 +31,11 @@ serve(async (req) => {
   }
 
   try {
-    const { record } = await req.json();
+    const { record, event_type } = await req.json();
     if (!record) return new Response("No record", { status: 400, headers: corsHeaders });
+
+    // event_type: "created" | "updated" | "status_changed" (default: "created")
+    const eventType = event_type || "created";
 
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (!resendApiKey) {
@@ -46,14 +49,21 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const [campaignRes, storeRes, pieceRes, motiveRes, emailsRes] = await Promise.all([
-      supabase.from("campaigns").select("name, client_id, clients(name)").eq("id", record.campaign_id).single(),
+    // Use record.id if available, otherwise record.campaign_id for email lookup
+    const campaignId = record.campaign_id;
+    const occurrenceId = record.id;
+
+    const [campaignRes, storeRes, pieceRes, motiveRes, emailsRes, statusRes] = await Promise.all([
+      supabase.from("campaigns").select("name, client_id, clients(name)").eq("id", campaignId).single(),
       supabase.from("client_stores").select("name, nickname").eq("id", record.store_id).single(),
       supabase.from("campaign_pieces").select("name").eq("id", record.piece_id).single(),
       record.motive_id
         ? supabase.from("occurrence_motives").select("description").eq("id", record.motive_id).single()
         : Promise.resolve({ data: null }),
-      supabase.from("campaign_notification_emails").select("email").eq("campaign_id", record.campaign_id),
+      supabase.from("campaign_notification_emails").select("email").eq("campaign_id", campaignId),
+      record.status
+        ? supabase.from("occurrence_statuses").select("label, color").eq("value", record.status).maybeSingle()
+        : Promise.resolve({ data: null }),
     ]);
 
     const emails = emailsRes.data?.map((e: any) => e.email) || [];
@@ -67,25 +77,59 @@ serve(async (req) => {
     const store = storeRes.data;
     const piece = pieceRes.data;
     const motive = motiveRes.data;
+    const statusData = statusRes.data;
     const clientName = escapeHtml((campaign as any)?.clients?.name);
     const storeName = escapeHtml(store?.nickname || store?.name);
     const campaignName = escapeHtml(campaign?.name);
     const pieceName = escapeHtml(piece?.name);
     const motiveDesc = escapeHtml(motive?.description);
     const description = escapeHtml(record.description);
-    const date = new Date(record.created_at).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+    const statusLabel = escapeHtml(statusData?.label || record.status);
+    const statusColor = statusData?.color || "#6366f1";
+    const date = new Date(record.created_at || new Date().toISOString()).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
-    const subject = `Nova Ocorrência - ${campaign?.name || "Campanha"}`;
-    
+    // Public link to view the occurrence
+    const publicUrl = occurrenceId
+      ? `https://produzai.lovable.app/ocorrencia/${occurrenceId}`
+      : null;
+
+    const subject = "Sua ocorrência teve uma atualização";
+
+    // Event description banner
+    let eventBanner = "";
+    if (eventType === "created") {
+      eventBanner = `<div style="background: #dcfce7; border-left: 4px solid #22c55e; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+        <p style="margin: 0; font-weight: bold; color: #166534;">🆕 Nova Ocorrência Registrada</p>
+      </div>`;
+    } else if (eventType === "status_changed") {
+      eventBanner = `<div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+        <p style="margin: 0; font-weight: bold; color: #1e40af;">🔄 Status Atualizado para: <span style="color: ${statusColor};">${statusLabel}</span></p>
+      </div>`;
+    } else {
+      eventBanner = `<div style="background: #fef9c3; border-left: 4px solid #eab308; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px;">
+        <p style="margin: 0; font-weight: bold; color: #854d0e;">✏️ Ocorrência Atualizada</p>
+      </div>`;
+    }
+
     const photoHtml = record.photo_url && isValidUrl(record.photo_url)
       ? `<div style="margin-top: 15px;"><p style="font-weight: bold; color: #555;">📷 Foto:</p><img src="${escapeHtml(record.photo_url)}" style="max-width: 100%; border-radius: 8px;" /></div>`
       : "";
 
+    const publicLinkHtml = publicUrl
+      ? `<div style="text-align: center; margin-top: 25px;">
+          <a href="${publicUrl}" style="display: inline-block; background-color: #6366f1; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 14px;">
+            📋 Visualizar Ocorrência
+          </a>
+          <p style="margin-top: 10px; font-size: 12px; color: #999;">Ou copie o link: <a href="${publicUrl}" style="color: #6366f1;">${publicUrl}</a></p>
+        </div>`
+      : "";
+
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #e74c3c; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">
-          ⚠️ Nova Ocorrência Registrada
+        <h2 style="color: #6366f1; border-bottom: 2px solid #6366f1; padding-bottom: 10px;">
+          Sua ocorrência teve uma atualização
         </h2>
+        ${eventBanner}
         <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
           <tr><td style="padding: 8px; font-weight: bold; color: #555;">📅 Data</td><td style="padding: 8px;">${escapeHtml(date)}</td></tr>
           <tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold; color: #555;">🏢 Cliente</td><td style="padding: 8px;">${clientName}</td></tr>
@@ -93,9 +137,11 @@ serve(async (req) => {
           <tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold; color: #555;">🏪 Loja</td><td style="padding: 8px;">${storeName}</td></tr>
           <tr><td style="padding: 8px; font-weight: bold; color: #555;">📦 Peça</td><td style="padding: 8px;">${pieceName}</td></tr>
           <tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold; color: #555;">⚠️ Motivo</td><td style="padding: 8px;">${motiveDesc}</td></tr>
-          ${record.description ? `<tr><td style="padding: 8px; font-weight: bold; color: #555;">📝 Descrição</td><td style="padding: 8px;">${description}</td></tr>` : ""}
+          ${record.status ? `<tr><td style="padding: 8px; font-weight: bold; color: #555;">🔵 Status</td><td style="padding: 8px;"><span style="color: ${statusColor}; font-weight: bold;">${statusLabel}</span></td></tr>` : ""}
+          ${record.description ? `<tr style="background: #f9f9f9;"><td style="padding: 8px; font-weight: bold; color: #555;">📝 Descrição</td><td style="padding: 8px;">${description}</td></tr>` : ""}
         </table>
         ${photoHtml}
+        ${publicLinkHtml}
         <p style="margin-top: 20px; font-size: 12px; color: #999;">Este é um email automático do sistema de gestão de ocorrências.</p>
       </div>
     `.trim();
@@ -123,7 +169,7 @@ serve(async (req) => {
       });
     }
 
-    console.log("Email sent successfully:", { messageId: resendData.id });
+    console.log("Email sent successfully:", { messageId: resendData.id, eventType });
 
     return new Response(
       JSON.stringify({ success: true, message: `Email sent to ${emails.length} recipient(s)` }),

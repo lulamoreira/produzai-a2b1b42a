@@ -195,10 +195,10 @@ export function useAddOccurrence() {
       if (error) {
         const { error: err2 } = await supabase.from("occurrences").insert(data);
         if (err2) throw err2;
-        supabase.functions.invoke("notify-occurrence", { body: { record: data } }).catch(console.error);
-        return null;
-      }
-      supabase.functions.invoke("notify-occurrence", { body: { record: data } }).catch(console.error);
+      supabase.functions.invoke("notify-occurrence", { body: { record: data, event_type: "created" } }).catch(console.error);
+      return null;
+    }
+    supabase.functions.invoke("notify-occurrence", { body: { record: { ...data, id: inserted?.id }, event_type: "created" } }).catch(console.error);
       return inserted?.id ?? null;
     },
     onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: ["occurrences", vars.campaign_id] }),
@@ -211,6 +211,11 @@ export function useUpdateOccurrenceStatus() {
     mutationFn: async ({ id, status, campaignId }: { id: string; status: string; campaignId: string }) => {
       const { error } = await supabase.from("occurrences").update({ status }).eq("id", id);
       if (error) throw error;
+      // Fetch full record to send notification
+      const { data: record } = await supabase.from("occurrences").select("*").eq("id", id).maybeSingle();
+      if (record) {
+        supabase.functions.invoke("notify-occurrence", { body: { record, event_type: "status_changed" } }).catch(console.error);
+      }
       return campaignId;
     },
     onSuccess: (campaignId) => qc.invalidateQueries({ queryKey: ["occurrences", campaignId] }),
@@ -223,6 +228,11 @@ export function useUpdateOccurrenceFields() {
     mutationFn: async ({ id, campaignId, ...fields }: { id: string; campaignId: string; [key: string]: unknown }) => {
       const { error } = await supabase.from("occurrences").update(fields).eq("id", id);
       if (error) throw error;
+      // Fetch full record to send notification
+      const { data: record } = await supabase.from("occurrences").select("*").eq("id", id).maybeSingle();
+      if (record) {
+        supabase.functions.invoke("notify-occurrence", { body: { record, event_type: "updated" } }).catch(console.error);
+      }
       return campaignId;
     },
     onSuccess: (campaignId) => qc.invalidateQueries({ queryKey: ["occurrences", campaignId as string] }),
