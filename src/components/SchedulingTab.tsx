@@ -7,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 interface SchedulingTabProps {
   campaignId: string;
@@ -134,6 +135,40 @@ const SchedulingTab = ({ campaignId, stores, canEdit }: SchedulingTabProps) => {
     return parts.join(", ") || "Endereço não informado";
   };
 
+  const prefLabel = (val: string | null) => {
+    const opt = PREFERENCE_OPTIONS.find((o) => o.value === val);
+    return opt?.label || "Não informado";
+  };
+
+  const handleExport = () => {
+    const rows = filteredStores.map((store) => {
+      const schedule = scheduleMap[store.id];
+      return {
+        "Código": store.store_code || "",
+        "Loja": store.name,
+        "Estado": store.state || "",
+        "Cidade": store.city || "",
+        "Bairro": store.neighborhood || "",
+        "Endereço": store.street || "",
+        "Número": store.number || "",
+        "Complemento": store.complement || "",
+        "CEP": store.zip_code || "",
+        "Contato": store.manager_name || "",
+        "Telefone": store.phone || "",
+        "E-mail": store.email || "",
+        "Data Agendada": schedule?.scheduled_date ? format(new Date(schedule.scheduled_date + "T12:00:00"), "dd/MM/yyyy") : "",
+        "Horário": schedule?.scheduled_time || "",
+        "OS Instalação": schedule?.installation_os || "",
+        "Preferência": prefLabel(schedule?.installation_preference ?? null),
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Agendamento");
+    XLSX.writeFile(wb, "agendamento.xlsx");
+    toast.success("Planilha exportada!");
+  };
+
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -167,6 +202,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit }: SchedulingTabProps) => {
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
+          <Download className="w-4 h-4" /> Exportar
+        </Button>
       </div>
 
       <p className="text-xs text-muted-foreground">{filteredStores.length} loja(s)</p>
