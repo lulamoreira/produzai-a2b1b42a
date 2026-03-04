@@ -33,6 +33,10 @@ interface AppHeaderProps {
   maxWidth?: string;
   /** Show Chat & Admin buttons (default: true) */
   showNav?: boolean;
+  /** Custom background style (e.g. gradient) */
+  bgStyle?: React.CSSProperties;
+  /** Custom background class override */
+  bgClass?: string;
 }
 
 export function useDisplayName() {
@@ -64,6 +68,8 @@ export default function AppHeader({
   children,
   maxWidth = "max-w-5xl",
   showNav = true,
+  bgStyle,
+  bgClass,
 }: AppHeaderProps) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
@@ -74,7 +80,7 @@ export default function AppHeader({
   const greeting = `${getGreeting()}, ${displayName}!`;
 
   return (
-    <header className="border-b border-border bg-card sticky top-0 z-10">
+    <header className={`border-b border-border sticky top-0 z-10 ${bgClass || "bg-card"}`} style={bgStyle}>
       <div className={`${maxWidth} mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2`}>
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {backTo && (
