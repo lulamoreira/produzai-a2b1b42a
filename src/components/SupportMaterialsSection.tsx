@@ -12,18 +12,12 @@ const CARD_GRADIENTS = [
   "from-primary/15 to-primary/5 border-primary/25",
   "from-secondary/15 to-secondary/5 border-secondary/25",
   "from-accent/15 to-accent/5 border-accent/25",
-  "from-destructive/15 to-destructive/5 border-destructive/25",
-  "from-info/15 to-info/5 border-info/25",
-  "from-success/15 to-success/5 border-success/25",
 ];
 
 const ICON_GRADIENTS = [
   "gradient-primary",
   "gradient-secondary",
   "gradient-accent",
-  "bg-destructive",
-  "bg-[hsl(210,80%,55%)]",
-  "bg-[hsl(152,60%,42%)]",
 ];
 
 interface SupportMaterial {
@@ -68,10 +62,18 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
     },
   });
 
-  // Auto-create 3 empty cards if none exist
+  // Auto-create 3 empty cards if none exist (runs only once)
+  const [initialized, setInitialized] = useState(false);
   useEffect(() => {
-    if (materials.length === 0 && canEdit) {
+    if (materials.length === 0 && canEdit && !initialized) {
+      setInitialized(true);
       const init = async () => {
+        const { data: existing } = await supabase
+          .from("campaign_support_materials")
+          .select("id")
+          .eq("campaign_id", campaignId)
+          .limit(1);
+        if (existing && existing.length > 0) return;
         const inserts = [0, 1, 2].map((i) => ({
           campaign_id: campaignId,
           title: "",
@@ -82,7 +84,7 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
       };
       init();
     }
-  }, [materials.length, canEdit, campaignId, queryClient]);
+  }, [materials.length, canEdit, campaignId, queryClient, initialized]);
 
   const addCard = useMutation({
     mutationFn: async () => {

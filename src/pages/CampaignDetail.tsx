@@ -33,7 +33,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import AppHeader from "@/components/AppHeader";
@@ -136,6 +136,9 @@ const CampaignDetail = () => {
   const [addPieceToStoreOpen, setAddPieceToStoreOpen] = useState(false);
   const [storeEditingPieceId, setStoreEditingPieceId] = useState<string | null>(null);
   const [storeEditQtyValue, setStoreEditQtyValue] = useState("");
+
+  // ─── Active section (null = home) ──────────────────────
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   // ─── Matrix editing ────────────────────────────────────
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
@@ -558,42 +561,94 @@ const CampaignDetail = () => {
       />
 
       <main className="max-w-[95vw] mx-auto px-2 sm:px-4 py-4 sm:py-6">
-        {/* Material de Apoio */}
-        <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
+        {/* ─── HOME VIEW: Material de Apoio + Nav Buttons ─── */}
+        {!activeSection && (
+          <>
+            <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center">
-              <Store className="w-5 h-5 text-white" />
+            {/* Stats Cards */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg gradient-secondary flex items-center justify-center">
+                  <Store className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{stores.length}</p>
+                  <p className="text-[11px] text-muted-foreground">Lojas cadastradas</p>
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 rounded-xl p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg gradient-accent flex items-center justify-center">
+                  <LayoutList className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{visiblePieces.length + kits.length}</p>
+                  <p className="text-[11px] text-muted-foreground">Peças cadastradas</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{stores.length}</p>
-              <p className="text-[11px] text-muted-foreground">Lojas cadastradas</p>
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20 rounded-xl p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg gradient-accent flex items-center justify-center">
-              <LayoutList className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{visiblePieces.length + kits.length}</p>
-              <p className="text-[11px] text-muted-foreground">Peças cadastradas</p>
-            </div>
-          </div>
-        </div>
 
-        <Tabs defaultValue="stores">
-          <TabsList className="mb-6 bg-card border border-border w-full overflow-x-auto flex justify-start">
-            <TabsTrigger value="stores" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Store className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Lojas</span></TabsTrigger>
-            <TabsTrigger value="matrix" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Grid3X3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Matriz</span></TabsTrigger>
-            <TabsTrigger value="pieces" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><LayoutList className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Peças</span></TabsTrigger>
-            <TabsTrigger value="occurrences" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-destructive/10 data-[state=active]:text-destructive"><AlertTriangle className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Ocorrências</span></TabsTrigger>
-            <TabsTrigger value="scheduling" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><CalendarDays className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Agendamento</span></TabsTrigger>
-          </TabsList>
+            {/* Navigation Buttons */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {[
+                { key: "stores", label: "Lojas", icon: Store, gradient: "from-secondary to-secondary/80", bg: "bg-secondary/10 border-secondary/30 hover:bg-secondary/20" },
+                { key: "matrix", label: "Matriz", icon: Grid3X3, gradient: "from-primary to-primary/80", bg: "bg-primary/10 border-primary/30 hover:bg-primary/20" },
+                { key: "pieces", label: "Peças", icon: LayoutList, gradient: "from-accent to-accent/80", bg: "bg-accent/10 border-accent/30 hover:bg-accent/20" },
+                { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, gradient: "from-destructive to-destructive/80", bg: "bg-destructive/10 border-destructive/30 hover:bg-destructive/20" },
+                { key: "scheduling", label: "Agendamento", icon: CalendarDays, gradient: "from-primary to-primary/80", bg: "bg-primary/10 border-primary/30 hover:bg-primary/20" },
+              ].map(({ key, label, icon: Icon, gradient, bg }) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveSection(key)}
+                  className={`${bg} border rounded-xl p-5 flex flex-col items-center gap-3 transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer`}
+                >
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}>
+                    <Icon className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="font-bold text-sm text-foreground">{label}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* ─── SECTION VIEW: Show active section with Home button ─── */}
+        {activeSection && (
+          <>
+            <div className="flex items-center gap-2 mb-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveSection(null)}
+                className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+              >
+                <Home className="w-4 h-4" />
+                Início
+              </Button>
+              <div className="flex gap-1 overflow-x-auto">
+                {[
+                  { key: "stores", label: "Lojas", icon: Store },
+                  { key: "matrix", label: "Matriz", icon: Grid3X3 },
+                  { key: "pieces", label: "Peças", icon: LayoutList },
+                  { key: "occurrences", label: "Ocorrências", icon: AlertTriangle },
+                  { key: "scheduling", label: "Agendamento", icon: CalendarDays },
+                ].map(({ key, label, icon: Icon }) => (
+                  <Button
+                    key={key}
+                    variant={activeSection === key ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setActiveSection(key)}
+                    className="gap-1 text-xs whitespace-nowrap"
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </div>
 
           {/* ─── TAB: LOJAS ─── */}
-          <TabsContent value="stores">
+          {activeSection === "stores" && (<>
             {renderStoreFilters()}
 
             {filteredStores.length === 0 ? (
@@ -967,9 +1022,9 @@ const CampaignDetail = () => {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-          </TabsContent>
+          </>)}
 
-          <TabsContent value="matrix">
+          {activeSection === "matrix" && (<>
             {renderStoreFilters()}
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <QuickMatrixEditor
@@ -1210,10 +1265,10 @@ const CampaignDetail = () => {
                 </Table>
               </div>
             )}
-          </TabsContent>
+          </>)}
 
-          {/* ─── TAB: PEÇAS ─── */}
-          <TabsContent value="pieces">
+          {/* ─── SECTION: PEÇAS ─── */}
+          {activeSection === "pieces" && (<>
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-accent/15 text-accent-foreground">
                 {visiblePieces.length + kits.length} peça(s)
@@ -1350,22 +1405,23 @@ const CampaignDetail = () => {
                 onReorder={handleReorderPieces}
               />
             )}
-          </TabsContent>
+          </>)}
 
-          {/* ─── TAB: OCORRÊNCIAS ─── */}
-          <TabsContent value="occurrences">
+          {/* ─── SECTION: OCORRÊNCIAS ─── */}
+          {activeSection === "occurrences" && (
             <OccurrencesTab campaignId={campaignId!} clientId={clientId} stores={stores} pieces={pieces} canEdit={canEditOccurrences} canDelete={canDeleteOccurrences} canEditReporter={canEditReporterData} />
-          </TabsContent>
+          )}
 
-          {/* ─── TAB: AGENDAMENTO ─── */}
-          <TabsContent value="scheduling">
+          {/* ─── SECTION: AGENDAMENTO ─── */}
+          {activeSection === "scheduling" && (
             <SchedulingTab
               campaignId={campaignId!}
               stores={stores.filter((s) => isStoreEnabled(s.id))}
               canEdit={canEditSchedules}
             />
-          </TabsContent>
-        </Tabs>
+          )}
+          </>
+        )}
       </main>
 
       {/* Edit Piece Dialog */}
