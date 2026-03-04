@@ -427,12 +427,12 @@ export function KitDetailDialog({
                         <Input value={editForm.width} onChange={(e) => setEditForm(f => ({ ...f, width: e.target.value }))} className="h-7 text-xs" />
                       </div>
                       <div>
-                        <label className="text-[10px] text-muted-foreground">Comprimento</label>
-                        <Input value={editForm.length} onChange={(e) => setEditForm(f => ({ ...f, length: e.target.value }))} className="h-7 text-xs" />
-                      </div>
-                      <div>
                         <label className="text-[10px] text-muted-foreground">Altura</label>
                         <Input value={editForm.height} onChange={(e) => setEditForm(f => ({ ...f, height: e.target.value }))} className="h-7 text-xs" />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground">Comprimento</label>
+                        <Input value={editForm.length} onChange={(e) => setEditForm(f => ({ ...f, length: e.target.value }))} className="h-7 text-xs" />
                       </div>
                     </div>
                     <div>

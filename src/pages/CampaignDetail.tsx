@@ -460,17 +460,17 @@ const CampaignDetail = () => {
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Medidas</label>
         <div className="grid grid-cols-3 gap-2">
-          <div>
+           <div>
             <label className="text-[10px] text-muted-foreground mb-0.5 block">Largura</label>
             <Input value={form.width} onChange={(e) => setForm((f) => ({ ...f, width: e.target.value }))} />
           </div>
           <div>
-            <label className="text-[10px] text-muted-foreground mb-0.5 block">Comprimento</label>
-            <Input value={form.length} onChange={(e) => setForm((f) => ({ ...f, length: e.target.value }))} />
-          </div>
-          <div>
             <label className="text-[10px] text-muted-foreground mb-0.5 block">Altura</label>
             <Input value={form.height} onChange={(e) => setForm((f) => ({ ...f, height: e.target.value }))} />
+          </div>
+          <div>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">Comprimento</label>
+            <Input value={form.length} onChange={(e) => setForm((f) => ({ ...f, length: e.target.value }))} />
           </div>
         </div>
       </div>
