@@ -370,6 +370,7 @@ export function KitDetailDialog({
               </div>
             ) : (
               <span className="flex items-center gap-2">
+                <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{kit.code}</span>
                 Kit: {kit.name}
                 {canEdit && onUpdateKit && (
                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setKitNameInput(kit.name); setEditingKitName(true); }}>
