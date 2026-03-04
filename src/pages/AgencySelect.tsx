@@ -9,7 +9,7 @@ import {
 } from "@/hooks/useAgencies";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { supabase } from "@/integrations/supabase/client";
-
+import AppHeader from "@/components/AppHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -234,8 +234,10 @@ const AgencySelect = () => {
   );
 
   return (
-    <div className="bg-background">
-      <main className="max-w-5xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background">
+      <AppHeader subtitle="Selecione uma agência" />
+
+      <main className="max-w-5xl mx-auto px-4 py-12">
         <div className="text-center mb-10">
           <h2 className="text-2xl font-bold text-foreground mb-2">Agências</h2>
           <p className="text-muted-foreground text-sm">Selecione uma agência para gerenciar seus clientes e campanhas.</p>

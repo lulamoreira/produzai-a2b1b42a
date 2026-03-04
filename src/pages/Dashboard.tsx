@@ -18,7 +18,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Package, Plus, Search, UserCircle, LogOut, Shield, Trash2, Download, Upload, Briefcase, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
-
+import AppHeader from "@/components/AppHeader";
 import { toast } from "sonner";
 import { exportClients, parseClientsImport } from "@/lib/exportMultiClient";
 
@@ -84,7 +84,14 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="bg-background">
+    <div className="min-h-screen bg-background">
+      <AppHeader
+        backTo="/"
+        backLabel="Agências"
+        subtitle={`${clients.length} cliente(s) cadastrado(s)`}
+        maxWidth="max-w-6xl"
+      />
+
       <main className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
         {/* Stats bar */}
         <div className="grid grid-cols-2 gap-3 mb-8">

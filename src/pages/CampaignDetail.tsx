@@ -36,7 +36,7 @@ import {
 import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
-
+import AppHeader from "@/components/AppHeader";
 import QuickMatrixEditor from "@/components/QuickMatrixEditor";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
@@ -576,13 +576,15 @@ const CampaignDetail = () => {
   ].sort((a, b) => a.display_order - b.display_order);
 
   return (
-    <div className="bg-background">
-      <div className="max-w-[95vw] mx-auto px-2 sm:px-4 pt-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-foreground">{campaign.name}</h1>
-          <p className="text-xs text-muted-foreground">{visiblePieces.length + kits.length} peça(s) · {stores.length} loja(s) · {totalPieces} unidade(s) total</p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <AppHeader
+        backTo={`/agency/${agencyId}/clients/${clientId}`}
+        backLabel={client?.name || "Voltar"}
+        title={campaign.name}
+        subtitle={`${visiblePieces.length + kits.length} peça(s) · ${stores.length} loja(s) · ${totalPieces} unidade(s) total`}
+        maxWidth="max-w-[95vw]"
+        
+      />
 
       <main className="max-w-[95vw] mx-auto px-2 sm:px-4 py-4 sm:py-6">
         {/* ─── HOME VIEW: Material de Apoio + Nav Buttons ─── */}
