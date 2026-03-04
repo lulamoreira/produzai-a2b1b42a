@@ -232,7 +232,7 @@ const CampaignDetail = () => {
   const handleAddPiece = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!campaignId) return;
-    const size = [pieceForm.width, pieceForm.length, pieceForm.height].filter(Boolean).join(" x ");
+    const size = [pieceForm.width, pieceForm.height, pieceForm.length].filter(Boolean).join(" x ");
     const code = pieceForm.code ? parseInt(pieceForm.code) : nextPieceCode.seq;
     if (pieceForm.store_category) {
       localStorage.setItem("last_store_category", pieceForm.store_category);
@@ -271,8 +271,8 @@ const CampaignDetail = () => {
       category: piece.category,
       name: piece.name,
       width: sizeParts[0] || "",
-      length: sizeParts[1] || "",
-      height: sizeParts[2] || "",
+      height: sizeParts[1] || "",
+      length: sizeParts[2] || "",
       store_category: piece.store_category || "",
       specification: piece.specification || "Vide Book/Manual",
       installation_instructions: piece.installation_instructions || "Sem informações específicas",
@@ -284,7 +284,7 @@ const CampaignDetail = () => {
 
   const handleEditPiece = async (e: React.FormEvent) => {
     e.preventDefault();
-    const size = [editPieceForm.width, editPieceForm.length, editPieceForm.height].filter(Boolean).join(" x ");
+    const size = [editPieceForm.width, editPieceForm.height, editPieceForm.length].filter(Boolean).join(" x ");
     const code = editPieceForm.code ? parseInt(editPieceForm.code) : nextPieceCode.seq;
     await updatePiece.mutateAsync({
       id: editPieceForm.id,
@@ -1485,60 +1485,6 @@ const CampaignDetail = () => {
             <DialogTitle>Editar Peça</DialogTitle>
             <DialogDescription>Altere os dados da peça.</DialogDescription>
           </DialogHeader>
-          {/* Image management */}
-          {editPieceForm.id && (() => {
-            const currentPiece = pieces.find(p => p.id === editPieceForm.id);
-            if (!currentPiece) return null;
-            return (
-              <div className="space-y-2">
-                {currentPiece.image_url ? (
-                  <div className="relative">
-                    <img src={currentPiece.image_url} alt={currentPiece.name} className="w-full h-40 object-contain rounded-lg border border-border bg-muted/30" />
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="absolute top-2 right-2 h-7 text-xs"
-                      onClick={async () => {
-                        await updatePiece.mutateAsync({ id: editPieceForm.id, image_url: null });
-                        toast.success("Imagem removida!");
-                      }}
-                    >
-                      <X className="w-3 h-3 mr-1" /> Remover
-                    </Button>
-                  </div>
-                ) : null}
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        try {
-                          const { compressImage } = await import("@/lib/compressImage");
-                          const compressed = await compressImage(file, 800, 0.6);
-                          const path = `campaign-piece-${editPieceForm.id}-${Date.now()}.jpg`;
-                          const { error } = await supabase.storage.from("piece-images").upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
-                          if (error) throw error;
-                          const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
-                          await updatePiece.mutateAsync({ id: editPieceForm.id, image_url: urlData.publicUrl });
-                          toast.success("Imagem atualizada!");
-                        } catch (err: any) {
-                          toast.error("Erro: " + err.message);
-                        }
-                      }}
-                    />
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20 text-xs text-muted-foreground cursor-pointer">
-                      <Upload className="w-3.5 h-3.5" />
-                      {currentPiece.image_url ? "Trocar foto" : "Adicionar foto"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
           <form onSubmit={handleEditPiece} className="space-y-3">
             {renderPieceFormFields(editPieceForm, setEditPieceForm as any)}
             <Button type="submit" className="w-full" disabled={updatePiece.isPending}>Salvar</Button>
