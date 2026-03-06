@@ -28,6 +28,7 @@ import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { getStateColor } from "@/lib/stateColors";
+import StoreContactsSection from "@/components/StoreContactsSection";
 
 // Helper to parse "Label|type" format from custom field labels
 const FIELD_TYPES = [
@@ -852,6 +853,7 @@ const ClientDetail = () => {
                     <DialogHeader><DialogTitle>Editar Loja</DialogTitle></DialogHeader>
                     <form onSubmit={handleEditStore} className="space-y-4">
                       {renderStoreFormFields(editStoreForm, setEditStoreForm)}
+                      <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} />
                       <Button type="submit" className="w-full" disabled={updateStore.isPending}>Salvar Alterações</Button>
                     </form>
                   </DialogContent>
