@@ -1,0 +1,303 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Trash2, UserPlus, Settings, X } from "lucide-react";
+import {
+  useStoreContacts,
+  useAddStoreContact,
+  useUpdateStoreContact,
+  useDeleteStoreContact,
+  useStoreContactRoles,
+  useAddStoreContactRole,
+  useDeleteStoreContactRole,
+  type StoreContact,
+  type StoreContactRole,
+} from "@/hooks/useStoreContacts";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+function formatPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+interface Props {
+  storeId: string | undefined;
+  clientId: string | undefined;
+  canEdit: boolean;
+}
+
+const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
+  const { data: contacts = [] } = useStoreContacts(storeId);
+  const { data: roles = [] } = useStoreContactRoles(clientId);
+  const addContact = useAddStoreContact();
+  const updateContact = useUpdateStoreContact();
+  const deleteContact = useDeleteStoreContact();
+  const addRole = useAddStoreContactRole();
+  const deleteRole = useDeleteStoreContactRole();
+
+  const [newContact, setNewContact] = useState({ name: "", phone: "", email: "", role_id: "" });
+  const [showAdd, setShowAdd] = useState(false);
+  const [rolesOpen, setRolesOpen] = useState(false);
+  const [newRoleName, setNewRoleName] = useState("");
+  const [deleteRoleConfirm, setDeleteRoleConfirm] = useState<string | null>(null);
+
+  const getRoleName = (roleId: string | null) => {
+    if (!roleId) return "—";
+    return roles.find(r => r.id === roleId)?.name || "—";
+  };
+
+  const handleAddContact = async () => {
+    if (!storeId || !newContact.name.trim()) return;
+    await addContact.mutateAsync({
+      store_id: storeId,
+      name: newContact.name.trim(),
+      phone: newContact.phone || undefined,
+      email: newContact.email || undefined,
+      role_id: newContact.role_id || null,
+    });
+    setNewContact({ name: "", phone: "", email: "", role_id: "" });
+    setShowAdd(false);
+  };
+
+  const handleDeleteContact = async (contact: StoreContact) => {
+    await deleteContact.mutateAsync({ id: contact.id, store_id: contact.store_id });
+  };
+
+  const handleUpdateField = async (contact: StoreContact, field: string, value: string) => {
+    await updateContact.mutateAsync({ id: contact.id, [field]: field === "role_id" ? (value || null) : value });
+  };
+
+  const handleAddRole = async () => {
+    if (!clientId || !newRoleName.trim()) return;
+    await addRole.mutateAsync({ client_id: clientId, name: newRoleName.trim() });
+    setNewRoleName("");
+  };
+
+  const handleDeleteRole = async (roleId: string) => {
+    if (!clientId) return;
+    await deleteRole.mutateAsync({ id: roleId, client_id: clientId });
+    setDeleteRoleConfirm(null);
+  };
+
+  return (
+    <div className="rounded-lg border-2 border-primary/20 bg-primary/5 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+          <UserPlus className="w-4 h-4 text-primary" />
+          Contatos da Loja
+        </h3>
+        <div className="flex items-center gap-1">
+          {canEdit && (
+            <>
+              <Dialog open={rolesOpen} onOpenChange={setRolesOpen}>
+                <DialogTrigger asChild>
+                  <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs">
+                    <Settings className="w-3 h-3 mr-1" /> Cargos
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-sm">
+                  <DialogHeader><DialogTitle>Gerenciar Cargos</DialogTitle></DialogHeader>
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="Novo cargo..."
+                        value={newRoleName}
+                        onChange={(e) => setNewRoleName(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddRole())}
+                        className="text-sm"
+                      />
+                      <Button type="button" size="sm" onClick={handleAddRole} disabled={!newRoleName.trim() || addRole.isPending}>
+                        <Plus className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                      {roles.map(role => (
+                        <div key={role.id} className="flex items-center justify-between px-2 py-1.5 rounded hover:bg-muted/50">
+                          <span className="text-sm">{role.name}</span>
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 text-destructive"
+                            onClick={() => setDeleteRoleConfirm(role.id)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ))}
+                      {roles.length === 0 && <p className="text-xs text-muted-foreground text-center py-2">Nenhum cargo cadastrado</p>}
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <AlertDialog open={!!deleteRoleConfirm} onOpenChange={(o) => !o && setDeleteRoleConfirm(null)}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir cargo?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Os contatos que possuem este cargo ficarão sem cargo atribuído.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => deleteRoleConfirm && handleDeleteRole(deleteRoleConfirm)}>
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Contact list */}
+      <div className="space-y-2">
+        {contacts.map((contact) => (
+          <div key={contact.id} className="flex flex-wrap items-center gap-2 bg-background rounded-md border border-border p-2">
+            <div className="flex-1 min-w-[120px]">
+              <label className="text-[10px] text-muted-foreground">Contato</label>
+              <Input
+                value={contact.name}
+                onChange={(e) => handleUpdateField(contact, "name", e.target.value)}
+                onBlur={(e) => handleUpdateField(contact, "name", e.target.value)}
+                className="h-7 text-xs"
+                disabled={!canEdit}
+              />
+            </div>
+            <div className="w-[110px]">
+              <label className="text-[10px] text-muted-foreground">Cargo</label>
+              <Select
+                value={contact.role_id || "__none__"}
+                onValueChange={(v) => handleUpdateField(contact, "role_id", v === "__none__" ? "" : v)}
+                disabled={!canEdit}
+              >
+                <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Nenhum</SelectItem>
+                  {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-[130px]">
+              <label className="text-[10px] text-muted-foreground">Telefone</label>
+              <Input
+                value={contact.phone ? formatPhone(contact.phone) : ""}
+                onChange={(e) => handleUpdateField(contact, "phone", formatPhone(e.target.value))}
+                className="h-7 text-xs"
+                placeholder="(00)00000-0000"
+                maxLength={14}
+                disabled={!canEdit}
+              />
+            </div>
+            <div className="flex-1 min-w-[140px]">
+              <label className="text-[10px] text-muted-foreground">E-mail</label>
+              <Input
+                value={contact.email || ""}
+                onChange={(e) => handleUpdateField(contact, "email", e.target.value)}
+                className="h-7 text-xs"
+                type="email"
+                disabled={!canEdit}
+              />
+            </div>
+            {canEdit && (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 text-destructive mt-3"
+                onClick={() => handleDeleteContact(contact)}
+              >
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
+        ))}
+        {contacts.length === 0 && !showAdd && (
+          <p className="text-xs text-muted-foreground text-center py-2">Nenhum contato cadastrado</p>
+        )}
+      </div>
+
+      {/* Add new contact */}
+      {canEdit && (
+        showAdd ? (
+          <div className="flex flex-wrap items-end gap-2 bg-background rounded-md border border-dashed border-primary/30 p-2">
+            <div className="flex-1 min-w-[120px]">
+              <label className="text-[10px] text-muted-foreground">Contato</label>
+              <Input
+                value={newContact.name}
+                onChange={(e) => setNewContact(c => ({ ...c, name: e.target.value }))}
+                className="h-7 text-xs"
+                placeholder="Nome do contato"
+                autoFocus
+              />
+            </div>
+            <div className="w-[110px]">
+              <label className="text-[10px] text-muted-foreground">Cargo</label>
+              <Select
+                value={newContact.role_id || "__none__"}
+                onValueChange={(v) => setNewContact(c => ({ ...c, role_id: v === "__none__" ? "" : v }))}
+              >
+                <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Nenhum</SelectItem>
+                  {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-[130px]">
+              <label className="text-[10px] text-muted-foreground">Telefone</label>
+              <Input
+                value={formatPhone(newContact.phone)}
+                onChange={(e) => setNewContact(c => ({ ...c, phone: formatPhone(e.target.value) }))}
+                className="h-7 text-xs"
+                placeholder="(00)00000-0000"
+                maxLength={14}
+              />
+            </div>
+            <div className="flex-1 min-w-[140px]">
+              <label className="text-[10px] text-muted-foreground">E-mail</label>
+              <Input
+                value={newContact.email}
+                onChange={(e) => setNewContact(c => ({ ...c, email: e.target.value }))}
+                className="h-7 text-xs"
+                type="email"
+                placeholder="email@exemplo.com"
+              />
+            </div>
+            <div className="flex gap-1 mt-3">
+              <Button type="button" size="sm" className="h-7 text-xs" onClick={handleAddContact} disabled={!newContact.name.trim() || addContact.isPending}>
+                Salvar
+              </Button>
+              <Button type="button" size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setShowAdd(false); setNewContact({ name: "", phone: "", email: "", role_id: "" }); }}>
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="w-full h-8 text-xs border-dashed"
+            onClick={() => setShowAdd(true)}
+          >
+            <Plus className="w-3 h-3 mr-1" /> Adicionar Contato
+          </Button>
+        )
+      )}
+    </div>
+  );
+};
+
+export default StoreContactsSection;
