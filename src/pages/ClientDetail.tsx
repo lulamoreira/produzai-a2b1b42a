@@ -881,7 +881,7 @@ const ClientDetail = () => {
                        <TableHead>Modelo</TableHead>
                        <TableHead>Telefone</TableHead>
                       <TableHead>E-mail</TableHead>
-                      <TableHead>Gerente</TableHead>
+                      <TableHead>Contato</TableHead>
                       {(canEditStores || canDeleteStores) && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
