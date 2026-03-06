@@ -21,7 +21,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import AppHeader from "@/components/AppHeader";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
@@ -499,6 +499,17 @@ const ClientDetail = () => {
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
           <Input value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} placeholder="Ex: Brasil" />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">E-mail</label>
+          <div className="flex gap-1">
+            <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="email@exemplo.com" className="flex-1" />
+            {form.email && (
+              <Button type="button" size="icon" variant="outline" className="shrink-0" asChild>
+                <a href={`mailto:${form.email}`}><Mail className="w-4 h-4" /></a>
+              </Button>
+            )}
+          </div>
         </div>
          <div>
            <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
