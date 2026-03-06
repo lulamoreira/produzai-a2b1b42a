@@ -495,14 +495,6 @@ const ClientDetail = () => {
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Estado</label>
           <Input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} />
         </div>
-        </div>
-      </div>
-    </>
-  );
-
-  const renderContactsSection = (storeId: string | undefined) => (
-    <StoreContactsSection storeId={storeId} clientId={clientId} canEdit={canEdit} />
-  );
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
           <Input value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} placeholder="Ex: Brasil" />
