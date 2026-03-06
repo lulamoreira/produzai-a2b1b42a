@@ -410,7 +410,7 @@ const CampaignDetail = () => {
           count++;
         }
         // Recodificar as peças do kit sequencialmente a partir do código do kit + 1
-        const kitPiecesForKit = kitPiecesList.filter(kp => kp.kit_id === item.id);
+        const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === item.id);
         let kitPieceCode = code + 1;
         for (const kp of kitPiecesForKit) {
           const piece = kitOnlyPieces.find(p => p.id === kp.piece_id);
