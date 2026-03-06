@@ -202,7 +202,7 @@ const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
                 />
                 {contact.phone && (
                   <a
-                    href={`https://wa.me/55${contact.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${contact.name}, como vai?`)}`}
+                    href={`https://wa.me/55${contact.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${contact.name.split(" ")[0]}, como vai?`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted transition-colors"
