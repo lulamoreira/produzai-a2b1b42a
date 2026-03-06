@@ -28,6 +28,7 @@ import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { getStateColor } from "@/lib/stateColors";
+import StoreContactsSection from "@/components/StoreContactsSection";
 
 // Helper to parse "Label|type" format from custom field labels
 const FIELD_TYPES = [
@@ -496,18 +497,6 @@ const ClientDetail = () => {
           <Input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} />
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefone</label>
-          <Input value={formatPhone(form.phone)} onChange={(e) => setForm((f) => ({ ...f, phone: formatPhone(e.target.value) }))} placeholder="(00)00000-0000" maxLength={14} />
-        </div>
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Gerente Responsável</label>
-          <Input value={form.manager_name} onChange={(e) => setForm((f) => ({ ...f, manager_name: e.target.value }))} />
-        </div>
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">E-mail</label>
-          <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="email@exemplo.com" />
-        </div>
-        <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
           <Input value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} placeholder="Ex: Brasil" />
         </div>
@@ -864,6 +853,7 @@ const ClientDetail = () => {
                     <DialogHeader><DialogTitle>Editar Loja</DialogTitle></DialogHeader>
                     <form onSubmit={handleEditStore} className="space-y-4">
                       {renderStoreFormFields(editStoreForm, setEditStoreForm)}
+                      <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} />
                       <Button type="submit" className="w-full" disabled={updateStore.isPending}>Salvar Alterações</Button>
                     </form>
                   </DialogContent>
@@ -891,7 +881,7 @@ const ClientDetail = () => {
                        <TableHead>Modelo</TableHead>
                        <TableHead>Telefone</TableHead>
                       <TableHead>E-mail</TableHead>
-                      <TableHead>Gerente</TableHead>
+                      <TableHead>Contato</TableHead>
                       {(canEditStores || canDeleteStores) && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
