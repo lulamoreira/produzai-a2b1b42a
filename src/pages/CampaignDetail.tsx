@@ -1439,30 +1439,71 @@ const CampaignDetail = () => {
               )}
             </div>
 
-            {visiblePieces.length === 0 && kits.length === 0 ? (
-              <div className="text-center py-16">
-                <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground text-sm">Nenhuma peça cadastrada nesta campanha.</p>
-              </div>
-            ) : (
-              <SortablePiecesTable
-                pieces={visiblePieces}
-                kits={kits}
-                kitPieces={kitPieces}
-                allPieces={pieces}
-                stores={stores}
-                qtyMap={qtyMap}
-                canEditPieces={canEditPieces}
-                canDeletePieces={canDeletePieces}
-                onEdit={handleOpenEditPiece}
-                onDelete={(id) => deletePiece.mutate(id)}
-                onDistribute={handleDistributePiece}
-                onMarkKitOnly={async (p) => { await updatePiece.mutateAsync({ id: p.id, kit_only: true }); }}
-                onKitClick={(kit) => setViewKitDetail(kit)}
-                onDeleteKit={(id) => deleteKit.mutate(id)}
-                onReorder={handleReorderUnified}
+            {/* Search bar */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar peça por nome, código ou categoria..."
+                value={pieceSearch}
+                onChange={(e) => setPieceSearch(e.target.value)}
+                className="pl-9 h-9 text-sm"
               />
-            )}
+              {pieceSearch && (
+                <button onClick={() => setPieceSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {(() => {
+              const search = pieceSearch.toLowerCase().trim();
+              const filteredVisiblePieces = search
+                ? visiblePieces.filter(p =>
+                    p.name.toLowerCase().includes(search) ||
+                    String(p.code).includes(search) ||
+                    (p.category || "").toLowerCase().includes(search) ||
+                    (p.store_category || "").toLowerCase().includes(search)
+                  )
+                : visiblePieces;
+              const filteredKits = search
+                ? kits.filter(k => {
+                    if (k.name.toLowerCase().includes(search) || String(k.code).includes(search)) return true;
+                    const kpIds = kitPieces.filter(kp => kp.kit_id === k.id).map(kp => kp.piece_id);
+                    return pieces.some(p => kpIds.includes(p.id) && p.name.toLowerCase().includes(search));
+                  })
+                : kits;
+
+              if (filteredVisiblePieces.length === 0 && filteredKits.length === 0) {
+                return (
+                  <div className="text-center py-16">
+                    <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-muted-foreground text-sm">
+                      {search ? "Nenhuma peça encontrada para a busca." : "Nenhuma peça cadastrada nesta campanha."}
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <SortablePiecesTable
+                  pieces={filteredVisiblePieces}
+                  kits={filteredKits}
+                  kitPieces={kitPieces}
+                  allPieces={pieces}
+                  stores={stores}
+                  qtyMap={qtyMap}
+                  canEditPieces={canEditPieces}
+                  canDeletePieces={canDeletePieces}
+                  onEdit={handleOpenEditPiece}
+                  onDelete={(id) => deletePiece.mutate(id)}
+                  onDistribute={handleDistributePiece}
+                  onMarkKitOnly={async (p) => { await updatePiece.mutateAsync({ id: p.id, kit_only: true }); }}
+                  onKitClick={(kit) => setViewKitDetail(kit)}
+                  onDeleteKit={(id) => deleteKit.mutate(id)}
+                  onReorder={handleReorderUnified}
+                />
+              );
+            })()}
           </>)}
 
           {/* ─── SECTION: OCORRÊNCIAS ─── */}
