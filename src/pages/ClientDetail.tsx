@@ -495,18 +495,14 @@ const ClientDetail = () => {
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Estado</label>
           <Input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} />
         </div>
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefone</label>
-          <Input value={formatPhone(form.phone)} onChange={(e) => setForm((f) => ({ ...f, phone: formatPhone(e.target.value) }))} placeholder="(00)00000-0000" maxLength={14} />
         </div>
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Gerente Responsável</label>
-          <Input value={form.manager_name} onChange={(e) => setForm((f) => ({ ...f, manager_name: e.target.value }))} />
-        </div>
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">E-mail</label>
-          <Input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="email@exemplo.com" />
-        </div>
+      </div>
+    </>
+  );
+
+  const renderContactsSection = (storeId: string | undefined) => (
+    <StoreContactsSection storeId={storeId} clientId={clientId} canEdit={canEdit} />
+  );
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
           <Input value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} placeholder="Ex: Brasil" />
