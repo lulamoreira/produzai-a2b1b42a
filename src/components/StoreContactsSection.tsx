@@ -200,16 +200,6 @@ const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
                 disabled={!canEdit}
               />
             </div>
-            <div className="flex-1 min-w-[140px]">
-              <label className="text-[10px] text-muted-foreground">E-mail</label>
-              <Input
-                value={contact.email || ""}
-                onChange={(e) => handleUpdateField(contact, "email", e.target.value)}
-                className="h-7 text-xs"
-                type="email"
-                disabled={!canEdit}
-              />
-            </div>
             {canEdit && (
               <Button
                 type="button"
@@ -263,16 +253,6 @@ const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
                 className="h-7 text-xs"
                 placeholder="(00)00000-0000"
                 maxLength={14}
-              />
-            </div>
-            <div className="flex-1 min-w-[140px]">
-              <label className="text-[10px] text-muted-foreground">E-mail</label>
-              <Input
-                value={newContact.email}
-                onChange={(e) => setNewContact(c => ({ ...c, email: e.target.value }))}
-                className="h-7 text-xs"
-                type="email"
-                placeholder="email@exemplo.com"
               />
             </div>
             <div className="flex gap-1 mt-3">
