@@ -409,13 +409,17 @@ const CampaignDetail = () => {
           await supabase.from("campaign_kits").update({ code }).eq("id", item.id);
           count++;
         }
-      }
-      code++;
-    }
-    for (const p of kitOnlyPieces) {
-      if (p.code !== code) {
-        await supabase.from("campaign_pieces").update({ code }).eq("id", p.id);
-        count++;
+        // Recodificar as peças do kit sequencialmente a partir do código do kit + 1
+        const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === item.id);
+        let kitPieceCode = code + 1;
+        for (const kp of kitPiecesForKit) {
+          const piece = kitOnlyPieces.find(p => p.id === kp.piece_id);
+          if (piece && piece.code !== kitPieceCode) {
+            await supabase.from("campaign_pieces").update({ code: kitPieceCode }).eq("id", kp.piece_id);
+            count++;
+          }
+          kitPieceCode++;
+        }
       }
       code++;
     }
