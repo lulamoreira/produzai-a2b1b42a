@@ -154,6 +154,7 @@ const CampaignDetail = () => {
 
   // ─── Active section (null = home) ──────────────────────
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [pieceSearch, setPieceSearch] = useState("");
 
   // ─── Matrix editing ────────────────────────────────────
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
@@ -1412,7 +1413,7 @@ const CampaignDetail = () => {
                   </Button>
                 </label>
                 <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setImportPiecesDialogOpen(true)}>
-                  <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">De outra</span> campanha
+                  <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Buscar de outra</span> campanha
                 </Button>
                 <Dialog open={pieceDialogOpen} onOpenChange={setPieceDialogOpen}>
                   <DialogTrigger asChild>
