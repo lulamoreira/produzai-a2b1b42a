@@ -34,6 +34,7 @@ const PREFERENCE_OPTIONS = [
   { value: "not_informed", label: "Não informado", icon: HelpCircle },
   { value: "morning", label: "Manhã", icon: Sun },
   { value: "night", label: "Noite", icon: Moon },
+  { value: "both", label: "Ambos", icon: Sun },
 ];
 
 const SchedulingTab = ({ campaignId, stores, canEdit }: SchedulingTabProps) => {
