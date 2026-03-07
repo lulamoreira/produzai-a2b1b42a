@@ -3,11 +3,12 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { type ClientStore } from "@/hooks/useMultiClientData";
 import { getStateColor } from "@/lib/stateColors";
+import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type StoreContactRole } from "@/hooks/useStoreContacts";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,10 @@ interface SchedulingTabProps {
   campaignId: string;
   stores: ClientStore[];
   canEdit: boolean;
+  agencyName: string;
+  clientName: string;
+  campaignName: string;
+  clientId: string;
 }
 
 type Schedule = {
@@ -37,11 +42,54 @@ const PREFERENCE_OPTIONS = [
   { value: "both", label: "Ambos", icon: Sun },
 ];
 
-const SchedulingTab = ({ campaignId, stores, canEdit }: SchedulingTabProps) => {
+function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null) {
+  const firstName = contactName.split(" ")[0];
+  const agencyFirst = agencyName.split(" ")[0];
+  const clientFirst = clientName.split(" ")[0];
+  const dateStr = date ? format(new Date(date + "T12:00:00"), "dd/MM/yyyy") : "(data a definir)";
+  const timeStr = time || "(horário a definir)";
+
+  const message = `Olá 😊
+
+Somos da ${agencyFirst}, responsáveis pelo agendamento das instalações da Campanha ${clientFirst} - ${campaignName}.
+
+Gostaríamos de solicitar a autorização para seguir com a instalação da campanha, que está prevista para o dia ${dateStr} às ${timeStr}.
+
+Pode, por gentileza, verificar com o shopping a liberação o quanto antes?
+
+Agradecemos imensamente sua colaboração e aguardamos o retorno dessa mensagem com a autorização/OS para a instalação.
+
+Ficamos à disposição! 🙏🏼`;
+
+  const digits = phone.replace(/\D/g, "");
+  const fullNumber = digits.startsWith("55") ? digits : `55${digits}`;
+  return `https://wa.me/${fullNumber}?text=${encodeURIComponent(message)}`;
+}
+
+const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, campaignName, clientId }: SchedulingTabProps) => {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
+
+  // Fetch all contacts for the client
+  const { data: allContacts = [] } = useStoreContactsByClient(clientId);
+  const { data: contactRoles = [] } = useStoreContactRoles(clientId);
+
+  const roleMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    contactRoles.forEach((r) => { map[r.id] = r.name; });
+    return map;
+  }, [contactRoles]);
+
+  const contactsByStore = useMemo(() => {
+    const map: Record<string, StoreContact[]> = {};
+    allContacts.forEach((c) => {
+      if (!map[c.store_id]) map[c.store_id] = [];
+      map[c.store_id].push(c);
+    });
+    return map;
+  }, [allContacts]);
 
   // Fetch schedules
   const { data: schedules = [] } = useQuery({
@@ -87,7 +135,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit }: SchedulingTabProps) => {
     return map;
   }, [schedules]);
 
-  // Derive unique states and cities
   const states = useMemo(() => {
     const set = new Set(stores.map((s) => s.state).filter(Boolean) as string[]);
     return Array.from(set).sort();
@@ -100,7 +147,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit }: SchedulingTabProps) => {
     return Array.from(set).sort();
   }, [stores, filterState]);
 
-  // Filter stores
   const filteredStores = useMemo(() => {
     let result = [...stores];
     if (filterState) result = result.filter((s) => s.state === filterState);
@@ -216,6 +262,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit }: SchedulingTabProps) => {
           const colors = getStateColor(store.state);
           const schedule = scheduleMap[store.id];
           const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
+          const storeContacts = contactsByStore[store.id] || [];
 
           return (
             <div
@@ -242,11 +289,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit }: SchedulingTabProps) => {
                   <span className="font-medium text-foreground">Endereço:</span> {buildAddress(store)}
                 </div>
 
-                {/* Contact */}
-                <div className="text-xs text-muted-foreground flex flex-wrap gap-x-4">
-                  <span><span className="font-medium text-foreground">Contato:</span> {store.manager_name || "—"}</span>
-                  <span><span className="font-medium text-foreground">Tel:</span> {store.phone || "—"}</span>
-                </div>
+                {/* Contacts section */}
+                <StoreContactsDisplay
+                  store={store}
+                  contacts={storeContacts}
+                  roleMap={roleMap}
+                  schedule={schedule}
+                  agencyName={agencyName}
+                  clientName={clientName}
+                  campaignName={campaignName}
+                />
 
                 <hr className="border-border" />
 
@@ -337,5 +389,124 @@ const SchedulingTab = ({ campaignId, stores, canEdit }: SchedulingTabProps) => {
     </div>
   );
 };
+
+// ─── Sub-component: Store Contacts Display ──────────────
+
+interface StoreContactsDisplayProps {
+  store: ClientStore;
+  contacts: StoreContact[];
+  roleMap: Record<string, string>;
+  schedule: Schedule | undefined;
+  agencyName: string;
+  clientName: string;
+  campaignName: string;
+}
+
+function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, clientName, campaignName }: StoreContactsDisplayProps) {
+  const hasContacts = contacts.length > 0;
+  const primaryContact = hasContacts ? contacts[0] : null;
+
+  if (!hasContacts) {
+    return (
+      <div className="text-xs text-muted-foreground flex flex-wrap gap-x-4">
+        <span><span className="font-medium text-foreground">Contato:</span> {store.manager_name || "—"}</span>
+        <span><span className="font-medium text-foreground">Tel:</span> {store.phone || "—"}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1.5">
+      {/* Primary contact */}
+      <ContactRow
+        contact={primaryContact!}
+        roleMap={roleMap}
+        schedule={schedule}
+        agencyName={agencyName}
+        clientName={clientName}
+        campaignName={campaignName}
+      />
+
+      {/* Multiple contacts popover */}
+      {contacts.length > 1 && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 px-2 text-muted-foreground hover:text-foreground">
+              <Users className="w-3 h-3" />
+              Ver todos os {contacts.length} contatos
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 max-h-64 overflow-y-auto p-3" align="start">
+            <p className="text-xs font-semibold text-foreground mb-2">Contatos da loja</p>
+            <div className="space-y-2.5">
+              {contacts.map((contact) => (
+                <ContactRow
+                  key={contact.id}
+                  contact={contact}
+                  roleMap={roleMap}
+                  schedule={schedule}
+                  agencyName={agencyName}
+                  clientName={clientName}
+                  campaignName={campaignName}
+                  showRole
+                />
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-component: Single Contact Row ──────────────────
+
+interface ContactRowProps {
+  contact: StoreContact;
+  roleMap: Record<string, string>;
+  schedule: Schedule | undefined;
+  agencyName: string;
+  clientName: string;
+  campaignName: string;
+  showRole?: boolean;
+}
+
+function ContactRow({ contact, roleMap, schedule, agencyName, clientName, campaignName, showRole }: ContactRowProps) {
+  const roleName = contact.role_id ? roleMap[contact.role_id] : null;
+
+  return (
+    <div className="text-xs text-muted-foreground space-y-0.5">
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="font-medium text-foreground">{contact.name || "—"}</span>
+        {showRole && roleName && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{roleName}</span>
+        )}
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        {contact.phone && (
+          <span className="flex items-center gap-1">
+            <Phone className="w-3 h-3" />
+            {contact.phone}
+            <a
+              href={buildWhatsAppUrl(contact.phone, contact.name, agencyName, clientName, campaignName, schedule?.scheduled_date ?? null, schedule?.scheduled_time ?? null)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-primary-foreground transition-colors"
+              title="Enviar mensagem no WhatsApp"
+            >
+              <MessageCircle className="w-3 h-3" />
+            </a>
+          </span>
+        )}
+        {contact.email && (
+          <span className="flex items-center gap-1">
+            <Mail className="w-3 h-3" />
+            {contact.email}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default SchedulingTab;

@@ -91,7 +91,7 @@ const CampaignDetail = () => {
     queryKey: ["agency", agencyId],
     queryFn: async () => {
       if (!agencyId) return null;
-      const { data } = await supabase.from("agencies").select("color").eq("id", agencyId).maybeSingle();
+      const { data } = await supabase.from("agencies").select("name, color").eq("id", agencyId).maybeSingle();
       return data;
     },
     enabled: !!agencyId,
@@ -1524,6 +1524,10 @@ const CampaignDetail = () => {
               campaignId={campaignId!}
               stores={stores.filter((s) => isStoreEnabled(s.id))}
               canEdit={canEditSchedules}
+              agencyName={agency?.name || ""}
+              clientName={client?.name || ""}
+              campaignName={campaign?.name || ""}
+              clientId={clientId!}
             />
           )}
           </>
