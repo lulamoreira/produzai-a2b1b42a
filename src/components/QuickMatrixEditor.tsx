@@ -210,12 +210,19 @@ const QuickMatrixEditor = ({
                   const key = `${store.id}-${p.id}`;
                   return s + (parseInt(draft[key]) || 0);
                 }, 0);
+                const hasAnyStoreWithQty = stores.some(
+                  (st) => st.id !== store.id && pieces.some((p) => (qtyMap[`${st.id}-${p.id}`] || 0) > 0)
+                );
+                const isEmptyStore = rowTotal === 0 && hasAnyStoreWithQty;
                 return (
-                  <TableRow key={store.id}>
-                    <TableCell className="sticky left-0 bg-card z-[5] font-medium">
+                  <TableRow key={store.id} className={isEmptyStore ? "bg-amber-50/50 dark:bg-amber-950/10" : ""}>
+                    <TableCell className={`sticky left-0 z-[5] font-medium ${isEmptyStore ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-card"}`}>
                       <span className="text-sm">{store.name}</span>
                       {store.nickname && store.nickname !== store.name && (
                         <span className="text-[10px] text-muted-foreground ml-1">({store.nickname})</span>
+                      )}
+                      {isEmptyStore && (
+                        <span className="text-amber-500 ml-1 text-[10px]" title="Loja sem quantidades — preencha manualmente">⚠</span>
                       )}
                     </TableCell>
                     {pieces.map((p) => {
@@ -236,6 +243,8 @@ const QuickMatrixEditor = ({
                             className={`w-14 h-7 text-center text-sm rounded border outline-none transition-colors ${
                               changed
                                 ? "border-primary bg-primary/10 font-bold text-primary"
+                                : isEmptyStore && parseInt(current) === 0
+                                ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20 text-amber-600"
                                 : "border-border bg-background text-foreground"
                             } focus:ring-2 focus:ring-primary/40 focus:border-primary`}
                           />
