@@ -420,6 +420,9 @@ const CampaignDetail = () => {
           }
           kitPieceCode++;
         }
+        // Avançar o código para depois das peças do kit
+        code = kitPieceCode;
+        continue;
       }
       code++;
     }
