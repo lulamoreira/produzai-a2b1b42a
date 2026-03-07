@@ -47,6 +47,7 @@ import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaig
 import SortablePiecesTable, { type UnifiedRow } from "@/components/SortablePiecesTable";
 import SupportMaterialsSection from "@/components/SupportMaterialsSection";
 import ImportSpecFromCampaign from "@/components/ImportSpecFromCampaign";
+import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
