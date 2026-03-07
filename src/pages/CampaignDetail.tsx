@@ -1685,59 +1685,45 @@ const CampaignDetail = () => {
           currentCampaignId={campaignId}
           existingPieces={pieces}
           existingKitCodes={kits.map(k => k.code)}
-          onImport={async ({ pieces: piecesToImport, kits: kitsToImport }) => {
+          onImport={async ({ pieces: piecesToImport, kits: kitsToImport, storeQuantities }) => {
             try {
-              // Insert all pieces via direct supabase insert to get IDs back
               const originalIdToNewId: Record<string, string> = {};
               let pieceCount = 0;
-
               for (const p of piecesToImport) {
                 const { _originalId, ...pieceData } = p as any;
-                const { data: created, error } = await supabase
-                  .from("campaign_pieces")
-                  .insert(pieceData)
-                  .select()
-                  .single();
+                const { data: created, error } = await supabase.from("campaign_pieces").insert(pieceData).select().single();
                 if (error) throw error;
                 pieceCount++;
-                if (_originalId && created) {
-                  originalIdToNewId[_originalId] = created.id;
-                }
+                if (_originalId && created) originalIdToNewId[_originalId] = created.id;
               }
-
-              // Create kits and their kit_pieces
               let kitCount = 0;
               for (const kit of kitsToImport) {
-                const createdKit = await addKit.mutateAsync({
-                  campaign_id: campaignId,
-                  name: kit.name,
-                  code: kit.code,
-                });
+                const createdKit = await addKit.mutateAsync({ campaign_id: campaignId, name: kit.name, code: kit.code });
                 kitCount++;
-
-                if (kit.image_url) {
-                  await updateKit.mutateAsync({ id: createdKit.id, image_url: kit.image_url });
-                }
-
+                if (kit.image_url) await updateKit.mutateAsync({ id: createdKit.id, image_url: kit.image_url });
                 for (const kp of kit.pieces) {
                   const newPieceId = originalIdToNewId[kp.originalPieceId];
-                  if (newPieceId) {
-                    await addKitPiece.mutateAsync({
-                      kit_id: createdKit.id,
-                      piece_id: newPieceId,
-                      quantity: kp.quantity,
-                    });
+                  if (newPieceId) await addKitPiece.mutateAsync({ kit_id: createdKit.id, piece_id: newPieceId, quantity: kp.quantity });
+                }
+              }
+              let qtyCount = 0;
+              if (storeQuantities && storeQuantities.length > 0) {
+                for (const sq of storeQuantities) {
+                  const targetPieceId = originalIdToNewId[sq.originalPieceId];
+                  if (targetPieceId) {
+                    await updateStorePiece.mutateAsync({ campaignId: campaignId!, storeId: sq.storeId, pieceId: targetPieceId, quantity: sq.quantity });
+                    qtyCount++;
                   }
                 }
               }
-
-              // Invalidate queries to refresh UI
               await queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
               await queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
               await queryClient.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
+              if (qtyCount > 0) await queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
               const parts = [];
               if (pieceCount > 0) parts.push(`${pieceCount} peça(s)`);
               if (kitCount > 0) parts.push(`${kitCount} kit(s)`);
+              if (qtyCount > 0) parts.push(`${qtyCount} quantidade(s) por loja`);
               toast.success(`${parts.join(" e ")} importado(s) com sucesso!`);
             } catch (e) {
               console.error("Import error:", e);
