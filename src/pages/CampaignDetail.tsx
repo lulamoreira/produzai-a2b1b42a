@@ -1178,7 +1178,28 @@ const CampaignDetail = () => {
                   </Button>
                 </label>
               )}
+              {canEditCampaign && (
+                <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setImportMatrixDialogOpen(true)}>
+                  <Copy className="w-3.5 h-3.5" /> Importar de outra campanha
+                </Button>
+              )}
             </div>
+
+            <ImportMatrixFromCampaignDialog
+              open={importMatrixDialogOpen}
+              onOpenChange={setImportMatrixDialogOpen}
+              clientId={clientId!}
+              currentCampaignId={campaignId!}
+              currentPieces={matrixPieces}
+              currentStores={activeFilteredStores}
+              onImport={async (changes) => {
+                for (const c of changes) {
+                  await updateStorePiece.mutateAsync({
+                    campaignId: campaignId!, storeId: c.storeId, pieceId: c.pieceId, quantity: c.quantity,
+                  });
+                }
+              }}
+            />
 
             {pieces.length === 0 ? (
               <div className="text-center py-20">
