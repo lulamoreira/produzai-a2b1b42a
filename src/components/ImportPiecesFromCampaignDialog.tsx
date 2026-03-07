@@ -145,6 +145,21 @@ const ImportPiecesFromCampaignDialog = ({
     enabled: remoteKits.length > 0,
   });
 
+  // Fetch store quantities from selected campaign
+  const { data: remoteStoreQuantities = [] } = useQuery({
+    queryKey: ["campaign_store_pieces_for_import", selectedCampaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_store_pieces")
+        .select("piece_id, store_id, quantity")
+        .eq("campaign_id", selectedCampaignId)
+        .gt("quantity", 0);
+      if (error) throw error;
+      return data as { piece_id: string; store_id: string; quantity: number }[];
+    },
+    enabled: !!selectedCampaignId && importQuantities,
+  });
+
   // Non-kit pieces for individual selection
   const nonKitPieces = useMemo(() => remotePieces.filter(p => !p.kit_only), [remotePieces]);
 
