@@ -161,7 +161,11 @@ const ImportPiecesFromCampaignDialog = ({
   });
 
   // Non-kit pieces for individual selection
-  const nonKitPieces = useMemo(() => remotePieces.filter(p => !p.kit_only), [remotePieces]);
+  const nonKitPieces = useMemo(() => remotePieces.filter(p => {
+    // Show pieces not linked to any kit
+    const kitPieceIds = new Set(remoteKitPieces.map(kp => kp.piece_id));
+    return !kitPieceIds.has(p.id);
+  }), [remotePieces, remoteKitPieces]);
 
   const filteredPieces = useMemo(() => {
     if (!searchTerm) return nonKitPieces;
