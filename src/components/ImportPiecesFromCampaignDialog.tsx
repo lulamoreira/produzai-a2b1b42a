@@ -558,6 +558,17 @@ const ImportPiecesFromCampaignDialog = ({
           )}
         </div>
 
+        {/* Import quantities option */}
+        {selectedCampaignId && totalSelected > 0 && (
+          <label className="flex items-center gap-2 pt-2 cursor-pointer">
+            <Checkbox
+              checked={importQuantities}
+              onCheckedChange={(v) => setImportQuantities(!!v)}
+            />
+            <span className="text-sm text-foreground">Importar também as quantidades por loja</span>
+          </label>
+        )}
+
         {/* Footer */}
         <div className="flex justify-end gap-2 pt-4 border-t border-border">
           <Button variant="outline" onClick={() => handleClose(false)}>Cancelar</Button>
