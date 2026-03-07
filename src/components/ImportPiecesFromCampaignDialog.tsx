@@ -40,6 +40,11 @@ interface ImportPiecesFromCampaignDialogProps {
         quantity: number;
       }>;
     }>;
+    storeQuantities?: Array<{
+      originalPieceId: string;
+      storeId: string;
+      quantity: number;
+    }>;
   }) => void;
 }
 
