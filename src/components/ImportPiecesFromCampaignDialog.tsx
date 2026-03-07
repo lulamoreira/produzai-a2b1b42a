@@ -81,6 +81,7 @@ const ImportPiecesFromCampaignDialog = ({
   const [selectedKitIds, setSelectedKitIds] = useState<Set<string>>(new Set());
   const [keepPhotoMap, setKeepPhotoMap] = useState<Record<string, boolean>>({});
   const [keepKitPhotoMap, setKeepKitPhotoMap] = useState<Record<string, boolean>>({});
+  const [importQuantities, setImportQuantities] = useState(false);
 
   // Fetch campaigns from same client (excluding current)
   const { data: campaigns = [] } = useQuery({
