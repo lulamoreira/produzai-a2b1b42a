@@ -341,9 +341,27 @@ const ImportPiecesFromCampaignDialog = ({
     // Combine non-kit pieces + kit pieces (keep _originalId for mapping)
     const allPieces = [...piecesToImport, ...kitPiecesToImport];
 
+    // Collect store quantities if requested
+    const storeQuantities = importQuantities
+      ? remoteStoreQuantities
+          .filter((sq) => {
+            // Include quantities for selected standalone pieces
+            if (selectedPieceIds.has(sq.piece_id)) return true;
+            // Include quantities for kit pieces belonging to selected kits
+            if (selectedKitPieceIds.has(sq.piece_id)) return true;
+            return false;
+          })
+          .map((sq) => ({
+            originalPieceId: sq.piece_id,
+            storeId: sq.store_id,
+            quantity: sq.quantity,
+          }))
+      : undefined;
+
     onImport({
       pieces: allPieces,
       kits: kitsToImport,
+      storeQuantities,
     });
 
     // Reset state
