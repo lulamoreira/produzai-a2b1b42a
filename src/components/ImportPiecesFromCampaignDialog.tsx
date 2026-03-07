@@ -376,6 +376,7 @@ const ImportPiecesFromCampaignDialog = ({
     setSelectedKitIds(new Set());
     setKeepPhotoMap({});
     setKeepKitPhotoMap({});
+    setImportQuantities(false);
   };
 
   const handleClose = (val: boolean) => {
