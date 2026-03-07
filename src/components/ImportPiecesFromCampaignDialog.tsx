@@ -40,6 +40,11 @@ interface ImportPiecesFromCampaignDialogProps {
         quantity: number;
       }>;
     }>;
+    storeQuantities?: Array<{
+      originalPieceId: string;
+      storeId: string;
+      quantity: number;
+    }>;
   }) => void;
 }
 
@@ -76,6 +81,7 @@ const ImportPiecesFromCampaignDialog = ({
   const [selectedKitIds, setSelectedKitIds] = useState<Set<string>>(new Set());
   const [keepPhotoMap, setKeepPhotoMap] = useState<Record<string, boolean>>({});
   const [keepKitPhotoMap, setKeepKitPhotoMap] = useState<Record<string, boolean>>({});
+  const [importQuantities, setImportQuantities] = useState(false);
 
   // Fetch campaigns from same client (excluding current)
   const { data: campaigns = [] } = useQuery({
@@ -137,6 +143,21 @@ const ImportPiecesFromCampaignDialog = ({
       return data as RemoteKitPiece[];
     },
     enabled: remoteKits.length > 0,
+  });
+
+  // Fetch store quantities from selected campaign
+  const { data: remoteStoreQuantities = [] } = useQuery({
+    queryKey: ["campaign_store_pieces_for_import", selectedCampaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_store_pieces")
+        .select("piece_id, store_id, quantity")
+        .eq("campaign_id", selectedCampaignId)
+        .gt("quantity", 0);
+      if (error) throw error;
+      return data as { piece_id: string; store_id: string; quantity: number }[];
+    },
+    enabled: !!selectedCampaignId && importQuantities,
   });
 
   // Non-kit pieces for individual selection
@@ -267,6 +288,7 @@ const ImportPiecesFromCampaignDialog = ({
         installation_instructions: p.installation_instructions,
         kit_only: false,
         image_url: keepPhotoMap[p.id] !== false ? p.image_url : null,
+        _originalId: p.id,
       }));
 
     // Kit pieces to import (kit_only pieces that belong to selected kits)
@@ -320,9 +342,27 @@ const ImportPiecesFromCampaignDialog = ({
     // Combine non-kit pieces + kit pieces (keep _originalId for mapping)
     const allPieces = [...piecesToImport, ...kitPiecesToImport];
 
+    // Collect store quantities if requested
+    const storeQuantities = importQuantities
+      ? remoteStoreQuantities
+          .filter((sq) => {
+            // Include quantities for selected standalone pieces
+            if (selectedPieceIds.has(sq.piece_id)) return true;
+            // Include quantities for kit pieces belonging to selected kits
+            if (selectedKitPieceIds.has(sq.piece_id)) return true;
+            return false;
+          })
+          .map((sq) => ({
+            originalPieceId: sq.piece_id,
+            storeId: sq.store_id,
+            quantity: sq.quantity,
+          }))
+      : undefined;
+
     onImport({
       pieces: allPieces,
       kits: kitsToImport,
+      storeQuantities,
     });
 
     // Reset state
@@ -337,6 +377,7 @@ const ImportPiecesFromCampaignDialog = ({
     setSelectedKitIds(new Set());
     setKeepPhotoMap({});
     setKeepKitPhotoMap({});
+    setImportQuantities(false);
   };
 
   const handleClose = (val: boolean) => {
@@ -517,6 +558,17 @@ const ImportPiecesFromCampaignDialog = ({
             </>
           )}
         </div>
+
+        {/* Import quantities option */}
+        {selectedCampaignId && totalSelected > 0 && (
+          <label className="flex items-center gap-2 pt-2 cursor-pointer">
+            <Checkbox
+              checked={importQuantities}
+              onCheckedChange={(v) => setImportQuantities(!!v)}
+            />
+            <span className="text-sm text-foreground">Importar também as quantidades por loja</span>
+          </label>
+        )}
 
         {/* Footer */}
         <div className="flex justify-end gap-2 pt-4 border-t border-border">
