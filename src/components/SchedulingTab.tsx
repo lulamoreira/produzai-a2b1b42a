@@ -373,7 +373,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       <span className="text-xs font-medium">Equipe com dados incompletos (RG, CPF ou Telefone)</span>
                     </div>
                   )}
-                  </div>
                 </div>
 
                 {/* Scheduling fields */}
