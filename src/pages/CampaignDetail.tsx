@@ -1258,6 +1258,10 @@ const CampaignDetail = () => {
                   <TableBody>
                     {activeFilteredStores.map((store) => {
                       const storeTotal = matrixPieces.reduce((s, p) => s + (qtyMap[`${store.id}-${p.id}`] || 0), 0);
+                      const hasAnyStoreWithQty = activeFilteredStores.some(
+                        (st) => st.id !== store.id && matrixPieces.some((p) => (qtyMap[`${st.id}-${p.id}`] || 0) > 0)
+                      );
+                      const isEmptyStore = storeTotal === 0 && hasAnyStoreWithQty;
                       return (
                         <TableRow key={store.id}>
                           <TableCell className="sticky left-0 bg-card z-[5] font-medium">
@@ -1296,13 +1300,16 @@ const CampaignDetail = () => {
                                       className={`w-full h-8 text-sm rounded transition-colors ${
                                         qty > 0
                                           ? "bg-primary/10 text-primary font-semibold hover:bg-primary/20"
+                                          : isEmptyStore
+                                          ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-medium"
                                           : canEditCampaign
                                           ? "text-muted-foreground/40 hover:bg-muted"
                                           : "text-muted-foreground/40"
                                       }`}
                                       disabled={!canEditCampaign}
+                                      title={isEmptyStore && qty === 0 ? "Loja sem quantidades — preencha manualmente" : undefined}
                                     >
-                                      {qty || "—"}
+                                      {qty > 0 ? qty : isEmptyStore ? "⚠" : "—"}
                                     </button>
                                   )}
                                 </TableCell>
@@ -1360,13 +1367,16 @@ const CampaignDetail = () => {
                                     className={`w-full h-8 text-sm rounded transition-colors ${
                                       kitQty > 0
                                         ? "bg-primary/15 text-primary font-semibold hover:bg-primary/25"
+                                        : isEmptyStore
+                                        ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-medium"
                                         : canEditCampaign
                                         ? "text-muted-foreground/40 hover:bg-muted"
                                         : "text-muted-foreground/40"
                                     }`}
                                     disabled={!canEditCampaign}
+                                    title={isEmptyStore && kitQty === 0 ? "Loja sem quantidades — preencha manualmente" : undefined}
                                   >
-                                    {kitQty || "—"}
+                                    {kitQty > 0 ? kitQty : isEmptyStore ? "⚠" : "—"}
                                   </button>
                                 )}
                               </TableCell>
