@@ -288,6 +288,7 @@ const ImportPiecesFromCampaignDialog = ({
         installation_instructions: p.installation_instructions,
         kit_only: false,
         image_url: keepPhotoMap[p.id] !== false ? p.image_url : null,
+        _originalId: p.id,
       }));
 
     // Kit pieces to import (kit_only pieces that belong to selected kits)
