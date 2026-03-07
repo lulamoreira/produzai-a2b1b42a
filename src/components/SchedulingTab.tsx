@@ -8,12 +8,22 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import InstallationTeamDialog, {
+  useInstallationTeams,
+  useAllTeamMembers,
+  useAllTeamVehicles,
+  isTeamIncomplete,
+  TeamCardContent,
+  type InstallationTeam,
+  type TeamMember,
+  type TeamVehicle,
+} from "@/components/InstallationTeamDialog";
 
 interface SchedulingTabProps {
   campaignId: string;
@@ -33,6 +43,7 @@ type Schedule = {
   scheduled_time: string | null;
   installation_os: string | null;
   installation_preference: string | null;
+  team_id: string | null;
 };
 
 const PREFERENCE_OPTIONS = [
@@ -71,10 +82,22 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [searchTerm, setSearchTerm] = useState("");
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
+  const [teamDialogOpen, setTeamDialogOpen] = useState(false);
 
   // Fetch all contacts for the client
   const { data: allContacts = [] } = useStoreContactsByClient(clientId);
   const { data: contactRoles = [] } = useStoreContactRoles(clientId);
+
+  // Fetch teams
+  const { data: teams = [] } = useInstallationTeams(campaignId);
+  const { data: allMembersMap = {} } = useAllTeamMembers(campaignId);
+  const { data: allVehiclesMap = {} } = useAllTeamVehicles(campaignId);
+
+  const teamMap = useMemo(() => {
+    const map: Record<string, InstallationTeam> = {};
+    teams.forEach((t) => { map[t.id] = t; });
+    return map;
+  }, [teams]);
 
   const roleMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -114,6 +137,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       scheduled_time?: string | null;
       installation_os?: string | null;
       installation_preference?: string | null;
+      team_id?: string | null;
     }) => {
       const { data, error } = await supabase
         .from("campaign_schedules")
@@ -173,6 +197,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       scheduled_time: existing?.scheduled_time ?? null,
       installation_os: existing?.installation_os ?? null,
       installation_preference: existing?.installation_preference ?? "not_informed",
+      team_id: existing?.team_id ?? null,
       [field]: value,
     });
   };
@@ -190,6 +215,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const handleExport = () => {
     const rows = filteredStores.map((store) => {
       const schedule = scheduleMap[store.id];
+      const team = schedule?.team_id ? teamMap[schedule.team_id] : null;
       return {
         "Código": store.store_code || "",
         "Loja": store.name,
@@ -207,6 +233,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         "Horário": schedule?.scheduled_time || "",
         "OS Instalação": schedule?.installation_os || "",
         "Preferência": prefLabel(schedule?.installation_preference ?? null),
+        "Equipe": team?.name || "",
       };
     });
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -249,6 +276,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setTeamDialogOpen(true)}>
+          <Wrench className="w-4 h-4" /> Equipes
+        </Button>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
           <Download className="w-4 h-4" /> Exportar
         </Button>
@@ -263,6 +293,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const schedule = scheduleMap[store.id];
           const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
           const storeContacts = contactsByStore[store.id] || [];
+          const assignedTeam = schedule?.team_id ? teamMap[schedule.team_id] : null;
+          const teamMembers: TeamMember[] = schedule?.team_id ? (allMembersMap[schedule.team_id] || []) : [];
+          const teamVehicles: TeamVehicle[] = schedule?.team_id ? (allVehiclesMap[schedule.team_id] || []) : [];
+          const teamIncomplete = assignedTeam ? isTeamIncomplete(teamMembers) : false;
 
           return (
             <div
@@ -301,6 +335,39 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 />
 
                 <hr className="border-border" />
+
+                {/* Team assignment */}
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                    <Wrench className="w-3 h-3" /> Equipe de Instalação
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <select
+                      disabled={!canEdit}
+                      value={schedule?.team_id || ""}
+                      onChange={(e) => handleFieldChange(store.id, "team_id", e.target.value || null)}
+                      className="flex-1 h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                    >
+                      <option value="">Nenhuma equipe</option>
+                      {teams.map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                    {assignedTeam && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="sm" className={cn("h-7 text-xs gap-1 px-2", teamIncomplete && "text-amber-500")}>
+                            {teamIncomplete && <AlertTriangle className="w-3 h-3" />}
+                            <Users className="w-3 h-3" /> Ver
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 max-h-64 overflow-y-auto p-3" align="start">
+                          <TeamCardContent team={assignedTeam} members={teamMembers} vehicles={teamVehicles} />
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
+                </div>
 
                 {/* Scheduling fields */}
                 <div className="grid grid-cols-2 gap-3">
@@ -386,6 +453,14 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       {filteredStores.length === 0 && (
         <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma loja encontrada</p>
       )}
+
+      {/* Team Management Dialog */}
+      <InstallationTeamDialog
+        open={teamDialogOpen}
+        onOpenChange={setTeamDialogOpen}
+        campaignId={campaignId}
+        canEdit={canEdit}
+      />
     </div>
   );
 };
@@ -417,7 +492,6 @@ function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, 
 
   return (
     <div className="space-y-1.5">
-      {/* Primary contact */}
       <ContactRow
         contact={primaryContact!}
         roleMap={roleMap}
@@ -426,8 +500,6 @@ function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, 
         clientName={clientName}
         campaignName={campaignName}
       />
-
-      {/* Multiple contacts popover */}
       {contacts.length > 1 && (
         <Popover>
           <PopoverTrigger asChild>
