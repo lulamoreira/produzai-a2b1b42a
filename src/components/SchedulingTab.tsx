@@ -401,6 +401,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                           locale={ptBR}
                           className="p-3 pointer-events-auto"
                         />
+                        {selectedDate && (
+                          <div className="px-3 pb-3">
+                            <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => handleFieldChange(store.id, "scheduled_date", null)}>
+                              Limpar data
+                            </Button>
+                          </div>
+                        )}
                       </PopoverContent>
                     </Popover>
                   </div>
@@ -410,13 +417,20 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     <label className="text-xs font-medium text-foreground flex items-center gap-1">
                       <Clock className="w-3 h-3" /> Horário
                     </label>
-                    <Input
-                      type="time"
-                      disabled={!canEdit}
-                      value={schedule?.scheduled_time || ""}
-                      onChange={(e) => handleFieldChange(store.id, "scheduled_time", e.target.value || null)}
-                      className="h-8 text-xs"
-                    />
+                    <div className="flex items-center gap-1">
+                      <Input
+                        type="time"
+                        disabled={!canEdit}
+                        value={schedule?.scheduled_time || ""}
+                        onChange={(e) => handleFieldChange(store.id, "scheduled_time", e.target.value || null)}
+                        className="h-8 text-xs flex-1"
+                      />
+                      {schedule?.scheduled_time && canEdit && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "scheduled_time", null)} title="Limpar horário">
+                          ✕
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   {/* OS */}
