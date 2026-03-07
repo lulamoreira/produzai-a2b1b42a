@@ -154,7 +154,14 @@ const PublicOccurrence = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const updateEntry = (idx: number, patch: Partial<OccurrenceEntry>) => {
-    setEntries((prev) => prev.map((e, i) => (i === idx ? { ...e, ...patch } : e)));
+    setEntries((prev) => prev.map((e, i) => {
+      if (i !== idx) return e;
+      // Reset pieceId when location changes
+      if (patch.locationInStore !== undefined && patch.locationInStore !== e.locationInStore) {
+        return { ...e, ...patch, pieceId: "" };
+      }
+      return { ...e, ...patch };
+    }));
   };
 
   const removeEntry = (idx: number) => {
