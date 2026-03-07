@@ -367,6 +367,12 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       </Popover>
                     )}
                   </div>
+                  {assignedTeam && teamIncomplete && (
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400">
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
+                      <span className="text-xs font-medium">Equipe com dados incompletos (RG, CPF ou Telefone)</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Scheduling fields */}
