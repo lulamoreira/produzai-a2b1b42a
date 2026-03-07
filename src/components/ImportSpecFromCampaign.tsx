@@ -71,7 +71,7 @@ export default function ImportSpecFromCampaign({ clientId, currentCampaignId, on
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" size="sm" className="h-7 text-xs gap-1.5">
-          <Import className="w-3 h-3" /> Importar de campanha
+          <Import className="w-3 h-3" /> Importar de outra campanha
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="start">
