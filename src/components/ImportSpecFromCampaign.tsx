@@ -133,7 +133,7 @@ export default function ImportSpecFromCampaign({ clientId, currentCampaignId, on
         {!selectedCampaign ? (
           <div className="p-3 space-y-2">
             <p className="text-xs font-semibold text-foreground">Selecione a campanha</p>
-            <ScrollArea className="max-h-48">
+            <ScrollArea className="h-48">
               {campaigns.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-2">Nenhuma campanha anterior encontrada.</p>
               ) : (
@@ -170,7 +170,7 @@ export default function ImportSpecFromCampaign({ clientId, currentCampaignId, on
                 className="h-7 text-xs pl-7"
               />
             </div>
-            <ScrollArea className="max-h-56">
+            <ScrollArea className="h-56">
               {!hasResults ? (
                 <p className="text-xs text-muted-foreground py-2">Nenhum item encontrado.</p>
               ) : (
