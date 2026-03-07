@@ -203,7 +203,7 @@ const PublicOccurrence = () => {
     updateEntry(entryIdx, { photos: entry.photos.filter((_, i) => i !== photoIdx) });
   };
 
-  const allEntriesValid = entries.every((e) => e.pieceId && e.motiveId);
+  const allEntriesValid = entries.every((e) => e.pieceId && e.motiveId && (locations.length === 0 || e.locationInStore));
   const reporterValid = storeId && reporterName.trim() && phoneDDD.trim() && phoneNumber.trim() && reporterEmail.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
