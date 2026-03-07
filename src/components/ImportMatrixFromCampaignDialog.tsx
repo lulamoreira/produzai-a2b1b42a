@@ -132,9 +132,9 @@ const ImportMatrixFromCampaignDialog = ({
       storeCount: number;
     }> = [];
 
-    // Standalone pieces (not kit_only, not in a kit)
+    // Standalone pieces (not linked to any kit via campaign_kit_pieces)
     remotePieces
-      .filter((p) => !p.kit_only && !kitPieceIds.has(p.id))
+      .filter((p) => !kitPieceIds.has(p.id))
       .forEach((p) => {
         const storeQtys = remoteStorePieces
           .filter((sp) => sp.piece_id === p.id && sp.quantity > 0 && currentStoreIds.has(sp.store_id))

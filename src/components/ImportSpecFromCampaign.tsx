@@ -79,7 +79,7 @@ export default function ImportSpecFromCampaign({ clientId, currentCampaignId, on
   // Build grouped list: standalone pieces + kits with their pieces
   const { standalonePieces, kitGroups } = useMemo(() => {
     const kitPieceIds = new Set(kitPieceLinks.map((kp) => kp.piece_id));
-    const standalone = pieces.filter((p) => !p.kit_only && !kitPieceIds.has(p.id));
+    const standalone = pieces.filter((p) => !kitPieceIds.has(p.id));
 
     const groups = kits.map((kit) => {
       const memberIds = kitPieceLinks.filter((kp) => kp.kit_id === kit.id).map((kp) => kp.piece_id);
