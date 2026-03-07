@@ -46,6 +46,7 @@ import SchedulingTab from "@/components/SchedulingTab";
 import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaignDialog";
 import SortablePiecesTable, { type UnifiedRow } from "@/components/SortablePiecesTable";
 import SupportMaterialsSection from "@/components/SupportMaterialsSection";
+import ImportSpecFromCampaign from "@/components/ImportSpecFromCampaign";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -552,8 +553,26 @@ const CampaignDetail = () => {
           </SelectContent>
         </Select>
       </div>
-      <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Especificação</label>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-medium text-muted-foreground">Especificação</label>
+          {clientId && campaignId && (
+            <ImportSpecFromCampaign
+              clientId={clientId}
+              currentCampaignId={campaignId}
+              onImport={({ specification, size }) => {
+                const sizeParts = size.split(" x ");
+                setForm((f) => ({
+                  ...f,
+                  specification,
+                  width: sizeParts[0] || f.width,
+                  height: sizeParts[1] || f.height,
+                  length: sizeParts[2] || f.length,
+                }));
+              }}
+            />
+          )}
+        </div>
         <Input value={form.specification} onChange={(e) => setForm((f) => ({ ...f, specification: e.target.value }))} />
       </div>
       <div>
