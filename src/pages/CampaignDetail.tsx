@@ -524,6 +524,22 @@ const CampaignDetail = () => {
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome *</label>
         <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
       </div>
+      {clientId && campaignId && (
+        <ImportSpecFromCampaign
+          clientId={clientId}
+          currentCampaignId={campaignId}
+          onImport={({ specification, size }) => {
+            const sizeParts = size.split(" x ");
+            setForm((f) => ({
+              ...f,
+              specification,
+              width: sizeParts[0] || f.width,
+              height: sizeParts[1] || f.height,
+              length: sizeParts[2] || f.length,
+            }));
+          }}
+        />
+      )}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Medidas</label>
         <div className="grid grid-cols-3 gap-2">
@@ -553,26 +569,8 @@ const CampaignDetail = () => {
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-1">
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-medium text-muted-foreground">Especificação</label>
-          {clientId && campaignId && (
-            <ImportSpecFromCampaign
-              clientId={clientId}
-              currentCampaignId={campaignId}
-              onImport={({ specification, size }) => {
-                const sizeParts = size.split(" x ");
-                setForm((f) => ({
-                  ...f,
-                  specification,
-                  width: sizeParts[0] || f.width,
-                  height: sizeParts[1] || f.height,
-                  length: sizeParts[2] || f.length,
-                }));
-              }}
-            />
-          )}
-        </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">Especificação</label>
         <Input value={form.specification} onChange={(e) => setForm((f) => ({ ...f, specification: e.target.value }))} />
       </div>
       <div>
