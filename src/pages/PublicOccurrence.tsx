@@ -67,7 +67,7 @@ const PublicOccurrence = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("campaign_pieces")
-        .select("id, name, code, image_url, kit_only")
+        .select("id, name, code, image_url, kit_only, category")
         .eq("campaign_id", campaignId!)
         .order("code");
       if (error) throw error;
@@ -105,19 +105,22 @@ const PublicOccurrence = () => {
     enabled: kits.length > 0,
   });
 
-  // Build grouped piece list: standalone pieces + kits with sub-pieces
-  const groupedPieceOptions = useMemo(() => {
+  // Build grouped piece list filtered by location
+  const buildGroupedPieceOptions = (locationFilter: string) => {
+    const filteredPieces = locationFilter
+      ? pieces.filter((p) => p.category === locationFilter)
+      : pieces;
     const kitPieceIds = new Set(kitPieces.map((kp) => kp.piece_id));
-    const standalonePieces = pieces.filter((p) => !p.kit_only && !kitPieceIds.has(p.id));
+    const standalonePieces = filteredPieces.filter((p) => !p.kit_only && !kitPieceIds.has(p.id));
 
     const kitGroups = kits.map((kit) => {
       const memberPieceIds = kitPieces.filter((kp) => kp.kit_id === kit.id).map((kp) => kp.piece_id);
-      const memberPieces = pieces.filter((p) => memberPieceIds.includes(p.id));
+      const memberPieces = filteredPieces.filter((p) => memberPieceIds.includes(p.id));
       return { kit, memberPieces };
-    });
+    }).filter((g) => g.memberPieces.length > 0);
 
     return { standalonePieces, kitGroups };
-  }, [pieces, kits, kitPieces]);
+  };
 
   const { data: locations = [] } = useQuery({
     queryKey: ["public_locations", campaignId],
@@ -151,7 +154,14 @@ const PublicOccurrence = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const updateEntry = (idx: number, patch: Partial<OccurrenceEntry>) => {
-    setEntries((prev) => prev.map((e, i) => (i === idx ? { ...e, ...patch } : e)));
+    setEntries((prev) => prev.map((e, i) => {
+      if (i !== idx) return e;
+      // Reset pieceId when location changes
+      if (patch.locationInStore !== undefined && patch.locationInStore !== e.locationInStore) {
+        return { ...e, ...patch, pieceId: "" };
+      }
+      return { ...e, ...patch };
+    }));
   };
 
   const removeEntry = (idx: number) => {
@@ -193,7 +203,7 @@ const PublicOccurrence = () => {
     updateEntry(entryIdx, { photos: entry.photos.filter((_, i) => i !== photoIdx) });
   };
 
-  const allEntriesValid = entries.every((e) => e.pieceId && e.motiveId);
+  const allEntriesValid = entries.every((e) => e.pieceId && e.motiveId && (locations.length === 0 || e.locationInStore));
   const reporterValid = storeId && reporterName.trim() && phoneDDD.trim() && phoneNumber.trim() && reporterEmail.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -373,48 +383,75 @@ const PublicOccurrence = () => {
                 )}
               </div>
 
+              {locations.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Localização na Loja *</label>
+                  <Select value={entry.locationInStore} onValueChange={(v) => updateEntry(idx, { locationInStore: v })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a localização" /></SelectTrigger>
+                    <SelectContent>
+                      {locations.map((loc) => (
+                        <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">Peça *</label>
-                <Select value={entry.pieceId} onValueChange={(v) => updateEntry(idx, { pieceId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecione a peça" /></SelectTrigger>
+                <Select
+                  value={entry.pieceId}
+                  onValueChange={(v) => updateEntry(idx, { pieceId: v })}
+                  disabled={locations.length > 0 && !entry.locationInStore}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={locations.length > 0 && !entry.locationInStore ? "Selecione a localização primeiro" : "Selecione a peça"} />
+                  </SelectTrigger>
                   <SelectContent>
-                    {groupedPieceOptions.standalonePieces.length > 0 && (
-                      <SelectGroup>
-                        <SelectLabel className="text-xs text-muted-foreground">Peças avulsas</SelectLabel>
-                        {groupedPieceOptions.standalonePieces.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            <div className="flex items-center gap-2">
-                              {p.image_url ? (
-                                <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
-                              ) : (
-                                <Package className="w-4 h-4 text-muted-foreground" />
-                              )}
-                              <span>{p.code} - {p.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    )}
-                    {groupedPieceOptions.kitGroups.map((group) => (
-                      <SelectGroup key={group.kit.id}>
-                        <SelectLabel className="text-xs font-bold text-white bg-[#1e3a5f] flex items-center gap-1.5 mt-2 px-2 py-1.5 rounded-md mx-1">
-                          <Boxes className="w-3.5 h-3.5" />
-                          Kit {group.kit.code} - {group.kit.name}
-                        </SelectLabel>
-                        {group.memberPieces.map((p) => (
-                          <SelectItem key={p.id} value={p.id} className="border-l-2 border-[#1e3a5f]/30 ml-3">
-                            <div className="flex items-center gap-2 pl-1">
-                              {p.image_url ? (
-                                <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
-                              ) : (
-                                <Package className="w-4 h-4 text-muted-foreground" />
-                              )}
-                              <span className="text-sm">{p.code} - {p.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    ))}
+                    {(() => {
+                      const groupedPieceOptions = buildGroupedPieceOptions(entry.locationInStore);
+                      return (
+                        <>
+                          {groupedPieceOptions.standalonePieces.length > 0 && (
+                            <SelectGroup>
+                              <SelectLabel className="text-xs text-muted-foreground">Peças avulsas</SelectLabel>
+                              {groupedPieceOptions.standalonePieces.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  <div className="flex items-center gap-2">
+                                    {p.image_url ? (
+                                      <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
+                                    ) : (
+                                      <Package className="w-4 h-4 text-muted-foreground" />
+                                    )}
+                                    <span>{p.code} - {p.name}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          )}
+                          {groupedPieceOptions.kitGroups.map((group) => (
+                            <SelectGroup key={group.kit.id}>
+                              <SelectLabel className="text-xs font-bold text-white bg-[#1e3a5f] flex items-center gap-1.5 mt-2 px-2 py-1.5 rounded-md mx-1">
+                                <Boxes className="w-3.5 h-3.5" />
+                                Kit {group.kit.code} - {group.kit.name}
+                              </SelectLabel>
+                              {group.memberPieces.map((p) => (
+                                <SelectItem key={p.id} value={p.id} className="border-l-2 border-[#1e3a5f]/30 ml-3">
+                                  <div className="flex items-center gap-2 pl-1">
+                                    {p.image_url ? (
+                                      <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
+                                    ) : (
+                                      <Package className="w-4 h-4 text-muted-foreground" />
+                                    )}
+                                    <span className="text-sm">{p.code} - {p.name}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          ))}
+                        </>
+                      );
+                    })()}
                   </SelectContent>
                 </Select>
               </div>
@@ -430,20 +467,6 @@ const PublicOccurrence = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              {locations.length > 0 && (
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">Localização na Loja</label>
-                  <Select value={entry.locationInStore} onValueChange={(v) => updateEntry(idx, { locationInStore: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a localização" /></SelectTrigger>
-                    <SelectContent>
-                      {locations.map((loc) => (
-                        <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
 
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">Descrição (opcional)</label>
