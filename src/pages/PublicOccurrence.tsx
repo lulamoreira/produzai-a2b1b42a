@@ -67,7 +67,7 @@ const PublicOccurrence = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("campaign_pieces")
-        .select("id, name, code, image_url, kit_only")
+        .select("id, name, code, image_url, kit_only, category")
         .eq("campaign_id", campaignId!)
         .order("code");
       if (error) throw error;
