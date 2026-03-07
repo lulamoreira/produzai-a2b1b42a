@@ -161,6 +161,7 @@ const CampaignDetail = () => {
   // ─── Matrix editing ────────────────────────────────────
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [importMatrixDialogOpen, setImportMatrixDialogOpen] = useState(false);
 
   // ─── Derived data ──────────────────────────────────────
   const qtyMap = useMemo(() => {
