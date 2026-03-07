@@ -239,6 +239,7 @@ export type Database = {
           scheduled_date: string | null
           scheduled_time: string | null
           store_id: string
+          team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -250,6 +251,7 @@ export type Database = {
           scheduled_date?: string | null
           scheduled_time?: string | null
           store_id: string
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -261,6 +263,7 @@ export type Database = {
           scheduled_date?: string | null
           scheduled_time?: string | null
           store_id?: string
+          team_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -276,6 +279,13 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_schedules_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "installation_teams"
             referencedColumns: ["id"]
           },
         ]
@@ -703,6 +713,111 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installation_team_members: {
+        Row: {
+          cpf: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string | null
+          rg: string | null
+          team_id: string
+        }
+        Insert: {
+          cpf?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string | null
+          rg?: string | null
+          team_id: string
+        }
+        Update: {
+          cpf?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          rg?: string | null
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installation_team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "installation_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installation_team_vehicles: {
+        Row: {
+          brand: string | null
+          color: string | null
+          created_at: string
+          id: string
+          name: string
+          plate: string | null
+          team_id: string
+        }
+        Insert: {
+          brand?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          plate?: string | null
+          team_id: string
+        }
+        Update: {
+          brand?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          plate?: string | null
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installation_team_vehicles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "installation_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      installation_teams: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installation_teams_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
             referencedColumns: ["id"]
           },
         ]
