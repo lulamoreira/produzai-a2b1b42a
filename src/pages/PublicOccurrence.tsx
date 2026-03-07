@@ -469,7 +469,7 @@ const PublicOccurrence = () => {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">Descrição (opcional)</label>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Fale mais sobre o problema (opcional)</label>
                 <Textarea
                   value={entry.description}
                   onChange={(e) => updateEntry(idx, { description: e.target.value })}
