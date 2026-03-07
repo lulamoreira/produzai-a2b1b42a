@@ -1191,6 +1191,7 @@ const CampaignDetail = () => {
               clientId={clientId!}
               currentCampaignId={campaignId!}
               currentPieces={matrixPieces}
+              currentKits={kits}
               currentStores={activeFilteredStores}
               onImport={async (changes) => {
                 for (const c of changes) {
