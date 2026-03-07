@@ -105,19 +105,22 @@ const PublicOccurrence = () => {
     enabled: kits.length > 0,
   });
 
-  // Build grouped piece list: standalone pieces + kits with sub-pieces
-  const groupedPieceOptions = useMemo(() => {
+  // Build grouped piece list filtered by location
+  const buildGroupedPieceOptions = (locationFilter: string) => {
+    const filteredPieces = locationFilter
+      ? pieces.filter((p) => p.category === locationFilter)
+      : pieces;
     const kitPieceIds = new Set(kitPieces.map((kp) => kp.piece_id));
-    const standalonePieces = pieces.filter((p) => !p.kit_only && !kitPieceIds.has(p.id));
+    const standalonePieces = filteredPieces.filter((p) => !p.kit_only && !kitPieceIds.has(p.id));
 
     const kitGroups = kits.map((kit) => {
       const memberPieceIds = kitPieces.filter((kp) => kp.kit_id === kit.id).map((kp) => kp.piece_id);
-      const memberPieces = pieces.filter((p) => memberPieceIds.includes(p.id));
+      const memberPieces = filteredPieces.filter((p) => memberPieceIds.includes(p.id));
       return { kit, memberPieces };
-    });
+    }).filter((g) => g.memberPieces.length > 0);
 
     return { standalonePieces, kitGroups };
-  }, [pieces, kits, kitPieces]);
+  };
 
   const { data: locations = [] } = useQuery({
     queryKey: ["public_locations", campaignId],
