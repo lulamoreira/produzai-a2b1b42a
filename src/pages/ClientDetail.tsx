@@ -791,6 +791,20 @@ const ClientDetail = () => {
                               <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da campanha *</label>
                               <Input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
                             </div>
+                            <div>
+                              <label className="text-xs font-medium text-muted-foreground mb-2 block">Cor da campanha</label>
+                              <div className="grid grid-cols-8 gap-1.5">
+                                {CAMPAIGN_COLORS.map((c) => (
+                                  <button
+                                    type="button"
+                                    key={c}
+                                    className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${campaignColor === c ? "border-foreground scale-110 ring-2 ring-primary/30" : "border-transparent"}`}
+                                    style={{ backgroundColor: c }}
+                                    onClick={() => setCampaignColor(c)}
+                                  />
+                                ))}
+                              </div>
+                            </div>
                             <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>Criar</Button>
                           </form>
                         </DialogContent>
