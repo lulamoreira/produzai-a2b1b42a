@@ -825,59 +825,23 @@ const ClientDetail = () => {
                 <p className="text-muted-foreground text-sm">Nenhuma campanha cadastrada.</p>
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {campaigns.map((c, i) => {
-                  const CAMP_BG = [
-                    "bg-primary",
-                    "bg-primary/85",
-                    "bg-primary/70",
-                    "bg-primary/55",
-                  ];
-                  const bgClass = CAMP_BG[i % CAMP_BG.length];
-                  return (
-                    <div
-                      key={c.id}
-                      className={`group rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden ${bgClass} text-primary-foreground shadow-sm hover:shadow-lg`}
-                      onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-                          <Megaphone className="w-4 h-4 text-primary-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-primary-foreground text-sm truncate">{c.name}</h3>
-                          <p className="text-[11px] text-primary-foreground/70 mt-0.5">
-                            {new Date(c.created_at).toLocaleDateString("pt-BR")}
-                          </p>
-                        </div>
-                        {canDeleteCampaigns && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 flex-shrink-0 text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10" onClick={(e) => e.stopPropagation()}>
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Tem certeza que deseja excluir esta campanha?</AlertDialogTitle>
-                                <AlertDialogDescription>Todos os dados associados a esta campanha serão apagados permanentemente, incluindo peças, quantidades por loja e configurações. Esta ação não pode ser desfeita.</AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteCampaign.mutate(c.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">SIM</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1 mt-3 text-xs text-primary-foreground/70">
-                        <span>Acessar</span>
-                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
+                <SortableContext items={campaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {campaigns.map((c) => (
+                      <SortableCampaignCard
+                        key={c.id}
+                        campaign={c}
+                        canDelete={canDeleteCampaigns}
+                        canEdit={canEditCampaigns}
+                        onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
+                        onDelete={() => deleteCampaign.mutate(c.id)}
+                        onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             )}
           </TabsContent>
 
