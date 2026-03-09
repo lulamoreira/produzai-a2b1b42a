@@ -232,6 +232,7 @@ function SortableCampaignCard({
 }
 
 const ClientDetail = () => {
+  const { agencyId, clientId } = useParams<{ agencyId: string; clientId: string }>();
   const navigate = useNavigate();
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaigns } = useClientPermission(clientId, "can_edit_campaigns");
