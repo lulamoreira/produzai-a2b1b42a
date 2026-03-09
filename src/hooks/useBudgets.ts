@@ -14,12 +14,82 @@ export interface BudgetItem {
 export interface Budget {
   id: string;
   campaign_id: string;
+  quotation_id: string | null;
   supplier_name: string;
   file_url: string | null;
   file_name: string | null;
   created_at: string;
   items?: BudgetItem[];
 }
+
+export interface Quotation {
+  id: string;
+  campaign_id: string;
+  name: string;
+  created_at: string;
+}
+
+// ─── Quotations ───
+
+export function useCampaignQuotations(campaignId?: string) {
+  return useQuery({
+    queryKey: ["campaign_quotations", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_quotations")
+        .select("*")
+        .eq("campaign_id", campaignId!)
+        .order("created_at");
+      if (error) throw error;
+      return data as Quotation[];
+    },
+    enabled: !!campaignId,
+  });
+}
+
+export function useAddQuotation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (q: { campaign_id: string; name: string }) => {
+      const { data, error } = await supabase.from("campaign_quotations").insert(q).select().single();
+      if (error) throw error;
+      return data as Quotation;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["campaign_quotations", vars.campaign_id] });
+    },
+  });
+}
+
+export function useUpdateQuotation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name, campaignId }: { id: string; name: string; campaignId: string }) => {
+      const { error } = await supabase.from("campaign_quotations").update({ name }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["campaign_quotations", vars.campaignId] });
+    },
+  });
+}
+
+export function useDeleteQuotation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, campaignId }: { id: string; campaignId: string }) => {
+      const { error } = await supabase.from("campaign_quotations").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["campaign_quotations", vars.campaignId] });
+      qc.invalidateQueries({ queryKey: ["campaign_budgets", vars.campaignId] });
+      qc.invalidateQueries({ queryKey: ["campaign_budget_items", vars.campaignId] });
+    },
+  });
+}
+
+// ─── Budgets ───
 
 export function useCampaignBudgets(campaignId?: string) {
   return useQuery({
@@ -41,7 +111,6 @@ export function useBudgetItems(campaignId?: string) {
   return useQuery({
     queryKey: ["campaign_budget_items", campaignId],
     queryFn: async () => {
-      // Get all budget ids for this campaign first
       const { data: budgets } = await supabase
         .from("campaign_budgets")
         .select("id")
@@ -63,7 +132,7 @@ export function useBudgetItems(campaignId?: string) {
 export function useAddBudget() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (budget: { campaign_id: string; supplier_name: string; file_url?: string; file_name?: string }) => {
+    mutationFn: async (budget: { campaign_id: string; supplier_name: string; quotation_id?: string; file_url?: string; file_name?: string }) => {
       const { data, error } = await supabase.from("campaign_budgets").insert(budget).select().single();
       if (error) throw error;
       return data as Budget;

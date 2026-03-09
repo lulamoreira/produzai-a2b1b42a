@@ -86,6 +86,7 @@ export type Database = {
           file_name: string | null
           file_url: string | null
           id: string
+          quotation_id: string | null
           supplier_name: string
         }
         Insert: {
@@ -94,6 +95,7 @@ export type Database = {
           file_name?: string | null
           file_url?: string | null
           id?: string
+          quotation_id?: string | null
           supplier_name: string
         }
         Update: {
@@ -102,6 +104,7 @@ export type Database = {
           file_name?: string | null
           file_url?: string | null
           id?: string
+          quotation_id?: string | null
           supplier_name?: string
         }
         Relationships: [
@@ -110,6 +113,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_budgets_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_quotations"
             referencedColumns: ["id"]
           },
         ]
@@ -298,6 +308,35 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "campaign_pieces_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_quotations: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_quotations_campaign_id_fkey"
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
