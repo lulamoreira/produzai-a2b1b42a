@@ -22,6 +22,8 @@ export type Campaign = {
   id: string;
   client_id: string;
   name: string;
+  color: string | null;
+  display_order: number;
   created_at: string;
 };
 
@@ -200,7 +202,7 @@ export function useCampaigns(clientId: string | undefined) {
         .from("campaigns")
         .select("*")
         .eq("client_id", clientId)
-        .order("created_at", { ascending: false });
+        .order("display_order").order("created_at", { ascending: false });
       if (error) throw error;
       return data as Campaign[];
     },
@@ -234,6 +236,32 @@ export function useAddCampaign() {
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaigns"] }); toast.success("Campanha criada!"); },
     onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useUpdateCampaign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: string } & Record<string, any>) => {
+      const { error } = await supabase.from("campaigns").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaigns"] }); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useReorderCampaigns() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; display_order: number }[]) => {
+      for (const item of items) {
+        const { error } = await supabase.from("campaigns").update({ display_order: item.display_order }).eq("id", item.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaigns"] }); },
+    onError: (e) => toast.error("Erro ao reordenar: " + e.message),
   });
 }
 
