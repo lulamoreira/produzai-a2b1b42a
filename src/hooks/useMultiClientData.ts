@@ -202,7 +202,7 @@ export function useCampaigns(clientId: string | undefined) {
         .from("campaigns")
         .select("*")
         .eq("client_id", clientId)
-        .order("created_at", { ascending: false });
+        .order("display_order").order("created_at", { ascending: false });
       if (error) throw error;
       return data as Campaign[];
     },
