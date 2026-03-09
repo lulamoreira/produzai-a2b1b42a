@@ -22,6 +22,8 @@ export type Campaign = {
   id: string;
   client_id: string;
   name: string;
+  color: string | null;
+  display_order: number;
   created_at: string;
 };
 
