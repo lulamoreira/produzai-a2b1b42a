@@ -31,6 +31,12 @@ const BudgetsTab = ({ campaignId, canEdit }: BudgetsTabProps) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Column mapping state
+  const [rawRows, setRawRows] = useState<Record<string, any>[]>([]);
+  const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
+  const [colMap, setColMap] = useState<{ item: string; quantity: string; unit_price: string; total_price: string }>({ item: "", quantity: "", unit_price: "", total_price: "" });
+  const [mappingStep, setMappingStep] = useState(false);
+
   // Group items by budget
   const itemsByBudget = useMemo(() => {
     const map: Record<string, BudgetItem[]> = {};
@@ -98,6 +104,7 @@ const BudgetsTab = ({ campaignId, canEdit }: BudgetsTabProps) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setSelectedFile(file);
+    setPreviewItems([]);
 
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -112,36 +119,49 @@ const BudgetsTab = ({ campaignId, canEdit }: BudgetsTabProps) => {
           return;
         }
 
-        // Try to auto-detect columns
-        const firstRow = rows[0];
-        const keys = Object.keys(firstRow);
+        const keys = Object.keys(rows[0]);
+        setDetectedColumns(keys);
+        setRawRows(rows);
 
-        // Heuristic: find columns for item, quantity, unit price, total
-        const findCol = (hints: string[]) => keys.find((k) => hints.some((h) => k.toLowerCase().includes(h)));
-        const itemCol = findCol(["item", "peça", "peca", "descrição", "descricao", "nome", "produto", "material"]) || keys[0];
-        const qtyCol = findCol(["qtd", "quantidade", "qty", "quant"]);
-        const unitCol = findCol(["unitário", "unitario", "unit", "preço unit", "preco unit", "valor unit", "vl unit", "vl. unit"]);
-        const totalCol = findCol(["total", "valor total", "vl total", "vl. total", "subtotal"]);
-
-        const parsed = rows.map((row: any) => {
-          const item_name = String(row[itemCol] || "").trim();
-          const quantity = parseFloat(String(row[qtyCol] || "1").replace(",", ".")) || 1;
-          const unit_price = parseFloat(String(row[unitCol] || "0").replace(/[^\d,.-]/g, "").replace(",", ".")) || 0;
-          let total_price = parseFloat(String(row[totalCol] || "0").replace(/[^\d,.-]/g, "").replace(",", ".")) || 0;
-          if (total_price === 0 && unit_price > 0) total_price = quantity * unit_price;
-          if (unit_price === 0 && total_price > 0 && quantity > 0) {
-            // derive unit price
-          }
-          return { item_name, quantity, unit_price, total_price };
-        }).filter((r) => r.item_name.length > 0);
-
-        setPreviewItems(parsed);
+        // Auto-detect hints
+        const findCol = (hints: string[]) => keys.find((k) => hints.some((h) => k.toLowerCase().includes(h))) || "";
+        setColMap({
+          item: findCol(["item", "peça", "peca", "descrição", "descricao", "nome", "produto", "material"]) || keys[0] || "",
+          quantity: findCol(["qtd", "quantidade", "qty", "quant"]),
+          unit_price: findCol(["unitário", "unitario", "unit", "preço unit", "preco unit", "valor unit", "vl unit", "vl. unit"]),
+          total_price: findCol(["total", "valor total", "vl total", "vl. total", "subtotal"]),
+        });
+        setMappingStep(true);
       } catch (err) {
         console.error(err);
         toast.error("Erro ao ler planilha.");
       }
     };
     reader.readAsArrayBuffer(file);
+  };
+
+  const applyColumnMapping = () => {
+    if (!colMap.item) {
+      toast.error("Selecione ao menos a coluna de Item.");
+      return;
+    }
+    const parsed = rawRows.map((row) => {
+      const item_name = String(row[colMap.item] || "").trim();
+      const quantity = colMap.quantity
+        ? parseFloat(String(row[colMap.quantity] || "1").replace(",", ".")) || 1
+        : 1;
+      const unit_price = colMap.unit_price
+        ? parseFloat(String(row[colMap.unit_price] || "0").replace(/[^\d,.-]/g, "").replace(",", ".")) || 0
+        : 0;
+      let total_price = colMap.total_price
+        ? parseFloat(String(row[colMap.total_price] || "0").replace(/[^\d,.-]/g, "").replace(",", ".")) || 0
+        : 0;
+      if (total_price === 0 && unit_price > 0) total_price = quantity * unit_price;
+      return { item_name, quantity, unit_price, total_price };
+    }).filter((r) => r.item_name.length > 0);
+
+    setPreviewItems(parsed);
+    setMappingStep(false);
   };
 
   const handleUpload = async () => {
@@ -415,13 +435,17 @@ const BudgetsTab = ({ campaignId, canEdit }: BudgetsTabProps) => {
           setSupplierName("");
           setPreviewItems([]);
           setSelectedFile(null);
+          setRawRows([]);
+          setDetectedColumns([]);
+          setColMap({ item: "", quantity: "", unit_price: "", total_price: "" });
+          setMappingStep(false);
         }
       }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Importar Orçamento</DialogTitle>
             <DialogDescription>
-              Suba uma planilha Excel (.xlsx) com os itens do orçamento. A planilha deve conter colunas como Item/Descrição, Quantidade, Valor Unitário e Valor Total.
+              Suba uma planilha Excel (.xlsx) com os itens do orçamento.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -453,12 +477,92 @@ const BudgetsTab = ({ campaignId, canEdit }: BudgetsTabProps) => {
               </Button>
             </div>
 
-            {/* Preview */}
-            {previewItems.length > 0 && (
-              <div className="space-y-2">
+            {/* Column Mapping Step */}
+            {mappingStep && detectedColumns.length > 0 && (
+              <div className="space-y-3 border border-border rounded-lg p-4 bg-muted/30">
                 <p className="text-sm font-medium text-foreground">
-                  Pré-visualização ({previewItems.length} itens)
+                  Mapeamento de Colunas
                 </p>
+                <p className="text-xs text-muted-foreground">
+                  Selecione qual coluna da planilha corresponde a cada campo. Detectamos {detectedColumns.length} colunas.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { key: "item" as const, label: "Item / Descrição *", required: true },
+                    { key: "quantity" as const, label: "Quantidade", required: false },
+                    { key: "unit_price" as const, label: "Valor Unitário", required: false },
+                    { key: "total_price" as const, label: "Valor Total", required: false },
+                  ].map(({ key, label }) => (
+                    <div key={key}>
+                      <label className="text-xs font-medium text-foreground mb-1 block">{label}</label>
+                      <select
+                        value={colMap[key]}
+                        onChange={(e) => setColMap((prev) => ({ ...prev, [key]: e.target.value }))}
+                        className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                      >
+                        <option value="">— Não mapear —</option>
+                        {detectedColumns.map((col) => (
+                          <option key={col} value={col}>{col}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Sample preview of first 3 rows with current mapping */}
+                {rawRows.length > 0 && colMap.item && (
+                  <div className="mt-2">
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Amostra com mapeamento atual:</p>
+                    <div className="border border-border rounded overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="text-xs">Item</TableHead>
+                            <TableHead className="text-xs text-center">Qtd</TableHead>
+                            <TableHead className="text-xs text-right">Unit.</TableHead>
+                            <TableHead className="text-xs text-right">Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {rawRows.slice(0, 3).map((row, i) => {
+                            const itemVal = String(row[colMap.item] || "").trim();
+                            const qtyVal = colMap.quantity ? parseFloat(String(row[colMap.quantity] || "1").replace(",", ".")) || 1 : 1;
+                            const unitVal = colMap.unit_price ? parseFloat(String(row[colMap.unit_price] || "0").replace(/[^\d,.-]/g, "").replace(",", ".")) || 0 : 0;
+                            let totalVal = colMap.total_price ? parseFloat(String(row[colMap.total_price] || "0").replace(/[^\d,.-]/g, "").replace(",", ".")) || 0 : 0;
+                            if (totalVal === 0 && unitVal > 0) totalVal = qtyVal * unitVal;
+                            return (
+                              <TableRow key={i}>
+                                <TableCell className="text-xs">{itemVal || "—"}</TableCell>
+                                <TableCell className="text-xs text-center">{qtyVal}</TableCell>
+                                <TableCell className="text-xs text-right">{formatCurrency(unitVal)}</TableCell>
+                                <TableCell className="text-xs text-right">{formatCurrency(totalVal)}</TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                )}
+
+                <Button onClick={applyColumnMapping} disabled={!colMap.item} className="w-full" size="sm">
+                  Confirmar Mapeamento
+                </Button>
+              </div>
+            )}
+
+            {/* Preview */}
+            {previewItems.length > 0 && !mappingStep && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-foreground">
+                    Pré-visualização ({previewItems.length} itens)
+                  </p>
+                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setMappingStep(true)}>
+                    Remapear colunas
+                  </Button>
+                </div>
                 <div className="border border-border rounded-lg max-h-[300px] overflow-y-auto">
                   <Table>
                     <TableHeader>
@@ -494,7 +598,7 @@ const BudgetsTab = ({ campaignId, canEdit }: BudgetsTabProps) => {
 
             <Button
               onClick={handleUpload}
-              disabled={!supplierName.trim() || previewItems.length === 0 || uploading}
+              disabled={!supplierName.trim() || previewItems.length === 0 || uploading || mappingStep}
               className="w-full"
             >
               {uploading ? "Importando..." : "Importar Orçamento"}
