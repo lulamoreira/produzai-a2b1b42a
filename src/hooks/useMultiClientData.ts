@@ -8,6 +8,8 @@ export type Client = {
   id: string;
   name: string;
   agency_id: string;
+  color: string | null;
+  display_order: number;
   custom_field_1_label: string | null;
   custom_field_2_label: string | null;
   custom_field_3_label: string | null;
@@ -111,7 +113,7 @@ export function useClients(agencyId?: string) {
   return useQuery({
     queryKey: ["clients", agencyId],
     queryFn: async () => {
-      let query = supabase.from("clients").select("*").order("name");
+      let query = supabase.from("clients").select("*").order("display_order").order("name");
       if (agencyId) query = query.eq("agency_id", agencyId);
       const { data, error } = await query;
       if (error) throw error;
@@ -158,6 +160,20 @@ export function useUpdateClient() {
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients"] }); toast.success("Cliente atualizado!"); },
     onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useReorderClients() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; display_order: number }[]) => {
+      for (const item of items) {
+        const { error } = await supabase.from("clients").update({ display_order: item.display_order }).eq("id", item.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients"] }); },
+    onError: (e) => toast.error("Erro ao reordenar: " + e.message),
   });
 }
 
