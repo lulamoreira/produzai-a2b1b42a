@@ -125,8 +125,113 @@ function generateStoreCode(clientName: string, country: string, existingStores: 
   while (usedNumbers.has(seq)) seq++;
   return `${prefix}${String(seq).padStart(4, "0")}`;
 }
+const CAMPAIGN_COLORS = [
+  "#6366f1", "#8b5cf6", "#a855f7", "#d946ef",
+  "#ec4899", "#f43f5e", "#ef4444", "#f97316",
+  "#f59e0b", "#eab308", "#84cc16", "#22c55e",
+  "#10b981", "#14b8a6", "#06b6d4", "#0ea5e9",
+  "#3b82f6", "#2563eb", "#4f46e5", "#7c3aed",
+  "#1e3a5f", "#334155", "#475569", "#78716c",
+];
 
-const ClientDetail = () => {
+function SortableCampaignCard({
+  campaign, canDelete, canEdit, onNavigate, onDelete, onColorChange,
+}: {
+  campaign: Campaign; canDelete: boolean; canEdit: boolean;
+  onNavigate: () => void; onDelete: () => void; onColorChange: (c: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: campaign.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : "auto" as any,
+  };
+  const color = campaign.color || "#6366f1";
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden text-white shadow-sm hover:shadow-lg"
+      onClick={onNavigate}
+    >
+      <div className="absolute inset-0 rounded-xl" style={{ backgroundColor: color }} />
+      <div className="relative z-10">
+        <div className="flex items-start gap-3">
+          {canEdit && (
+            <button
+              className="cursor-grab active:cursor-grabbing touch-none p-0.5 text-white/70 hover:text-white transition-colors mt-1"
+              {...attributes}
+              {...listeners}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="w-4 h-4" />
+            </button>
+          )}
+          <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+            <Megaphone className="w-4 h-4 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-white text-sm truncate">{campaign.name}</h3>
+            <p className="text-[11px] text-white/70 mt-0.5">
+              {new Date(campaign.created_at).toLocaleDateString("pt-BR")}
+            </p>
+          </div>
+          <div className="flex items-center gap-0.5">
+            {canEdit && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 text-white/70 hover:text-white hover:bg-white/10" onClick={(e) => e.stopPropagation()}>
+                    <Palette className="w-3.5 h-3.5" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-52 p-3" onClick={(e) => e.stopPropagation()}>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">Cor da campanha</p>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {CAMPAIGN_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
+                        style={{ backgroundColor: c }}
+                        onClick={(e) => { e.stopPropagation(); onColorChange(c); }}
+                      />
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+            {canDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 flex-shrink-0 text-white/70 hover:text-white hover:bg-white/10" onClick={(e) => e.stopPropagation()}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Tem certeza que deseja excluir esta campanha?</AlertDialogTitle>
+                    <AlertDialogDescription>Todos os dados associados a esta campanha serão apagados permanentemente. Esta ação não pode ser desfeita.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">SIM</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 mt-3 text-xs text-white/70">
+          <span>Acessar</span>
+          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
   const { agencyId, clientId } = useParams<{ agencyId: string; clientId: string }>();
   const navigate = useNavigate();
   // Permission checks replace isAdmin for granular access control
