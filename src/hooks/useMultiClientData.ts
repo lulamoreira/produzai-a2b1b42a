@@ -163,6 +163,20 @@ export function useUpdateClient() {
   });
 }
 
+export function useReorderClients() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; display_order: number }[]) => {
+      for (const item of items) {
+        const { error } = await supabase.from("clients").update({ display_order: item.display_order }).eq("id", item.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients"] }); },
+    onError: (e) => toast.error("Erro ao reordenar: " + e.message),
+  });
+}
+
 export function useDeleteClient() {
   const qc = useQueryClient();
   return useMutation({
