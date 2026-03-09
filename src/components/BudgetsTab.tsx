@@ -31,6 +31,12 @@ const BudgetsTab = ({ campaignId, canEdit }: BudgetsTabProps) => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Column mapping state
+  const [rawRows, setRawRows] = useState<Record<string, any>[]>([]);
+  const [detectedColumns, setDetectedColumns] = useState<string[]>([]);
+  const [colMap, setColMap] = useState<{ item: string; quantity: string; unit_price: string; total_price: string }>({ item: "", quantity: "", unit_price: "", total_price: "" });
+  const [mappingStep, setMappingStep] = useState(false);
+
   // Group items by budget
   const itemsByBudget = useMemo(() => {
     const map: Record<string, BudgetItem[]> = {};
