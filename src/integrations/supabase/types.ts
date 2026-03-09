@@ -791,34 +791,40 @@ export type Database = {
       clients: {
         Row: {
           agency_id: string
+          color: string | null
           created_at: string
           custom_field_1_label: string | null
           custom_field_2_label: string | null
           custom_field_3_label: string | null
           custom_field_4_label: string | null
           custom_field_5_label: string | null
+          display_order: number | null
           id: string
           name: string
         }
         Insert: {
           agency_id: string
+          color?: string | null
           created_at?: string
           custom_field_1_label?: string | null
           custom_field_2_label?: string | null
           custom_field_3_label?: string | null
           custom_field_4_label?: string | null
           custom_field_5_label?: string | null
+          display_order?: number | null
           id?: string
           name: string
         }
         Update: {
           agency_id?: string
+          color?: string | null
           created_at?: string
           custom_field_1_label?: string | null
           custom_field_2_label?: string | null
           custom_field_3_label?: string | null
           custom_field_4_label?: string | null
           custom_field_5_label?: string | null
+          display_order?: number | null
           id?: string
           name?: string
         }
