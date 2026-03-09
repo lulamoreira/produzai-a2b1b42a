@@ -708,6 +708,7 @@ const CampaignDetail = () => {
                 { key: "pieces", label: "Peças", icon: LayoutList },
                 { key: "occurrences", label: "Ocorrências", icon: AlertTriangle },
                 { key: "scheduling", label: "Agendamento", icon: CalendarDays },
+                { key: "budgets", label: "Orçamentos", icon: DollarSign },
               ].map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
