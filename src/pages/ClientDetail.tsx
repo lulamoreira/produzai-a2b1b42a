@@ -257,6 +257,7 @@ const ClientDetail = () => {
   const deleteStoreModel = useDeleteClientStoreModel();
 
   const [campaignName, setCampaignName] = useState("");
+  const [campaignColor, setCampaignColor] = useState(CAMPAIGN_COLORS[0]);
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
   const [storeDialogOpen, setStoreDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
