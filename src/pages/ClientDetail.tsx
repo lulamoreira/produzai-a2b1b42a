@@ -1,11 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  useClient, useCampaigns, useAddCampaign, useDeleteCampaign,
+  useClient, useCampaigns, useAddCampaign, useDeleteCampaign, useUpdateCampaign, useReorderCampaigns,
   useClientStores, useAddClientStore, useImportClientStores, useDeleteClientStore,
   useUpdateClient, useUpdateClientStore, fetchAddressByCep, fetchCnpjData,
   useClientStoreModels, useAddClientStoreModel, useDeleteClientStoreModel,
-  type ClientStore,
+  type ClientStore, type Campaign,
 } from "@/hooks/useMultiClientData";
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { Button } from "@/components/ui/button";
