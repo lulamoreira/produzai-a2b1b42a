@@ -308,12 +308,32 @@ const ClientDetail = () => {
       toast.error("CEP não encontrado.");
     }
   };
+  const campaignSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleCampaignDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = campaigns.findIndex((c) => c.id === active.id);
+    const newIndex = campaigns.findIndex((c) => c.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(campaigns, oldIndex, newIndex);
+    reorderCampaigns.mutate(reordered.map((c, i) => ({ id: c.id, display_order: i })));
+  }, [campaigns, reorderCampaigns]);
 
   const handleAddCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientId || !campaignName.trim()) return;
     await addCampaign.mutateAsync({ client_id: clientId, name: campaignName.trim() });
+    // Set color
+    const { data } = await supabase.from("campaigns").select("id").eq("name", campaignName.trim()).eq("client_id", clientId).order("created_at", { ascending: false }).limit(1);
+    if (data?.[0]) {
+      await updateCampaign.mutateAsync({ id: data[0].id, color: campaignColor });
+    }
     setCampaignName("");
+    setCampaignColor(CAMPAIGN_COLORS[0]);
     setCampaignDialogOpen(false);
   };
 
