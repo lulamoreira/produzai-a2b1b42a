@@ -534,19 +534,25 @@ export type Database = {
       campaigns: {
         Row: {
           client_id: string
+          color: string | null
           created_at: string
+          display_order: number | null
           id: string
           name: string
         }
         Insert: {
           client_id: string
+          color?: string | null
           created_at?: string
+          display_order?: number | null
           id?: string
           name: string
         }
         Update: {
           client_id?: string
+          color?: string | null
           created_at?: string
+          display_order?: number | null
           id?: string
           name?: string
         }
