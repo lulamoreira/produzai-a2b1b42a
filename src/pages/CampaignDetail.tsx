@@ -1584,6 +1584,11 @@ const CampaignDetail = () => {
               clientId={clientId!}
             />
           )}
+
+          {/* ─── SECTION: ORÇAMENTOS ─── */}
+          {activeSection === "budgets" && (
+            <BudgetsTab campaignId={campaignId!} canEdit={canEditCampaign} />
+          )}
           </>
         )}
       </main>
