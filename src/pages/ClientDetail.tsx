@@ -140,6 +140,8 @@ const ClientDetail = () => {
   const { data: stores = [], isLoading: loadingStores } = useClientStores(clientId);
   const addCampaign = useAddCampaign();
   const deleteCampaign = useDeleteCampaign();
+  const updateCampaign = useUpdateCampaign();
+  const reorderCampaigns = useReorderCampaigns();
   const addStore = useAddClientStore();
   const importStores = useImportClientStores();
   const deleteStore = useDeleteClientStore();
