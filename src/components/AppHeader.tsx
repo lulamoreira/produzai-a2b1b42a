@@ -10,6 +10,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LogOut, Shield, MessageSquare, ArrowLeft } from "lucide-react";
+import { WhatsNewButton } from "@/components/WhatsNewSheet";
 
 const getGreeting = () => {
   const h = new Date().getHours();
