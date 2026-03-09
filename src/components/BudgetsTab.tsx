@@ -104,6 +104,7 @@ const BudgetsTab = ({ campaignId, canEdit }: BudgetsTabProps) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setSelectedFile(file);
+    setPreviewItems([]);
 
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -118,36 +119,49 @@ const BudgetsTab = ({ campaignId, canEdit }: BudgetsTabProps) => {
           return;
         }
 
-        // Try to auto-detect columns
-        const firstRow = rows[0];
-        const keys = Object.keys(firstRow);
+        const keys = Object.keys(rows[0]);
+        setDetectedColumns(keys);
+        setRawRows(rows);
 
-        // Heuristic: find columns for item, quantity, unit price, total
-        const findCol = (hints: string[]) => keys.find((k) => hints.some((h) => k.toLowerCase().includes(h)));
-        const itemCol = findCol(["item", "peça", "peca", "descrição", "descricao", "nome", "produto", "material"]) || keys[0];
-        const qtyCol = findCol(["qtd", "quantidade", "qty", "quant"]);
-        const unitCol = findCol(["unitário", "unitario", "unit", "preço unit", "preco unit", "valor unit", "vl unit", "vl. unit"]);
-        const totalCol = findCol(["total", "valor total", "vl total", "vl. total", "subtotal"]);
-
-        const parsed = rows.map((row: any) => {
-          const item_name = String(row[itemCol] || "").trim();
-          const quantity = parseFloat(String(row[qtyCol] || "1").replace(",", ".")) || 1;
-          const unit_price = parseFloat(String(row[unitCol] || "0").replace(/[^\d,.-]/g, "").replace(",", ".")) || 0;
-          let total_price = parseFloat(String(row[totalCol] || "0").replace(/[^\d,.-]/g, "").replace(",", ".")) || 0;
-          if (total_price === 0 && unit_price > 0) total_price = quantity * unit_price;
-          if (unit_price === 0 && total_price > 0 && quantity > 0) {
-            // derive unit price
-          }
-          return { item_name, quantity, unit_price, total_price };
-        }).filter((r) => r.item_name.length > 0);
-
-        setPreviewItems(parsed);
+        // Auto-detect hints
+        const findCol = (hints: string[]) => keys.find((k) => hints.some((h) => k.toLowerCase().includes(h))) || "";
+        setColMap({
+          item: findCol(["item", "peça", "peca", "descrição", "descricao", "nome", "produto", "material"]) || keys[0] || "",
+          quantity: findCol(["qtd", "quantidade", "qty", "quant"]),
+          unit_price: findCol(["unitário", "unitario", "unit", "preço unit", "preco unit", "valor unit", "vl unit", "vl. unit"]),
+          total_price: findCol(["total", "valor total", "vl total", "vl. total", "subtotal"]),
+        });
+        setMappingStep(true);
       } catch (err) {
         console.error(err);
         toast.error("Erro ao ler planilha.");
       }
     };
     reader.readAsArrayBuffer(file);
+  };
+
+  const applyColumnMapping = () => {
+    if (!colMap.item) {
+      toast.error("Selecione ao menos a coluna de Item.");
+      return;
+    }
+    const parsed = rawRows.map((row) => {
+      const item_name = String(row[colMap.item] || "").trim();
+      const quantity = colMap.quantity
+        ? parseFloat(String(row[colMap.quantity] || "1").replace(",", ".")) || 1
+        : 1;
+      const unit_price = colMap.unit_price
+        ? parseFloat(String(row[colMap.unit_price] || "0").replace(/[^\d,.-]/g, "").replace(",", ".")) || 0
+        : 0;
+      let total_price = colMap.total_price
+        ? parseFloat(String(row[colMap.total_price] || "0").replace(/[^\d,.-]/g, "").replace(",", ".")) || 0
+        : 0;
+      if (total_price === 0 && unit_price > 0) total_price = quantity * unit_price;
+      return { item_name, quantity, unit_price, total_price };
+    }).filter((r) => r.item_name.length > 0);
+
+    setPreviewItems(parsed);
+    setMappingStep(false);
   };
 
   const handleUpload = async () => {
