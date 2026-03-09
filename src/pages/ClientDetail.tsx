@@ -21,7 +21,17 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette } from "lucide-react";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 import AppHeader from "@/components/AppHeader";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
