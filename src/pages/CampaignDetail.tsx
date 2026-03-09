@@ -701,7 +701,7 @@ const CampaignDetail = () => {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {[
                 { key: "stores", label: "Lojas", icon: Store },
                 { key: "matrix", label: "Matriz", icon: Grid3X3 },
