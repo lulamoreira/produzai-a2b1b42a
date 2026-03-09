@@ -38,6 +38,82 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_budget_items: {
+        Row: {
+          budget_id: string
+          created_at: string
+          display_order: number
+          id: string
+          item_name: string
+          quantity: number
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          budget_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          item_name: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Update: {
+          budget_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          item_name?: string
+          quantity?: number
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_budget_items_budget_id_fkey"
+            columns: ["budget_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_budgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_budgets: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          file_name: string | null
+          file_url: string | null
+          id: string
+          supplier_name: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          supplier_name: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          supplier_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_budgets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_kit_pieces: {
         Row: {
           created_at: string

@@ -33,7 +33,8 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign } from "lucide-react";
+import BudgetsTab from "@/components/BudgetsTab";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import AppHeader from "@/components/AppHeader";
@@ -700,13 +701,14 @@ const CampaignDetail = () => {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {[
                 { key: "stores", label: "Lojas", icon: Store },
                 { key: "matrix", label: "Matriz", icon: Grid3X3 },
                 { key: "pieces", label: "Peças", icon: LayoutList },
                 { key: "occurrences", label: "Ocorrências", icon: AlertTriangle },
                 { key: "scheduling", label: "Agendamento", icon: CalendarDays },
+                { key: "budgets", label: "Orçamentos", icon: DollarSign },
               ].map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
@@ -743,6 +745,7 @@ const CampaignDetail = () => {
                   { key: "pieces", label: "Peças", icon: LayoutList },
                   { key: "occurrences", label: "Ocorrências", icon: AlertTriangle },
                   { key: "scheduling", label: "Agendamento", icon: CalendarDays },
+                  { key: "budgets", label: "Orçamentos", icon: DollarSign },
                 ].map(({ key, label, icon: Icon }) => (
                   <Button
                     key={key}
@@ -1580,6 +1583,11 @@ const CampaignDetail = () => {
               campaignName={campaign?.name || ""}
               clientId={clientId!}
             />
+          )}
+
+          {/* ─── SECTION: ORÇAMENTOS ─── */}
+          {activeSection === "budgets" && (
+            <BudgetsTab campaignId={campaignId!} canEdit={canEditCampaign} />
           )}
           </>
         )}
