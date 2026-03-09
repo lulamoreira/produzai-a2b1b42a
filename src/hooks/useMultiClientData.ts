@@ -239,6 +239,32 @@ export function useAddCampaign() {
   });
 }
 
+export function useUpdateCampaign() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: string } & Record<string, any>) => {
+      const { error } = await supabase.from("campaigns").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaigns"] }); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useReorderCampaigns() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; display_order: number }[]) => {
+      for (const item of items) {
+        const { error } = await supabase.from("campaigns").update({ display_order: item.display_order }).eq("id", item.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaigns"] }); },
+    onError: (e) => toast.error("Erro ao reordenar: " + e.message),
+  });
+}
+
 export function useDeleteCampaign() {
   const qc = useQueryClient();
   return useMutation({
