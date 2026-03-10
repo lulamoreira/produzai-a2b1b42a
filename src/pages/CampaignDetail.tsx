@@ -286,6 +286,7 @@ const CampaignDetail = () => {
       specification: piece.specification || "Vide Book/Manual",
       installation_instructions: piece.installation_instructions || "Sem informações específicas",
       kit_only: piece.kit_only || false,
+      is_mockup: piece.is_mockup || false,
       image_url: piece.image_url || "",
     });
     setEditPieceDialogOpen(true);
