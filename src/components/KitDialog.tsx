@@ -275,6 +275,7 @@ export function KitDetailDialog({
   const [showAddPieces, setShowAddPieces] = useState(false);
   const [editingKitName, setEditingKitName] = useState(false);
   const [kitNameInput, setKitNameInput] = useState("");
+  const [addPieceSearch, setAddPieceSearch] = useState("");
 
   if (!kit) return null;
 
