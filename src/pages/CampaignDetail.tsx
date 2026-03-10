@@ -128,6 +128,7 @@ const CampaignDetail = () => {
     specification: "Vide Book/Manual",
     installation_instructions: "Sem informações específicas",
     kit_only: false,
+    is_mockup: false,
     image_url: "",
   });
   const [pieceImageUploading, setPieceImageUploading] = useState(false);
@@ -139,6 +140,7 @@ const CampaignDetail = () => {
     specification: "Vide Book/Manual",
     installation_instructions: "Sem informações específicas",
     kit_only: false,
+    is_mockup: false,
     image_url: "",
   });
 
