@@ -381,6 +381,7 @@ export default function SortablePiecesTable({
                     onToggleMockup={onToggleMockup}
                     onKitClick={onKitClick}
                     onDeleteKit={onDeleteKit}
+                    onToggleKitMockup={onToggleKitMockup}
                     isDistributed={row.type === "piece" ? getIsDistributed(row.data) : false}
                     qtyMap={qtyMap}
                     stores={stores}
