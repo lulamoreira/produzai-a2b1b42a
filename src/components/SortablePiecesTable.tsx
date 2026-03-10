@@ -205,6 +205,14 @@ function SortableRow({
               </Button>
             )}
             {canEditPieces && (
+              <Button variant="ghost" size="icon" className="h-7 w-7"
+                title={piece.is_mockup ? "Remover marcação de mockup" : "Marcar como mockup"}
+                onClick={() => onToggleMockup(piece)}
+              >
+                <Palette className={`w-3.5 h-3.5 ${piece.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
+              </Button>
+            )}
+            {canEditPieces && (
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(piece)}>
                 <Edit3 className="w-3.5 h-3.5" />
               </Button>
