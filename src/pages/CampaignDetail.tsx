@@ -255,6 +255,7 @@ const CampaignDetail = () => {
       specification: pieceForm.specification,
       installation_instructions: pieceForm.installation_instructions,
       kit_only: pieceForm.kit_only,
+      is_mockup: pieceForm.is_mockup,
       display_order: maxOrder + 1,
       image_url: pieceForm.image_url || undefined,
     });
