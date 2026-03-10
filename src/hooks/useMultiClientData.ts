@@ -874,7 +874,7 @@ export function useDeleteCampaignKit() {
 export function useUpdateCampaignKit() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (kit: { id: string; name?: string; image_url?: string | null }) => {
+    mutationFn: async (kit: { id: string; name?: string; image_url?: string | null; is_mockup?: boolean }) => {
       const { id, ...updates } = kit;
       const { data, error } = await supabase.from("campaign_kits").update(updates).eq("id", id).select().single();
       if (error) throw error;
