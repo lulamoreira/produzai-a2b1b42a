@@ -42,6 +42,7 @@ interface SortableRowProps {
   onDelete: (id: string) => void;
   onDistribute: (piece: CampaignPiece) => void;
   onMarkKitOnly: (piece: CampaignPiece) => void;
+  onToggleMockup: (piece: CampaignPiece) => void;
   onKitClick: (kit: CampaignKit) => void;
   onDeleteKit: (id: string) => void;
   isDistributed: boolean;
@@ -52,7 +53,7 @@ interface SortableRowProps {
 
 function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
-  onEdit, onDelete, onDistribute, onMarkKitOnly, onKitClick, onDeleteKit,
+  onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit,
   isDistributed, kitCategory,
 }: SortableRowProps) {
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
@@ -205,6 +206,14 @@ function SortableRow({
               </Button>
             )}
             {canEditPieces && (
+              <Button variant="ghost" size="icon" className="h-7 w-7"
+                title={piece.is_mockup ? "Remover marcação de mockup" : "Marcar como mockup"}
+                onClick={() => onToggleMockup(piece)}
+              >
+                <Palette className={`w-3.5 h-3.5 ${piece.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
+              </Button>
+            )}
+            {canEditPieces && (
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(piece)}>
                 <Edit3 className="w-3.5 h-3.5" />
               </Button>
@@ -248,6 +257,7 @@ interface SortablePiecesTableProps {
   onDelete: (id: string) => void;
   onDistribute: (piece: CampaignPiece) => void;
   onMarkKitOnly: (piece: CampaignPiece) => void;
+  onToggleMockup: (piece: CampaignPiece) => void;
   onKitClick: (kit: CampaignKit) => void;
   onDeleteKit: (id: string) => void;
   onReorder: (rows: UnifiedRow[]) => void;
@@ -256,7 +266,7 @@ interface SortablePiecesTableProps {
 export default function SortablePiecesTable({
   pieces, kits, kitPieces: kitPiecesList, allPieces, stores, qtyMap,
   canEditPieces, canDeletePieces,
-  onEdit, onDelete, onDistribute, onMarkKitOnly, onKitClick, onDeleteKit, onReorder,
+  onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onReorder,
 }: SortablePiecesTableProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -358,6 +368,7 @@ export default function SortablePiecesTable({
                     onDelete={onDelete}
                     onDistribute={onDistribute}
                     onMarkKitOnly={onMarkKitOnly}
+                    onToggleMockup={onToggleMockup}
                     onKitClick={onKitClick}
                     onDeleteKit={onDeleteKit}
                     isDistributed={row.type === "piece" ? getIsDistributed(row.data) : false}

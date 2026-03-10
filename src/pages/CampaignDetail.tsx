@@ -1572,6 +1572,7 @@ const CampaignDetail = () => {
                   onDelete={(id) => deletePiece.mutate(id)}
                   onDistribute={handleDistributePiece}
                   onMarkKitOnly={async (p) => { await updatePiece.mutateAsync({ id: p.id, kit_only: true }); }}
+                  onToggleMockup={async (p) => { await updatePiece.mutateAsync({ id: p.id, is_mockup: !p.is_mockup }); }}
                   onKitClick={(kit) => setViewKitDetail(kit)}
                   onDeleteKit={(id) => deleteKit.mutate(id)}
                   onReorder={handleReorderUnified}
