@@ -121,13 +121,14 @@ export function exportCampaignPieces(
     "Modelo de Loja": p.store_category || "",
     "Especificação": p.specification || "",
     "Instruções de Instalação": p.installation_instructions || "",
+    "Mockup": p.is_mockup ? "Sim" : "",
   }));
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{
     "Código": "", "Localização na Loja": "", "Nome": "", "Medidas": "", "Modelo de Loja": "",
-    "Especificação": "", "Instruções de Instalação": "",
+    "Especificação": "", "Instruções de Instalação": "", "Mockup": "",
   }]);
-  ws["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }];
+  ws["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }, { wch: 10 }];
   XLSX.utils.book_append_sheet(wb, ws, "Peças");
 
   // Kit detail sheets
@@ -208,7 +209,8 @@ export function exportMatrix(
     let total = 0;
     pieces.forEach((p) => {
       const qty = qtyMap[`${store.id}-${p.id}`] || 0;
-      row[`${p.code} - ${p.name}`] = qty;
+      const colName = p.is_mockup ? `${p.code} - ${p.name} (MOCKUP)` : `${p.code} - ${p.name}`;
+      row[colName] = qty;
       total += qty;
     });
 

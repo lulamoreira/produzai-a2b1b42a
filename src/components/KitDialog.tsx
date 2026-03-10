@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -259,7 +260,7 @@ interface KitDetailDialogProps {
   onDeleteKitPiece?: (id: string) => void;
   onDeleteKit?: (id: string) => void;
   onAddKitPiece?: (kitPiece: { kit_id: string; piece_id: string; quantity?: number }) => Promise<void>;
-  onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null }) => Promise<CampaignKit>;
+  onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null; is_mockup?: boolean }) => Promise<CampaignKit>;
   onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
   onDeletePiece?: (id: string) => void;
   onUpdateKitPiece?: (update: { id: string; quantity: number }) => Promise<void>;
@@ -397,6 +398,31 @@ export function KitDetailDialog({
         )}
         {!canEdit && kit.image_url && (
           <img src={kit.image_url} alt={kit.name} className="w-full h-32 object-contain rounded-lg border border-border bg-muted/30" />
+        )}
+
+        {/* Mockup toggle */}
+        {canEdit && onUpdateKit && (
+          <div className="flex items-center justify-between p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+            <div>
+              <label className="text-xs font-medium text-foreground">Mockup</label>
+              <p className="text-[10px] text-muted-foreground">Marcar kit e suas peças como mockup</p>
+            </div>
+            <Switch
+              checked={kit.is_mockup || false}
+              onCheckedChange={async (checked) => {
+                await onUpdateKit({ id: kit.id, is_mockup: checked });
+                // Propagate to all pieces in the kit
+                if (onUpdatePiece) {
+                  for (const kp of piecesInKit) {
+                    if (kp.piece) {
+                      await onUpdatePiece({ id: kp.piece.id, is_mockup: checked });
+                    }
+                  }
+                }
+                toast.success(checked ? "Kit marcado como mockup!" : "Mockup removido do kit!");
+              }}
+            />
+          </div>
         )}
 
         {/* Pieces list */}

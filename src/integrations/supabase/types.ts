@@ -171,6 +171,7 @@ export type Database = {
           display_order: number
           id: string
           image_url: string | null
+          is_mockup: boolean
           name: string
         }
         Insert: {
@@ -180,6 +181,7 @@ export type Database = {
           display_order?: number
           id?: string
           image_url?: string | null
+          is_mockup?: boolean
           name: string
         }
         Update: {
@@ -189,6 +191,7 @@ export type Database = {
           display_order?: number
           id?: string
           image_url?: string | null
+          is_mockup?: boolean
           name?: string
         }
         Relationships: [
@@ -269,6 +272,7 @@ export type Database = {
           id: string
           image_url: string | null
           installation_instructions: string
+          is_mockup: boolean
           kit_only: boolean
           name: string
           size: string
@@ -284,6 +288,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           installation_instructions?: string
+          is_mockup?: boolean
           kit_only?: boolean
           name: string
           size: string
@@ -299,6 +304,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           installation_instructions?: string
+          is_mockup?: boolean
           kit_only?: boolean
           name?: string
           size?: string

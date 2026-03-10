@@ -69,6 +69,7 @@ export type CampaignPiece = {
   specification: string;
   installation_instructions: string;
   kit_only: boolean;
+  is_mockup: boolean;
   display_order: number;
   created_at: string;
 };
@@ -80,6 +81,7 @@ export type CampaignKit = {
   code: number;
   display_order: number;
   image_url: string | null;
+  is_mockup: boolean;
   created_at: string;
 };
 
@@ -366,7 +368,7 @@ export function useCampaignPieces(campaignId: string | undefined) {
 export function useAddCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (piece: { campaign_id: string; code: number; category: string; name: string; size: string; store_category?: string; image_url?: string; specification?: string; installation_instructions?: string; kit_only?: boolean; display_order?: number }) => {
+    mutationFn: async (piece: { campaign_id: string; code: number; category: string; name: string; size: string; store_category?: string; image_url?: string; specification?: string; installation_instructions?: string; kit_only?: boolean; is_mockup?: boolean; display_order?: number }) => {
       const { error } = await supabase.from("campaign_pieces").insert(piece);
       if (error) throw error;
     },
@@ -872,7 +874,7 @@ export function useDeleteCampaignKit() {
 export function useUpdateCampaignKit() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (kit: { id: string; name?: string; image_url?: string | null }) => {
+    mutationFn: async (kit: { id: string; name?: string; image_url?: string | null; is_mockup?: boolean }) => {
       const { id, ...updates } = kit;
       const { data, error } = await supabase.from("campaign_kits").update(updates).eq("id", id).select().single();
       if (error) throw error;

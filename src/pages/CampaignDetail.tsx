@@ -128,6 +128,7 @@ const CampaignDetail = () => {
     specification: "Vide Book/Manual",
     installation_instructions: "Sem informações específicas",
     kit_only: false,
+    is_mockup: false,
     image_url: "",
   });
   const [pieceImageUploading, setPieceImageUploading] = useState(false);
@@ -139,6 +140,7 @@ const CampaignDetail = () => {
     specification: "Vide Book/Manual",
     installation_instructions: "Sem informações específicas",
     kit_only: false,
+    is_mockup: false,
     image_url: "",
   });
 
@@ -253,6 +255,7 @@ const CampaignDetail = () => {
       specification: pieceForm.specification,
       installation_instructions: pieceForm.installation_instructions,
       kit_only: pieceForm.kit_only,
+      is_mockup: pieceForm.is_mockup,
       display_order: maxOrder + 1,
       image_url: pieceForm.image_url || undefined,
     });
@@ -263,6 +266,7 @@ const CampaignDetail = () => {
       specification: "Vide Book/Manual",
       installation_instructions: "Sem informações específicas",
       kit_only: false,
+      is_mockup: false,
       image_url: "",
     });
     setPieceDialogOpen(false);
@@ -282,6 +286,7 @@ const CampaignDetail = () => {
       specification: piece.specification || "Vide Book/Manual",
       installation_instructions: piece.installation_instructions || "Sem informações específicas",
       kit_only: piece.kit_only || false,
+      is_mockup: piece.is_mockup || false,
       image_url: piece.image_url || "",
     });
     setEditPieceDialogOpen(true);
@@ -301,6 +306,7 @@ const CampaignDetail = () => {
       specification: editPieceForm.specification,
       installation_instructions: editPieceForm.installation_instructions,
       kit_only: editPieceForm.kit_only,
+      is_mockup: editPieceForm.is_mockup,
     });
     setEditPieceDialogOpen(false);
   };
@@ -451,6 +457,13 @@ const CampaignDetail = () => {
           <p className="text-[10px] text-muted-foreground">Ative para usar esta peça exclusivamente em kits</p>
         </div>
         <Switch checked={form.kit_only} onCheckedChange={(checked) => setForm((f) => ({ ...f, kit_only: checked }))} />
+      </div>
+      <div className="flex items-center justify-between p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+        <div>
+          <label className="text-xs font-medium text-foreground">Mockup</label>
+          <p className="text-[10px] text-muted-foreground">Marcar esta peça como item de mockup</p>
+        </div>
+        <Switch checked={form.is_mockup} onCheckedChange={(checked) => setForm((f) => ({ ...f, is_mockup: checked }))} />
       </div>
       {/* Image upload */}
       <div>
