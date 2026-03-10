@@ -117,6 +117,14 @@ function SortableRow({
           <TableCell>
             <div className="flex items-center gap-1">
               {canEditPieces && (
+                <Button variant="ghost" size="icon" className="h-7 w-7"
+                  title={kit.is_mockup ? "Remover marcação de mockup" : "Marcar como mockup"}
+                  onClick={() => onToggleKitMockup(kit)}
+                >
+                  <Palette className={`w-3.5 h-3.5 ${kit.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
+                </Button>
+              )}
+              {canEditPieces && (
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onKitClick(kit)}>
                   <Edit3 className="w-3.5 h-3.5" />
                 </Button>
