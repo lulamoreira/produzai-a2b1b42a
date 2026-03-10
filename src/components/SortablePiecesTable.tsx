@@ -53,7 +53,7 @@ interface SortableRowProps {
 
 function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
-  onEdit, onDelete, onDistribute, onMarkKitOnly, onKitClick, onDeleteKit,
+  onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit,
   isDistributed, kitCategory,
 }: SortableRowProps) {
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
