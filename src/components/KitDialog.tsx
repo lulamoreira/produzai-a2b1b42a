@@ -400,6 +400,31 @@ export function KitDetailDialog({
           <img src={kit.image_url} alt={kit.name} className="w-full h-32 object-contain rounded-lg border border-border bg-muted/30" />
         )}
 
+        {/* Mockup toggle */}
+        {canEdit && onUpdateKit && (
+          <div className="flex items-center justify-between p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+            <div>
+              <label className="text-xs font-medium text-foreground">Mockup</label>
+              <p className="text-[10px] text-muted-foreground">Marcar kit e suas peças como mockup</p>
+            </div>
+            <Switch
+              checked={kit.is_mockup || false}
+              onCheckedChange={async (checked) => {
+                await onUpdateKit({ id: kit.id, is_mockup: checked });
+                // Propagate to all pieces in the kit
+                if (onUpdatePiece) {
+                  for (const kp of piecesInKit) {
+                    if (kp.piece) {
+                      await onUpdatePiece({ id: kp.piece.id, is_mockup: checked });
+                    }
+                  }
+                }
+                toast.success(checked ? "Kit marcado como mockup!" : "Mockup removido do kit!");
+              }}
+            />
+          </div>
+        )}
+
         {/* Pieces list */}
         {piecesInKit.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">Nenhuma peça neste kit.</p>
