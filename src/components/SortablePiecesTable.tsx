@@ -257,6 +257,7 @@ interface SortablePiecesTableProps {
   onDelete: (id: string) => void;
   onDistribute: (piece: CampaignPiece) => void;
   onMarkKitOnly: (piece: CampaignPiece) => void;
+  onToggleMockup: (piece: CampaignPiece) => void;
   onKitClick: (kit: CampaignKit) => void;
   onDeleteKit: (id: string) => void;
   onReorder: (rows: UnifiedRow[]) => void;
