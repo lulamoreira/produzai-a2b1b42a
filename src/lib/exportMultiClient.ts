@@ -126,9 +126,9 @@ export function exportCampaignPieces(
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{
     "Código": "", "Localização na Loja": "", "Nome": "", "Medidas": "", "Modelo de Loja": "",
-    "Especificação": "", "Instruções de Instalação": "",
+    "Especificação": "", "Instruções de Instalação": "", "Mockup": "",
   }]);
-  ws["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }];
+  ws["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }, { wch: 10 }];
   XLSX.utils.book_append_sheet(wb, ws, "Peças");
 
   // Kit detail sheets
