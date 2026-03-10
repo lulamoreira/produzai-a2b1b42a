@@ -119,6 +119,7 @@ const CampaignDetail = () => {
   const [createKitDialogOpen, setCreateKitDialogOpen] = useState(false);
   const [importPiecesDialogOpen, setImportPiecesDialogOpen] = useState(false);
   const [viewKitDetail, setViewKitDetail] = useState<CampaignKit | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   // ─── Piece dialogs ─────────────────────────────────────
   const [pieceDialogOpen, setPieceDialogOpen] = useState(false);
