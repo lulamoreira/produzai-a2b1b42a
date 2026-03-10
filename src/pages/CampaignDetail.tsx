@@ -237,20 +237,6 @@ const CampaignDetail = () => {
     return { prefix: campaignPrefix, seq, full: `${campaignPrefix}${String(seq).padStart(4, "0")}` };
   }, [pieces, campaign]);
 
-      {/* Bulk Delete Pieces Dialog */}
-      <BulkDeletePiecesDialog
-        open={bulkDeleteOpen}
-        onOpenChange={setBulkDeleteOpen}
-        pieces={pieces}
-        onDeletePieces={async (ids) => {
-          for (const id of ids) {
-            await deletePiece.mutateAsync(id);
-          }
-          toast.success(`${ids.length} peça(s) excluída(s) com sucesso!`);
-        }}
-      />
-
-
   const handleAddPiece = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!campaignId) return;
