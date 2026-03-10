@@ -48,6 +48,7 @@ import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaig
 import SortablePiecesTable, { type UnifiedRow } from "@/components/SortablePiecesTable";
 import SupportMaterialsSection from "@/components/SupportMaterialsSection";
 import ImportSpecFromCampaign from "@/components/ImportSpecFromCampaign";
+import BulkDeletePiecesDialog from "@/components/BulkDeletePiecesDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 
 const CampaignDetail = () => {
