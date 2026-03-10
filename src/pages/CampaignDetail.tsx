@@ -1511,6 +1511,9 @@ const CampaignDetail = () => {
                 <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
                   <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Novo Kit
                 </Button>
+                <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setBulkDeleteOpen(true)}>
+                  <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Excluir em lote
+                </Button>
                 </>
               )}
             </div>
