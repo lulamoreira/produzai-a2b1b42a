@@ -260,7 +260,7 @@ interface KitDetailDialogProps {
   onDeleteKitPiece?: (id: string) => void;
   onDeleteKit?: (id: string) => void;
   onAddKitPiece?: (kitPiece: { kit_id: string; piece_id: string; quantity?: number }) => Promise<void>;
-  onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null }) => Promise<CampaignKit>;
+  onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null; is_mockup?: boolean }) => Promise<CampaignKit>;
   onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
   onDeletePiece?: (id: string) => void;
   onUpdateKitPiece?: (update: { id: string; quantity: number }) => Promise<void>;
