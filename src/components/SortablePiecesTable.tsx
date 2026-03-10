@@ -99,6 +99,7 @@ function SortableRow({
             <span className="flex items-center gap-1.5">
               {kit.name}
               <span className="text-[10px] bg-primary/20 text-primary font-bold px-1.5 py-0.5 rounded">KIT</span>
+              {kit.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">MOCKUP</span>}
             </span>
             <span className="text-[11px] text-muted-foreground block">
               {kitPieceDetails.length} peça(s): {kitPieceDetails.map(p => p!.name).join(", ") || "Nenhuma"}
