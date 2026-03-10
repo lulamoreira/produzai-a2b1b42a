@@ -45,6 +45,7 @@ interface SortableRowProps {
   onToggleMockup: (piece: CampaignPiece) => void;
   onKitClick: (kit: CampaignKit) => void;
   onDeleteKit: (id: string) => void;
+  onToggleKitMockup: (kit: CampaignKit) => void;
   isDistributed: boolean;
   qtyMap: Record<string, number>;
   stores: ClientStore[];
