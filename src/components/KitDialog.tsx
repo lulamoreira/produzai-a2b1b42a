@@ -277,16 +277,14 @@ export function KitDetailDialog({
   const [kitNameInput, setKitNameInput] = useState("");
   const [addPieceSearch, setAddPieceSearch] = useState("");
 
-  if (!kit) return null;
-
-  const piecesInKit = kitPieces
+  const piecesInKit = kit ? kitPieces
     .filter(kp => kp.kit_id === kit.id)
     .map(kp => ({ ...kp, piece: allPieces.find(p => p.id === kp.piece_id) }))
-    .filter(kp => kp.piece);
+    .filter(kp => kp.piece) : [];
 
-  const kitOnlyPiecesNotInKit = allPieces.filter(
+  const kitOnlyPiecesNotInKit = kit ? allPieces.filter(
     p => p.kit_only && p.campaign_id === kit.campaign_id && !piecesInKit.some(kp => kp.piece_id === p.id)
-  );
+  ) : [];
 
   const filteredAddPieces = useMemo(() => {
     if (!addPieceSearch.trim()) return kitOnlyPiecesNotInKit;
@@ -297,6 +295,8 @@ export function KitDetailDialog({
       String(p.code).includes(q)
     );
   }, [kitOnlyPiecesNotInKit, addPieceSearch]);
+
+  if (!kit) return null;
 
   const startEditPiece = (p: CampaignPiece) => {
     setEditingPieceId(p.id);
