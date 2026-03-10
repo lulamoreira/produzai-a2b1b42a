@@ -1573,8 +1573,17 @@ const CampaignDetail = () => {
                   onDistribute={handleDistributePiece}
                   onMarkKitOnly={async (p) => { await updatePiece.mutateAsync({ id: p.id, kit_only: true }); }}
                   onToggleMockup={async (p) => { await updatePiece.mutateAsync({ id: p.id, is_mockup: !p.is_mockup }); }}
-                  onKitClick={(kit) => setViewKitDetail(kit)}
-                  onDeleteKit={(id) => deleteKit.mutate(id)}
+                   onKitClick={(kit) => setViewKitDetail(kit)}
+                   onDeleteKit={(id) => deleteKit.mutate(id)}
+                   onToggleKitMockup={async (kit) => {
+                     const newVal = !kit.is_mockup;
+                     await updateKit.mutateAsync({ id: kit.id, is_mockup: newVal });
+                     // Propagar para peças do kit
+                     const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
+                     for (const kp of kpForKit) {
+                       await updatePiece.mutateAsync({ id: kp.piece_id, is_mockup: newVal });
+                     }
+                   }}
                   onReorder={handleReorderUnified}
                 />
               );
