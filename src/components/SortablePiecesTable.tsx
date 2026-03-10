@@ -368,6 +368,7 @@ export default function SortablePiecesTable({
                     onDelete={onDelete}
                     onDistribute={onDistribute}
                     onMarkKitOnly={onMarkKitOnly}
+                    onToggleMockup={onToggleMockup}
                     onKitClick={onKitClick}
                     onDeleteKit={onDeleteKit}
                     isDistributed={row.type === "piece" ? getIsDistributed(row.data) : false}
