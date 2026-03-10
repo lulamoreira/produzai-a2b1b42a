@@ -81,6 +81,7 @@ export type CampaignKit = {
   code: number;
   display_order: number;
   image_url: string | null;
+  is_mockup: boolean;
   created_at: string;
 };
 

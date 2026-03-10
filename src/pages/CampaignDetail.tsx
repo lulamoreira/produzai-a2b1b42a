@@ -458,6 +458,13 @@ const CampaignDetail = () => {
         </div>
         <Switch checked={form.kit_only} onCheckedChange={(checked) => setForm((f) => ({ ...f, kit_only: checked }))} />
       </div>
+      <div className="flex items-center justify-between p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+        <div>
+          <label className="text-xs font-medium text-foreground">Mockup</label>
+          <p className="text-[10px] text-muted-foreground">Marcar esta peça como item de mockup</p>
+        </div>
+        <Switch checked={form.is_mockup} onCheckedChange={(checked) => setForm((f) => ({ ...f, is_mockup: checked }))} />
+      </div>
       {/* Image upload */}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Foto da peça</label>
