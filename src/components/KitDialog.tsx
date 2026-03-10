@@ -285,8 +285,18 @@ export function KitDetailDialog({
     .filter(kp => kp.piece);
 
   const kitOnlyPiecesNotInKit = allPieces.filter(
-    p => p.kit_only && !piecesInKit.some(kp => kp.piece_id === p.id)
+    p => p.kit_only && p.campaign_id === kit.campaign_id && !piecesInKit.some(kp => kp.piece_id === p.id)
   );
+
+  const filteredAddPieces = useMemo(() => {
+    if (!addPieceSearch.trim()) return kitOnlyPiecesNotInKit;
+    const q = addPieceSearch.toLowerCase();
+    return kitOnlyPiecesNotInKit.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      String(p.code).includes(q)
+    );
+  }, [kitOnlyPiecesNotInKit, addPieceSearch]);
 
   const startEditPiece = (p: CampaignPiece) => {
     setEditingPieceId(p.id);
