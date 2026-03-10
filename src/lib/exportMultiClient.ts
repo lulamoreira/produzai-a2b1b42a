@@ -121,6 +121,7 @@ export function exportCampaignPieces(
     "Modelo de Loja": p.store_category || "",
     "Especificação": p.specification || "",
     "Instruções de Instalação": p.installation_instructions || "",
+    "Mockup": p.is_mockup ? "Sim" : "",
   }));
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{
