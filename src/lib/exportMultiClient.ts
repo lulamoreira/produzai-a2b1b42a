@@ -209,7 +209,8 @@ export function exportMatrix(
     let total = 0;
     pieces.forEach((p) => {
       const qty = qtyMap[`${store.id}-${p.id}`] || 0;
-      row[`${p.code} - ${p.name}`] = qty;
+      const colName = p.is_mockup ? `${p.code} - ${p.name} (MOCKUP)` : `${p.code} - ${p.name}`;
+      row[colName] = qty;
       total += qty;
     });
 

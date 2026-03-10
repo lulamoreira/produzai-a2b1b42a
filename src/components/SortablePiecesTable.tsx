@@ -168,7 +168,10 @@ function SortableRow({
           className="font-medium text-left hover:text-primary hover:underline transition-colors"
           onClick={() => onEdit(piece)}
         >
-          {piece.name}
+          <span className="flex items-center gap-1.5">
+            {piece.name}
+            {piece.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">MOCKUP</span>}
+          </span>
         </button>
       </TableCell>
       <TableCell className="text-sm text-muted-foreground">{piece.size || "—"}</TableCell>
