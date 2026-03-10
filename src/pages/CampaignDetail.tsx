@@ -306,6 +306,7 @@ const CampaignDetail = () => {
       specification: editPieceForm.specification,
       installation_instructions: editPieceForm.installation_instructions,
       kit_only: editPieceForm.kit_only,
+      is_mockup: editPieceForm.is_mockup,
     });
     setEditPieceDialogOpen(false);
   };
