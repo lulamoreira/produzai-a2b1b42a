@@ -1721,6 +1721,19 @@ const CampaignDetail = () => {
         onUpdateKitPiece={async (update) => { await updateKitPiece.mutateAsync(update); }}
       />
 
+      {/* Bulk Delete Pieces Dialog */}
+      <BulkDeletePiecesDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        pieces={pieces}
+        onDeletePieces={async (ids) => {
+          for (const id of ids) {
+            await deletePiece.mutateAsync(id);
+          }
+          toast.success(`${ids.length} peça(s) excluída(s) com sucesso!`);
+        }}
+      />
+
       {/* Import Pieces from Campaign Dialog */}
       {clientId && campaignId && (
         <ImportPiecesFromCampaignDialog
