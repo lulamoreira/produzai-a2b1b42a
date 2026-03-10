@@ -275,17 +275,28 @@ export function KitDetailDialog({
   const [showAddPieces, setShowAddPieces] = useState(false);
   const [editingKitName, setEditingKitName] = useState(false);
   const [kitNameInput, setKitNameInput] = useState("");
+  const [addPieceSearch, setAddPieceSearch] = useState("");
 
-  if (!kit) return null;
-
-  const piecesInKit = kitPieces
+  const piecesInKit = kit ? kitPieces
     .filter(kp => kp.kit_id === kit.id)
     .map(kp => ({ ...kp, piece: allPieces.find(p => p.id === kp.piece_id) }))
-    .filter(kp => kp.piece);
+    .filter(kp => kp.piece) : [];
 
-  const kitOnlyPiecesNotInKit = allPieces.filter(
-    p => p.kit_only && !piecesInKit.some(kp => kp.piece_id === p.id)
-  );
+  const kitOnlyPiecesNotInKit = kit ? allPieces.filter(
+    p => p.kit_only && p.campaign_id === kit.campaign_id && !piecesInKit.some(kp => kp.piece_id === p.id)
+  ) : [];
+
+  const filteredAddPieces = useMemo(() => {
+    if (!addPieceSearch.trim()) return kitOnlyPiecesNotInKit;
+    const q = addPieceSearch.toLowerCase();
+    return kitOnlyPiecesNotInKit.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      String(p.code).includes(q)
+    );
+  }, [kitOnlyPiecesNotInKit, addPieceSearch]);
+
+  if (!kit) return null;
 
   const startEditPiece = (p: CampaignPiece) => {
     setEditingPieceId(p.id);
@@ -610,12 +621,21 @@ export function KitDetailDialog({
                 <Plus className="w-3 h-3" /> Incluir mais peças
               </Button>
             ) : (
-              <div className="space-y-1 max-h-[200px] overflow-y-auto border border-border rounded-lg p-2">
-                <label className="text-xs font-medium text-muted-foreground">Peças disponíveis</label>
+              <div className="space-y-1 max-h-[250px] overflow-y-auto border border-border rounded-lg p-2">
+                <label className="text-xs font-medium text-muted-foreground">Peças disponíveis desta campanha</label>
+                <Input
+                  placeholder="Buscar peça por nome, código ou localização..."
+                  value={addPieceSearch}
+                  onChange={(e) => setAddPieceSearch(e.target.value)}
+                  className="h-7 text-xs mb-1"
+                  autoFocus
+                />
                 {kitOnlyPiecesNotInKit.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-3">Nenhuma peça disponível.</p>
+                ) : filteredAddPieces.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-3">Nenhuma peça encontrada.</p>
                 ) : (
-                  kitOnlyPiecesNotInKit.map(p => (
+                  filteredAddPieces.map(p => (
                     <div key={p.id} className="flex items-center justify-between px-2 py-1.5 rounded border border-border hover:bg-muted/50">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
@@ -628,7 +648,7 @@ export function KitDetailDialog({
                     </div>
                   ))
                 )}
-                <Button variant="ghost" size="sm" className="w-full text-xs mt-1" onClick={() => setShowAddPieces(false)}>Fechar</Button>
+                <Button variant="ghost" size="sm" className="w-full text-xs mt-1" onClick={() => { setShowAddPieces(false); setAddPieceSearch(""); }}>Fechar</Button>
               </div>
             )}
           </div>
