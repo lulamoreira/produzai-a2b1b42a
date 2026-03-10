@@ -1579,7 +1579,7 @@ const CampaignDetail = () => {
                      const newVal = !kit.is_mockup;
                      await updateKit.mutateAsync({ id: kit.id, is_mockup: newVal });
                      // Propagar para peças do kit
-                     const kpForKit = kitPiecesList.filter(kp => kp.kit_id === kit.id);
+                     const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
                      for (const kp of kpForKit) {
                        await updatePiece.mutateAsync({ id: kp.piece_id, is_mockup: newVal });
                      }
