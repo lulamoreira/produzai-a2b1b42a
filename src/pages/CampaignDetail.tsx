@@ -48,6 +48,7 @@ import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaig
 import SortablePiecesTable, { type UnifiedRow } from "@/components/SortablePiecesTable";
 import SupportMaterialsSection from "@/components/SupportMaterialsSection";
 import ImportSpecFromCampaign from "@/components/ImportSpecFromCampaign";
+import BulkDeletePiecesDialog from "@/components/BulkDeletePiecesDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 
 const CampaignDetail = () => {
@@ -118,6 +119,7 @@ const CampaignDetail = () => {
   const [createKitDialogOpen, setCreateKitDialogOpen] = useState(false);
   const [importPiecesDialogOpen, setImportPiecesDialogOpen] = useState(false);
   const [viewKitDetail, setViewKitDetail] = useState<CampaignKit | null>(null);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   // ─── Piece dialogs ─────────────────────────────────────
   const [pieceDialogOpen, setPieceDialogOpen] = useState(false);
@@ -234,7 +236,6 @@ const CampaignDetail = () => {
     while (usedNumbers.has(seq)) seq++;
     return { prefix: campaignPrefix, seq, full: `${campaignPrefix}${String(seq).padStart(4, "0")}` };
   }, [pieces, campaign]);
-
 
   const handleAddPiece = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1509,6 +1510,9 @@ const CampaignDetail = () => {
                 <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
                   <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Novo Kit
                 </Button>
+                <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setBulkDeleteOpen(true)}>
+                  <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Excluir em lote
+                </Button>
                 </>
               )}
             </div>
@@ -1715,6 +1719,19 @@ const CampaignDetail = () => {
         onUpdatePiece={async (piece) => { await updatePiece.mutateAsync(piece as any); }}
         onDeletePiece={(id) => deletePiece.mutate(id)}
         onUpdateKitPiece={async (update) => { await updateKitPiece.mutateAsync(update); }}
+      />
+
+      {/* Bulk Delete Pieces Dialog */}
+      <BulkDeletePiecesDialog
+        open={bulkDeleteOpen}
+        onOpenChange={setBulkDeleteOpen}
+        pieces={pieces}
+        onDeletePieces={async (ids) => {
+          for (const id of ids) {
+            await deletePiece.mutateAsync(id);
+          }
+          toast.success(`${ids.length} peça(s) excluída(s) com sucesso!`);
+        }}
       />
 
       {/* Import Pieces from Campaign Dialog */}
