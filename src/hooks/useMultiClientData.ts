@@ -69,6 +69,7 @@ export type CampaignPiece = {
   specification: string;
   installation_instructions: string;
   kit_only: boolean;
+  is_mockup: boolean;
   display_order: number;
   created_at: string;
 };
