@@ -498,6 +498,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-foreground flex items-center gap-1">
                       <FileText className="w-3 h-3" /> OS Instalação
+                      {!hasOs && schedule?.scheduled_date && schedule?.scheduled_time && (
+                        <AlertTriangle className="w-3 h-3 text-amber-500" />
+                      )}
                     </label>
                     <Input
                       disabled={!canEdit}
