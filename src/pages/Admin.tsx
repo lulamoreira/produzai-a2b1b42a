@@ -5,6 +5,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { useUserClientAccess } from "@/hooks/useMultiClientData";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
+import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Users, Tags, Database, UserCheck, Search } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
@@ -20,6 +21,7 @@ const Admin = () => {
   const { data: users = [], isLoading: loadingUsers } = useAdminUsers();
   const { data: allAccess = [] } = useUserClientAccess();
   const { data: allAgencyAccess = [] } = useUserAgencyAccess();
+  const { data: allCampaignAccess = [] } = useUserCampaignAccess();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
 
