@@ -50,6 +50,7 @@ import SupportMaterialsSection from "@/components/SupportMaterialsSection";
 import ImportSpecFromCampaign from "@/components/ImportSpecFromCampaign";
 import BulkDeletePiecesDialog from "@/components/BulkDeletePiecesDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
+import MatrixFilterSidebar, { EMPTY_FILTERS, type PieceFilters } from "@/components/MatrixFilterSidebar";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
