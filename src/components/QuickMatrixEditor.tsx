@@ -300,7 +300,7 @@ const QuickMatrixEditor = ({
                     </TableCell>
                     {matrixColumns.map((col) => {
                       const colId = getColId(col);
-                      const gridKey = `${store.id}-${colId}`;
+                      const gridKey = `${store.id}${SEP}${colId}`;
 
                       if (col.type === "piece") {
                         const p = col.data;
