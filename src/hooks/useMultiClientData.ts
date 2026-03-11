@@ -437,38 +437,84 @@ export function useCampaignStorePieces(campaignId: string | undefined) {
 
 export function useUpdateCampaignStorePiece() {
   const qc = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ campaignId, storeId, pieceId, quantity }: { campaignId: string; storeId: string; pieceId: string; quantity: number }) => {
-      if (quantity === 0) {
-        await supabase
+      const normalizedQty = Math.max(0, quantity);
+
+      if (normalizedQty === 0) {
+        const { error } = await supabase
           .from("campaign_store_pieces")
           .delete()
           .eq("campaign_id", campaignId)
           .eq("store_id", storeId)
           .eq("piece_id", pieceId);
-      } else {
-        const { data: existing } = await supabase
-          .from("campaign_store_pieces")
-          .select("id")
-          .eq("campaign_id", campaignId)
-          .eq("store_id", storeId)
-          .eq("piece_id", pieceId)
-          .maybeSingle();
 
-        if (existing) {
-          await supabase
-            .from("campaign_store_pieces")
-            .update({ quantity })
-            .eq("id", existing.id);
-        } else {
-          await supabase
-            .from("campaign_store_pieces")
-            .insert({ campaign_id: campaignId, store_id: storeId, piece_id: pieceId, quantity });
-        }
+        if (error) throw error;
+        return;
+      }
+
+      const { data: existing, error: existingError } = await supabase
+        .from("campaign_store_pieces")
+        .select("id")
+        .eq("campaign_id", campaignId)
+        .eq("store_id", storeId)
+        .eq("piece_id", pieceId)
+        .maybeSingle();
+
+      if (existingError) throw existingError;
+
+      if (existing) {
+        const { error: updateError } = await supabase
+          .from("campaign_store_pieces")
+          .update({ quantity: normalizedQty })
+          .eq("id", existing.id);
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from("campaign_store_pieces")
+          .insert({ campaign_id: campaignId, store_id: storeId, piece_id: pieceId, quantity: normalizedQty });
+
+        if (insertError) throw insertError;
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_store_pieces"] }); },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onMutate: async ({ campaignId, storeId, pieceId, quantity }) => {
+      const queryKey = ["campaign_store_pieces", campaignId] as const;
+      await qc.cancelQueries({ queryKey });
+
+      const previous = qc.getQueryData<CampaignStorePiece[]>(queryKey) ?? [];
+      const next = [...previous];
+      const index = next.findIndex(
+        (row) => row.campaign_id === campaignId && row.store_id === storeId && row.piece_id === pieceId
+      );
+
+      if (quantity <= 0) {
+        if (index >= 0) next.splice(index, 1);
+      } else if (index >= 0) {
+        next[index] = { ...next[index], quantity };
+      } else {
+        next.push({
+          id: `optimistic-${campaignId}-${storeId}-${pieceId}`,
+          campaign_id: campaignId,
+          store_id: storeId,
+          piece_id: pieceId,
+          quantity,
+        });
+      }
+
+      qc.setQueryData(queryKey, next);
+      return { queryKey, previous };
+    },
+    onError: (e, _vars, context) => {
+      if (context?.queryKey && context?.previous) {
+        qc.setQueryData(context.queryKey, context.previous);
+      }
+      toast.error("Erro: " + e.message);
+    },
+    onSettled: (_data, _error, vars) => {
+      qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
+    },
   });
 }
 
