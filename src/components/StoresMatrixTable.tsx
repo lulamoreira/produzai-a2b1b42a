@@ -6,6 +6,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, ArrowUpDown, GripVertical, Check, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { getStateColor } from "@/lib/stateColors";
 import type { ClientStore } from "@/hooks/useMultiClientData";
 import {
