@@ -53,7 +53,7 @@ export function InviteButton() {
     }
   };
 
-  const scopeLabel = clientId ? "este cliente" : "esta agência";
+  const scopeLabel = "este cliente";
 
   return (
     <Tooltip>
