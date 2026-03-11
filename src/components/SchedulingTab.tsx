@@ -607,6 +607,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: Approval
 
   return (
     <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-2">
+      <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide mb-1">Status de aprovação da instalação</p>
       {/* Toggle 1: Lojista */}
       <ToggleSwitch
         label="Lojista"
