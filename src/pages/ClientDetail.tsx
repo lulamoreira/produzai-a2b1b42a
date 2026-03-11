@@ -1044,78 +1044,18 @@ const ClientDetail = () => {
                 <p className="text-muted-foreground text-sm">Nenhuma loja cadastrada.</p>
               </div>
             ) : (
-              <div className="border border-border rounded-lg overflow-x-auto">
-                <Table className="min-w-[800px]">
-                  <TableHeader>
-                    <TableRow>
-                      <SortableHead label="Nome" sortKey="name" />
-                      <SortableHead label="Apelido" sortKey="nickname" />
-                      <SortableHead label="Código" sortKey="store_code" />
-                      <SortableHead label="Cidade" sortKey="city" />
-                      <SortableHead label="UF" sortKey="state" />
-                      <SortableHead label="Modelo" sortKey="store_model" />
-                      <SortableHead label="Telefone" sortKey="phone" />
-                      <SortableHead label="E-mail" sortKey="email" />
-                      <SortableHead label="Contato" sortKey="manager_name" />
-                      {(canEditStores || canDeleteStores) && <TableHead className="text-right">Ações</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredStores.map((s) => (
-                      <TableRow key={s.id}>
-                        <TableCell className="font-medium">
-                          <button
-                            type="button"
-                            className="text-left hover:underline underline-offset-2 transition-colors cursor-pointer px-2 py-0.5 rounded-md"
-                            style={{ backgroundColor: getStateColor(s.state).bg, color: getStateColor(s.state).text }}
-                            onClick={() => handleOpenEditStore(s)}
-                          >
-                            {s.name}
-                          </button>
-                        </TableCell>
-                        <TableCell>{s.nickname || "—"}</TableCell>
-                        <TableCell className="text-xs font-mono">{s.store_code || "—"}</TableCell>
-                        <TableCell>{s.city || "—"}</TableCell>
-                        <TableCell>{s.state || "—"}</TableCell>
-                        <TableCell className="text-xs">{s.store_model || "—"}</TableCell>
-                        <TableCell className="text-xs">{s.phone ? formatPhone(s.phone) : "—"}</TableCell>
-                        <TableCell className="text-xs">{(s as any).email || "—"}</TableCell>
-                        <TableCell className="text-xs">{s.manager_name || "—"}</TableCell>
-                        {(canEditStores || canDeleteStores) && (
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              {canEditStores && (
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditStore(s)}>
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </Button>
-                              )}
-                              {canDeleteStores && (
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Excluir loja?</AlertDialogTitle>
-                                      <AlertDialogDescription>A loja será removida de todas as campanhas.</AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => deleteStore.mutate(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              )}
-                            </div>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <StoresMatrixTable
+                stores={stores}
+                clientId={clientId!}
+                customFieldLabels={customFieldsParsed
+                  .map((cf, i) => ({ label: cf.name, index: i + 1 }))
+                  .filter((cf) => cf.label)}
+                canEdit={canEditStores}
+                onUpdateStore={async (data) => { await updateStore.mutateAsync(data); }}
+                onOpenEditStore={handleOpenEditStore}
+                storeSearch={storeSearch}
+                storeStateFilter={storeStateFilter}
+              />
             )}
           </TabsContent>
 
