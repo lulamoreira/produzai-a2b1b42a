@@ -62,7 +62,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!isAdmin && approvalStatus !== "approved") {
+  if (!isAdminOrMaster && approvalStatus !== "approved") {
     return <PendingApprovalScreen />;
   }
 
