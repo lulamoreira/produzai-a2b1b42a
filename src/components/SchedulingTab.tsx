@@ -44,6 +44,12 @@ type Schedule = {
   installation_os: string | null;
   installation_preference: string | null;
   team_id: string | null;
+  store_approved: boolean;
+  store_approved_at: string | null;
+  team_approved: boolean;
+  team_approved_at: string | null;
+  responsibility: string | null;
+  responsibility_at: string | null;
 };
 
 const PREFERENCE_OPTIONS = [
