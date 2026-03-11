@@ -292,13 +292,15 @@ const Admin = () => {
         <Tabs defaultValue="users">
           <TabsList className="mb-6 bg-card border border-border flex-wrap overflow-x-auto w-full justify-start">
             <TabsTrigger value="users" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Users className="w-4 h-4" /> Usuários</TabsTrigger>
-            {isAdmin && (
+            {isAdminOrMaster && (
               <>
                 <TabsTrigger value="categories" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Tags className="w-4 h-4" /> Roles</TabsTrigger>
                 <TabsTrigger value="agency_access" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Building2 className="w-4 h-4" /> Acesso por Agência</TabsTrigger>
                 <TabsTrigger value="access" className="gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><KeyRound className="w-4 h-4" /> Acesso por Cliente</TabsTrigger>
-                <TabsTrigger value="backup" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Database className="w-4 h-4" /> Backup</TabsTrigger>
               </>
+            )}
+            {isAdmin && (
+                <TabsTrigger value="backup" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Database className="w-4 h-4" /> Backup</TabsTrigger>
             )}
           </TabsList>
 
