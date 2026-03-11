@@ -607,9 +607,14 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
     }
   };
 
+  const sectionDisabled = !canEdit || !hasDateAndTime;
+
   return (
-    <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-2">
-      <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide mb-1">Status de aprovação da instalação</p>
+    <div className={cn("border-t border-border bg-muted/30 px-4 py-3 space-y-2", !hasDateAndTime && "opacity-50")}>
+      <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide mb-1">
+        Status de aprovação da instalação
+        {!hasDateAndTime && <span className="ml-2 text-muted-foreground font-normal normal-case">(preencha data e horário)</span>}
+      </p>
       {/* Toggle 1: Lojista */}
       <ToggleSwitch
         label="Lojista"
@@ -619,7 +624,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
         onClickLeft={() => handleSetApproval("store_approved", true)}
         onClickRight={() => handleSetApproval("store_approved", false)}
         timestamp={formatTimestamp(schedule?.store_approved_at ?? null)}
-        disabled={!canEdit}
+        disabled={sectionDisabled}
       />
 
       {/* Toggle 2: Equipe */}
@@ -631,7 +636,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
         onClickLeft={() => handleSetApproval("team_approved", true)}
         onClickRight={() => handleSetApproval("team_approved", false)}
         timestamp={formatTimestamp(schedule?.team_approved_at ?? null)}
-        disabled={!canEdit}
+        disabled={sectionDisabled}
       />
 
       {/* Toggle 3: Responsabilidade — only when there's a pendency */}
@@ -644,7 +649,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
           onClickLeft={() => handleSetResponsibility("client")}
           onClickRight={() => handleSetResponsibility("team")}
           timestamp={formatTimestamp(schedule?.responsibility_at ?? null)}
-          disabled={!canEdit}
+          disabled={sectionDisabled}
         />
       )}
     </div>
