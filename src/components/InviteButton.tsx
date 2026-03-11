@@ -22,7 +22,7 @@ export function InviteButton() {
   const [loading, setLoading] = useState(false);
 
   if (!isAdmin && !isMaster) return null;
-  if (!agencyId) return null;
+  if (!agencyId || !clientId) return null;
 
   const handleInvite = async () => {
     if (loading) return;
