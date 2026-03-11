@@ -6,8 +6,6 @@ import { toast } from "sonner";
 import { capitalizeName } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQueryClient } from "@tanstack/react-query";
-import { useAdminUsers, useUpdateUserRole } from "@/hooks/useAdminUsers";
-import { useUserPermissionLevel } from "@/hooks/useUserPermissionLevel";
 import {
   useClients, useUserClientAccess, useAddUserClientAccess,
   useUpdateUserClientAccess, useDeleteUserClientAccess,
