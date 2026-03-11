@@ -21,7 +21,7 @@ export function useClientPermission(clientId?: string, permission?: PermissionKe
     queryKey: ["client_permission", user?.id, clientId, permission],
     queryFn: async () => {
       if (!user || !clientId || !permission) return false;
-      if (isAdmin) return true;
+      if (isAdmin || isMaster) return true;
 
       // Check direct client access
       const { data: clientAccess } = await supabase
