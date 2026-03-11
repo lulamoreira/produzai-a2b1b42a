@@ -480,6 +480,3 @@ function CampaignAccessRow({ access, clients, agencies, categories, onChangeCate
   );
 }
 
-// Need useQuery import for CampaignAccessRow
-import { useQuery } from "@tanstack/react-query";
-import type { PermissionCategory } from "@/hooks/usePermissionCategories";
