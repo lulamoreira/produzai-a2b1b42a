@@ -560,10 +560,11 @@ interface ApprovalTogglesProps {
   schedule: Schedule | undefined;
   storeId: string;
   canEdit: boolean;
+  hasDateAndTime: boolean;
   onMultiUpdate: (fields: Record<string, any>) => void;
 }
 
-function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: ApprovalTogglesProps) {
+function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUpdate }: ApprovalTogglesProps) {
   const storeApproved = schedule?.store_approved ?? false;
   const teamApproved = schedule?.team_approved ?? false;
   const hasPendency = !storeApproved || !teamApproved;
