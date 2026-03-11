@@ -25,7 +25,7 @@ import {
 import { useUpdateUserRole, type UserWithRole } from "@/hooks/useAdminUsers";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronDown, ChevronRight, Edit3, Plus, Trash2,
   PauseCircle, PlayCircle, Building2, KeyRound, Shield, Megaphone,
