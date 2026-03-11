@@ -1303,7 +1303,7 @@ const CampaignDetail = () => {
                       <Filter className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
                       <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma peça corresponde aos filtros</h2>
                       <p className="text-muted-foreground text-sm">Ajuste os filtros no painel lateral para exibir peças.</p>
-                      <Button size="sm" variant="outline" className="mt-3" onClick={() => setPieceFilters({ ...EMPTY_FILTERS })}>
+                      <Button size="sm" variant="outline" className="mt-3" onClick={() => { setPieceFilters({ ...EMPTY_FILTERS }); setStoreFilters({ ...EMPTY_STORE_FILTERS }); }}>
                         Limpar filtros
                       </Button>
                     </div>
