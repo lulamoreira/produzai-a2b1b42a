@@ -169,6 +169,7 @@ const UserApprovals = () => {
                                   <SelectItem value="pending">⏳ Pendente</SelectItem>
                                 </SelectContent>
                               </Select>
+                              {isAdmin && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -193,6 +194,7 @@ const UserApprovals = () => {
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
+                              )}
                             </>
                           )}
                         </div>
