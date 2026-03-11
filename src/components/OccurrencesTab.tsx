@@ -159,7 +159,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
   };
 
-  const publicLink = `https://produzai.lovable.app/ocorrencias/${campaignId}`;
+  const publicLink = `${typeof window !== "undefined" ? window.location.origin : "https://produzai.lovable.app"}/ocorrencias/${campaignId}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(publicLink);
