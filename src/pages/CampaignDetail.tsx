@@ -1319,6 +1319,8 @@ const CampaignDetail = () => {
                     <QuickMatrixEditor
                       stores={activeFilteredStores}
                       pieces={matrixPieces}
+                      kits={matrixKits}
+                      kitPieces={kitPieces}
                       qtyMap={qtyMap}
                       campaignId={campaignId!}
                       isAdmin={canEditCampaign}
