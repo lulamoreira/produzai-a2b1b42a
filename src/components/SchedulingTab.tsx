@@ -193,8 +193,18 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           (s.state || "").toLowerCase().includes(term)
       );
     }
+    if (filterApproval) {
+      result = result.filter((s) => {
+        const sch = scheduleMap[s.id];
+        const storeOk = sch?.store_approved ?? true;
+        const teamOk = sch?.team_approved ?? true;
+        if (filterApproval === "approved") return storeOk && teamOk;
+        if (filterApproval === "pending") return !storeOk || !teamOk;
+        return true;
+      });
+    }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, searchTerm]);
+  }, [stores, filterState, filterCity, searchTerm, filterApproval, scheduleMap]);
 
   const handleFieldChange = (storeId: string, field: string, value: string | null) => {
     const existing = scheduleMap[storeId];
