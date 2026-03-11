@@ -379,7 +379,7 @@ const QuickMatrixEditor = ({
                 })}
                 <TableCell className="text-center text-sm text-primary">
                   {stores.reduce((total, st) =>
-                    total + pieces.reduce((s, p) => s + (parseInt(draft[`${st.id}-${p.id}`]) || 0), 0), 0
+                    total + pieces.reduce((s, p) => s + (parseInt(draft[`${st.id}${SEP}${p.id}`]) || 0), 0), 0
                   )}
                 </TableCell>
               </TableRow>
