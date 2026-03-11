@@ -349,8 +349,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 
           const storeApproved = schedule?.store_approved ?? false;
           const teamApproved = schedule?.team_approved ?? false;
-          const fullyApproved = storeApproved && teamApproved;
-          const hasPendency = !storeApproved || !teamApproved;
+          const hasOs = !!(schedule?.installation_os?.trim());
+          const fullyApproved = storeApproved && teamApproved && hasOs;
+          const hasPendency = !fullyApproved;
 
           return (
             <div
