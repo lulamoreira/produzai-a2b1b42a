@@ -47,14 +47,15 @@ const BASE_COLUMNS: ColumnDef[] = [
   { key: "observations", label: "Observações", storeField: "observations" },
 ];
 
-function buildColumns(customFieldLabels: { label: string; index: number }[]): ColumnDef[] {
+function buildColumns(customFieldLabels: { label: string; index: number; type?: string }[]): ColumnDef[] {
   const cols = [...BASE_COLUMNS];
-  customFieldLabels.forEach(({ label, index }) => {
+  customFieldLabels.forEach(({ label, index, type }) => {
     if (label) {
       cols.push({
         key: `custom_field_${index}`,
         label,
         storeField: `custom_field_${index}`,
+        fieldType: (type as ColumnDef["fieldType"]) || "text",
       });
     }
   });
