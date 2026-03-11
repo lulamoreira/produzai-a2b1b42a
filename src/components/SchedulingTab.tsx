@@ -572,7 +572,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: Approval
     if (!canEdit) return;
     const now = new Date().toISOString();
     const atField = field === "store_approved" ? "store_approved_at" : "team_approved_at";
-    const otherApproved = field === "store_approved" ? (schedule?.team_approved ?? true) : (schedule?.store_approved ?? true);
+    const otherApproved = field === "store_approved" ? (schedule?.team_approved ?? false) : (schedule?.store_approved ?? false);
     
     const updates: Record<string, any> = {
       [field]: newVal,
