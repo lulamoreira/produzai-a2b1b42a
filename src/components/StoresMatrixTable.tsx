@@ -470,6 +470,15 @@ export default function StoresMatrixTable({
                     );
                   }
 
+                  const fieldSuggestions = (() => {
+                    const vals = new Set<string>();
+                    stores.forEach((s) => {
+                      const v = ((s as any)[col.storeField] || "").toString().trim();
+                      if (v && s.id !== store.id) vals.add(v);
+                    });
+                    return Array.from(vals).sort((a, b) => a.localeCompare(b));
+                  })();
+
                   return (
                     <TableCell key={col.key} className="p-1">
                       <EditableCell
@@ -481,6 +490,7 @@ export default function StoresMatrixTable({
                         onSave={handleSave}
                         onCancel={handleCancel}
                         onNavigate={navigateToCell}
+                        suggestions={fieldSuggestions}
                         cellRef={(el) => {
                           const key = getCellKey(store.id, col.storeField);
                           if (el) cellRefs.current.set(key, el);
