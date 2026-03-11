@@ -42,7 +42,7 @@ const statusConfig: Record<ApprovalStatus, { label: string; color: string; icon:
 
 const UserApprovals = () => {
   const { user } = useAuth();
-  const { isAdmin, isLoading: loadingRole } = useUserRole();
+  const { isAdmin, isAdminOrMaster, isLoading: loadingRole } = useUserRole();
   const { data: users = [], isLoading } = useAllUsersApproval();
   const updateStatus = useUpdateApprovalStatus();
   const navigate = useNavigate();
@@ -72,7 +72,7 @@ const UserApprovals = () => {
     );
   }
 
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdminOrMaster) return <Navigate to="/" replace />;
 
   const pending = users.filter((u) => u.approval_status === "pending");
   const approved = users.filter((u) => u.approval_status === "approved");
@@ -169,6 +169,7 @@ const UserApprovals = () => {
                                   <SelectItem value="pending">⏳ Pendente</SelectItem>
                                 </SelectContent>
                               </Select>
+                              {isAdmin && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                   <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -193,6 +194,7 @@ const UserApprovals = () => {
                                   </AlertDialogFooter>
                                 </AlertDialogContent>
                               </AlertDialog>
+                              )}
                             </>
                           )}
                         </div>

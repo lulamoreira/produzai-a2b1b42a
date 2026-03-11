@@ -15,13 +15,13 @@ type PermissionKey =
 
 export function useClientPermission(clientId?: string, permission?: PermissionKey) {
   const { user } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isMaster } = useUserRole();
 
   const { data: hasPermission = false, isLoading } = useQuery({
     queryKey: ["client_permission", user?.id, clientId, permission],
     queryFn: async () => {
       if (!user || !clientId || !permission) return false;
-      if (isAdmin) return true;
+      if (isAdmin || isMaster) return true;
 
       // Check direct client access
       const { data: clientAccess } = await supabase
@@ -64,5 +64,5 @@ export function useClientPermission(clientId?: string, permission?: PermissionKe
     enabled: !!user && !!clientId && !!permission,
   });
 
-  return { hasPermission: isAdmin || hasPermission, isLoading };
+  return { hasPermission: isAdmin || isMaster || hasPermission, isLoading };
 }

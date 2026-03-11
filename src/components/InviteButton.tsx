@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissionLevel } from "@/hooks/useUserPermissionLevel";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Link2, Check } from "lucide-react";
@@ -15,13 +14,12 @@ import {
 
 export function InviteButton() {
   const { user } = useAuth();
-  const { isAdmin } = useUserRole();
-  const { isMaster } = useUserPermissionLevel();
+  const { isAdminOrMaster } = useUserRole();
   const { agencyId, clientId } = useParams();
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  if (!isAdmin && !isMaster) return null;
+  if (!isAdminOrMaster) return null;
   if (!agencyId || !clientId) return null;
 
   const handleInvite = async () => {
@@ -53,8 +51,6 @@ export function InviteButton() {
     }
   };
 
-  const scopeLabel = "este cliente";
-
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -76,7 +72,7 @@ export function InviteButton() {
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        <p>Copiar link de convite para {scopeLabel}</p>
+        <p>Copiar link de convite para este cliente</p>
       </TooltipContent>
     </Tooltip>
   );

@@ -7,7 +7,6 @@ import { capitalizeName } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAdminUsers, useUpdateUserRole } from "@/hooks/useAdminUsers";
-import { useUserPermissionLevel } from "@/hooks/useUserPermissionLevel";
 import {
   useClients, useUserClientAccess, useAddUserClientAccess,
   useUpdateUserClientAccess, useDeleteUserClientAccess,
@@ -92,8 +91,7 @@ const setCategoryField = (form: any, perm: PermKey, mod: ModuleKey, val: boolean
 
 const Admin = () => {
   const { user } = useAuth();
-  const { isAdmin, isLoading: loadingRole } = useUserRole();
-  const { isMasterOrEditor, isLoading: loadingPermLevel } = useUserPermissionLevel();
+  const { isAdmin, isMaster, isAdminOrMaster, isLoading: loadingRole } = useUserRole();
   const { data: users = [], isLoading: loadingUsers } = useAdminUsers();
   const updateRole = useUpdateUserRole();
   const navigate = useNavigate();
@@ -164,7 +162,7 @@ const Admin = () => {
     setEditNameValue("");
   };
 
-  if (loadingRole || loadingPermLevel) {
+  if (loadingRole) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-10 h-10 border-3 border-primary border-t-transparent rounded-full" />
@@ -172,10 +170,12 @@ const Admin = () => {
     );
   }
 
-  if (!isAdmin && !isMasterOrEditor) return <Navigate to="/" replace />;
+  if (!isAdminOrMaster) return <Navigate to="/" replace />;
 
   const handleRoleChange = (userId: string, newRole: AppRole) => {
     if (userId === user?.id) return;
+    // Master can't promote to admin
+    if (!isAdmin && newRole === "admin") return;
     updateRole.mutate({ userId, newRole });
   };
 
@@ -294,13 +294,15 @@ const Admin = () => {
         <Tabs defaultValue="users">
           <TabsList className="mb-6 bg-card border border-border flex-wrap overflow-x-auto w-full justify-start">
             <TabsTrigger value="users" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Users className="w-4 h-4" /> Usuários</TabsTrigger>
-            {isAdmin && (
+            {isAdminOrMaster && (
               <>
                 <TabsTrigger value="categories" className="gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Tags className="w-4 h-4" /> Roles</TabsTrigger>
                 <TabsTrigger value="agency_access" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Building2 className="w-4 h-4" /> Acesso por Agência</TabsTrigger>
                 <TabsTrigger value="access" className="gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><KeyRound className="w-4 h-4" /> Acesso por Cliente</TabsTrigger>
-                <TabsTrigger value="backup" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Database className="w-4 h-4" /> Backup</TabsTrigger>
               </>
+            )}
+            {isAdmin && (
+                <TabsTrigger value="backup" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Database className="w-4 h-4" /> Backup</TabsTrigger>
             )}
           </TabsList>
 
@@ -315,46 +317,18 @@ const Admin = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Usuário</TableHead>
-                      {isAdmin && <TableHead>Role / Cliente</TableHead>}
-                      {isAdmin && <TableHead className="text-right">Tipo</TableHead>}
+                      {isAdminOrMaster && <TableHead>Role / Cliente</TableHead>}
+                      {isAdminOrMaster && <TableHead className="text-right">Tipo</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {users.map((u) => {
                       const userAccesses = allAccess.filter((a) => a.user_id === u.user_id);
 
-                      // Master/Editor can only edit names of non-admin users in the same agency
-                      const canEditName = isAdmin
-                        ? true
-                        : isMasterOrEditor && u.role !== "admin" && (() => {
-                            // Get current user's agency IDs (from agency access)
-                            const myAgencyIds = allAgencyAccess
-                              .filter((a) => a.user_id === user?.id)
-                              .map((a) => a.agency_id);
-                            // Get current user's agency IDs via client access
-                            const myClientAgencyIds = allAccess
-                              .filter((a) => a.user_id === user?.id)
-                              .map((a) => {
-                                const c = clients.find((c) => c.id === a.client_id);
-                                return c?.agency_id;
-                              })
-                              .filter(Boolean);
-                            const allMyAgencyIds = [...new Set([...myAgencyIds, ...myClientAgencyIds])];
-                            if (allMyAgencyIds.length === 0) return false;
-                            // Check if target user shares any agency
-                            const targetAgencyIds = allAgencyAccess
-                              .filter((a) => a.user_id === u.user_id)
-                              .map((a) => a.agency_id);
-                            const targetClientAgencyIds = allAccess
-                              .filter((a) => a.user_id === u.user_id)
-                              .map((a) => {
-                                const c = clients.find((c) => c.id === a.client_id);
-                                return c?.agency_id;
-                              })
-                              .filter(Boolean);
-                            const allTargetAgencyIds = [...new Set([...targetAgencyIds, ...targetClientAgencyIds])];
-                            return allMyAgencyIds.some((id) => allTargetAgencyIds.includes(id));
-                          })();
+                      // Admin/Master can edit names (Master can't edit Admin names)
+                      const canEditName = isAdminOrMaster
+                        ? (u.role !== "admin" || isAdmin)
+                        : false;
 
                       return (
                       <TableRow key={u.user_id}>
@@ -385,10 +359,12 @@ const Admin = () => {
                           )}
                           <p className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
                         </TableCell>
-                        {isAdmin && (
+                        {isAdminOrMaster && (
                         <TableCell>
                           {u.role === "admin" ? (
                             <Badge variant="default" className="text-[10px] uppercase">Admin</Badge>
+                          ) : u.role === "master" ? (
+                            <Badge variant="outline" className="text-[10px] uppercase bg-orange-500/15 text-orange-700 border-orange-500/30">Master</Badge>
                           ) : userAccesses.length > 0 ? (
                             <div className="space-y-1.5">
                               {userAccesses.map((a) => {
@@ -416,7 +392,7 @@ onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: categoryHasEdi
                           )}
                         </TableCell>
                         )}
-                        {isAdmin && (
+                        {isAdminOrMaster && (
                         <TableCell className="text-right">
                           {u.user_id === user?.id ? (
                             <span className="text-xs text-muted-foreground italic">Você</span>
@@ -424,7 +400,8 @@ onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: categoryHasEdi
                             <Select value={u.role} onValueChange={(val) => handleRoleChange(u.user_id, val as AppRole)}>
                               <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="admin">Admin</SelectItem>
+                                {isAdmin && <SelectItem value="admin">Admin</SelectItem>}
+                                <SelectItem value="master">Master</SelectItem>
                                 <SelectItem value="viewer">Usuário</SelectItem>
                               </SelectContent>
                             </Select>
