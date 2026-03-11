@@ -347,8 +347,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const teamVehicles: TeamVehicle[] = schedule?.team_id ? (allVehiclesMap[schedule.team_id] || []) : [];
           const teamIncomplete = assignedTeam ? isTeamIncomplete(teamMembers) : false;
 
-          const storeApproved = schedule?.store_approved ?? true;
-          const teamApproved = schedule?.team_approved ?? true;
+          const storeApproved = schedule?.store_approved ?? false;
+          const teamApproved = schedule?.team_approved ?? false;
           const fullyApproved = storeApproved && teamApproved;
           const hasPendency = !storeApproved || !teamApproved;
 
