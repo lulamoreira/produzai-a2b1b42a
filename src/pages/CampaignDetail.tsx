@@ -1425,8 +1425,28 @@ const CampaignDetail = () => {
                                             min={0}
                                             value={editValue}
                                             onChange={(e) => setEditValue(e.target.value)}
-                                            onBlur={handleCellSave}
-                                            onKeyDown={(e) => { if (e.key === "Enter") handleCellSave(); if (e.key === "Escape") setEditingCell(null); }}
+                                            onBlur={() => handleCellSave()}
+                                            onKeyDown={(e) => {
+                                              if (e.key === "Tab") {
+                                                e.preventDefault();
+                                                const next = navigateMatrixCell(e.shiftKey ? "left" : "right");
+                                                handleCellSave(next || undefined);
+                                              } else if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                const next = navigateMatrixCell(e.shiftKey ? "up" : "down");
+                                                handleCellSave(next || undefined);
+                                              } else if (e.key === "ArrowUp") {
+                                                e.preventDefault();
+                                                const next = navigateMatrixCell("up");
+                                                handleCellSave(next || undefined);
+                                              } else if (e.key === "ArrowDown") {
+                                                e.preventDefault();
+                                                const next = navigateMatrixCell("down");
+                                                handleCellSave(next || undefined);
+                                              } else if (e.key === "Escape") {
+                                                setEditingCell(null);
+                                              }
+                                            }}
                                             className="w-16 h-8 text-center mx-auto text-sm"
                                             autoFocus
                                           />
