@@ -119,11 +119,24 @@ export function CreateKitDialog({
   const [createdKit, setCreatedKit] = useState<CampaignKit | null>(null);
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [createSearch, setCreateSearch] = useState("");
 
   const nextCode = useMemo(() => {
     const maxCode = existingKits.reduce((max, k) => Math.max(max, k.code), 0);
     return maxCode + 1;
   }, [existingKits]);
+
+  const availablePieces = kitOnlyPieces.filter(p => !selectedPieceIds.includes(p.id));
+
+  const filteredAvailablePieces = useMemo(() => {
+    if (!createSearch.trim()) return availablePieces;
+    const q = createSearch.toLowerCase();
+    return availablePieces.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      String(p.code).includes(q)
+    );
+  }, [availablePieces, createSearch]);
 
   const handleCreateKit = async () => {
     if (!kitName.trim()) return;
@@ -148,10 +161,9 @@ export function CreateKitDialog({
     setKitName("");
     setCreatedKit(null);
     setSelectedPieceIds([]);
+    setCreateSearch("");
     onOpenChange(false);
   };
-
-  const availablePieces = kitOnlyPieces.filter(p => !selectedPieceIds.includes(p.id));
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -197,16 +209,26 @@ export function CreateKitDialog({
               />
             )}
 
+            {/* Search bar */}
+            <div>
+              <Input
+                placeholder="Buscar peça por nome, código ou categoria..."
+                value={createSearch}
+                onChange={(e) => setCreateSearch(e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+
             {selectedPieceIds.length > 0 && (
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">Peças incluídas</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Peças incluídas ({selectedPieceIds.length})</label>
                 {selectedPieceIds.map(pid => {
                   const piece = kitOnlyPieces.find(p => p.id === pid);
                   if (!piece) return null;
                   return (
                     <div key={pid} className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/20">
                       <PieceThumbnail imageUrl={piece.image_url} name={piece.name} size="sm" />
-                      <span className="text-xs font-bold text-primary">#{piece.code}</span>
+                      <span className="text-xs font-bold text-primary shrink-0">#{piece.code}</span>
                       <span className="text-sm flex-1 truncate">{piece.name}</span>
                     </div>
                   );
@@ -214,27 +236,29 @@ export function CreateKitDialog({
               </div>
             )}
 
-            {availablePieces.length > 0 ? (
-              <div className="space-y-1 max-h-[250px] overflow-y-auto">
+            {filteredAvailablePieces.length > 0 ? (
+              <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Peças disponíveis para kit</label>
-                {availablePieces.map(p => (
-                  <div key={p.id} className="flex items-center justify-between px-3 py-2 rounded-md border border-border hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="max-h-[250px] overflow-y-auto space-y-1.5 pr-1">
+                  {filteredAvailablePieces.map(p => (
+                    <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-md border border-border hover:bg-muted/50 transition-colors">
                       <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
-                      <span className="text-xs font-bold text-primary">#{p.code}</span>
-                      <span className="text-sm truncate">{p.name}</span>
+                      <span className="text-xs font-bold text-primary shrink-0">#{p.code}</span>
+                      <span className="text-sm flex-1 truncate min-w-0">{p.name}</span>
+                      <Button size="sm" variant="outline" className="text-xs gap-1 shrink-0 ml-2" onClick={() => handleAddPiece(p.id)}>
+                        <Plus className="w-3 h-3" /> Incluir
+                      </Button>
                     </div>
-                    <Button size="sm" variant="outline" className="text-xs gap-1 ml-2" onClick={() => handleAddPiece(p.id)}>
-                      <Plus className="w-3 h-3" /> Incluir
-                    </Button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">
                 {kitOnlyPieces.length === 0
                   ? "Nenhuma peça marcada como 'para kit'. Crie peças com essa opção ativada primeiro."
-                  : "Todas as peças para kit já foram incluídas."}
+                  : createSearch.trim()
+                    ? "Nenhuma peça encontrada para essa busca."
+                    : "Todas as peças para kit já foram incluídas."}
               </p>
             )}
 
