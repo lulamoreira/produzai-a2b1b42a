@@ -27,6 +27,16 @@ const Auth = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
 
+  // Store invite token from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const inviteToken = params.get("invite");
+    if (inviteToken) {
+      localStorage.setItem("invite_token", inviteToken);
+      setIsLogin(false); // Switch to signup mode
+    }
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);

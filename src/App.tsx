@@ -48,8 +48,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const { data: approvalStatus, isLoading: loadingApproval } = useUserApprovalStatus();
   const { isAdmin } = useUserRole();
+  const { isProcessing } = useProcessInvite();
 
-  if (loading || loadingApproval) {
+  if (loading || loadingApproval || isProcessing) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
