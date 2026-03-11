@@ -44,6 +44,7 @@ const QuickMatrixEditor = ({
     ].sort((a, b) => a.display_order - b.display_order);
   }, [pieces, kits]);
 
+  const SEP = ":::";
   const getColId = (col: MatrixCol) => col.type === "piece" ? col.data.id : `kit-${col.data.id}`;
 
   // Build flat grid index for keyboard navigation
