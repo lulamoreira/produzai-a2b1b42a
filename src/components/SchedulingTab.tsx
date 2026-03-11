@@ -141,11 +141,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     mutationFn: async (payload: {
       campaign_id: string;
       store_id: string;
-      scheduled_date?: string | null;
-      scheduled_time?: string | null;
-      installation_os?: string | null;
-      installation_preference?: string | null;
-      team_id?: string | null;
+      [key: string]: any;
     }) => {
       const { data, error } = await supabase
         .from("campaign_schedules")
