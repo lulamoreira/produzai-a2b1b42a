@@ -324,9 +324,9 @@ const Admin = () => {
                       const userAccesses = allAccess.filter((a) => a.user_id === u.user_id);
 
                       // Master/Editor can only edit names of non-admin users in the same agency
-                      const canEditName = isAdmin
-                        ? true
-                        : isMasterOrEditor && u.role !== "admin" && (() => {
+                      const canEditName = isAdminOrMaster
+                        ? (u.role !== "admin" || isAdmin)
+                        : false;
                             // Get current user's agency IDs (from agency access)
                             const myAgencyIds = allAgencyAccess
                               .filter((a) => a.user_id === user?.id)
