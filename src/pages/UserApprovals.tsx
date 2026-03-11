@@ -71,7 +71,7 @@ const UserApprovals = () => {
     );
   }
 
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdminOrMaster) return <Navigate to="/" replace />;
 
   const pending = users.filter((u) => u.approval_status === "pending");
   const approved = users.filter((u) => u.approval_status === "approved");
