@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useUserApprovalStatus } from "@/hooks/useUserApproval";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useProcessInvite } from "@/hooks/useProcessInvite";
 import { PendingUsersAlert } from "@/components/PendingUsersAlert";
 import { NameConfirmDialog } from "@/components/NameConfirmDialog";
 import AgencySelect from "./pages/AgencySelect";
