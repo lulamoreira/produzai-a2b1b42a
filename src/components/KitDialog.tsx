@@ -194,7 +194,7 @@ export function CreateKitDialog({
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-hidden">
             {/* Kit image */}
             {createdKit && (
               <KitImageSection
