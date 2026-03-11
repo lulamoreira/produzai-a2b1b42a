@@ -50,7 +50,7 @@ import SupportMaterialsSection from "@/components/SupportMaterialsSection";
 import ImportSpecFromCampaign from "@/components/ImportSpecFromCampaign";
 import BulkDeletePiecesDialog from "@/components/BulkDeletePiecesDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
-import MatrixFilterSidebar, { EMPTY_FILTERS, type PieceFilters } from "@/components/MatrixFilterSidebar";
+import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters } from "@/components/MatrixFilterSidebar";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -169,6 +169,7 @@ const CampaignDetail = () => {
   const [editValue, setEditValue] = useState("");
   const [importMatrixDialogOpen, setImportMatrixDialogOpen] = useState(false);
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
+  const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(false);
 
   // ─── Derived data ──────────────────────────────────────
@@ -192,15 +193,26 @@ const CampaignDetail = () => {
         s.nickname?.toLowerCase().includes(storeSearch.toLowerCase());
       const matchesCity = cityFilter === "__all__" || s.city === cityFilter;
       const matchesState = stateFilter === "__all__" || s.state?.trim() === stateFilter;
-      // Store category filter: show stores that have pieces with matching store_category
       const matchesStoreCategory = storeCategoryFilter === "__all__" || true; // applied on matrix level
+
+      // Apply sidebar store filters
+      const sf = storeFilters;
+      if (sf.city.size > 0 && (!s.city || !sf.city.has(s.city))) return false;
+      if (sf.state.size > 0 && (!s.state || !sf.state.has(s.state.trim()))) return false;
+      if (sf.store_model.size > 0 && (!s.store_model || !sf.store_model.has(s.store_model))) return false;
+      if (sf.custom_field_1.size > 0 && (!s.custom_field_1 || !sf.custom_field_1.has(s.custom_field_1))) return false;
+      if (sf.custom_field_2.size > 0 && (!s.custom_field_2 || !sf.custom_field_2.has(s.custom_field_2))) return false;
+      if (sf.custom_field_3.size > 0 && (!s.custom_field_3 || !sf.custom_field_3.has(s.custom_field_3))) return false;
+      if (sf.custom_field_4.size > 0 && (!s.custom_field_4 || !sf.custom_field_4.has(s.custom_field_4))) return false;
+      if (sf.custom_field_5.size > 0 && (!s.custom_field_5 || !sf.custom_field_5.has(s.custom_field_5))) return false;
+
       return matchesSearch && matchesCity && matchesState && matchesStoreCategory;
     }).sort((a, b) => {
       const stateComp = (a.state || "").localeCompare(b.state || "");
       if (stateComp !== 0) return stateComp;
       return a.name.localeCompare(b.name);
     });
-  }, [stores, storeSearch, cityFilter, stateFilter, storeCategoryFilter]);
+  }, [stores, storeSearch, cityFilter, stateFilter, storeCategoryFilter, storeFilters]);
 
   const allEnabled = useMemo(() => filteredStores.every(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
   const activeFilteredStores = useMemo(() => filteredStores.filter(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
@@ -1188,10 +1200,20 @@ const CampaignDetail = () => {
               {/* Filter Sidebar */}
               <MatrixFilterSidebar
                 pieces={pieces}
+                stores={stores}
                 filters={pieceFilters}
+                storeFilters={storeFilters}
                 onFiltersChange={setPieceFilters}
+                onStoreFiltersChange={setStoreFilters}
                 collapsed={filterSidebarCollapsed}
                 onCollapsedChange={setFilterSidebarCollapsed}
+                customFieldLabels={[
+                  ...(client?.custom_field_1_label ? [{ key: "custom_field_1" as const, label: client.custom_field_1_label }] : []),
+                  ...(client?.custom_field_2_label ? [{ key: "custom_field_2" as const, label: client.custom_field_2_label }] : []),
+                  ...(client?.custom_field_3_label ? [{ key: "custom_field_3" as const, label: client.custom_field_3_label }] : []),
+                  ...(client?.custom_field_4_label ? [{ key: "custom_field_4" as const, label: client.custom_field_4_label }] : []),
+                  ...(client?.custom_field_5_label ? [{ key: "custom_field_5" as const, label: client.custom_field_5_label }] : []),
+                ]}
               />
 
               {/* Matrix Content */}
@@ -1281,7 +1303,7 @@ const CampaignDetail = () => {
                       <Filter className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
                       <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma peça corresponde aos filtros</h2>
                       <p className="text-muted-foreground text-sm">Ajuste os filtros no painel lateral para exibir peças.</p>
-                      <Button size="sm" variant="outline" className="mt-3" onClick={() => setPieceFilters({ ...EMPTY_FILTERS })}>
+                      <Button size="sm" variant="outline" className="mt-3" onClick={() => { setPieceFilters({ ...EMPTY_FILTERS }); setStoreFilters({ ...EMPTY_STORE_FILTERS }); }}>
                         Limpar filtros
                       </Button>
                     </div>
