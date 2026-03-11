@@ -22,7 +22,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
@@ -543,6 +543,36 @@ const ClientDetail = () => {
 
   const storeStates = Array.from(new Set(stores.map((s) => s.state?.trim()).filter(Boolean) as string[])).sort();
 
+  type StoreSortKey = "name" | "nickname" | "store_code" | "city" | "state" | "store_model" | "phone" | "email" | "manager_name";
+  const [storeSortKey, setStoreSortKey] = useState<StoreSortKey>("state");
+  const [storeSortDir, setStoreSortDir] = useState<"asc" | "desc">("asc");
+
+  const handleStoreSort = (key: StoreSortKey) => {
+    if (storeSortKey === key) {
+      setStoreSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setStoreSortKey(key);
+      setStoreSortDir("asc");
+    }
+  };
+
+  const SortableHead = ({ label, sortKey }: { label: string; sortKey: StoreSortKey }) => (
+    <TableHead>
+      <button
+        type="button"
+        className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer select-none"
+        onClick={() => handleStoreSort(sortKey)}
+      >
+        {label}
+        {storeSortKey === sortKey ? (
+          storeSortDir === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
+        ) : (
+          <ArrowUpDown className="w-3.5 h-3.5 opacity-30" />
+        )}
+      </button>
+    </TableHead>
+  );
+
   const filteredStores = stores
     .filter((s) => {
       if (storeStateFilter && storeStateFilter !== "all" && s.state?.trim() !== storeStateFilter) return false;
@@ -552,9 +582,10 @@ const ClientDetail = () => {
         s.city?.toLowerCase().includes(q);
     })
     .sort((a, b) => {
-      const stateA = (a.state || "").localeCompare(b.state || "");
-      if (stateA !== 0) return stateA;
-      return a.name.localeCompare(b.name);
+      const valA = ((a as any)[storeSortKey] || "").toString().toLowerCase();
+      const valB = ((b as any)[storeSortKey] || "").toString().toLowerCase();
+      const cmp = valA.localeCompare(valB);
+      return storeSortDir === "asc" ? cmp : -cmp;
     });
 
   const customFieldLabelsRaw = [
@@ -1016,15 +1047,15 @@ const ClientDetail = () => {
                 <Table className="min-w-[800px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                       <TableHead>Apelido</TableHead>
-                       <TableHead>Código</TableHead>
-                       <TableHead>Cidade</TableHead>
-                       <TableHead>UF</TableHead>
-                       <TableHead>Modelo</TableHead>
-                       <TableHead>Telefone</TableHead>
-                      <TableHead>E-mail</TableHead>
-                      <TableHead>Contato</TableHead>
+                      <SortableHead label="Nome" sortKey="name" />
+                      <SortableHead label="Apelido" sortKey="nickname" />
+                      <SortableHead label="Código" sortKey="store_code" />
+                      <SortableHead label="Cidade" sortKey="city" />
+                      <SortableHead label="UF" sortKey="state" />
+                      <SortableHead label="Modelo" sortKey="store_model" />
+                      <SortableHead label="Telefone" sortKey="phone" />
+                      <SortableHead label="E-mail" sortKey="email" />
+                      <SortableHead label="Contato" sortKey="manager_name" />
                       {(canEditStores || canDeleteStores) && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
