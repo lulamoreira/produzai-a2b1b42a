@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -44,6 +44,12 @@ type Schedule = {
   installation_os: string | null;
   installation_preference: string | null;
   team_id: string | null;
+  store_approved: boolean;
+  store_approved_at: string | null;
+  team_approved: boolean;
+  team_approved_at: string | null;
+  responsibility: string | null;
+  responsibility_at: string | null;
 };
 
 const PREFERENCE_OPTIONS = [
@@ -83,6 +89,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
+
+  const [filterApproval, setFilterApproval] = useState("");
 
   // Fetch all contacts for the client
   const { data: allContacts = [] } = useStoreContactsByClient(clientId);
@@ -133,11 +141,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     mutationFn: async (payload: {
       campaign_id: string;
       store_id: string;
-      scheduled_date?: string | null;
-      scheduled_time?: string | null;
-      installation_os?: string | null;
-      installation_preference?: string | null;
-      team_id?: string | null;
+      [key: string]: any;
     }) => {
       const { data, error } = await supabase
         .from("campaign_schedules")
@@ -185,10 +189,20 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           (s.state || "").toLowerCase().includes(term)
       );
     }
+    if (filterApproval) {
+      result = result.filter((s) => {
+        const sch = scheduleMap[s.id];
+        const storeOk = sch?.store_approved ?? true;
+        const teamOk = sch?.team_approved ?? true;
+        if (filterApproval === "approved") return storeOk && teamOk;
+        if (filterApproval === "pending") return !storeOk || !teamOk;
+        return true;
+      });
+    }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, searchTerm]);
+  }, [stores, filterState, filterCity, searchTerm, filterApproval, scheduleMap]);
 
-  const handleFieldChange = (storeId: string, field: string, value: string | null) => {
+  const handleFieldChange = (storeId: string, field: string, value: any) => {
     const existing = scheduleMap[storeId];
     upsertSchedule.mutate({
       campaign_id: campaignId,
@@ -198,6 +212,12 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       installation_os: existing?.installation_os ?? null,
       installation_preference: existing?.installation_preference ?? "not_informed",
       team_id: existing?.team_id ?? null,
+      store_approved: existing?.store_approved ?? true,
+      team_approved: existing?.team_approved ?? true,
+      responsibility: existing?.responsibility ?? null,
+      store_approved_at: existing?.store_approved_at ?? null,
+      team_approved_at: existing?.team_approved_at ?? null,
+      responsibility_at: existing?.responsibility_at ?? null,
       [field]: value,
     });
   };
@@ -276,6 +296,15 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
+        <select
+          value={filterApproval}
+          onChange={(e) => setFilterApproval(e.target.value)}
+          className="px-3 py-2 text-sm rounded-md border border-border bg-card text-foreground"
+        >
+          <option value="">Todas as aprovações</option>
+          <option value="approved">✅ 100% Aprovado</option>
+          <option value="pending">⚠️ Com pendência</option>
+        </select>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setTeamDialogOpen(true)}>
           <Wrench className="w-4 h-4" /> Equipes
         </Button>
@@ -298,26 +327,37 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const teamVehicles: TeamVehicle[] = schedule?.team_id ? (allVehiclesMap[schedule.team_id] || []) : [];
           const teamIncomplete = assignedTeam ? isTeamIncomplete(teamMembers) : false;
 
+          const storeApproved = schedule?.store_approved ?? true;
+          const teamApproved = schedule?.team_approved ?? true;
+          const fullyApproved = storeApproved && teamApproved;
+          const hasPendency = !storeApproved || !teamApproved;
+
           return (
             <div
               key={store.id}
-              className="rounded-xl border overflow-hidden shadow-sm"
+              className="rounded-xl border overflow-hidden shadow-sm flex flex-col"
               style={{ borderColor: colors.text, borderWidth: 2 }}
             >
               {/* Header */}
               <div
-                className="px-4 py-3 flex items-center gap-3"
+                className="px-4 py-3 flex items-center gap-3 relative"
                 style={{ backgroundColor: colors.bg, color: colors.text }}
               >
                 <span className="font-bold text-lg">{store.store_code || "—"}</span>
-                <div className="flex flex-col min-w-0">
+                <div className="flex flex-col min-w-0 flex-1">
                   <span className="font-semibold truncate text-sm">{store.name}</span>
                   <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
                 </div>
+                {/* Approval status icon */}
+                {fullyApproved ? (
+                  <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
+                ) : (
+                  <AlertCircle className="w-6 h-6 shrink-0 text-amber-500 drop-shadow" />
+                )}
               </div>
 
               {/* Body */}
-              <div className="p-4 space-y-3 bg-card">
+              <div className="p-4 space-y-3 bg-card flex-1">
                 {/* Address */}
                 <div className="text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">Endereço:</span> {buildAddress(store)}
@@ -465,6 +505,14 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   </div>
                 </div>
               </div>
+
+              {/* Footer - Approval Toggles */}
+              <ApprovalToggles
+                schedule={schedule}
+                storeId={store.id}
+                canEdit={canEdit}
+                onToggle={(field, value) => handleFieldChange(store.id, field, value)}
+              />
             </div>
           );
         })}
@@ -484,6 +532,149 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     </div>
   );
 };
+
+// ─── Sub-component: Approval Toggles ────────────────────
+
+interface ApprovalTogglesProps {
+  schedule: Schedule | undefined;
+  storeId: string;
+  canEdit: boolean;
+  onToggle: (field: string, value: string | null) => void;
+}
+
+function ApprovalToggles({ schedule, storeId, canEdit, onToggle }: ApprovalTogglesProps) {
+  const storeApproved = schedule?.store_approved ?? true;
+  const teamApproved = schedule?.team_approved ?? true;
+  const hasPendency = !storeApproved || !teamApproved;
+  const responsibility = schedule?.responsibility || null;
+
+  const handleToggle = (field: "store_approved" | "team_approved", current: boolean) => {
+    if (!canEdit) return;
+    const newVal = !current;
+    const now = new Date().toISOString();
+    const atField = field === "store_approved" ? "store_approved_at" : "team_approved_at";
+    // We need to send both fields together
+    onToggle(field, newVal as any);
+    // Also update the timestamp — use a slight delay to avoid race
+    setTimeout(() => onToggle(atField, now), 50);
+
+    // If both become approved, clear responsibility
+    const otherApproved = field === "store_approved" ? (schedule?.team_approved ?? true) : (schedule?.store_approved ?? true);
+    if (newVal && otherApproved) {
+      setTimeout(() => {
+        onToggle("responsibility", null);
+        setTimeout(() => onToggle("responsibility_at", null), 50);
+      }, 100);
+    }
+  };
+
+  const handleResponsibility = (value: string) => {
+    if (!canEdit) return;
+    onToggle("responsibility", value);
+    setTimeout(() => onToggle("responsibility_at", new Date().toISOString()), 50);
+  };
+
+  const formatTimestamp = (ts: string | null) => {
+    if (!ts) return null;
+    try {
+      return format(new Date(ts), "dd/MM/yy HH:mm", { locale: ptBR });
+    } catch {
+      return null;
+    }
+  };
+
+  return (
+    <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-2">
+      {/* Toggle 1: Lojista */}
+      <ToggleSwitch
+        label="Lojista"
+        leftLabel="Aprovado"
+        rightLabel="Desaprovado"
+        isLeft={storeApproved}
+        onToggle={() => handleToggle("store_approved", storeApproved)}
+        timestamp={formatTimestamp(schedule?.store_approved_at ?? null)}
+        disabled={!canEdit}
+      />
+
+      {/* Toggle 2: Equipe */}
+      <ToggleSwitch
+        label="Equipe"
+        leftLabel="Aprovado"
+        rightLabel="Desaprovado"
+        isLeft={teamApproved}
+        onToggle={() => handleToggle("team_approved", teamApproved)}
+        timestamp={formatTimestamp(schedule?.team_approved_at ?? null)}
+        disabled={!canEdit}
+      />
+
+      {/* Toggle 3: Responsabilidade — only when there's a pendency */}
+      {hasPendency && (
+        <ToggleSwitch
+          label="Responsável"
+          leftLabel="Cliente"
+          rightLabel="Equipe"
+          isLeft={responsibility !== "team"}
+          onToggle={() => handleResponsibility(responsibility === "team" ? "client" : "team")}
+          timestamp={formatTimestamp(schedule?.responsibility_at ?? null)}
+          disabled={!canEdit}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-component: Toggle Switch ───────────────────────
+
+interface ToggleSwitchProps {
+  label: string;
+  leftLabel: string;
+  rightLabel: string;
+  isLeft: boolean;
+  onToggle: () => void;
+  timestamp: string | null;
+  disabled?: boolean;
+}
+
+function ToggleSwitch({ label, leftLabel, rightLabel, isLeft, onToggle, timestamp, disabled }: ToggleSwitchProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] font-semibold text-muted-foreground w-[70px] shrink-0 uppercase tracking-wide">{label}</span>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onToggle}
+        className={cn(
+          "relative flex items-center rounded-full h-7 w-full max-w-[220px] border transition-colors cursor-pointer select-none overflow-hidden",
+          disabled && "opacity-60 cursor-not-allowed",
+          isLeft
+            ? "bg-emerald-500/15 border-emerald-500/40"
+            : "bg-amber-500/15 border-amber-500/40"
+        )}
+      >
+        {/* Sliding indicator */}
+        <span
+          className={cn(
+            "absolute top-0.5 bottom-0.5 w-1/2 rounded-full transition-all duration-200 shadow-sm",
+            isLeft
+              ? "left-0.5 bg-emerald-500"
+              : "left-[calc(50%-2px)] bg-amber-500"
+          )}
+        />
+        <span className={cn(
+          "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors",
+          isLeft ? "text-primary-foreground" : "text-foreground"
+        )}>{leftLabel}</span>
+        <span className={cn(
+          "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors",
+          !isLeft ? "text-primary-foreground" : "text-foreground"
+        )}>{rightLabel}</span>
+      </button>
+      {timestamp && (
+        <span className="text-[9px] text-muted-foreground whitespace-nowrap">{timestamp}</span>
+      )}
+    </div>
+  );
+}
 
 // ─── Sub-component: Store Contacts Display ──────────────
 
