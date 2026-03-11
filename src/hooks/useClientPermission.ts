@@ -59,6 +59,31 @@ export function useClientPermission(clientId?: string, permission?: PermissionKe
         }
       }
 
+      // Check campaign-level access (inherited from any campaign of this client)
+      const { data: campaigns } = await supabase
+        .from("campaigns")
+        .select("id")
+        .eq("client_id", clientId);
+
+      if (campaigns && campaigns.length > 0) {
+        const campaignIds = campaigns.map(c => c.id);
+        const { data: campaignAccesses } = await supabase
+          .from("user_campaign_access")
+          .select("category_id, suspended, permission_categories(*)")
+          .eq("user_id", user.id)
+          .in("campaign_id", campaignIds)
+          .eq("suspended", false);
+
+        if (campaignAccesses) {
+          for (const ca of campaignAccesses) {
+            if (ca.permission_categories) {
+              const pc = ca.permission_categories as Record<string, unknown>;
+              if (!!pc[permission]) return true;
+            }
+          }
+        }
+      }
+
       return false;
     },
     enabled: !!user && !!clientId && !!permission,
