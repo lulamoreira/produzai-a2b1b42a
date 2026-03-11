@@ -55,7 +55,12 @@ import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilt
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
+
+  const locationState = location.state as { initialSection?: string; limitedMode?: boolean } | null;
+  const isLimitedMode = locationState?.limitedMode || false;
+
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaign } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canEditOccurrences } = useClientPermission(clientId, "can_edit_occurrences");
@@ -65,6 +70,14 @@ const CampaignDetail = () => {
   const { hasPermission: canDeletePieces } = useClientPermission(clientId, "can_delete_pieces");
   const { hasPermission: canEditCampaignStores } = useClientPermission(clientId, "can_edit_campaign_stores");
   const { hasPermission: canEditSchedules } = useClientPermission(clientId, "can_edit_schedules");
+
+  // View permissions for module visibility
+  const { hasPermission: canViewStores } = useClientPermission(clientId, "can_view_stores");
+  const { hasPermission: canViewCampaignStores } = useClientPermission(clientId, "can_view_campaign_stores");
+  const { hasPermission: canViewPieces } = useClientPermission(clientId, "can_view_pieces");
+  const { hasPermission: canViewOccurrences } = useClientPermission(clientId, "can_view_occurrences");
+  const { hasPermission: canViewSchedules } = useClientPermission(clientId, "can_view_schedules");
+  const { hasPermission: canViewCampaigns } = useClientPermission(clientId, "can_view_campaigns");
   const { data: client } = useClient(clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: stores = [] } = useClientStores(clientId);
