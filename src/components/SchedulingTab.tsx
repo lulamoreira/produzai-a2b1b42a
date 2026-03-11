@@ -655,21 +655,19 @@ interface ToggleSwitchProps {
   leftLabel: string;
   rightLabel: string;
   isLeft: boolean;
-  onToggle: () => void;
+  onClickLeft: () => void;
+  onClickRight: () => void;
   timestamp: string | null;
   disabled?: boolean;
 }
 
-function ToggleSwitch({ label, leftLabel, rightLabel, isLeft, onToggle, timestamp, disabled }: ToggleSwitchProps) {
+function ToggleSwitch({ label, leftLabel, rightLabel, isLeft, onClickLeft, onClickRight, timestamp, disabled }: ToggleSwitchProps) {
   return (
     <div className="flex items-center gap-2">
       <span className="text-[10px] font-semibold text-muted-foreground w-[70px] shrink-0 uppercase tracking-wide">{label}</span>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={onToggle}
+      <div
         className={cn(
-          "relative flex items-center rounded-full h-7 w-full max-w-[220px] border transition-colors cursor-pointer select-none overflow-hidden",
+          "relative flex items-center rounded-full h-7 w-full max-w-[220px] border transition-colors select-none overflow-hidden",
           disabled && "opacity-60 cursor-not-allowed",
           isLeft
             ? "bg-emerald-500/15 border-emerald-500/40"
@@ -679,21 +677,31 @@ function ToggleSwitch({ label, leftLabel, rightLabel, isLeft, onToggle, timestam
         {/* Sliding indicator */}
         <span
           className={cn(
-            "absolute top-0.5 bottom-0.5 w-1/2 rounded-full transition-all duration-200 shadow-sm",
+            "absolute top-0.5 bottom-0.5 w-1/2 rounded-full transition-all duration-300 shadow-sm pointer-events-none",
             isLeft
               ? "left-0.5 bg-emerald-500"
               : "left-[calc(50%-2px)] bg-amber-500"
           )}
         />
-        <span className={cn(
-          "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors",
-          isLeft ? "text-primary-foreground" : "text-foreground"
-        )}>{leftLabel}</span>
-        <span className={cn(
-          "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors",
-          !isLeft ? "text-primary-foreground" : "text-foreground"
-        )}>{rightLabel}</span>
-      </button>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onClickLeft}
+          className={cn(
+            "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors cursor-pointer h-full",
+            isLeft ? "text-primary-foreground" : "text-foreground"
+          )}
+        >{leftLabel}</button>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onClickRight}
+          className={cn(
+            "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors cursor-pointer h-full",
+            !isLeft ? "text-primary-foreground" : "text-foreground"
+          )}
+        >{rightLabel}</button>
+      </div>
       {timestamp && (
         <span className="text-[9px] text-muted-foreground whitespace-nowrap">{timestamp}</span>
       )}
