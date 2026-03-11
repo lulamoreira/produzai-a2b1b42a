@@ -175,8 +175,10 @@ function EditableCell({
     onSave(storeId, fieldKey, val);
     if (navigate) {
       onNavigate(navigate);
+    } else {
+      onCancel(); // close cell when not navigating
     }
-  }, [storeId, fieldKey, onSave, onNavigate]);
+  }, [storeId, fieldKey, onSave, onNavigate, onCancel]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === "Tab") {
@@ -196,7 +198,11 @@ function EditableCell({
   const handleSelectSuggestion = (val: string) => {
     setEditValue(val);
     setShowSuggestions(false);
-    doSave(val);
+    // Save but keep cell open so user can continue editing or navigate
+    savingRef.current = false;
+    onSave(storeId, fieldKey, val);
+    // Re-focus input
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   if (isEditing) {
