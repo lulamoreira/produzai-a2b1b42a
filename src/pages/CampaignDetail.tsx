@@ -174,7 +174,7 @@ const CampaignDetail = () => {
   const [storeEditQtyValue, setStoreEditQtyValue] = useState("");
 
   // ─── Active section (null = home) ──────────────────────
-  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<string | null>(locationState?.initialSection || null);
   const [pieceSearch, setPieceSearch] = useState("");
 
   // ─── Matrix editing ────────────────────────────────────
