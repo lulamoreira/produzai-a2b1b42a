@@ -420,6 +420,7 @@ export default function StoresMatrixTable({
 
   const getCellDisplay = (store: ClientStore, col: ColumnDef) => {
     const val = (store as any)[col.storeField];
+    if (col.fieldType === "boolean") return val === "true" || val === true ? "Sim" : "Não";
     if (!val) return "";
     if (col.storeField === "phone") return formatPhone(val);
     return val;
