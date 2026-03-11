@@ -1189,10 +1189,20 @@ const CampaignDetail = () => {
               {/* Filter Sidebar */}
               <MatrixFilterSidebar
                 pieces={pieces}
+                stores={stores}
                 filters={pieceFilters}
+                storeFilters={storeFilters}
                 onFiltersChange={setPieceFilters}
+                onStoreFiltersChange={setStoreFilters}
                 collapsed={filterSidebarCollapsed}
                 onCollapsedChange={setFilterSidebarCollapsed}
+                customFieldLabels={[
+                  ...(client?.custom_field_1_label ? [{ key: "custom_field_1" as const, label: client.custom_field_1_label }] : []),
+                  ...(client?.custom_field_2_label ? [{ key: "custom_field_2" as const, label: client.custom_field_2_label }] : []),
+                  ...(client?.custom_field_3_label ? [{ key: "custom_field_3" as const, label: client.custom_field_3_label }] : []),
+                  ...(client?.custom_field_4_label ? [{ key: "custom_field_4" as const, label: client.custom_field_4_label }] : []),
+                  ...(client?.custom_field_5_label ? [{ key: "custom_field_5" as const, label: client.custom_field_5_label }] : []),
+                ]}
               />
 
               {/* Matrix Content */}
