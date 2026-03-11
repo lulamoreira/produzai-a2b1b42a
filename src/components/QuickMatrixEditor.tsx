@@ -284,7 +284,7 @@ const QuickMatrixEditor = ({
                   return s + (parseInt(draft[key]) || 0);
                 }, 0);
                 const hasAnyStoreWithQty = stores.some(
-                  (st) => st.id !== store.id && pieces.some((p) => (qtyMap[`${st.id}-${p.id}`] || 0) > 0)
+                  (st) => st.id !== store.id && pieces.some((p) => (qtyMap[`${st.id}${SEP}${p.id}`] || 0) > 0)
                 );
                 const isEmptyStore = rowTotal === 0 && hasAnyStoreWithQty;
                 return (
