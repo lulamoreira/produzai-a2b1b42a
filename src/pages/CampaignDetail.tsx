@@ -731,12 +731,11 @@ const CampaignDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader
-        backTo={`/agency/${agencyId}/clients/${clientId}`}
-        backLabel={client?.name || "Voltar"}
+        backTo={isLimitedMode ? "/my-campaigns" : `/agency/${agencyId}/clients/${clientId}`}
+        backLabel={isLimitedMode ? "Minhas Campanhas" : (client?.name || "Voltar")}
         title={campaign.name}
-        subtitle={`${visiblePieces.length + kits.length} peça(s) · ${stores.length} loja(s) · ${totalPieces} unidade(s) total`}
+        subtitle={isLimitedMode ? undefined : `${visiblePieces.length + kits.length} peça(s) · ${stores.length} loja(s) · ${totalPieces} unidade(s) total`}
         maxWidth="max-w-[95vw]"
-        
       />
 
       <main className="max-w-[95vw] mx-auto px-2 sm:px-4 py-4 sm:py-6">
