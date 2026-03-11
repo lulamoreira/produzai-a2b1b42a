@@ -116,6 +116,7 @@ const Admin = () => {
                     userInfo={u}
                     allClientAccess={allAccess}
                     allAgencyAccess={allAgencyAccess}
+                    allCampaignAccess={allCampaignAccess}
                   />
                 ))}
               </div>
