@@ -168,6 +168,8 @@ const CampaignDetail = () => {
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
   const [editValue, setEditValue] = useState("");
   const [importMatrixDialogOpen, setImportMatrixDialogOpen] = useState(false);
+  const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
+  const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(false);
 
   // ─── Derived data ──────────────────────────────────────
   const qtyMap = useMemo(() => {
