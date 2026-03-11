@@ -23,6 +23,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import StoresMatrixTable from "@/components/StoresMatrixTable";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
@@ -543,50 +544,15 @@ const ClientDetail = () => {
 
   const storeStates = Array.from(new Set(stores.map((s) => s.state?.trim()).filter(Boolean) as string[])).sort();
 
-  type StoreSortKey = "name" | "nickname" | "store_code" | "city" | "state" | "store_model" | "phone" | "email" | "manager_name";
-  const [storeSortKey, setStoreSortKey] = useState<StoreSortKey>("state");
-  const [storeSortDir, setStoreSortDir] = useState<"asc" | "desc">("asc");
-
-  const handleStoreSort = (key: StoreSortKey) => {
-    if (storeSortKey === key) {
-      setStoreSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setStoreSortKey(key);
-      setStoreSortDir("asc");
-    }
-  };
-
-  const SortableHead = ({ label, sortKey }: { label: string; sortKey: StoreSortKey }) => (
-    <TableHead>
-      <button
-        type="button"
-        className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer select-none"
-        onClick={() => handleStoreSort(sortKey)}
-      >
-        {label}
-        {storeSortKey === sortKey ? (
-          storeSortDir === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />
-        ) : (
-          <ArrowUpDown className="w-3.5 h-3.5 opacity-30" />
-        )}
-      </button>
-    </TableHead>
-  );
-
-  const filteredStores = stores
+  // filteredStores is now handled by StoresMatrixTable, but we still need the count
+  const filteredStoresCount = stores
     .filter((s) => {
       if (storeStateFilter && storeStateFilter !== "all" && s.state?.trim() !== storeStateFilter) return false;
       const q = storeSearch.toLowerCase();
       return !q || s.name.toLowerCase().includes(q) ||
         s.nickname?.toLowerCase().includes(q) ||
         s.city?.toLowerCase().includes(q);
-    })
-    .sort((a, b) => {
-      const valA = ((a as any)[storeSortKey] || "").toString().toLowerCase();
-      const valB = ((b as any)[storeSortKey] || "").toString().toLowerCase();
-      const cmp = valA.localeCompare(valB);
-      return storeSortDir === "asc" ? cmp : -cmp;
-    });
+    }).length;
 
   const customFieldLabelsRaw = [
     client?.custom_field_1_label,
@@ -1037,84 +1003,24 @@ const ClientDetail = () => {
 
             {loadingStores ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
-            ) : filteredStores.length === 0 ? (
+            ) : filteredStoresCount === 0 ? (
               <div className="text-center py-16">
                 <Store className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-muted-foreground text-sm">Nenhuma loja cadastrada.</p>
               </div>
             ) : (
-              <div className="border border-border rounded-lg overflow-x-auto">
-                <Table className="min-w-[800px]">
-                  <TableHeader>
-                    <TableRow>
-                      <SortableHead label="Nome" sortKey="name" />
-                      <SortableHead label="Apelido" sortKey="nickname" />
-                      <SortableHead label="Código" sortKey="store_code" />
-                      <SortableHead label="Cidade" sortKey="city" />
-                      <SortableHead label="UF" sortKey="state" />
-                      <SortableHead label="Modelo" sortKey="store_model" />
-                      <SortableHead label="Telefone" sortKey="phone" />
-                      <SortableHead label="E-mail" sortKey="email" />
-                      <SortableHead label="Contato" sortKey="manager_name" />
-                      {(canEditStores || canDeleteStores) && <TableHead className="text-right">Ações</TableHead>}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredStores.map((s) => (
-                      <TableRow key={s.id}>
-                        <TableCell className="font-medium">
-                          <button
-                            type="button"
-                            className="text-left hover:underline underline-offset-2 transition-colors cursor-pointer px-2 py-0.5 rounded-md"
-                            style={{ backgroundColor: getStateColor(s.state).bg, color: getStateColor(s.state).text }}
-                            onClick={() => handleOpenEditStore(s)}
-                          >
-                            {s.name}
-                          </button>
-                        </TableCell>
-                        <TableCell>{s.nickname || "—"}</TableCell>
-                        <TableCell className="text-xs font-mono">{s.store_code || "—"}</TableCell>
-                        <TableCell>{s.city || "—"}</TableCell>
-                        <TableCell>{s.state || "—"}</TableCell>
-                        <TableCell className="text-xs">{s.store_model || "—"}</TableCell>
-                        <TableCell className="text-xs">{s.phone ? formatPhone(s.phone) : "—"}</TableCell>
-                        <TableCell className="text-xs">{(s as any).email || "—"}</TableCell>
-                        <TableCell className="text-xs">{s.manager_name || "—"}</TableCell>
-                        {(canEditStores || canDeleteStores) && (
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              {canEditStores && (
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleOpenEditStore(s)}>
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                </Button>
-                              )}
-                              {canDeleteStores && (
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Excluir loja?</AlertDialogTitle>
-                                      <AlertDialogDescription>A loja será removida de todas as campanhas.</AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => deleteStore.mutate(s.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              )}
-                            </div>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+              <StoresMatrixTable
+                stores={stores}
+                clientId={clientId!}
+                customFieldLabels={customFieldsParsed
+                  .map((cf, i) => ({ label: cf.name, index: i + 1 }))
+                  .filter((cf) => cf.label)}
+                canEdit={canEditStores}
+                onUpdateStore={async (data) => { await updateStore.mutateAsync(data); }}
+                onOpenEditStore={handleOpenEditStore}
+                storeSearch={storeSearch}
+                storeStateFilter={storeStateFilter}
+              />
             )}
           </TabsContent>
 
