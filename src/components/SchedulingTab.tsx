@@ -531,6 +531,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 schedule={schedule}
                 storeId={store.id}
                 canEdit={canEdit}
+                hasDateAndTime={!!(schedule?.scheduled_date && schedule?.scheduled_time)}
                 onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
               />
             </div>
