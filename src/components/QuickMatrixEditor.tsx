@@ -368,7 +368,7 @@ const QuickMatrixEditor = ({
                   if (col.type === "piece") {
                     const p = col.data;
                     const colTotal = stores.reduce((s, st) => {
-                      const key = `${st.id}-${p.id}`;
+                      const key = `${st.id}${SEP}${p.id}`;
                       return s + (parseInt(draft[key]) || 0);
                     }, 0);
                     return <TableCell key={p.id} className="text-center text-sm">{colTotal}</TableCell>;
