@@ -162,7 +162,7 @@ const Admin = () => {
     setEditNameValue("");
   };
 
-  if (loadingRole || loadingPermLevel) {
+  if (loadingRole) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-10 h-10 border-3 border-primary border-t-transparent rounded-full" />
@@ -170,7 +170,7 @@ const Admin = () => {
     );
   }
 
-  if (!isAdmin && !isMasterOrEditor) return <Navigate to="/" replace />;
+  if (!isAdminOrMaster) return <Navigate to="/" replace />;
 
   const handleRoleChange = (userId: string, newRole: AppRole) => {
     if (userId === user?.id) return;
