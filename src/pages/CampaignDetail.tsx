@@ -1456,28 +1456,43 @@ const CampaignDetail = () => {
                                       <TableCell key={p.id} className="text-center p-1">
                                         {isEditing ? (
                                           <Input
+                                            ref={(el) => { editingInputRefs.current[`${store.id}-${p.id}`] = el; }}
                                             type="number"
                                             min={0}
                                             value={editValue}
                                             onChange={(e) => setEditValue(e.target.value)}
-                                            onBlur={() => handleCellSave()}
+                                            onBlur={handlePieceBlur}
                                             onKeyDown={(e) => {
                                               if (e.key === "Tab") {
                                                 e.preventDefault();
+                                                skipBlurSaveRef.current = true;
                                                 const next = navigateMatrixCell(e.shiftKey ? "left" : "right");
-                                                handleCellSave(next || undefined);
+                                                handleCellSave(next ? { navigateTo: next } : undefined);
                                               } else if (e.key === "Enter") {
                                                 e.preventDefault();
+                                                skipBlurSaveRef.current = true;
                                                 const next = navigateMatrixCell(e.shiftKey ? "up" : "down");
-                                                handleCellSave(next || undefined);
+                                                handleCellSave(next ? { navigateTo: next } : undefined);
                                               } else if (e.key === "ArrowUp") {
                                                 e.preventDefault();
+                                                skipBlurSaveRef.current = true;
                                                 const next = navigateMatrixCell("up");
-                                                handleCellSave(next || undefined);
+                                                handleCellSave(next ? { navigateTo: next } : undefined);
                                               } else if (e.key === "ArrowDown") {
                                                 e.preventDefault();
+                                                skipBlurSaveRef.current = true;
                                                 const next = navigateMatrixCell("down");
-                                                handleCellSave(next || undefined);
+                                                handleCellSave(next ? { navigateTo: next } : undefined);
+                                              } else if (e.key === "ArrowLeft") {
+                                                e.preventDefault();
+                                                skipBlurSaveRef.current = true;
+                                                const next = navigateMatrixCell("left");
+                                                handleCellSave(next ? { navigateTo: next } : undefined);
+                                              } else if (e.key === "ArrowRight") {
+                                                e.preventDefault();
+                                                skipBlurSaveRef.current = true;
+                                                const next = navigateMatrixCell("right");
+                                                handleCellSave(next ? { navigateTo: next } : undefined);
                                               } else if (e.key === "Escape") {
                                                 setEditingCell(null);
                                               }
