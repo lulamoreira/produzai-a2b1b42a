@@ -531,7 +531,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 schedule={schedule}
                 storeId={store.id}
                 canEdit={canEdit}
-                onToggle={(field, value) => handleFieldChange(store.id, field, value)}
+                onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
               />
             </div>
           );
