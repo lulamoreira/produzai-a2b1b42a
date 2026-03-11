@@ -169,6 +169,7 @@ const CampaignDetail = () => {
   const [editValue, setEditValue] = useState("");
   const [importMatrixDialogOpen, setImportMatrixDialogOpen] = useState(false);
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
+  const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(false);
 
   // ─── Derived data ──────────────────────────────────────
