@@ -377,16 +377,12 @@ export default function StoresMatrixTable({
     const store = stores.find((s) => s.id === storeId);
     if (!store) return;
     const oldValue = ((store as any)[field] || "").toString();
-    if (value === oldValue) {
-      setEditingCell(null);
-      return;
-    }
+    if (value === oldValue) return;
     try {
       await onUpdateStore({ id: storeId, [field]: value || null });
     } catch {
       // error handled by mutation
     }
-    setEditingCell(null);
   }, [stores, onUpdateStore]);
 
   const handleCancel = () => setEditingCell(null);
