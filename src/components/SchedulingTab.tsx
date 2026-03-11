@@ -218,7 +218,27 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       store_approved_at: existing?.store_approved_at ?? null,
       team_approved_at: existing?.team_approved_at ?? null,
       responsibility_at: existing?.responsibility_at ?? null,
-      [field]: value,
+      ...(typeof field === "string" ? { [field]: value } : {}),
+    });
+  };
+
+  const handleMultiFieldChange = (storeId: string, fields: Record<string, any>) => {
+    const existing = scheduleMap[storeId];
+    upsertSchedule.mutate({
+      campaign_id: campaignId,
+      store_id: storeId,
+      scheduled_date: existing?.scheduled_date ?? null,
+      scheduled_time: existing?.scheduled_time ?? null,
+      installation_os: existing?.installation_os ?? null,
+      installation_preference: existing?.installation_preference ?? "not_informed",
+      team_id: existing?.team_id ?? null,
+      store_approved: existing?.store_approved ?? true,
+      team_approved: existing?.team_approved ?? true,
+      responsibility: existing?.responsibility ?? null,
+      store_approved_at: existing?.store_approved_at ?? null,
+      team_approved_at: existing?.team_approved_at ?? null,
+      responsibility_at: existing?.responsibility_at ?? null,
+      ...fields,
     });
   };
 
