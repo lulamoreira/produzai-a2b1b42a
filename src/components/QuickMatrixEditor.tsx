@@ -97,7 +97,7 @@ const QuickMatrixEditor = ({
     if (piecesInKit.length === 0) return 0;
     return Math.min(
       ...piecesInKit.map(kp => {
-        const key = `${storeId}-${kp.piece_id}`;
+        const key = `${storeId}${SEP}${kp.piece_id}`;
         return Math.floor((parseInt(draft[key]) || 0) / (kp.quantity || 1));
       })
     );
