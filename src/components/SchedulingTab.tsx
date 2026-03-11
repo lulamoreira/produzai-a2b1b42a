@@ -192,8 +192,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     if (filterApproval) {
       result = result.filter((s) => {
         const sch = scheduleMap[s.id];
-        const storeOk = sch?.store_approved ?? true;
-        const teamOk = sch?.team_approved ?? true;
+        const storeOk = sch?.store_approved ?? false;
+        const teamOk = sch?.team_approved ?? false;
         if (filterApproval === "approved") return storeOk && teamOk;
         if (filterApproval === "pending") return !storeOk || !teamOk;
         return true;
@@ -212,9 +212,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       installation_os: existing?.installation_os ?? null,
       installation_preference: existing?.installation_preference ?? "not_informed",
       team_id: existing?.team_id ?? null,
-      store_approved: existing?.store_approved ?? true,
-      team_approved: existing?.team_approved ?? true,
-      responsibility: existing?.responsibility ?? null,
+      store_approved: existing?.store_approved ?? false,
+      team_approved: existing?.team_approved ?? false,
+      responsibility: existing?.responsibility ?? "team",
       store_approved_at: existing?.store_approved_at ?? null,
       team_approved_at: existing?.team_approved_at ?? null,
       responsibility_at: existing?.responsibility_at ?? null,
@@ -232,9 +232,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       installation_os: existing?.installation_os ?? null,
       installation_preference: existing?.installation_preference ?? "not_informed",
       team_id: existing?.team_id ?? null,
-      store_approved: existing?.store_approved ?? true,
-      team_approved: existing?.team_approved ?? true,
-      responsibility: existing?.responsibility ?? null,
+      store_approved: existing?.store_approved ?? false,
+      team_approved: existing?.team_approved ?? false,
+      responsibility: existing?.responsibility ?? "team",
       store_approved_at: existing?.store_approved_at ?? null,
       team_approved_at: existing?.team_approved_at ?? null,
       responsibility_at: existing?.responsibility_at ?? null,
@@ -347,8 +347,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const teamVehicles: TeamVehicle[] = schedule?.team_id ? (allVehiclesMap[schedule.team_id] || []) : [];
           const teamIncomplete = assignedTeam ? isTeamIncomplete(teamMembers) : false;
 
-          const storeApproved = schedule?.store_approved ?? true;
-          const teamApproved = schedule?.team_approved ?? true;
+          const storeApproved = schedule?.store_approved ?? false;
+          const teamApproved = schedule?.team_approved ?? false;
           const fullyApproved = storeApproved && teamApproved;
           const hasPendency = !storeApproved || !teamApproved;
 
@@ -563,16 +563,16 @@ interface ApprovalTogglesProps {
 }
 
 function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: ApprovalTogglesProps) {
-  const storeApproved = schedule?.store_approved ?? true;
-  const teamApproved = schedule?.team_approved ?? true;
+  const storeApproved = schedule?.store_approved ?? false;
+  const teamApproved = schedule?.team_approved ?? false;
   const hasPendency = !storeApproved || !teamApproved;
-  const responsibility = schedule?.responsibility || null;
+  const responsibility = schedule?.responsibility || "team";
 
   const handleSetApproval = (field: "store_approved" | "team_approved", newVal: boolean) => {
     if (!canEdit) return;
     const now = new Date().toISOString();
     const atField = field === "store_approved" ? "store_approved_at" : "team_approved_at";
-    const otherApproved = field === "store_approved" ? (schedule?.team_approved ?? true) : (schedule?.store_approved ?? true);
+    const otherApproved = field === "store_approved" ? (schedule?.team_approved ?? false) : (schedule?.store_approved ?? false);
     
     const updates: Record<string, any> = {
       [field]: newVal,
@@ -607,6 +607,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: Approval
 
   return (
     <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-2">
+      <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide mb-1">Status de aprovação da instalação</p>
       {/* Toggle 1: Lojista */}
       <ToggleSwitch
         label="Lojista"
