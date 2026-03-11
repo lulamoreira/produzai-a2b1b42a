@@ -357,10 +357,12 @@ const Admin = () => {
                           )}
                           <p className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
                         </TableCell>
-                        {isAdmin && (
+                        {isAdminOrMaster && (
                         <TableCell>
                           {u.role === "admin" ? (
                             <Badge variant="default" className="text-[10px] uppercase">Admin</Badge>
+                          ) : u.role === "master" ? (
+                            <Badge variant="outline" className="text-[10px] uppercase bg-orange-500/15 text-orange-700 border-orange-500/30">Master</Badge>
                           ) : userAccesses.length > 0 ? (
                             <div className="space-y-1.5">
                               {userAccesses.map((a) => {
@@ -388,7 +390,7 @@ onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: categoryHasEdi
                           )}
                         </TableCell>
                         )}
-                        {isAdmin && (
+                        {isAdminOrMaster && (
                         <TableCell className="text-right">
                           {u.user_id === user?.id ? (
                             <span className="text-xs text-muted-foreground italic">Você</span>
@@ -396,7 +398,8 @@ onValueChange={(val) => updateAccess.mutate({ id: a.id, can_edit: categoryHasEdi
                             <Select value={u.role} onValueChange={(val) => handleRoleChange(u.user_id, val as AppRole)}>
                               <SelectTrigger className="w-[140px] h-8 text-xs"><SelectValue /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="admin">Admin</SelectItem>
+                                {isAdmin && <SelectItem value="admin">Admin</SelectItem>}
+                                <SelectItem value="master">Master</SelectItem>
                                 <SelectItem value="viewer">Usuário</SelectItem>
                               </SelectContent>
                             </Select>
