@@ -365,7 +365,7 @@ const CampaignDetail = () => {
     setEditValue(String(qty));
   };
 
-  const handleCellSave = () => {
+  const handleCellSave = (navigateTo?: { storeId: string; pieceId: string }) => {
     if (!editingCell || !campaignId) return;
     const qty = parseInt(editValue) || 0;
     updateStorePiece.mutate({
@@ -374,8 +374,36 @@ const CampaignDetail = () => {
       pieceId: editingCell.pieceId,
       quantity: Math.max(0, qty),
     });
-    setEditingCell(null);
+    if (navigateTo) {
+      setEditingCell(navigateTo);
+      const navKey = `${navigateTo.storeId}-${navigateTo.pieceId}`;
+      setEditValue(String(qtyMap[navKey] || 0));
+    } else {
+      setEditingCell(null);
+    }
   };
+
+  const navigateMatrixCell = useCallback((dir: "up" | "down" | "left" | "right") => {
+    if (!editingCell) return;
+    const storeIdx = activeFilteredStores.findIndex((s) => s.id === editingCell.storeId);
+    const colIds = matrixColumns.map((c) => c.type === "piece" ? c.data.id : `kit-${c.data.id}`);
+    const colIdx = colIds.indexOf(editingCell.pieceId);
+    if (storeIdx === -1 || colIdx === -1) return;
+
+    let newStoreIdx = storeIdx;
+    let newColIdx = colIdx;
+    if (dir === "up") newStoreIdx = Math.max(0, storeIdx - 1);
+    else if (dir === "down") newStoreIdx = Math.min(activeFilteredStores.length - 1, storeIdx + 1);
+    else if (dir === "left") newColIdx = Math.max(0, colIdx - 1);
+    else if (dir === "right") newColIdx = Math.min(colIds.length - 1, colIdx + 1);
+
+    const newStore = activeFilteredStores[newStoreIdx];
+    const newPieceId = colIds[newColIdx];
+    if (newStore && newPieceId) {
+      return { storeId: newStore.id, pieceId: newPieceId };
+    }
+    return null;
+  }, [editingCell, activeFilteredStores, matrixColumns]);
 
   const handleDistributePiece = async (piece: CampaignPiece) => {
     if (!campaignId) return;
