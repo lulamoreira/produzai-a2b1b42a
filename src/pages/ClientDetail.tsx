@@ -1013,7 +1013,7 @@ const ClientDetail = () => {
                 stores={stores}
                 clientId={clientId!}
                 customFieldLabels={customFieldsParsed
-                  .map((cf, i) => ({ label: cf.name, index: i + 1 }))
+                  .map((cf, i) => ({ label: cf.name, index: i + 1, type: cf.type }))
                   .filter((cf) => cf.label)}
                 canEdit={canEditStores}
                 onUpdateStore={async (data) => { await updateStore.mutateAsync(data); }}

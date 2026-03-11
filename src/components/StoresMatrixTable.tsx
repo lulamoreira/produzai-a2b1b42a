@@ -23,6 +23,7 @@ export type ColumnDef = {
   key: string;
   label: string;
   storeField: string;
+  fieldType?: "text" | "number" | "date" | "boolean";
 };
 
 const BASE_COLUMNS: ColumnDef[] = [
