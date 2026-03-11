@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useUserPermissionLevel } from "@/hooks/useUserPermissionLevel";
 import { supabase } from "@/integrations/supabase/client";
 import { capitalizeName } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,23 +20,14 @@ const getGreeting = () => {
 };
 
 interface AppHeaderProps {
-  /** Show back button pointing to this path */
   backTo?: string;
-  /** Label for the back button */
   backLabel?: string;
-  /** Override the greeting line with custom title */
   title?: string;
-  /** Subtitle below the title */
   subtitle?: string;
-  /** Extra content rendered between title and right-side controls */
   children?: React.ReactNode;
-  /** Max width class (default: max-w-5xl) */
   maxWidth?: string;
-  /** Show Chat & Admin buttons (default: true) */
   showNav?: boolean;
-  /** Custom background style (e.g. gradient) */
   bgStyle?: React.CSSProperties;
-  /** Custom background class override */
   bgClass?: string;
 }
 
@@ -74,12 +64,18 @@ export default function AppHeader({
   bgClass,
 }: AppHeaderProps) {
   const { user, signOut } = useAuth();
-  const { isAdmin } = useUserRole();
-  const { isMasterOrEditor } = useUserPermissionLevel();
+  const { isAdmin, isMaster, isAdminOrMaster, role } = useUserRole();
   const navigate = useNavigate();
   const displayName = useDisplayName();
 
   const greeting = `${getGreeting()}, ${displayName}!`;
+
+  const roleBadge = isAdmin ? "Admin" : isMaster ? "Master" : "Usuário";
+  const roleBadgeClass = isAdmin
+    ? "bg-primary/15 text-primary"
+    : isMaster
+    ? "bg-orange-500/15 text-orange-700"
+    : "bg-muted text-muted-foreground";
 
   return (
     <header className={`border-b border-white/10 sticky top-0 z-10 ${bgClass || "bg-gradient-to-r from-[#1e3a5f] to-[#5b3f8f]"} text-white`} style={bgStyle}>
@@ -111,7 +107,7 @@ export default function AppHeader({
                 <MessageSquare className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline text-xs font-semibold">Chat</span>
               </Button>
-              {(isAdmin || isMasterOrEditor) && (
+              {isAdminOrMaster && (
                 <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]" onClick={() => navigate("/admin")}>
                   <Shield className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline text-xs font-semibold">Admin</span>
@@ -131,8 +127,8 @@ export default function AppHeader({
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem className="text-xs text-muted-foreground" disabled>{user?.email}</DropdownMenuItem>
               <DropdownMenuItem className="text-xs" disabled>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${isAdmin ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
-                  {isAdmin ? "Admin" : "Usuário"}
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${roleBadgeClass}`}>
+                  {roleBadge}
                 </span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={signOut} className="text-destructive">

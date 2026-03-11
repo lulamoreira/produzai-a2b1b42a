@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-export type AppRole = "admin" | "viewer";
+export type AppRole = "admin" | "master" | "viewer";
 
 export function useUserRole() {
   const { user } = useAuth();
@@ -25,6 +25,8 @@ export function useUserRole() {
   return {
     role: role ?? "viewer",
     isAdmin: role === "admin",
+    isMaster: role === "master",
+    isAdminOrMaster: role === "admin" || role === "master",
     isLoading,
   };
 }
