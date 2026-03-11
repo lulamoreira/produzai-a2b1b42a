@@ -193,15 +193,26 @@ const CampaignDetail = () => {
         s.nickname?.toLowerCase().includes(storeSearch.toLowerCase());
       const matchesCity = cityFilter === "__all__" || s.city === cityFilter;
       const matchesState = stateFilter === "__all__" || s.state?.trim() === stateFilter;
-      // Store category filter: show stores that have pieces with matching store_category
       const matchesStoreCategory = storeCategoryFilter === "__all__" || true; // applied on matrix level
+
+      // Apply sidebar store filters
+      const sf = storeFilters;
+      if (sf.city.size > 0 && (!s.city || !sf.city.has(s.city))) return false;
+      if (sf.state.size > 0 && (!s.state || !sf.state.has(s.state.trim()))) return false;
+      if (sf.store_model.size > 0 && (!s.store_model || !sf.store_model.has(s.store_model))) return false;
+      if (sf.custom_field_1.size > 0 && (!s.custom_field_1 || !sf.custom_field_1.has(s.custom_field_1))) return false;
+      if (sf.custom_field_2.size > 0 && (!s.custom_field_2 || !sf.custom_field_2.has(s.custom_field_2))) return false;
+      if (sf.custom_field_3.size > 0 && (!s.custom_field_3 || !sf.custom_field_3.has(s.custom_field_3))) return false;
+      if (sf.custom_field_4.size > 0 && (!s.custom_field_4 || !sf.custom_field_4.has(s.custom_field_4))) return false;
+      if (sf.custom_field_5.size > 0 && (!s.custom_field_5 || !sf.custom_field_5.has(s.custom_field_5))) return false;
+
       return matchesSearch && matchesCity && matchesState && matchesStoreCategory;
     }).sort((a, b) => {
       const stateComp = (a.state || "").localeCompare(b.state || "");
       if (stateComp !== 0) return stateComp;
       return a.name.localeCompare(b.name);
     });
-  }, [stores, storeSearch, cityFilter, stateFilter, storeCategoryFilter]);
+  }, [stores, storeSearch, cityFilter, stateFilter, storeCategoryFilter, storeFilters]);
 
   const allEnabled = useMemo(() => filteredStores.every(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
   const activeFilteredStores = useMemo(() => filteredStores.filter(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
