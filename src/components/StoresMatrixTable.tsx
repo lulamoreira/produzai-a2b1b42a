@@ -6,6 +6,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, ArrowUpDown, GripVertical, Check, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { getStateColor } from "@/lib/stateColors";
 import type { ClientStore } from "@/hooks/useMultiClientData";
 import {
@@ -23,6 +24,7 @@ export type ColumnDef = {
   key: string;
   label: string;
   storeField: string;
+  fieldType?: "text" | "number" | "date" | "boolean";
 };
 
 const BASE_COLUMNS: ColumnDef[] = [
@@ -46,14 +48,15 @@ const BASE_COLUMNS: ColumnDef[] = [
   { key: "observations", label: "Observações", storeField: "observations" },
 ];
 
-function buildColumns(customFieldLabels: { label: string; index: number }[]): ColumnDef[] {
+function buildColumns(customFieldLabels: { label: string; index: number; type?: string }[]): ColumnDef[] {
   const cols = [...BASE_COLUMNS];
-  customFieldLabels.forEach(({ label, index }) => {
+  customFieldLabels.forEach(({ label, index, type }) => {
     if (label) {
       cols.push({
         key: `custom_field_${index}`,
         label,
         storeField: `custom_field_${index}`,
+        fieldType: (type as ColumnDef["fieldType"]) || "text",
       });
     }
   });
@@ -272,7 +275,7 @@ function EditableCell({
 type Props = {
   stores: ClientStore[];
   clientId: string;
-  customFieldLabels: { label: string; index: number }[];
+  customFieldLabels: { label: string; index: number; type?: string }[];
   canEdit: boolean;
   onUpdateStore: (data: { id: string } & Partial<ClientStore>) => Promise<void>;
   onOpenEditStore?: (store: ClientStore) => void;
@@ -417,6 +420,7 @@ export default function StoresMatrixTable({
 
   const getCellDisplay = (store: ClientStore, col: ColumnDef) => {
     const val = (store as any)[col.storeField];
+    if (col.fieldType === "boolean") return val === "true" || val === true ? "Sim" : "Não";
     if (!val) return "";
     if (col.storeField === "phone") return formatPhone(val);
     return val;
@@ -460,6 +464,30 @@ export default function StoresMatrixTable({
                         >
                           {store.name}
                         </button>
+                      </TableCell>
+                    );
+                  }
+
+                  // Boolean field: render as Switch
+                  if (col.fieldType === "boolean") {
+                    const boolVal = (store as any)[col.storeField];
+                    const isTrue = boolVal === "true" || boolVal === true;
+                    return (
+                      <TableCell key={col.key} className="p-1">
+                        {canEdit ? (
+                          <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
+                            <Switch
+                              checked={isTrue}
+                              onCheckedChange={(checked) => {
+                                handleSave(store.id, col.storeField, checked ? "true" : "false");
+                              }}
+                              className="scale-75"
+                            />
+                            <span className="text-xs text-muted-foreground">{isTrue ? "Sim" : "Não"}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs px-1">{isTrue ? "Sim" : "Não"}</span>
+                        )}
                       </TableCell>
                     );
                   }

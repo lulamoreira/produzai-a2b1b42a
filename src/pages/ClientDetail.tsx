@@ -347,6 +347,13 @@ const ClientDetail = () => {
     if (!formData.store_code && client) {
       formData.store_code = generateStoreCode(client.name, formData.country, stores);
     }
+    // Set boolean custom fields to "false" if empty
+    customFieldsParsed.forEach((cf, i) => {
+      const key = `custom_field_${i + 1}` as keyof typeof formData;
+      if (cf.type === "boolean" && !formData[key]) {
+        (formData as any)[key] = "false";
+      }
+    });
     await addStore.mutateAsync({ client_id: clientId, ...formData });
     setStoreForm({ ...emptyStoreForm });
     nicknameTouchedRef.current = false;
@@ -1013,7 +1020,7 @@ const ClientDetail = () => {
                 stores={stores}
                 clientId={clientId!}
                 customFieldLabels={customFieldsParsed
-                  .map((cf, i) => ({ label: cf.name, index: i + 1 }))
+                  .map((cf, i) => ({ label: cf.name, index: i + 1, type: cf.type }))
                   .filter((cf) => cf.label)}
                 canEdit={canEditStores}
                 onUpdateStore={async (data) => { await updateStore.mutateAsync(data); }}
