@@ -1047,15 +1047,15 @@ const ClientDetail = () => {
                 <Table className="min-w-[800px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nome</TableHead>
-                       <TableHead>Apelido</TableHead>
-                       <TableHead>Código</TableHead>
-                       <TableHead>Cidade</TableHead>
-                       <TableHead>UF</TableHead>
-                       <TableHead>Modelo</TableHead>
-                       <TableHead>Telefone</TableHead>
-                      <TableHead>E-mail</TableHead>
-                      <TableHead>Contato</TableHead>
+                      <SortableHead label="Nome" sortKey="name" />
+                      <SortableHead label="Apelido" sortKey="nickname" />
+                      <SortableHead label="Código" sortKey="store_code" />
+                      <SortableHead label="Cidade" sortKey="city" />
+                      <SortableHead label="UF" sortKey="state" />
+                      <SortableHead label="Modelo" sortKey="store_model" />
+                      <SortableHead label="Telefone" sortKey="phone" />
+                      <SortableHead label="E-mail" sortKey="email" />
+                      <SortableHead label="Contato" sortKey="manager_name" />
                       {(canEditStores || canDeleteStores) && <TableHead className="text-right">Ações</TableHead>}
                     </TableRow>
                   </TableHeader>
