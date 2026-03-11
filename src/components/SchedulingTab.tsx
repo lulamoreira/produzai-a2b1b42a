@@ -90,6 +90,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterCity, setFilterCity] = useState("");
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
 
+  const [filterApproval, setFilterApproval] = useState("");
+
   // Fetch all contacts for the client
   const { data: allContacts = [] } = useStoreContactsByClient(clientId);
   const { data: contactRoles = [] } = useStoreContactRoles(clientId);
