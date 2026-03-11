@@ -171,12 +171,27 @@ const AgencySelect = () => {
     setEditDialogOpen(true);
   };
 
-  if (isLoading || loadingAccess || loadingClientAccess) {
+  if (isLoading || loadingAccess || loadingClientAccess || loadingDirectAccess) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-10 h-10 border-3 border-primary border-t-transparent rounded-full" />
       </div>
     );
+  }
+
+  // Limited users (campaign-level access only) → redirect
+  if (isLimited) {
+    if (limitedCampaigns.length === 1 && limitedCampaigns[0].modules.length > 0) {
+      const c = limitedCampaigns[0];
+      return (
+        <Navigate
+          to={`/agency/${c.agencyId}/clients/${c.clientId}/campaigns/${c.campaignId}`}
+          state={{ initialSection: c.modules[0], limitedMode: true }}
+          replace
+        />
+      );
+    }
+    return <Navigate to="/my-campaigns" replace />;
   }
 
   const LogoUploadArea = ({ preview, logoUrl, onFileSelect, fileInputRef }: {
