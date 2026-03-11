@@ -681,28 +681,42 @@ const ClientDetail = () => {
       {customFieldsParsed.some(f => f.name) && (
         <div className="border-t border-border pt-3 space-y-3">
           <p className="text-sm font-medium text-foreground">Campos Personalizados</p>
-          {customFieldsParsed.map((field, i) =>
-            field.name ? (
+          {customFieldsParsed.map((field, i) => {
+            if (!field.name) return null;
+            const fieldKey = `custom_field_${i + 1}` as keyof typeof form;
+            const currentValue = (form as any)[fieldKey] || "";
+            const suggestions = [...new Set(
+              stores
+                .map((s) => (s as any)[fieldKey])
+                .filter((v: any) => typeof v === "string" && v.trim() !== "")
+            )].sort() as string[];
+            return (
               <div key={i}>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">{field.name}</label>
                 {field.type === "boolean" ? (
                   <div className="flex items-center gap-2">
                     <Switch
-                      checked={(form as any)[`custom_field_${i + 1}`] === "true"}
-                      onCheckedChange={(checked) => setForm((f) => ({ ...f, [`custom_field_${i + 1}`]: checked ? "true" : "false" }))}
+                      checked={currentValue === "true"}
+                      onCheckedChange={(checked) => setForm((f) => ({ ...f, [fieldKey]: checked ? "true" : "false" }))}
                     />
-                    <span className="text-sm text-muted-foreground">{(form as any)[`custom_field_${i + 1}`] === "true" ? "Sim" : "Não"}</span>
+                    <span className="text-sm text-muted-foreground">{currentValue === "true" ? "Sim" : "Não"}</span>
                   </div>
-                ) : (
+                ) : field.type === "number" || field.type === "date" ? (
                   <Input
-                    type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
-                    value={(form as any)[`custom_field_${i + 1}`]}
-                    onChange={(e) => setForm((f) => ({ ...f, [`custom_field_${i + 1}`]: e.target.value }))}
+                    type={field.type}
+                    value={currentValue}
+                    onChange={(e) => setForm((f) => ({ ...f, [fieldKey]: e.target.value }))}
+                  />
+                ) : (
+                  <ComboboxInput
+                    value={currentValue}
+                    onChange={(v) => setForm((f) => ({ ...f, [fieldKey]: v }))}
+                    suggestions={suggestions}
                   />
                 )}
               </div>
-            ) : null
-          )}
+            );
+          })}
         </div>
       )}
     </>
