@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
       category = newCat;
     }
 
-    // 3. Grant access
+    // 3. Grant client-level access only
     if (invite.client_id) {
       const { data: existing } = await admin
         .from('user_client_access')
@@ -126,22 +126,10 @@ Deno.serve(async (req) => {
         });
       }
     } else {
-      const { data: existing } = await admin
-        .from('user_agency_access')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('agency_id', invite.agency_id)
-        .maybeSingle();
-
-      if (!existing) {
-        await admin.from('user_agency_access').insert({
-          user_id: user.id,
-          agency_id: invite.agency_id,
-          category_id: category!.id,
-          can_edit: false,
-          suspended: false,
-        });
-      }
+      // No client_id means invalid invite for scoped access
+      return new Response(JSON.stringify({ error: 'Invite must have a client scope' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     // 4. Mark invite as used
