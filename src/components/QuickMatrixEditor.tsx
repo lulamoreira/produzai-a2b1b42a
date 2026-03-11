@@ -304,7 +304,7 @@ const QuickMatrixEditor = ({
 
                       if (col.type === "piece") {
                         const p = col.data;
-                        const key = `${store.id}-${p.id}`;
+                        const key = `${store.id}${SEP}${p.id}`;
                         const original = qtyMap[key] || 0;
                         const current = draft[key] ?? String(original);
                         const changed = parseInt(current) !== original;
