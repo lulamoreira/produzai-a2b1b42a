@@ -323,38 +323,10 @@ const Admin = () => {
                     {users.map((u) => {
                       const userAccesses = allAccess.filter((a) => a.user_id === u.user_id);
 
-                      // Master/Editor can only edit names of non-admin users in the same agency
+                      // Admin/Master can edit names (Master can't edit Admin names)
                       const canEditName = isAdminOrMaster
                         ? (u.role !== "admin" || isAdmin)
                         : false;
-                            // Get current user's agency IDs (from agency access)
-                            const myAgencyIds = allAgencyAccess
-                              .filter((a) => a.user_id === user?.id)
-                              .map((a) => a.agency_id);
-                            // Get current user's agency IDs via client access
-                            const myClientAgencyIds = allAccess
-                              .filter((a) => a.user_id === user?.id)
-                              .map((a) => {
-                                const c = clients.find((c) => c.id === a.client_id);
-                                return c?.agency_id;
-                              })
-                              .filter(Boolean);
-                            const allMyAgencyIds = [...new Set([...myAgencyIds, ...myClientAgencyIds])];
-                            if (allMyAgencyIds.length === 0) return false;
-                            // Check if target user shares any agency
-                            const targetAgencyIds = allAgencyAccess
-                              .filter((a) => a.user_id === u.user_id)
-                              .map((a) => a.agency_id);
-                            const targetClientAgencyIds = allAccess
-                              .filter((a) => a.user_id === u.user_id)
-                              .map((a) => {
-                                const c = clients.find((c) => c.id === a.client_id);
-                                return c?.agency_id;
-                              })
-                              .filter(Boolean);
-                            const allTargetAgencyIds = [...new Set([...targetAgencyIds, ...targetClientAgencyIds])];
-                            return allMyAgencyIds.some((id) => allTargetAgencyIds.includes(id));
-                          })();
 
                       return (
                       <TableRow key={u.user_id}>
