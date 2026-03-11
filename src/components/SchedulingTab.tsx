@@ -294,6 +294,15 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
+        <select
+          value={filterApproval}
+          onChange={(e) => setFilterApproval(e.target.value)}
+          className="px-3 py-2 text-sm rounded-md border border-border bg-card text-foreground"
+        >
+          <option value="">Todas as aprovações</option>
+          <option value="approved">✅ 100% Aprovado</option>
+          <option value="pending">⚠️ Com pendência</option>
+        </select>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setTeamDialogOpen(true)}>
           <Wrench className="w-4 h-4" /> Equipes
         </Button>
