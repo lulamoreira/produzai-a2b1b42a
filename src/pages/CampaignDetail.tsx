@@ -740,7 +740,7 @@ const CampaignDetail = () => {
 
       <main className="max-w-[95vw] mx-auto px-2 sm:px-4 py-4 sm:py-6">
         {/* ─── HOME VIEW: Material de Apoio + Nav Buttons ─── */}
-        {!activeSection && (
+        {!activeSection && !isLimitedMode && (
           <>
             <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
 
@@ -769,13 +769,13 @@ const CampaignDetail = () => {
             {/* Navigation Buttons */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {[
-                { key: "stores", label: "Lojas", icon: Store },
-                { key: "matrix", label: "Matriz", icon: Grid3X3 },
-                { key: "pieces", label: "Peças", icon: LayoutList },
-                { key: "occurrences", label: "Ocorrências", icon: AlertTriangle },
-                { key: "scheduling", label: "Agendamento", icon: CalendarDays },
-                { key: "budgets", label: "Orçamentos", icon: DollarSign },
-              ].map(({ key, label, icon: Icon }) => (
+                { key: "stores", label: "Lojas", icon: Store, visible: canViewStores || canViewCampaignStores },
+                { key: "matrix", label: "Matriz", icon: Grid3X3, visible: canViewCampaignStores },
+                { key: "pieces", label: "Peças", icon: LayoutList, visible: canViewPieces },
+                { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, visible: canViewOccurrences },
+                { key: "scheduling", label: "Agendamento", icon: CalendarDays, visible: canViewSchedules },
+                { key: "budgets", label: "Orçamentos", icon: DollarSign, visible: canViewCampaigns },
+              ].filter(m => m.visible).map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   onClick={() => setActiveSection(key)}
