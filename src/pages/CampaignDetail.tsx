@@ -360,29 +360,62 @@ const CampaignDetail = () => {
     toast.success(`${count} peça(s) receberam código automaticamente.`);
   };
 
+  const focusEditingCell = useCallback((cell: { storeId: string; pieceId: string } | null) => {
+    if (!cell) return;
+    const el = editingInputRefs.current[`${cell.storeId}-${cell.pieceId}`];
+    if (el && document.activeElement !== el) {
+      el.focus();
+      el.select();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!editingCell) return;
+    const rafId = requestAnimationFrame(() => focusEditingCell(editingCell));
+    return () => cancelAnimationFrame(rafId);
+  }, [editingCell, qtyMap, focusEditingCell]);
+
+  const getCellQty = useCallback((storeId: string, pieceId: string) => {
+    return qtyMap[`${storeId}-${pieceId}`] || 0;
+  }, [qtyMap]);
+
   const handleCellClick = (storeId: string, pieceId: string) => {
     if (!canEditCampaign) return;
-    const qty = qtyMap[`${storeId}-${pieceId}`] || 0;
     setEditingCell({ storeId, pieceId });
-    setEditValue(String(qty));
+    setEditValue(String(getCellQty(storeId, pieceId)));
   };
 
-  const handleCellSave = (navigateTo?: { storeId: string; pieceId: string }) => {
+  const handleCellSave = useCallback((options?: { navigateTo?: { storeId: string; pieceId: string }; keepEditing?: boolean }) => {
     if (!editingCell || !campaignId) return;
-    const qty = parseInt(editValue) || 0;
+
+    const currentCell = editingCell;
+    const qty = Math.max(0, parseInt(editValue) || 0);
+
     updateStorePiece.mutate({
       campaignId,
-      storeId: editingCell.storeId,
-      pieceId: editingCell.pieceId,
-      quantity: Math.max(0, qty),
+      storeId: currentCell.storeId,
+      pieceId: currentCell.pieceId,
+      quantity: qty,
     });
-    if (navigateTo) {
-      setEditingCell(navigateTo);
-      const navKey = `${navigateTo.storeId}-${navigateTo.pieceId}`;
-      setEditValue(String(qtyMap[navKey] || 0));
-    } else {
-      setEditingCell(null);
+
+    const targetCell = options?.navigateTo ?? (options?.keepEditing ? currentCell : null);
+
+    if (targetCell) {
+      setEditingCell(targetCell);
+      const targetIsCurrent = targetCell.storeId === currentCell.storeId && targetCell.pieceId === currentCell.pieceId;
+      setEditValue(String(targetIsCurrent ? qty : getCellQty(targetCell.storeId, targetCell.pieceId)));
+      return;
     }
+
+    setEditingCell(null);
+  }, [editingCell, campaignId, editValue, updateStorePiece, getCellQty]);
+
+  const handlePieceBlur = () => {
+    if (skipBlurSaveRef.current) {
+      skipBlurSaveRef.current = false;
+      return;
+    }
+    handleCellSave({ keepEditing: true });
   };
 
 
