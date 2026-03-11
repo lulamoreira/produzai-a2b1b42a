@@ -1587,6 +1587,48 @@ export type Database = {
           },
         ]
       }
+      user_campaign_access: {
+        Row: {
+          campaign_id: string
+          category_id: string | null
+          created_at: string
+          id: string
+          suspended: boolean
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          suspended?: boolean
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          suspended?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_campaign_access_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_campaign_access_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "permission_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_client_access: {
         Row: {
           can_edit: boolean
@@ -1658,6 +1700,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_campaign_category_permission: {
+        Args: { _campaign_id: string; _permission: string; _user_id: string }
+        Returns: boolean
+      }
       has_category_permission: {
         Args: { _client_id: string; _permission: string; _user_id: string }
         Returns: boolean
