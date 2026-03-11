@@ -41,6 +41,7 @@ const statusConfig: Record<ApprovalStatus, { label: string; color: string; icon:
 };
 
 const UserApprovals = () => {
+  const { user } = useAuth();
   const { isAdmin, isAdminOrMaster, isLoading: loadingRole } = useUserRole();
   const { data: users = [], isLoading } = useAllUsersApproval();
   const updateStatus = useUpdateApprovalStatus();
