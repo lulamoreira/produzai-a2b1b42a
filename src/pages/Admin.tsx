@@ -90,8 +90,7 @@ const setCategoryField = (form: any, perm: PermKey, mod: ModuleKey, val: boolean
 
 const Admin = () => {
   const { user } = useAuth();
-  const { isAdmin, isLoading: loadingRole } = useUserRole();
-  const { isMasterOrEditor, isLoading: loadingPermLevel } = useUserPermissionLevel();
+  const { isAdmin, isMaster, isAdminOrMaster, isLoading: loadingRole } = useUserRole();
   const { data: users = [], isLoading: loadingUsers } = useAdminUsers();
   const updateRole = useUpdateUserRole();
   const navigate = useNavigate();
