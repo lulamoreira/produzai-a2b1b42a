@@ -1546,52 +1546,77 @@ const CampaignDetail = () => {
                                     <TableCell key={`kit-${kit.id}`} className="text-center p-1 bg-primary/5">
                                       {isEditing ? (
                                         <Input
+                                          ref={(el) => { editingInputRefs.current[`${store.id}-kit-${kit.id}`] = el; }}
                                           type="number"
                                           min={0}
                                           value={editValue}
                                           onChange={(e) => setEditValue(e.target.value)}
                                           onBlur={async () => {
+                                            if (skipBlurSaveRef.current) {
+                                              skipBlurSaveRef.current = false;
+                                              return;
+                                            }
+
                                             const qty = Math.max(0, parseInt(editValue) || 0);
                                             if (campaignId) {
                                               for (const kp of kitPiecesForKit) {
-                                                await updateStorePiece.mutateAsync({ campaignId, storeId: store.id, pieceId: kp.piece_id, quantity: qty * (kp.quantity || 1) });
+                                                await updateStorePiece.mutateAsync({
+                                                  campaignId,
+                                                  storeId: store.id,
+                                                  pieceId: kp.piece_id,
+                                                  quantity: qty * (kp.quantity || 1),
+                                                });
                                               }
                                             }
-                                            setEditingCell(null);
+
+                                            setEditValue(String(qty));
+                                            setEditingCell({ storeId: store.id, pieceId: `kit-${kit.id}` });
                                           }}
                                           onKeyDown={async (e) => {
                                             const saveKit = async () => {
                                               const qty = Math.max(0, parseInt(editValue) || 0);
                                               if (campaignId) {
                                                 for (const kp of kitPiecesForKit) {
-                                                  await updateStorePiece.mutateAsync({ campaignId, storeId: store.id, pieceId: kp.piece_id, quantity: qty * (kp.quantity || 1) });
+                                                  await updateStorePiece.mutateAsync({
+                                                    campaignId,
+                                                    storeId: store.id,
+                                                    pieceId: kp.piece_id,
+                                                    quantity: qty * (kp.quantity || 1),
+                                                  });
                                                 }
                                               }
                                             };
+
+                                            const saveAndNavigate = async (dir: "up" | "down" | "left" | "right") => {
+                                              skipBlurSaveRef.current = true;
+                                              await saveKit();
+                                              const next = navigateMatrixCell(dir);
+                                              if (next) {
+                                                setEditingCell(next);
+                                                setEditValue(String(getCellQty(next.storeId, next.pieceId)));
+                                              } else {
+                                                setEditingCell(null);
+                                              }
+                                            };
+
                                             if (e.key === "Tab") {
                                               e.preventDefault();
-                                              await saveKit();
-                                              const next = navigateMatrixCell(e.shiftKey ? "left" : "right");
-                                              if (next) { setEditingCell(next); setEditValue(String(qtyMap[`${next.storeId}-${next.pieceId}`] || 0)); }
-                                              else setEditingCell(null);
+                                              await saveAndNavigate(e.shiftKey ? "left" : "right");
                                             } else if (e.key === "Enter") {
                                               e.preventDefault();
-                                              await saveKit();
-                                              const next = navigateMatrixCell(e.shiftKey ? "up" : "down");
-                                              if (next) { setEditingCell(next); setEditValue(String(qtyMap[`${next.storeId}-${next.pieceId}`] || 0)); }
-                                              else setEditingCell(null);
+                                              await saveAndNavigate(e.shiftKey ? "up" : "down");
                                             } else if (e.key === "ArrowUp") {
                                               e.preventDefault();
-                                              await saveKit();
-                                              const next = navigateMatrixCell("up");
-                                              if (next) { setEditingCell(next); setEditValue(String(qtyMap[`${next.storeId}-${next.pieceId}`] || 0)); }
-                                              else setEditingCell(null);
+                                              await saveAndNavigate("up");
                                             } else if (e.key === "ArrowDown") {
                                               e.preventDefault();
-                                              await saveKit();
-                                              const next = navigateMatrixCell("down");
-                                              if (next) { setEditingCell(next); setEditValue(String(qtyMap[`${next.storeId}-${next.pieceId}`] || 0)); }
-                                              else setEditingCell(null);
+                                              await saveAndNavigate("down");
+                                            } else if (e.key === "ArrowLeft") {
+                                              e.preventDefault();
+                                              await saveAndNavigate("left");
+                                            } else if (e.key === "ArrowRight") {
+                                              e.preventDefault();
+                                              await saveAndNavigate("right");
                                             } else if (e.key === "Escape") {
                                               setEditingCell(null);
                                             }
