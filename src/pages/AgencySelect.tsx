@@ -43,6 +43,7 @@ const AgencySelect = () => {
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
+  const { isLimited, campaigns: limitedCampaigns, isLoading: loadingDirectAccess } = useUserDirectAccess();
   const { data: allAgencies = [], isLoading } = useAgencies();
 
   // Fetch user's display_name from profile
