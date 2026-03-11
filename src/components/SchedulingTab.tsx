@@ -559,39 +559,41 @@ interface ApprovalTogglesProps {
   schedule: Schedule | undefined;
   storeId: string;
   canEdit: boolean;
-  onToggle: (field: string, value: string | null) => void;
+  onMultiUpdate: (fields: Record<string, any>) => void;
 }
 
-function ApprovalToggles({ schedule, storeId, canEdit, onToggle }: ApprovalTogglesProps) {
+function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: ApprovalTogglesProps) {
   const storeApproved = schedule?.store_approved ?? true;
   const teamApproved = schedule?.team_approved ?? true;
   const hasPendency = !storeApproved || !teamApproved;
   const responsibility = schedule?.responsibility || null;
 
-  const handleToggle = (field: "store_approved" | "team_approved", current: boolean) => {
+  const handleSetApproval = (field: "store_approved" | "team_approved", newVal: boolean) => {
     if (!canEdit) return;
-    const newVal = !current;
     const now = new Date().toISOString();
     const atField = field === "store_approved" ? "store_approved_at" : "team_approved_at";
-    // We need to send both fields together
-    onToggle(field, newVal as any);
-    // Also update the timestamp — use a slight delay to avoid race
-    setTimeout(() => onToggle(atField, now), 50);
+    const otherApproved = field === "store_approved" ? (schedule?.team_approved ?? true) : (schedule?.store_approved ?? true);
+    
+    const updates: Record<string, any> = {
+      [field]: newVal,
+      [atField]: now,
+    };
 
     // If both become approved, clear responsibility
-    const otherApproved = field === "store_approved" ? (schedule?.team_approved ?? true) : (schedule?.store_approved ?? true);
     if (newVal && otherApproved) {
-      setTimeout(() => {
-        onToggle("responsibility", null);
-        setTimeout(() => onToggle("responsibility_at", null), 50);
-      }, 100);
+      updates.responsibility = null;
+      updates.responsibility_at = null;
     }
+
+    onMultiUpdate(updates);
   };
 
-  const handleResponsibility = (value: string) => {
+  const handleSetResponsibility = (value: string) => {
     if (!canEdit) return;
-    onToggle("responsibility", value);
-    setTimeout(() => onToggle("responsibility_at", new Date().toISOString()), 50);
+    onMultiUpdate({
+      responsibility: value,
+      responsibility_at: new Date().toISOString(),
+    });
   };
 
   const formatTimestamp = (ts: string | null) => {
@@ -611,7 +613,8 @@ function ApprovalToggles({ schedule, storeId, canEdit, onToggle }: ApprovalToggl
         leftLabel="Aprovado"
         rightLabel="Desaprovado"
         isLeft={storeApproved}
-        onToggle={() => handleToggle("store_approved", storeApproved)}
+        onClickLeft={() => handleSetApproval("store_approved", true)}
+        onClickRight={() => handleSetApproval("store_approved", false)}
         timestamp={formatTimestamp(schedule?.store_approved_at ?? null)}
         disabled={!canEdit}
       />
@@ -622,7 +625,8 @@ function ApprovalToggles({ schedule, storeId, canEdit, onToggle }: ApprovalToggl
         leftLabel="Aprovado"
         rightLabel="Desaprovado"
         isLeft={teamApproved}
-        onToggle={() => handleToggle("team_approved", teamApproved)}
+        onClickLeft={() => handleSetApproval("team_approved", true)}
+        onClickRight={() => handleSetApproval("team_approved", false)}
         timestamp={formatTimestamp(schedule?.team_approved_at ?? null)}
         disabled={!canEdit}
       />
@@ -634,7 +638,8 @@ function ApprovalToggles({ schedule, storeId, canEdit, onToggle }: ApprovalToggl
           leftLabel="Cliente"
           rightLabel="Equipe"
           isLeft={responsibility !== "team"}
-          onToggle={() => handleResponsibility(responsibility === "team" ? "client" : "team")}
+          onClickLeft={() => handleSetResponsibility("client")}
+          onClickRight={() => handleSetResponsibility("team")}
           timestamp={formatTimestamp(schedule?.responsibility_at ?? null)}
           disabled={!canEdit}
         />
