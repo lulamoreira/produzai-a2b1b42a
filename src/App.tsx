@@ -47,7 +47,7 @@ const PendingApprovalScreen = () => {
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const { data: approvalStatus, isLoading: loadingApproval } = useUserApprovalStatus();
-  const { isAdmin } = useUserRole();
+  const { isAdminOrMaster } = useUserRole();
   const { isProcessing } = useProcessInvite();
 
   if (loading || loadingApproval || isProcessing) {
