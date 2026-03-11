@@ -105,6 +105,7 @@ export default function AppHeader({
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {showNav && (
             <>
+              <InviteButton />
               <WhatsNewButton />
               <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]" onClick={() => navigate("/chat")}>
                 <MessageSquare className="w-3.5 h-3.5" />
