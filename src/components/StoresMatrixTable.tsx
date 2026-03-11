@@ -467,6 +467,30 @@ export default function StoresMatrixTable({
                     );
                   }
 
+                  // Boolean field: render as Switch
+                  if (col.fieldType === "boolean") {
+                    const boolVal = (store as any)[col.storeField];
+                    const isTrue = boolVal === "true" || boolVal === true;
+                    return (
+                      <TableCell key={col.key} className="p-1">
+                        {canEdit ? (
+                          <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
+                            <Switch
+                              checked={isTrue}
+                              onCheckedChange={(checked) => {
+                                handleSave(store.id, col.storeField, checked ? "true" : "false");
+                              }}
+                              className="scale-75"
+                            />
+                            <span className="text-xs text-muted-foreground">{isTrue ? "Sim" : "Não"}</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs px-1">{isTrue ? "Sim" : "Não"}</span>
+                        )}
+                      </TableCell>
+                    );
+                  }
+
                   if (!canEdit) {
                     return (
                       <TableCell key={col.key} className="text-xs">
