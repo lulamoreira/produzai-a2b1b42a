@@ -52,7 +52,7 @@ const QuickMatrixEditor = ({
     const keys: string[] = [];
     stores.forEach((s) => {
       matrixColumns.forEach((col) => {
-        keys.push(`${s.id}-${getColId(col)}`);
+        keys.push(`${s.id}${SEP}${getColId(col)}`);
       });
     });
     return keys;
