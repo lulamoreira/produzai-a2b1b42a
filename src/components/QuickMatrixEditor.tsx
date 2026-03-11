@@ -91,17 +91,26 @@ const QuickMatrixEditor = ({
     setEditing(false);
   };
 
+  // Get piece qty from draft with fallback to current matrix qty
+  const getPieceDraftQty = useCallback((storeId: string, pieceId: string) => {
+    const key = mk(storeId, pieceId);
+    const draftValue = draft[key];
+    if (draftValue === undefined || draftValue === "") {
+      return getQty(storeId, pieceId);
+    }
+    return Math.max(0, parseInt(draftValue) || 0);
+  }, [draft, getQty]);
+
   // Get kit draft value (derived from underlying piece drafts)
   const getKitDraftQty = useCallback((storeId: string, kitId: string) => {
     const piecesInKit = kitPieces.filter(kp => kp.kit_id === kitId);
     if (piecesInKit.length === 0) return 0;
     return Math.min(
       ...piecesInKit.map(kp => {
-        const key = mk(storeId, kp.piece_id);
-        return Math.floor((parseInt(draft[key]) || 0) / (kp.quantity || 1));
+        return Math.floor(getPieceDraftQty(storeId, kp.piece_id) / (kp.quantity || 1));
       })
     );
-  }, [kitPieces, draft]);
+  }, [kitPieces, getPieceDraftQty]);
 
   const getKitOriginalQty = useCallback((storeId: string, kitId: string) => {
     const piecesInKit = kitPieces.filter(kp => kp.kit_id === kitId);
