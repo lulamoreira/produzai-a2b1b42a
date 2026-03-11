@@ -9,7 +9,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronDown, ChevronRight, Filter, PanelLeftClose, PanelLeft, X, Search } from "lucide-react";
-import type { CampaignPiece } from "@/hooks/useMultiClientData";
+import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 
 export type PieceFilters = {
   category: Set<string>;
@@ -20,6 +20,17 @@ export type PieceFilters = {
   installation_instructions: Set<string>;
   kit_only: Set<string>;
   is_mockup: Set<string>;
+};
+
+export type StoreFilters = {
+  city: Set<string>;
+  state: Set<string>;
+  store_model: Set<string>;
+  custom_field_1: Set<string>;
+  custom_field_2: Set<string>;
+  custom_field_3: Set<string>;
+  custom_field_4: Set<string>;
+  custom_field_5: Set<string>;
 };
 
 const EMPTY_FILTERS: PieceFilters = {
@@ -33,12 +44,23 @@ const EMPTY_FILTERS: PieceFilters = {
   is_mockup: new Set(),
 };
 
+const EMPTY_STORE_FILTERS: StoreFilters = {
+  city: new Set(),
+  state: new Set(),
+  store_model: new Set(),
+  custom_field_1: new Set(),
+  custom_field_2: new Set(),
+  custom_field_3: new Set(),
+  custom_field_4: new Set(),
+  custom_field_5: new Set(),
+};
+
 interface FilterGroupProps {
   label: string;
-  filterKey: keyof PieceFilters;
+  filterKey: string;
   options: string[];
   selected: Set<string>;
-  onToggle: (key: keyof PieceFilters, value: string) => void;
+  onToggle: (key: string, value: string) => void;
 }
 
 const FilterGroup = ({ label, filterKey, options, selected, onToggle }: FilterGroupProps) => {
@@ -109,20 +131,33 @@ const FilterGroup = ({ label, filterKey, options, selected, onToggle }: FilterGr
   );
 };
 
+interface CustomFieldLabel {
+  key: keyof StoreFilters;
+  label: string;
+}
+
 interface MatrixFilterSidebarProps {
   pieces: CampaignPiece[];
+  stores: ClientStore[];
   filters: PieceFilters;
+  storeFilters: StoreFilters;
   onFiltersChange: (filters: PieceFilters) => void;
+  onStoreFiltersChange: (filters: StoreFilters) => void;
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
+  customFieldLabels?: CustomFieldLabel[];
 }
 
 const MatrixFilterSidebar = ({
   pieces,
+  stores,
   filters,
+  storeFilters,
   onFiltersChange,
+  onStoreFiltersChange,
   collapsed,
   onCollapsedChange,
+  customFieldLabels = [],
 }: MatrixFilterSidebarProps) => {
   // Extract unique options from pieces for each field
   const filterOptions = useMemo(() => {
@@ -147,20 +182,51 @@ const MatrixFilterSidebar = ({
     };
   }, [pieces]);
 
-  const handleToggle = (key: keyof PieceFilters, value: string) => {
-    const newSet = new Set(filters[key]);
-    if (newSet.has(value)) {
-      newSet.delete(value);
-    } else {
-      newSet.add(value);
+  // Extract unique options from stores
+  const storeFilterOptions = useMemo(() => {
+    const cities = [...new Set(stores.map((s) => s.city).filter(Boolean) as string[])].sort();
+    const states = [...new Set(stores.map((s) => s.state?.trim()).filter(Boolean) as string[])].sort();
+    const models = [...new Set(stores.map((s) => s.store_model).filter(Boolean) as string[])].sort();
+    const cf1 = [...new Set(stores.map((s) => s.custom_field_1).filter(Boolean) as string[])].sort();
+    const cf2 = [...new Set(stores.map((s) => s.custom_field_2).filter(Boolean) as string[])].sort();
+    const cf3 = [...new Set(stores.map((s) => s.custom_field_3).filter(Boolean) as string[])].sort();
+    const cf4 = [...new Set(stores.map((s) => s.custom_field_4).filter(Boolean) as string[])].sort();
+    const cf5 = [...new Set(stores.map((s) => s.custom_field_5).filter(Boolean) as string[])].sort();
+
+    return {
+      city: cities,
+      state: states,
+      store_model: models,
+      custom_field_1: cf1,
+      custom_field_2: cf2,
+      custom_field_3: cf3,
+      custom_field_4: cf4,
+      custom_field_5: cf5,
+    };
+  }, [stores]);
+
+  const handleToggle = (key: string, value: string) => {
+    // Check if it's a piece filter or store filter
+    if (key in filters) {
+      const k = key as keyof PieceFilters;
+      const newSet = new Set(filters[k]);
+      if (newSet.has(value)) newSet.delete(value); else newSet.add(value);
+      onFiltersChange({ ...filters, [k]: newSet });
+    } else if (key in storeFilters) {
+      const k = key as keyof StoreFilters;
+      const newSet = new Set(storeFilters[k]);
+      if (newSet.has(value)) newSet.delete(value); else newSet.add(value);
+      onStoreFiltersChange({ ...storeFilters, [k]: newSet });
     }
-    onFiltersChange({ ...filters, [key]: newSet });
   };
 
-  const activeFilterCount = Object.values(filters).reduce((sum, set) => sum + set.size, 0);
+  const activeFilterCount =
+    Object.values(filters).reduce((sum, set) => sum + set.size, 0) +
+    Object.values(storeFilters).reduce((sum, set) => sum + set.size, 0);
 
   const clearAll = () => {
     onFiltersChange({ ...EMPTY_FILTERS });
+    onStoreFiltersChange({ ...EMPTY_STORE_FILTERS });
   };
 
   if (collapsed) {
@@ -184,13 +250,27 @@ const MatrixFilterSidebar = ({
     );
   }
 
+  // Build custom field filter groups dynamically
+  const customFieldGroups = customFieldLabels
+    .filter((cf) => storeFilterOptions[cf.key].length > 0)
+    .map((cf) => (
+      <FilterGroup
+        key={cf.key}
+        label={cf.label}
+        filterKey={cf.key}
+        options={storeFilterOptions[cf.key]}
+        selected={storeFilters[cf.key]}
+        onToggle={handleToggle}
+      />
+    ));
+
   return (
     <div className="w-64 shrink-0 border-r border-border bg-card/50 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
         <div className="flex items-center gap-2">
           <Filter className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs font-bold text-foreground">Filtros de Peças</span>
+          <span className="text-xs font-bold text-foreground">Filtros</span>
           {activeFilterCount > 0 && (
             <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
               {activeFilterCount}
@@ -225,6 +305,10 @@ const MatrixFilterSidebar = ({
       {/* Filter groups */}
       <ScrollArea className="flex-1">
         <div className="py-1">
+          {/* Piece filters */}
+          <div className="px-3 py-1.5">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Peças</span>
+          </div>
           <FilterGroup label="Localização na Loja" filterKey="category" options={filterOptions.category} selected={filters.category} onToggle={handleToggle} />
           <FilterGroup label="Nome" filterKey="name" options={filterOptions.name} selected={filters.name} onToggle={handleToggle} />
           <FilterGroup label="Modelo de Loja" filterKey="store_category" options={filterOptions.store_category} selected={filters.store_category} onToggle={handleToggle} />
@@ -237,11 +321,31 @@ const MatrixFilterSidebar = ({
           {filterOptions.is_mockup.length > 0 && (
             <FilterGroup label="Mockup" filterKey="is_mockup" options={filterOptions.is_mockup} selected={filters.is_mockup} onToggle={handleToggle} />
           )}
+
+          {/* Store filters */}
+          <div className="px-3 py-1.5 mt-2 border-t border-border">
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Lojas</span>
+          </div>
+          <FilterGroup label="Cidade" filterKey="city" options={storeFilterOptions.city} selected={storeFilters.city} onToggle={handleToggle} />
+          <FilterGroup label="Estado" filterKey="state" options={storeFilterOptions.state} selected={storeFilters.state} onToggle={handleToggle} />
+          {storeFilterOptions.store_model.length > 0 && (
+            <FilterGroup label="Modelo de Loja" filterKey="store_model" options={storeFilterOptions.store_model} selected={storeFilters.store_model} onToggle={handleToggle} />
+          )}
+
+          {/* Custom field filters */}
+          {customFieldGroups.length > 0 && (
+            <>
+              <div className="px-3 py-1.5 mt-2 border-t border-border">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Campos Personalizados</span>
+              </div>
+              {customFieldGroups}
+            </>
+          )}
         </div>
       </ScrollArea>
     </div>
   );
 };
 
-export { EMPTY_FILTERS };
+export { EMPTY_FILTERS, EMPTY_STORE_FILTERS };
 export default MatrixFilterSidebar;
