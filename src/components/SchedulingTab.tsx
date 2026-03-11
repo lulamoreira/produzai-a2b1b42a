@@ -325,26 +325,37 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const teamVehicles: TeamVehicle[] = schedule?.team_id ? (allVehiclesMap[schedule.team_id] || []) : [];
           const teamIncomplete = assignedTeam ? isTeamIncomplete(teamMembers) : false;
 
+          const storeApproved = schedule?.store_approved ?? true;
+          const teamApproved = schedule?.team_approved ?? true;
+          const fullyApproved = storeApproved && teamApproved;
+          const hasPendency = !storeApproved || !teamApproved;
+
           return (
             <div
               key={store.id}
-              className="rounded-xl border overflow-hidden shadow-sm"
+              className="rounded-xl border overflow-hidden shadow-sm flex flex-col"
               style={{ borderColor: colors.text, borderWidth: 2 }}
             >
               {/* Header */}
               <div
-                className="px-4 py-3 flex items-center gap-3"
+                className="px-4 py-3 flex items-center gap-3 relative"
                 style={{ backgroundColor: colors.bg, color: colors.text }}
               >
                 <span className="font-bold text-lg">{store.store_code || "—"}</span>
-                <div className="flex flex-col min-w-0">
+                <div className="flex flex-col min-w-0 flex-1">
                   <span className="font-semibold truncate text-sm">{store.name}</span>
                   <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
                 </div>
+                {/* Approval status icon */}
+                {fullyApproved ? (
+                  <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
+                ) : (
+                  <AlertCircle className="w-6 h-6 shrink-0 text-amber-500 drop-shadow" />
+                )}
               </div>
 
               {/* Body */}
-              <div className="p-4 space-y-3 bg-card">
+              <div className="p-4 space-y-3 bg-card flex-1">
                 {/* Address */}
                 <div className="text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">Endereço:</span> {buildAddress(store)}
@@ -492,6 +503,14 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   </div>
                 </div>
               </div>
+
+              {/* Footer - Approval Toggles */}
+              <ApprovalToggles
+                schedule={schedule}
+                storeId={store.id}
+                canEdit={canEdit}
+                onToggle={(field, value) => handleFieldChange(store.id, field, value)}
+              />
             </div>
           );
         })}
