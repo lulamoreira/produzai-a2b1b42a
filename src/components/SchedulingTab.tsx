@@ -563,10 +563,10 @@ interface ApprovalTogglesProps {
 }
 
 function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: ApprovalTogglesProps) {
-  const storeApproved = schedule?.store_approved ?? true;
-  const teamApproved = schedule?.team_approved ?? true;
+  const storeApproved = schedule?.store_approved ?? false;
+  const teamApproved = schedule?.team_approved ?? false;
   const hasPendency = !storeApproved || !teamApproved;
-  const responsibility = schedule?.responsibility || null;
+  const responsibility = schedule?.responsibility || "team";
 
   const handleSetApproval = (field: "store_approved" | "team_approved", newVal: boolean) => {
     if (!canEdit) return;
