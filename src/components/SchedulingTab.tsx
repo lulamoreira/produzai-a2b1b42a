@@ -531,6 +531,149 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   );
 };
 
+// ─── Sub-component: Approval Toggles ────────────────────
+
+interface ApprovalTogglesProps {
+  schedule: Schedule | undefined;
+  storeId: string;
+  canEdit: boolean;
+  onToggle: (field: string, value: string | null) => void;
+}
+
+function ApprovalToggles({ schedule, storeId, canEdit, onToggle }: ApprovalTogglesProps) {
+  const storeApproved = schedule?.store_approved ?? true;
+  const teamApproved = schedule?.team_approved ?? true;
+  const hasPendency = !storeApproved || !teamApproved;
+  const responsibility = schedule?.responsibility || null;
+
+  const handleToggle = (field: "store_approved" | "team_approved", current: boolean) => {
+    if (!canEdit) return;
+    const newVal = !current;
+    const now = new Date().toISOString();
+    const atField = field === "store_approved" ? "store_approved_at" : "team_approved_at";
+    // We need to send both fields together
+    onToggle(field, newVal as any);
+    // Also update the timestamp — use a slight delay to avoid race
+    setTimeout(() => onToggle(atField, now), 50);
+
+    // If both become approved, clear responsibility
+    const otherApproved = field === "store_approved" ? (schedule?.team_approved ?? true) : (schedule?.store_approved ?? true);
+    if (newVal && otherApproved) {
+      setTimeout(() => {
+        onToggle("responsibility", null);
+        setTimeout(() => onToggle("responsibility_at", null), 50);
+      }, 100);
+    }
+  };
+
+  const handleResponsibility = (value: string) => {
+    if (!canEdit) return;
+    onToggle("responsibility", value);
+    setTimeout(() => onToggle("responsibility_at", new Date().toISOString()), 50);
+  };
+
+  const formatTimestamp = (ts: string | null) => {
+    if (!ts) return null;
+    try {
+      return format(new Date(ts), "dd/MM/yy HH:mm", { locale: ptBR });
+    } catch {
+      return null;
+    }
+  };
+
+  return (
+    <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-2">
+      {/* Toggle 1: Lojista */}
+      <ToggleSwitch
+        label="Lojista"
+        leftLabel="Aprovado"
+        rightLabel="Desaprovado"
+        isLeft={storeApproved}
+        onToggle={() => handleToggle("store_approved", storeApproved)}
+        timestamp={formatTimestamp(schedule?.store_approved_at ?? null)}
+        disabled={!canEdit}
+      />
+
+      {/* Toggle 2: Equipe */}
+      <ToggleSwitch
+        label="Equipe"
+        leftLabel="Aprovado"
+        rightLabel="Desaprovado"
+        isLeft={teamApproved}
+        onToggle={() => handleToggle("team_approved", teamApproved)}
+        timestamp={formatTimestamp(schedule?.team_approved_at ?? null)}
+        disabled={!canEdit}
+      />
+
+      {/* Toggle 3: Responsabilidade — only when there's a pendency */}
+      {hasPendency && (
+        <ToggleSwitch
+          label="Responsável"
+          leftLabel="Cliente"
+          rightLabel="Equipe"
+          isLeft={responsibility !== "team"}
+          onToggle={() => handleResponsibility(responsibility === "team" ? "client" : "team")}
+          timestamp={formatTimestamp(schedule?.responsibility_at ?? null)}
+          disabled={!canEdit}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-component: Toggle Switch ───────────────────────
+
+interface ToggleSwitchProps {
+  label: string;
+  leftLabel: string;
+  rightLabel: string;
+  isLeft: boolean;
+  onToggle: () => void;
+  timestamp: string | null;
+  disabled?: boolean;
+}
+
+function ToggleSwitch({ label, leftLabel, rightLabel, isLeft, onToggle, timestamp, disabled }: ToggleSwitchProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] font-semibold text-muted-foreground w-[70px] shrink-0 uppercase tracking-wide">{label}</span>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onToggle}
+        className={cn(
+          "relative flex items-center rounded-full h-7 w-full max-w-[220px] border transition-colors cursor-pointer select-none overflow-hidden",
+          disabled && "opacity-60 cursor-not-allowed",
+          isLeft
+            ? "bg-emerald-500/15 border-emerald-500/40"
+            : "bg-amber-500/15 border-amber-500/40"
+        )}
+      >
+        {/* Sliding indicator */}
+        <span
+          className={cn(
+            "absolute top-0.5 bottom-0.5 w-1/2 rounded-full transition-all duration-200 shadow-sm",
+            isLeft
+              ? "left-0.5 bg-emerald-500"
+              : "left-[calc(50%-2px)] bg-amber-500"
+          )}
+        />
+        <span className={cn(
+          "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors",
+          isLeft ? "text-primary-foreground" : "text-foreground"
+        )}>{leftLabel}</span>
+        <span className={cn(
+          "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors",
+          !isLeft ? "text-primary-foreground" : "text-foreground"
+        )}>{rightLabel}</span>
+      </button>
+      {timestamp && (
+        <span className="text-[9px] text-muted-foreground whitespace-nowrap">{timestamp}</span>
+      )}
+    </div>
+  );
+}
+
 // ─── Sub-component: Store Contacts Display ──────────────
 
 interface StoreContactsDisplayProps {
