@@ -218,7 +218,27 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       store_approved_at: existing?.store_approved_at ?? null,
       team_approved_at: existing?.team_approved_at ?? null,
       responsibility_at: existing?.responsibility_at ?? null,
-      [field]: value,
+      ...(typeof field === "string" ? { [field]: value } : {}),
+    });
+  };
+
+  const handleMultiFieldChange = (storeId: string, fields: Record<string, any>) => {
+    const existing = scheduleMap[storeId];
+    upsertSchedule.mutate({
+      campaign_id: campaignId,
+      store_id: storeId,
+      scheduled_date: existing?.scheduled_date ?? null,
+      scheduled_time: existing?.scheduled_time ?? null,
+      installation_os: existing?.installation_os ?? null,
+      installation_preference: existing?.installation_preference ?? "not_informed",
+      team_id: existing?.team_id ?? null,
+      store_approved: existing?.store_approved ?? true,
+      team_approved: existing?.team_approved ?? true,
+      responsibility: existing?.responsibility ?? null,
+      store_approved_at: existing?.store_approved_at ?? null,
+      team_approved_at: existing?.team_approved_at ?? null,
+      responsibility_at: existing?.responsibility_at ?? null,
+      ...fields,
     });
   };
 
@@ -511,7 +531,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 schedule={schedule}
                 storeId={store.id}
                 canEdit={canEdit}
-                onToggle={(field, value) => handleFieldChange(store.id, field, value)}
+                onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
               />
             </div>
           );
@@ -539,39 +559,41 @@ interface ApprovalTogglesProps {
   schedule: Schedule | undefined;
   storeId: string;
   canEdit: boolean;
-  onToggle: (field: string, value: string | null) => void;
+  onMultiUpdate: (fields: Record<string, any>) => void;
 }
 
-function ApprovalToggles({ schedule, storeId, canEdit, onToggle }: ApprovalTogglesProps) {
+function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: ApprovalTogglesProps) {
   const storeApproved = schedule?.store_approved ?? true;
   const teamApproved = schedule?.team_approved ?? true;
   const hasPendency = !storeApproved || !teamApproved;
   const responsibility = schedule?.responsibility || null;
 
-  const handleToggle = (field: "store_approved" | "team_approved", current: boolean) => {
+  const handleSetApproval = (field: "store_approved" | "team_approved", newVal: boolean) => {
     if (!canEdit) return;
-    const newVal = !current;
     const now = new Date().toISOString();
     const atField = field === "store_approved" ? "store_approved_at" : "team_approved_at";
-    // We need to send both fields together
-    onToggle(field, newVal as any);
-    // Also update the timestamp — use a slight delay to avoid race
-    setTimeout(() => onToggle(atField, now), 50);
+    const otherApproved = field === "store_approved" ? (schedule?.team_approved ?? true) : (schedule?.store_approved ?? true);
+    
+    const updates: Record<string, any> = {
+      [field]: newVal,
+      [atField]: now,
+    };
 
     // If both become approved, clear responsibility
-    const otherApproved = field === "store_approved" ? (schedule?.team_approved ?? true) : (schedule?.store_approved ?? true);
     if (newVal && otherApproved) {
-      setTimeout(() => {
-        onToggle("responsibility", null);
-        setTimeout(() => onToggle("responsibility_at", null), 50);
-      }, 100);
+      updates.responsibility = null;
+      updates.responsibility_at = null;
     }
+
+    onMultiUpdate(updates);
   };
 
-  const handleResponsibility = (value: string) => {
+  const handleSetResponsibility = (value: string) => {
     if (!canEdit) return;
-    onToggle("responsibility", value);
-    setTimeout(() => onToggle("responsibility_at", new Date().toISOString()), 50);
+    onMultiUpdate({
+      responsibility: value,
+      responsibility_at: new Date().toISOString(),
+    });
   };
 
   const formatTimestamp = (ts: string | null) => {
@@ -591,7 +613,8 @@ function ApprovalToggles({ schedule, storeId, canEdit, onToggle }: ApprovalToggl
         leftLabel="Aprovado"
         rightLabel="Desaprovado"
         isLeft={storeApproved}
-        onToggle={() => handleToggle("store_approved", storeApproved)}
+        onClickLeft={() => handleSetApproval("store_approved", true)}
+        onClickRight={() => handleSetApproval("store_approved", false)}
         timestamp={formatTimestamp(schedule?.store_approved_at ?? null)}
         disabled={!canEdit}
       />
@@ -602,7 +625,8 @@ function ApprovalToggles({ schedule, storeId, canEdit, onToggle }: ApprovalToggl
         leftLabel="Aprovado"
         rightLabel="Desaprovado"
         isLeft={teamApproved}
-        onToggle={() => handleToggle("team_approved", teamApproved)}
+        onClickLeft={() => handleSetApproval("team_approved", true)}
+        onClickRight={() => handleSetApproval("team_approved", false)}
         timestamp={formatTimestamp(schedule?.team_approved_at ?? null)}
         disabled={!canEdit}
       />
@@ -614,7 +638,8 @@ function ApprovalToggles({ schedule, storeId, canEdit, onToggle }: ApprovalToggl
           leftLabel="Cliente"
           rightLabel="Equipe"
           isLeft={responsibility !== "team"}
-          onToggle={() => handleResponsibility(responsibility === "team" ? "client" : "team")}
+          onClickLeft={() => handleSetResponsibility("client")}
+          onClickRight={() => handleSetResponsibility("team")}
           timestamp={formatTimestamp(schedule?.responsibility_at ?? null)}
           disabled={!canEdit}
         />
@@ -630,21 +655,19 @@ interface ToggleSwitchProps {
   leftLabel: string;
   rightLabel: string;
   isLeft: boolean;
-  onToggle: () => void;
+  onClickLeft: () => void;
+  onClickRight: () => void;
   timestamp: string | null;
   disabled?: boolean;
 }
 
-function ToggleSwitch({ label, leftLabel, rightLabel, isLeft, onToggle, timestamp, disabled }: ToggleSwitchProps) {
+function ToggleSwitch({ label, leftLabel, rightLabel, isLeft, onClickLeft, onClickRight, timestamp, disabled }: ToggleSwitchProps) {
   return (
     <div className="flex items-center gap-2">
       <span className="text-[10px] font-semibold text-muted-foreground w-[70px] shrink-0 uppercase tracking-wide">{label}</span>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={onToggle}
+      <div
         className={cn(
-          "relative flex items-center rounded-full h-7 w-full max-w-[220px] border transition-colors cursor-pointer select-none overflow-hidden",
+          "relative flex items-center rounded-full h-7 w-full max-w-[220px] border transition-colors select-none overflow-hidden",
           disabled && "opacity-60 cursor-not-allowed",
           isLeft
             ? "bg-emerald-500/15 border-emerald-500/40"
@@ -654,21 +677,31 @@ function ToggleSwitch({ label, leftLabel, rightLabel, isLeft, onToggle, timestam
         {/* Sliding indicator */}
         <span
           className={cn(
-            "absolute top-0.5 bottom-0.5 w-1/2 rounded-full transition-all duration-200 shadow-sm",
+            "absolute top-0.5 bottom-0.5 w-1/2 rounded-full transition-all duration-300 shadow-sm pointer-events-none",
             isLeft
               ? "left-0.5 bg-emerald-500"
               : "left-[calc(50%-2px)] bg-amber-500"
           )}
         />
-        <span className={cn(
-          "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors",
-          isLeft ? "text-primary-foreground" : "text-foreground"
-        )}>{leftLabel}</span>
-        <span className={cn(
-          "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors",
-          !isLeft ? "text-primary-foreground" : "text-foreground"
-        )}>{rightLabel}</span>
-      </button>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onClickLeft}
+          className={cn(
+            "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors cursor-pointer h-full",
+            isLeft ? "text-primary-foreground" : "text-foreground"
+          )}
+        >{leftLabel}</button>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onClickRight}
+          className={cn(
+            "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors cursor-pointer h-full",
+            !isLeft ? "text-primary-foreground" : "text-foreground"
+          )}
+        >{rightLabel}</button>
+      </div>
       {timestamp && (
         <span className="text-[9px] text-muted-foreground whitespace-nowrap">{timestamp}</span>
       )}
