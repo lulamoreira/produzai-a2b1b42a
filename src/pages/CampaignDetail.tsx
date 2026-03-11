@@ -1699,7 +1699,7 @@ const CampaignDetail = () => {
                       </Table>
                     </div>
                   )}
-                </div>
+                </div>}
               </div>
             </div>
           )}
