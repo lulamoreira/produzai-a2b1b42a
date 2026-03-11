@@ -1499,16 +1499,41 @@ const CampaignDetail = () => {
                                             setEditingCell(null);
                                           }}
                                           onKeyDown={async (e) => {
-                                            if (e.key === "Enter") {
+                                            const saveKit = async () => {
                                               const qty = Math.max(0, parseInt(editValue) || 0);
                                               if (campaignId) {
                                                 for (const kp of kitPiecesForKit) {
                                                   await updateStorePiece.mutateAsync({ campaignId, storeId: store.id, pieceId: kp.piece_id, quantity: qty * (kp.quantity || 1) });
                                                 }
                                               }
+                                            };
+                                            if (e.key === "Tab") {
+                                              e.preventDefault();
+                                              await saveKit();
+                                              const next = navigateMatrixCell(e.shiftKey ? "left" : "right");
+                                              if (next) { setEditingCell(next); setEditValue(String(qtyMap[`${next.storeId}-${next.pieceId}`] || 0)); }
+                                              else setEditingCell(null);
+                                            } else if (e.key === "Enter") {
+                                              e.preventDefault();
+                                              await saveKit();
+                                              const next = navigateMatrixCell(e.shiftKey ? "up" : "down");
+                                              if (next) { setEditingCell(next); setEditValue(String(qtyMap[`${next.storeId}-${next.pieceId}`] || 0)); }
+                                              else setEditingCell(null);
+                                            } else if (e.key === "ArrowUp") {
+                                              e.preventDefault();
+                                              await saveKit();
+                                              const next = navigateMatrixCell("up");
+                                              if (next) { setEditingCell(next); setEditValue(String(qtyMap[`${next.storeId}-${next.pieceId}`] || 0)); }
+                                              else setEditingCell(null);
+                                            } else if (e.key === "ArrowDown") {
+                                              e.preventDefault();
+                                              await saveKit();
+                                              const next = navigateMatrixCell("down");
+                                              if (next) { setEditingCell(next); setEditValue(String(qtyMap[`${next.storeId}-${next.pieceId}`] || 0)); }
+                                              else setEditingCell(null);
+                                            } else if (e.key === "Escape") {
                                               setEditingCell(null);
                                             }
-                                            if (e.key === "Escape") setEditingCell(null);
                                           }}
                                           className="w-16 h-8 text-center mx-auto text-sm"
                                           autoFocus
