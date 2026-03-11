@@ -138,6 +138,33 @@ export function CreateKitDialog({
     );
   }, [availablePieces, createSearch]);
 
+  const handleCreateKit = async () => {
+    if (!kitName.trim()) return;
+    setSaving(true);
+    try {
+      const kit = await onCreateKit({ campaign_id: campaignId, name: kitName.trim(), code: nextCode });
+      setCreatedKit(kit);
+      setStep("pieces");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddPiece = async (pieceId: string) => {
+    if (!createdKit) return;
+    await onAddKitPiece({ kit_id: createdKit.id, piece_id: pieceId });
+    setSelectedPieceIds(prev => [...prev, pieceId]);
+  };
+
+  const handleClose = () => {
+    setStep("name");
+    setKitName("");
+    setCreatedKit(null);
+    setSelectedPieceIds([]);
+    setCreateSearch("");
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md">
