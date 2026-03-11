@@ -119,39 +119,24 @@ export function CreateKitDialog({
   const [createdKit, setCreatedKit] = useState<CampaignKit | null>(null);
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [createSearch, setCreateSearch] = useState("");
 
   const nextCode = useMemo(() => {
     const maxCode = existingKits.reduce((max, k) => Math.max(max, k.code), 0);
     return maxCode + 1;
   }, [existingKits]);
 
-  const handleCreateKit = async () => {
-    if (!kitName.trim()) return;
-    setSaving(true);
-    try {
-      const kit = await onCreateKit({ campaign_id: campaignId, name: kitName.trim(), code: nextCode });
-      setCreatedKit(kit);
-      setStep("pieces");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleAddPiece = async (pieceId: string) => {
-    if (!createdKit) return;
-    await onAddKitPiece({ kit_id: createdKit.id, piece_id: pieceId });
-    setSelectedPieceIds(prev => [...prev, pieceId]);
-  };
-
-  const handleClose = () => {
-    setStep("name");
-    setKitName("");
-    setCreatedKit(null);
-    setSelectedPieceIds([]);
-    onOpenChange(false);
-  };
-
   const availablePieces = kitOnlyPieces.filter(p => !selectedPieceIds.includes(p.id));
+
+  const filteredAvailablePieces = useMemo(() => {
+    if (!createSearch.trim()) return availablePieces;
+    const q = createSearch.toLowerCase();
+    return availablePieces.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.category.toLowerCase().includes(q) ||
+      String(p.code).includes(q)
+    );
+  }, [availablePieces, createSearch]);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
