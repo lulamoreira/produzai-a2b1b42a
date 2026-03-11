@@ -17,6 +17,7 @@ interface QuickMatrixEditorProps {
   campaignId: string;
   isAdmin: boolean;
   onSaveBatch: (changes: { storeId: string; pieceId: string; quantity: number }[]) => Promise<void>;
+  onEditingChange?: (editing: boolean) => void;
 }
 
 type MatrixCol = { type: "piece"; data: CampaignPiece } | { type: "kit"; data: CampaignKit };
