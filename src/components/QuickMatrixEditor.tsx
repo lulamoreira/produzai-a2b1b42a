@@ -214,6 +214,11 @@ const QuickMatrixEditor = ({
     }
   };
 
+  // Notify parent of editing state changes
+  useEffect(() => {
+    onEditingChange?.(editing);
+  }, [editing, onEditingChange]);
+
   // Auto-focus first cell when entering edit mode
   useEffect(() => {
     if (editing && gridKeys.length > 0) {
