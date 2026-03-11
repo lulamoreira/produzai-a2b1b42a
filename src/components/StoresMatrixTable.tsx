@@ -274,7 +274,7 @@ function EditableCell({
 type Props = {
   stores: ClientStore[];
   clientId: string;
-  customFieldLabels: { label: string; index: number }[];
+  customFieldLabels: { label: string; index: number; type?: string }[];
   canEdit: boolean;
   onUpdateStore: (data: { id: string } & Partial<ClientStore>) => Promise<void>;
   onOpenEditStore?: (store: ClientStore) => void;
