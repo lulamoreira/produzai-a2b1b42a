@@ -206,7 +206,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
   }, [stores, filterState, filterCity, searchTerm, filterApproval, scheduleMap]);
 
-  const handleFieldChange = (storeId: string, field: string, value: string | null) => {
+  const handleFieldChange = (storeId: string, field: string, value: any) => {
     const existing = scheduleMap[storeId];
     upsertSchedule.mutate({
       campaign_id: campaignId,
@@ -216,6 +216,12 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       installation_os: existing?.installation_os ?? null,
       installation_preference: existing?.installation_preference ?? "not_informed",
       team_id: existing?.team_id ?? null,
+      store_approved: existing?.store_approved ?? true,
+      team_approved: existing?.team_approved ?? true,
+      responsibility: existing?.responsibility ?? null,
+      store_approved_at: existing?.store_approved_at ?? null,
+      team_approved_at: existing?.team_approved_at ?? null,
+      responsibility_at: existing?.responsibility_at ?? null,
       [field]: value,
     });
   };
