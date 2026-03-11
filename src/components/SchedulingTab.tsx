@@ -192,8 +192,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     if (filterApproval) {
       result = result.filter((s) => {
         const sch = scheduleMap[s.id];
-        const storeOk = sch?.store_approved ?? true;
-        const teamOk = sch?.team_approved ?? true;
+        const storeOk = sch?.store_approved ?? false;
+        const teamOk = sch?.team_approved ?? false;
         if (filterApproval === "approved") return storeOk && teamOk;
         if (filterApproval === "pending") return !storeOk || !teamOk;
         return true;
