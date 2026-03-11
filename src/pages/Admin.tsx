@@ -315,8 +315,8 @@ const Admin = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Usuário</TableHead>
-                      {isAdmin && <TableHead>Role / Cliente</TableHead>}
-                      {isAdmin && <TableHead className="text-right">Tipo</TableHead>}
+                      {isAdminOrMaster && <TableHead>Role / Cliente</TableHead>}
+                      {isAdminOrMaster && <TableHead className="text-right">Tipo</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
