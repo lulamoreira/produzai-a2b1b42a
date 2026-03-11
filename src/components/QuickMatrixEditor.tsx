@@ -128,7 +128,7 @@ const QuickMatrixEditor = ({
       const original = qtyMap[key] || 0;
       const newQty = Math.max(0, parseInt(val) || 0);
       if (newQty !== original) {
-        const [storeId, pieceId] = key.split("-");
+        const [storeId, pieceId] = key.split(SEP);
         changes.push({ storeId, pieceId, quantity: newQty });
       }
     });
