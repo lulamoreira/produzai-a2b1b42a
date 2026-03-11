@@ -167,7 +167,7 @@ export function CreateKitDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md overflow-hidden">
         <DialogHeader>
           <DialogTitle>{step === "name" ? "Novo Kit" : `Kit: ${kitName}`}</DialogTitle>
           <DialogDescription>
