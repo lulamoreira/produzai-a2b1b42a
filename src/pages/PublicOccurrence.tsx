@@ -53,7 +53,7 @@ const PublicOccurrence = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_stores")
-        .select("id, name, nickname")
+        .select("id, name, nickname, phone, email")
         .eq("client_id", campaign!.client_id)
         .order("nickname");
       if (error) throw error;
