@@ -1575,7 +1575,14 @@ const CampaignDetail = () => {
                                             }
 
                                             setEditValue(String(qty));
-                                            setEditingCell({ storeId: store.id, pieceId: `kit-${kit.id}` });
+
+                                            const currentCell = { storeId: store.id, pieceId: `kit-${kit.id}` };
+                                            if (
+                                              editingCellRef.current?.storeId === currentCell.storeId &&
+                                              editingCellRef.current?.pieceId === currentCell.pieceId
+                                            ) {
+                                              requestAnimationFrame(() => focusEditingCell(currentCell));
+                                            }
                                           }}
                                           onKeyDown={async (e) => {
                                             const saveKit = async () => {
