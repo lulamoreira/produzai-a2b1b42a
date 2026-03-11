@@ -357,9 +357,15 @@ export type Database = {
           id: string
           installation_os: string | null
           installation_preference: string | null
+          responsibility: string | null
+          responsibility_at: string | null
           scheduled_date: string | null
           scheduled_time: string | null
+          store_approved: boolean
+          store_approved_at: string | null
           store_id: string
+          team_approved: boolean
+          team_approved_at: string | null
           team_id: string | null
           updated_at: string
         }
@@ -369,9 +375,15 @@ export type Database = {
           id?: string
           installation_os?: string | null
           installation_preference?: string | null
+          responsibility?: string | null
+          responsibility_at?: string | null
           scheduled_date?: string | null
           scheduled_time?: string | null
+          store_approved?: boolean
+          store_approved_at?: string | null
           store_id: string
+          team_approved?: boolean
+          team_approved_at?: string | null
           team_id?: string | null
           updated_at?: string
         }
@@ -381,9 +393,15 @@ export type Database = {
           id?: string
           installation_os?: string | null
           installation_preference?: string | null
+          responsibility?: string | null
+          responsibility_at?: string | null
           scheduled_date?: string | null
           scheduled_time?: string | null
+          store_approved?: boolean
+          store_approved_at?: string | null
           store_id?: string
+          team_approved?: boolean
+          team_approved_at?: string | null
           team_id?: string | null
           updated_at?: string
         }
