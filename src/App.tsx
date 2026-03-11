@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useUserApprovalStatus } from "@/hooks/useUserApproval";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useProcessInvite } from "@/hooks/useProcessInvite";
 import { PendingUsersAlert } from "@/components/PendingUsersAlert";
 import { NameConfirmDialog } from "@/components/NameConfirmDialog";
 import AgencySelect from "./pages/AgencySelect";
@@ -47,8 +48,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const { data: approvalStatus, isLoading: loadingApproval } = useUserApprovalStatus();
   const { isAdmin } = useUserRole();
+  const { isProcessing } = useProcessInvite();
 
-  if (loading || loadingApproval) {
+  if (loading || loadingApproval || isProcessing) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />

@@ -973,6 +973,54 @@ export type Database = {
           },
         ]
       }
+      invites: {
+        Row: {
+          agency_id: string
+          client_id: string | null
+          created_at: string
+          created_by: string
+          id: string
+          token: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          agency_id: string
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          agency_id?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invites_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invites_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       occurrence_comments: {
         Row: {
           content: string
