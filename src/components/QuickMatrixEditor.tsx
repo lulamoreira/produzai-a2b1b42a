@@ -21,13 +21,15 @@ interface QuickMatrixEditorProps {
 
 type MatrixCol = { type: "piece"; data: CampaignPiece } | { type: "kit"; data: CampaignKit };
 
-// Use a separator that won't appear in UUIDs
+// Use a separator that won't appear in UUIDs for internal draft keys
 const SEP = ":::";
-const makeKey = (a: string, b: string) => `${a}${SEP}${b}`;
-const splitKey = (key: string) => {
+const mk = (a: string, b: string) => `${a}${SEP}${b}`;
+const splitMk = (key: string): [string, string] => {
   const idx = key.indexOf(SEP);
   return [key.slice(0, idx), key.slice(idx + SEP.length)];
 };
+// Parent qtyMap key (uses dash)
+const parentKey = (storeId: string, pieceId: string) => `${storeId}-${pieceId}`;
 
 const QuickMatrixEditor = ({
   stores,
@@ -44,16 +46,9 @@ const QuickMatrixEditor = ({
   const [saving, setSaving] = useState(false);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  // Build a qtyMap with our separator from the parent's dash-based qtyMap
-  const internalQtyMap = useMemo(() => {
-    const map: Record<string, number> = {};
-    for (const [key, val] of Object.entries(qtyMap)) {
-      // Parent keys are "storeId-pieceId" where both are UUIDs (36 chars each)
-      const storeId = key.slice(0, 36);
-      const pieceId = key.slice(37);
-      map[makeKey(storeId, pieceId)] = val;
-    }
-    return map;
+  // Helper to read from parent qtyMap using dash key
+  const getQty = useCallback((storeId: string, pieceId: string) => {
+    return qtyMap[parentKey(storeId, pieceId)] || 0;
   }, [qtyMap]);
 
   // Unified columns (pieces + kits) sorted by display_order
@@ -64,45 +59,32 @@ const QuickMatrixEditor = ({
     ].sort((a, b) => a.display_order - b.display_order);
   }, [pieces, kits]);
 
-  const getColId = (col: MatrixCol) => col.type === "piece" ? col.data.id : `kit-${col.data.id}`;
+  const getColId = (col: MatrixCol) => col.type === "piece" ? col.data.id : `kit${SEP}${col.data.id}`;
 
   // Build flat grid index for keyboard navigation
   const gridKeys = useMemo(() => {
     const keys: string[] = [];
     stores.forEach((s) => {
       matrixColumns.forEach((col) => {
-        keys.push(makeKey(s.id, getColId(col)));
+        keys.push(mk(s.id, getColId(col)));
       });
     });
     return keys;
   }, [stores, matrixColumns]);
-
-  // Helper: compute kit qty from underlying piece qtys
-  const getKitQty = useCallback((storeId: string, kitId: string, source: Record<string, number | string>) => {
-    const piecesInKit = kitPieces.filter(kp => kp.kit_id === kitId);
-    if (piecesInKit.length === 0) return 0;
-    return Math.min(
-      ...piecesInKit.map(kp => {
-        const key = makeKey(storeId, kp.piece_id);
-        const val = key in source ? (typeof source[key] === "string" ? parseInt(source[key] as string) || 0 : source[key] as number) : (internalQtyMap[key] || 0);
-        return Math.floor(val / (kp.quantity || 1));
-      })
-    );
-  }, [kitPieces, internalQtyMap]);
 
   const startEditing = useCallback(() => {
     const initial: Record<string, string> = {};
     stores.forEach((s) => {
       matrixColumns.forEach((col) => {
         if (col.type === "piece") {
-          const key = makeKey(s.id, col.data.id);
-          initial[key] = String(internalQtyMap[key] || 0);
+          const key = mk(s.id, col.data.id);
+          initial[key] = String(getQty(s.id, col.data.id));
         }
       });
     });
     setDraft(initial);
     setEditing(true);
-  }, [stores, matrixColumns, internalQtyMap]);
+  }, [stores, matrixColumns, getQty]);
 
   const cancelEditing = () => {
     setDraft({});
@@ -115,18 +97,28 @@ const QuickMatrixEditor = ({
     if (piecesInKit.length === 0) return 0;
     return Math.min(
       ...piecesInKit.map(kp => {
-        const key = makeKey(storeId, kp.piece_id);
+        const key = mk(storeId, kp.piece_id);
         return Math.floor((parseInt(draft[key]) || 0) / (kp.quantity || 1));
       })
     );
   }, [kitPieces, draft]);
+
+  const getKitOriginalQty = useCallback((storeId: string, kitId: string) => {
+    const piecesInKit = kitPieces.filter(kp => kp.kit_id === kitId);
+    if (piecesInKit.length === 0) return 0;
+    return Math.min(
+      ...piecesInKit.map(kp => {
+        return Math.floor(getQty(storeId, kp.piece_id) / (kp.quantity || 1));
+      })
+    );
+  }, [kitPieces, getQty]);
 
   const setKitDraftQty = useCallback((storeId: string, kitId: string, kitQty: number) => {
     const piecesInKit = kitPieces.filter(kp => kp.kit_id === kitId);
     setDraft(d => {
       const next = { ...d };
       for (const kp of piecesInKit) {
-        next[makeKey(storeId, kp.piece_id)] = String(kitQty * (kp.quantity || 1));
+        next[mk(storeId, kp.piece_id)] = String(kitQty * (kp.quantity || 1));
       }
       return next;
     });
@@ -135,18 +127,19 @@ const QuickMatrixEditor = ({
   const changedCount = useMemo(() => {
     if (!editing) return 0;
     return Object.entries(draft).filter(([key, val]) => {
-      const original = internalQtyMap[key] || 0;
+      const [storeId, pieceId] = splitMk(key);
+      const original = getQty(storeId, pieceId);
       return parseInt(val) !== original;
     }).length;
-  }, [draft, internalQtyMap, editing]);
+  }, [draft, getQty, editing]);
 
   const handleSave = async () => {
     const changes: { storeId: string; pieceId: string; quantity: number }[] = [];
     Object.entries(draft).forEach(([key, val]) => {
-      const original = internalQtyMap[key] || 0;
+      const [storeId, pieceId] = splitMk(key);
+      const original = getQty(storeId, pieceId);
       const newQty = Math.max(0, parseInt(val) || 0);
       if (newQty !== original) {
-        const [storeId, pieceId] = splitKey(key);
         changes.push({ storeId, pieceId, quantity: newQty });
       }
     });
@@ -270,24 +263,24 @@ const QuickMatrixEditor = ({
                   if (col.type === "piece") {
                     const p = col.data;
                     return (
-                      <TableHead key={p.id} className="text-center min-w-[80px]">
+                      <TableHead key={p.id} className="text-center min-w-[100px]">
                         <div className="flex flex-col items-center gap-0.5">
                           <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
                           <span className="text-xs font-bold">{p.code}</span>
-                          <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">{p.name}</span>
+                          <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[100px] whitespace-normal break-words">{p.name}</span>
                         </div>
                       </TableHead>
                     );
                   }
                   const kit = col.data;
                   return (
-                    <TableHead key={`kit-${kit.id}`} className="text-center min-w-[80px] bg-primary/10">
+                    <TableHead key={`kit-${kit.id}`} className="text-center min-w-[100px] bg-primary/10">
                       <div className="flex flex-col items-center gap-0.5">
                         <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
                           <Package className="w-4 h-4 text-primary" />
                         </div>
                         <span className="text-xs font-bold text-primary">{kit.code}</span>
-                        <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">{kit.name}</span>
+                        <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[100px] whitespace-normal break-words">{kit.name}</span>
                       </div>
                     </TableHead>
                   );
@@ -298,11 +291,11 @@ const QuickMatrixEditor = ({
             <TableBody>
               {stores.map((store) => {
                 const rowTotal = pieces.reduce((s, p) => {
-                  const key = makeKey(store.id, p.id);
+                  const key = mk(store.id, p.id);
                   return s + (parseInt(draft[key]) || 0);
                 }, 0);
                 const hasAnyStoreWithQty = stores.some(
-                  (st) => st.id !== store.id && pieces.some((p) => (internalQtyMap[makeKey(st.id, p.id)] || 0) > 0)
+                  (st) => st.id !== store.id && pieces.some((p) => getQty(st.id, p.id) > 0)
                 );
                 const isEmptyStore = rowTotal === 0 && hasAnyStoreWithQty;
                 return (
@@ -318,12 +311,12 @@ const QuickMatrixEditor = ({
                     </TableCell>
                     {matrixColumns.map((col) => {
                       const colId = getColId(col);
-                      const gridKey = makeKey(store.id, colId);
+                      const gridKey = mk(store.id, colId);
 
                       if (col.type === "piece") {
                         const p = col.data;
-                        const key = makeKey(store.id, p.id);
-                        const original = internalQtyMap[key] || 0;
+                        const key = mk(store.id, p.id);
+                        const original = getQty(store.id, p.id);
                         const current = draft[key] ?? String(original);
                         const changed = parseInt(current) !== original;
                         return (
@@ -351,7 +344,7 @@ const QuickMatrixEditor = ({
                       // Kit column
                       const kit = col.data;
                       const kitQtyVal = getKitDraftQty(store.id, kit.id);
-                      const originalKitQty = getKitQty(store.id, kit.id, internalQtyMap);
+                      const originalKitQty = getKitOriginalQty(store.id, kit.id);
                       const kitChanged = kitQtyVal !== originalKitQty;
                       return (
                         <TableCell key={`kit-${kit.id}`} className="p-0.5 text-center bg-primary/5">
@@ -386,7 +379,7 @@ const QuickMatrixEditor = ({
                   if (col.type === "piece") {
                     const p = col.data;
                     const colTotal = stores.reduce((s, st) => {
-                      const key = makeKey(st.id, p.id);
+                      const key = mk(st.id, p.id);
                       return s + (parseInt(draft[key]) || 0);
                     }, 0);
                     return <TableCell key={p.id} className="text-center text-sm">{colTotal}</TableCell>;
@@ -397,7 +390,7 @@ const QuickMatrixEditor = ({
                 })}
                 <TableCell className="text-center text-sm text-primary">
                   {stores.reduce((total, st) =>
-                    total + pieces.reduce((s, p) => s + (parseInt(draft[makeKey(st.id, p.id)]) || 0), 0), 0
+                    total + pieces.reduce((s, p) => s + (parseInt(draft[mk(st.id, p.id)]) || 0), 0), 0
                   )}
                 </TableCell>
               </TableRow>
