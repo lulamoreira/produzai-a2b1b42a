@@ -376,8 +376,19 @@ const CampaignDetail = () => {
   }, [editingCell, qtyMap, focusEditingCell]);
 
   const getCellQty = useCallback((storeId: string, pieceId: string) => {
+    if (pieceId.startsWith("kit-")) {
+      const kitId = pieceId.replace("kit-", "");
+      const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
+      if (piecesInKit.length === 0) return 0;
+      return Math.min(
+        ...piecesInKit.map((kp) => {
+          const baseQty = qtyMap[`${storeId}-${kp.piece_id}`] || 0;
+          return Math.floor(baseQty / (kp.quantity || 1));
+        })
+      );
+    }
     return qtyMap[`${storeId}-${pieceId}`] || 0;
-  }, [qtyMap]);
+  }, [qtyMap, kitPieces]);
 
   const handleCellClick = (storeId: string, pieceId: string) => {
     if (!canEditCampaign) return;
