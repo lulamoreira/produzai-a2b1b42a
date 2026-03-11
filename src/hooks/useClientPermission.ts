@@ -15,7 +15,7 @@ type PermissionKey =
 
 export function useClientPermission(clientId?: string, permission?: PermissionKey) {
   const { user } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isMaster } = useUserRole();
 
   const { data: hasPermission = false, isLoading } = useQuery({
     queryKey: ["client_permission", user?.id, clientId, permission],
