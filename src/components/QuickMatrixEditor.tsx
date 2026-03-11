@@ -17,6 +17,7 @@ interface QuickMatrixEditorProps {
   campaignId: string;
   isAdmin: boolean;
   onSaveBatch: (changes: { storeId: string; pieceId: string; quantity: number }[]) => Promise<void>;
+  onEditingChange?: (editing: boolean) => void;
 }
 
 type MatrixCol = { type: "piece"; data: CampaignPiece } | { type: "kit"; data: CampaignKit };
@@ -40,6 +41,7 @@ const QuickMatrixEditor = ({
   campaignId,
   isAdmin,
   onSaveBatch,
+  onEditingChange,
 }: QuickMatrixEditorProps) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
@@ -211,6 +213,11 @@ const QuickMatrixEditor = ({
       focusCell(gridKeys[nextIdx]);
     }
   };
+
+  // Notify parent of editing state changes
+  useEffect(() => {
+    onEditingChange?.(editing);
+  }, [editing, onEditingChange]);
 
   // Auto-focus first cell when entering edit mode
   useEffect(() => {

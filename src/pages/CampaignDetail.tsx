@@ -187,6 +187,7 @@ const CampaignDetail = () => {
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(false);
+  const [quickEditActive, setQuickEditActive] = useState(false);
 
   // ─── Derived data ──────────────────────────────────────
   const qtyMap = useMemo(() => {
@@ -1331,6 +1332,7 @@ const CampaignDetail = () => {
                           });
                         }
                       }}
+                      onEditingChange={setQuickEditActive}
                     />
                     <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces)}>
                       <Download className="w-3.5 h-3.5" /> Exportar Matriz
@@ -1380,8 +1382,8 @@ const CampaignDetail = () => {
                   }}
                 />
 
-                {/* Matrix Table */}
-                <div className="flex-1 overflow-auto p-3">
+                {/* Matrix Table - hidden during quick edit */}
+                {!quickEditActive && <div className="flex-1 overflow-auto p-3">
                   {pieces.length === 0 ? (
                     <div className="text-center py-20">
                       <Package className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
@@ -1697,7 +1699,7 @@ const CampaignDetail = () => {
                       </Table>
                     </div>
                   )}
-                </div>
+                </div>}
               </div>
             </div>
           )}
