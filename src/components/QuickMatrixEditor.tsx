@@ -280,7 +280,7 @@ const QuickMatrixEditor = ({
             <TableBody>
               {stores.map((store) => {
                 const rowTotal = pieces.reduce((s, p) => {
-                  const key = `${store.id}-${p.id}`;
+                  const key = `${store.id}${SEP}${p.id}`;
                   return s + (parseInt(draft[key]) || 0);
                 }, 0);
                 const hasAnyStoreWithQty = stores.some(
