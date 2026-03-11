@@ -76,7 +76,7 @@ const QuickMatrixEditor = ({
     stores.forEach((s) => {
       matrixColumns.forEach((col) => {
         if (col.type === "piece") {
-          const key = `${s.id}-${col.data.id}`;
+          const key = `${s.id}${SEP}${col.data.id}`;
           initial[key] = String(qtyMap[key] || 0);
         }
         // Kit values are derived, not stored directly
