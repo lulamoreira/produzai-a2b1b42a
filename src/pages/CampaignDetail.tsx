@@ -371,6 +371,10 @@ const CampaignDetail = () => {
   }, []);
 
   useEffect(() => {
+    editingCellRef.current = editingCell;
+  }, [editingCell]);
+
+  useEffect(() => {
     if (!editingCell) return;
     const rafId = requestAnimationFrame(() => focusEditingCell(editingCell));
     return () => cancelAnimationFrame(rafId);
