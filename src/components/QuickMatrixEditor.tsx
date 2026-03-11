@@ -108,7 +108,7 @@ const QuickMatrixEditor = ({
     setDraft(d => {
       const next = { ...d };
       for (const kp of piecesInKit) {
-        next[`${storeId}-${kp.piece_id}`] = String(kitQty * (kp.quantity || 1));
+        next[`${storeId}${SEP}${kp.piece_id}`] = String(kitQty * (kp.quantity || 1));
       }
       return next;
     });
