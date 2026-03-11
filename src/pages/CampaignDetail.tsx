@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   useCampaign, useClient, useClientStores, useCampaignPieces, useCampaignStorePieces,
   useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece,
@@ -55,7 +55,12 @@ import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilt
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
+
+  const locationState = location.state as { initialSection?: string; limitedMode?: boolean } | null;
+  const isLimitedMode = locationState?.limitedMode || false;
+
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaign } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canEditOccurrences } = useClientPermission(clientId, "can_edit_occurrences");
@@ -65,6 +70,14 @@ const CampaignDetail = () => {
   const { hasPermission: canDeletePieces } = useClientPermission(clientId, "can_delete_pieces");
   const { hasPermission: canEditCampaignStores } = useClientPermission(clientId, "can_edit_campaign_stores");
   const { hasPermission: canEditSchedules } = useClientPermission(clientId, "can_edit_schedules");
+
+  // View permissions for module visibility
+  const { hasPermission: canViewStores } = useClientPermission(clientId, "can_view_stores");
+  const { hasPermission: canViewCampaignStores } = useClientPermission(clientId, "can_view_campaign_stores");
+  const { hasPermission: canViewPieces } = useClientPermission(clientId, "can_view_pieces");
+  const { hasPermission: canViewOccurrences } = useClientPermission(clientId, "can_view_occurrences");
+  const { hasPermission: canViewSchedules } = useClientPermission(clientId, "can_view_schedules");
+  const { hasPermission: canViewCampaigns } = useClientPermission(clientId, "can_view_campaigns");
   const { data: client } = useClient(clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: stores = [] } = useClientStores(clientId);
@@ -161,7 +174,7 @@ const CampaignDetail = () => {
   const [storeEditQtyValue, setStoreEditQtyValue] = useState("");
 
   // ─── Active section (null = home) ──────────────────────
-  const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<string | null>(locationState?.initialSection || null);
   const [pieceSearch, setPieceSearch] = useState("");
 
   // ─── Matrix editing ────────────────────────────────────
@@ -718,17 +731,16 @@ const CampaignDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader
-        backTo={`/agency/${agencyId}/clients/${clientId}`}
-        backLabel={client?.name || "Voltar"}
+        backTo={isLimitedMode ? "/my-campaigns" : `/agency/${agencyId}/clients/${clientId}`}
+        backLabel={isLimitedMode ? "Minhas Campanhas" : (client?.name || "Voltar")}
         title={campaign.name}
-        subtitle={`${visiblePieces.length + kits.length} peça(s) · ${stores.length} loja(s) · ${totalPieces} unidade(s) total`}
+        subtitle={isLimitedMode ? undefined : `${visiblePieces.length + kits.length} peça(s) · ${stores.length} loja(s) · ${totalPieces} unidade(s) total`}
         maxWidth="max-w-[95vw]"
-        
       />
 
       <main className="max-w-[95vw] mx-auto px-2 sm:px-4 py-4 sm:py-6">
         {/* ─── HOME VIEW: Material de Apoio + Nav Buttons ─── */}
-        {!activeSection && (
+        {!activeSection && !isLimitedMode && (
           <>
             <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
 
@@ -757,13 +769,13 @@ const CampaignDetail = () => {
             {/* Navigation Buttons */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               {[
-                { key: "stores", label: "Lojas", icon: Store },
-                { key: "matrix", label: "Matriz", icon: Grid3X3 },
-                { key: "pieces", label: "Peças", icon: LayoutList },
-                { key: "occurrences", label: "Ocorrências", icon: AlertTriangle },
-                { key: "scheduling", label: "Agendamento", icon: CalendarDays },
-                { key: "budgets", label: "Orçamentos", icon: DollarSign },
-              ].map(({ key, label, icon: Icon }) => (
+                { key: "stores", label: "Lojas", icon: Store, visible: canViewStores || canViewCampaignStores },
+                { key: "matrix", label: "Matriz", icon: Grid3X3, visible: canViewCampaignStores },
+                { key: "pieces", label: "Peças", icon: LayoutList, visible: canViewPieces },
+                { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, visible: canViewOccurrences },
+                { key: "scheduling", label: "Agendamento", icon: CalendarDays, visible: canViewSchedules },
+                { key: "budgets", label: "Orçamentos", icon: DollarSign, visible: canViewCampaigns },
+              ].filter(m => m.visible).map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   onClick={() => setActiveSection(key)}
@@ -783,24 +795,26 @@ const CampaignDetail = () => {
         {activeSection && (
           <>
             <div className="flex items-center gap-2 mb-4 overflow-x-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveSection(null)}
-                className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 flex-shrink-0"
-              >
-                <Home className="w-4 h-4" />
-                <span className="hidden sm:inline">Início</span>
-              </Button>
+              {!isLimitedMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveSection(null)}
+                  className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 flex-shrink-0"
+                >
+                  <Home className="w-4 h-4" />
+                  <span className="hidden sm:inline">Início</span>
+                </Button>
+              )}
               <div className="flex gap-1 overflow-x-auto">
                 {[
-                  { key: "stores", label: "Lojas", icon: Store },
-                  { key: "matrix", label: "Matriz", icon: Grid3X3 },
-                  { key: "pieces", label: "Peças", icon: LayoutList },
-                  { key: "occurrences", label: "Ocorrências", icon: AlertTriangle },
-                  { key: "scheduling", label: "Agendamento", icon: CalendarDays },
-                  { key: "budgets", label: "Orçamentos", icon: DollarSign },
-                ].map(({ key, label, icon: Icon }) => (
+                  { key: "stores", label: "Lojas", icon: Store, visible: canViewStores || canViewCampaignStores },
+                  { key: "matrix", label: "Matriz", icon: Grid3X3, visible: canViewCampaignStores },
+                  { key: "pieces", label: "Peças", icon: LayoutList, visible: canViewPieces },
+                  { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, visible: canViewOccurrences },
+                  { key: "scheduling", label: "Agendamento", icon: CalendarDays, visible: canViewSchedules },
+                  { key: "budgets", label: "Orçamentos", icon: DollarSign, visible: canViewCampaigns },
+                ].filter(m => m.visible).map(({ key, label, icon: Icon }) => (
                   <Button
                     key={key}
                     variant={activeSection === key ? "default" : "ghost"}
