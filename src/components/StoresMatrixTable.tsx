@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -130,6 +131,7 @@ function EditableCell({
   onCancel,
   onNavigate,
   cellRef,
+  suggestions,
 }: {
   value: string;
   storeId: string;
@@ -140,52 +142,109 @@ function EditableCell({
   onCancel: () => void;
   onNavigate: (dir: "up" | "down" | "left" | "right") => void;
   cellRef: (el: HTMLElement | null) => void;
+  suggestions: string[];
 }) {
   const [editValue, setEditValue] = useState(value);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     if (isEditing) {
       setEditValue(value);
-      setTimeout(() => inputRef.current?.focus(), 0);
+      savingRef.current = false;
+      setTimeout(() => {
+        inputRef.current?.focus();
+        setShowSuggestions(true);
+      }, 0);
+    } else {
+      setShowSuggestions(false);
     }
   }, [isEditing, value]);
+
+  const filteredSuggestions = useMemo(() => {
+    const q = editValue.toLowerCase().trim();
+    if (!q) return suggestions;
+    return suggestions.filter((s) => s.toLowerCase().includes(q));
+  }, [suggestions, editValue]);
+
+  const doSave = useCallback((val: string, navigate?: "up" | "down" | "left" | "right") => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    onSave(storeId, fieldKey, val);
+    if (navigate) {
+      onNavigate(navigate);
+    } else {
+      onCancel(); // close cell when not navigating
+    }
+  }, [storeId, fieldKey, onSave, onNavigate, onCancel]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === "Tab") {
       e.preventDefault();
-      onSave(storeId, fieldKey, editValue);
-      if (e.key === "Tab") {
-        onNavigate(e.shiftKey ? "left" : "right");
-      } else {
-        onNavigate(e.shiftKey ? "up" : "down");
-      }
+      doSave(editValue, e.key === "Tab" ? (e.shiftKey ? "left" : "right") : (e.shiftKey ? "up" : "down"));
     } else if (e.key === "Escape") {
       onCancel();
-    } else if (e.key === "ArrowUp") {
+    } else if (e.key === "ArrowUp" && !showSuggestions) {
       e.preventDefault();
-      onSave(storeId, fieldKey, editValue);
-      onNavigate("up");
-    } else if (e.key === "ArrowDown") {
+      doSave(editValue, "up");
+    } else if (e.key === "ArrowDown" && !showSuggestions) {
       e.preventDefault();
-      onSave(storeId, fieldKey, editValue);
-      onNavigate("down");
+      doSave(editValue, "down");
     }
+  };
+
+  const handleSelectSuggestion = (val: string) => {
+    setEditValue(val);
+    setShowSuggestions(false);
+    // Save but keep cell open so user can continue editing or navigate
+    savingRef.current = false;
+    onSave(storeId, fieldKey, val);
+    // Re-focus input
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   if (isEditing) {
     return (
-      <div ref={cellRef} className="flex items-center gap-1">
+      <div ref={(el) => { cellRef(el); (wrapperRef as any).current = el; }} className="relative">
         <Input
           ref={inputRef}
           value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
+          onChange={(e) => {
+            setEditValue(e.target.value);
+            setShowSuggestions(true);
+          }}
           onKeyDown={handleKeyDown}
-          onBlur={() => {
-            onSave(storeId, fieldKey, editValue);
+          onBlur={(e) => {
+            // Don't blur if clicking a suggestion
+            if (wrapperRef.current?.contains(e.relatedTarget as Node)) return;
+            doSave(editValue);
           }}
           className="h-7 text-xs min-w-[60px] px-1.5"
+          autoComplete="off"
         />
+        {showSuggestions && filteredSuggestions.length > 0 && (
+          <div className="absolute z-50 mt-0.5 w-full min-w-[120px] max-h-[160px] overflow-y-auto rounded-md border border-border bg-popover shadow-md">
+            {filteredSuggestions.map((item) => (
+              <button
+                key={item}
+                type="button"
+                tabIndex={-1}
+                className={cn(
+                  "w-full text-left px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer",
+                  item === editValue && "bg-accent/50 font-medium"
+                )}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleSelectSuggestion(item);
+                }}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -324,16 +383,12 @@ export default function StoresMatrixTable({
     const store = stores.find((s) => s.id === storeId);
     if (!store) return;
     const oldValue = ((store as any)[field] || "").toString();
-    if (value === oldValue) {
-      setEditingCell(null);
-      return;
-    }
+    if (value === oldValue) return;
     try {
       await onUpdateStore({ id: storeId, [field]: value || null });
     } catch {
       // error handled by mutation
     }
-    setEditingCell(null);
   }, [stores, onUpdateStore]);
 
   const handleCancel = () => setEditingCell(null);
@@ -417,6 +472,15 @@ export default function StoresMatrixTable({
                     );
                   }
 
+                  const fieldSuggestions = (() => {
+                    const vals = new Set<string>();
+                    stores.forEach((s) => {
+                      const v = ((s as any)[col.storeField] || "").toString().trim();
+                      if (v && s.id !== store.id) vals.add(v);
+                    });
+                    return Array.from(vals).sort((a, b) => a.localeCompare(b));
+                  })();
+
                   return (
                     <TableCell key={col.key} className="p-1">
                       <EditableCell
@@ -428,6 +492,7 @@ export default function StoresMatrixTable({
                         onSave={handleSave}
                         onCancel={handleCancel}
                         onNavigate={navigateToCell}
+                        suggestions={fieldSuggestions}
                         cellRef={(el) => {
                           const key = getCellKey(store.id, col.storeField);
                           if (el) cellRefs.current.set(key, el);
