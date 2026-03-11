@@ -53,7 +53,7 @@ const PublicOccurrence = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_stores")
-        .select("id, name, nickname")
+        .select("id, name, nickname, phone, email")
         .eq("client_id", campaign!.client_id)
         .order("nickname");
       if (error) throw error;
@@ -306,7 +306,18 @@ const PublicOccurrence = () => {
 
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">Identifique sua loja *</label>
-              <Select value={storeId} onValueChange={setStoreId}>
+              <Select value={storeId} onValueChange={(val) => {
+                setStoreId(val);
+                const selected = stores.find((s) => s.id === val);
+                if (selected) {
+                  if (selected.phone) {
+                    const digits = selected.phone.replace(/\D/g, "");
+                    setPhoneDDD(digits.slice(0, 2));
+                    setPhoneNumber(digits.slice(2));
+                  }
+                  if (selected.email) setReporterEmail(selected.email);
+                }
+              }}>
                 <SelectTrigger><SelectValue placeholder="Selecione pelo apelido da loja" /></SelectTrigger>
                 <SelectContent>
                   {stores.map((s) => (
