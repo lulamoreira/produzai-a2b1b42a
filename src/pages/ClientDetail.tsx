@@ -1003,7 +1003,7 @@ const ClientDetail = () => {
 
             {loadingStores ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
-            ) : filteredStores.length === 0 ? (
+            ) : filteredStoresCount === 0 ? (
               <div className="text-center py-16">
                 <Store className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-muted-foreground text-sm">Nenhuma loja cadastrada.</p>
