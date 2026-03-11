@@ -180,6 +180,8 @@ const CampaignDetail = () => {
   // ─── Matrix editing ────────────────────────────────────
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
   const [editValue, setEditValue] = useState("");
+  const editingInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const skipBlurSaveRef = useRef(false);
   const [importMatrixDialogOpen, setImportMatrixDialogOpen] = useState(false);
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
