@@ -646,23 +646,6 @@ const CampaignDetail = () => {
     </div>
   );
 
-  // ─── Loading / Not found ───────────────────────────────
-  if (loadingCampaign) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-10 h-10 border-3 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  if (!campaign) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Campanha não encontrada.</p>
-      </div>
-    );
-  }
-
   // ─── Filtered pieces for matrix (by store_category + piece filters) ───
   const matrixPieces = useMemo(() => {
     let filtered = storeCategoryFilter === "__all__"
@@ -702,6 +685,23 @@ const CampaignDetail = () => {
     ...matrixPieces.map(p => ({ type: "piece" as const, data: p, display_order: p.display_order })),
     ...matrixKits.map(k => ({ type: "kit" as const, data: k, display_order: k.display_order })),
   ].sort((a, b) => a.display_order - b.display_order);
+
+  // ─── Loading / Not found ───────────────────────────────
+  if (loadingCampaign) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-3 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!campaign) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Campanha não encontrada.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
