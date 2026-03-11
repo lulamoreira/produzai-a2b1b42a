@@ -226,10 +226,10 @@ export function CreateKitDialog({
                   const piece = kitOnlyPieces.find(p => p.id === pid);
                   if (!piece) return null;
                   return (
-                    <div key={pid} className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/20">
+                    <div key={pid} className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/20 min-w-0">
                       <PieceThumbnail imageUrl={piece.image_url} name={piece.name} size="sm" />
                       <span className="text-xs font-bold text-primary shrink-0">#{piece.code}</span>
-                      <span className="text-sm flex-1 truncate">{piece.name}</span>
+                      <span className="text-sm flex-1 truncate min-w-0">{piece.name}</span>
                     </div>
                   );
                 })}
