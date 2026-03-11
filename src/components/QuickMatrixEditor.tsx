@@ -41,6 +41,7 @@ const QuickMatrixEditor = ({
   campaignId,
   isAdmin,
   onSaveBatch,
+  onEditingChange,
 }: QuickMatrixEditorProps) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
