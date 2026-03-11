@@ -531,6 +531,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 schedule={schedule}
                 storeId={store.id}
                 canEdit={canEdit}
+                hasDateAndTime={!!(schedule?.scheduled_date && schedule?.scheduled_time)}
                 onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
               />
             </div>
@@ -559,10 +560,11 @@ interface ApprovalTogglesProps {
   schedule: Schedule | undefined;
   storeId: string;
   canEdit: boolean;
+  hasDateAndTime: boolean;
   onMultiUpdate: (fields: Record<string, any>) => void;
 }
 
-function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: ApprovalTogglesProps) {
+function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUpdate }: ApprovalTogglesProps) {
   const storeApproved = schedule?.store_approved ?? false;
   const teamApproved = schedule?.team_approved ?? false;
   const hasPendency = !storeApproved || !teamApproved;
@@ -605,9 +607,14 @@ function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: Approval
     }
   };
 
+  const sectionDisabled = !canEdit || !hasDateAndTime;
+
   return (
-    <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-2">
-      <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide mb-1">Status de aprovação da instalação</p>
+    <div className={cn("border-t border-border bg-muted/30 px-4 py-3 space-y-2", !hasDateAndTime && "opacity-50")}>
+      <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide mb-1">
+        Status de aprovação da instalação
+        {!hasDateAndTime && <span className="ml-2 text-muted-foreground font-normal normal-case">(preencha data e horário)</span>}
+      </p>
       {/* Toggle 1: Lojista */}
       <ToggleSwitch
         label="Lojista"
@@ -617,7 +624,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: Approval
         onClickLeft={() => handleSetApproval("store_approved", true)}
         onClickRight={() => handleSetApproval("store_approved", false)}
         timestamp={formatTimestamp(schedule?.store_approved_at ?? null)}
-        disabled={!canEdit}
+        disabled={sectionDisabled}
       />
 
       {/* Toggle 2: Equipe */}
@@ -629,7 +636,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: Approval
         onClickLeft={() => handleSetApproval("team_approved", true)}
         onClickRight={() => handleSetApproval("team_approved", false)}
         timestamp={formatTimestamp(schedule?.team_approved_at ?? null)}
-        disabled={!canEdit}
+        disabled={sectionDisabled}
       />
 
       {/* Toggle 3: Responsabilidade — only when there's a pendency */}
@@ -642,7 +649,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, onMultiUpdate }: Approval
           onClickLeft={() => handleSetResponsibility("client")}
           onClickRight={() => handleSetResponsibility("team")}
           timestamp={formatTimestamp(schedule?.responsibility_at ?? null)}
-          disabled={!canEdit}
+          disabled={sectionDisabled}
         />
       )}
     </div>
