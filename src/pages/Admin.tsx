@@ -174,6 +174,8 @@ const Admin = () => {
 
   const handleRoleChange = (userId: string, newRole: AppRole) => {
     if (userId === user?.id) return;
+    // Master can't promote to admin
+    if (!isAdmin && newRole === "admin") return;
     updateRole.mutate({ userId, newRole });
   };
 

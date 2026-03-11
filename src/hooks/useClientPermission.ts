@@ -64,5 +64,5 @@ export function useClientPermission(clientId?: string, permission?: PermissionKe
     enabled: !!user && !!clientId && !!permission,
   });
 
-  return { hasPermission: isAdmin || hasPermission, isLoading };
+  return { hasPermission: isAdmin || isMaster || hasPermission, isLoading };
 }
