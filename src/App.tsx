@@ -21,6 +21,7 @@ import UserApprovals from "./pages/UserApprovals";
 import PublicOccurrence from "./pages/PublicOccurrence";
 import PublicOccurrenceDetail from "./pages/PublicOccurrenceDetail";
 import Chat from "./pages/Chat";
+import MyCampaigns from "./pages/MyCampaigns";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
