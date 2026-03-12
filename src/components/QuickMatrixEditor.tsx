@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Edit3, Save, X, Package } from "lucide-react";
+import { Edit3, Save, X, Package, Sparkles, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import PieceThumbnail from "@/components/PieceThumbnail";
+import { supabase } from "@/integrations/supabase/client";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
 
 interface QuickMatrixEditorProps {
