@@ -889,6 +889,10 @@ const ClientDetail = () => {
                 <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportClientStores(stores, client.name)}>
                   <Download className="w-3 h-3" /> Exportar
                 </Button>
+                <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setCustomExportOpen(true)}>
+                  <Download className="w-3 h-3" /> Export. Personalizada
+                </Button>
+                </Button>
                 {canEditStores && (
                   <>
                     <label className="cursor-pointer">
