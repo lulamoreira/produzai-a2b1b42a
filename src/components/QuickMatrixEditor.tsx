@@ -9,6 +9,11 @@ import PieceThumbnail from "@/components/PieceThumbnail";
 import { supabase } from "@/integrations/supabase/client";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
 
+interface CustomFieldLabel {
+  key: string;
+  label: string;
+}
+
 interface QuickMatrixEditorProps {
   stores: ClientStore[];
   pieces: CampaignPiece[];
@@ -19,6 +24,7 @@ interface QuickMatrixEditorProps {
   isAdmin: boolean;
   onSaveBatch: (changes: { storeId: string; pieceId: string; quantity: number }[]) => Promise<void>;
   onEditingChange?: (editing: boolean) => void;
+  customFieldLabels?: CustomFieldLabel[];
 }
 
 type MatrixCol = { type: "piece"; data: CampaignPiece } | { type: "kit"; data: CampaignKit };
@@ -38,6 +44,7 @@ const QuickMatrixEditor = ({
   pieces,
   kits = [],
   kitPieces = [],
+  customFieldLabels = [],
   qtyMap,
   campaignId,
   isAdmin,
@@ -165,14 +172,23 @@ const QuickMatrixEditor = ({
       const { data, error } = await supabase.functions.invoke("matrix-ai-fill", {
         body: {
           prompt: aiPrompt.trim(),
-          stores: stores.map(s => ({
-            id: s.id,
-            name: s.name,
-            nickname: s.nickname,
-            store_model: s.store_model,
-            city: s.city,
-            state: s.state,
-          })),
+          stores: stores.map(s => {
+            const storeData: Record<string, any> = {
+              id: s.id,
+              name: s.name,
+              nickname: s.nickname,
+              store_model: s.store_model,
+              city: s.city,
+              state: s.state,
+            };
+            // Include custom fields with their labels
+            for (const cf of customFieldLabels) {
+              const val = (s as any)[cf.key];
+              if (val) storeData[cf.label] = val;
+            }
+            return storeData;
+          }),
+          customFieldLabels: customFieldLabels.map(cf => ({ key: cf.key, label: cf.label })),
           pieces: pieces.map(p => ({
             id: p.id,
             code: p.code,
