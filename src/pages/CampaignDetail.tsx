@@ -41,6 +41,7 @@ import AppHeader from "@/components/AppHeader";
 import QuickMatrixEditor from "@/components/QuickMatrixEditor";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
+import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
 import OccurrencesTab from "@/components/OccurrencesTab";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 import SchedulingTab from "@/components/SchedulingTab";
