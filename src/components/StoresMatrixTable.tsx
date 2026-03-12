@@ -281,6 +281,7 @@ type Props = {
   onOpenEditStore?: (store: ClientStore) => void;
   storeSearch: string;
   storeStateFilter: string;
+  onDisplayOrderChange?: (stores: ClientStore[]) => void;
 };
 
 export default function StoresMatrixTable({
