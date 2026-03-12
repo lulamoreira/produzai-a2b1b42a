@@ -44,6 +44,7 @@ const QuickMatrixEditor = ({
   pieces,
   kits = [],
   kitPieces = [],
+  customFieldLabels = [],
   qtyMap,
   campaignId,
   isAdmin,
