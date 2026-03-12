@@ -357,7 +357,12 @@ export default function StoresMatrixTable({
       });
   }, [stores, storeSearch, storeStateFilter, sortKey, sortDir]);
 
-  // Editing state
+  // Notify parent of current display order
+  useEffect(() => {
+    onDisplayOrderChange?.(filteredStores);
+  }, [filteredStores, onDisplayOrderChange]);
+
+
   const [editingCell, setEditingCell] = useState<{ storeId: string; field: string } | null>(null);
   const cellRefs = useRef<Map<string, HTMLElement>>(new Map());
 
