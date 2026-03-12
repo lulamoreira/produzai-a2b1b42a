@@ -9,6 +9,11 @@ import PieceThumbnail from "@/components/PieceThumbnail";
 import { supabase } from "@/integrations/supabase/client";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
 
+interface CustomFieldLabel {
+  key: string;
+  label: string;
+}
+
 interface QuickMatrixEditorProps {
   stores: ClientStore[];
   pieces: CampaignPiece[];
@@ -19,6 +24,7 @@ interface QuickMatrixEditorProps {
   isAdmin: boolean;
   onSaveBatch: (changes: { storeId: string; pieceId: string; quantity: number }[]) => Promise<void>;
   onEditingChange?: (editing: boolean) => void;
+  customFieldLabels?: CustomFieldLabel[];
 }
 
 type MatrixCol = { type: "piece"; data: CampaignPiece } | { type: "kit"; data: CampaignKit };
