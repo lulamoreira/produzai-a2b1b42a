@@ -1043,7 +1043,7 @@ const ClientDetail = () => {
               title="Exportação Personalizada — Lojas"
               fileName={`Lojas_${client.name}`}
               sheetName="Lojas"
-              data={stores}
+              data={displayOrderStores.length > 0 ? displayOrderStores : stores}
               fields={(() => {
                 const base: ExportFieldDef[] = [
                   { key: "name", label: "Nome", getValue: (s: ClientStore) => s.name || "" },
