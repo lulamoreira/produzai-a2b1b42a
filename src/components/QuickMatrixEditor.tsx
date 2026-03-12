@@ -147,6 +147,82 @@ const QuickMatrixEditor = ({
     }).length;
   }, [draft, getQty, editing]);
 
+  const handleAiPrompt = async () => {
+    if (!aiPrompt.trim() || aiLoading) return;
+    setAiLoading(true);
+    try {
+      const currentQuantities: Record<string, number> = {};
+      stores.forEach(s => {
+        pieces.forEach(p => {
+          const key = mk(s.id, p.id);
+          const val = parseInt(draft[key]) || 0;
+          if (val > 0) {
+            currentQuantities[parentKey(s.id, p.id)] = val;
+          }
+        });
+      });
+
+      const { data, error } = await supabase.functions.invoke("matrix-ai-fill", {
+        body: {
+          prompt: aiPrompt.trim(),
+          stores: stores.map(s => ({
+            id: s.id,
+            name: s.name,
+            nickname: s.nickname,
+            store_model: s.store_model,
+            city: s.city,
+            state: s.state,
+          })),
+          pieces: pieces.map(p => ({
+            id: p.id,
+            code: p.code,
+            name: p.name,
+            category: p.category,
+            size: p.size,
+            kit_only: p.kit_only,
+          })),
+          kits: kits.map(k => ({ id: k.id, code: k.code, name: k.name })),
+          kitPieces: kitPieces.map(kp => ({
+            kit_id: kp.kit_id,
+            piece_id: kp.piece_id,
+            quantity: kp.quantity,
+          })),
+          currentQuantities,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      const changes = data?.changes as { storeId: string; pieceId: string; quantity: number }[] | undefined;
+      if (!changes || changes.length === 0) {
+        toast.info("A IA não gerou alterações para este comando.");
+        return;
+      }
+
+      // Apply changes to draft
+      setDraft(d => {
+        const next = { ...d };
+        for (const c of changes) {
+          next[mk(c.storeId, c.pieceId)] = String(Math.max(0, c.quantity));
+        }
+        return next;
+      });
+
+      toast.success(`IA aplicou ${changes.length} alteração(ões) na planilha. Revise e salve.`);
+      setAiPrompt("");
+    } catch (err: any) {
+      console.error("AI fill error:", err);
+      toast.error(err?.message || "Erro ao processar comando da IA.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     const changes: { storeId: string; pieceId: string; quantity: number }[] = [];
     Object.entries(draft).forEach(([key, val]) => {
