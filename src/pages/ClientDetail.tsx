@@ -271,6 +271,7 @@ const ClientDetail = () => {
   const [newModelName, setNewModelName] = useState("");
   const [enriching, setEnriching] = useState(false);
   const [enrichProgress, setEnrichProgress] = useState({ current: 0, total: 0 });
+  const [customExportOpen, setCustomExportOpen] = useState(false);
 
   // Store form
   const [storeForm, setStoreForm] = useState({ ...emptyStoreForm });
