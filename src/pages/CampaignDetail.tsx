@@ -41,6 +41,7 @@ import AppHeader from "@/components/AppHeader";
 import QuickMatrixEditor from "@/components/QuickMatrixEditor";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
+import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
 import OccurrencesTab from "@/components/OccurrencesTab";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 import SchedulingTab from "@/components/SchedulingTab";
@@ -188,6 +189,7 @@ const CampaignDetail = () => {
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(false);
   const [quickEditActive, setQuickEditActive] = useState(false);
+  const [matrixCustomExportOpen, setMatrixCustomExportOpen] = useState(false);
 
   // ─── Derived data ──────────────────────────────────────
   const qtyMap = useMemo(() => {
@@ -1344,6 +1346,9 @@ const CampaignDetail = () => {
                     <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces)}>
                       <Download className="w-3.5 h-3.5" /> Exportar Matriz
                     </Button>
+                    <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setMatrixCustomExportOpen(true)}>
+                      <Download className="w-3.5 h-3.5" /> Export. Personalizada
+                    </Button>
                     {canEditCampaign && (
                       <label className="cursor-pointer">
                         <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
@@ -1387,6 +1392,75 @@ const CampaignDetail = () => {
                       });
                     }
                   }}
+                />
+
+                <CustomExportDialog
+                  open={matrixCustomExportOpen}
+                  onOpenChange={setMatrixCustomExportOpen}
+                  title="Exportação Personalizada — Matriz"
+                  fileName={`Matriz_${campaign?.name || "Campanha"}`}
+                  sheetName="Matriz"
+                  data={activeFilteredStores}
+                  fields={(() => {
+                    const base: ExportFieldDef[] = [
+                      { key: "store_name", label: "Loja", getValue: (s: ClientStore) => s.name || "" },
+                      { key: "store_nickname", label: "Apelido", getValue: (s: ClientStore) => s.nickname || "" },
+                      { key: "store_code", label: "Código Loja", getValue: (s: ClientStore) => s.store_code || "" },
+                      { key: "store_city", label: "Cidade", getValue: (s: ClientStore) => s.city || "" },
+                      { key: "store_state", label: "UF", getValue: (s: ClientStore) => s.state || "" },
+                      { key: "store_model", label: "Modelo", getValue: (s: ClientStore) => s.store_model || "" },
+                      { key: "store_cnpj", label: "CNPJ", getValue: (s: ClientStore) => s.cnpj || "" },
+                      { key: "store_zip", label: "CEP", getValue: (s: ClientStore) => s.zip_code || "" },
+                      { key: "store_street", label: "Rua", getValue: (s: ClientStore) => s.street || "" },
+                      { key: "store_number", label: "Nº", getValue: (s: ClientStore) => s.number || "" },
+                      { key: "store_complement", label: "Complemento", getValue: (s: ClientStore) => s.complement || "" },
+                      { key: "store_neighborhood", label: "Bairro", getValue: (s: ClientStore) => s.neighborhood || "" },
+                      { key: "store_country", label: "País", getValue: (s: ClientStore) => s.country || "" },
+                      { key: "store_phone", label: "Telefone", getValue: (s: ClientStore) => s.phone || "" },
+                      { key: "store_email", label: "E-mail", getValue: (s: ClientStore) => s.email || "" },
+                      { key: "store_manager", label: "Contato", getValue: (s: ClientStore) => s.manager_name || "" },
+                    ];
+                    [1, 2, 3, 4, 5].forEach((i) => {
+                      const label = (client as any)?.[`custom_field_${i}_label`];
+                      if (label) {
+                        const parsed = label.split("|")[0];
+                        if (parsed) {
+                          base.push({
+                            key: `store_cf_${i}`,
+                            label: parsed,
+                            getValue: (s: ClientStore) => (s as any)[`custom_field_${i}`] || "",
+                          });
+                        }
+                      }
+                    });
+                    matrixPieces.forEach((p) => {
+                      base.push({
+                        key: `piece_${p.id}`,
+                        label: `${p.code} - ${p.name}`,
+                        getValue: (s: ClientStore) => qtyMap[`${s.id}-${p.id}`] || 0,
+                      });
+                    });
+                    kits.forEach((kit) => {
+                      const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
+                      base.push({
+                        key: `kit_${kit.id}`,
+                        label: `Kit ${kit.code} - ${kit.name}`,
+                        getValue: (s: ClientStore) => {
+                          if (kpForKit.length === 0) return 0;
+                          return Math.min(...kpForKit.map(kp => {
+                            const storeQty = qtyMap[`${s.id}-${kp.piece_id}`] || 0;
+                            return Math.floor(storeQty / (kp.quantity || 1));
+                          }));
+                        },
+                      });
+                    });
+                    base.push({
+                      key: "total",
+                      label: "Total",
+                      getValue: (s: ClientStore) => matrixPieces.reduce((sum, p) => sum + (qtyMap[`${s.id}-${p.id}`] || 0), 0),
+                    });
+                    return base;
+                  })()}
                 />
 
                 {/* Matrix Table - hidden during quick edit */}
