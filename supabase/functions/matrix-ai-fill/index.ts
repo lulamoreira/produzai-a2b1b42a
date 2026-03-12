@@ -14,7 +14,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const { prompt, stores, pieces, kits, kitPieces, currentQuantities } =
+    const { prompt, stores, pieces, kits, kitPieces, currentQuantities, customFieldLabels } =
       await req.json();
 
     if (!prompt || !stores || !pieces) {
