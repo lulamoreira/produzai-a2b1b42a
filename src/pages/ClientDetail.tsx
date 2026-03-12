@@ -272,6 +272,7 @@ const ClientDetail = () => {
   const [enriching, setEnriching] = useState(false);
   const [enrichProgress, setEnrichProgress] = useState({ current: 0, total: 0 });
   const [customExportOpen, setCustomExportOpen] = useState(false);
+  const [displayOrderStores, setDisplayOrderStores] = useState<ClientStore[]>([]);
 
   // Store form
   const [storeForm, setStoreForm] = useState({ ...emptyStoreForm });
