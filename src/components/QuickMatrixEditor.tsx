@@ -47,6 +47,8 @@ const QuickMatrixEditor = ({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // Helper to read from parent qtyMap using dash key
