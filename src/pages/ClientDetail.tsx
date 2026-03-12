@@ -1033,6 +1033,7 @@ const ClientDetail = () => {
                 onOpenEditStore={handleOpenEditStore}
                 storeSearch={storeSearch}
                 storeStateFilter={storeStateFilter}
+                onDisplayOrderChange={setDisplayOrderStores}
                />
             )}
 
