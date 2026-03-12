@@ -293,6 +293,7 @@ export default function StoresMatrixTable({
   onOpenEditStore,
   storeSearch,
   storeStateFilter,
+  onDisplayOrderChange,
 }: Props) {
   const allColumns = useMemo(() => buildColumns(customFieldLabels), [customFieldLabels]);
 
