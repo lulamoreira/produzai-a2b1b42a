@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.notify-occurrence]
 verify_jwt = false
+
+[functions.matrix-ai-fill]
+verify_jwt = false
