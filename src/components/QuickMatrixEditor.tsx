@@ -347,6 +347,40 @@ const QuickMatrixEditor = ({
         )}
       </div>
 
+      {/* AI Prompt */}
+      {editing && (
+        <div className="flex items-center gap-2 mb-3 p-3 rounded-lg border border-primary/20 bg-primary/5">
+          <Sparkles className="w-4 h-4 text-primary shrink-0" />
+          <input
+            type="text"
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleAiPrompt();
+              }
+            }}
+            placeholder="Ex: Coloque 5 unidades de todas as peças em todas as lojas..."
+            disabled={aiLoading}
+            className="flex-1 h-8 px-3 text-sm rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary disabled:opacity-50"
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/10 shrink-0"
+            onClick={handleAiPrompt}
+            disabled={aiLoading || !aiPrompt.trim()}
+          >
+            {aiLoading ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processando...</>
+            ) : (
+              <><Send className="w-3.5 h-3.5" /> Enviar</>
+            )}
+          </Button>
+        </div>
+      )}
+
       {/* Quick-edit table */}
       {editing && (
         <div className="border border-primary/30 rounded-lg overflow-x-auto bg-card shadow-sm">
