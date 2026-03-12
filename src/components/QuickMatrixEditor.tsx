@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Edit3, Save, X, Package } from "lucide-react";
+import { Edit3, Save, X, Package, Sparkles, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
 import PieceThumbnail from "@/components/PieceThumbnail";
+import { supabase } from "@/integrations/supabase/client";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
 
 interface QuickMatrixEditorProps {
@@ -46,6 +47,8 @@ const QuickMatrixEditor = ({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // Helper to read from parent qtyMap using dash key
@@ -143,6 +146,82 @@ const QuickMatrixEditor = ({
       return parseInt(val) !== original;
     }).length;
   }, [draft, getQty, editing]);
+
+  const handleAiPrompt = async () => {
+    if (!aiPrompt.trim() || aiLoading) return;
+    setAiLoading(true);
+    try {
+      const currentQuantities: Record<string, number> = {};
+      stores.forEach(s => {
+        pieces.forEach(p => {
+          const key = mk(s.id, p.id);
+          const val = parseInt(draft[key]) || 0;
+          if (val > 0) {
+            currentQuantities[parentKey(s.id, p.id)] = val;
+          }
+        });
+      });
+
+      const { data, error } = await supabase.functions.invoke("matrix-ai-fill", {
+        body: {
+          prompt: aiPrompt.trim(),
+          stores: stores.map(s => ({
+            id: s.id,
+            name: s.name,
+            nickname: s.nickname,
+            store_model: s.store_model,
+            city: s.city,
+            state: s.state,
+          })),
+          pieces: pieces.map(p => ({
+            id: p.id,
+            code: p.code,
+            name: p.name,
+            category: p.category,
+            size: p.size,
+            kit_only: p.kit_only,
+          })),
+          kits: kits.map(k => ({ id: k.id, code: k.code, name: k.name })),
+          kitPieces: kitPieces.map(kp => ({
+            kit_id: kp.kit_id,
+            piece_id: kp.piece_id,
+            quantity: kp.quantity,
+          })),
+          currentQuantities,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      const changes = data?.changes as { storeId: string; pieceId: string; quantity: number }[] | undefined;
+      if (!changes || changes.length === 0) {
+        toast.info("A IA não gerou alterações para este comando.");
+        return;
+      }
+
+      // Apply changes to draft
+      setDraft(d => {
+        const next = { ...d };
+        for (const c of changes) {
+          next[mk(c.storeId, c.pieceId)] = String(Math.max(0, c.quantity));
+        }
+        return next;
+      });
+
+      toast.success(`IA aplicou ${changes.length} alteração(ões) na planilha. Revise e salve.`);
+      setAiPrompt("");
+    } catch (err: any) {
+      console.error("AI fill error:", err);
+      toast.error(err?.message || "Erro ao processar comando da IA.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const handleSave = async () => {
     const changes: { storeId: string; pieceId: string; quantity: number }[] = [];
@@ -267,6 +346,40 @@ const QuickMatrixEditor = ({
           </>
         )}
       </div>
+
+      {/* AI Prompt */}
+      {editing && (
+        <div className="flex items-center gap-2 mb-3 p-3 rounded-lg border border-primary/20 bg-primary/5">
+          <Sparkles className="w-4 h-4 text-primary shrink-0" />
+          <input
+            type="text"
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleAiPrompt();
+              }
+            }}
+            placeholder="Ex: Coloque 5 unidades de todas as peças em todas as lojas..."
+            disabled={aiLoading}
+            className="flex-1 h-8 px-3 text-sm rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary disabled:opacity-50"
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/10 shrink-0"
+            onClick={handleAiPrompt}
+            disabled={aiLoading || !aiPrompt.trim()}
+          >
+            {aiLoading ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Processando...</>
+            ) : (
+              <><Send className="w-3.5 h-3.5" /> Enviar</>
+            )}
+          </Button>
+        </div>
+      )}
 
       {/* Quick-edit table */}
       {editing && (
