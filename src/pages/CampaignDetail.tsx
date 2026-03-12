@@ -1333,6 +1333,13 @@ const CampaignDetail = () => {
                         }
                       }}
                       onEditingChange={setQuickEditActive}
+                      customFieldLabels={[
+                        ...(client?.custom_field_1_label ? [{ key: "custom_field_1", label: client.custom_field_1_label }] : []),
+                        ...(client?.custom_field_2_label ? [{ key: "custom_field_2", label: client.custom_field_2_label }] : []),
+                        ...(client?.custom_field_3_label ? [{ key: "custom_field_3", label: client.custom_field_3_label }] : []),
+                        ...(client?.custom_field_4_label ? [{ key: "custom_field_4", label: client.custom_field_4_label }] : []),
+                        ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label }] : []),
+                      ]}
                     />
                     <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces)}>
                       <Download className="w-3.5 h-3.5" /> Exportar Matriz
