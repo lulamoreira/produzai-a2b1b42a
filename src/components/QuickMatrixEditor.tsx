@@ -191,7 +191,19 @@ const QuickMatrixEditor = ({
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check for 402/429 status in the error message
+        const errMsg = error?.message || String(error);
+        if (errMsg.includes("402") || errMsg.includes("Créditos insuficientes")) {
+          toast.error("Créditos de IA insuficientes. Adicione créditos ao workspace Lovable em Settings → Workspace → Usage.");
+          return;
+        }
+        if (errMsg.includes("429") || errMsg.includes("Limite de requisições")) {
+          toast.error("Limite de requisições excedido. Aguarde alguns segundos e tente novamente.");
+          return;
+        }
+        throw error;
+      }
 
       if (data?.error) {
         toast.error(data.error);
