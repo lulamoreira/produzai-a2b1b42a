@@ -27,8 +27,18 @@ serve(async (req) => {
     // Build context for the AI
     const storeList = stores
       .map(
-        (s: any) =>
-          `- ID: ${s.id} | Nome: "${s.name}"${s.nickname ? ` (${s.nickname})` : ""}${s.store_model ? ` | Modelo: ${s.store_model}` : ""}${s.city ? ` | Cidade: ${s.city}` : ""}${s.state ? ` | UF: ${s.state}` : ""}`
+        (s: any) => {
+          let line = `- ID: ${s.id} | Nome: "${s.name}"${s.nickname ? ` (${s.nickname})` : ""}${s.store_model ? ` | Modelo: ${s.store_model}` : ""}${s.city ? ` | Cidade: ${s.city}` : ""}${s.state ? ` | UF: ${s.state}` : ""}`;
+          // Add custom fields
+          if (customFieldLabels && customFieldLabels.length > 0) {
+            for (const cf of customFieldLabels) {
+              if (s[cf.label]) {
+                line += ` | ${cf.label}: ${s[cf.label]}`;
+              }
+            }
+          }
+          return line;
+        }
       )
       .join("\n");
 
