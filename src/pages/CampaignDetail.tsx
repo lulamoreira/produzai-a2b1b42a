@@ -1349,7 +1349,6 @@ const CampaignDetail = () => {
                     <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setMatrixCustomExportOpen(true)}>
                       <Download className="w-3.5 h-3.5" /> Export. Personalizada
                     </Button>
-                    </Button>
                     {canEditCampaign && (
                       <label className="cursor-pointer">
                         <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
