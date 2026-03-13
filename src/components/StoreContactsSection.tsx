@@ -192,9 +192,9 @@ const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
             <div className="w-[130px]">
               <label className="text-[10px] text-muted-foreground">Telefone</label>
               <div className="flex gap-0.5 items-center">
-                <Input
+              <DebouncedInput
                   value={contact.phone ? formatPhone(contact.phone) : ""}
-                  onChange={(e) => handleUpdateField(contact, "phone", formatPhone(e.target.value))}
+                  onValueCommit={(val) => handleUpdateField(contact, "phone", formatPhone(val))}
                   className="h-7 text-xs"
                   placeholder="(00)00000-0000"
                   maxLength={14}

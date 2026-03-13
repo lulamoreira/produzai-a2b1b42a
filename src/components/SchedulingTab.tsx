@@ -492,11 +492,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       <Clock className="w-3 h-3" /> Horário
                     </label>
                     <div className="flex items-center gap-1">
-                      <Input
+                      <DebouncedInput
                         type="time"
                         disabled={!canEdit}
                         value={schedule?.scheduled_time || ""}
-                        onChange={(e) => handleFieldChange(store.id, "scheduled_time", e.target.value || null)}
+                        onValueCommit={(val) => handleFieldChange(store.id, "scheduled_time", val || null)}
                         className="h-8 text-xs flex-1"
                       />
                       {schedule?.scheduled_time && canEdit && (
