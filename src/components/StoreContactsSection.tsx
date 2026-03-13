@@ -168,10 +168,9 @@ const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
           <div key={contact.id} className="flex flex-wrap items-center gap-2 bg-background rounded-md border border-border p-2">
             <div className="flex-1 min-w-[120px]">
               <label className="text-[10px] text-muted-foreground">Contato</label>
-              <Input
+              <DebouncedInput
                 value={contact.name}
-                onChange={(e) => handleUpdateField(contact, "name", e.target.value)}
-                onBlur={(e) => handleUpdateField(contact, "name", e.target.value)}
+                onValueCommit={(val) => handleUpdateField(contact, "name", val)}
                 className="h-7 text-xs"
                 disabled={!canEdit}
               />
