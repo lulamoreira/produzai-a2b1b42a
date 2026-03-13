@@ -5,6 +5,8 @@ import { type ClientStore } from "@/hooks/useMultiClientData";
 import { getStateColor } from "@/lib/stateColors";
 import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type StoreContactRole } from "@/hooks/useStoreContacts";
 import { Input } from "@/components/ui/input";
+import DebouncedInput from "@/components/DebouncedInput";
+import SchedulingChatSheet from "@/components/SchedulingChatSheet";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -89,7 +91,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
-
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatStoreName, setChatStoreName] = useState("");
   const [filterApproval, setFilterApproval] = useState("");
 
   // Fetch all contacts for the client
@@ -369,6 +372,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   <span className="font-semibold truncate text-sm">{store.name}</span>
                   <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  style={{ color: colors.text }}
+                  title="Abrir chat"
+                  onClick={() => { setChatStoreName(store.name); setChatOpen(true); }}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </Button>
                 {/* Approval status icon */}
                 {fullyApproved ? (
                   <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
@@ -502,11 +515,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         <AlertTriangle className="w-3 h-3 text-amber-500" />
                       )}
                     </label>
-                    <Input
+                    <DebouncedInput
                       disabled={!canEdit}
                       placeholder="Nº OS"
                       value={schedule?.installation_os || ""}
-                      onChange={(e) => handleFieldChange(store.id, "installation_os", e.target.value || null)}
+                      onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)}
                       className="h-8 text-xs"
                     />
                   </div>
@@ -553,6 +566,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         onOpenChange={setTeamDialogOpen}
         campaignId={campaignId}
         canEdit={canEdit}
+      />
+
+      {/* Chat Sheet */}
+      <SchedulingChatSheet
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        storeName={chatStoreName}
       />
     </div>
   );
