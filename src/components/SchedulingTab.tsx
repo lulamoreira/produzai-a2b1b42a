@@ -505,11 +505,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         <AlertTriangle className="w-3 h-3 text-amber-500" />
                       )}
                     </label>
-                    <Input
+                    <DebouncedInput
                       disabled={!canEdit}
                       placeholder="Nº OS"
                       value={schedule?.installation_os || ""}
-                      onChange={(e) => handleFieldChange(store.id, "installation_os", e.target.value || null)}
+                      onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)}
                       className="h-8 text-xs"
                     />
                   </div>
