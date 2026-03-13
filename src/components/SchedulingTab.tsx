@@ -372,6 +372,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   <span className="font-semibold truncate text-sm">{store.name}</span>
                   <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  style={{ color: colors.text }}
+                  title="Abrir chat"
+                  onClick={() => { setChatStoreName(store.name); setChatOpen(true); }}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                </Button>
                 {/* Approval status icon */}
                 {fullyApproved ? (
                   <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
