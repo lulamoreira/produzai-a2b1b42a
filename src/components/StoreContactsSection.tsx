@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import DebouncedInput from "@/components/DebouncedInput";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, UserPlus, Settings, X } from "lucide-react";
 import {
@@ -167,10 +168,9 @@ const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
           <div key={contact.id} className="flex flex-wrap items-center gap-2 bg-background rounded-md border border-border p-2">
             <div className="flex-1 min-w-[120px]">
               <label className="text-[10px] text-muted-foreground">Contato</label>
-              <Input
+              <DebouncedInput
                 value={contact.name}
-                onChange={(e) => handleUpdateField(contact, "name", e.target.value)}
-                onBlur={(e) => handleUpdateField(contact, "name", e.target.value)}
+                onValueCommit={(val) => handleUpdateField(contact, "name", val)}
                 className="h-7 text-xs"
                 disabled={!canEdit}
               />
@@ -192,9 +192,9 @@ const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
             <div className="w-[130px]">
               <label className="text-[10px] text-muted-foreground">Telefone</label>
               <div className="flex gap-0.5 items-center">
-                <Input
+              <DebouncedInput
                   value={contact.phone ? formatPhone(contact.phone) : ""}
-                  onChange={(e) => handleUpdateField(contact, "phone", formatPhone(e.target.value))}
+                  onValueCommit={(val) => handleUpdateField(contact, "phone", formatPhone(val))}
                   className="h-7 text-xs"
                   placeholder="(00)00000-0000"
                   maxLength={14}
