@@ -92,7 +92,7 @@ const ChatTabContent = () => {
   const selectedConv = conversations.find((c) => c.id === selectedConversation);
 
   return (
-    <div className="border border-border rounded-xl bg-card overflow-hidden" style={{ height: "calc(100vh - 280px)", minHeight: 400 }}>
+    <div className="border border-border rounded-xl bg-card overflow-hidden h-full" style={{ minHeight: 400 }}>
       <div className="flex h-full">
         {/* Conversation List */}
         <aside
