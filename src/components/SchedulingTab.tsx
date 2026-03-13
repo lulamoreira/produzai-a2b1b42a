@@ -567,6 +567,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         campaignId={campaignId}
         canEdit={canEdit}
       />
+
+      {/* Chat Sheet */}
+      <SchedulingChatSheet
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        storeName={chatStoreName}
+      />
     </div>
   );
 };
