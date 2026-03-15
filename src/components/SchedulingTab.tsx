@@ -6,7 +6,7 @@ import { getStateColor } from "@/lib/stateColors";
 import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type StoreContactRole } from "@/hooks/useStoreContacts";
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
-import SchedulingChatSheet from "@/components/SchedulingChatSheet";
+import ScheduleCardChat from "@/components/ScheduleCardChat";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
