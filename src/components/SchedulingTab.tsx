@@ -379,7 +379,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   className="h-7 w-7 shrink-0"
                   style={{ color: colors.text }}
                   title="Abrir chat"
-                  onClick={() => { setChatStoreName(store.name); setChatOpen(true); }}
+                  onClick={() => { setChatStoreId(store.id); setChatStoreName(store.name); setChatOpen(true); }}
                 >
                   <MessageCircle className="w-4 h-4" />
                 </Button>
