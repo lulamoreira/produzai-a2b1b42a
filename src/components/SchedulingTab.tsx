@@ -569,10 +569,12 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         canEdit={canEdit}
       />
 
-      {/* Chat Sheet */}
-      <SchedulingChatSheet
+      {/* Per-card Chat */}
+      <ScheduleCardChat
         open={chatOpen}
         onOpenChange={setChatOpen}
+        campaignId={campaignId}
+        storeId={chatStoreId}
         storeName={chatStoreName}
       />
     </div>
