@@ -6,7 +6,7 @@ import { getStateColor } from "@/lib/stateColors";
 import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type StoreContactRole } from "@/hooks/useStoreContacts";
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
-import SchedulingChatSheet from "@/components/SchedulingChatSheet";
+import ScheduleCardChat from "@/components/ScheduleCardChat";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -92,6 +92,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterCity, setFilterCity] = useState("");
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [chatStoreId, setChatStoreId] = useState("");
   const [chatStoreName, setChatStoreName] = useState("");
   const [filterApproval, setFilterApproval] = useState("");
 
@@ -378,7 +379,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   className="h-7 w-7 shrink-0"
                   style={{ color: colors.text }}
                   title="Abrir chat"
-                  onClick={() => { setChatStoreName(store.name); setChatOpen(true); }}
+                  onClick={() => { setChatStoreId(store.id); setChatStoreName(store.name); setChatOpen(true); }}
                 >
                   <MessageCircle className="w-4 h-4" />
                 </Button>
@@ -568,10 +569,12 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         canEdit={canEdit}
       />
 
-      {/* Chat Sheet */}
-      <SchedulingChatSheet
+      {/* Per-card Chat */}
+      <ScheduleCardChat
         open={chatOpen}
         onOpenChange={setChatOpen}
+        campaignId={campaignId}
+        storeId={chatStoreId}
         storeName={chatStoreName}
       />
     </div>
