@@ -386,6 +386,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 {/* Approval status icon */}
                 {fullyApproved ? (
                   <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
+                ) : (storeApproved && teamApproved && !hasOs && schedule?.scheduled_date && schedule?.scheduled_time) ? (
+                  <span className="text-[10px] font-bold text-destructive whitespace-nowrap leading-tight text-center shrink-0">FALTA<br/>nº OS</span>
                 ) : (
                   <AlertCircle className="w-6 h-6 shrink-0 text-amber-500 drop-shadow" />
                 )}
@@ -463,9 +465,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                           variant="outline"
                           size="sm"
                           disabled={!canEdit}
-                          className={cn("w-full justify-start text-left text-xs font-normal h-8", !selectedDate && "text-muted-foreground")}
+                          className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !selectedDate && "text-muted-foreground")}
                         >
-                          {selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar"}
+                          <span className="truncate">{selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar"}</span>
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0" align="start">
