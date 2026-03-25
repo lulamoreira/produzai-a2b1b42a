@@ -649,12 +649,15 @@ export function TeamCardContent({ team, members, vehicles }: TeamCardProps) {
       <div>
         <p className="font-medium text-muted-foreground mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Instaladores ({members.length})</p>
         {members.length === 0 && <p className="pl-4 text-muted-foreground italic">Nenhum instalador cadastrado</p>}
-        {members.map((m) => (
-          <div key={m.id} className="pl-4 flex items-center gap-2 flex-wrap">
-            <span className="font-medium">{m.name}</span>
-            {!m.rg && !m.cpf && !m.phone && <span className="text-amber-500 text-[10px]">(incompleto)</span>}
-          </div>
-        ))}
+        {members.map((m) => {
+          const missing = getMemberMissingFields(m);
+          return (
+            <div key={m.id} className="pl-4 flex items-center gap-2 flex-wrap">
+              <span className="font-medium">{m.name}</span>
+              {missing.length > 0 && <span className="text-amber-500 text-[10px]">(Falta: {missing.join(", ")})</span>}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
