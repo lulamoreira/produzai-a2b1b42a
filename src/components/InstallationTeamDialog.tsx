@@ -164,7 +164,14 @@ export function useAllTeamVehicles(campaignId: string) {
 
 export function isTeamIncomplete(members: TeamMember[]): boolean {
   if (members.length === 0) return true;
-  return members.some((m) => !m.rg || !m.cpf || !m.phone);
+  return members.some((m) => !m.rg || !m.cpf);
+}
+
+export function getMemberMissingFields(member: TeamMember): string[] {
+  const missing: string[] = [];
+  if (!member.rg) missing.push("RG");
+  if (!member.cpf) missing.push("CPF");
+  return missing;
 }
 
 // ─── Main Dialog ─────────────────────────────────────────
