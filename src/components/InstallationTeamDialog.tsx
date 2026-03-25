@@ -320,6 +320,7 @@ function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; 
   const { data: vehicles = [] } = useTeamVehicles(teamId);
   const [showVehicles, setShowVehicles] = useState(vehicles.length > 0);
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", brand: "", color: "", plate: "" });
 
   const invalidate = () => {
@@ -336,6 +337,15 @@ function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; 
     onError: () => toast.error("Erro ao adicionar veículo"),
   });
 
+  const updateVehicle = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<TeamVehicle> }) => {
+      const { error } = await supabase.from("installation_team_vehicles").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); setEditingId(null); toast.success("Veículo atualizado!"); },
+    onError: () => toast.error("Erro ao atualizar veículo"),
+  });
+
   const deleteVehicle = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("installation_team_vehicles").delete().eq("id", id);
@@ -343,6 +353,15 @@ function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; 
     },
     onSuccess: () => { invalidate(); toast.success("Veículo removido!"); },
   });
+
+  const startEditing = (v: TeamVehicle) => {
+    setEditingId(v.id);
+    setForm({ name: v.name || "", brand: v.brand || "", color: v.color || "", plate: v.plate || "" });
+  };
+
+  const saveEdit = () => {
+    if (editingId) updateVehicle.mutate({ id: editingId, data: form });
+  };
 
   return (
     <div className="space-y-2">
@@ -352,7 +371,7 @@ function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; 
         {canEdit && (
           <div className="flex items-center gap-2 ml-auto">
             <span className="text-xs text-muted-foreground">Possui veículo?</span>
-            <Switch checked={showVehicles} onCheckedChange={(v) => { setShowVehicles(v); if (!v) setAdding(false); }} />
+            <Switch checked={showVehicles} onCheckedChange={(v) => { setShowVehicles(v); if (!v) { setAdding(false); setEditingId(null); } }} />
           </div>
         )}
       </div>
@@ -360,20 +379,50 @@ function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; 
       {showVehicles && (
         <div className="space-y-2 pl-6">
           {vehicles.map((v) => (
-            <div key={v.id} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5">
-              <span className="font-medium">{v.name || "Sem nome"}</span>
-              {v.brand && <span className="text-muted-foreground">· {v.brand}</span>}
-              {v.color && <span className="text-muted-foreground">· {v.color}</span>}
-              {v.plate && <span className="font-mono uppercase">{v.plate}</span>}
-              {canEdit && (
-                <Button size="icon" variant="ghost" className="h-5 w-5 ml-auto" onClick={() => deleteVehicle.mutate(v.id)}>
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              )}
-            </div>
+            editingId === v.id ? (
+              <div key={v.id} className="grid grid-cols-2 gap-2 bg-muted/50 rounded p-2">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium">Nome</label>
+                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-7 text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium">Marca</label>
+                  <Input value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className="h-7 text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium">Cor</label>
+                  <Input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className="h-7 text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium">Placa</label>
+                  <Input value={form.plate} onChange={(e) => setForm({ ...form, plate: e.target.value.toUpperCase() })} className="h-7 text-xs" />
+                </div>
+                <div className="col-span-2 flex gap-2">
+                  <Button size="sm" className="h-7 text-xs" onClick={saveEdit}><Check className="w-3 h-3 mr-1" />Salvar</Button>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingId(null)}>Cancelar</Button>
+                </div>
+              </div>
+            ) : (
+              <div key={v.id} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5">
+                <span className="font-medium">{v.name || "Sem nome"}</span>
+                {v.brand && <span className="text-muted-foreground">· {v.brand}</span>}
+                {v.color && <span className="text-muted-foreground">· {v.color}</span>}
+                {v.plate && <span className="font-mono uppercase">{v.plate}</span>}
+                {canEdit && (
+                  <div className="flex items-center gap-1 ml-auto">
+                    <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => startEditing(v)}>
+                      <Edit3 className="w-3 h-3" />
+                    </Button>
+                    <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive" onClick={() => deleteVehicle.mutate(v.id)}>
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )
           ))}
-          {canEdit && !adding && (
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setAdding(true)}>
+          {canEdit && !adding && !editingId && (
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => { setAdding(true); setForm({ name: "", brand: "", color: "", plate: "" }); }}>
               <Plus className="w-3 h-3" /> Adicionar veículo
             </Button>
           )}
@@ -413,6 +462,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
   const queryClient = useQueryClient();
   const { data: members = [] } = useTeamMembers(teamId);
   const [adding, setAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", rg: "", cpf: "", phone: "" });
   const [cpfError, setCpfError] = useState("");
 
@@ -439,6 +489,23 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
     onError: (e) => toast.error(e.message || "Erro ao adicionar"),
   });
 
+  const updateMember = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: { name: string; rg: string; cpf: string; phone: string } }) => {
+      if (data.cpf && !isValidCpf(data.cpf)) {
+        throw new Error("CPF inválido");
+      }
+      const { error } = await supabase.from("installation_team_members").update({
+        name: data.name,
+        rg: data.rg,
+        cpf: data.cpf.replace(/\D/g, ""),
+        phone: data.phone,
+      }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { invalidate(); setEditingId(null); setCpfError(""); toast.success("Instalador atualizado!"); },
+    onError: (e) => toast.error(e.message || "Erro ao atualizar"),
+  });
+
   const deleteMember = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("installation_team_members").delete().eq("id", id);
@@ -458,6 +525,42 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
     }
   };
 
+  const startEditing = (m: TeamMember) => {
+    setEditingId(m.id);
+    setForm({ name: m.name, rg: m.rg || "", cpf: m.cpf ? formatCpf(m.cpf) : "", phone: m.phone || "" });
+    setCpfError("");
+  };
+
+  const memberFormFields = (isNew: boolean) => (
+    <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-1">
+        <label className="text-xs font-medium">Nome *</label>
+        <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-7 text-xs" placeholder="Nome completo" />
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs font-medium">RG</label>
+        <Input value={form.rg} onChange={(e) => setForm({ ...form, rg: e.target.value })} className="h-7 text-xs" placeholder="RG" />
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs font-medium">CPF</label>
+        <Input value={form.cpf} onChange={(e) => handleCpfChange(e.target.value)} className={cn("h-7 text-xs", cpfError && "border-destructive")} placeholder="000.000.000-00" />
+        {cpfError && <p className="text-[10px] text-destructive">{cpfError}</p>}
+      </div>
+      <div className="space-y-1">
+        <label className="text-xs font-medium">Telefone</label>
+        <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-7 text-xs" placeholder="(00) 00000-0000" />
+      </div>
+      <div className="col-span-2 flex gap-2">
+        {isNew ? (
+          <Button size="sm" className="h-7 text-xs" disabled={!form.name.trim() || !!cpfError} onClick={() => addMember.mutate()}>Salvar</Button>
+        ) : (
+          <Button size="sm" className="h-7 text-xs" disabled={!form.name.trim() || !!cpfError} onClick={() => updateMember.mutate({ id: editingId!, data: form })}><Check className="w-3 h-3 mr-1" />Salvar</Button>
+        )}
+        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { isNew ? setAdding(false) : setEditingId(null); setCpfError(""); }}>Cancelar</Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
@@ -468,58 +571,43 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
 
       <div className="space-y-2 pl-6">
         {members.map((m) => {
-          const incomplete = !m.rg || !m.cpf || !m.phone;
+          const missingFields = getMemberMissingFields(m);
+          if (editingId === m.id) {
+            return <div key={m.id} className="bg-muted/50 rounded p-2">{memberFormFields(false)}</div>;
+          }
           return (
             <div key={m.id} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5 flex-wrap">
               <span className="font-medium">{m.name}</span>
               {m.rg && <span className="text-muted-foreground">RG: {m.rg}</span>}
               {m.cpf && <span className="text-muted-foreground">CPF: {formatCpf(m.cpf)}</span>}
               {m.phone && <span className="text-muted-foreground">Tel: {m.phone}</span>}
-              {incomplete && (
-                <span className="text-amber-500 flex items-center gap-0.5" title="Dados incompletos">
+              {missingFields.length > 0 && (
+                <span className="text-amber-500 flex items-center gap-0.5" title={`Faltam: ${missingFields.join(", ")}`}>
                   <AlertTriangle className="w-3 h-3" />
+                  <span className="text-[10px]">Falta: {missingFields.join(", ")}</span>
                 </span>
               )}
               {canEdit && (
-                <Button size="icon" variant="ghost" className="h-5 w-5 ml-auto" onClick={() => deleteMember.mutate(m.id)}>
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+                <div className="flex items-center gap-1 ml-auto">
+                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => startEditing(m)}>
+                    <Edit3 className="w-3 h-3" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive" onClick={() => deleteMember.mutate(m.id)}>
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
               )}
             </div>
           );
         })}
 
-        {canEdit && !adding && (
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setAdding(true)}>
+        {canEdit && !adding && !editingId && (
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => { setAdding(true); setForm({ name: "", rg: "", cpf: "", phone: "" }); }}>
             <Plus className="w-3 h-3" /> Adicionar instalador
           </Button>
         )}
 
-        {canEdit && adding && (
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <label className="text-xs font-medium">Nome *</label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-7 text-xs" placeholder="Nome completo" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium">RG</label>
-              <Input value={form.rg} onChange={(e) => setForm({ ...form, rg: e.target.value })} className="h-7 text-xs" placeholder="RG" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium">CPF</label>
-              <Input value={form.cpf} onChange={(e) => handleCpfChange(e.target.value)} className={cn("h-7 text-xs", cpfError && "border-destructive")} placeholder="000.000.000-00" />
-              {cpfError && <p className="text-[10px] text-destructive">{cpfError}</p>}
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium">Telefone</label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-7 text-xs" placeholder="(00) 00000-0000" />
-            </div>
-            <div className="col-span-2 flex gap-2">
-              <Button size="sm" className="h-7 text-xs" disabled={!form.name.trim() || !!cpfError} onClick={() => addMember.mutate()}>Salvar</Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { setAdding(false); setCpfError(""); }}>Cancelar</Button>
-            </div>
-          </div>
-        )}
+        {canEdit && adding && memberFormFields(true)}
       </div>
     </div>
   );
