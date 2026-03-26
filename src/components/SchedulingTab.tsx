@@ -288,6 +288,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   };
 
   const handleExportTeams = () => {
+    console.log("handleExportTeams called, teams:", teams.length, "members keys:", Object.keys(allMembersMap), "vehicles keys:", Object.keys(allVehiclesMap));
     if (teams.length === 0) {
       toast.error("Nenhuma equipe cadastrada para exportar.");
       return;
