@@ -289,7 +289,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   };
 
   const handleExportTeams = () => {
-    console.log("handleExportTeams called, teams:", teams.length, "members keys:", Object.keys(allMembersMap), "vehicles keys:", Object.keys(allVehiclesMap));
     if (teams.length === 0) {
       toast.error("Nenhuma equipe cadastrada para exportar.");
       return;
@@ -297,7 +296,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 
     const wb = XLSX.utils.book_new();
 
-    // Resumo
     const summaryRows = teams.map((team) => {
       const members = allMembersMap[team.id] || [];
       const incomplete = isTeamIncomplete(members);
@@ -312,47 +310,34 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     summaryWs["!cols"] = [{ wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }];
     XLSX.utils.book_append_sheet(wb, summaryWs, "Resumo Equipes");
 
-    // Aba por equipe com instaladores e veículos
     teams.forEach((team) => {
       const members = allMembersMap[team.id] || [];
       const vehicles = allVehiclesMap[team.id] || [];
-      const rows: Record<string, string>[] = [];
+      if (members.length === 0 && vehicles.length === 0) return;
 
-      members.forEach((m: TeamMember) => {
-        rows.push({ "Tipo": "Instalador", "Nome": m.name, "Campo 1": m.rg || "", "Campo 2": m.cpf || "", "Campo 3": m.phone || "" });
-      });
+      const sheetData: string[][] = [];
 
-      if (members.length > 0 && vehicles.length > 0) {
-        rows.push({ "Tipo": "", "Nome": "", "Campo 1": "", "Campo 2": "", "Campo 3": "" });
+      if (members.length > 0) {
+        sheetData.push(["Instalador", "Nome", "RG", "CPF", "Telefone"]);
+        members.forEach((m: TeamMember) => {
+          sheetData.push(["", m.name, m.rg || "", m.cpf || "", m.phone || ""]);
+        });
       }
 
-      vehicles.forEach((v: TeamVehicle) => {
-        rows.push({ "Tipo": "Veículo", "Nome": v.name || "", "Campo 1": v.brand || "", "Campo 2": v.color || "", "Campo 3": v.plate || "" });
-      });
-
-      if (rows.length > 0) {
-        // Build manually to have proper headers per section
-        const sheetData: string[][] = [];
-        if (members.length > 0) {
-          sheetData.push(["Instalador", "Nome", "RG", "CPF", "Telefone"]);
-          members.forEach((m: TeamMember) => {
-            sheetData.push(["", m.name, m.rg || "", m.cpf || "", m.phone || ""]);
-          });
-        }
-        if (vehicles.length > 0) {
-          if (sheetData.length > 0) sheetData.push([]);
-          sheetData.push(["Veículo", "Nome", "Marca", "Cor", "Placa"]);
-          vehicles.forEach((v: TeamVehicle) => {
-            sheetData.push(["", v.name || "", v.brand || "", v.color || "", v.plate || ""]);
-          });
-        }
-        const ws = XLSX.utils.aoa_to_sheet(sheetData);
-        ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
-        XLSX.utils.book_append_sheet(wb, ws, team.name.slice(0, 31));
+      if (vehicles.length > 0) {
+        if (sheetData.length > 0) sheetData.push([]);
+        sheetData.push(["Veículo", "Nome", "Marca", "Cor", "Placa"]);
+        vehicles.forEach((v: TeamVehicle) => {
+          sheetData.push(["", v.name || "", v.brand || "", v.color || "", v.plate || ""]);
+        });
       }
+
+      const ws = XLSX.utils.aoa_to_sheet(sheetData);
+      ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+      XLSX.utils.book_append_sheet(wb, ws, team.name.slice(0, 31));
     });
 
-    XLSX.writeFile(wb, "equipes_instalacao.xlsx");
+    downloadWorkbook(wb, "equipes_instalacao.xlsx");
     toast.success("Planilha de equipes exportada!");
   };
 
