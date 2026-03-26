@@ -295,15 +295,14 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 
     const wb = XLSX.utils.book_new();
 
-    // Resumo das equipes
+    // Resumo
     const summaryRows = teams.map((team) => {
       const members = allMembersMap[team.id] || [];
-      const vehicles = allVehiclesMap[team.id] || [];
       const incomplete = isTeamIncomplete(members);
       return {
         "Equipe": team.name,
         "Instaladores": members.length,
-        "Veículos": vehicles.length,
+        "Veículos": (allVehiclesMap[team.id] || []).length,
         "Status": incomplete ? "Dados Incompletos" : "Completo",
       };
     });
@@ -311,43 +310,41 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     summaryWs["!cols"] = [{ wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }];
     XLSX.utils.book_append_sheet(wb, summaryWs, "Resumo Equipes");
 
-    // Uma aba por equipe
+    // Aba por equipe com instaladores e veículos
     teams.forEach((team) => {
       const members = allMembersMap[team.id] || [];
       const vehicles = allVehiclesMap[team.id] || [];
+      const rows: Record<string, string>[] = [];
 
-      const memberRows = members.map((m: TeamMember) => ({
-        "Tipo": "Instalador",
-        "Nome": m.name,
-        "RG": m.rg || "",
-        "CPF": m.cpf || "",
-        "Telefone": m.phone || "",
-      }));
+      members.forEach((m: TeamMember) => {
+        rows.push({ "Tipo": "Instalador", "Nome": m.name, "Campo 1": m.rg || "", "Campo 2": m.cpf || "", "Campo 3": m.phone || "" });
+      });
 
-      const vehicleRows = vehicles.map((v: TeamVehicle) => ({
-        "Tipo": "Veículo",
-        "Nome": v.name || "",
-        "Marca": v.brand || "",
-        "Cor": v.color || "",
-        "Placa": v.plate || "",
-      }));
-
-      const allRows: Record<string, string>[] = [];
-      if (memberRows.length > 0) {
-        allRows.push(...memberRows);
-      }
-      if (vehicleRows.length > 0) {
-        // Separador
-        allRows.push({ "Tipo": "", "Nome": "", "RG": "", "CPF": "", "Telefone": "" });
-        // Cabeçalho veículos
-        allRows.push({ "Tipo": "Veículo", "Nome": "Nome", "RG": "Marca", "CPF": "Cor", "Telefone": "Placa" });
-        vehicleRows.forEach((v) => {
-          allRows.push({ "Tipo": "Veículo", "Nome": v["Nome"], "RG": v["Marca"], "CPF": v["Cor"], "Telefone": v["Placa"] });
-        });
+      if (members.length > 0 && vehicles.length > 0) {
+        rows.push({ "Tipo": "", "Nome": "", "Campo 1": "", "Campo 2": "", "Campo 3": "" });
       }
 
-      if (allRows.length > 0) {
-        const ws = XLSX.utils.json_to_sheet(allRows);
+      vehicles.forEach((v: TeamVehicle) => {
+        rows.push({ "Tipo": "Veículo", "Nome": v.name || "", "Campo 1": v.brand || "", "Campo 2": v.color || "", "Campo 3": v.plate || "" });
+      });
+
+      if (rows.length > 0) {
+        // Build manually to have proper headers per section
+        const sheetData: string[][] = [];
+        if (members.length > 0) {
+          sheetData.push(["Instalador", "Nome", "RG", "CPF", "Telefone"]);
+          members.forEach((m: TeamMember) => {
+            sheetData.push(["", m.name, m.rg || "", m.cpf || "", m.phone || ""]);
+          });
+        }
+        if (vehicles.length > 0) {
+          if (sheetData.length > 0) sheetData.push([]);
+          sheetData.push(["Veículo", "Nome", "Marca", "Cor", "Placa"]);
+          vehicles.forEach((v: TeamVehicle) => {
+            sheetData.push(["", v.name || "", v.brand || "", v.color || "", v.plate || ""]);
+          });
+        }
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
         ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
         XLSX.utils.book_append_sheet(wb, ws, team.name.slice(0, 31));
       }
