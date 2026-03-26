@@ -299,7 +299,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     const summaryRows = teams.map((team) => {
       const members = allMembersMap[team.id] || [];
       const vehicles = allVehiclesMap[team.id] || [];
-      const incomplete = isTeamIncomplete(members, vehicles);
+      const incomplete = isTeamIncomplete(members);
       return {
         "Equipe": team.name,
         "Instaladores": members.length,
