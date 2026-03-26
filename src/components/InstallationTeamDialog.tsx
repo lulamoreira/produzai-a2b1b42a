@@ -510,8 +510,20 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("installation_team_members").delete().eq("id", id);
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => { invalidate(); toast.success("Instalador removido!"); },
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: ["team_members", teamId] });
+      const previous = queryClient.getQueryData<TeamMember[]>(["team_members", teamId]);
+      queryClient.setQueryData<TeamMember[]>(["team_members", teamId], (old) => (old || []).filter(m => m.id !== id));
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) queryClient.setQueryData(["team_members", teamId], context.previous);
+      toast.error("Erro ao remover instalador");
+    },
+    onSettled: () => { invalidate(); },
+    onSuccess: () => { toast.success("Instalador removido!"); },
   });
 
   const handleCpfChange = (value: string) => {
