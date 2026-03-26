@@ -399,6 +399,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setTeamDialogOpen(true)}>
           <Wrench className="w-4 h-4" /> Equipes
         </Button>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportTeams}>
+          <Users className="w-4 h-4" /> Exportar Equipes
+        </Button>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
           <Download className="w-4 h-4" /> Exportar
         </Button>
