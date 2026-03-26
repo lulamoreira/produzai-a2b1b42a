@@ -287,6 +287,73 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     toast.success("Planilha exportada!");
   };
 
+  const handleExportTeams = () => {
+    if (teams.length === 0) {
+      toast.error("Nenhuma equipe cadastrada para exportar.");
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    // Resumo
+    const summaryRows = teams.map((team) => {
+      const members = allMembersMap[team.id] || [];
+      const incomplete = isTeamIncomplete(members);
+      return {
+        "Equipe": team.name,
+        "Instaladores": members.length,
+        "Veículos": (allVehiclesMap[team.id] || []).length,
+        "Status": incomplete ? "Dados Incompletos" : "Completo",
+      };
+    });
+    const summaryWs = XLSX.utils.json_to_sheet(summaryRows);
+    summaryWs["!cols"] = [{ wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, summaryWs, "Resumo Equipes");
+
+    // Aba por equipe com instaladores e veículos
+    teams.forEach((team) => {
+      const members = allMembersMap[team.id] || [];
+      const vehicles = allVehiclesMap[team.id] || [];
+      const rows: Record<string, string>[] = [];
+
+      members.forEach((m: TeamMember) => {
+        rows.push({ "Tipo": "Instalador", "Nome": m.name, "Campo 1": m.rg || "", "Campo 2": m.cpf || "", "Campo 3": m.phone || "" });
+      });
+
+      if (members.length > 0 && vehicles.length > 0) {
+        rows.push({ "Tipo": "", "Nome": "", "Campo 1": "", "Campo 2": "", "Campo 3": "" });
+      }
+
+      vehicles.forEach((v: TeamVehicle) => {
+        rows.push({ "Tipo": "Veículo", "Nome": v.name || "", "Campo 1": v.brand || "", "Campo 2": v.color || "", "Campo 3": v.plate || "" });
+      });
+
+      if (rows.length > 0) {
+        // Build manually to have proper headers per section
+        const sheetData: string[][] = [];
+        if (members.length > 0) {
+          sheetData.push(["Instalador", "Nome", "RG", "CPF", "Telefone"]);
+          members.forEach((m: TeamMember) => {
+            sheetData.push(["", m.name, m.rg || "", m.cpf || "", m.phone || ""]);
+          });
+        }
+        if (vehicles.length > 0) {
+          if (sheetData.length > 0) sheetData.push([]);
+          sheetData.push(["Veículo", "Nome", "Marca", "Cor", "Placa"]);
+          vehicles.forEach((v: TeamVehicle) => {
+            sheetData.push(["", v.name || "", v.brand || "", v.color || "", v.plate || ""]);
+          });
+        }
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+        XLSX.utils.book_append_sheet(wb, ws, team.name.slice(0, 31));
+      }
+    });
+
+    XLSX.writeFile(wb, "equipes_instalacao.xlsx");
+    toast.success("Planilha de equipes exportada!");
+  };
+
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -331,6 +398,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         </select>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setTeamDialogOpen(true)}>
           <Wrench className="w-4 h-4" /> Equipes
+        </Button>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportTeams}>
+          <Users className="w-4 h-4" /> Exportar Equipes
         </Button>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
           <Download className="w-4 h-4" /> Exportar
