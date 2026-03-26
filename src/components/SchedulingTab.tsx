@@ -334,7 +334,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 
       const ws = XLSX.utils.aoa_to_sheet(sheetData);
       ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
-      XLSX.utils.book_append_sheet(wb, ws, team.name.slice(0, 31));
+      const safeName = team.name.replace(/[:\\/?*\[\]]/g, "").slice(0, 31) || "Equipe";
+      XLSX.utils.book_append_sheet(wb, ws, safeName);
     });
 
     downloadWorkbook(wb, "equipes_instalacao.xlsx");
