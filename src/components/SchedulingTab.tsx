@@ -287,6 +287,76 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     toast.success("Planilha exportada!");
   };
 
+  const handleExportTeams = () => {
+    if (teams.length === 0) {
+      toast.error("Nenhuma equipe cadastrada para exportar.");
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    // Resumo das equipes
+    const summaryRows = teams.map((team) => {
+      const members = allMembersMap[team.id] || [];
+      const vehicles = allVehiclesMap[team.id] || [];
+      const incomplete = isTeamIncomplete(members, vehicles);
+      return {
+        "Equipe": team.name,
+        "Instaladores": members.length,
+        "Veículos": vehicles.length,
+        "Status": incomplete ? "Dados Incompletos" : "Completo",
+      };
+    });
+    const summaryWs = XLSX.utils.json_to_sheet(summaryRows);
+    summaryWs["!cols"] = [{ wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, summaryWs, "Resumo Equipes");
+
+    // Uma aba por equipe
+    teams.forEach((team) => {
+      const members = allMembersMap[team.id] || [];
+      const vehicles = allVehiclesMap[team.id] || [];
+
+      const memberRows = members.map((m: TeamMember) => ({
+        "Tipo": "Instalador",
+        "Nome": m.name,
+        "RG": m.rg || "",
+        "CPF": m.cpf || "",
+        "Telefone": m.phone || "",
+      }));
+
+      const vehicleRows = vehicles.map((v: TeamVehicle) => ({
+        "Tipo": "Veículo",
+        "Nome": v.name || "",
+        "Marca": v.brand || "",
+        "Cor": v.color || "",
+        "Placa": v.plate || "",
+      }));
+
+      const allRows: Record<string, string>[] = [];
+      if (memberRows.length > 0) {
+        allRows.push(...memberRows);
+      }
+      if (vehicleRows.length > 0) {
+        // Separador
+        allRows.push({ "Tipo": "", "Nome": "", "RG": "", "CPF": "", "Telefone": "" });
+        // Cabeçalho veículos
+        allRows.push({ "Tipo": "Veículo", "Nome": "Nome", "RG": "Marca", "CPF": "Cor", "Telefone": "Placa" });
+        vehicleRows.forEach((v) => {
+          allRows.push({ "Tipo": "Veículo", "Nome": v["Nome"], "RG": v["Marca"], "CPF": v["Cor"], "Telefone": v["Placa"] });
+        });
+      }
+
+      if (allRows.length > 0) {
+        const ws = XLSX.utils.json_to_sheet(allRows);
+        ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+        XLSX.utils.book_append_sheet(wb, ws, team.name.slice(0, 31));
+      }
+    });
+
+    XLSX.writeFile(wb, "equipes_instalacao.xlsx");
+    toast.success("Planilha de equipes exportada!");
+  };
+
   return (
     <div className="space-y-4">
       {/* Filters */}
