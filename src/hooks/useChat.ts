@@ -7,8 +7,10 @@ export interface ChatConversation {
   id: string;
   user_1: string;
   user_2: string;
+  subject: string;
+  created_by: string | null;
   created_at: string;
-  other_user?: { display_name: string | null; user_id: string };
+  other_user?: { display_name: string | null; nickname: string | null; user_id: string };
   last_message?: { content: string; created_at: string };
 }
 
@@ -18,6 +20,7 @@ export interface ChatMessage {
   sender_id: string;
   content: string;
   created_at: string;
+  sender_name?: string;
 }
 
 export function useConversations() {
@@ -33,17 +36,15 @@ export function useConversations() {
         .order("created_at", { ascending: false });
       if (error) throw error;
 
-      // Fetch profiles for all other users
       const otherUserIds = (data || []).map((c: any) =>
         c.user_1 === user!.id ? c.user_2 : c.user_1
       );
 
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, display_name")
+        .select("user_id, display_name, nickname")
         .in("user_id", otherUserIds);
 
-      // Fetch last message for each conversation
       const convIds = (data || []).map((c: any) => c.id);
       const lastMessages: Record<string, { content: string; created_at: string }> = {};
 
@@ -66,7 +67,7 @@ export function useConversations() {
         const profile = (profiles || []).find((p: any) => p.user_id === otherUserId);
         return {
           ...c,
-          other_user: profile || { display_name: null, user_id: otherUserId },
+          other_user: profile || { display_name: null, nickname: null, user_id: otherUserId },
           last_message: lastMessages[c.id],
         } as ChatConversation;
       });
@@ -112,7 +113,22 @@ export function useMessages(conversationId: string | null) {
         .eq("conversation_id", conversationId!)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return (data || []) as ChatMessage[];
+
+      // Fetch sender profiles
+      const senderIds = [...new Set((data || []).map((m: any) => m.sender_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, nickname")
+        .in("user_id", senderIds);
+
+      const profileMap: Record<string, { display_name: string | null; nickname: string | null }> = {};
+      (profiles || []).forEach((p: any) => { profileMap[p.user_id] = p; });
+
+      return (data || []).map((m: any) => {
+        const profile = profileMap[m.sender_id];
+        const senderName = profile?.nickname || profile?.display_name || "Usuário";
+        return { ...m, sender_name: senderName } as ChatMessage;
+      });
     },
   });
 }
@@ -135,6 +151,7 @@ export function useSendMessage() {
     onSuccess: (_, vars) => {
       queryClient.invalidateQueries({ queryKey: ["chat-messages", vars.conversationId] });
       queryClient.invalidateQueries({ queryKey: ["chat-conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["conversation-unread"] });
     },
   });
 }
@@ -179,11 +196,11 @@ export function useStartConversation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (otherUserId: string) => {
+    mutationFn: async ({ otherUserId, subject }: { otherUserId: string; subject?: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Check if conversation already exists
+      // Check if conversation already exists with same users
       const { data: existing } = await supabase
         .from("chat_conversations")
         .select("*")
@@ -191,13 +208,19 @@ export function useStartConversation() {
           `and(user_1.eq.${user.id},user_2.eq.${otherUserId}),and(user_1.eq.${otherUserId},user_2.eq.${user.id})`
         );
 
-      if (existing && existing.length > 0) {
+      // Only reuse if no subject specified and existing has default subject
+      if (existing && existing.length > 0 && !subject) {
         return existing[0].id as string;
       }
 
       const { data, error } = await supabase
         .from("chat_conversations")
-        .insert({ user_1: user.id, user_2: otherUserId })
+        .insert({
+          user_1: user.id,
+          user_2: otherUserId,
+          subject: subject || "Geral",
+          created_by: user.id,
+        } as any)
         .select()
         .single();
       if (error) throw error;
@@ -205,6 +228,30 @@ export function useStartConversation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["chat-conversations"] });
+    },
+  });
+}
+
+export function useDeleteConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (conversationId: string) => {
+      // Delete messages first
+      await supabase
+        .from("chat_messages")
+        .delete()
+        .eq("conversation_id", conversationId);
+      // Then delete conversation
+      const { error } = await supabase
+        .from("chat_conversations")
+        .delete()
+        .eq("id", conversationId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["chat-conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["chat-messages"] });
     },
   });
 }

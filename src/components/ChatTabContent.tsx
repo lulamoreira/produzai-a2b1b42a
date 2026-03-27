@@ -87,7 +87,7 @@ const ChatTabContent = () => {
   };
 
   const handleStartChat = async (otherUserId: string) => {
-    const convId = await startConversation.mutateAsync(otherUserId);
+    const convId = await startConversation.mutateAsync({ otherUserId });
     setSelectedConversation(convId);
     setShowNewChat(false);
   };
