@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, DollarSign, LogOut, Package, Camera } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
+import ModuleGrid from "@/components/ModuleGrid";
 
 const MODULE_META: Record<string, { label: string; icon: React.ElementType }> = {
   stores: { label: "Lojas", icon: Store },
