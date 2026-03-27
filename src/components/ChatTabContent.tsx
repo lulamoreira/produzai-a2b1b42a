@@ -10,6 +10,7 @@ import {
 } from "@/hooks/useChat";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { useConversationUnreadCounts, useMarkAsRead } from "@/hooks/useChatReadStatus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -51,6 +52,8 @@ const ChatTabContent = () => {
   const deleteMessage = useDeleteMessage();
   const editMessage = useEditMessage();
   const startConversation = useStartConversation();
+  const { data: unreadData } = useConversationUnreadCounts();
+  const markAsRead = useMarkAsRead();
 
   const { data: allUsers = [] } = useQuery({
     queryKey: ["all-profiles"],
