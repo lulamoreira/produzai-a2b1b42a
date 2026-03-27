@@ -33,7 +33,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare } from "lucide-react";
 import BudgetsTab from "@/components/BudgetsTab";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
@@ -54,6 +54,7 @@ import BulkDeletePiecesDialog from "@/components/BulkDeletePiecesDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters } from "@/components/MatrixFilterSidebar";
 import ModuleGrid from "@/components/ModuleGrid";
+import CampaignChatSection from "@/components/CampaignChatSection";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -906,6 +907,7 @@ const CampaignDetail = () => {
                 { key: "scheduling", label: "Agendamento", icon: CalendarDays, visible: canViewSchedules },
                 { key: "installations", label: "Instalações", icon: Camera, visible: canViewInstallations },
                 { key: "budgets", label: "Orçamentos", icon: DollarSign, visible: canViewCampaigns },
+                { key: "chat", label: "Chat", icon: MessageSquare, visible: canViewCampaigns, color: "#06b6d4" },
               ]}
               onSelect={(key) => setActiveSection(key)}
             />
@@ -940,6 +942,7 @@ const CampaignDetail = () => {
                   { key: "scheduling", label: "Agendamento", icon: CalendarDays, visible: canViewSchedules },
                   { key: "installations", label: "Instalações", icon: Camera, visible: canViewInstallations },
                   { key: "budgets", label: "Orçamentos", icon: DollarSign, visible: canViewCampaigns },
+                  { key: "chat", label: "Chat", icon: MessageSquare, visible: canViewCampaigns },
                 ].filter(m => m.visible).map(({ key, label, icon: Icon }) => (
                   <Button
                     key={key}
@@ -2020,6 +2023,11 @@ const CampaignDetail = () => {
           {/* ─── SECTION: ORÇAMENTOS ─── */}
           {activeSection === "budgets" && (
             <BudgetsTab campaignId={campaignId!} canEdit={canEditCampaign} />
+          )}
+
+          {/* ─── SECTION: CHAT ─── */}
+          {activeSection === "chat" && campaignId && (
+            <CampaignChatSection campaignId={campaignId} />
           )}
           </>
         )}
