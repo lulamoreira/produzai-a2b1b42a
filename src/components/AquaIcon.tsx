@@ -1,7 +1,5 @@
-import { type LucideIcon } from "lucide-react";
-
 interface AquaIconProps {
-  icon: LucideIcon;
+  icon: React.ElementType;
   size?: "sm" | "md" | "lg" | "xl";
   color?: string;
   className?: string;
