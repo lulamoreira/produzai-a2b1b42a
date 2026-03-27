@@ -34,6 +34,7 @@ export type TeamMember = {
   rg: string;
   cpf: string;
   phone: string;
+  is_unified_doc: boolean;
 };
 
 // ─── CPF Validation ──────────────────────────────────────
@@ -169,8 +170,12 @@ export function isTeamIncomplete(members: TeamMember[]): boolean {
 
 export function getMemberMissingFields(member: TeamMember): string[] {
   const missing: string[] = [];
-  if (!member.rg) missing.push("RG");
-  if (!member.cpf) missing.push("CPF");
+  if (member.is_unified_doc) {
+    if (!member.cpf) missing.push("RU");
+  } else {
+    if (!member.rg) missing.push("RG");
+    if (!member.cpf) missing.push("CPF");
+  }
   return missing;
 }
 
