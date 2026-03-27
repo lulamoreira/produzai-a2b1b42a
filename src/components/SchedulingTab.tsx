@@ -266,6 +266,12 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     return opt?.label || "Não informado";
   };
 
+  const approvalLabel = (val: ApprovalStatusValue | undefined) => {
+    if (val === "approved") return "Aprovado";
+    if (val === "rejected") return "Desaprovado";
+    return "Em análise";
+  };
+
   const handleExport = () => {
     const rows = filteredStores.map((store) => {
       const schedule = scheduleMap[store.id];
