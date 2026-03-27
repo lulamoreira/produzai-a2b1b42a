@@ -228,8 +228,8 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
           return (
             <div
               key={store.id}
-              className="rounded-xl border overflow-hidden shadow-sm flex flex-col"
-              style={{ borderColor: colors.text, borderWidth: 2 }}
+              className="aqua-card overflow-hidden shadow-sm flex flex-col"
+              style={{ borderColor: colors.text, borderWidth: 2, border: `2px solid ${colors.text}` }}
             >
               {/* Header */}
               <div

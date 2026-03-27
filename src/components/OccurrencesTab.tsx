@@ -287,7 +287,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
             return (
               <div
                 key={occ.id}
-                className={`group bg-gradient-to-br ${motiveColor} border border-border border-l-4 rounded-xl p-4 hover:shadow-lg transition-all duration-200 relative`}
+                className={`group aqua-card bg-gradient-to-br ${motiveColor} border border-border border-l-4 p-4 hover:shadow-lg transition-all duration-200`}
               >
                 {/* Header: date + status */}
                 <div className="flex items-center justify-between mb-3">
