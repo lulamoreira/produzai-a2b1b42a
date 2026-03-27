@@ -328,73 +328,65 @@ const AgencySelect = () => {
               return (
                 <div
                   key={agency.id}
-                  className="group aqua-card p-6 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border border-border"
+                  className="group aqua-card p-6 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border border-border flex flex-col items-center text-center"
                   style={{
                     background: `linear-gradient(135deg, ${agencyColor}15, ${agencyColor}08)`,
                     borderColor: `${agencyColor}30`,
                   }}
                   onClick={() => navigate(`/agency/${agency.id}`)}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-12 h-12 aqua-icon flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden"
-                        style={{ background: `linear-gradient(145deg, ${agencyColor}, ${agencyColor}cc)` }}
+                  {/* Admin actions */}
+                  {isAdmin && (
+                    <div className="flex gap-1 self-end opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-1 mb-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={(e) => { e.stopPropagation(); openEdit(agency); }}
                       >
-                        {agency.logo_url ? (
-                          <img src={agency.logo_url} alt={agency.name} className="w-full h-full object-cover relative z-10" />
-                        ) : (
-                          <Building2 className="w-6 h-6 text-white relative z-10 drop-shadow-sm" />
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-foreground text-base group-hover:transition-colors" style={{ color: undefined }}>
-                          {agency.name}
-                        </h3>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          Criado em {new Date(agency.created_at).toLocaleDateString("pt-BR")}
-                        </p>
-                      </div>
+                        <Palette className="w-3.5 h-3.5 text-muted-foreground" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir agência?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Todos os clientes, campanhas e dados associados a esta agência serão apagados permanentemente.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteAgency.mutate(agency.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              SIM
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
-                    {isAdmin && (
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={(e) => { e.stopPropagation(); openEdit(agency); }}
-                        >
-                          <Palette className="w-4 h-4 text-muted-foreground" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir agência?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Todos os clientes, campanhas e dados associados a esta agência serão apagados permanentemente.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteAgency.mutate(agency.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                SIM
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
+                  )}
+
+                  <div
+                    className="w-16 h-16 aqua-icon flex items-center justify-center shadow-lg overflow-hidden mb-3"
+                    style={{ background: `linear-gradient(145deg, ${agencyColor}, ${agencyColor}cc)` }}
+                  >
+                    {agency.logo_url ? (
+                      <img src={agency.logo_url} alt={agency.name} className="w-full h-full object-cover relative z-10" />
+                    ) : (
+                      <Building2 className="w-7 h-7 text-white relative z-10 drop-shadow-sm" />
                     )}
                   </div>
-                  <div className="flex items-center justify-end mt-4">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground transition-colors" style={{ color: undefined }}>
-                      <span>Acessar</span>
-                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                    </div>
+                  <h3 className="font-bold text-foreground text-base mb-0.5">{agency.name}</h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    Criado em {new Date(agency.created_at).toLocaleDateString("pt-BR")}
+                  </p>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground mt-3 group-hover:text-primary transition-colors">
+                    <span>Acessar</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
               );
