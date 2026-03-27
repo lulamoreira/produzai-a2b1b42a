@@ -39,6 +39,8 @@ interface SchedulingTabProps {
   clientId: string;
 }
 
+type ApprovalStatusValue = "approved" | "under_review" | "rejected";
+
 type Schedule = {
   id: string;
   campaign_id: string;
@@ -52,6 +54,8 @@ type Schedule = {
   store_approved_at: string | null;
   team_approved: boolean;
   team_approved_at: string | null;
+  store_approval_status: ApprovalStatusValue;
+  team_approval_status: ApprovalStatusValue;
   responsibility: string | null;
   responsibility_at: string | null;
 };
@@ -198,8 +202,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     if (filterApproval) {
       result = result.filter((s) => {
         const sch = scheduleMap[s.id];
-        const storeOk = sch?.store_approved ?? false;
-        const teamOk = sch?.team_approved ?? false;
+        const storeOk = (sch?.store_approval_status ?? "under_review") === "approved";
+        const teamOk = (sch?.team_approval_status ?? "under_review") === "approved";
         if (filterApproval === "approved") return storeOk && teamOk;
         if (filterApproval === "pending") return !storeOk || !teamOk;
         return true;
@@ -220,6 +224,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       team_id: existing?.team_id ?? null,
       store_approved: existing?.store_approved ?? false,
       team_approved: existing?.team_approved ?? false,
+      store_approval_status: existing?.store_approval_status ?? "under_review",
+      team_approval_status: existing?.team_approval_status ?? "under_review",
       responsibility: existing?.responsibility ?? "team",
       store_approved_at: existing?.store_approved_at ?? null,
       team_approved_at: existing?.team_approved_at ?? null,
@@ -240,6 +246,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       team_id: existing?.team_id ?? null,
       store_approved: existing?.store_approved ?? false,
       team_approved: existing?.team_approved ?? false,
+      store_approval_status: existing?.store_approval_status ?? "under_review",
+      team_approval_status: existing?.team_approval_status ?? "under_review",
       responsibility: existing?.responsibility ?? "team",
       store_approved_at: existing?.store_approved_at ?? null,
       team_approved_at: existing?.team_approved_at ?? null,
