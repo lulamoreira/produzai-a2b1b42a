@@ -7,6 +7,7 @@ import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
 import ScheduleCardChat from "@/components/ScheduleCardChat";
+import { useScheduleChatUnreadCounts, useMarkAsRead } from "@/hooks/useChatReadStatus";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -101,6 +102,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [chatStoreId, setChatStoreId] = useState("");
   const [chatStoreName, setChatStoreName] = useState("");
   const [filterApproval, setFilterApproval] = useState("");
+  const [filterMessages, setFilterMessages] = useState("");
+
+  // Unread message counts
+  const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
+  const markAsRead = useMarkAsRead();
 
   // Fetch all contacts for the client
   const { data: allContacts = [] } = useStoreContactsByClient(clientId);
