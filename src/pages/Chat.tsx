@@ -10,6 +10,7 @@ import {
   useStartConversation,
   type ChatConversation,
 } from "@/hooks/useChat";
+import { useMarkAsRead, useConversationUnreadCounts } from "@/hooks/useChatReadStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
