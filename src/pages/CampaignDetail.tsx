@@ -1997,7 +1997,7 @@ const CampaignDetail = () => {
           )}
           </>
         )}
-      </main>
+      
 
       {/* Edit Piece Dialog */}
       <Dialog open={editPieceDialogOpen} onOpenChange={setEditPieceDialogOpen}>
