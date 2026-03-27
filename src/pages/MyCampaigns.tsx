@@ -83,7 +83,7 @@ const MyCampaigns = () => {
                   <h3 className="font-bold text-foreground text-lg">{c.campaignName}</h3>
                   <p className="text-xs text-muted-foreground">{c.clientName}</p>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="flex flex-wrap justify-center gap-3">
                   {c.modules.map((mod) => {
                     const meta = MODULE_META[mod];
                     if (!meta) return null;
@@ -92,7 +92,7 @@ const MyCampaigns = () => {
                       <button
                         key={mod}
                         onClick={() => handleNavigate(c, mod)}
-                        className="bg-primary/5 border border-primary/20 hover:bg-primary/10 rounded-xl p-5 flex flex-col items-center gap-3 transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer"
+                        className="bg-primary/5 border border-primary/20 hover:bg-primary/10 rounded-xl p-5 flex flex-col items-center gap-3 transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer w-[130px]"
                       >
                         <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-md">
                           <Icon className="w-6 h-6 text-primary-foreground" />
