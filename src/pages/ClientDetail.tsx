@@ -786,7 +786,7 @@ const ClientDetail = () => {
               <div className="card-kpi col-span-2 sm:col-span-1 overflow-hidden">
                 <p className="text-xs font-semibold text-foreground mb-2">Ações</p>
                 <div className="flex flex-wrap gap-1.5 overflow-x-auto">
-                  <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportCampaigns(campaigns, client.name)}>
+                  <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportCampaigns(campaigns, client.name, agencyInfo?.name)}>
                     <Download className="w-3 h-3" /> Exportar
                   </Button>
                   {canEditCampaigns && (
@@ -901,7 +901,7 @@ const ClientDetail = () => {
                 </SelectContent>
               </Select>
               <div className="flex flex-wrap gap-1.5">
-                <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportClientStores(stores, client.name)}>
+                <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportClientStores(stores, client.name, agencyInfo?.name)}>
                   <Download className="w-3 h-3" /> Exportar
                 </Button>
                 <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setCustomExportOpen(true)}>
@@ -1056,6 +1056,8 @@ const ClientDetail = () => {
               onOpenChange={setCustomExportOpen}
               title="Exportação Personalizada — Lojas"
               fileName={`Lojas_${client.name}`}
+              agencyName={agencyInfo?.name}
+              clientName={client.name}
               sheetName="Lojas"
               data={displayOrderStores.length > 0 ? displayOrderStores : stores}
               fields={(() => {

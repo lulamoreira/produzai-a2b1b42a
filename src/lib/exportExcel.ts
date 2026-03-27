@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { buildExportFileName } from "@/lib/exportFileName";
 import type { Store, Piece, StorePiece } from "@/hooks/useStoreData";
 
 function buildStoreSheet(store: Store, pieces: Piece[], storePieces: StorePiece[]) {
@@ -27,7 +28,7 @@ export function exportSingleStore(store: Store, pieces: Piece[], storePieces: St
   const ws = XLSX.utils.json_to_sheet(rows);
   ws["!cols"] = [{ wch: 8 }, { wch: 15 }, { wch: 35 }, { wch: 30 }, { wch: 12 }];
   XLSX.utils.book_append_sheet(wb, ws, store.name.slice(0, 31));
-  XLSX.writeFile(wb, `Loja_${store.number}_${store.name.replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
+  XLSX.writeFile(wb, buildExportFileName(`Loja_${store.number}_${store.name}`));
 }
 
 export function exportAllStores(stores: Store[], pieces: Piece[], allStorePieces: StorePiece[]) {
@@ -61,7 +62,7 @@ export function exportAllStores(stores: Store[], pieces: Piece[], allStorePieces
     }
   }
 
-  XLSX.writeFile(wb, "Campanha_Completa.xlsx");
+  XLSX.writeFile(wb, buildExportFileName("Campanha_Completa"));
 }
 
 export function exportFilteredStores(filteredStores: Store[], pieces: Piece[], allStorePieces: StorePiece[]) {
@@ -90,5 +91,5 @@ export function exportFilteredStores(filteredStores: Store[], pieces: Piece[], a
     }
   }
 
-  XLSX.writeFile(wb, "Campanha_Filtrada.xlsx");
+  XLSX.writeFile(wb, buildExportFileName("Campanha_Filtrada"));
 }

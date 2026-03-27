@@ -1,9 +1,10 @@
 import * as XLSX from "xlsx";
+import { buildExportFileName } from "@/lib/exportFileName";
 import type { Client, ClientStore, Campaign, CampaignPiece, CampaignStorePiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
 
 // ─── Clients ────────────────────────────────────────────
 
-export function exportClients(clients: Client[]) {
+export function exportClients(clients: Client[], agencyName?: string) {
   const rows = clients.map((c) => ({
     "Nome": c.name,
     "Criado em": new Date(c.created_at).toLocaleDateString("pt-BR"),
@@ -12,7 +13,7 @@ export function exportClients(clients: Client[]) {
   const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ "Nome": "" }]);
   ws["!cols"] = [{ wch: 40 }, { wch: 15 }];
   XLSX.utils.book_append_sheet(wb, ws, "Clientes");
-  XLSX.writeFile(wb, "Clientes.xlsx");
+  XLSX.writeFile(wb, buildExportFileName("Clientes", { agencyName }));
 }
 
 export function parseClientsImport(file: File): Promise<Array<{ name: string }>> {
@@ -35,7 +36,7 @@ export function parseClientsImport(file: File): Promise<Array<{ name: string }>>
 
 // ─── Campaigns ──────────────────────────────────────────
 
-export function exportCampaigns(campaigns: Campaign[], clientName: string) {
+export function exportCampaigns(campaigns: Campaign[], clientName: string, agencyName?: string) {
   const rows = campaigns.map((c) => ({
     "Nome": c.name,
     "Criado em": new Date(c.created_at).toLocaleDateString("pt-BR"),
@@ -44,7 +45,7 @@ export function exportCampaigns(campaigns: Campaign[], clientName: string) {
   const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{ "Nome": "" }]);
   ws["!cols"] = [{ wch: 40 }, { wch: 15 }];
   XLSX.utils.book_append_sheet(wb, ws, "Campanhas");
-  XLSX.writeFile(wb, `Campanhas_${clientName.replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
+  XLSX.writeFile(wb, buildExportFileName("Campanhas", { agencyName, clientName }));
 }
 
 export function parseCampaignsImport(file: File): Promise<Array<{ name: string }>> {
@@ -67,7 +68,7 @@ export function parseCampaignsImport(file: File): Promise<Array<{ name: string }
 
 // ─── Client Stores ──────────────────────────────────────
 
-export function exportClientStores(stores: ClientStore[], clientName: string) {
+export function exportClientStores(stores: ClientStore[], clientName: string, agencyName?: string) {
   const rows = stores.map((s) => ({
     "Nome": s.name,
     "Apelido": s.nickname || "",
@@ -101,7 +102,7 @@ export function exportClientStores(stores: ClientStore[], clientName: string) {
     { wch: 18 }, { wch: 15 },
   ];
   XLSX.utils.book_append_sheet(wb, ws, "Lojas");
-  XLSX.writeFile(wb, `Lojas_${clientName.replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
+  XLSX.writeFile(wb, buildExportFileName("Lojas", { agencyName, clientName }));
 }
 
 // ─── Campaign Pieces ────────────────────────────────────
@@ -112,6 +113,8 @@ export function exportCampaignPieces(
   kits: CampaignKit[] = [],
   kitPieces: CampaignKitPiece[] = [],
   allPieces: CampaignPiece[] = [],
+  agencyName?: string,
+  clientName?: string,
 ) {
   const rows = pieces.map((p) => ({
     "Código": p.code,
@@ -155,7 +158,7 @@ export function exportCampaignPieces(
     }
   });
 
-  XLSX.writeFile(wb, `Pecas_${campaignName.replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
+  XLSX.writeFile(wb, buildExportFileName(`Pecas_${campaignName}`, { agencyName, clientName }));
 }
 
 export function parsePiecesImport(file: File): Promise<Array<{ code: number; category: string; name: string; size: string; store_category?: string; specification?: string; installation_instructions?: string }>> {
@@ -192,6 +195,8 @@ export function exportMatrix(
   kits: CampaignKit[] = [],
   kitPieces: CampaignKitPiece[] = [],
   allPieces: CampaignPiece[] = [],
+  agencyName?: string,
+  clientName?: string,
 ) {
   const qtyMap: Record<string, number> = {};
   storePieces.forEach((sp) => { qtyMap[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
@@ -258,7 +263,7 @@ export function exportMatrix(
     }
   });
 
-  XLSX.writeFile(wb, `Matriz_${campaignName.replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
+  XLSX.writeFile(wb, buildExportFileName(`Matriz_${campaignName}`, { agencyName, clientName }));
 }
 
 export function parseMatrixImport(
