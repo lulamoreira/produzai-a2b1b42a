@@ -111,17 +111,6 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
     return map;
   }, [teams]);
 
-  const allMembersMap = useMemo(() => {
-    const map: Record<string, TeamMember[]> = {};
-    allMembers.forEach((m) => { (map[m.team_id] = map[m.team_id] || []).push(m); });
-    return map;
-  }, [allMembers]);
-
-  const allVehiclesMap = useMemo(() => {
-    const map: Record<string, TeamVehicle[]> = {};
-    allVehicles.forEach((v) => { (map[v.team_id] = map[v.team_id] || []).push(v); });
-    return map;
-  }, [allVehicles]);
 
   const contactsByStore = useMemo(() => {
     const map: Record<string, StoreContact[]> = {};
