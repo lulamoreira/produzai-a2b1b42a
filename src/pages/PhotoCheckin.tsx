@@ -239,11 +239,15 @@ export default function PhotoCheckin() {
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
-                {photo.caption && (
-                  <div className="p-2">
+                <div className="p-2 space-y-0.5">
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    {photo.upload_method === "camera" ? <Camera className="w-3 h-3" /> : <Upload className="w-3 h-3" />}
+                    {photo.upload_method === "camera" ? "Foto" : "Upload"} · {format(new Date(photo.created_at), "dd/MM/yy HH:mm", { locale: ptBR })}
+                  </p>
+                  {photo.caption && (
                     <p className="text-[10px] text-muted-foreground truncate">{photo.caption}</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ))}
           </div>
