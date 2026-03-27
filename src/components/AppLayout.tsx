@@ -22,11 +22,13 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
     <div className="min-h-screen bg-background">
       <AppSidebar />
 
-      {/* Main content - offset for sidebar */}
-      <div className="pl-[60px] lg:pl-[220px] transition-all duration-300">
-        {/* Top bar with breadcrumbs */}
+      {/* Main content */}
+      <div className="lg:pl-[220px] transition-all duration-300">
+        {/* Top bar */}
         {(breadcrumbs || title || headerRight) && (
           <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 h-12 flex items-center justify-between gap-3">
+            {/* Spacer for mobile hamburger */}
+            <div className="w-9 lg:hidden flex-shrink-0" />
             <div className="flex items-center gap-1 min-w-0 flex-1">
               {breadcrumbs && breadcrumbs.length > 0 ? (
                 breadcrumbs.map((crumb, i) => {
