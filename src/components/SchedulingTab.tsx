@@ -215,8 +215,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         return true;
       });
     }
+    if (filterMessages === "unread") {
+      result = result.filter((s) => (chatCounts?.unreadPerStore[s.id] || 0) > 0);
+    } else if (filterMessages === "has_messages") {
+      result = result.filter((s) => (chatCounts?.totalPerStore[s.id] || 0) > 0);
+    }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, searchTerm, filterApproval, scheduleMap]);
+  }, [stores, filterState, filterCity, searchTerm, filterApproval, filterMessages, scheduleMap, chatCounts]);
 
   const handleFieldChange = (storeId: string, field: string, value: any) => {
     const existing = scheduleMap[storeId];
