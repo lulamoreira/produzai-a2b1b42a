@@ -338,13 +338,13 @@ const AgencySelect = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden"
-                        style={{ backgroundColor: agencyColor }}
+                        className="w-12 h-12 aqua-icon flex items-center justify-center shadow-lg flex-shrink-0 overflow-hidden"
+                        style={{ background: `linear-gradient(145deg, ${agencyColor}, ${agencyColor}cc)` }}
                       >
                         {agency.logo_url ? (
-                          <img src={agency.logo_url} alt={agency.name} className="w-full h-full object-cover" />
+                          <img src={agency.logo_url} alt={agency.name} className="w-full h-full object-cover relative z-10" />
                         ) : (
-                          <Building2 className="w-6 h-6 text-white" />
+                          <Building2 className="w-6 h-6 text-white relative z-10 drop-shadow-sm" />
                         )}
                       </div>
                       <div>

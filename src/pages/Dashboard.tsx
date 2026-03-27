@@ -87,10 +87,10 @@ function SortableClientCard({
             </button>
           )}
           <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: color }}
+            className="w-11 h-11 aqua-icon flex items-center justify-center flex-shrink-0"
+            style={{ background: `linear-gradient(145deg, ${color}, ${color}cc)` }}
           >
-            <span className="text-white font-bold text-lg">{client.name.charAt(0).toUpperCase()}</span>
+            <span className="text-white font-bold text-lg relative z-10 drop-shadow-sm">{client.name.charAt(0).toUpperCase()}</span>
           </div>
           <div>
             <h3 className="font-bold text-foreground text-base group-hover:text-primary transition-colors">{client.name}</h3>
