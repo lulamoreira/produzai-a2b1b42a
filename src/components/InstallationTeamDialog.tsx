@@ -611,8 +611,14 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
           return (
             <div key={m.id} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5 flex-wrap">
               <span className="font-medium">{m.name}</span>
-              {m.rg && <span className="text-muted-foreground">RG: {m.rg}</span>}
-              {m.cpf && <span className="text-muted-foreground">CPF: {formatCpf(m.cpf)}</span>}
+              {m.is_unified_doc ? (
+                m.cpf && <span className="text-muted-foreground">RU: {formatCpf(m.cpf)}</span>
+              ) : (
+                <>
+                  {m.rg && <span className="text-muted-foreground">RG: {m.rg}</span>}
+                  {m.cpf && <span className="text-muted-foreground">CPF: {formatCpf(m.cpf)}</span>}
+                </>
+              )}
               {m.phone && <span className="text-muted-foreground">Tel: {m.phone}</span>}
               {missingFields.length > 0 && (
                 <span className="text-amber-500 flex items-center gap-0.5" title={`Faltam: ${missingFields.join(", ")}`}>
