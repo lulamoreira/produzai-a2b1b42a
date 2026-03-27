@@ -33,6 +33,7 @@ const CAMPAIGN_MODULES = [
   { key: "scheduling", label: "Agendamento", icon: CalendarDays, color: "#22c55e" },
   { key: "installations", label: "Instalações", icon: Camera, color: "#f97316" },
   { key: "budgets", label: "Orçamentos", icon: DollarSign, color: "#14b8a6" },
+  { key: "chat", label: "Chat", icon: MessageSquare, color: "#06b6d4" },
 ];
 
 export default function AppSidebar() {
