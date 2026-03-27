@@ -8,12 +8,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageCircle } from "lucide-react";
 
 interface EditProfileDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+}
+
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 7) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+  return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
 export default function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps) {
@@ -27,7 +35,7 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
       if (!user) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, phone, job_title, nickname")
+        .select("display_name, phone, job_title, nickname, company, phone_is_whatsapp")
         .eq("user_id", user.id)
         .maybeSingle();
       return data;
@@ -40,15 +48,19 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
     phone: "",
     job_title: "",
     nickname: "",
+    company: "",
+    phone_is_whatsapp: false,
   });
 
   useEffect(() => {
     if (profile) {
       setForm({
         display_name: profile.display_name || "",
-        phone: (profile as any).phone || "",
+        phone: maskPhone((profile as any).phone || ""),
         job_title: (profile as any).job_title || "",
         nickname: (profile as any).nickname || "",
+        company: (profile as any).company || "",
+        phone_is_whatsapp: (profile as any).phone_is_whatsapp || false,
       });
     }
   }, [profile]);
@@ -70,9 +82,11 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
       .from("profiles")
       .update({
         display_name: trimmedName,
-        phone: form.phone.trim() || null,
+        phone: form.phone.replace(/\D/g, "").trim() || null,
         job_title: form.job_title.trim() || null,
         nickname: form.nickname.trim() || null,
+        company: form.company.trim() || null,
+        phone_is_whatsapp: form.phone_is_whatsapp,
       } as any)
       .eq("user_id", user.id);
 
@@ -129,13 +143,34 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
             </div>
 
             <div>
+              <Label className="text-xs">Empresa</Label>
+              <Input
+                value={form.company}
+                onChange={(e) => setForm(f => ({ ...f, company: e.target.value }))}
+                placeholder="Nome da empresa onde trabalha"
+                maxLength={100}
+              />
+            </div>
+
+            <div>
               <Label className="text-xs">Telefone</Label>
               <Input
                 value={form.phone}
-                onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))}
-                placeholder="(00) 00000-0000"
-                maxLength={20}
+                onChange={(e) => setForm(f => ({ ...f, phone: maskPhone(e.target.value) }))}
+                placeholder="(00)00000-0000"
+                maxLength={14}
               />
+              <div className="flex items-center gap-2 mt-2">
+                <Switch
+                  checked={form.phone_is_whatsapp}
+                  onCheckedChange={(v) => setForm(f => ({ ...f, phone_is_whatsapp: v }))}
+                  id="whatsapp-toggle"
+                />
+                <Label htmlFor="whatsapp-toggle" className="text-xs flex items-center gap-1 cursor-pointer">
+                  <MessageCircle className="w-4 h-4 text-green-600" />
+                  Este número é WhatsApp
+                </Label>
+              </div>
             </div>
 
             <div>

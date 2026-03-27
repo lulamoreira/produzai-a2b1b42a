@@ -48,7 +48,7 @@ export function useDisplayName() {
       if (!user) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("display_name")
+        .select("display_name, nickname")
         .eq("user_id", user.id)
         .maybeSingle();
       return data;
@@ -56,7 +56,7 @@ export function useDisplayName() {
     enabled: !!user,
   });
 
-  const raw = profile?.display_name || user?.email?.split("@")[0] || "";
+  const raw = (profile as any)?.nickname || profile?.display_name || user?.email?.split("@")[0] || "";
   return capitalizeName(raw);
 }
 

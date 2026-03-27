@@ -1427,6 +1427,7 @@ export type Database = {
         Row: {
           approval_status: Database["public"]["Enums"]["approval_status"]
           avatar_url: string | null
+          company: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -1434,12 +1435,14 @@ export type Database = {
           name_confirmed: boolean
           nickname: string | null
           phone: string | null
+          phone_is_whatsapp: boolean | null
           updated_at: string
           user_id: string
         }
         Insert: {
           approval_status?: Database["public"]["Enums"]["approval_status"]
           avatar_url?: string | null
+          company?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -1447,12 +1450,14 @@ export type Database = {
           name_confirmed?: boolean
           nickname?: string | null
           phone?: string | null
+          phone_is_whatsapp?: boolean | null
           updated_at?: string
           user_id: string
         }
         Update: {
           approval_status?: Database["public"]["Enums"]["approval_status"]
           avatar_url?: string | null
+          company?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -1460,6 +1465,7 @@ export type Database = {
           name_confirmed?: boolean
           nickname?: string | null
           phone?: string | null
+          phone_is_whatsapp?: boolean | null
           updated_at?: string
           user_id?: string
         }
