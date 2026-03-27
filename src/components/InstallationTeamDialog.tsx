@@ -621,7 +621,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
         })}
 
         {canEdit && !adding && !editingId && (
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => { setAdding(true); setForm({ name: "", rg: "", cpf: "", phone: "" }); }}>
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => { setAdding(true); setForm({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false }); }}>
             <Plus className="w-3 h-3" /> Adicionar instalador
           </Button>
         )}
