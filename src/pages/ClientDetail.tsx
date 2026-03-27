@@ -36,7 +36,7 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
 import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -741,19 +741,13 @@ const ClientDetail = () => {
   );
 
    return (
-    <div className="min-h-screen bg-background">
-      <AppHeader
-        backTo={`/agency/${agencyId}`}
-        backLabel="Voltar"
-        breadcrumbs={[
-          { label: agencyInfo?.name || "Agência", href: "/" },
-          { label: client.name },
-        ]}
-        subtitle={`${campaigns.length} campanha(s) · ${stores.length} loja(s)`}
-        maxWidth="max-w-6xl"
-      />
-
-      <main className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
+    <AppLayout
+      breadcrumbs={[
+        { label: agencyInfo?.name || "Agência", href: "/" },
+        { label: client.name },
+      ]}
+    >
+      <div className="max-w-6xl mx-auto">
         <Tabs defaultValue="campaigns">
           <TabsList className="mb-6 bg-card border border-border w-full overflow-x-auto flex justify-start">
             <TabsTrigger value="campaigns" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Campanhas</span></TabsTrigger>
@@ -1102,7 +1096,7 @@ const ClientDetail = () => {
             <ChatTabContent />
           </TabsContent>
         </Tabs>
-      </main>
+      </div>
 
       {/* ─── Store Models Management Dialog ─── */}
       <Dialog open={storeModelDialogOpen} onOpenChange={setStoreModelDialogOpen}>
@@ -1148,7 +1142,7 @@ const ClientDetail = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppLayout>
   );
 };
 

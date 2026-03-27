@@ -8,7 +8,7 @@ import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Users, Tags, Database, UserCheck, Search } from "lucide-react";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -51,19 +51,15 @@ const Admin = () => {
     : sortedUsers;
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader
-        backTo="/"
-        backLabel="Voltar"
-        title="Painel de Administração"
-        showNav={false}
-      >
-        <Button variant="outline" size="sm" className="ml-auto gap-1.5" onClick={() => navigate("/approvals")}>
+    <AppLayout
+      breadcrumbs={[{ label: "Admin" }]}
+      headerRight={
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate("/approvals")}>
           <UserCheck className="w-4 h-4" /> Aprovações
         </Button>
-      </AppHeader>
-
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      }
+    >
+      <div className="max-w-5xl mx-auto">
         <Tabs defaultValue="users">
           <TabsList className="mb-6 bg-card border border-border">
             <TabsTrigger value="users" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
@@ -135,8 +131,8 @@ const Admin = () => {
             </TabsContent>
           )}
         </Tabs>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

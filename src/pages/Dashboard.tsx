@@ -15,7 +15,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Package, Plus, Search, Trash2, Download, Upload, Briefcase, ArrowRight, GripVertical, Palette } from "lucide-react";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { toast } from "sonner";
 import { exportClients, parseClientsImport } from "@/lib/exportMultiClient";
 import {
@@ -256,19 +256,13 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader
-        backTo="/"
-        backLabel="Agências"
-        breadcrumbs={[
-          { label: agencyInfo?.name || "Agência", href: "/" },
-          { label: "Clientes" },
-        ]}
-        subtitle={`${clients.length} cliente(s) cadastrado(s)`}
-        maxWidth="max-w-6xl"
-      />
-
-      <main className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
+    <AppLayout
+      breadcrumbs={[
+        { label: agencyInfo?.name || "Agência", href: "/" },
+        { label: "Clientes" },
+      ]}
+    >
+      <div className="max-w-6xl mx-auto">
         {/* Stats bar */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
           <div className="card-kpi flex items-center gap-3">
@@ -395,8 +389,8 @@ const Dashboard = () => {
             </SortableContext>
           </DndContext>
         )}
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

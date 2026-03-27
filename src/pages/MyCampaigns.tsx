@@ -3,7 +3,7 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, DollarSign, LogOut, Package, Camera } from "lucide-react";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import ModuleGrid from "@/components/ModuleGrid";
 
 const MODULE_META: Record<string, { label: string; icon: React.ElementType }> = {
@@ -54,10 +54,8 @@ const MyCampaigns = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader subtitle="Minhas Campanhas" />
-
-      <main className="max-w-4xl mx-auto px-4 py-12">
+    <AppLayout title="Minhas Campanhas">
+      <div className="max-w-4xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-2xl font-bold text-foreground mb-2">Minhas Campanhas</h2>
           <p className="text-muted-foreground text-sm">Selecione um módulo para acessar.</p>
@@ -101,8 +99,8 @@ const MyCampaigns = () => {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 

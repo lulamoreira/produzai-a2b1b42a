@@ -6,7 +6,7 @@ import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Shield, UserCheck, UserX, Clock, Trash2 } from "lucide-react";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -80,15 +80,8 @@ const UserApprovals = () => {
   const sorted = [...pending, ...approved, ...rejected];
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader
-        backTo="/admin"
-        backLabel="Voltar"
-        title="Aprovação de Usuários"
-        showNav={false}
-      />
-
-      <main className="max-w-5xl mx-auto px-4 py-8">
+    <AppLayout breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Aprovações" }]}>
+      <div className="max-w-5xl mx-auto">
         <div className="flex gap-4 mb-6 flex-wrap">
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
             <Clock className="w-4 h-4 text-yellow-600" />
@@ -206,8 +199,8 @@ const UserApprovals = () => {
             </Table>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 
