@@ -76,7 +76,7 @@ const MyCampaigns = () => {
             {campaigns.map((c) => (
               <div
                 key={`${c.campaignId}-${c.modules.join(",")}`}
-                className="border border-border rounded-xl p-6 bg-card hover:shadow-md transition-shadow"
+                className="aqua-card border border-border p-6 bg-card hover:shadow-md transition-shadow"
               >
                 <div className="mb-5">
                   <h3 className="font-bold text-foreground text-lg">{c.campaignName}</h3>
