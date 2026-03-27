@@ -1,0 +1,67 @@
+import { type ReactNode } from "react";
+import AppSidebar from "@/components/AppSidebar";
+import { ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+interface AppLayoutProps {
+  children: ReactNode;
+  breadcrumbs?: BreadcrumbItem[];
+  title?: string;
+  headerRight?: ReactNode;
+}
+
+export default function AppLayout({ children, breadcrumbs, title, headerRight }: AppLayoutProps) {
+  const navigate = useNavigate();
+
+  return (
+    <div className="min-h-screen bg-background">
+      <AppSidebar />
+
+      {/* Main content - offset for sidebar */}
+      <div className="pl-[60px] lg:pl-[220px] transition-all duration-300">
+        {/* Top bar with breadcrumbs */}
+        {(breadcrumbs || title || headerRight) && (
+          <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 h-12 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-1 min-w-0 flex-1">
+              {breadcrumbs && breadcrumbs.length > 0 ? (
+                breadcrumbs.map((crumb, i) => {
+                  const isLast = i === breadcrumbs.length - 1;
+                  return (
+                    <span key={i} className="flex items-center gap-1 min-w-0">
+                      {i > 0 && <ChevronRight className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />}
+                      {isLast ? (
+                        <span className="text-sm font-bold text-foreground truncate">{crumb.label}</span>
+                      ) : crumb.href ? (
+                        <button
+                          onClick={() => navigate(crumb.href!)}
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors truncate max-w-[160px]"
+                        >
+                          {crumb.label}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground truncate max-w-[160px]">{crumb.label}</span>
+                      )}
+                    </span>
+                  );
+                })
+              ) : title ? (
+                <h1 className="text-sm font-bold text-foreground truncate">{title}</h1>
+              ) : null}
+            </div>
+            {headerRight && <div className="flex items-center gap-2 flex-shrink-0">{headerRight}</div>}
+          </header>
+        )}
+
+        {/* Page content */}
+        <main className="p-4 sm:p-6">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
