@@ -284,7 +284,7 @@ const Dashboard = () => {
             <div className="flex-1">
               <p className="text-sm font-semibold text-foreground mb-1">Ações rápidas</p>
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => exportClients(clients)}>
+                <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => exportClients(clients, agencyInfo?.name)}>
                   <Download className="w-3.5 h-3.5 mr-1" /> Exportar
                 </Button>
                 {isAdmin && (
