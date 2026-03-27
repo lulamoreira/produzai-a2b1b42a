@@ -68,94 +68,88 @@ function SortableClientCard({
     <div
       ref={setNodeRef}
       style={style}
-      className="group card-item hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-5"
+      className="group card-item hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-5 flex flex-col items-center text-center"
       onClick={onNavigate}
     >
       {/* Color accent strip */}
       <div className="absolute top-0 left-0 right-0 h-1 rounded-t-lg" style={{ backgroundColor: color }} />
 
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
+      {/* Admin actions */}
+      {isAdmin && (
+        <div className="flex gap-1 self-end opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-1 mb-1">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Palette className="w-3.5 h-3.5" style={{ color }} />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-52 p-3" onClick={(e) => e.stopPropagation()}>
+              <p className="text-xs font-medium text-muted-foreground mb-2">Cor do cliente</p>
+              <div className="grid grid-cols-6 gap-1.5">
+                {CLIENT_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
+                    style={{ backgroundColor: c }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onColorChange(c);
+                    }}
+                  />
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
           {isAdmin && (
             <button
-              className="cursor-grab active:cursor-grabbing touch-none p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+              className="cursor-grab active:cursor-grabbing touch-none p-1 text-muted-foreground hover:text-foreground transition-colors"
               {...attributes}
               {...listeners}
               onClick={(e) => e.stopPropagation()}
             >
-              <GripVertical className="w-4 h-4" />
+              <GripVertical className="w-3.5 h-3.5" />
             </button>
           )}
-          <div
-            className="w-11 h-11 aqua-icon flex items-center justify-center flex-shrink-0"
-            style={{ background: `linear-gradient(145deg, ${color}, ${color}cc)` }}
-          >
-            <span className="text-white font-bold text-lg relative z-10 drop-shadow-sm">{client.name.charAt(0).toUpperCase()}</span>
-          </div>
-          <div>
-            <h3 className="font-bold text-foreground text-base group-hover:text-primary transition-colors">{client.name}</h3>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
-              Criado em {new Date(client.created_at).toLocaleDateString("pt-BR")}
-            </p>
-          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
+                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Tem certeza que deseja excluir este cliente?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Todos os dados associados a este cliente serão apagados permanentemente, incluindo campanhas, lojas, peças e quantidades. Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  SIM
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
-        <div className="flex items-center gap-1">
-          {isAdmin && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Palette className="w-4 h-4" style={{ color }} />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-52 p-3" onClick={(e) => e.stopPropagation()}>
-                <p className="text-xs font-medium text-muted-foreground mb-2">Cor do cliente</p>
-                <div className="grid grid-cols-6 gap-1.5">
-                  {CLIENT_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
-                      style={{ backgroundColor: c }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onColorChange(c);
-                      }}
-                    />
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-          {isAdmin && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Tem certeza que deseja excluir este cliente?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Todos os dados associados a este cliente serão apagados permanentemente, incluindo campanhas, lojas, peças e quantidades. Esta ação não pode ser desfeita.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    SIM
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
+      )}
+
+      <div
+        className="w-14 h-14 aqua-icon flex items-center justify-center flex-shrink-0 mb-3"
+        style={{ background: `linear-gradient(145deg, ${color}, ${color}cc)` }}
+      >
+        <span className="text-white font-bold text-xl relative z-10 drop-shadow-sm">{client.name.charAt(0).toUpperCase()}</span>
       </div>
-      <div className="flex items-center justify-between mt-4">
+      <h3 className="font-bold text-foreground text-base mb-0.5 group-hover:text-primary transition-colors">{client.name}</h3>
+      <p className="text-[11px] text-muted-foreground">
+        Criado em {new Date(client.created_at).toLocaleDateString("pt-BR")}
+      </p>
+      <div className="flex items-center justify-between w-full mt-3">
         <span className="text-[11px] text-muted-foreground flex items-center gap-1">
           <Package className="w-3.5 h-3.5" /> {campaignCount} campanha(s)
         </span>
