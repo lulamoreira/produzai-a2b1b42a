@@ -21,11 +21,17 @@ const getGreeting = () => {
   return "Boa noite";
 };
 
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
 interface AppHeaderProps {
   backTo?: string;
   backLabel?: string;
   title?: string;
   subtitle?: string;
+  breadcrumbs?: BreadcrumbItem[];
   children?: React.ReactNode;
   maxWidth?: string;
   showNav?: boolean;
