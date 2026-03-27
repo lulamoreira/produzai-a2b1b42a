@@ -14,7 +14,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Package, Plus, Search, Trash2, Download, Upload, Briefcase, ArrowRight, GripVertical, Palette } from "lucide-react";
+import { Package, Plus, Search, Trash2, Briefcase, ArrowRight, GripVertical, Palette } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { toast } from "sonner";
 import { exportClients, parseClientsImport } from "@/lib/exportMultiClient";
