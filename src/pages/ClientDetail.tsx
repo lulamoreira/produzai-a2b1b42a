@@ -752,7 +752,6 @@ const ClientDetail = () => {
           <TabsList className="mb-6 bg-card border border-border w-full overflow-x-auto flex justify-start">
             <TabsTrigger value="campaigns" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Campanhas</span></TabsTrigger>
             <TabsTrigger value="stores" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Store className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Lojas</span></TabsTrigger>
-            <TabsTrigger value="chat" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Chat</span></TabsTrigger>
           </TabsList>
 
           {/* ─── Campaigns Tab ─── */}
@@ -777,72 +776,41 @@ const ClientDetail = () => {
                   <p className="text-[11px] text-muted-foreground">Lojas</p>
                 </div>
               </div>
-              <div className="card-kpi col-span-2 sm:col-span-1 overflow-hidden">
-                <p className="text-xs font-semibold text-foreground mb-2">Ações</p>
-                <div className="flex flex-wrap gap-1.5 overflow-x-auto">
-                  <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportCampaigns(campaigns, client.name, agencyInfo?.name)}>
-                    <Download className="w-3 h-3" /> Exportar
-                  </Button>
-                  {canEditCampaigns && (
-                    <>
-                      <label className="cursor-pointer">
-                        <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file || !clientId) return;
-                          try {
-                            const items = await parseCampaignsImport(file);
-                            if (items.length === 0) { toast.error("Nenhuma campanha encontrada."); return; }
-                            let added = 0, updated = 0;
-                            for (const item of items) {
-                              const existing = campaigns.find(c => c.name.toLowerCase() === item.name.toLowerCase());
-                              if (existing) { updated++; } else {
-                                await addCampaign.mutateAsync({ client_id: clientId, name: item.name });
-                                added++;
-                              }
-                            }
-                            toast.success(`${added} adicionada(s), ${updated} já existente(s)!`);
-                          } catch { toast.error("Erro ao importar."); }
-                          e.target.value = "";
-                        }} />
-                        <Button size="sm" variant="outline" className="text-xs h-7 gap-1" asChild>
-                          <span><Upload className="w-3 h-3" /> Importar</span>
-                        </Button>
-                      </label>
-                      <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
-                        <DialogTrigger asChild>
-                          <Button size="sm" className="text-xs h-7 gap-1 bg-primary text-primary-foreground hover:bg-primary/90">
-                            <Plus className="w-3 h-3" /> Nova
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader><DialogTitle>Nova Campanha</DialogTitle></DialogHeader>
-                          <form onSubmit={handleAddCampaign} className="space-y-4">
-                            <div>
-                              <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da campanha *</label>
-                              <Input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
-                            </div>
-                            <div>
-                              <label className="text-xs font-medium text-muted-foreground mb-2 block">Cor da campanha</label>
-                              <div className="grid grid-cols-8 gap-1.5">
-                                {CAMPAIGN_COLORS.map((c) => (
-                                  <button
-                                    type="button"
-                                    key={c}
-                                    className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${campaignColor === c ? "border-foreground scale-110 ring-2 ring-primary/30" : "border-transparent"}`}
-                                    style={{ backgroundColor: c }}
-                                    onClick={() => setCampaignColor(c)}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                            <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>Criar</Button>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-                    </>
-                  )}
+              {canEditCampaigns && (
+                <div className="card-kpi col-span-2 sm:col-span-1 flex items-center justify-center">
+                  <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="lg" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md font-bold text-sm px-6">
+                        <Plus className="w-5 h-5" /> Incluir Nova Campanha
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader><DialogTitle>Nova Campanha</DialogTitle></DialogHeader>
+                      <form onSubmit={handleAddCampaign} className="space-y-4">
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da campanha *</label>
+                          <Input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-2 block">Cor da campanha</label>
+                          <div className="grid grid-cols-8 gap-1.5">
+                            {CAMPAIGN_COLORS.map((c) => (
+                              <button
+                                type="button"
+                                key={c}
+                                className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${campaignColor === c ? "border-foreground scale-110 ring-2 ring-primary/30" : "border-transparent"}`}
+                                style={{ backgroundColor: c }}
+                                onClick={() => setCampaignColor(c)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>Criar</Button>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
                 </div>
-              </div>
+              )}
             </div>
 
             {loadingCampaigns ? (
@@ -1090,11 +1058,6 @@ const ClientDetail = () => {
             />
           </TabsContent>
 
-
-          {/* ─── Chat Tab ─── */}
-          <TabsContent value="chat">
-            <ChatTabContent />
-          </TabsContent>
         </Tabs>
       </div>
 
