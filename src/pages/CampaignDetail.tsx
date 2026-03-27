@@ -53,6 +53,7 @@ import ImportSpecFromCampaign from "@/components/ImportSpecFromCampaign";
 import BulkDeletePiecesDialog from "@/components/BulkDeletePiecesDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters } from "@/components/MatrixFilterSidebar";
+import ModuleGrid from "@/components/ModuleGrid";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -876,8 +877,9 @@ const CampaignDetail = () => {
             </div>
 
             {/* Navigation Buttons */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {[
+            <ModuleGrid
+              title="Módulos"
+              items={[
                 { key: "stores", label: "Lojas", icon: Store, visible: canViewStores || canViewCampaignStores },
                 { key: "matrix", label: "Matriz", icon: Grid3X3, visible: canViewCampaignStores },
                 { key: "pieces", label: "Peças", icon: LayoutList, visible: canViewPieces },
@@ -885,19 +887,9 @@ const CampaignDetail = () => {
                 { key: "scheduling", label: "Agendamento", icon: CalendarDays, visible: canViewSchedules },
                 { key: "installations", label: "Instalações", icon: Camera, visible: canViewInstallations },
                 { key: "budgets", label: "Orçamentos", icon: DollarSign, visible: canViewCampaigns },
-              ].filter(m => m.visible).map(({ key, label, icon: Icon }) => (
-                <button
-                  key={key}
-                  onClick={() => setActiveSection(key)}
-                  className="bg-primary/5 border border-primary/20 hover:bg-primary/10 rounded-xl p-5 flex flex-col items-center gap-3 transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-md">
-                    <Icon className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <span className="font-bold text-sm text-foreground">{label}</span>
-                </button>
-              ))}
-            </div>
+              ]}
+              onSelect={(key) => setActiveSection(key)}
+            />
           </>
         )}
 
