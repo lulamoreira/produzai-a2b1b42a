@@ -106,11 +106,10 @@ export function useConversationUnreadCounts() {
     enabled: !!user,
     refetchInterval: 30000,
     queryFn: async () => {
-      // Get all conversations for this user
+      // Get all conversations accessible to this user (RLS handles filtering)
       const { data: convs, error: convErr } = await supabase
         .from("chat_conversations")
-        .select("id")
-        .or(`user_1.eq.${user!.id},user_2.eq.${user!.id}`);
+        .select("id");
       if (convErr) throw convErr;
 
       if (!convs || convs.length === 0) return { unreadPerConv: {}, totalUnread: 0 };
