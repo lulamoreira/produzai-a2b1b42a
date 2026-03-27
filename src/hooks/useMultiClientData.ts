@@ -186,8 +186,17 @@ export function useUpdateClient() {
       const { error } = await supabase.from("clients").update(data).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients"] }); toast.success("Cliente atualizado!"); },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onMutate: async ({ id, ...data }) => {
+      qc.setQueriesData<Client[]>({ queryKey: ["clients"] }, (old) =>
+        old ? old.map((c) => c.id === id ? { ...c, ...data } : c) : old
+      );
+      // Also update single client query
+      qc.setQueriesData<Client | null>({ queryKey: ["clients", id] }, (old) =>
+        old ? { ...old, ...data } : old
+      );
+    },
+    onSettled: () => { qc.invalidateQueries({ queryKey: ["clients"] }); },
+    onError: (e) => { toast.error("Erro: " + e.message); qc.invalidateQueries({ queryKey: ["clients"] }); },
   });
 }
 
