@@ -210,14 +210,14 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
       {/* Header actions */}
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" onClick={handleCopyLink}>
-          <Copy className="w-3.5 h-3.5 mr-1.5" /> Copiar link público
+          <Copy className="w-3.5 h-3.5 mr-1.5" /> Copiar Link para acesso a essa página
         </Button>
         <Button variant="outline" size="sm" onClick={() => setQrOpen(true)}>
-          <QrCode className="w-3.5 h-3.5 mr-1.5" /> QR Code
+          <QrCode className="w-3.5 h-3.5 mr-1.5" /> QR-Code para acesso a essa página
         </Button>
         <a href={publicLink} target="_blank" rel="noopener noreferrer">
           <Button variant="outline" size="sm">
-            <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Abrir formulário
+            <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Incluir Ocorrência
           </Button>
         </a>
         {canEdit && (
