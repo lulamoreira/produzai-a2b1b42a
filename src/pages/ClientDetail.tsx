@@ -174,8 +174,8 @@ function SortableCampaignCard({
               <GripVertical className="w-4 h-4" />
             </button>
           )}
-          <div className="w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
-            <Megaphone className="w-4 h-4 text-white" />
+          <div className="w-9 h-9 aqua-icon flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.25), rgba(255,255,255,0.1))' }}>
+            <Megaphone className="w-4 h-4 text-white relative z-10 drop-shadow-sm" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-white text-sm truncate">{campaign.name}</h3>
