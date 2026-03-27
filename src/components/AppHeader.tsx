@@ -65,6 +65,7 @@ export default function AppHeader({
   backLabel,
   title,
   subtitle,
+  breadcrumbs,
   children,
   maxWidth = "max-w-5xl",
   showNav = true,
