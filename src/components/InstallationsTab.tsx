@@ -97,10 +97,8 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
   const scheduledStores = useMemo(() => stores.filter((s) => scheduleMap[s.id]), [stores, scheduleMap]);
 
   const { data: teams = [] } = useInstallationTeams(campaignId);
-  const allMembersQuery = useAllTeamMembers(campaignId);
-  const allMembersRaw = allMembersQuery.data || [];
-  const allVehiclesQuery = useAllTeamVehicles(campaignId);
-  const allVehiclesRaw = allVehiclesQuery.data || [];
+  const { data: allMembers = [] } = useAllTeamMembers(campaignId);
+  const { data: allVehicles = [] } = useAllTeamVehicles(campaignId);
   const { data: photos = [] } = useInstallationPhotos(campaignId);
   const addPhoto = useAddInstallationPhoto();
 
