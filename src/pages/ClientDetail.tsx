@@ -157,8 +157,8 @@ function SortableCampaignCard({
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className="group rounded-xl p-4 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden text-white shadow-sm hover:shadow-lg"
+      style={{ ...style, backgroundColor: color }}
+      className="group aqua-card-colored p-4 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer text-white shadow-lg hover:shadow-xl"
       onClick={onNavigate}
     >
       <div className="absolute inset-0 rounded-xl" style={{ backgroundColor: color }} />

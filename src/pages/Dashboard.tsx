@@ -68,7 +68,7 @@ function SortableClientCard({
     <div
       ref={setNodeRef}
       style={style}
-      className="group card-item hover:-translate-y-0.5 transition-all duration-200 cursor-pointer relative overflow-hidden p-5"
+      className="group card-item hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-5"
       onClick={onNavigate}
     >
       {/* Color accent strip */}
