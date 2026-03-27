@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMarkAsRead } from "@/hooks/useChatReadStatus";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,14 @@ const ScheduleCardChat = ({ open, onOpenChange, campaignId, storeId, storeName }
   const [editingMessage, setEditingMessage] = useState<{ id: string; content: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryKey = ["schedule-chat", campaignId, storeId];
+  const markChatAsRead = useMarkAsRead();
+
+  // Mark as read when opening
+  useEffect(() => {
+    if (open) {
+      markChatAsRead.mutate({ contextType: "schedule_chat", contextId: `${campaignId}:${storeId}` });
+    }
+  }, [open, campaignId, storeId]);
 
   // Realtime subscription
   useEffect(() => {

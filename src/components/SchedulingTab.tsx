@@ -7,6 +7,7 @@ import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
 import ScheduleCardChat from "@/components/ScheduleCardChat";
+import { useScheduleChatUnreadCounts, useMarkAsRead } from "@/hooks/useChatReadStatus";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -101,6 +102,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [chatStoreId, setChatStoreId] = useState("");
   const [chatStoreName, setChatStoreName] = useState("");
   const [filterApproval, setFilterApproval] = useState("");
+  const [filterMessages, setFilterMessages] = useState("");
+
+  // Unread message counts
+  const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
+  const markAsRead = useMarkAsRead();
 
   // Fetch all contacts for the client
   const { data: allContacts = [] } = useStoreContactsByClient(clientId);
@@ -209,8 +215,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         return true;
       });
     }
+    if (filterMessages === "unread") {
+      result = result.filter((s) => (chatCounts?.unreadPerStore[s.id] || 0) > 0);
+    } else if (filterMessages === "has_messages") {
+      result = result.filter((s) => (chatCounts?.totalPerStore[s.id] || 0) > 0);
+    }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, searchTerm, filterApproval, scheduleMap]);
+  }, [stores, filterState, filterCity, searchTerm, filterApproval, filterMessages, scheduleMap, chatCounts]);
 
   const handleFieldChange = (storeId: string, field: string, value: any) => {
     const existing = scheduleMap[storeId];
@@ -398,6 +409,15 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           <option value="approved">✅ 100% Aprovado</option>
           <option value="pending">⚠️ Com pendência</option>
         </select>
+        <select
+          value={filterMessages}
+          onChange={(e) => setFilterMessages(e.target.value)}
+          className="px-3 py-2 text-sm rounded-md border border-border bg-card text-foreground"
+        >
+          <option value="">Todas as mensagens</option>
+          <option value="unread">💬 Com mensagens novas</option>
+          <option value="has_messages">📩 Com mensagens</option>
+        </select>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setTeamDialogOpen(true)}>
           <Wrench className="w-4 h-4" /> Equipes
         </Button>
@@ -450,12 +470,27 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0"
+                  className="h-7 w-7 shrink-0 relative"
                   style={{ color: colors.text }}
                   title="Abrir chat"
-                  onClick={() => { setChatStoreId(store.id); setChatStoreName(store.name); setChatOpen(true); }}
+                  onClick={() => {
+                    setChatStoreId(store.id);
+                    setChatStoreName(store.name);
+                    setChatOpen(true);
+                    markAsRead.mutate({ contextType: "schedule_chat", contextId: `${campaignId}:${store.id}` });
+                  }}
                 >
                   <MessageCircle className="w-4 h-4" />
+                  {(chatCounts?.unreadPerStore[store.id] || 0) > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5">
+                      {chatCounts!.unreadPerStore[store.id]}
+                    </span>
+                  )}
+                  {(chatCounts?.totalPerStore[store.id] || 0) > 0 && !(chatCounts?.unreadPerStore[store.id]) && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-muted text-muted-foreground text-[9px] font-bold flex items-center justify-center px-0.5">
+                      {chatCounts!.totalPerStore[store.id]}
+                    </span>
+                  )}
                 </Button>
                 {/* Approval status icon */}
                 {fullyApproved ? (
