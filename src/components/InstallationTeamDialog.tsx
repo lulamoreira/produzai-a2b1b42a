@@ -34,6 +34,7 @@ export type TeamMember = {
   rg: string;
   cpf: string;
   phone: string;
+  is_unified_doc: boolean;
 };
 
 // ─── CPF Validation ──────────────────────────────────────
@@ -164,13 +165,20 @@ export function useAllTeamVehicles(campaignId: string) {
 
 export function isTeamIncomplete(members: TeamMember[]): boolean {
   if (members.length === 0) return true;
-  return members.some((m) => !m.rg || !m.cpf);
+  return members.some((m) => {
+    if (m.is_unified_doc) return !m.cpf;
+    return !m.rg || !m.cpf;
+  });
 }
 
 export function getMemberMissingFields(member: TeamMember): string[] {
   const missing: string[] = [];
-  if (!member.rg) missing.push("RG");
-  if (!member.cpf) missing.push("CPF");
+  if (member.is_unified_doc) {
+    if (!member.cpf) missing.push("RU");
+  } else {
+    if (!member.rg) missing.push("RG");
+    if (!member.cpf) missing.push("CPF");
+  }
   return missing;
 }
 
@@ -463,7 +471,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
   const { data: members = [] } = useTeamMembers(teamId);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", rg: "", cpf: "", phone: "" });
+  const [form, setForm] = useState({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false });
   const [cpfError, setCpfError] = useState("");
 
   const invalidate = () => {
@@ -479,26 +487,28 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
       const { error } = await supabase.from("installation_team_members").insert({
         team_id: teamId,
         name: form.name,
-        rg: form.rg,
+        rg: form.isUnifiedDoc ? "" : form.rg,
         cpf: form.cpf.replace(/\D/g, ""),
         phone: form.phone,
+        is_unified_doc: form.isUnifiedDoc,
       });
       if (error) throw error;
     },
-    onSuccess: () => { invalidate(); setForm({ name: "", rg: "", cpf: "", phone: "" }); setCpfError(""); setAdding(false); toast.success("Instalador adicionado!"); },
+    onSuccess: () => { invalidate(); setForm({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false }); setCpfError(""); setAdding(false); toast.success("Instalador adicionado!"); },
     onError: (e) => toast.error(e.message || "Erro ao adicionar"),
   });
 
   const updateMember = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { name: string; rg: string; cpf: string; phone: string } }) => {
+    mutationFn: async ({ id, data }: { id: string; data: { name: string; rg: string; cpf: string; phone: string; isUnifiedDoc: boolean } }) => {
       if (data.cpf && !isValidCpf(data.cpf)) {
         throw new Error("CPF inválido");
       }
       const { error } = await supabase.from("installation_team_members").update({
         name: data.name,
-        rg: data.rg,
+        rg: data.isUnifiedDoc ? "" : data.rg,
         cpf: data.cpf.replace(/\D/g, ""),
         phone: data.phone,
+        is_unified_doc: data.isUnifiedDoc,
       }).eq("id", id);
       if (error) throw error;
     },
@@ -539,7 +549,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
 
   const startEditing = (m: TeamMember) => {
     setEditingId(m.id);
-    setForm({ name: m.name, rg: m.rg || "", cpf: m.cpf ? formatCpf(m.cpf) : "", phone: m.phone || "" });
+    setForm({ name: m.name, rg: m.rg || "", cpf: m.cpf ? formatCpf(m.cpf) : "", phone: m.phone || "", isUnifiedDoc: !!m.is_unified_doc });
     setCpfError("");
   };
 
@@ -549,18 +559,32 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
         <label className="text-xs font-medium">Nome *</label>
         <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-7 text-xs" placeholder="Nome completo" />
       </div>
-      <div className="space-y-1">
-        <label className="text-xs font-medium">RG</label>
-        <Input value={form.rg} onChange={(e) => setForm({ ...form, rg: e.target.value })} className="h-7 text-xs" placeholder="RG" />
+      <div className="space-y-1 flex items-end gap-2">
+        <div className="flex-1 space-y-1">
+          <label className="text-xs font-medium">{form.isUnifiedDoc ? "—" : "RG"}</label>
+          <Input
+            value={form.isUnifiedDoc ? "" : form.rg}
+            onChange={(e) => setForm({ ...form, rg: e.target.value })}
+            className="h-7 text-xs"
+            placeholder="RG"
+            disabled={form.isUnifiedDoc}
+          />
+        </div>
       </div>
       <div className="space-y-1">
-        <label className="text-xs font-medium">CPF</label>
+        <label className="text-xs font-medium">{form.isUnifiedDoc ? "RU" : "CPF"}</label>
         <Input value={form.cpf} onChange={(e) => handleCpfChange(e.target.value)} className={cn("h-7 text-xs", cpfError && "border-destructive")} placeholder="000.000.000-00" />
         {cpfError && <p className="text-[10px] text-destructive">{cpfError}</p>}
       </div>
       <div className="space-y-1">
         <label className="text-xs font-medium">Telefone</label>
         <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-7 text-xs" placeholder="(00) 00000-0000" />
+      </div>
+      <div className="col-span-2 flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <Switch checked={form.isUnifiedDoc} onCheckedChange={(v) => setForm({ ...form, isUnifiedDoc: v, rg: v ? "" : form.rg })} />
+          <span className="text-[10px] text-muted-foreground">Registro Unificado (RU)</span>
+        </div>
       </div>
       <div className="col-span-2 flex gap-2">
         {isNew ? (
@@ -590,8 +614,14 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
           return (
             <div key={m.id} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5 flex-wrap">
               <span className="font-medium">{m.name}</span>
-              {m.rg && <span className="text-muted-foreground">RG: {m.rg}</span>}
-              {m.cpf && <span className="text-muted-foreground">CPF: {formatCpf(m.cpf)}</span>}
+              {m.is_unified_doc ? (
+                m.cpf && <span className="text-muted-foreground">RU: {formatCpf(m.cpf)}</span>
+              ) : (
+                <>
+                  {m.rg && <span className="text-muted-foreground">RG: {m.rg}</span>}
+                  {m.cpf && <span className="text-muted-foreground">CPF: {formatCpf(m.cpf)}</span>}
+                </>
+              )}
               {m.phone && <span className="text-muted-foreground">Tel: {m.phone}</span>}
               {missingFields.length > 0 && (
                 <span className="text-amber-500 flex items-center gap-0.5" title={`Faltam: ${missingFields.join(", ")}`}>
@@ -614,7 +644,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
         })}
 
         {canEdit && !adding && !editingId && (
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => { setAdding(true); setForm({ name: "", rg: "", cpf: "", phone: "" }); }}>
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => { setAdding(true); setForm({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false }); }}>
             <Plus className="w-3 h-3" /> Adicionar instalador
           </Button>
         )}

@@ -318,9 +318,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       const sheetData: string[][] = [];
 
       if (members.length > 0) {
-        sheetData.push(["Instalador", "Nome", "RG", "CPF", "Telefone"]);
+        sheetData.push(["Instalador", "Nome", "RG", "CPF", "RU", "Telefone"]);
         members.forEach((m: TeamMember) => {
-          sheetData.push(["", m.name, m.rg || "", m.cpf || "", m.phone || ""]);
+          const isRU = !!(m as any).is_unified_doc;
+          sheetData.push(["", m.name, isRU ? "" : (m.rg || ""), isRU ? "" : (m.cpf || ""), isRU ? (m.cpf || "") : "", m.phone || ""]);
         });
       }
 
@@ -333,7 +334,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       }
 
       const ws = XLSX.utils.aoa_to_sheet(sheetData);
-      ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+      ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
       const safeName = team.name.replace(/[:\\/?*\[\]]/g, "").slice(0, 31) || "Equipe";
       XLSX.utils.book_append_sheet(wb, ws, safeName);
     });
