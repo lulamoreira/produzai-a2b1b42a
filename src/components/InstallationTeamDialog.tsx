@@ -496,15 +496,16 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
   });
 
   const updateMember = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { name: string; rg: string; cpf: string; phone: string } }) => {
+    mutationFn: async ({ id, data }: { id: string; data: { name: string; rg: string; cpf: string; phone: string; isUnifiedDoc: boolean } }) => {
       if (data.cpf && !isValidCpf(data.cpf)) {
         throw new Error("CPF inválido");
       }
       const { error } = await supabase.from("installation_team_members").update({
         name: data.name,
-        rg: data.rg,
+        rg: data.isUnifiedDoc ? "" : data.rg,
         cpf: data.cpf.replace(/\D/g, ""),
         phone: data.phone,
+        is_unified_doc: data.isUnifiedDoc,
       }).eq("id", id);
       if (error) throw error;
     },
@@ -545,7 +546,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
 
   const startEditing = (m: TeamMember) => {
     setEditingId(m.id);
-    setForm({ name: m.name, rg: m.rg || "", cpf: m.cpf ? formatCpf(m.cpf) : "", phone: m.phone || "" });
+    setForm({ name: m.name, rg: m.rg || "", cpf: m.cpf ? formatCpf(m.cpf) : "", phone: m.phone || "", isUnifiedDoc: !!m.is_unified_doc });
     setCpfError("");
   };
 
