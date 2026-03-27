@@ -168,6 +168,7 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
           photo_url: urlData.publicUrl,
           category,
           uploaded_by: user?.id,
+          upload_method: "upload",
         });
       } catch (err) {
         console.error("Upload error:", err);

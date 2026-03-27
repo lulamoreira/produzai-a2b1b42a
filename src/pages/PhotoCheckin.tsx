@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { ArrowLeft, Camera, Upload, Trash2, Edit3, X, ChevronLeft, ChevronRight, Image } from "lucide-react";
 
 const CATEGORIES = [
@@ -61,7 +63,7 @@ export default function PhotoCheckin() {
         .join(", ")
     : "";
 
-  const handleUpload = async (files: FileList | null, category: string) => {
+  const handleUpload = async (files: FileList | null, category: string, method: "upload" | "camera" = "upload") => {
     if (!files || !campaignId || !storeId || !user) return;
     for (const file of Array.from(files)) {
       try {
@@ -77,6 +79,7 @@ export default function PhotoCheckin() {
           photo_url: urlData.publicUrl,
           category,
           uploaded_by: user.id,
+          upload_method: method,
         });
         toast.success("Foto enviada!");
       } catch (err: any) {
@@ -172,8 +175,8 @@ export default function PhotoCheckin() {
               <Camera className="w-3.5 h-3.5" /> Tirar foto
             </Button>
           </div>
-          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory)} />
-          <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory)} />
+          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory, "upload")} />
+          <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory, "camera")} />
         </div>
 
         {/* Category filter */}
@@ -236,11 +239,15 @@ export default function PhotoCheckin() {
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
-                {photo.caption && (
-                  <div className="p-2">
+                <div className="p-2 space-y-0.5">
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    {photo.upload_method === "camera" ? <Camera className="w-3 h-3" /> : <Upload className="w-3 h-3" />}
+                    {photo.upload_method === "camera" ? "Foto" : "Upload"} · {format(new Date(photo.created_at), "dd/MM/yy HH:mm", { locale: ptBR })}
+                  </p>
+                  {photo.caption && (
                     <p className="text-[10px] text-muted-foreground truncate">{photo.caption}</p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -288,6 +295,10 @@ export default function PhotoCheckin() {
           />
 
           <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-4 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+            <p className="text-center text-xs text-white/70 flex items-center justify-center gap-1.5">
+              {currentLightbox.upload_method === "camera" ? <Camera className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
+              {currentLightbox.upload_method === "camera" ? "Foto tirada" : "Upload"} em {format(new Date(currentLightbox.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            </p>
             <div className="flex items-center gap-2 justify-center">
               {CATEGORIES.map((cat) => (
                 <Button
