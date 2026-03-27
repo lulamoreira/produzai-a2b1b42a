@@ -725,7 +725,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
         label="Lojista"
         value={storeStatus}
         onChange={(val) => handleSetStatus("store_approval_status", val)}
-        timestamp={formatTimestamp(schedule?.store_approved_at ?? null)}
+        timestamp={storeStatus === "approved" ? formatTimestamp(schedule?.store_approved_at ?? null) : null}
         disabled={sectionDisabled}
       />
       <ThreeStateToggle
