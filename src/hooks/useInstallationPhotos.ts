@@ -10,6 +10,7 @@ export type InstallationPhoto = {
   caption: string | null;
   created_at: string;
   uploaded_by: string | null;
+  upload_method: string;
 };
 
 export function useInstallationPhotos(campaignId: string | undefined) {
@@ -39,6 +40,7 @@ export function useAddInstallationPhoto() {
       category: string;
       caption?: string;
       uploaded_by?: string;
+      upload_method?: string;
     }) => {
       const { data, error } = await supabase
         .from("installation_photos")
