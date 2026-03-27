@@ -470,12 +470,27 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 shrink-0"
+                  className="h-7 w-7 shrink-0 relative"
                   style={{ color: colors.text }}
                   title="Abrir chat"
-                  onClick={() => { setChatStoreId(store.id); setChatStoreName(store.name); setChatOpen(true); }}
+                  onClick={() => {
+                    setChatStoreId(store.id);
+                    setChatStoreName(store.name);
+                    setChatOpen(true);
+                    markAsRead.mutate({ contextType: "schedule_chat", contextId: `${campaignId}:${store.id}` });
+                  }}
                 >
                   <MessageCircle className="w-4 h-4" />
+                  {(chatCounts?.unreadPerStore[store.id] || 0) > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5">
+                      {chatCounts!.unreadPerStore[store.id]}
+                    </span>
+                  )}
+                  {(chatCounts?.totalPerStore[store.id] || 0) > 0 && !(chatCounts?.unreadPerStore[store.id]) && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-muted text-muted-foreground text-[9px] font-bold flex items-center justify-center px-0.5">
+                      {chatCounts!.totalPerStore[store.id]}
+                    </span>
+                  )}
                 </Button>
                 {/* Approval status icon */}
                 {fullyApproved ? (
