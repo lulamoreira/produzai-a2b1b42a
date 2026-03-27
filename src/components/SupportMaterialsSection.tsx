@@ -5,8 +5,9 @@ import { compressImage } from "@/lib/compressImage";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Plus, Upload, Trash2, FileText, Image, File, Download, Pencil, Check, X, ExternalLink } from "lucide-react";
+import { Plus, Upload, Trash2, FileText, Image, File, Download, Pencil, Check, X, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 
 const CARD_GRADIENTS = [
   "from-primary/15 to-primary/5 border-primary/25",
