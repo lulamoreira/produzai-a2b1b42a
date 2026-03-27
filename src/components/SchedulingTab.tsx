@@ -336,7 +336,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     ws["!cols"] = [{ wch: 14 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
     XLSX.utils.book_append_sheet(wb, ws, "Equipes");
 
-    downloadWorkbook(wb, "equipes_instalacao.xlsx");
+    downloadWorkbook(wb, buildExportFileName(`Equipes_${campaignName}`, { agencyName, clientName }));
     toast.success("Planilha de equipes exportada!");
   };
 
