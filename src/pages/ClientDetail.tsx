@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -239,6 +239,7 @@ function SortableCampaignCard({
 const ClientDetail = () => {
   const { agencyId, clientId } = useParams<{ agencyId: string; clientId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaigns } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canDeleteCampaigns } = useClientPermission(clientId, "can_delete_campaigns");
@@ -748,14 +749,9 @@ const ClientDetail = () => {
       ]}
     >
       <div className="max-w-6xl mx-auto">
-        <Tabs defaultValue="campaigns">
-          <TabsList className="mb-6 bg-card border border-border w-full overflow-x-auto flex justify-start">
-            <TabsTrigger value="campaigns" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Campanhas</span></TabsTrigger>
-            <TabsTrigger value="stores" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Store className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Lojas</span></TabsTrigger>
-          </TabsList>
-
-          {/* ─── Campaigns Tab ─── */}
-          <TabsContent value="campaigns">
+        {/* ─── Campaigns View (default) ─── */}
+        {!new URLSearchParams(location.search).has("tab") && (
+          <>
             {/* Stats cards */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
               <div className="card-kpi flex items-center gap-3">
@@ -841,10 +837,12 @@ const ClientDetail = () => {
                 </SortableContext>
               </DndContext>
             )}
-          </TabsContent>
+          </>
+        )}
 
-          {/* ─── Stores Tab ─── */}
-          <TabsContent value="stores">
+        {/* ─── Stores View ─── */}
+        {new URLSearchParams(location.search).get("tab") === "stores" && (
+          <>
             {/* Stats + Actions */}
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
               <span className="text-sm font-semibold text-foreground">{stores.length} lojas</span>
@@ -1056,9 +1054,8 @@ const ClientDetail = () => {
                 return base;
               })()}
             />
-          </TabsContent>
-
-        </Tabs>
+          </>
+        )}
       </div>
 
       {/* ─── Store Models Management Dialog ─── */}
