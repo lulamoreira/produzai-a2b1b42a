@@ -295,6 +295,10 @@ export default function PhotoCheckin() {
           />
 
           <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-4 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+            <p className="text-center text-xs text-white/70 flex items-center justify-center gap-1.5">
+              {currentLightbox.upload_method === "camera" ? <Camera className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
+              {currentLightbox.upload_method === "camera" ? "Foto tirada" : "Upload"} em {format(new Date(currentLightbox.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+            </p>
             <div className="flex items-center gap-2 justify-center">
               {CATEGORIES.map((cat) => (
                 <Button
