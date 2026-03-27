@@ -146,8 +146,8 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
 
   const handleAddCampaignAccess = () => {
     if (!newCampaignId || !newCampaignCategoryId) return;
-    const existing = userCampaignAccesses.find(a => a.campaign_id === newCampaignId);
-    if (existing) { toast.error("Já possui acesso a esta campanha."); return; }
+    const existing = userCampaignAccesses.find(a => a.campaign_id === newCampaignId && a.category_id === newCampaignCategoryId);
+    if (existing) { toast.error("Já possui este acesso com a mesma categoria."); return; }
     addCampaignAccess.mutate({ user_id: userInfo.user_id, campaign_id: newCampaignId, category_id: newCampaignCategoryId });
     setAddingCampaign(false); setNewCampaignClientId(""); setNewCampaignId(""); setNewCampaignCategoryId("");
   };
@@ -383,7 +383,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                     <Select value={newCampaignId} onValueChange={setNewCampaignId} disabled={!newCampaignClientId}>
                       <SelectTrigger className="w-[180px] h-8 text-xs"><SelectValue placeholder="Campanha" /></SelectTrigger>
                       <SelectContent>
-                        {campaignsForClient.filter(c => !userCampaignAccesses.some(a => a.campaign_id === c.id)).map(c => (
+                        {campaignsForClient.map(c => (
                           <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                         ))}
                       </SelectContent>
