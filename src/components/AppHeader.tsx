@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Shield, MessageSquare, ArrowLeft } from "lucide-react";
+import { LogOut, Shield, MessageSquare, ArrowLeft, UserCog } from "lucide-react";
 import { WhatsNewButton } from "@/components/WhatsNewSheet";
 import { InviteButton } from "@/components/InviteButton";
+import EditProfileDialog from "@/components/EditProfileDialog";
 
 const getGreeting = () => {
   const h = new Date().getHours();
