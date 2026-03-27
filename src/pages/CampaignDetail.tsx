@@ -33,7 +33,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera } from "lucide-react";
 import BudgetsTab from "@/components/BudgetsTab";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
@@ -45,6 +45,7 @@ import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExpo
 import OccurrencesTab from "@/components/OccurrencesTab";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 import SchedulingTab from "@/components/SchedulingTab";
+import InstallationsTab from "@/components/InstallationsTab";
 import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaignDialog";
 import SortablePiecesTable, { type UnifiedRow } from "@/components/SortablePiecesTable";
 import SupportMaterialsSection from "@/components/SupportMaterialsSection";
@@ -857,6 +858,7 @@ const CampaignDetail = () => {
                 { key: "pieces", label: "Peças", icon: LayoutList, visible: canViewPieces },
                 { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, visible: canViewOccurrences },
                 { key: "scheduling", label: "Agendamento", icon: CalendarDays, visible: canViewSchedules },
+                { key: "installations", label: "Instalações", icon: Camera, visible: canViewSchedules },
                 { key: "budgets", label: "Orçamentos", icon: DollarSign, visible: canViewCampaigns },
               ].filter(m => m.visible).map(({ key, label, icon: Icon }) => (
                 <button
@@ -896,6 +898,7 @@ const CampaignDetail = () => {
                   { key: "pieces", label: "Peças", icon: LayoutList, visible: canViewPieces },
                   { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, visible: canViewOccurrences },
                   { key: "scheduling", label: "Agendamento", icon: CalendarDays, visible: canViewSchedules },
+                  { key: "installations", label: "Instalações", icon: Camera, visible: canViewSchedules },
                   { key: "budgets", label: "Orçamentos", icon: DollarSign, visible: canViewCampaigns },
                 ].filter(m => m.visible).map(({ key, label, icon: Icon }) => (
                   <Button
