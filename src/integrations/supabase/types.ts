@@ -868,6 +868,54 @@ export type Database = {
           },
         ]
       }
+      installation_photos: {
+        Row: {
+          campaign_id: string
+          caption: string | null
+          category: string
+          created_at: string
+          id: string
+          photo_url: string
+          store_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          campaign_id: string
+          caption?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          photo_url: string
+          store_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          caption?: string | null
+          category?: string
+          created_at?: string
+          id?: string
+          photo_url?: string
+          store_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installation_photos_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installation_photos_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       installation_team_members: {
         Row: {
           cpf: string | null
