@@ -1053,9 +1053,8 @@ const ClientDetail = () => {
                 return base;
               })()}
             />
-          </TabsContent>
-
-        </Tabs>
+          </>
+        )}
       </div>
 
       {/* ─── Store Models Management Dialog ─── */}
