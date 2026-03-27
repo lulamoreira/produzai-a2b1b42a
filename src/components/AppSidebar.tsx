@@ -113,8 +113,15 @@ export default function AppSidebar() {
         label: "Campanhas",
         icon: Megaphone,
         href: `/agency/${agencyId}/clients/${clientId}`,
-        active: location.pathname === `/agency/${agencyId}/clients/${clientId}`,
+        active: location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores"),
         color: "#3b82f6",
+      });
+      items.push({
+        label: "Lojas",
+        icon: Store,
+        href: `/agency/${agencyId}/clients/${clientId}?tab=stores`,
+        active: location.search.includes("tab=stores"),
+        color: "#6366f1",
       });
     }
 
