@@ -732,7 +732,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
         label="Equipe"
         value={teamStatus}
         onChange={(val) => handleSetStatus("team_approval_status", val)}
-        timestamp={formatTimestamp(schedule?.team_approved_at ?? null)}
+        timestamp={teamStatus === "approved" ? formatTimestamp(schedule?.team_approved_at ?? null) : null}
         disabled={sectionDisabled}
       />
 
