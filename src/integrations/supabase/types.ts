@@ -647,19 +647,25 @@ export type Database = {
       chat_conversations: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
+          subject: string
           user_1: string
           user_2: string
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
+          subject?: string
           user_1: string
           user_2: string
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
+          subject?: string
           user_1?: string
           user_2?: string
         }
