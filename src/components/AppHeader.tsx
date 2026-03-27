@@ -14,7 +14,7 @@ import { WhatsNewButton } from "@/components/WhatsNewSheet";
 import { InviteButton } from "@/components/InviteButton";
 import EditProfileDialog from "@/components/EditProfileDialog";
 
-const getGreeting = () => {
+export const getGreeting = () => {
   const h = new Date().getHours();
   if (h < 12) return "Bom dia";
   if (h < 18) return "Boa tarde";
