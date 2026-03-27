@@ -401,8 +401,8 @@ const AgencySelect = () => {
             })}
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 };
 
