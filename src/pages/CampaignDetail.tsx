@@ -63,6 +63,14 @@ const CampaignDetail = () => {
   const locationState = location.state as { initialSection?: string; limitedMode?: boolean } | null;
   const isLimitedMode = locationState?.limitedMode || false;
 
+  // For limited users, browser back button should go to /my-campaigns
+  useEffect(() => {
+    if (!isLimitedMode) return;
+    const onPopState = () => navigate("/my-campaigns", { replace: true });
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [isLimitedMode, navigate]);
+
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaign } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canEditOccurrences } = useClientPermission(clientId, "can_edit_occurrences");
@@ -900,17 +908,21 @@ const CampaignDetail = () => {
         {activeSection && (
           <>
             <div className="flex items-center gap-2 mb-4 overflow-x-auto">
-              {!isLimitedMode && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setActiveSection(null)}
-                  className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 flex-shrink-0"
-                >
-                  <Home className="w-4 h-4" />
-                  <span className="hidden sm:inline">Início</span>
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (isLimitedMode) {
+                    navigate("/my-campaigns", { replace: true });
+                  } else {
+                    setActiveSection(null);
+                  }
+                }}
+                className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 flex-shrink-0"
+              >
+                <Home className="w-4 h-4" />
+                <span className="hidden sm:inline">Início</span>
+              </Button>
               <div className="flex gap-1 overflow-x-auto">
                 {[
                   { key: "stores", label: "Lojas", icon: Store, visible: canViewStores || canViewCampaignStores },

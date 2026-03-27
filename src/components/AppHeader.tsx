@@ -92,7 +92,7 @@ export default function AppHeader({
       <div className={`${maxWidth} mx-auto px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between gap-2`}>
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {backTo && (
-            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white" onClick={() => navigate(backTo)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 text-white hover:bg-white/10 hover:text-white" onClick={() => navigate(backTo, { replace: true })}>
               <ArrowLeft className="w-4 h-4" />
             </Button>
           )}
