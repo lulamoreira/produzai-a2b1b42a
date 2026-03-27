@@ -175,6 +175,16 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { agencyId } = useParams<{ agencyId: string }>();
   const { data: clients = [], isLoading } = useClients(agencyId);
+
+  const { data: agencyInfo } = useQuery({
+    queryKey: ["agency_name", agencyId],
+    queryFn: async () => {
+      if (!agencyId) return null;
+      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
+      return data;
+    },
+    enabled: !!agencyId,
+  });
   const addClient = useAddClient();
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
