@@ -288,6 +288,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         "OS Instalação": schedule?.installation_os || "",
         "Preferência": prefLabel(schedule?.installation_preference ?? null),
         "Equipe": team?.name || "",
+        "Aprovação Lojista": approvalLabel(schedule?.store_approval_status as ApprovalStatusValue | undefined),
+        "Aprovação Equipe": approvalLabel(schedule?.team_approval_status as ApprovalStatusValue | undefined),
       };
     });
     const ws = XLSX.utils.json_to_sheet(rows);
