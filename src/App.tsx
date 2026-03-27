@@ -22,6 +22,7 @@ import PublicOccurrence from "./pages/PublicOccurrence";
 import PublicOccurrenceDetail from "./pages/PublicOccurrenceDetail";
 import Chat from "./pages/Chat";
 import MyCampaigns from "./pages/MyCampaigns";
+import PhotoCheckin from "./pages/PhotoCheckin";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
