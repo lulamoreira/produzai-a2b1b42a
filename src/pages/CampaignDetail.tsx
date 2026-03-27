@@ -187,8 +187,34 @@ const CampaignDetail = () => {
   const [storeEditQtyValue, setStoreEditQtyValue] = useState("");
 
   // ─── Active section (null = home) ──────────────────────
-  const [activeSection, setActiveSection] = useState<string | null>(locationState?.initialSection || null);
+  const searchParams = new URLSearchParams(location.search);
+  const sectionFromUrl = searchParams.get("section");
+  const [activeSection, setActiveSectionState] = useState<string | null>(locationState?.initialSection || sectionFromUrl || null);
   const [pieceSearch, setPieceSearch] = useState("");
+
+  // Sync section from URL search params (for sidebar navigation)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const urlSection = params.get("section");
+    if (urlSection && urlSection !== activeSection) {
+      setActiveSectionState(urlSection);
+    } else if (!urlSection && activeSection && !locationState?.initialSection) {
+      // Only clear if navigated without section param and no initial section
+    }
+  }, [location.search]);
+
+  const setActiveSection = useCallback((section: string | null) => {
+    setActiveSectionState(section);
+    // Update URL without full navigation
+    const params = new URLSearchParams(location.search);
+    if (section) {
+      params.set("section", section);
+    } else {
+      params.delete("section");
+    }
+    const newUrl = `${location.pathname}${params.toString() ? `?${params}` : ""}`;
+    window.history.replaceState(null, "", newUrl);
+  }, [location.pathname, location.search]);
 
   // ─── Matrix editing ────────────────────────────────────
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
