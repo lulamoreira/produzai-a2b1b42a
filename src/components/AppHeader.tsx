@@ -134,11 +134,15 @@ export default function AppHeader({
                   {roleBadge}
                 </span>
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setProfileDialogOpen(true)}>
+                <UserCog className="w-4 h-4 mr-2" /> Editar Perfil
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={signOut} className="text-destructive">
                 <LogOut className="w-4 h-4 mr-2" /> Sair
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <EditProfileDialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen} />
         </div>
       </div>
     </header>
