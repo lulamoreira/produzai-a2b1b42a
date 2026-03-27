@@ -1432,6 +1432,8 @@ const CampaignDetail = () => {
                   onOpenChange={setMatrixCustomExportOpen}
                   title="Exportação Personalizada — Matriz"
                   fileName={`Matriz_${campaign?.name || "Campanha"}`}
+                  agencyName={agency?.name}
+                  clientName={client?.name}
                   sheetName="Matriz"
                   data={activeFilteredStores}
                   fields={(() => {

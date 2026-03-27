@@ -1056,6 +1056,8 @@ const ClientDetail = () => {
               onOpenChange={setCustomExportOpen}
               title="Exportação Personalizada — Lojas"
               fileName={`Lojas_${client.name}`}
+              agencyName={agencyInfo?.name}
+              clientName={client.name}
               sheetName="Lojas"
               data={displayOrderStores.length > 0 ? displayOrderStores : stores}
               fields={(() => {
