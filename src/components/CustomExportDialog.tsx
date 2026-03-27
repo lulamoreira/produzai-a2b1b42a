@@ -88,6 +88,8 @@ export default function CustomExportDialog({
   data,
   fileName,
   sheetName = "Dados",
+  agencyName,
+  clientName,
 }: CustomExportDialogProps) {
   const [fieldOrder, setFieldOrder] = useState<string[]>(() => fields.map((f) => f.key));
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(() => new Set(fields.map((f) => f.key)));
