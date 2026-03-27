@@ -36,7 +36,7 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
 import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

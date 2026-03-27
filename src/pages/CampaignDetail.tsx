@@ -37,7 +37,7 @@ import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, Layout
 import BudgetsTab from "@/components/BudgetsTab";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import QuickMatrixEditor from "@/components/QuickMatrixEditor";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";

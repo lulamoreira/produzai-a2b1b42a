@@ -8,7 +8,7 @@ import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { Navigate, useNavigate } from "react-router-dom";
 import { Users, Tags, Database, UserCheck, Search } from "lucide-react";
-import AppHeader from "@/components/AppHeader";
+import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
