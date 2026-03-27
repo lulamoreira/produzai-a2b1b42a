@@ -38,32 +38,35 @@ const typeConfig: Record<
 };
 
 export function useUnreadCount() {
-  const lastSeen = localStorage.getItem(STORAGE_KEY);
-  return useMemo(() => {
-    if (!lastSeen) return changelog.length;
-    return changelog.filter((e) => e.date > lastSeen).length;
-  }, [lastSeen]);
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const check = () => {
+      const lastSeen = localStorage.getItem(STORAGE_KEY);
+      if (!lastSeen) {
+        setCount(changelog.length);
+      } else {
+        setCount(changelog.filter((e) => e.date > lastSeen).length);
+      }
+    };
+    check();
+    // Re-check periodically in case changelog is updated at runtime
+    const interval = setInterval(check, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return count;
 }
 
 export function WhatsNewButton() {
   const [open, setOpen] = useState(false);
-  const [unread, setUnread] = useState(0);
-
-  useEffect(() => {
-    const lastSeen = localStorage.getItem(STORAGE_KEY);
-    if (!lastSeen) {
-      setUnread(changelog.length);
-    } else {
-      setUnread(changelog.filter((e) => e.date > lastSeen).length);
-    }
-  }, []);
+  const unread = useUnreadCount();
 
   const handleOpen = () => {
     setOpen(true);
     if (changelog.length > 0) {
       localStorage.setItem(STORAGE_KEY, changelog[0].date);
     }
-    setUnread(0);
   };
 
   return (
