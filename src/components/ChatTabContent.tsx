@@ -144,24 +144,37 @@ const ChatTabContent = () => {
                 Nenhuma conversa ainda
               </div>
             ) : (
-              conversations.map((conv) => (
-                <button
-                  key={conv.id}
-                  onClick={() => setSelectedConversation(conv.id)}
-                  className={`w-full text-left px-4 py-3 border-b border-border hover:bg-accent/50 transition-colors ${
-                    selectedConversation === conv.id ? "bg-accent" : ""
-                  }`}
-                >
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {conv.other_user?.display_name || "Usuário"}
-                  </p>
-                  {conv.last_message && (
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {conv.last_message.content}
-                    </p>
-                  )}
-                </button>
-              ))
+              conversations.map((conv) => {
+                const unreadCount = unreadData?.unreadPerConv[conv.id] || 0;
+                return (
+                  <button
+                    key={conv.id}
+                    onClick={() => {
+                      setSelectedConversation(conv.id);
+                      markAsRead.mutate({ contextType: "conversation", contextId: conv.id });
+                    }}
+                    className={`w-full text-left px-4 py-3 border-b border-border hover:bg-accent/50 transition-colors ${
+                      selectedConversation === conv.id ? "bg-accent" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {conv.other_user?.display_name || "Usuário"}
+                      </p>
+                      {unreadCount > 0 && (
+                        <span className="min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shrink-0">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    {conv.last_message && (
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {conv.last_message.content}
+                      </p>
+                    )}
+                  </button>
+                );
+              })
             )}
           </div>
         </aside>
