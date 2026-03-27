@@ -10,6 +10,7 @@ import {
   useStartConversation,
   type ChatConversation,
 } from "@/hooks/useChat";
+import { useMarkAsRead, useConversationUnreadCounts } from "@/hooks/useChatReadStatus";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -52,10 +53,21 @@ const Chat = () => {
 
   const { data: conversations = [], isLoading: loadingConvs } = useConversations();
   const { data: messages = [] } = useMessages(selectedConversation);
+  const { data: chatUnread } = useConversationUnreadCounts();
+  const markAsRead = useMarkAsRead();
   const sendMessage = useSendMessage();
   const deleteMessage = useDeleteMessage();
   const editMessage = useEditMessage();
   const startConversation = useStartConversation();
+
+  // Mark conversation as read after 1 second
+  useEffect(() => {
+    if (!selectedConversation) return;
+    const timer = setTimeout(() => {
+      markAsRead.mutate({ contextType: "conversation", contextId: selectedConversation });
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [selectedConversation, messages.length]);
 
   // Get all users for new conversation
   const { data: allUsers = [] } = useQuery({
@@ -147,24 +159,34 @@ const Chat = () => {
                 Nenhuma conversa ainda
               </div>
             ) : (
-              conversations.map((conv) => (
-                <button
-                  key={conv.id}
-                  onClick={() => setSelectedConversation(conv.id)}
-                  className={`w-full text-left px-4 py-3 border-b border-border hover:bg-accent/50 transition-colors ${
-                    selectedConversation === conv.id ? "bg-accent" : ""
-                  }`}
-                >
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {capitalizeName(conv.other_user?.display_name) || "Usuário"}
-                  </p>
-                  {conv.last_message && (
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
-                      {conv.last_message.content}
-                    </p>
-                  )}
-                </button>
-              ))
+              conversations.map((conv) => {
+                const unreadCount = chatUnread?.unreadPerConv?.[conv.id] || 0;
+                return (
+                  <button
+                    key={conv.id}
+                    onClick={() => setSelectedConversation(conv.id)}
+                    className={`w-full text-left px-4 py-3 border-b border-border hover:bg-accent/50 transition-colors ${
+                      selectedConversation === conv.id ? "bg-accent" : ""
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className={`text-sm font-medium text-foreground truncate ${unreadCount > 0 ? "font-bold" : ""}`}>
+                        {capitalizeName(conv.other_user?.display_name) || "Usuário"}
+                      </p>
+                      {unreadCount > 0 && (
+                        <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    {conv.last_message && (
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {conv.last_message.content}
+                      </p>
+                    )}
+                  </button>
+                );
+              })
             )}
           </div>
         </aside>
