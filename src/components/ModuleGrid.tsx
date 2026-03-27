@@ -30,13 +30,13 @@ const ModuleGrid = ({ items, onSelect }: ModuleGridProps) => {
   if (visibleItems.length === 0) return null;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm">
+    <div className="aqua-card border border-border bg-card p-4 sm:p-6 shadow-sm">
       <div className="flex flex-wrap justify-center gap-3">
         {visibleItems.map(({ key, label, icon: Icon, color }) => (
           <button
             key={key}
             onClick={() => onSelect(key)}
-            className="bg-muted/50 border border-border hover:bg-muted rounded-xl p-4 sm:p-5 flex flex-col items-center gap-3 transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer w-[110px] sm:w-[130px]"
+            className="aqua-card bg-muted/50 border border-border hover:bg-muted p-4 sm:p-5 flex flex-col items-center gap-3 transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer w-[110px] sm:w-[130px]"
           >
             <AquaIcon icon={Icon} size="lg" color={color || MODULE_COLORS[key]} />
             <span className="font-bold text-xs sm:text-sm text-foreground">{label}</span>
