@@ -260,6 +260,10 @@ const Dashboard = () => {
       <AppHeader
         backTo="/"
         backLabel="Agências"
+        breadcrumbs={[
+          { label: agencyInfo?.name || "Agência", href: "/" },
+          { label: "Clientes" },
+        ]}
         subtitle={`${clients.length} cliente(s) cadastrado(s)`}
         maxWidth="max-w-6xl"
       />
