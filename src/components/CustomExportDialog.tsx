@@ -14,6 +14,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import * as XLSX from "xlsx";
+import { buildExportFileName } from "@/lib/exportFileName";
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -31,6 +32,8 @@ export interface CustomExportDialogProps {
   data: any[];
   fileName: string;
   sheetName?: string;
+  agencyName?: string;
+  clientName?: string;
 }
 
 // ─── Sortable Field Item ────────────────────────────────
@@ -176,7 +179,7 @@ export default function CustomExportDialog({
       XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31));
     }
 
-    XLSX.writeFile(wb, `${fileName.replace(/[^a-zA-Z0-9_\\-]/g, "_")}.xlsx`);
+    XLSX.writeFile(wb, buildExportFileName(fileName, { agencyName, clientName }));
     onOpenChange(false);
   };
 
