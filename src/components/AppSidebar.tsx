@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDisplayName } from "@/components/AppHeader";
@@ -10,7 +10,8 @@ import AquaIcon from "@/components/AquaIcon";
 import {
   Building2, MessageSquare, Shield, LogOut, Users,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
-  Briefcase, Megaphone, Store,
+  Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
+  CalendarDays, Camera, DollarSign,
 } from "lucide-react";
 
 interface NavItem {
@@ -21,6 +22,16 @@ interface NavItem {
   color?: string;
   children?: NavItem[];
 }
+
+const CAMPAIGN_MODULES = [
+  { key: "stores", label: "Lojas", icon: Store, color: "#6366f1" },
+  { key: "matrix", label: "Matriz", icon: Grid3X3, color: "#8b5cf6" },
+  { key: "pieces", label: "Peças", icon: LayoutList, color: "#3b82f6" },
+  { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, color: "#ef4444" },
+  { key: "scheduling", label: "Agendamento", icon: CalendarDays, color: "#22c55e" },
+  { key: "installations", label: "Instalações", icon: Camera, color: "#f97316" },
+  { key: "budgets", label: "Orçamentos", icon: DollarSign, color: "#14b8a6" },
+];
 
 export default function AppSidebar() {
   const navigate = useNavigate();
@@ -41,25 +52,35 @@ export default function AppSidebar() {
   const agencyId = agencyIdx !== -1 ? pathParts[agencyIdx + 1] : undefined;
   const clientsIdx = pathParts.indexOf("clients");
   const clientId = clientsIdx !== -1 ? pathParts[clientsIdx + 1] : undefined;
+  const campaignsIdx = pathParts.indexOf("campaigns");
+  const campaignId = campaignsIdx !== -1 ? pathParts[campaignsIdx + 1] : undefined;
 
   const isInsideAgency = !!agencyId;
   const isInsideClient = !!clientId;
+  const isInsideCampaign = !!campaignId;
+
+  // Get current section from URL search params
+  const currentSection = new URLSearchParams(location.search).get("section");
 
   const roleBadge = isAdmin ? "Admin" : isMaster ? "Master" : "Usuário";
 
-  const toggleGroup = (key: string) => {
+  const toggleGroup = useCallback((key: string) => {
     setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+  }, []);
 
   // Auto-expand groups based on current route
   useEffect(() => {
     if (location.pathname.startsWith("/admin") || location.pathname === "/approvals") {
       setExpandedGroups((prev) => ({ ...prev, admin: true }));
     }
-    if (isInsideAgency) {
-      setExpandedGroups((prev) => ({ ...prev, agency: true }));
+    if (isInsideCampaign) {
+      setExpandedGroups((prev) => ({ ...prev, campaign: true }));
     }
-  }, [location.pathname, isInsideAgency]);
+  }, [location.pathname, isInsideCampaign]);
+
+  const campaignBasePath = isInsideCampaign
+    ? `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}`
+    : "";
 
   const navItems: NavItem[] = useMemo(() => {
     const items: NavItem[] = [
@@ -72,7 +93,6 @@ export default function AppSidebar() {
       },
     ];
 
-    // Contextual sub-items when inside an agency
     if (isInsideAgency) {
       items.push({
         label: "Clientes",
@@ -81,16 +101,32 @@ export default function AppSidebar() {
         active: location.pathname === `/agency/${agencyId}`,
         color: "#8b5cf6",
       });
+    }
 
-      if (isInsideClient) {
-        items.push({
-          label: "Campanhas",
-          icon: Megaphone,
-          href: `/agency/${agencyId}/clients/${clientId}`,
-          active: location.pathname === `/agency/${agencyId}/clients/${clientId}`,
-          color: "#3b82f6",
-        });
-      }
+    if (isInsideClient) {
+      items.push({
+        label: "Campanhas",
+        icon: Megaphone,
+        href: `/agency/${agencyId}/clients/${clientId}`,
+        active: location.pathname === `/agency/${agencyId}/clients/${clientId}`,
+        color: "#3b82f6",
+      });
+    }
+
+    if (isInsideCampaign) {
+      items.push({
+        label: "Módulos",
+        icon: Grid3X3,
+        color: "#8b5cf6",
+        active: !!currentSection,
+        children: CAMPAIGN_MODULES.map((mod) => ({
+          label: mod.label,
+          icon: mod.icon,
+          color: mod.color,
+          href: `${campaignBasePath}?section=${mod.key}`,
+          active: currentSection === mod.key,
+        })),
+      });
     }
 
     items.push({
@@ -127,16 +163,17 @@ export default function AppSidebar() {
     }
 
     return items;
-  }, [location.pathname, isInsideAgency, isInsideClient, agencyId, clientId, isAdminOrMaster]);
+  }, [location.pathname, currentSection, isInsideAgency, isInsideClient, isInsideCampaign, agencyId, clientId, campaignBasePath, isAdminOrMaster]);
 
   const renderNavItem = (item: NavItem) => {
     if (item.children) {
-      const isExpanded = expandedGroups[item.label.toLowerCase()] ?? false;
+      const groupKey = item.label.toLowerCase();
+      const isExpanded = expandedGroups[groupKey] ?? false;
       const hasActiveChild = item.children.some((c) => c.active);
       return (
         <div key={item.label}>
           <button
-            onClick={() => toggleGroup(item.label.toLowerCase())}
+            onClick={() => toggleGroup(groupKey)}
             className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all ${
               hasActiveChild
                 ? "bg-sidebar-accent text-sidebar-primary"
