@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useDisplayName } from "@/components/AppHeader";
+import { useDisplayName, getGreeting } from "@/components/AppHeader";
 import { WhatsNewButton } from "@/components/WhatsNewSheet";
 import { InviteButton } from "@/components/InviteButton";
 import EditProfileDialog from "@/components/EditProfileDialog";
@@ -264,6 +264,13 @@ export default function AppSidebar() {
           <X className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Greeting */}
+      {!collapsed && (
+        <div className="px-3 py-2.5 border-b border-sidebar-border">
+          <p className="text-sm font-bold text-sidebar-foreground">{getGreeting()}, {displayName}!</p>
+        </div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
