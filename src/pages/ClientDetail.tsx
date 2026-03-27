@@ -836,10 +836,12 @@ const ClientDetail = () => {
                 </SortableContext>
               </DndContext>
             )}
-          </TabsContent>
+          </>
+        )}
 
-          {/* ─── Stores Tab ─── */}
-          <TabsContent value="stores">
+        {/* ─── Stores View ─── */}
+        {new URLSearchParams(location.search).get("tab") === "stores" && (
+          <>
             {/* Stats + Actions */}
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
               <span className="text-sm font-semibold text-foreground">{stores.length} lojas</span>
