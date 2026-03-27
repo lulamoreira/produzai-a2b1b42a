@@ -844,7 +844,6 @@ const CampaignDetail = () => {
           }
           return crumbs;
         })()}
-        subtitle={`${visiblePieces.length + kits.length} peça(s) · ${stores.length} loja(s) · ${totalPieces} unidade(s) total`}
         maxWidth="max-w-[95vw]"
       />
 
