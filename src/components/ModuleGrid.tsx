@@ -21,6 +21,7 @@ const MODULE_COLORS: Record<string, string> = {
   scheduling: "#22c55e",
   installations: "#f97316",
   budgets: "#14b8a6",
+  chat: "#06b6d4",
 };
 
 const ModuleGrid = ({ items, onSelect }: ModuleGridProps) => {

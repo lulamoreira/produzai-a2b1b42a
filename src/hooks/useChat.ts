@@ -10,6 +10,7 @@ export interface ChatConversation {
   subject: string;
   created_by: string | null;
   created_at: string;
+  campaign_id: string | null;
   other_user?: { display_name: string | null; nickname: string | null; user_id: string };
   last_message?: { content: string; created_at: string };
 }
@@ -23,27 +24,35 @@ export interface ChatMessage {
   sender_name?: string;
 }
 
-export function useConversations() {
+export function useConversations(campaignId?: string) {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["chat-conversations", user?.id],
-    enabled: !!user,
+    queryKey: ["chat-conversations", user?.id, campaignId],
+    enabled: !!user && !!campaignId,
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("chat_conversations")
         .select("*")
+        .eq("campaign_id", campaignId!)
         .order("created_at", { ascending: false });
+
+      const { data, error } = await query;
       if (error) throw error;
 
-      const otherUserIds = (data || []).map((c: any) =>
-        c.user_1 === user!.id ? c.user_2 : c.user_1
-      );
+      // Get all unique user IDs from conversations
+      const userIds = new Set<string>();
+      (data || []).forEach((c: any) => {
+        userIds.add(c.user_1);
+        userIds.add(c.user_2);
+      });
+      // Remove current user
+      userIds.delete(user!.id);
 
       const { data: profiles } = await supabase
         .from("profiles")
         .select("user_id, display_name, nickname")
-        .in("user_id", otherUserIds);
+        .in("user_id", Array.from(userIds));
 
       const convIds = (data || []).map((c: any) => c.id);
       const lastMessages: Record<string, { content: string; created_at: string }> = {};
@@ -196,22 +205,9 @@ export function useStartConversation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ otherUserId, subject }: { otherUserId: string; subject?: string }) => {
+    mutationFn: async ({ otherUserId, subject, campaignId }: { otherUserId: string; subject?: string; campaignId: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
-
-      // Check if conversation already exists with same users
-      const { data: existing } = await supabase
-        .from("chat_conversations")
-        .select("*")
-        .or(
-          `and(user_1.eq.${user.id},user_2.eq.${otherUserId}),and(user_1.eq.${otherUserId},user_2.eq.${user.id})`
-        );
-
-      // Only reuse if no subject specified and existing has default subject
-      if (existing && existing.length > 0 && !subject) {
-        return existing[0].id as string;
-      }
 
       const { data, error } = await supabase
         .from("chat_conversations")
@@ -220,6 +216,7 @@ export function useStartConversation() {
           user_2: otherUserId,
           subject: subject || "Geral",
           created_by: user.id,
+          campaign_id: campaignId,
         } as any)
         .select()
         .single();

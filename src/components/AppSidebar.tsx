@@ -7,7 +7,7 @@ import { WhatsNewButton } from "@/components/WhatsNewSheet";
 import { InviteButton } from "@/components/InviteButton";
 import EditProfileDialog from "@/components/EditProfileDialog";
 import AquaIcon from "@/components/AquaIcon";
-import { useConversationUnreadCounts } from "@/hooks/useChatReadStatus";
+
 import {
   Building2, MessageSquare, Shield, LogOut, Users,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
@@ -33,6 +33,7 @@ const CAMPAIGN_MODULES = [
   { key: "scheduling", label: "Agendamento", icon: CalendarDays, color: "#22c55e" },
   { key: "installations", label: "Instalações", icon: Camera, color: "#f97316" },
   { key: "budgets", label: "Orçamentos", icon: DollarSign, color: "#14b8a6" },
+  { key: "chat", label: "Chat", icon: MessageSquare, color: "#06b6d4" },
 ];
 
 export default function AppSidebar() {
@@ -46,9 +47,6 @@ export default function AppSidebar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-  // Chat unread counts
-  const { data: chatUnread } = useConversationUnreadCounts();
-  const totalChatUnread = chatUnread?.totalUnread || 0;
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
@@ -136,14 +134,7 @@ export default function AppSidebar() {
       });
     }
 
-    items.push({
-      label: "Chat",
-      icon: MessageSquare,
-      href: "/chat",
-      active: location.pathname === "/chat",
-      color: "#06b6d4",
-      badge: totalChatUnread,
-    });
+    // Chat is now campaign-scoped, no standalone nav item
 
     if (isAdminOrMaster) {
       items.push({
@@ -171,7 +162,7 @@ export default function AppSidebar() {
     }
 
     return items;
-  }, [location.pathname, currentSection, isInsideAgency, isInsideClient, isInsideCampaign, agencyId, clientId, campaignBasePath, isAdminOrMaster, homePath, totalChatUnread]);
+  }, [location.pathname, currentSection, isInsideAgency, isInsideClient, isInsideCampaign, agencyId, clientId, campaignBasePath, isAdminOrMaster, homePath]);
 
   const renderNavItem = (item: NavItem) => {
     if (item.children) {

@@ -646,6 +646,7 @@ export type Database = {
       }
       chat_conversations: {
         Row: {
+          campaign_id: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -654,6 +655,7 @@ export type Database = {
           user_2: string
         }
         Insert: {
+          campaign_id?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -662,6 +664,7 @@ export type Database = {
           user_2: string
         }
         Update: {
+          campaign_id?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -669,7 +672,15 @@ export type Database = {
           user_1?: string
           user_2?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chat_conversations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       chat_messages: {
         Row: {
