@@ -741,19 +741,13 @@ const ClientDetail = () => {
   );
 
    return (
-    <div className="min-h-screen bg-background">
-      <AppHeader
-        backTo={`/agency/${agencyId}`}
-        backLabel="Voltar"
-        breadcrumbs={[
-          { label: agencyInfo?.name || "Agência", href: "/" },
-          { label: client.name },
-        ]}
-        subtitle={`${campaigns.length} campanha(s) · ${stores.length} loja(s)`}
-        maxWidth="max-w-6xl"
-      />
-
-      <main className="max-w-6xl mx-auto px-2 sm:px-4 py-4 sm:py-6">
+    <AppLayout
+      breadcrumbs={[
+        { label: agencyInfo?.name || "Agência", href: "/" },
+        { label: client.name },
+      ]}
+    >
+      <div className="max-w-6xl mx-auto">
         <Tabs defaultValue="campaigns">
           <TabsList className="mb-6 bg-card border border-border w-full overflow-x-auto flex justify-start">
             <TabsTrigger value="campaigns" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Campanhas</span></TabsTrigger>
