@@ -1376,7 +1376,7 @@ const CampaignDetail = () => {
                         ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label }] : []),
                       ]}
                     />
-                    <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces)}>
+                    <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
                       <Download className="w-3.5 h-3.5" /> Exportar Matriz
                     </Button>
                     <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setMatrixCustomExportOpen(true)}>
@@ -1824,7 +1824,7 @@ const CampaignDetail = () => {
               <span className="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-accent/15 text-accent-foreground">
                 {visiblePieces.length + kits.length} peça(s)
               </span>
-              <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces)}>
+              <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
                 <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Exportar
               </Button>
               {canEditPieces && (
