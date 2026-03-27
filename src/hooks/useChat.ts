@@ -31,13 +31,11 @@ export function useConversations(campaignId?: string) {
     queryKey: ["chat-conversations", user?.id, campaignId],
     enabled: !!user && !!campaignId,
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from("chat_conversations")
         .select("*")
         .eq("campaign_id", campaignId!)
         .order("created_at", { ascending: false });
-
-      const { data, error } = await query;
       if (error) throw error;
 
       // Get all unique user IDs from conversations
@@ -46,7 +44,6 @@ export function useConversations(campaignId?: string) {
         userIds.add(c.user_1);
         userIds.add(c.user_2);
       });
-      // Remove current user
       userIds.delete(user!.id);
 
       const { data: profiles } = await supabase
@@ -54,21 +51,24 @@ export function useConversations(campaignId?: string) {
         .select("user_id, display_name, nickname")
         .in("user_id", Array.from(userIds));
 
+      // Batch fetch last messages for ALL conversations in a single query
       const convIds = (data || []).map((c: any) => c.id);
       const lastMessages: Record<string, { content: string; created_at: string }> = {};
 
       if (convIds.length > 0) {
-        for (const convId of convIds) {
-          const { data: msgs } = await supabase
-            .from("chat_messages")
-            .select("content, created_at")
-            .eq("conversation_id", convId)
-            .order("created_at", { ascending: false })
-            .limit(1);
-          if (msgs && msgs.length > 0) {
-            lastMessages[convId] = msgs[0];
+        // Fetch recent messages for all conversations at once
+        const { data: allMsgs } = await supabase
+          .from("chat_messages")
+          .select("conversation_id, content, created_at")
+          .in("conversation_id", convIds)
+          .order("created_at", { ascending: false });
+
+        // Pick the latest message per conversation
+        (allMsgs || []).forEach((m: any) => {
+          if (!lastMessages[m.conversation_id]) {
+            lastMessages[m.conversation_id] = { content: m.content, created_at: m.created_at };
           }
-        }
+        });
       }
 
       return (data || []).map((c: any) => {
@@ -144,20 +144,39 @@ export function useMessages(conversationId: string | null) {
 
 export function useSendMessage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ conversationId, content }: { conversationId: string; content: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) throw new Error("Not authenticated");
 
       const { error } = await supabase.from("chat_messages").insert({
         conversation_id: conversationId,
-        sender_id: user.id,
+        sender_id: authUser.id,
         content,
       });
       if (error) throw error;
     },
-    onSuccess: (_, vars) => {
+    onMutate: async ({ conversationId, content }) => {
+      if (!user) return;
+      await queryClient.cancelQueries({ queryKey: ["chat-messages", conversationId] });
+      const prev = queryClient.getQueryData<ChatMessage[]>(["chat-messages", conversationId]);
+      const optimisticMsg: ChatMessage = {
+        id: `optimistic-${Date.now()}`,
+        conversation_id: conversationId,
+        sender_id: user.id,
+        content,
+        created_at: new Date().toISOString(),
+        sender_name: "Você",
+      };
+      queryClient.setQueryData<ChatMessage[]>(["chat-messages", conversationId], (old) => [...(old || []), optimisticMsg]);
+      return { prev, conversationId };
+    },
+    onError: (_e, _vars, ctx) => {
+      if (ctx) queryClient.setQueryData(["chat-messages", ctx.conversationId], ctx.prev);
+    },
+    onSettled: (_, __, vars) => {
       queryClient.invalidateQueries({ queryKey: ["chat-messages", vars.conversationId] });
       queryClient.invalidateQueries({ queryKey: ["chat-conversations"] });
       queryClient.invalidateQueries({ queryKey: ["conversation-unread"] });
