@@ -322,7 +322,7 @@ const AgencySelect = () => {
             <p className="text-muted-foreground text-sm">Crie sua primeira agência para começar.</p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-wrap justify-center gap-4">
             {agencies.map((agency) => {
               const agencyColor = agency.color || PRESET_COLORS[0];
               return (
