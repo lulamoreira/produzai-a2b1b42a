@@ -745,7 +745,10 @@ const ClientDetail = () => {
       <AppHeader
         backTo={`/agency/${agencyId}`}
         backLabel="Voltar"
-        title={client.name}
+        breadcrumbs={[
+          { label: agencyInfo?.name || "Agência", href: "/" },
+          { label: client.name },
+        ]}
         subtitle={`${campaigns.length} campanha(s) · ${stores.length} loja(s)`}
         maxWidth="max-w-6xl"
       />
