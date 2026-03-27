@@ -556,18 +556,32 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
         <label className="text-xs font-medium">Nome *</label>
         <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-7 text-xs" placeholder="Nome completo" />
       </div>
-      <div className="space-y-1">
-        <label className="text-xs font-medium">RG</label>
-        <Input value={form.rg} onChange={(e) => setForm({ ...form, rg: e.target.value })} className="h-7 text-xs" placeholder="RG" />
+      <div className="space-y-1 flex items-end gap-2">
+        <div className="flex-1 space-y-1">
+          <label className="text-xs font-medium">{form.isUnifiedDoc ? "—" : "RG"}</label>
+          <Input
+            value={form.isUnifiedDoc ? "" : form.rg}
+            onChange={(e) => setForm({ ...form, rg: e.target.value })}
+            className="h-7 text-xs"
+            placeholder="RG"
+            disabled={form.isUnifiedDoc}
+          />
+        </div>
       </div>
       <div className="space-y-1">
-        <label className="text-xs font-medium">CPF</label>
+        <label className="text-xs font-medium">{form.isUnifiedDoc ? "RU" : "CPF"}</label>
         <Input value={form.cpf} onChange={(e) => handleCpfChange(e.target.value)} className={cn("h-7 text-xs", cpfError && "border-destructive")} placeholder="000.000.000-00" />
         {cpfError && <p className="text-[10px] text-destructive">{cpfError}</p>}
       </div>
       <div className="space-y-1">
         <label className="text-xs font-medium">Telefone</label>
         <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-7 text-xs" placeholder="(00) 00000-0000" />
+      </div>
+      <div className="col-span-2 flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <Switch checked={form.isUnifiedDoc} onCheckedChange={(v) => setForm({ ...form, isUnifiedDoc: v, rg: v ? "" : form.rg })} />
+          <span className="text-[10px] text-muted-foreground">Registro Unificado (RU)</span>
+        </div>
       </div>
       <div className="col-span-2 flex gap-2">
         {isNew ? (
