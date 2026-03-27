@@ -409,6 +409,15 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           <option value="approved">✅ 100% Aprovado</option>
           <option value="pending">⚠️ Com pendência</option>
         </select>
+        <select
+          value={filterMessages}
+          onChange={(e) => setFilterMessages(e.target.value)}
+          className="px-3 py-2 text-sm rounded-md border border-border bg-card text-foreground"
+        >
+          <option value="">Todas as mensagens</option>
+          <option value="unread">💬 Com mensagens novas</option>
+          <option value="has_messages">📩 Com mensagens</option>
+        </select>
         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setTeamDialogOpen(true)}>
           <Wrench className="w-4 h-4" /> Equipes
         </Button>
