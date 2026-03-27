@@ -71,31 +71,42 @@ export function useUserDirectAccess() {
         .select("id, name, client_id, clients(name, agency_id)")
         .in("id", campaignIds);
 
-      const result: CampaignAccess[] = campaignAccess.map(ca => {
+      // Merge multiple access rows for the same campaign
+      const mergedMap = new Map<string, { campaignId: string; modules: Set<string>; campaignName: string; clientName: string; clientId: string; agencyId: string }>();
+
+      for (const ca of campaignAccess) {
         const campaign = campaigns?.find(c => c.id === ca.campaign_id);
         const pc = ca.permission_categories as Record<string, boolean> | null;
-        const modules: string[] = [];
+        const client = campaign?.clients as { name: string; agency_id: string } | null;
 
-        if (pc) {
-          if (pc.can_view_stores || pc.can_view_campaign_stores) modules.push("stores");
-          if (pc.can_view_campaign_stores) modules.push("matrix");
-          if (pc.can_view_pieces) modules.push("pieces");
-          if (pc.can_view_occurrences) modules.push("occurrences");
-          if (pc.can_view_schedules) modules.push("scheduling");
-          if (pc.can_view_installations) modules.push("installations");
-          if (pc.can_view_campaigns) modules.push("budgets");
+        let entry = mergedMap.get(ca.campaign_id);
+        if (!entry) {
+          entry = {
+            campaignId: ca.campaign_id,
+            campaignName: campaign?.name || "",
+            clientName: client?.name || "",
+            clientId: campaign?.client_id || "",
+            agencyId: client?.agency_id || "",
+            modules: new Set(),
+          };
+          mergedMap.set(ca.campaign_id, entry);
         }
 
-        const client = campaign?.clients as { name: string; agency_id: string } | null;
-        return {
-          campaignId: ca.campaign_id,
-          campaignName: campaign?.name || "",
-          clientName: client?.name || "",
-          clientId: campaign?.client_id || "",
-          agencyId: client?.agency_id || "",
-          modules: [...new Set(modules)],
-        };
-      });
+        if (pc) {
+          if (pc.can_view_stores || pc.can_view_campaign_stores) entry.modules.add("stores");
+          if (pc.can_view_campaign_stores) entry.modules.add("matrix");
+          if (pc.can_view_pieces) entry.modules.add("pieces");
+          if (pc.can_view_occurrences) entry.modules.add("occurrences");
+          if (pc.can_view_schedules) entry.modules.add("scheduling");
+          if (pc.can_view_installations) entry.modules.add("installations");
+          if (pc.can_view_campaigns) entry.modules.add("budgets");
+        }
+      }
+
+      const result: CampaignAccess[] = Array.from(mergedMap.values()).map(e => ({
+        ...e,
+        modules: [...e.modules],
+      }));
 
       return { isLimited: true, campaigns: result };
     },
