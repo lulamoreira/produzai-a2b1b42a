@@ -69,6 +69,7 @@ export default function AppHeader({
   const { isAdmin, isMaster, isAdminOrMaster, role } = useUserRole();
   const navigate = useNavigate();
   const displayName = useDisplayName();
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
   const greeting = `${getGreeting()}, ${displayName}!`;
 
