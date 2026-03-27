@@ -12,6 +12,14 @@ export interface ChangelogEntry {
  */
 export const changelog: ChangelogEntry[] = [
   {
+    id: "2026-03-27-unread-chat",
+    date: "2026-03-27",
+    title: "Indicadores de mensagens não lidas",
+    description:
+      "Os cards de agendamento e as conversas do chat agora exibem badges com a quantidade de mensagens não lidas. Um novo filtro permite localizar cards com mensagens novas.",
+    type: "feature",
+  },
+  {
     id: "2026-03-09-scroll-fix",
     date: "2026-03-09",
     title: "Correção de rolagem no importador de especificações",
