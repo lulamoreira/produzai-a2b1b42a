@@ -98,16 +98,8 @@ const Chat = () => {
   const selectedConv = conversations.find((c) => c.id === selectedConversation);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <AppHeader
-        backTo="/"
-        backLabel="Voltar"
-        title="Chat"
-        maxWidth="max-w-4xl"
-        showNav={false}
-      />
-
-      <div className="flex-1 max-w-4xl mx-auto w-full flex">
+    <AppLayout breadcrumbs={[{ label: "Chat" }]}>
+      <div className="max-w-4xl mx-auto w-full flex" style={{ height: "calc(100vh - 7rem)" }}>
         {/* Conversation List */}
         <aside
           className={`w-full md:w-80 border-r border-border flex flex-col ${
@@ -335,7 +327,7 @@ const Chat = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </AppLayout>
   );
 };
 
