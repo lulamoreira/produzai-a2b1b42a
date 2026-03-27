@@ -295,27 +295,25 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     }
 
     const wb = XLSX.utils.book_new();
+    const sheetData: (string | number)[][] = [];
 
-    const summaryRows = teams.map((team) => {
-      const members = allMembersMap[team.id] || [];
-      const incomplete = isTeamIncomplete(members);
-      return {
-        "Equipe": team.name,
-        "Instaladores": members.length,
-        "Veículos": (allVehiclesMap[team.id] || []).length,
-        "Status": incomplete ? "Dados Incompletos" : "Completo",
-      };
-    });
-    const summaryWs = XLSX.utils.json_to_sheet(summaryRows);
-    summaryWs["!cols"] = [{ wch: 25 }, { wch: 14 }, { wch: 12 }, { wch: 18 }];
-    XLSX.utils.book_append_sheet(wb, summaryWs, "Resumo Equipes");
-
-    teams.forEach((team) => {
+    teams.forEach((team, teamIndex) => {
       const members = allMembersMap[team.id] || [];
       const vehicles = allVehiclesMap[team.id] || [];
-      if (members.length === 0 && vehicles.length === 0) return;
+      const incomplete = isTeamIncomplete(members);
 
-      const sheetData: string[][] = [];
+      // Add blank separator row between teams
+      if (teamIndex > 0) sheetData.push([]);
+
+      // Team header row
+      sheetData.push([
+        `Equipe: ${team.name}`,
+        "",
+        "",
+        `Instaladores: ${members.length}`,
+        `Veículos: ${vehicles.length}`,
+        incomplete ? "Dados Incompletos" : "Completo",
+      ]);
 
       if (members.length > 0) {
         sheetData.push(["Instalador", "Nome", "RG", "CPF", "RU", "Telefone"]);
@@ -326,18 +324,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       }
 
       if (vehicles.length > 0) {
-        if (sheetData.length > 0) sheetData.push([]);
-        sheetData.push(["Veículo", "Nome", "Marca", "Cor", "Placa"]);
+        sheetData.push(["Veículo", "Nome", "Marca", "Cor", "Placa", ""]);
         vehicles.forEach((v: TeamVehicle) => {
-          sheetData.push(["", v.name || "", v.brand || "", v.color || "", v.plate || ""]);
+          sheetData.push(["", v.name || "", v.brand || "", v.color || "", v.plate || "", ""]);
         });
       }
-
-      const ws = XLSX.utils.aoa_to_sheet(sheetData);
-      ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
-      const safeName = team.name.replace(/[:\\/?*\[\]]/g, "").slice(0, 31) || "Equipe";
-      XLSX.utils.book_append_sheet(wb, ws, safeName);
     });
+
+    const ws = XLSX.utils.aoa_to_sheet(sheetData);
+    ws["!cols"] = [{ wch: 14 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
+    XLSX.utils.book_append_sheet(wb, ws, "Equipes");
 
     downloadWorkbook(wb, "equipes_instalacao.xlsx");
     toast.success("Planilha de equipes exportada!");
