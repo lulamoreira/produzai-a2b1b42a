@@ -1965,6 +1965,16 @@ const CampaignDetail = () => {
             />
           )}
 
+          {/* ─── SECTION: INSTALAÇÕES ─── */}
+          {activeSection === "installations" && (
+            <InstallationsTab
+              campaignId={campaignId!}
+              stores={stores.filter((s) => isStoreEnabled(s.id))}
+              canEdit={canEditSchedules}
+              clientId={clientId!}
+            />
+          )}
+
           {/* ─── SECTION: ORÇAMENTOS ─── */}
           {activeSection === "budgets" && (
             <BudgetsTab campaignId={campaignId!} canEdit={canEditCampaign} />
