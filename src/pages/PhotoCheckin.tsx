@@ -61,7 +61,7 @@ export default function PhotoCheckin() {
         .join(", ")
     : "";
 
-  const handleUpload = async (files: FileList | null, category: string) => {
+  const handleUpload = async (files: FileList | null, category: string, method: "upload" | "camera" = "upload") => {
     if (!files || !campaignId || !storeId || !user) return;
     for (const file of Array.from(files)) {
       try {
@@ -77,6 +77,7 @@ export default function PhotoCheckin() {
           photo_url: urlData.publicUrl,
           category,
           uploaded_by: user.id,
+          upload_method: method,
         });
         toast.success("Foto enviada!");
       } catch (err: any) {
@@ -172,8 +173,8 @@ export default function PhotoCheckin() {
               <Camera className="w-3.5 h-3.5" /> Tirar foto
             </Button>
           </div>
-          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory)} />
-          <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory)} />
+          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory, "upload")} />
+          <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory, "camera")} />
         </div>
 
         {/* Category filter */}
