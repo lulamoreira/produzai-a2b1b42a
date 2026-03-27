@@ -883,6 +883,7 @@ export type Database = {
           id: string
           photo_url: string
           store_id: string
+          upload_method: string
           uploaded_by: string | null
         }
         Insert: {
@@ -893,6 +894,7 @@ export type Database = {
           id?: string
           photo_url: string
           store_id: string
+          upload_method?: string
           uploaded_by?: string | null
         }
         Update: {
@@ -903,6 +905,7 @@ export type Database = {
           id?: string
           photo_url?: string
           store_id?: string
+          upload_method?: string
           uploaded_by?: string | null
         }
         Relationships: [
