@@ -2,7 +2,7 @@ import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, DollarSign, LogOut, Package } from "lucide-react";
+import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, DollarSign, LogOut, Package, Camera } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 
 const MODULE_META: Record<string, { label: string; icon: React.ElementType }> = {
@@ -11,6 +11,7 @@ const MODULE_META: Record<string, { label: string; icon: React.ElementType }> = 
   pieces: { label: "Peças", icon: LayoutList },
   occurrences: { label: "Ocorrências", icon: AlertTriangle },
   scheduling: { label: "Agendamento", icon: CalendarDays },
+  installations: { label: "Instalações", icon: Camera },
   budgets: { label: "Orçamentos", icon: DollarSign },
 };
 
@@ -33,7 +34,7 @@ const MyCampaigns = () => {
   }
 
   // If only one campaign with one module, go directly
-  if (campaigns.length === 1 && campaigns[0].modules.length > 0) {
+  if (campaigns.length === 1 && campaigns[0].modules.length === 1) {
     const c = campaigns[0];
     return (
       <Navigate
@@ -55,7 +56,7 @@ const MyCampaigns = () => {
     <div className="min-h-screen bg-background">
       <AppHeader subtitle="Minhas Campanhas" />
 
-      <main className="max-w-3xl mx-auto px-4 py-12">
+      <main className="max-w-4xl mx-auto px-4 py-12">
         <div className="text-center mb-10">
           <h2 className="text-2xl font-bold text-foreground mb-2">Minhas Campanhas</h2>
           <p className="text-muted-foreground text-sm">Selecione um módulo para acessar.</p>
@@ -72,17 +73,17 @@ const MyCampaigns = () => {
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {campaigns.map((c) => (
               <div
-                key={c.campaignId}
-                className="border border-border rounded-xl p-5 bg-card hover:shadow-md transition-shadow"
+                key={`${c.campaignId}-${c.modules.join(",")}`}
+                className="border border-border rounded-xl p-6 bg-card hover:shadow-md transition-shadow"
               >
-                <div className="mb-3">
+                <div className="mb-5">
                   <h3 className="font-bold text-foreground text-lg">{c.campaignName}</h3>
                   <p className="text-xs text-muted-foreground">{c.clientName}</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {c.modules.map((mod) => {
                     const meta = MODULE_META[mod];
                     if (!meta) return null;
@@ -91,10 +92,12 @@ const MyCampaigns = () => {
                       <button
                         key={mod}
                         onClick={() => handleNavigate(c, mod)}
-                        className="bg-primary/5 border border-primary/20 hover:bg-primary/10 rounded-lg px-4 py-3 flex items-center gap-2 transition-all hover:shadow-md cursor-pointer"
+                        className="bg-primary/5 border border-primary/20 hover:bg-primary/10 rounded-xl p-5 flex flex-col items-center gap-3 transition-all hover:shadow-md hover:scale-[1.02] cursor-pointer"
                       >
-                        <Icon className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium text-foreground">{meta.label}</span>
+                        <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-md">
+                          <Icon className="w-6 h-6 text-primary-foreground" />
+                        </div>
+                        <span className="font-bold text-sm text-foreground">{meta.label}</span>
                       </button>
                     );
                   })}
