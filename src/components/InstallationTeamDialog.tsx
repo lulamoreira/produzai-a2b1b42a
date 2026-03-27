@@ -165,7 +165,10 @@ export function useAllTeamVehicles(campaignId: string) {
 
 export function isTeamIncomplete(members: TeamMember[]): boolean {
   if (members.length === 0) return true;
-  return members.some((m) => !m.rg || !m.cpf);
+  return members.some((m) => {
+    if (m.is_unified_doc) return !m.cpf;
+    return !m.rg || !m.cpf;
+  });
 }
 
 export function getMemberMissingFields(member: TeamMember): string[] {
