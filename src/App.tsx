@@ -22,6 +22,7 @@ import PublicOccurrence from "./pages/PublicOccurrence";
 import PublicOccurrenceDetail from "./pages/PublicOccurrenceDetail";
 import Chat from "./pages/Chat";
 import MyCampaigns from "./pages/MyCampaigns";
+import PhotoCheckin from "./pages/PhotoCheckin";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -108,6 +109,7 @@ const App = () => (
             <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
             <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><CampaignDetail /></ProtectedRoute>} />
+            <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />

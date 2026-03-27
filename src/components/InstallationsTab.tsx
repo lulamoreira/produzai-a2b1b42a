@@ -8,7 +8,7 @@ import { useInstallationPhotos, useAddInstallationPhoto, type InstallationPhoto 
 import { useAuth } from "@/hooks/useAuth";
 import { compressImage } from "@/lib/compressImage";
 import DebouncedInput from "@/components/DebouncedInput";
-import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -70,7 +70,7 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
   const [searchTerm, setSearchTerm] = useState("");
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
-  const [checkinStore, setCheckinStore] = useState<ClientStore | null>(null);
+  
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
 
   // Fetch schedules (only stores with schedules)
@@ -313,13 +313,13 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
                         src={photo.photo_url}
                         alt=""
                         className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
-                        onClick={() => setCheckinStore(store)}
+                        onClick={() => window.open(`/checkin/${campaignId}/${store.id}`, '_blank')}
                       />
                     ))}
                     {storePhotos.length > 6 && (
                       <button
                         className="w-12 h-12 rounded-md bg-muted border border-border flex items-center justify-center text-xs font-bold text-muted-foreground hover:bg-muted/80"
-                        onClick={() => setCheckinStore(store)}
+                        onClick={() => window.open(`/checkin/${campaignId}/${store.id}`, '_blank')}
                       >
                         +{storePhotos.length - 6}
                       </button>
@@ -373,7 +373,7 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
                   variant="outline"
                   size="sm"
                   className="w-full text-xs gap-2"
-                  onClick={() => setCheckinStore(store)}
+                  onClick={() => window.open(`/checkin/${campaignId}/${store.id}`, '_blank')}
                 >
                   <Camera className="w-4 h-4" />
                   Checkin Fotográfico
@@ -395,15 +395,6 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
         </p>
       )}
 
-      {/* Checkin Dialog */}
-      {checkinStore && (
-        <PhotoCheckinDialog
-          open={!!checkinStore}
-          onOpenChange={(open) => { if (!open) setCheckinStore(null); }}
-          store={checkinStore}
-          photos={photosByStore[checkinStore.id] || []}
-        />
-      )}
     </div>
   );
 };
