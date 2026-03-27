@@ -697,6 +697,30 @@ export type Database = {
           },
         ]
       }
+      chat_read_status: {
+        Row: {
+          context_id: string
+          context_type: string
+          id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          context_id: string
+          context_type: string
+          id?: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          context_id?: string
+          context_type?: string
+          id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       client_store_models: {
         Row: {
           client_id: string
