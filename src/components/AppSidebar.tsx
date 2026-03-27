@@ -7,11 +7,12 @@ import { WhatsNewButton } from "@/components/WhatsNewSheet";
 import { InviteButton } from "@/components/InviteButton";
 import EditProfileDialog from "@/components/EditProfileDialog";
 import AquaIcon from "@/components/AquaIcon";
+import { useConversationUnreadCounts } from "@/hooks/useChatReadStatus";
 import {
   Building2, MessageSquare, Shield, LogOut, Users,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
-  CalendarDays, Camera, DollarSign,
+  CalendarDays, Camera, DollarSign, Home,
 } from "lucide-react";
 
 interface NavItem {
@@ -21,6 +22,7 @@ interface NavItem {
   active?: boolean;
   color?: string;
   children?: NavItem[];
+  badge?: number;
 }
 
 const CAMPAIGN_MODULES = [
@@ -44,6 +46,10 @@ export default function AppSidebar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
+  // Chat unread counts
+  const { data: chatUnread } = useConversationUnreadCounts();
+  const totalChatUnread = chatUnread?.totalUnread || 0;
+
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
   // Extract context from URL
@@ -59,22 +65,23 @@ export default function AppSidebar() {
   const isInsideClient = !!clientId;
   const isInsideCampaign = !!campaignId;
 
-  // Get current section from URL search params
   const currentSection = new URLSearchParams(location.search).get("section");
 
   const roleBadge = isAdmin ? "Admin" : isMaster ? "Master" : "Usuário";
+
+  // Home path depends on user type
+  const homePath = isAdminOrMaster ? "/" : "/my-campaigns";
 
   const toggleGroup = useCallback((key: string) => {
     setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  // Auto-expand groups based on current route
   useEffect(() => {
     if (location.pathname.startsWith("/admin") || location.pathname === "/approvals") {
       setExpandedGroups((prev) => ({ ...prev, admin: true }));
     }
     if (isInsideCampaign) {
-      setExpandedGroups((prev) => ({ ...prev, campaign: true }));
+      setExpandedGroups((prev) => ({ ...prev, módulos: true }));
     }
   }, [location.pathname, isInsideCampaign]);
 
@@ -85,10 +92,10 @@ export default function AppSidebar() {
   const navItems: NavItem[] = useMemo(() => {
     const items: NavItem[] = [
       {
-        label: "Agências",
-        icon: Building2,
-        href: "/",
-        active: location.pathname === "/" || location.pathname === "/agency-select",
+        label: "Início",
+        icon: Home,
+        href: homePath,
+        active: location.pathname === homePath || location.pathname === "/" || location.pathname === "/agency-select",
         color: "#6366f1",
       },
     ];
@@ -135,6 +142,7 @@ export default function AppSidebar() {
       href: "/chat",
       active: location.pathname === "/chat",
       color: "#06b6d4",
+      badge: totalChatUnread,
     });
 
     if (isAdminOrMaster) {
@@ -163,7 +171,7 @@ export default function AppSidebar() {
     }
 
     return items;
-  }, [location.pathname, currentSection, isInsideAgency, isInsideClient, isInsideCampaign, agencyId, clientId, campaignBasePath, isAdminOrMaster]);
+  }, [location.pathname, currentSection, isInsideAgency, isInsideClient, isInsideCampaign, agencyId, clientId, campaignBasePath, isAdminOrMaster, homePath, totalChatUnread]);
 
   const renderNavItem = (item: NavItem) => {
     if (item.children) {
@@ -218,15 +226,31 @@ export default function AppSidebar() {
       <button
         key={item.label}
         onClick={() => item.href && navigate(item.href)}
-        className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all ${
+        className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all relative ${
           item.active
             ? "bg-sidebar-accent text-sidebar-primary"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
         }`}
         title={collapsed ? item.label : undefined}
       >
-        <AquaIcon icon={item.icon} size="sm" color={item.color} />
-        {!collapsed && <span className="truncate font-medium">{item.label}</span>}
+        <div className="relative flex-shrink-0">
+          <AquaIcon icon={item.icon} size="sm" color={item.color} />
+          {item.badge && item.badge > 0 ? (
+            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+              {item.badge > 99 ? "99+" : item.badge}
+            </span>
+          ) : null}
+        </div>
+        {!collapsed && (
+          <>
+            <span className="truncate font-medium">{item.label}</span>
+            {item.badge && item.badge > 0 ? (
+              <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                {item.badge > 99 ? "99+" : item.badge}
+              </span>
+            ) : null}
+          </>
+        )}
       </button>
     );
   };
