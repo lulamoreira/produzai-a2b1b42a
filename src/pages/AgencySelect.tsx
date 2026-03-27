@@ -328,7 +328,7 @@ const AgencySelect = () => {
               return (
                 <div
                   key={agency.id}
-                  className="group aqua-card p-6 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border border-border flex flex-col items-center text-center"
+                  className="group aqua-card p-6 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border border-border flex flex-col items-center text-center w-[260px]"
                   style={{
                     background: `linear-gradient(135deg, ${agencyColor}15, ${agencyColor}08)`,
                     borderColor: `${agencyColor}30`,
