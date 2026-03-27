@@ -8,14 +8,16 @@ import {
   useDeleteMessage,
   useEditMessage,
   useStartConversation,
+  useDeleteConversation,
   type ChatConversation,
 } from "@/hooks/useChat";
 import { useMarkAsRead, useConversationUnreadCounts } from "@/hooks/useChatReadStatus";
+import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import AppLayout from "@/components/AppLayout";
 import { Input } from "@/components/ui/input";
+import AppLayout from "@/components/AppLayout";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,12 +45,16 @@ import { ptBR } from "date-fns/locale";
 
 const Chat = () => {
   const { user } = useAuth();
+  const { isAdminOrMaster } = useUserRole();
   const navigate = useNavigate();
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [deleteMessageId, setDeleteMessageId] = useState<string | null>(null);
+  const [deleteConvId, setDeleteConvId] = useState<string | null>(null);
   const [editingMessage, setEditingMessage] = useState<{ id: string; content: string } | null>(null);
   const [showNewChat, setShowNewChat] = useState(false);
+  const [newChatSubject, setNewChatSubject] = useState("");
+  const [selectedNewUser, setSelectedNewUser] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: conversations = [], isLoading: loadingConvs } = useConversations();
@@ -59,6 +65,20 @@ const Chat = () => {
   const deleteMessage = useDeleteMessage();
   const editMessage = useEditMessage();
   const startConversation = useStartConversation();
+  const deleteConversation = useDeleteConversation();
+
+  // Get all users for new conversation
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ["all-profiles"],
+    enabled: showNewChat,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id, display_name, nickname")
+        .neq("user_id", user?.id || "");
+      return data || [];
+    },
+  });
 
   // Mark conversation as read after 1 second
   useEffect(() => {
@@ -68,19 +88,6 @@ const Chat = () => {
     }, 1000);
     return () => clearTimeout(timer);
   }, [selectedConversation, messages.length]);
-
-  // Get all users for new conversation
-  const { data: allUsers = [] } = useQuery({
-    queryKey: ["all-profiles"],
-    enabled: showNewChat,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("user_id, display_name")
-        .neq("user_id", user?.id || "");
-      return data || [];
-    },
-  });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -101,10 +108,36 @@ const Chat = () => {
     });
   };
 
-  const handleStartChat = async (otherUserId: string) => {
-    const convId = await startConversation.mutateAsync(otherUserId);
+  const handleDeleteConvConfirm = () => {
+    if (!deleteConvId) return;
+    deleteConversation.mutate(deleteConvId, {
+      onSuccess: () => {
+        setDeleteConvId(null);
+        if (selectedConversation === deleteConvId) {
+          setSelectedConversation(null);
+        }
+      },
+    });
+  };
+
+  const handleStartChat = async () => {
+    if (!selectedNewUser) return;
+    const convId = await startConversation.mutateAsync({
+      otherUserId: selectedNewUser,
+      subject: newChatSubject.trim() || undefined,
+    });
     setSelectedConversation(convId);
     setShowNewChat(false);
+    setNewChatSubject("");
+    setSelectedNewUser(null);
+  };
+
+  const canDeleteConversation = (conv: ChatConversation) => {
+    return conv.created_by === user?.id || isAdminOrMaster;
+  };
+
+  const getDisplayName = (u: any) => {
+    return u?.nickname || u?.display_name ? capitalizeName(u.nickname || u.display_name) : "Usuário";
   };
 
   const selectedConv = conversations.find((c) => c.id === selectedConversation);
@@ -120,32 +153,53 @@ const Chat = () => {
         >
           <div className="p-3 border-b border-border flex items-center justify-between">
             <span className="text-sm font-medium text-muted-foreground">Conversas</span>
-            <Button size="sm" variant="ghost" onClick={() => setShowNewChat(true)}>
+            <Button size="sm" variant="ghost" onClick={() => { setShowNewChat(true); setSelectedNewUser(null); setNewChatSubject(""); }}>
               <Plus className="w-4 h-4" />
             </Button>
           </div>
 
           {showNewChat && (
             <div className="p-3 border-b border-border bg-muted/30">
-              <p className="text-xs font-medium text-muted-foreground mb-2">Nova conversa com:</p>
-              <div className="space-y-1 max-h-48 overflow-y-auto">
-                {allUsers.map((u: any) => (
-                  <button
-                    key={u.user_id}
-                    onClick={() => handleStartChat(u.user_id)}
-                    className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-accent transition-colors flex items-center gap-2"
-                  >
-                    <UserCircle className="w-4 h-4 text-muted-foreground" />
-                    {capitalizeName(u.display_name) || "Usuário"}
-                  </button>
-                ))}
-                {allUsers.length === 0 && (
-                  <p className="text-xs text-muted-foreground px-3">Nenhum usuário encontrado</p>
-                )}
+              <p className="text-xs font-medium text-muted-foreground mb-2">Nova conversa</p>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-1 block">Assunto</label>
+                  <Input
+                    placeholder="Geral"
+                    value={newChatSubject}
+                    onChange={(e) => setNewChatSubject(e.target.value)}
+                    className="h-8 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-1 block">Conversar com:</label>
+                  <div className="space-y-1 max-h-36 overflow-y-auto">
+                    {allUsers.map((u: any) => (
+                      <button
+                        key={u.user_id}
+                        onClick={() => setSelectedNewUser(u.user_id)}
+                        className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors flex items-center gap-2 ${
+                          selectedNewUser === u.user_id ? "bg-primary/20 text-primary font-medium" : "hover:bg-accent"
+                        }`}
+                      >
+                        <UserCircle className="w-4 h-4 text-muted-foreground" />
+                        {getDisplayName(u)}
+                      </button>
+                    ))}
+                    {allUsers.length === 0 && (
+                      <p className="text-xs text-muted-foreground px-3">Nenhum usuário encontrado</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" className="flex-1" disabled={!selectedNewUser} onClick={handleStartChat}>
+                    Iniciar
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setShowNewChat(false); setSelectedNewUser(null); }}>
+                    Cancelar
+                  </Button>
+                </div>
               </div>
-              <Button size="sm" variant="outline" className="mt-2 w-full" onClick={() => setShowNewChat(false)}>
-                Cancelar
-              </Button>
             </div>
           )}
 
@@ -162,29 +216,43 @@ const Chat = () => {
               conversations.map((conv) => {
                 const unreadCount = chatUnread?.unreadPerConv?.[conv.id] || 0;
                 return (
-                  <button
+                  <div
                     key={conv.id}
-                    onClick={() => setSelectedConversation(conv.id)}
-                    className={`w-full text-left px-4 py-3 border-b border-border hover:bg-accent/50 transition-colors ${
+                    className={`group relative w-full text-left px-4 py-3 border-b border-border hover:bg-accent/50 transition-colors cursor-pointer ${
                       selectedConversation === conv.id ? "bg-accent" : ""
                     }`}
+                    onClick={() => setSelectedConversation(conv.id)}
                   >
                     <div className="flex items-center justify-between">
-                      <p className={`text-sm font-medium text-foreground truncate ${unreadCount > 0 ? "font-bold" : ""}`}>
-                        {capitalizeName(conv.other_user?.display_name) || "Usuário"}
-                      </p>
-                      {unreadCount > 0 && (
-                        <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                          {unreadCount}
-                        </span>
-                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className={`text-sm font-medium text-foreground truncate ${unreadCount > 0 ? "font-bold" : ""}`}>
+                          {getDisplayName(conv.other_user)}
+                        </p>
+                        <p className="text-[10px] text-primary/70 font-medium truncate">{(conv as any).subject || "Geral"}</p>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {unreadCount > 0 && (
+                          <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                            {unreadCount}
+                          </span>
+                        )}
+                        {canDeleteConversation(conv) && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteConvId(conv.id); }}
+                            className="p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-destructive/10 transition-all"
+                            title="Apagar conversa"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     {conv.last_message && (
                       <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {conv.last_message.content}
                       </p>
                     )}
-                  </button>
+                  </div>
                 );
               })
             )}
@@ -210,9 +278,12 @@ const Chat = () => {
                   <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <UserCircle className="w-5 h-5 text-muted-foreground" />
-                <span className="font-medium text-sm">
-                  {capitalizeName(selectedConv?.other_user?.display_name) || "Usuário"}
-                </span>
+                <div className="min-w-0">
+                  <span className="font-medium text-sm block truncate">
+                    {getDisplayName(selectedConv?.other_user)}
+                  </span>
+                  <span className="text-[10px] text-primary/70">{(selectedConv as any)?.subject || "Geral"}</span>
+                </div>
               </div>
 
               {/* Messages */}
@@ -231,6 +302,13 @@ const Chat = () => {
                             : "bg-muted text-foreground"
                         }`}
                       >
+                        {/* Sender name */}
+                        <p className={`text-[10px] font-bold mb-0.5 ${
+                          isMine ? "text-primary-foreground/70" : "text-primary/70"
+                        }`}>
+                          {msg.sender_name || "Usuário"}
+                        </p>
+
                         {editingMessage?.id === msg.id ? (
                           <div className="flex items-center gap-1">
                             <input
@@ -276,7 +354,7 @@ const Chat = () => {
                             isMine ? "text-primary-foreground/60" : "text-muted-foreground"
                           }`}
                         >
-                          {format(new Date(msg.created_at), "HH:mm", { locale: ptBR })}
+                          {format(new Date(msg.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                         </p>
                         {isMine && editingMessage?.id !== msg.id && (
                           <div className="absolute -left-16 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
@@ -329,7 +407,7 @@ const Chat = () => {
         </main>
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Message Dialog */}
       <AlertDialog open={!!deleteMessageId} onOpenChange={(open) => !open && setDeleteMessageId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -344,7 +422,28 @@ const Chat = () => {
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Apagar
+              SIM
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Conversation Dialog */}
+      <AlertDialog open={!!deleteConvId} onOpenChange={(open) => !open && setDeleteConvId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apagar conversa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todas as mensagens desta conversa serão removidas permanentemente. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConvConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              SIM
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
