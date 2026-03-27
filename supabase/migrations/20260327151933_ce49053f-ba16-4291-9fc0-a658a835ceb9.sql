@@ -1,0 +1,2 @@
+ALTER TABLE public.user_campaign_access DROP CONSTRAINT user_campaign_access_user_id_campaign_id_key;
+ALTER TABLE public.user_campaign_access ADD CONSTRAINT user_campaign_access_user_campaign_category_key UNIQUE (user_id, campaign_id, category_id);
