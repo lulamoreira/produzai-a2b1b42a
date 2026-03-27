@@ -468,7 +468,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
   const { data: members = [] } = useTeamMembers(teamId);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", rg: "", cpf: "", phone: "" });
+  const [form, setForm] = useState({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false });
   const [cpfError, setCpfError] = useState("");
 
   const invalidate = () => {
@@ -484,13 +484,14 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
       const { error } = await supabase.from("installation_team_members").insert({
         team_id: teamId,
         name: form.name,
-        rg: form.rg,
+        rg: form.isUnifiedDoc ? "" : form.rg,
         cpf: form.cpf.replace(/\D/g, ""),
         phone: form.phone,
+        is_unified_doc: form.isUnifiedDoc,
       });
       if (error) throw error;
     },
-    onSuccess: () => { invalidate(); setForm({ name: "", rg: "", cpf: "", phone: "" }); setCpfError(""); setAdding(false); toast.success("Instalador adicionado!"); },
+    onSuccess: () => { invalidate(); setForm({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false }); setCpfError(""); setAdding(false); toast.success("Instalador adicionado!"); },
     onError: (e) => toast.error(e.message || "Erro ao adicionar"),
   });
 
