@@ -147,11 +147,35 @@ export function useAddClient() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (client: { name: string; agency_id: string; custom_field_1_label?: string; custom_field_2_label?: string; custom_field_3_label?: string; custom_field_4_label?: string; custom_field_5_label?: string }) => {
-      const { error } = await supabase.from("clients").insert(client);
+      const { data, error } = await supabase.from("clients").insert(client).select().single();
       if (error) throw error;
+      return data as Client;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients"] }); toast.success("Cliente criado!"); },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onMutate: async (newClient) => {
+      await qc.cancelQueries({ queryKey: ["clients", newClient.agency_id] });
+      const prev = qc.getQueryData<Client[]>(["clients", newClient.agency_id]);
+      const optimistic: Client = {
+        id: `optimistic-${Date.now()}`,
+        name: newClient.name,
+        agency_id: newClient.agency_id,
+        color: null,
+        display_order: 999,
+        custom_field_1_label: newClient.custom_field_1_label || null,
+        custom_field_2_label: newClient.custom_field_2_label || null,
+        custom_field_3_label: newClient.custom_field_3_label || null,
+        custom_field_4_label: newClient.custom_field_4_label || null,
+        custom_field_5_label: newClient.custom_field_5_label || null,
+        created_at: new Date().toISOString(),
+      };
+      qc.setQueryData<Client[]>(["clients", newClient.agency_id], (old) => [...(old || []), optimistic]);
+      return { prev, agencyId: newClient.agency_id };
+    },
+    onError: (e, _, ctx) => {
+      if (ctx) qc.setQueryData(["clients", ctx.agencyId], ctx.prev);
+      toast.error("Erro: " + e.message);
+    },
+    onSettled: (_, __, vars) => { qc.invalidateQueries({ queryKey: ["clients", vars.agency_id] }); },
+    onSuccess: () => toast.success("Cliente criado!"),
   });
 }
 
@@ -187,9 +211,17 @@ export function useDeleteClient() {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("clients").delete().eq("id", id);
       if (error) throw error;
+      return id;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["clients"] }); toast.success("Cliente removido!"); },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onMutate: async (id) => {
+      // Optimistically remove from all client queries
+      qc.setQueriesData<Client[]>({ queryKey: ["clients"] }, (old) =>
+        old ? old.filter((c) => c.id !== id) : old
+      );
+    },
+    onSuccess: () => { toast.success("Cliente removido!"); },
+    onSettled: () => { qc.invalidateQueries({ queryKey: ["clients"] }); },
+    onError: (e) => { toast.error("Erro: " + e.message); qc.invalidateQueries({ queryKey: ["clients"] }); },
   });
 }
 
@@ -233,11 +265,30 @@ export function useAddCampaign() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (campaign: { client_id: string; name: string }) => {
-      const { error } = await supabase.from("campaigns").insert(campaign);
+      const { data, error } = await supabase.from("campaigns").insert(campaign).select().single();
       if (error) throw error;
+      return data as Campaign;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaigns"] }); toast.success("Campanha criada!"); },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onMutate: async (newCampaign) => {
+      await qc.cancelQueries({ queryKey: ["campaigns", newCampaign.client_id] });
+      const prev = qc.getQueryData<Campaign[]>(["campaigns", newCampaign.client_id]);
+      const optimistic: Campaign = {
+        id: `optimistic-${Date.now()}`,
+        client_id: newCampaign.client_id,
+        name: newCampaign.name,
+        color: null,
+        display_order: 999,
+        created_at: new Date().toISOString(),
+      };
+      qc.setQueryData<Campaign[]>(["campaigns", newCampaign.client_id], (old) => [...(old || []), optimistic]);
+      return { prev, clientId: newCampaign.client_id };
+    },
+    onError: (e, _, ctx) => {
+      if (ctx) qc.setQueryData(["campaigns", ctx.clientId], ctx.prev);
+      toast.error("Erro: " + e.message);
+    },
+    onSettled: (_, __, vars) => { qc.invalidateQueries({ queryKey: ["campaigns", vars.client_id] }); },
+    onSuccess: () => toast.success("Campanha criada!"),
   });
 }
 
@@ -274,8 +325,14 @@ export function useDeleteCampaign() {
       const { error } = await supabase.from("campaigns").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaigns"] }); toast.success("Campanha removida!"); },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onMutate: async (id) => {
+      qc.setQueriesData<Campaign[]>({ queryKey: ["campaigns"] }, (old) =>
+        old ? old.filter((c) => c.id !== id) : old
+      );
+    },
+    onSuccess: () => toast.success("Campanha removida!"),
+    onSettled: () => { qc.invalidateQueries({ queryKey: ["campaigns"] }); },
+    onError: (e) => { toast.error("Erro: " + e.message); qc.invalidateQueries({ queryKey: ["campaigns"] }); },
   });
 }
 
@@ -329,8 +386,14 @@ export function useUpdateClientStore() {
       const { error } = await supabase.from("client_stores").update(data).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["client_stores"] }); toast.success("Loja atualizada!"); },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onMutate: async ({ id, ...data }) => {
+      // Optimistically update store in all queries
+      qc.setQueriesData<ClientStore[]>({ queryKey: ["client_stores"] }, (old) =>
+        old ? old.map((s) => s.id === id ? { ...s, ...data } : s) : old
+      );
+    },
+    onSettled: () => { qc.invalidateQueries({ queryKey: ["client_stores"] }); },
+    onError: (e) => { toast.error("Erro: " + e.message); qc.invalidateQueries({ queryKey: ["client_stores"] }); },
   });
 }
 
@@ -369,11 +432,38 @@ export function useAddCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (piece: { campaign_id: string; code: number; category: string; name: string; size: string; store_category?: string; image_url?: string; specification?: string; installation_instructions?: string; kit_only?: boolean; is_mockup?: boolean; display_order?: number }) => {
-      const { error } = await supabase.from("campaign_pieces").insert(piece);
+      const { data, error } = await supabase.from("campaign_pieces").insert(piece).select().single();
       if (error) throw error;
+      return data as CampaignPiece;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_pieces"] }); toast.success("Peça adicionada!"); },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onMutate: async (newPiece) => {
+      await qc.cancelQueries({ queryKey: ["campaign_pieces", newPiece.campaign_id] });
+      const prev = qc.getQueryData<CampaignPiece[]>(["campaign_pieces", newPiece.campaign_id]);
+      const optimistic: CampaignPiece = {
+        id: `optimistic-${Date.now()}`,
+        campaign_id: newPiece.campaign_id,
+        code: newPiece.code,
+        category: newPiece.category,
+        name: newPiece.name,
+        size: newPiece.size,
+        store_category: newPiece.store_category || null,
+        image_url: newPiece.image_url || null,
+        specification: newPiece.specification || "",
+        installation_instructions: newPiece.installation_instructions || "",
+        kit_only: newPiece.kit_only || false,
+        is_mockup: newPiece.is_mockup || false,
+        display_order: newPiece.display_order || 999,
+        created_at: new Date().toISOString(),
+      };
+      qc.setQueryData<CampaignPiece[]>(["campaign_pieces", newPiece.campaign_id], (old) => [...(old || []), optimistic]);
+      return { prev, campaignId: newPiece.campaign_id };
+    },
+    onError: (e, _, ctx) => {
+      if (ctx) qc.setQueryData(["campaign_pieces", ctx.campaignId], ctx.prev);
+      toast.error("Erro: " + e.message);
+    },
+    onSettled: (_, __, vars) => { qc.invalidateQueries({ queryKey: ["campaign_pieces", vars.campaign_id] }); },
+    onSuccess: () => toast.success("Peça adicionada!"),
   });
 }
 
@@ -384,8 +474,14 @@ export function useUpdateCampaignPiece() {
       const { error } = await supabase.from("campaign_pieces").update(data).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_pieces"] }); toast.success("Peça atualizada!"); },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onMutate: async ({ id, ...data }) => {
+      qc.setQueriesData<CampaignPiece[]>({ queryKey: ["campaign_pieces"] }, (old) =>
+        old ? old.map((p) => p.id === id ? { ...p, ...data } : p) : old
+      );
+    },
+    onSettled: () => { qc.invalidateQueries({ queryKey: ["campaign_pieces"] }); },
+    onSuccess: () => toast.success("Peça atualizada!"),
+    onError: (e) => { toast.error("Erro: " + e.message); qc.invalidateQueries({ queryKey: ["campaign_pieces"] }); },
   });
 }
 
@@ -408,12 +504,17 @@ export function useDeleteCampaignPiece() {
       const { error } = await supabase.from("campaign_pieces").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async (id) => {
+      qc.setQueriesData<CampaignPiece[]>({ queryKey: ["campaign_pieces"] }, (old) =>
+        old ? old.filter((p) => p.id !== id) : old
+      );
+    },
+    onSuccess: () => toast.success("Peça removida!"),
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["campaign_pieces"] });
       qc.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
-      toast.success("Peça removida!");
     },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onError: (e) => { toast.error("Erro: " + e.message); qc.invalidateQueries({ queryKey: ["campaign_pieces"] }); },
   });
 }
 

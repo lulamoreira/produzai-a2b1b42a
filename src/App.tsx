@@ -26,7 +26,16 @@ import PhotoCheckin from "./pages/PhotoCheckin";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30 * 1000,       // 30s — avoid refetching on every mount
+      gcTime: 5 * 60 * 1000,      // 5min — keep cache alive longer
+      refetchOnWindowFocus: false, // only refetch when explicitly invalidated
+      retry: 1,
+    },
+  },
+});
 
 const PendingApprovalScreen = () => {
   const { signOut } = useAuth();
