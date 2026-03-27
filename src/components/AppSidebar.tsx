@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDisplayName } from "@/components/AppHeader";
@@ -9,7 +9,8 @@ import EditProfileDialog from "@/components/EditProfileDialog";
 import AquaIcon from "@/components/AquaIcon";
 import {
   Building2, MessageSquare, Shield, LogOut, Users,
-  PanelLeftClose, PanelLeft, Menu, X,
+  PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
+  Briefcase, Megaphone, Store,
 } from "lucide-react";
 
 interface NavItem {
@@ -18,6 +19,7 @@ interface NavItem {
   href?: string;
   active?: boolean;
   color?: string;
+  children?: NavItem[];
 }
 
 export default function AppSidebar() {
@@ -29,23 +31,168 @@ export default function AppSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-  // Close mobile sidebar on route change
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+
+  // Extract context from URL
+  const pathParts = location.pathname.split("/");
+  const agencyIdx = pathParts.indexOf("agency");
+  const agencyId = agencyIdx !== -1 ? pathParts[agencyIdx + 1] : undefined;
+  const clientsIdx = pathParts.indexOf("clients");
+  const clientId = clientsIdx !== -1 ? pathParts[clientsIdx + 1] : undefined;
+
+  const isInsideAgency = !!agencyId;
+  const isInsideClient = !!clientId;
 
   const roleBadge = isAdmin ? "Admin" : isMaster ? "Master" : "Usuário";
 
-  const navItems: NavItem[] = [
-    { label: "Agências", icon: Building2, href: "/", active: location.pathname === "/", color: "#6366f1" },
-    { label: "Chat", icon: MessageSquare, href: "/chat", active: location.pathname === "/chat", color: "#06b6d4" },
-  ];
+  const toggleGroup = (key: string) => {
+    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
-  if (isAdminOrMaster) {
-    navItems.push(
-      { label: "Admin", icon: Shield, href: "/admin", active: location.pathname === "/admin", color: "#f97316" },
-      { label: "Aprovações", icon: Users, href: "/approvals", active: location.pathname === "/approvals", color: "#22c55e" },
+  // Auto-expand groups based on current route
+  useEffect(() => {
+    if (location.pathname.startsWith("/admin") || location.pathname === "/approvals") {
+      setExpandedGroups((prev) => ({ ...prev, admin: true }));
+    }
+    if (isInsideAgency) {
+      setExpandedGroups((prev) => ({ ...prev, agency: true }));
+    }
+  }, [location.pathname, isInsideAgency]);
+
+  const navItems: NavItem[] = useMemo(() => {
+    const items: NavItem[] = [
+      {
+        label: "Agências",
+        icon: Building2,
+        href: "/",
+        active: location.pathname === "/" || location.pathname === "/agency-select",
+        color: "#6366f1",
+      },
+    ];
+
+    // Contextual sub-items when inside an agency
+    if (isInsideAgency) {
+      items.push({
+        label: "Clientes",
+        icon: Briefcase,
+        href: `/agency/${agencyId}`,
+        active: location.pathname === `/agency/${agencyId}`,
+        color: "#8b5cf6",
+      });
+
+      if (isInsideClient) {
+        items.push({
+          label: "Campanhas",
+          icon: Megaphone,
+          href: `/agency/${agencyId}/clients/${clientId}`,
+          active: location.pathname === `/agency/${agencyId}/clients/${clientId}`,
+          color: "#3b82f6",
+        });
+      }
+    }
+
+    items.push({
+      label: "Chat",
+      icon: MessageSquare,
+      href: "/chat",
+      active: location.pathname === "/chat",
+      color: "#06b6d4",
+    });
+
+    if (isAdminOrMaster) {
+      items.push({
+        label: "Admin",
+        icon: Shield,
+        color: "#f97316",
+        active: location.pathname.startsWith("/admin") || location.pathname === "/approvals",
+        children: [
+          {
+            label: "Painel Admin",
+            icon: Shield,
+            href: "/admin",
+            active: location.pathname === "/admin",
+            color: "#f97316",
+          },
+          {
+            label: "Aprovações",
+            icon: Users,
+            href: "/approvals",
+            active: location.pathname === "/approvals",
+            color: "#22c55e",
+          },
+        ],
+      });
+    }
+
+    return items;
+  }, [location.pathname, isInsideAgency, isInsideClient, agencyId, clientId, isAdminOrMaster]);
+
+  const renderNavItem = (item: NavItem) => {
+    if (item.children) {
+      const isExpanded = expandedGroups[item.label.toLowerCase()] ?? false;
+      const hasActiveChild = item.children.some((c) => c.active);
+      return (
+        <div key={item.label}>
+          <button
+            onClick={() => toggleGroup(item.label.toLowerCase())}
+            className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all ${
+              hasActiveChild
+                ? "bg-sidebar-accent text-sidebar-primary"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+            }`}
+            title={collapsed ? item.label : undefined}
+          >
+            <AquaIcon icon={item.icon} size="sm" color={item.color} />
+            {!collapsed && (
+              <>
+                <span className="truncate font-medium flex-1 text-left">{item.label}</span>
+                {isExpanded
+                  ? <ChevronDown className="w-3.5 h-3.5 text-sidebar-foreground/40 flex-shrink-0" />
+                  : <ChevronRight className="w-3.5 h-3.5 text-sidebar-foreground/40 flex-shrink-0" />
+                }
+              </>
+            )}
+          </button>
+          {!collapsed && isExpanded && (
+            <div className="ml-4 pl-2 border-l border-sidebar-border/50 mt-0.5 space-y-0.5">
+              {item.children.map((child) => (
+                <button
+                  key={child.label}
+                  onClick={() => child.href && navigate(child.href)}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all ${
+                    child.active
+                      ? "bg-sidebar-accent text-sidebar-primary font-semibold"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
+                  }`}
+                >
+                  <AquaIcon icon={child.icon} size="xs" color={child.color} />
+                  <span className="truncate">{child.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <button
+        key={item.label}
+        onClick={() => item.href && navigate(item.href)}
+        className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all ${
+          item.active
+            ? "bg-sidebar-accent text-sidebar-primary"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+        }`}
+        title={collapsed ? item.label : undefined}
+      >
+        <AquaIcon icon={item.icon} size="sm" color={item.color} />
+        {!collapsed && <span className="truncate font-medium">{item.label}</span>}
+      </button>
     );
-  }
+  };
 
   const sidebarContent = (
     <>
@@ -68,21 +215,7 @@ export default function AppSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
-        {navItems.map((item) => (
-          <button
-            key={item.label}
-            onClick={() => item.href && navigate(item.href)}
-            className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all ${
-              item.active
-                ? "bg-sidebar-accent text-sidebar-primary"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-            }`}
-            title={collapsed ? item.label : undefined}
-          >
-            <AquaIcon icon={item.icon} size="sm" color={item.color} />
-            {!collapsed && <span className="truncate font-medium">{item.label}</span>}
-          </button>
-        ))}
+        {navItems.map(renderNavItem)}
       </nav>
 
       {/* Utility */}
