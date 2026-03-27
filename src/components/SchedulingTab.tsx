@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { downloadWorkbook } from "@/lib/downloadWorkbook";
+import { buildExportFileName } from "@/lib/exportFileName";
 import InstallationTeamDialog, {
   useInstallationTeams,
   useAllTeamMembers,
@@ -284,7 +285,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Agendamento");
-    XLSX.writeFile(wb, "agendamento.xlsx");
+    XLSX.writeFile(wb, buildExportFileName(`Agendamento_${campaignName}`, { agencyName, clientName }));
     toast.success("Planilha exportada!");
   };
 
