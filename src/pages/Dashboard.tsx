@@ -263,56 +263,6 @@ const Dashboard = () => {
       ]}
     >
       <div className="max-w-6xl mx-auto">
-        {/* Stats bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
-          <div className="card-kpi flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-              <Briefcase className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{clients.length}</p>
-              <p className="text-[11px] text-muted-foreground">Clientes</p>
-            </div>
-          </div>
-          <div className="card-kpi col-span-1 sm:col-span-1">
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-foreground mb-1">Ações rápidas</p>
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" className="text-xs h-8" onClick={() => exportClients(clients, agencyInfo?.name)}>
-                  <Download className="w-3.5 h-3.5 mr-1" /> Exportar
-                </Button>
-                {isAdmin && (
-                  <label className="cursor-pointer">
-                    <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        const items = await parseClientsImport(file);
-                        if (items.length === 0) { toast.error("Nenhum cliente encontrado."); return; }
-                        let added = 0, updated = 0;
-                        for (const item of items) {
-                          const existing = clients.find(c => c.name.toLowerCase() === item.name.toLowerCase());
-                          if (existing) {
-                            await updateClient.mutateAsync({ id: existing.id, name: item.name });
-                            updated++;
-                          } else {
-                            await addClient.mutateAsync({ ...item, agency_id: agencyId! });
-                            added++;
-                          }
-                        }
-                        toast.success(`${added} adicionado(s), ${updated} atualizado(s)!`);
-                      } catch { toast.error("Erro ao importar."); }
-                      e.target.value = "";
-                    }} />
-                    <Button size="sm" variant="outline" className="text-xs h-8" asChild>
-                      <span><Upload className="w-3.5 h-3.5 mr-1" /> Importar</span>
-                    </Button>
-                  </label>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Search + Add */}
         <div className="flex items-center gap-3 mb-6">
