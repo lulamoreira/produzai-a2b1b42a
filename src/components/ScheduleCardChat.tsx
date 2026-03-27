@@ -45,6 +45,14 @@ const ScheduleCardChat = ({ open, onOpenChange, campaignId, storeId, storeName }
   const [editingMessage, setEditingMessage] = useState<{ id: string; content: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryKey = ["schedule-chat", campaignId, storeId];
+  const markChatAsRead = useMarkAsRead();
+
+  // Mark as read when opening
+  useEffect(() => {
+    if (open) {
+      markChatAsRead.mutate({ contextType: "schedule_chat", contextId: `${campaignId}:${storeId}` });
+    }
+  }, [open, campaignId, storeId]);
 
   // Realtime subscription
   useEffect(() => {
