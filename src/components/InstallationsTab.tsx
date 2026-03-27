@@ -8,7 +8,7 @@ import { useInstallationPhotos, useAddInstallationPhoto, type InstallationPhoto 
 import { useAuth } from "@/hooks/useAuth";
 import { compressImage } from "@/lib/compressImage";
 import DebouncedInput from "@/components/DebouncedInput";
-import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -70,7 +70,7 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
   const [searchTerm, setSearchTerm] = useState("");
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
-  const [checkinStore, setCheckinStore] = useState<ClientStore | null>(null);
+  
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
 
   // Fetch schedules (only stores with schedules)
