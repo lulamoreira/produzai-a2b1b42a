@@ -1096,7 +1096,7 @@ const ClientDetail = () => {
             <ChatTabContent />
           </TabsContent>
         </Tabs>
-      </main>
+      </div>
 
       {/* ─── Store Models Management Dialog ─── */}
       <Dialog open={storeModelDialogOpen} onOpenChange={setStoreModelDialogOpen}>
@@ -1142,7 +1142,7 @@ const ClientDetail = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppLayout>
   );
 };
 

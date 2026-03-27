@@ -824,31 +824,25 @@ const CampaignDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AppHeader
-        backTo={isLimitedMode ? "/my-campaigns" : `/agency/${agencyId}/clients/${clientId}`}
-        backLabel={isLimitedMode ? "Minhas Campanhas" : (client?.name || "Voltar")}
-        breadcrumbs={(() => {
-          const SECTION_LABELS: Record<string, string> = {
-            stores: "Lojas", matrix: "Matriz", pieces: "Peças",
-            occurrences: "Ocorrências", scheduling: "Agendamento",
-            installations: "Instalações", budgets: "Orçamentos",
-          };
-          const crumbs = [
-                { label: agency?.name || "Agência", href: isLimitedMode ? undefined : "/" },
-                { label: client?.name || "Cliente", href: isLimitedMode ? undefined : `/agency/${agencyId}/clients/${clientId}` },
-                { label: campaign.name, href: undefined as string | undefined },
-              ];
-          if (activeSection) {
-            crumbs[crumbs.length - 1].href = isLimitedMode ? undefined : `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}`;
-            crumbs.push({ label: SECTION_LABELS[activeSection] || activeSection, href: undefined });
-          }
-          return crumbs;
-        })()}
-        maxWidth="max-w-[95vw]"
-      />
-
-      <main className="max-w-[95vw] mx-auto px-2 sm:px-4 py-4 sm:py-6">
+    <AppLayout
+      breadcrumbs={(() => {
+        const SECTION_LABELS: Record<string, string> = {
+          stores: "Lojas", matrix: "Matriz", pieces: "Peças",
+          occurrences: "Ocorrências", scheduling: "Agendamento",
+          installations: "Instalações", budgets: "Orçamentos",
+        };
+        const crumbs = [
+          { label: agency?.name || "Agência", href: isLimitedMode ? undefined : "/" },
+          { label: client?.name || "Cliente", href: isLimitedMode ? undefined : `/agency/${agencyId}/clients/${clientId}` },
+          { label: campaign.name, href: undefined as string | undefined },
+        ];
+        if (activeSection) {
+          crumbs[crumbs.length - 1].href = isLimitedMode ? undefined : `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}`;
+          crumbs.push({ label: SECTION_LABELS[activeSection] || activeSection, href: undefined });
+        }
+        return crumbs;
+      })()}
+    >
         {/* ─── HOME VIEW: Material de Apoio + Nav Buttons ─── */}
         {!activeSection && !isLimitedMode && (
           <>
@@ -2175,7 +2169,7 @@ const CampaignDetail = () => {
           }}
         />
       )}
-    </div>
+    </AppLayout>
   );
 };
 
