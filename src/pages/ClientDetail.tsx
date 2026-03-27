@@ -752,7 +752,6 @@ const ClientDetail = () => {
           <TabsList className="mb-6 bg-card border border-border w-full overflow-x-auto flex justify-start">
             <TabsTrigger value="campaigns" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary"><Megaphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Campanhas</span></TabsTrigger>
             <TabsTrigger value="stores" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-secondary/10 data-[state=active]:text-secondary"><Store className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Lojas</span></TabsTrigger>
-            <TabsTrigger value="chat" className="gap-1 text-xs sm:text-sm sm:gap-1.5 data-[state=active]:bg-accent/10 data-[state=active]:text-accent-foreground"><MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" /> <span>Chat</span></TabsTrigger>
           </TabsList>
 
           {/* ─── Campaigns Tab ─── */}
