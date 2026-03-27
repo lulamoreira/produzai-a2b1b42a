@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   useClient, useCampaigns, useAddCampaign, useDeleteCampaign, useUpdateCampaign, useReorderCampaigns,
@@ -246,6 +247,16 @@ const ClientDetail = () => {
   const { hasPermission: canEditClients } = useClientPermission(clientId, "can_edit_clients");
   const { data: client, isLoading: loadingClient } = useClient(clientId);
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
+
+  const { data: agencyInfo } = useQuery({
+    queryKey: ["agency_name", agencyId],
+    queryFn: async () => {
+      if (!agencyId) return null;
+      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
+      return data;
+    },
+    enabled: !!agencyId,
+  });
   const { data: stores = [], isLoading: loadingStores } = useClientStores(clientId);
   const addCampaign = useAddCampaign();
   const deleteCampaign = useDeleteCampaign();
@@ -734,7 +745,10 @@ const ClientDetail = () => {
       <AppHeader
         backTo={`/agency/${agencyId}`}
         backLabel="Voltar"
-        title={client.name}
+        breadcrumbs={[
+          { label: agencyInfo?.name || "Agência", href: "/" },
+          { label: client.name },
+        ]}
         subtitle={`${campaigns.length} campanha(s) · ${stores.length} loja(s)`}
         maxWidth="max-w-6xl"
       />

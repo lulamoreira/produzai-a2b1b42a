@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Shield, MessageSquare, ArrowLeft, UserCog } from "lucide-react";
+import { LogOut, Shield, MessageSquare, ArrowLeft, UserCog, ChevronRight } from "lucide-react";
 import { WhatsNewButton } from "@/components/WhatsNewSheet";
 import { InviteButton } from "@/components/InviteButton";
 import EditProfileDialog from "@/components/EditProfileDialog";
@@ -21,11 +21,17 @@ const getGreeting = () => {
   return "Boa noite";
 };
 
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
 interface AppHeaderProps {
   backTo?: string;
   backLabel?: string;
   title?: string;
   subtitle?: string;
+  breadcrumbs?: BreadcrumbItem[];
   children?: React.ReactNode;
   maxWidth?: string;
   showNav?: boolean;
@@ -59,6 +65,7 @@ export default function AppHeader({
   backLabel,
   title,
   subtitle,
+  breadcrumbs,
   children,
   maxWidth = "max-w-5xl",
   showNav = true,
@@ -90,9 +97,34 @@ export default function AppHeader({
             </Button>
           )}
           <div className="min-w-0">
-            <h1 className="text-sm sm:text-lg font-bold truncate">
-              {title || greeting}
-            </h1>
+            {breadcrumbs && breadcrumbs.length > 0 ? (
+              <div className="flex items-center gap-1 flex-wrap">
+                {breadcrumbs.map((crumb, i) => {
+                  const isLast = i === breadcrumbs.length - 1;
+                  return (
+                    <span key={i} className="flex items-center gap-1">
+                      {i > 0 && <ChevronRight className="w-3 h-3 opacity-40 flex-shrink-0" />}
+                      {isLast ? (
+                        <span className="text-sm sm:text-lg font-bold truncate">{crumb.label}</span>
+                      ) : crumb.href ? (
+                        <button
+                          onClick={() => navigate(crumb.href!)}
+                          className="text-[10px] sm:text-xs opacity-70 hover:opacity-100 transition-opacity truncate max-w-[100px] sm:max-w-[160px]"
+                        >
+                          {crumb.label}
+                        </button>
+                      ) : (
+                        <span className="text-[10px] sm:text-xs opacity-60 truncate max-w-[100px] sm:max-w-[160px]">{crumb.label}</span>
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
+            ) : (
+              <h1 className="text-sm sm:text-lg font-bold truncate">
+                {title || greeting}
+              </h1>
+            )}
             {subtitle && (
               <p className="text-[10px] sm:text-xs truncate opacity-80">{subtitle}</p>
             )}

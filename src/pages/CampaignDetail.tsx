@@ -819,7 +819,25 @@ const CampaignDetail = () => {
       <AppHeader
         backTo={isLimitedMode ? "/my-campaigns" : `/agency/${agencyId}/clients/${clientId}`}
         backLabel={isLimitedMode ? "Minhas Campanhas" : (client?.name || "Voltar")}
-        title={campaign.name}
+        breadcrumbs={(() => {
+          const SECTION_LABELS: Record<string, string> = {
+            stores: "Lojas", matrix: "Matriz", pieces: "Peças",
+            occurrences: "Ocorrências", scheduling: "Agendamento",
+            installations: "Instalações", budgets: "Orçamentos",
+          };
+          const crumbs = isLimitedMode
+            ? [{ label: campaign.name, href: undefined as string | undefined }]
+            : [
+                { label: agency?.name || "Agência", href: "/" },
+                { label: client?.name || "Cliente", href: `/agency/${agencyId}/clients/${clientId}` },
+                { label: campaign.name, href: undefined as string | undefined },
+              ];
+          if (activeSection) {
+            crumbs[crumbs.length - 1].href = `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}`;
+            crumbs.push({ label: SECTION_LABELS[activeSection] || activeSection, href: undefined });
+          }
+          return crumbs;
+        })()}
         subtitle={isLimitedMode ? undefined : `${visiblePieces.length + kits.length} peça(s) · ${stores.length} loja(s) · ${totalPieces} unidade(s) total`}
         maxWidth="max-w-[95vw]"
       />
