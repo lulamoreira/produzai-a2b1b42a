@@ -917,47 +917,6 @@ const CampaignDetail = () => {
         {/* ─── SECTION VIEW: Show active section with Home button ─── */}
         {activeSection && (
           <>
-            <div className="flex items-center gap-2 mb-4 overflow-x-auto">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  if (isLimitedMode) {
-                    navigate("/my-campaigns", { replace: true });
-                  } else {
-                    setActiveSection(null);
-                  }
-                }}
-                className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10 flex-shrink-0"
-              >
-                <Home className="w-4 h-4" />
-                <span className="hidden sm:inline">Início</span>
-              </Button>
-              <div className="flex gap-1 overflow-x-auto">
-                {[
-                  { key: "stores", label: "Lojas", icon: Store, visible: canViewStores || canViewCampaignStores },
-                  { key: "matrix", label: "Matriz", icon: Grid3X3, visible: canViewCampaignStores },
-                  { key: "pieces", label: "Peças", icon: LayoutList, visible: canViewPieces },
-                  { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, visible: canViewOccurrences },
-                  { key: "scheduling", label: "Agendamento", icon: CalendarDays, visible: canViewSchedules },
-                  { key: "installations", label: "Instalações", icon: Camera, visible: canViewInstallations },
-                  { key: "budgets", label: "Orçamentos", icon: DollarSign, visible: canViewCampaigns },
-                  { key: "chat", label: "Chat", icon: MessageSquare, visible: canViewCampaigns },
-                ].filter(m => m.visible).map(({ key, label, icon: Icon }) => (
-                  <Button
-                    key={key}
-                    variant={activeSection === key ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setActiveSection(key)}
-                    className="gap-1 text-[10px] sm:text-xs whitespace-nowrap flex-shrink-0"
-                  >
-                    <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span className="hidden sm:inline">{label}</span>
-                    <span className="sm:hidden">{label.slice(0, 4)}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
 
           {/* ─── TAB: LOJAS ─── */}
           {activeSection === "stores" && (<>
