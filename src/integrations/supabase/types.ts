@@ -1299,6 +1299,7 @@ export type Database = {
           can_delete_campaign_stores: boolean
           can_delete_campaigns: boolean
           can_delete_clients: boolean
+          can_delete_installations: boolean
           can_delete_occurrences: boolean
           can_delete_pieces: boolean
           can_delete_schedules: boolean
@@ -1306,6 +1307,7 @@ export type Database = {
           can_edit_campaign_stores: boolean
           can_edit_campaigns: boolean
           can_edit_clients: boolean
+          can_edit_installations: boolean
           can_edit_occurrences: boolean
           can_edit_pieces: boolean
           can_edit_reporter_data: boolean
@@ -1314,6 +1316,7 @@ export type Database = {
           can_view_campaign_stores: boolean
           can_view_campaigns: boolean
           can_view_clients: boolean
+          can_view_installations: boolean
           can_view_occurrences: boolean
           can_view_pieces: boolean
           can_view_schedules: boolean
@@ -1326,6 +1329,7 @@ export type Database = {
           can_delete_campaign_stores?: boolean
           can_delete_campaigns?: boolean
           can_delete_clients?: boolean
+          can_delete_installations?: boolean
           can_delete_occurrences?: boolean
           can_delete_pieces?: boolean
           can_delete_schedules?: boolean
@@ -1333,6 +1337,7 @@ export type Database = {
           can_edit_campaign_stores?: boolean
           can_edit_campaigns?: boolean
           can_edit_clients?: boolean
+          can_edit_installations?: boolean
           can_edit_occurrences?: boolean
           can_edit_pieces?: boolean
           can_edit_reporter_data?: boolean
@@ -1341,6 +1346,7 @@ export type Database = {
           can_view_campaign_stores?: boolean
           can_view_campaigns?: boolean
           can_view_clients?: boolean
+          can_view_installations?: boolean
           can_view_occurrences?: boolean
           can_view_pieces?: boolean
           can_view_schedules?: boolean
@@ -1353,6 +1359,7 @@ export type Database = {
           can_delete_campaign_stores?: boolean
           can_delete_campaigns?: boolean
           can_delete_clients?: boolean
+          can_delete_installations?: boolean
           can_delete_occurrences?: boolean
           can_delete_pieces?: boolean
           can_delete_schedules?: boolean
@@ -1360,6 +1367,7 @@ export type Database = {
           can_edit_campaign_stores?: boolean
           can_edit_campaigns?: boolean
           can_edit_clients?: boolean
+          can_edit_installations?: boolean
           can_edit_occurrences?: boolean
           can_edit_pieces?: boolean
           can_edit_reporter_data?: boolean
@@ -1368,6 +1376,7 @@ export type Database = {
           can_view_campaign_stores?: boolean
           can_view_campaigns?: boolean
           can_view_clients?: boolean
+          can_view_installations?: boolean
           can_view_occurrences?: boolean
           can_view_pieces?: boolean
           can_view_schedules?: boolean

@@ -79,6 +79,8 @@ const CampaignDetail = () => {
   const { hasPermission: canViewPieces } = useClientPermission(clientId, "can_view_pieces");
   const { hasPermission: canViewOccurrences } = useClientPermission(clientId, "can_view_occurrences");
   const { hasPermission: canViewSchedules } = useClientPermission(clientId, "can_view_schedules");
+  const { hasPermission: canViewInstallations } = useClientPermission(clientId, "can_view_installations");
+  const { hasPermission: canEditInstallations } = useClientPermission(clientId, "can_edit_installations");
   const { hasPermission: canViewCampaigns } = useClientPermission(clientId, "can_view_campaigns");
   const { data: client } = useClient(clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
@@ -858,7 +860,7 @@ const CampaignDetail = () => {
                 { key: "pieces", label: "Peças", icon: LayoutList, visible: canViewPieces },
                 { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, visible: canViewOccurrences },
                 { key: "scheduling", label: "Agendamento", icon: CalendarDays, visible: canViewSchedules },
-                { key: "installations", label: "Instalações", icon: Camera, visible: canViewSchedules },
+                { key: "installations", label: "Instalações", icon: Camera, visible: canViewInstallations },
                 { key: "budgets", label: "Orçamentos", icon: DollarSign, visible: canViewCampaigns },
               ].filter(m => m.visible).map(({ key, label, icon: Icon }) => (
                 <button
@@ -898,7 +900,7 @@ const CampaignDetail = () => {
                   { key: "pieces", label: "Peças", icon: LayoutList, visible: canViewPieces },
                   { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, visible: canViewOccurrences },
                   { key: "scheduling", label: "Agendamento", icon: CalendarDays, visible: canViewSchedules },
-                  { key: "installations", label: "Instalações", icon: Camera, visible: canViewSchedules },
+                  { key: "installations", label: "Instalações", icon: Camera, visible: canViewInstallations },
                   { key: "budgets", label: "Orçamentos", icon: DollarSign, visible: canViewCampaigns },
                 ].filter(m => m.visible).map(({ key, label, icon: Icon }) => (
                   <Button
@@ -1970,7 +1972,7 @@ const CampaignDetail = () => {
             <InstallationsTab
               campaignId={campaignId!}
               stores={stores.filter((s) => isStoreEnabled(s.id))}
-              canEdit={canEditSchedules}
+              canEdit={canEditInstallations}
               clientId={clientId!}
             />
           )}

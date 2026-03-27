@@ -53,7 +53,8 @@ export function useUserDirectAccess() {
           campaign_id,
           permission_categories (
             can_view_stores, can_view_campaign_stores, can_view_pieces,
-            can_view_occurrences, can_view_schedules, can_view_campaigns
+            can_view_occurrences, can_view_schedules, can_view_campaigns,
+            can_view_installations
           )
         `)
         .eq("user_id", user.id)
@@ -81,6 +82,7 @@ export function useUserDirectAccess() {
           if (pc.can_view_pieces) modules.push("pieces");
           if (pc.can_view_occurrences) modules.push("occurrences");
           if (pc.can_view_schedules) modules.push("scheduling");
+          if (pc.can_view_installations) modules.push("installations");
           if (pc.can_view_campaigns) modules.push("budgets");
         }
 
