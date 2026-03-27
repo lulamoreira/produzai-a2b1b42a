@@ -47,9 +47,6 @@ export default function AppSidebar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-  // Chat unread counts
-  const { data: chatUnread } = useConversationUnreadCounts();
-  const totalChatUnread = chatUnread?.totalUnread || 0;
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname]);
 
