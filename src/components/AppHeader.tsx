@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Shield, MessageSquare, ArrowLeft, UserCog } from "lucide-react";
+import { LogOut, Shield, MessageSquare, ArrowLeft, UserCog, ChevronRight } from "lucide-react";
 import { WhatsNewButton } from "@/components/WhatsNewSheet";
 import { InviteButton } from "@/components/InviteButton";
 import EditProfileDialog from "@/components/EditProfileDialog";
