@@ -137,14 +137,7 @@ export default function AppSidebar() {
       });
     }
 
-    items.push({
-      label: "Chat",
-      icon: MessageSquare,
-      href: "/chat",
-      active: location.pathname === "/chat",
-      color: "#06b6d4",
-      badge: totalChatUnread,
-    });
+    // Chat is now campaign-scoped, no standalone nav item
 
     if (isAdminOrMaster) {
       items.push({
