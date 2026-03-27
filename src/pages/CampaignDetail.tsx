@@ -878,7 +878,6 @@ const CampaignDetail = () => {
 
             {/* Navigation Buttons */}
             <ModuleGrid
-              title="Módulos"
               items={[
                 { key: "stores", label: "Lojas", icon: Store, visible: canViewStores || canViewCampaignStores },
                 { key: "matrix", label: "Matriz", icon: Grid3X3, visible: canViewCampaignStores },
