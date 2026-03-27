@@ -24,6 +24,7 @@ const MODULES = [
   { key: "pieces", label: "Peças", icon: "🧩" },
   { key: "occurrences", label: "Ocorrências", icon: "📋" },
   { key: "schedules", label: "Agendamento", icon: "📅" },
+  { key: "installations", label: "Instalações", icon: "📷" },
 ] as const;
 
 const PERMISSIONS = [
@@ -47,6 +48,7 @@ const defaultForm = (): Omit<PermissionCategory, "id" | "created_at"> => ({
   can_view_pieces: true, can_edit_pieces: false, can_delete_pieces: false,
   can_view_occurrences: true, can_edit_occurrences: false, can_delete_occurrences: false,
   can_view_schedules: true, can_edit_schedules: false, can_delete_schedules: false,
+  can_view_installations: true, can_edit_installations: false, can_delete_installations: false,
   can_edit_reporter_data: false,
 });
 

@@ -26,6 +26,9 @@ export type PermissionCategory = {
   can_view_schedules: boolean;
   can_edit_schedules: boolean;
   can_delete_schedules: boolean;
+  can_view_installations: boolean;
+  can_edit_installations: boolean;
+  can_delete_installations: boolean;
   can_edit_reporter_data: boolean;
   created_at: string;
 };
