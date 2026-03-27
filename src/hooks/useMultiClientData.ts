@@ -308,8 +308,13 @@ export function useUpdateCampaign() {
       const { error } = await supabase.from("campaigns").update(data).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaigns"] }); },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onMutate: async ({ id, ...data }) => {
+      qc.setQueriesData<Campaign[]>({ queryKey: ["campaigns"] }, (old) =>
+        old ? old.map((c) => c.id === id ? { ...c, ...data } : c) : old
+      );
+    },
+    onSettled: () => { qc.invalidateQueries({ queryKey: ["campaigns"] }); },
+    onError: (e) => { toast.error("Erro: " + e.message); qc.invalidateQueries({ queryKey: ["campaigns"] }); },
   });
 }
 
