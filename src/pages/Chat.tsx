@@ -53,10 +53,21 @@ const Chat = () => {
 
   const { data: conversations = [], isLoading: loadingConvs } = useConversations();
   const { data: messages = [] } = useMessages(selectedConversation);
+  const { data: chatUnread } = useConversationUnreadCounts();
+  const markAsRead = useMarkAsRead();
   const sendMessage = useSendMessage();
   const deleteMessage = useDeleteMessage();
   const editMessage = useEditMessage();
   const startConversation = useStartConversation();
+
+  // Mark conversation as read after 1 second
+  useEffect(() => {
+    if (!selectedConversation) return;
+    const timer = setTimeout(() => {
+      markAsRead.mutate({ contextType: "conversation", contextId: selectedConversation });
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [selectedConversation, messages.length]);
 
   // Get all users for new conversation
   const { data: allUsers = [] } = useQuery({
