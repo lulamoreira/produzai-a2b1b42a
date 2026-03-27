@@ -660,24 +660,27 @@ interface ApprovalTogglesProps {
 }
 
 function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUpdate }: ApprovalTogglesProps) {
-  const storeApproved = schedule?.store_approved ?? false;
-  const teamApproved = schedule?.team_approved ?? false;
-  const hasPendency = !storeApproved || !teamApproved;
+  const storeStatus = (schedule?.store_approval_status ?? "under_review") as ApprovalStatusValue;
+  const teamStatus = (schedule?.team_approval_status ?? "under_review") as ApprovalStatusValue;
+  const hasPendency = storeStatus !== "approved" || teamStatus !== "approved";
   const responsibility = schedule?.responsibility || "team";
 
-  const handleSetApproval = (field: "store_approved" | "team_approved", newVal: boolean) => {
+  const handleSetStatus = (field: "store_approval_status" | "team_approval_status", newVal: ApprovalStatusValue) => {
     if (!canEdit) return;
     const now = new Date().toISOString();
-    const atField = field === "store_approved" ? "store_approved_at" : "team_approved_at";
-    const otherApproved = field === "store_approved" ? (schedule?.team_approved ?? false) : (schedule?.store_approved ?? false);
-    
+    const atField = field === "store_approval_status" ? "store_approved_at" : "team_approved_at";
+    const boolField = field === "store_approval_status" ? "store_approved" : "team_approved";
+    const otherStatus = field === "store_approval_status"
+      ? (schedule?.team_approval_status ?? "under_review")
+      : (schedule?.store_approval_status ?? "under_review");
+
     const updates: Record<string, any> = {
       [field]: newVal,
+      [boolField]: newVal === "approved",
       [atField]: now,
     };
 
-    // If both become approved, clear responsibility
-    if (newVal && otherApproved) {
+    if (newVal === "approved" && otherStatus === "approved") {
       updates.responsibility = null;
       updates.responsibility_at = null;
     }
@@ -710,31 +713,21 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
         Status de aprovação da instalação
         {!hasDateAndTime && <span className="ml-2 text-muted-foreground font-normal normal-case">(preencha data e horário)</span>}
       </p>
-      {/* Toggle 1: Lojista */}
-      <ToggleSwitch
+      <ThreeStateToggle
         label="Lojista"
-        leftLabel="Aprovado"
-        rightLabel="Desaprovado"
-        isLeft={storeApproved}
-        onClickLeft={() => handleSetApproval("store_approved", true)}
-        onClickRight={() => handleSetApproval("store_approved", false)}
+        value={storeStatus}
+        onChange={(val) => handleSetStatus("store_approval_status", val)}
         timestamp={formatTimestamp(schedule?.store_approved_at ?? null)}
         disabled={sectionDisabled}
       />
-
-      {/* Toggle 2: Equipe */}
-      <ToggleSwitch
+      <ThreeStateToggle
         label="Equipe"
-        leftLabel="Aprovado"
-        rightLabel="Desaprovado"
-        isLeft={teamApproved}
-        onClickLeft={() => handleSetApproval("team_approved", true)}
-        onClickRight={() => handleSetApproval("team_approved", false)}
+        value={teamStatus}
+        onChange={(val) => handleSetStatus("team_approval_status", val)}
         timestamp={formatTimestamp(schedule?.team_approved_at ?? null)}
         disabled={sectionDisabled}
       />
 
-      {/* Toggle 3: Responsabilidade — only when there's a pendency */}
       {hasPendency && (
         <ToggleSwitch
           label="Responsável"
@@ -751,7 +744,71 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
   );
 }
 
-// ─── Sub-component: Toggle Switch ───────────────────────
+// ─── Sub-component: Three State Toggle ──────────────────
+
+interface ThreeStateToggleProps {
+  label: string;
+  value: ApprovalStatusValue;
+  onChange: (val: ApprovalStatusValue) => void;
+  timestamp: string | null;
+  disabled?: boolean;
+}
+
+const STATUS_CONFIG: Record<ApprovalStatusValue, { label: string; bg: string; border: string; activeBg: string }> = {
+  approved: { label: "Aprovado", bg: "bg-emerald-500/15", border: "border-emerald-500/40", activeBg: "bg-emerald-500" },
+  under_review: { label: "Em análise", bg: "bg-amber-500/15", border: "border-amber-500/40", activeBg: "bg-amber-500" },
+  rejected: { label: "Desaprovado", bg: "bg-red-500/15", border: "border-red-500/40", activeBg: "bg-red-500" },
+};
+
+function ThreeStateToggle({ label, value, onChange, timestamp, disabled }: ThreeStateToggleProps) {
+  const options: ApprovalStatusValue[] = ["approved", "under_review", "rejected"];
+  const activeIdx = options.indexOf(value);
+  const cfg = STATUS_CONFIG[value];
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] font-semibold text-muted-foreground w-[70px] shrink-0 uppercase tracking-wide">{label}</span>
+      <div
+        className={cn(
+          "relative flex items-center rounded-full h-7 w-full max-w-[280px] border transition-colors select-none overflow-hidden",
+          disabled && "opacity-60 cursor-not-allowed",
+          cfg.bg, cfg.border
+        )}
+      >
+        {/* Sliding indicator */}
+        <span
+          className={cn(
+            "absolute top-0.5 bottom-0.5 rounded-full transition-all duration-300 shadow-sm pointer-events-none",
+            cfg.activeBg
+          )}
+          style={{
+            width: `calc(${100 / 3}% - 4px)`,
+            left: activeIdx === 0 ? "2px" : activeIdx === 1 ? `calc(${100 / 3}% + 0px)` : `calc(${200 / 3}% - 2px)`,
+          }}
+        />
+        {options.map((opt, i) => (
+          <button
+            key={opt}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(opt)}
+            className={cn(
+              "relative z-10 flex-1 text-center text-[9px] font-bold transition-colors cursor-pointer h-full",
+              i === activeIdx ? "text-primary-foreground" : "text-foreground"
+            )}
+          >
+            {STATUS_CONFIG[opt].label}
+          </button>
+        ))}
+      </div>
+      {timestamp && (
+        <span className="text-[9px] text-muted-foreground whitespace-nowrap">{timestamp}</span>
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-component: Toggle Switch (binary, used for Responsibility) ──
 
 interface ToggleSwitchProps {
   label: string;
@@ -777,7 +834,6 @@ function ToggleSwitch({ label, leftLabel, rightLabel, isLeft, onClickLeft, onCli
             : "bg-amber-500/15 border-amber-500/40"
         )}
       >
-        {/* Sliding indicator */}
         <span
           className={cn(
             "absolute top-0.5 bottom-0.5 w-1/2 rounded-full transition-all duration-300 shadow-sm pointer-events-none",
