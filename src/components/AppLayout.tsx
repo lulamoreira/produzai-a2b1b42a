@@ -1,7 +1,7 @@
 import { type ReactNode } from "react";
 import AppSidebar from "@/components/AppSidebar";
-import { ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export interface BreadcrumbItem {
   label: string;
@@ -17,19 +17,42 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children, breadcrumbs, title, headerRight }: AppLayoutProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const backHref = breadcrumbs
+    ?.slice(0, -1)
+    .reverse()
+    .find((c) => c.href)?.href;
+
+  const isRootPage = location.pathname === "/" || location.pathname === "/admin" || location.pathname === "/chat" || location.pathname === "/my-campaigns" || location.pathname === "/approvals";
+
+  const handleBack = () => {
+    if (backHref) {
+      navigate(backHref);
+    } else {
+      navigate(-1);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <AppSidebar />
 
-      {/* Main content */}
       <div className="lg:pl-[220px] transition-all duration-300">
-        {/* Top bar */}
         {(breadcrumbs || title || headerRight) && (
           <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-2">
             <div className="flex items-center justify-between gap-3">
-              {/* Spacer for mobile hamburger */}
-              <div className="w-9 lg:hidden flex-shrink-0" />
+              {!isRootPage ? (
+                <button
+                  onClick={handleBack}
+                  className="lg:hidden flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors -ml-1"
+                  aria-label="Voltar"
+                >
+                  <ChevronLeft className="w-5 h-5 text-foreground" />
+                </button>
+              ) : (
+                <div className="w-9 lg:hidden flex-shrink-0" />
+              )}
               <div className="flex items-center gap-1 min-w-0 flex-1">
                 {breadcrumbs && breadcrumbs.length > 1 ? (
                   <div className="flex flex-wrap items-center gap-1">
@@ -55,7 +78,6 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
               </div>
               {headerRight && <div className="flex items-center gap-2 flex-shrink-0">{headerRight}</div>}
             </div>
-            {/* Current page title aligned exactly with breadcrumb text start */}
             {breadcrumbs && breadcrumbs.length > 0 && (
               <div className="mt-0.5 flex items-start gap-3">
                 <div className="w-9 lg:hidden flex-shrink-0" />
@@ -67,7 +89,6 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
           </header>
         )}
 
-        {/* Page content */}
         <main className="p-4 sm:p-6">
           {children}
         </main>
