@@ -28,6 +28,7 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
   const [visibleCodes, setVisibleCodes] = useState<Record<string, boolean>>({});
 
   const { data: teams = [] } = useInstallationTeams(campaignId);
+  const { data: allMembers = {} } = useAllTeamMembers(campaignId);
 
   const { data: codes = [], isLoading } = useQuery({
     queryKey: ["team_codes", campaignId],
