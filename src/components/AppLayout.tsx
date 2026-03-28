@@ -26,18 +26,30 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
     .reverse()
     .find((c) => c.href)?.href;
 
+  const params = new URLSearchParams(location.search);
+  const sectionBaseHref = (params.has("section") || params.has("tab")) ? location.pathname : null;
+  const currentUrl = `${location.pathname}${location.search}`;
+
   const handleBack = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // React Router v6 stores the history index in state
-    const idx = (window.history.state as { idx?: number } | null)?.idx;
-    if (typeof idx === "number" && idx > 0) {
+
+    if (location.key !== "default") {
       navigate(-1);
-    } else if (backHref && backHref !== location.pathname + location.search) {
-      navigate(backHref);
-    } else {
-      navigate("/");
+      return;
     }
+
+    if (sectionBaseHref && sectionBaseHref !== currentUrl) {
+      navigate(sectionBaseHref);
+      return;
+    }
+
+    if (backHref && backHref !== currentUrl) {
+      navigate(backHref);
+      return;
+    }
+
+    navigate("/");
   };
 
   return (
