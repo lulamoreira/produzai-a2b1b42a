@@ -35,6 +35,7 @@ export type TeamMember = {
   cpf: string;
   phone: string;
   is_unified_doc: boolean;
+  is_leader: boolean;
 };
 
 // ─── CPF Validation ──────────────────────────────────────
@@ -471,7 +472,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
   const { data: members = [] } = useTeamMembers(teamId);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false });
+  const [form, setForm] = useState({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false, isLeader: false });
   const [cpfError, setCpfError] = useState("");
 
   const invalidate = () => {
@@ -484,6 +485,10 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
       if (form.cpf && !isValidCpf(form.cpf)) {
         throw new Error("CPF inválido");
       }
+      // If marking as leader, unset other leaders first
+      if (form.isLeader) {
+        await supabase.from("installation_team_members").update({ is_leader: false }).eq("team_id", teamId).eq("is_leader", true);
+      }
       const { error } = await supabase.from("installation_team_members").insert({
         team_id: teamId,
         name: form.name,
@@ -491,17 +496,22 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
         cpf: form.cpf.replace(/\D/g, ""),
         phone: form.phone,
         is_unified_doc: form.isUnifiedDoc,
+        is_leader: form.isLeader,
       });
       if (error) throw error;
     },
-    onSuccess: () => { invalidate(); setForm({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false }); setCpfError(""); setAdding(false); toast.success("Instalador adicionado!"); },
+    onSuccess: () => { invalidate(); setForm({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false, isLeader: false }); setCpfError(""); setAdding(false); toast.success("Instalador adicionado!"); },
     onError: (e) => toast.error(e.message || "Erro ao adicionar"),
   });
 
   const updateMember = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { name: string; rg: string; cpf: string; phone: string; isUnifiedDoc: boolean } }) => {
+    mutationFn: async ({ id, data }: { id: string; data: { name: string; rg: string; cpf: string; phone: string; isUnifiedDoc: boolean; isLeader: boolean } }) => {
       if (data.cpf && !isValidCpf(data.cpf)) {
         throw new Error("CPF inválido");
+      }
+      // If marking as leader, unset other leaders first
+      if (data.isLeader) {
+        await supabase.from("installation_team_members").update({ is_leader: false }).eq("team_id", teamId).eq("is_leader", true);
       }
       const { error } = await supabase.from("installation_team_members").update({
         name: data.name,
@@ -509,6 +519,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
         cpf: data.cpf.replace(/\D/g, ""),
         phone: data.phone,
         is_unified_doc: data.isUnifiedDoc,
+        is_leader: data.isLeader,
       }).eq("id", id);
       if (error) throw error;
     },
@@ -549,7 +560,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
 
   const startEditing = (m: TeamMember) => {
     setEditingId(m.id);
-    setForm({ name: m.name, rg: m.rg || "", cpf: m.cpf ? formatCpf(m.cpf) : "", phone: m.phone || "", isUnifiedDoc: !!m.is_unified_doc });
+    setForm({ name: m.name, rg: m.rg || "", cpf: m.cpf ? formatCpf(m.cpf) : "", phone: m.phone || "", isUnifiedDoc: !!m.is_unified_doc, isLeader: !!m.is_leader });
     setCpfError("");
   };
 
@@ -580,10 +591,14 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
         <label className="text-xs font-medium">Telefone</label>
         <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-7 text-xs" placeholder="(00) 00000-0000" />
       </div>
-      <div className="col-span-2 flex items-center gap-3">
+      <div className="col-span-2 flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-1.5">
           <Switch checked={form.isUnifiedDoc} onCheckedChange={(v) => setForm({ ...form, isUnifiedDoc: v, rg: v ? "" : form.rg })} />
           <span className="text-[10px] text-muted-foreground">Registro Unificado (RU)</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Switch checked={form.isLeader} onCheckedChange={(v) => setForm({ ...form, isLeader: v })} />
+          <span className="text-[10px] text-muted-foreground">⭐ Líder da equipe</span>
         </div>
       </div>
       <div className="col-span-2 flex gap-2">
@@ -614,6 +629,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
           return (
             <div key={m.id} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5 flex-wrap">
               <span className="font-medium">{m.name}</span>
+              {m.is_leader && <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-medium">⭐ Líder</span>}
               {m.is_unified_doc ? (
                 m.cpf && <span className="text-muted-foreground">RU: {formatCpf(m.cpf)}</span>
               ) : (
@@ -644,7 +660,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
         })}
 
         {canEdit && !adding && !editingId && (
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => { setAdding(true); setForm({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false }); }}>
+          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => { setAdding(true); setForm({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false, isLeader: false }); }}>
             <Plus className="w-3 h-3" /> Adicionar instalador
           </Button>
         )}
