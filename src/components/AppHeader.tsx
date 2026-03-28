@@ -164,9 +164,9 @@ export default function AppHeader({
           <EditProfileDialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen} />
           </div>
         </div>
-        {/* Row 2: current page title - full width, never truncated */}
+        {/* Row 2: current page title - aligned with breadcrumb text */}
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <div className="text-sm sm:text-lg font-bold leading-tight mt-0.5">
+          <div className={`text-sm sm:text-lg font-bold leading-tight mt-0.5 ${backTo ? 'pl-10' : ''}`}>
             {breadcrumbs[breadcrumbs.length - 1]?.label}
           </div>
         )}
