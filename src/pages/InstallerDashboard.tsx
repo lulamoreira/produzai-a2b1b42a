@@ -69,39 +69,32 @@ export default function InstallerDashboard() {
     }
   };
 
-  const handleUpload = async (storeId: string, files: FileList | null) => {
+  const handleUpload = async (storeId: string, files: FileList | null, method: "upload" | "camera" = "upload") => {
     if (!files || !data) return;
     const category = uploadCategory[storeId] || "during";
-    const campaignId = data.campaign.id;
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
     for (const file of Array.from(files)) {
       try {
         const compressed = await compressImage(file, 1200, 0.7);
-        const fileName = `${campaignId}/${storeId}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
-        const { error: upErr } = await supabase.storage
-          .from("installation-photos")
-          .upload(fileName, compressed, { contentType: "image/jpeg" });
-        if (upErr) throw upErr;
+        const formData = new FormData();
+        formData.append("team_code", code);
+        formData.append("store_id", storeId);
+        formData.append("category", category);
+        formData.append("upload_method", method);
+        formData.append("photo", new File([compressed], `photo.jpg`, { type: "image/jpeg" }));
 
-        const { data: urlData } = supabase.storage.from("installation-photos").getPublicUrl(fileName);
+        const res = await fetch(
+          `https://${projectId}.supabase.co/functions/v1/upload-installation-photo`,
+          { method: "POST", body: formData }
+        );
 
-        const { data: newPhoto, error: insertErr } = await supabase
-          .from("installation_photos")
-          .insert({
-            campaign_id: campaignId,
-            store_id: storeId,
-            photo_url: urlData.publicUrl,
-            category,
-            upload_method: "upload",
-          })
-          .select()
-          .single();
-
-        if (insertErr) throw insertErr;
-        if (newPhoto) setLocalPhotos((prev) => [...prev, newPhoto]);
-      } catch (err) {
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || "Erro ao enviar foto");
+        if (result.photo) setLocalPhotos((prev) => [...prev, result.photo]);
+      } catch (err: any) {
         console.error(err);
-        toast.error("Erro ao enviar foto");
+        toast.error(err.message || "Erro ao enviar foto");
       }
     }
     toast.success(`${files.length} foto(s) enviada(s)!`);
