@@ -6,7 +6,7 @@ import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { useUserClientAccess } from "@/hooks/useMultiClientData";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { Users, Tags, Database, UserCheck, Search } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,8 @@ const Admin = () => {
   const { data: allAgencyAccess = [] } = useUserAgencyAccess();
   const { data: allCampaignAccess = [] } = useUserCampaignAccess();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "users";
   const [searchQuery, setSearchQuery] = useState("");
 
   if (loadingRole) {
@@ -60,7 +62,7 @@ const Admin = () => {
       }
     >
       <div className="max-w-5xl mx-auto">
-        <Tabs defaultValue="users">
+        <Tabs defaultValue={initialTab}>
           <TabsList className="mb-6 bg-card border border-border">
             <TabsTrigger value="users" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
               <Users className="w-4 h-4" /> Usuários
