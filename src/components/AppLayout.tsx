@@ -19,28 +19,25 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
   const navigate = useNavigate();
   const location = useLocation();
 
+  const isRootPage = location.pathname === "/" || location.pathname === "/admin" || location.pathname === "/chat" || location.pathname === "/my-campaigns" || location.pathname === "/approvals";
+
   const backHref = breadcrumbs
     ?.slice(0, -1)
     .reverse()
     .find((c) => c.href)?.href;
 
-  const isRootPage = location.pathname === "/" || location.pathname === "/admin" || location.pathname === "/chat" || location.pathname === "/my-campaigns" || location.pathname === "/approvals";
-
   const handleBack = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (window.history.state?.idx > 0) {
+    // React Router v6 stores the history index in state
+    const idx = (window.history.state as { idx?: number } | null)?.idx;
+    if (typeof idx === "number" && idx > 0) {
       navigate(-1);
-      return;
-    }
-
-    if (backHref && backHref !== location.pathname) {
+    } else if (backHref && backHref !== location.pathname + location.search) {
       navigate(backHref);
-      return;
+    } else {
+      navigate("/");
     }
-
-    navigate("/");
   };
 
   return (
