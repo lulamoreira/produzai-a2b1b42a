@@ -164,10 +164,13 @@ export default function AppHeader({
           <EditProfileDialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen} />
           </div>
         </div>
-        {/* Row 2: current page title - aligned with breadcrumb text */}
+        {/* Row 2: current page title aligned exactly with breadcrumb text start */}
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <div className={`text-sm sm:text-lg font-bold leading-tight mt-0.5 ${backTo ? 'pl-10' : ''}`}>
-            {breadcrumbs[breadcrumbs.length - 1]?.label}
+          <div className="mt-0.5 flex items-start gap-2 min-w-0">
+            {backTo && <div className="h-8 w-8 flex-shrink-0" aria-hidden="true" />}
+            <div className="min-w-0 flex-1 text-sm sm:text-lg font-bold leading-tight">
+              {breadcrumbs[breadcrumbs.length - 1]?.label}
+            </div>
           </div>
         )}
         {subtitle && (
