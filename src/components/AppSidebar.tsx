@@ -203,14 +203,17 @@ export default function AppSidebar() {
             active: location.pathname === "/approvals",
             color: "#22c55e",
           },
-          ...(isAdmin ? [{
-            label: "Backup",
-            icon: Database,
-            href: "/admin?tab=backup",
-            active: location.pathname === "/admin" && location.search.includes("tab=backup"),
-            color: "#6366f1",
-          }] : []),
         ],
+      });
+    }
+
+    if (isAdmin) {
+      items.push({
+        label: "Backup",
+        icon: Database,
+        color: "#6366f1",
+        href: "/admin?tab=backup",
+        active: location.pathname === "/admin" && location.search.includes("tab=backup"),
       });
     }
 
