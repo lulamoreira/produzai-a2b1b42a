@@ -164,6 +164,15 @@ export default function AppHeader({
           <EditProfileDialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen} />
           </div>
         </div>
+        {/* Row 2: current page title - full width, never truncated */}
+        {breadcrumbs && breadcrumbs.length > 0 && (
+          <div className="text-sm sm:text-lg font-bold leading-tight mt-0.5">
+            {breadcrumbs[breadcrumbs.length - 1]?.label}
+          </div>
+        )}
+        {subtitle && (
+          <p className="text-[10px] sm:text-xs opacity-80">{subtitle}</p>
+        )}
       </div>
     </header>
   );
