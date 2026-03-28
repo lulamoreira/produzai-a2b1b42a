@@ -29,18 +29,24 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
   const params = new URLSearchParams(location.search);
   const sectionBaseHref = (params.has("section") || params.has("tab")) ? location.pathname : null;
   const currentUrl = `${location.pathname}${location.search}`;
+  const from = (location.state as { from?: string } | null)?.from;
 
   const handleBack = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (location.key !== "default") {
-      navigate(-1);
+    if (from && from !== currentUrl) {
+      navigate(from, { replace: true });
       return;
     }
 
     if (sectionBaseHref && sectionBaseHref !== currentUrl) {
-      navigate(sectionBaseHref);
+      navigate(sectionBaseHref, { replace: true });
+      return;
+    }
+
+    if (location.key !== "default") {
+      navigate(-1);
       return;
     }
 
