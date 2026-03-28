@@ -289,6 +289,11 @@ Em caso de dúvidas, entre em contato com a administração.`;
           })}
         </div>
       )}
+
+      {/* Access Window Configuration */}
+      <div className="border-t border-border pt-4 mt-6">
+        <AccessWindowConfig campaignId={campaignId} />
+      </div>
     </div>
   );
 }
