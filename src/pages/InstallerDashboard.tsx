@@ -333,7 +333,7 @@ export default function InstallerDashboard() {
                       accept="image/*"
                       multiple
                       className="hidden"
-                      onChange={(e) => { handleUpload(store.id, e.target.files); e.target.value = ""; }}
+                      onChange={(e) => { handleUpload(store.id, e.target.files, "camera"); e.target.value = ""; }}
                     />
                     <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none" asChild>
                       <span><Upload className="w-3 h-3" /> Upload</span>
@@ -345,7 +345,7 @@ export default function InstallerDashboard() {
                       accept="image/*"
                       capture="environment"
                       className="hidden"
-                      onChange={(e) => { handleUpload(store.id, e.target.files); e.target.value = ""; }}
+                      onChange={(e) => { handleUpload(store.id, e.target.files, "upload"); e.target.value = ""; }}
                     />
                     <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none" asChild>
                       <span><Camera className="w-3 h-3" /> Foto</span>
