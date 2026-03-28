@@ -123,6 +123,42 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
     toast.success("Código copiado!");
   };
 
+  const sendWhatsApp = (teamId: string) => {
+    const teamCode = codeMap[teamId];
+    const team = teams.find((t) => t.id === teamId);
+    if (!teamCode || !team) return;
+
+    const members = allMembers[teamId] || [];
+    const leader = members.find((m) => m.is_leader);
+    if (!leader || !leader.phone) {
+      toast.error("Nenhum líder com telefone cadastrado nesta equipe. Defina um líder no cadastro de equipes.");
+      return;
+    }
+
+    const phone = leader.phone.replace(/\D/g, "");
+    const fullPhone = phone.startsWith("55") ? phone : `55${phone}`;
+
+    const message = `🔑 *Código de Acesso Temporário*
+
+Olá ${leader.name}! Segue seu código de acesso para a campanha:
+
+*Equipe:* ${team.name}
+*Código:* ${teamCode.code}
+
+📱 *Como acessar:*
+1. Acesse o link do sistema
+2. Na tela de login, clique em "Acesso Instalador"
+3. Digite o código acima
+4. Você verá as tarefas agendadas para sua equipe
+
+⏰ O acesso é liberado 2h antes do horário agendado e expira 24h após o início.
+
+Em caso de dúvidas, entre em contato com a administração.`;
+
+    const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+  };
+
   const filteredTeams = teams.filter(
     (t) => !search || t.name.toLowerCase().includes(search.toLowerCase())
   );
