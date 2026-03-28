@@ -19,11 +19,6 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
   const navigate = useNavigate();
   const location = useLocation();
 
-  const backHref = breadcrumbs
-    ?.slice(0, -1)
-    .reverse()
-    .find((c) => c.href)?.href;
-
   const isRootPage = location.pathname === "/" || location.pathname === "/admin" || location.pathname === "/chat" || location.pathname === "/my-campaigns" || location.pathname === "/approvals";
 
   const backHref = breadcrumbs
