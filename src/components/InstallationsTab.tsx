@@ -10,6 +10,7 @@ import { compressImage } from "@/lib/compressImage";
 import DebouncedInput from "@/components/DebouncedInput";
 import TeamCodesPanel from "@/components/TeamCodesPanel";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useClientPermission } from "@/hooks/useClientPermission";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,8 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
+  const { hasPermission: canManageTeamCodes } = useClientPermission(clientId, "can_manage_team_codes");
+  const showTeamCodesPanel = isAdminOrMaster || canManageTeamCodes;
   const [searchTerm, setSearchTerm] = useState("");
   const [showCodes, setShowCodes] = useState(false);
   const [filterState, setFilterState] = useState("");
@@ -184,8 +187,8 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
 
   return (
     <div className="space-y-4">
-      {/* Team Codes Panel (admin/master only) */}
-      {isAdminOrMaster && (
+      {/* Team Codes Panel (admin/master or users with permission) */}
+      {showTeamCodesPanel && (
         <div className="space-y-2">
           <Button
             variant="outline"
