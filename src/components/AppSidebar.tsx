@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDisplayName, getGreeting } from "@/components/AppHeader";
@@ -62,6 +64,37 @@ export default function AppSidebar() {
   const isInsideAgency = !!agencyId;
   const isInsideClient = !!clientId;
   const isInsideCampaign = !!campaignId;
+
+  // Fetch names for context indicator
+  const { data: agencyName } = useQuery({
+    queryKey: ["sidebar-agency", agencyId],
+    queryFn: async () => {
+      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId!).maybeSingle();
+      return data?.name ?? null;
+    },
+    enabled: !!agencyId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: clientName } = useQuery({
+    queryKey: ["sidebar-client", clientId],
+    queryFn: async () => {
+      const { data } = await supabase.from("clients").select("name").eq("id", clientId!).maybeSingle();
+      return data?.name ?? null;
+    },
+    enabled: !!clientId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: campaignName } = useQuery({
+    queryKey: ["sidebar-campaign", campaignId],
+    queryFn: async () => {
+      const { data } = await supabase.from("campaigns").select("name").eq("id", campaignId!).maybeSingle();
+      return data?.name ?? null;
+    },
+    enabled: !!campaignId,
+    staleTime: 5 * 60 * 1000,
+  });
 
   const currentSection = new URLSearchParams(location.search).get("section");
 
@@ -276,6 +309,30 @@ export default function AppSidebar() {
       {!collapsed && (
         <div className="px-3 py-2.5 border-b border-sidebar-border">
           <p className="text-sm font-bold text-sidebar-foreground">{getGreeting()}, {displayName}!</p>
+        </div>
+      )}
+
+      {/* Context indicator */}
+      {!collapsed && isInsideAgency && (
+        <div className="px-3 py-2 border-b border-sidebar-border space-y-1">
+          {agencyName && (
+            <div className="flex items-center gap-1.5">
+              <Building2 className="w-3 h-3 text-sidebar-primary/60 flex-shrink-0" />
+              <span className="text-[10px] text-sidebar-foreground/50 truncate">{agencyName}</span>
+            </div>
+          )}
+          {clientName && (
+            <div className="flex items-center gap-1.5 pl-2">
+              <Briefcase className="w-3 h-3 text-sidebar-primary/50 flex-shrink-0" />
+              <span className="text-[10px] font-medium text-sidebar-foreground/70 truncate">{clientName}</span>
+            </div>
+          )}
+          {campaignName && (
+            <div className="flex items-center gap-1.5 pl-4">
+              <Megaphone className="w-3 h-3 text-sidebar-primary/40 flex-shrink-0" />
+              <span className="text-[10px] font-semibold text-sidebar-foreground/90 truncate">{campaignName}</span>
+            </div>
+          )}
         </div>
       )}
 
