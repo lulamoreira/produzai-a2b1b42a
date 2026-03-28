@@ -323,13 +323,13 @@ export default function AppSidebar() {
           )}
           {clientName && (
             <div className="flex items-center gap-1.5 pl-2">
-              <Briefcase className="w-3 h-3 text-purple-400/70 flex-shrink-0" />
+              <Briefcase className="w-3 h-3 text-sidebar-primary/50 flex-shrink-0" />
               <span className="text-[10px] font-medium text-sidebar-foreground/70 truncate">{clientName}</span>
             </div>
           )}
           {campaignName && (
             <div className="flex items-center gap-1.5 pl-4">
-              <Megaphone className="w-3 h-3 text-blue-400/70 flex-shrink-0" />
+              <Megaphone className="w-3 h-3 text-sidebar-primary/40 flex-shrink-0" />
               <span className="text-[10px] font-semibold text-sidebar-foreground/90 truncate">{campaignName}</span>
             </div>
           )}
