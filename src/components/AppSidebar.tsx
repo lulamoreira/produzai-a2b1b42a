@@ -357,9 +357,9 @@ export default function AppSidebar() {
         {navItems.map(renderNavItem)}
       </nav>
 
-      {/* Footer */}
-      <div className="shrink-0 border-t border-sidebar-border bg-sidebar">
-        <div className="px-2 pt-2 pb-2">
+      {/* Footer – always visible, safe-area aware */}
+      <div className="shrink-0 border-t border-sidebar-border bg-sidebar" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
+        <div className="px-2 pt-2">
           <button
             onClick={() => setProfileOpen(true)}
             className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all"
@@ -384,7 +384,7 @@ export default function AppSidebar() {
           </button>
         </div>
 
-        <div className="px-2 pt-2 pb-3 border-t border-sidebar-border">
+        <div className="px-2 pt-2 border-t border-sidebar-border">
           <div className={`flex ${collapsed ? "flex-col" : ""} items-center gap-1`}>
             <InviteButton />
             <WhatsNewButton />
