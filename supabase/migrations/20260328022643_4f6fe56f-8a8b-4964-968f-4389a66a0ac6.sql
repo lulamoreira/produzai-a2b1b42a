@@ -1,0 +1,1 @@
+ALTER TABLE public.installation_team_members ADD COLUMN is_leader boolean NOT NULL DEFAULT false;
