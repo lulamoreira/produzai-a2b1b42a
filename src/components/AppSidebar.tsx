@@ -65,6 +65,37 @@ export default function AppSidebar() {
   const isInsideClient = !!clientId;
   const isInsideCampaign = !!campaignId;
 
+  // Fetch names for context indicator
+  const { data: agencyName } = useQuery({
+    queryKey: ["sidebar-agency", agencyId],
+    queryFn: async () => {
+      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId!).maybeSingle();
+      return data?.name ?? null;
+    },
+    enabled: !!agencyId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: clientName } = useQuery({
+    queryKey: ["sidebar-client", clientId],
+    queryFn: async () => {
+      const { data } = await supabase.from("clients").select("name").eq("id", clientId!).maybeSingle();
+      return data?.name ?? null;
+    },
+    enabled: !!clientId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: campaignName } = useQuery({
+    queryKey: ["sidebar-campaign", campaignId],
+    queryFn: async () => {
+      const { data } = await supabase.from("campaigns").select("name").eq("id", campaignId!).maybeSingle();
+      return data?.name ?? null;
+    },
+    enabled: !!campaignId,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const currentSection = new URLSearchParams(location.search).get("section");
 
   const roleBadge = isAdmin ? "Admin" : isMaster ? "Master" : "Usuário";
