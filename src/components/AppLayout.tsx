@@ -26,36 +26,41 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
       <div className="lg:pl-[220px] transition-all duration-300">
         {/* Top bar */}
         {(breadcrumbs || title || headerRight) && (
-          <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 h-12 flex items-center justify-between gap-3">
-            {/* Spacer for mobile hamburger */}
-            <div className="w-9 lg:hidden flex-shrink-0" />
-            <div className="flex items-center gap-1 min-w-0 flex-1">
-              {breadcrumbs && breadcrumbs.length > 0 ? (
-                breadcrumbs.map((crumb, i) => {
-                  const isLast = i === breadcrumbs.length - 1;
-                  return (
-                    <span key={i} className="flex items-center gap-1 min-w-0">
-                      {i > 0 && <ChevronRight className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />}
-                      {isLast ? (
-                        <span className="text-sm font-bold text-foreground truncate">{crumb.label}</span>
-                      ) : crumb.href ? (
-                        <button
-                          onClick={() => navigate(crumb.href!)}
-                          className="text-xs text-muted-foreground hover:text-foreground transition-colors truncate max-w-[160px]"
-                        >
-                          {crumb.label}
-                        </button>
-                      ) : (
-                        <span className="text-xs text-muted-foreground truncate max-w-[160px]">{crumb.label}</span>
-                      )}
-                    </span>
-                  );
-                })
-              ) : title ? (
-                <h1 className="text-sm font-bold text-foreground truncate">{title}</h1>
-              ) : null}
+          <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-2">
+            <div className="flex items-center justify-between gap-3">
+              {/* Spacer for mobile hamburger */}
+              <div className="w-9 lg:hidden flex-shrink-0" />
+              <div className="flex items-center gap-1 min-w-0 flex-1">
+                {breadcrumbs && breadcrumbs.length > 1 ? (
+                  <div className="flex flex-wrap items-center gap-1">
+                    {breadcrumbs.slice(0, -1).map((crumb, i) => (
+                      <span key={i} className="flex items-center gap-1 min-w-0">
+                        {i > 0 && <ChevronRight className="w-3 h-3 text-muted-foreground/40 flex-shrink-0" />}
+                        {crumb.href ? (
+                          <button
+                            onClick={() => navigate(crumb.href!)}
+                            className="text-xs text-muted-foreground hover:text-foreground transition-colors truncate max-w-[100px] sm:max-w-[160px]"
+                          >
+                            {crumb.label}
+                          </button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground truncate max-w-[100px] sm:max-w-[160px]">{crumb.label}</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                ) : !breadcrumbs && title ? (
+                  <h1 className="text-sm font-bold text-foreground truncate">{title}</h1>
+                ) : null}
+              </div>
+              {headerRight && <div className="flex items-center gap-2 flex-shrink-0">{headerRight}</div>}
             </div>
-            {headerRight && <div className="flex items-center gap-2 flex-shrink-0">{headerRight}</div>}
+            {/* Current page title - full width, never truncated */}
+            {breadcrumbs && breadcrumbs.length > 0 && (
+              <div className="text-sm font-bold text-foreground leading-tight pl-9 lg:pl-0">
+                {breadcrumbs[breadcrumbs.length - 1]?.label}
+              </div>
+            )}
           </header>
         )}
 
