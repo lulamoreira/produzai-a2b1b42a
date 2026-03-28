@@ -89,12 +89,18 @@
     @apply border-border;
   }
 
-  html, body {
+  html, body, #root {
     @apply overflow-x-hidden;
+    min-height: 100%;
   }
 
   body {
     @apply bg-background text-foreground font-sans;
+    min-height: 100dvh;
+  }
+
+  #root {
+    min-height: 100dvh;
   }
 
   h1, h2, h3, h4 {

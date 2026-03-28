@@ -59,7 +59,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <AppSidebar />
 
       {/* Fixed floating back button for mobile */}
@@ -74,7 +74,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
         </button>
       )}
 
-      <div className="lg:pl-[220px] transition-all duration-300">
+      <div className="min-h-dvh lg:pl-[220px] transition-all duration-300">
         {(breadcrumbs || title || headerRight) && (
           <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-2">
             <div className="flex items-center justify-between gap-3">
