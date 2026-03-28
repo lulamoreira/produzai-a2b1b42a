@@ -48,7 +48,7 @@ export default function AppSidebar() {
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
 
-  useEffect(() => { setMobileOpen(false); }, [location.pathname]);
+  useEffect(() => { setMobileOpen(false); }, [location.pathname, location.search]);
 
   // Extract context from URL
   const pathParts = location.pathname.split("/");
