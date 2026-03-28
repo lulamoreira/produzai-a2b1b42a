@@ -26,11 +26,14 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
 
   const isRootPage = location.pathname === "/" || location.pathname === "/admin" || location.pathname === "/chat" || location.pathname === "/my-campaigns" || location.pathname === "/approvals";
 
-  const handleBack = () => {
+  const handleBack = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (backHref) {
       navigate(backHref);
-    } else {
+    } else if (window.history.length > 1) {
       navigate(-1);
+    } else {
+      navigate("/");
     }
   };
 
@@ -38,11 +41,12 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
     <div className="min-h-screen bg-background">
       <AppSidebar />
 
-      {/* Fixed floating back button for mobile — always accessible */}
+      {/* Fixed floating back button for mobile */}
       {!isRootPage && (
         <button
+          type="button"
           onClick={handleBack}
-          className="lg:hidden fixed bottom-6 left-4 z-50 w-12 h-12 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform"
+          className="lg:hidden fixed bottom-6 left-4 z-[100] pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl active:scale-95 transition-transform"
           aria-label="Voltar"
         >
           <ChevronLeft className="w-6 h-6" />
