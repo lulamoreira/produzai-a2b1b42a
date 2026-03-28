@@ -259,6 +259,15 @@ Em caso de dúvidas, entre em contato com a administração.`;
                       >
                         <Copy className="w-3.5 h-3.5" />
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-green-600"
+                        onClick={() => sendWhatsApp(team.id)}
+                        title="Enviar código via WhatsApp para o líder"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                      </Button>
                     </>
                   ) : (
                     <span className="text-xs text-muted-foreground italic">Sem código</span>
