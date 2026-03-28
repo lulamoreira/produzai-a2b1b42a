@@ -67,7 +67,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
         <button
           type="button"
           onClick={handleBack}
-          className="lg:hidden fixed bottom-6 left-4 z-[100] pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl active:scale-95 transition-transform"
+          className="lg:hidden fixed bottom-6 left-4 z-[100] pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl active:scale-95 transition-transform [[data-sidebar-mobile-open=true]_&]:hidden"
           aria-label="Voltar"
         >
           <ChevronLeft className="w-6 h-6" />
