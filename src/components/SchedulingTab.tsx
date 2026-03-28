@@ -370,8 +370,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="space-y-2">
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar loja..."
@@ -380,59 +380,63 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             className="pl-10 bg-card border-border"
           />
         </div>
-        <select
-          value={filterState}
-          onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
-          className="px-3 py-2 text-sm rounded-md border border-border bg-card text-foreground"
-        >
-          <option value="">Todos os estados</option>
-          {states.map((s) => (
-            <option key={s} value={s}>{s}</option>
-          ))}
-        </select>
-        <select
-          value={filterCity}
-          onChange={(e) => setFilterCity(e.target.value)}
-          className="px-3 py-2 text-sm rounded-md border border-border bg-card text-foreground"
-        >
-          <option value="">Todas as cidades</option>
-          {cities.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-        <select
-          value={filterApproval}
-          onChange={(e) => setFilterApproval(e.target.value)}
-          className="px-3 py-2 text-sm rounded-md border border-border bg-card text-foreground"
-        >
-          <option value="">Todas as aprovações</option>
-          <option value="approved">✅ 100% Aprovado</option>
-          <option value="pending">⚠️ Com pendência</option>
-        </select>
-        <select
-          value={filterMessages}
-          onChange={(e) => setFilterMessages(e.target.value)}
-          className="px-3 py-2 text-sm rounded-md border border-border bg-card text-foreground"
-        >
-          <option value="">Todas as mensagens</option>
-          <option value="unread">💬 Com mensagens novas</option>
-          <option value="has_messages">📩 Com mensagens</option>
-        </select>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setTeamDialogOpen(true)}>
-          <Wrench className="w-4 h-4" /> Equipes
-        </Button>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportTeams}>
-          <Users className="w-4 h-4" /> Exportar Equipes
-        </Button>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
-          <Download className="w-4 h-4" /> Exportar
-        </Button>
+        <div className="flex flex-wrap gap-2 items-center">
+          <select
+            value={filterState}
+            onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+          >
+            <option value="">Todos estados</option>
+            {states.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <select
+            value={filterCity}
+            onChange={(e) => setFilterCity(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+          >
+            <option value="">Todas cidades</option>
+            {cities.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <select
+            value={filterApproval}
+            onChange={(e) => setFilterApproval(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
+          >
+            <option value="">Aprovações</option>
+            <option value="approved">✅ Aprovado</option>
+            <option value="pending">⚠️ Pendência</option>
+          </select>
+          <select
+            value={filterMessages}
+            onChange={(e) => setFilterMessages(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
+          >
+            <option value="">Mensagens</option>
+            <option value="unread">💬 Novas</option>
+            <option value="has_messages">📩 Com msg</option>
+          </select>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setTeamDialogOpen(true)}>
+            <Wrench className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Equipes</span><span className="sm:hidden">Eq.</span>
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleExportTeams}>
+            <Users className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Exportar Equipes</span><span className="sm:hidden">Exp. Eq.</span>
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleExport}>
+            <Download className="w-3.5 h-3.5" /> Exportar
+          </Button>
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground">{filteredStores.length} loja(s)</p>
 
       {/* Store Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
         {filteredStores.map((store) => {
           const colors = getStateColor(store.state);
           const schedule = scheduleMap[store.id];
@@ -562,7 +566,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 </div>
 
                 {/* Scheduling fields */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Date */}
                   <div className="space-y-1">
                     <label className="text-xs font-medium text-foreground flex items-center gap-1">

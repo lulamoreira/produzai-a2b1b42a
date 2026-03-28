@@ -92,7 +92,7 @@ function SortableRow({
             <span className="font-bold text-primary">{kit.code}</span>
           </div>
         </TableCell>
-        <TableCell className="text-muted-foreground">{kitCategory || "—"}</TableCell>
+        <TableCell className="text-muted-foreground hidden sm:table-cell">{kitCategory || "—"}</TableCell>
         <TableCell>
           <button
             className="font-medium text-left hover:text-primary hover:underline transition-colors"
@@ -108,10 +108,10 @@ function SortableRow({
             </span>
           </button>
         </TableCell>
-        <TableCell className="text-sm text-muted-foreground">—</TableCell>
-        <TableCell>—</TableCell>
-        <TableCell className="text-sm text-muted-foreground">—</TableCell>
-        <TableCell className="text-sm text-muted-foreground">—</TableCell>
+        <TableCell className="text-sm text-muted-foreground hidden md:table-cell">—</TableCell>
+        <TableCell className="hidden lg:table-cell">—</TableCell>
+        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">—</TableCell>
+        <TableCell className="text-sm text-muted-foreground hidden xl:table-cell">—</TableCell>
         <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
         {(canEditPieces || canDeletePieces) && (
           <TableCell>
@@ -172,26 +172,26 @@ function SortableRow({
           <span className="font-bold text-primary">{piece.code}</span>
         </div>
       </TableCell>
-      <TableCell className="text-muted-foreground">{piece.category}</TableCell>
+      <TableCell className="text-muted-foreground hidden sm:table-cell">{piece.category}</TableCell>
       <TableCell>
         <button
           className="font-medium text-left hover:text-primary hover:underline transition-colors"
           onClick={() => onEdit(piece)}
         >
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-1.5 flex-wrap">
             {piece.name}
             {piece.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">MOCKUP</span>}
           </span>
         </button>
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground">{piece.size || "—"}</TableCell>
-      <TableCell>
+      <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{piece.size || "—"}</TableCell>
+      <TableCell className="hidden lg:table-cell">
         {piece.store_category ? (
           <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{piece.store_category}</span>
         ) : "—"}
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground">{piece.specification}</TableCell>
-      <TableCell className="text-sm text-muted-foreground">{piece.installation_instructions}</TableCell>
+      <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">{piece.specification}</TableCell>
+      <TableCell className="text-sm text-muted-foreground hidden xl:table-cell">{piece.installation_instructions}</TableCell>
       <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
       {(canEditPieces || canDeletePieces) && (
         <TableCell>
@@ -343,20 +343,20 @@ export default function SortablePiecesTable({
   };
 
   return (
-    <div className="border border-border rounded-lg overflow-x-auto">
+    <div className="border border-border rounded-lg overflow-x-auto -mx-1 sm:mx-0">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <Table className="min-w-[900px]">
+        <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
               {canEditPieces && <TableHead className="w-8" />}
-              <TableHead className="w-[80px]">Código</TableHead>
-              <TableHead>Localização na Loja</TableHead>
+              <TableHead className="w-[70px]">Cód.</TableHead>
+              <TableHead className="hidden sm:table-cell">Localização</TableHead>
               <TableHead>Nome</TableHead>
-              <TableHead>Medidas</TableHead>
-              <TableHead>Modelo de Loja</TableHead>
-              <TableHead>Especificação</TableHead>
-              <TableHead>Instruções de Instalação</TableHead>
-              <TableHead className="text-center">Total distribuído</TableHead>
+              <TableHead className="hidden md:table-cell">Medidas</TableHead>
+              <TableHead className="hidden lg:table-cell">Modelo</TableHead>
+              <TableHead className="hidden lg:table-cell">Especificação</TableHead>
+              <TableHead className="hidden xl:table-cell">Instalação</TableHead>
+              <TableHead className="text-center w-[60px]">Total</TableHead>
               {(canEditPieces || canDeletePieces) && <TableHead className="w-[80px]">Ações</TableHead>}
             </TableRow>
           </TableHeader>

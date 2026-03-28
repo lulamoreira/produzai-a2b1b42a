@@ -181,8 +181,8 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="space-y-2">
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar loja..."
@@ -191,28 +191,30 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
             className="pl-10 bg-card border-border"
           />
         </div>
-        <select
-          value={filterState}
-          onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
-          className="px-3 py-2 text-sm rounded-md border border-border bg-card text-foreground"
-        >
-          <option value="">Todos os estados</option>
-          {states.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <select
-          value={filterCity}
-          onChange={(e) => setFilterCity(e.target.value)}
-          className="px-3 py-2 text-sm rounded-md border border-border bg-card text-foreground"
-        >
-          <option value="">Todas as cidades</option>
-          {cities.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
+        <div className="flex flex-wrap gap-2 items-center">
+          <select
+            value={filterState}
+            onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+          >
+            <option value="">Todos estados</option>
+            {states.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select
+            value={filterCity}
+            onChange={(e) => setFilterCity(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+          >
+            <option value="">Todas cidades</option>
+            {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground">{filteredStores.length} loja(s) com agendamento</p>
 
       {/* Store Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
         {filteredStores.map((store) => {
           const colors = getStateColor(store.state);
           const schedule = scheduleMap[store.id];
@@ -330,7 +332,7 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
 
                 {/* Upload section */}
                 {canEdit && (
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <select
                       value={catForStore}
                       onChange={(e) => setUploadCategory((prev) => ({ ...prev, [store.id]: e.target.value }))}

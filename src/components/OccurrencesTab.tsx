@@ -208,24 +208,26 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   return (
     <div className="space-y-4">
       {/* Header actions */}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="outline" size="sm" onClick={handleCopyLink}>
-          <Copy className="w-3.5 h-3.5 mr-1.5" /> Copiar Link para acesso a essa página
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => setQrOpen(true)}>
-          <QrCode className="w-3.5 h-3.5 mr-1.5" /> QR-Code para acesso a essa página
-        </Button>
-        <a href={publicLink} target="_blank" rel="noopener noreferrer">
-          <Button variant="outline" size="sm">
-            <ExternalLink className="w-3.5 h-3.5 mr-1.5" /> Incluir Ocorrência
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyLink}>
+            <Copy className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">Copiar Link para acesso a essa página</span><span className="sm:hidden">Copiar Link</span>
           </Button>
-        </a>
-        {canEdit && (
-          <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
-            <Settings className="w-3.5 h-3.5 mr-1.5" /> Configurar
+          <Button variant="outline" size="sm" className="text-xs" onClick={() => setQrOpen(true)}>
+            <QrCode className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">QR-Code para acesso a essa página</span><span className="sm:hidden">QR-Code</span>
           </Button>
-        )}
-        <span className="ml-auto text-sm text-muted-foreground">{filteredOccurrences.length} de {occurrences.length} ocorrência(s)</span>
+          <a href={publicLink} target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" size="sm" className="text-xs">
+              <ExternalLink className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">Incluir Ocorrência</span><span className="sm:hidden">Incluir</span>
+            </Button>
+          </a>
+          {canEdit && (
+            <Button variant="outline" size="sm" className="text-xs" onClick={() => setSettingsOpen(true)}>
+              <Settings className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">Configurar</span><span className="sm:hidden">Config.</span>
+            </Button>
+          )}
+        </div>
+        <span className="text-xs text-muted-foreground">{filteredOccurrences.length} de {occurrences.length} ocorrência(s)</span>
       </div>
 
       {/* Dashboard */}
@@ -269,7 +271,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           <p className="text-muted-foreground text-sm">Nenhuma ocorrência registrada.</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {filteredOccurrences.map((occ) => {
             const motiveIdx = motives.findIndex((m) => m.id === occ.motive_id);
             const MOTIVE_COLORS = [

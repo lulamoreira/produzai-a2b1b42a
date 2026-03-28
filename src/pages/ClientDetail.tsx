@@ -844,28 +844,30 @@ const ClientDetail = () => {
         {new URLSearchParams(location.search).get("tab") === "stores" && (
           <>
             {/* Stats + Actions */}
-            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
-              <span className="text-sm font-semibold text-foreground">{stores.length} lojas</span>
-              <div className="flex-1 min-w-[120px] max-w-xs">
-                <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-foreground">{stores.length} lojas</span>
+                <div className="flex-1 min-w-[80px] max-w-xs">
+                  <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <Select value={storeStateFilter} onValueChange={setStoreStateFilter}>
+                  <SelectTrigger className="h-8 text-xs w-[80px] sm:w-[100px]">
+                    <SelectValue placeholder="UF" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    {storeStates.map((uf) => (
+                      <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <Select value={storeStateFilter} onValueChange={setStoreStateFilter}>
-                <SelectTrigger className="h-8 text-xs w-[100px]">
-                  <SelectValue placeholder="UF" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  {storeStates.map((uf) => (
-                    <SelectItem key={uf} value={uf}>{uf}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <div className="flex flex-wrap gap-1.5">
                 <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportClientStores(stores, client.name, agencyInfo?.name)}>
                   <Download className="w-3 h-3" /> Exportar
                 </Button>
                 <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setCustomExportOpen(true)}>
-                  <Download className="w-3 h-3" /> Export. Personalizada
+                  <Download className="w-3 h-3" /> <span className="hidden sm:inline">Export.</span> Pers.
                 </Button>
                 {canEditStores && (
                   <>
@@ -879,7 +881,7 @@ const ClientDetail = () => {
                       <Sparkles className="w-3 h-3" /> Códigos
                     </Button>
                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleEnrichStores} disabled={enriching}>
-                       <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "Atualizando..." : "Enriquecer"}
+                       <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "..." : "Enriquecer"}
                      </Button>
                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setStoreModelDialogOpen(true)}>
                        <Tag className="w-3 h-3" /> Modelos
