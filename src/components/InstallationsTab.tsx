@@ -8,6 +8,8 @@ import { useInstallationPhotos, useAddInstallationPhoto, type InstallationPhoto 
 import { useAuth } from "@/hooks/useAuth";
 import { compressImage } from "@/lib/compressImage";
 import DebouncedInput from "@/components/DebouncedInput";
+import TeamCodesPanel from "@/components/TeamCodesPanel";
+import { useUserRole } from "@/hooks/useUserRole";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,7 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle,
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
-  Camera, Image, Upload, Plus,
+  Camera, Image, Upload, Plus, Key,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -67,7 +69,9 @@ function buildAddress(store: ClientStore) {
 const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: InstallationsTabProps) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { isAdminOrMaster } = useUserRole();
   const [searchTerm, setSearchTerm] = useState("");
+  const [showCodes, setShowCodes] = useState(false);
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
   
@@ -180,6 +184,26 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
 
   return (
     <div className="space-y-4">
+      {/* Team Codes Panel (admin/master only) */}
+      {isAdminOrMaster && (
+        <div className="space-y-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs gap-1.5"
+            onClick={() => setShowCodes(!showCodes)}
+          >
+            <Key className="w-3.5 h-3.5" />
+            {showCodes ? "Ocultar Códigos de Acesso" : "Códigos de Acesso Temporário"}
+          </Button>
+          {showCodes && (
+            <div className="aqua-card p-4">
+              <TeamCodesPanel campaignId={campaignId} />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Filters */}
       <div className="space-y-2">
         <div className="relative w-full">
