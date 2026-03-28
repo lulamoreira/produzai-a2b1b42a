@@ -38,21 +38,22 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
     <div className="min-h-screen bg-background">
       <AppSidebar />
 
+      {/* Fixed floating back button for mobile — always accessible */}
+      {!isRootPage && (
+        <button
+          onClick={handleBack}
+          className="lg:hidden fixed bottom-6 left-4 z-50 w-12 h-12 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform"
+          aria-label="Voltar"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+      )}
+
       <div className="lg:pl-[220px] transition-all duration-300">
         {(breadcrumbs || title || headerRight) && (
           <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-2">
             <div className="flex items-center justify-between gap-3">
-              {!isRootPage ? (
-                <button
-                  onClick={handleBack}
-                  className="lg:hidden flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 active:scale-95 transition-all -ml-1 shadow-sm border border-primary/20"
-                  aria-label="Voltar"
-                >
-                  <ChevronLeft className="w-6 h-6 text-primary" />
-                </button>
-              ) : (
-                <div className="w-9 lg:hidden flex-shrink-0" />
-              )}
+              <div className="w-9 lg:hidden flex-shrink-0" />
               <div className="flex items-center gap-1 min-w-0 flex-1">
                 {breadcrumbs && breadcrumbs.length > 1 ? (
                   <div className="flex flex-wrap items-center gap-1">
