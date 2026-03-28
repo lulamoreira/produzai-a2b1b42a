@@ -727,47 +727,47 @@ const CampaignDetail = () => {
 
   // ─── Store filters bar ─────────────────────────────────
   const renderStoreFilters = () => (
-    <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3 mb-4">
-      <div className="relative flex-1 min-w-0 sm:min-w-[200px] sm:max-w-xs">
+    <div className="space-y-2 mb-4">
+      <div className="relative w-full">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="pl-10" />
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 items-center">
         {uniqueStates.length > 0 && (
           <Select value={stateFilter} onValueChange={setStateFilter}>
-            <SelectTrigger className="w-[120px] sm:w-[140px]">
+            <SelectTrigger className="w-[100px] sm:w-[140px] text-xs">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Todos estados</SelectItem>
+              <SelectItem value="__all__">Todos</SelectItem>
               {uniqueStates.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
             </SelectContent>
           </Select>
         )}
         {uniqueCities.length > 0 && (
           <Select value={cityFilter} onValueChange={setCityFilter}>
-            <SelectTrigger className="w-[140px] sm:w-[180px]">
+            <SelectTrigger className="w-[110px] sm:w-[180px] text-xs">
               <SelectValue placeholder="Cidade" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Todas cidades</SelectItem>
+              <SelectItem value="__all__">Todas</SelectItem>
               {uniqueCities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
         )}
         {uniqueStoreCategories.length > 0 && (
           <Select value={storeCategoryFilter} onValueChange={setStoreCategoryFilter}>
-            <SelectTrigger className="w-[140px] sm:w-[180px]">
-              <SelectValue placeholder="Cat. de Loja" />
+            <SelectTrigger className="w-[110px] sm:w-[180px] text-xs">
+              <SelectValue placeholder="Cat." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Todas categorias</SelectItem>
+              <SelectItem value="__all__">Todas</SelectItem>
               {uniqueStoreCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
         )}
+        <span className="text-xs text-muted-foreground">{filteredStores.length} loja(s)</span>
       </div>
-      <span className="text-xs sm:text-sm text-muted-foreground">{filteredStores.length} loja(s)</span>
     </div>
   );
 
@@ -928,8 +928,8 @@ const CampaignDetail = () => {
                 <p className="text-muted-foreground text-sm">Nenhuma loja encontrada.</p>
               </div>
             ) : (
-              <div className="border border-border rounded-lg overflow-x-auto">
-                <Table className="min-w-[700px]">
+              <div className="border border-border rounded-lg overflow-x-auto -mx-1 sm:mx-0">
+                <Table className="min-w-[600px]">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Loja</TableHead>
@@ -1298,7 +1298,7 @@ const CampaignDetail = () => {
           </>)}
 
           {activeSection === "matrix" && (
-            <div className="flex border border-border rounded-xl overflow-hidden bg-card -mx-2 sm:-mx-4" style={{ minHeight: "calc(100vh - 200px)" }}>
+            <div className="flex flex-col lg:flex-row border border-border rounded-xl overflow-hidden bg-card -mx-2 sm:-mx-4" style={{ minHeight: "calc(100vh - 200px)" }}>
               {/* Filter Sidebar */}
               <MatrixFilterSidebar
                 pieces={pieces}
