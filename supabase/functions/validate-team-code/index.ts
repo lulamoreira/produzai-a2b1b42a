@@ -57,20 +57,29 @@ Deno.serve(async (req) => {
     const daysAfter = campaign?.access_days_after ?? 0;
     const ignoreDate = campaign?.access_ignore_date ?? false;
 
-    // Get schedules in a wide date range
     const now = new Date();
-    const rangeStart = new Date(now);
-    rangeStart.setDate(rangeStart.getDate() - Math.max(daysAfter, 2));
-    const rangeEnd = new Date(now);
-    rangeEnd.setDate(rangeEnd.getDate() + Math.max(daysBefore, 2));
 
-    const { data: schedules, error: schedError } = await supabase
+    // When both date and time are ignored, fetch ALL schedules for this team
+    const bypassWindow = ignoreDate && ignoreTime;
+
+    let schedQuery = supabase
       .from("campaign_schedules")
       .select("*, client_stores(*)")
       .eq("campaign_id", campaignId)
-      .eq("team_id", teamId)
-      .gte("scheduled_date", rangeStart.toISOString().split("T")[0])
-      .lte("scheduled_date", rangeEnd.toISOString().split("T")[0]);
+      .eq("team_id", teamId);
+
+    // Only apply date range filter when date matters
+    if (!ignoreDate) {
+      const rangeStart = new Date(now);
+      rangeStart.setDate(rangeStart.getDate() - Math.max(daysAfter, 2));
+      const rangeEnd = new Date(now);
+      rangeEnd.setDate(rangeEnd.getDate() + Math.max(daysBefore, 2));
+      schedQuery = schedQuery
+        .gte("scheduled_date", rangeStart.toISOString().split("T")[0])
+        .lte("scheduled_date", rangeEnd.toISOString().split("T")[0]);
+    }
+
+    const { data: schedules, error: schedError } = await schedQuery;
 
     if (schedError) {
       return new Response(
@@ -81,7 +90,13 @@ Deno.serve(async (req) => {
 
     // If both date and time are ignored, all schedules are valid
     const validSchedules = (schedules || []).filter((s: any) => {
+      // When both are bypassed, everything passes
+      if (bypassWindow) return true;
+
       if (!s.scheduled_date && !ignoreDate) return false;
+
+      // If ignoring date but not time, and there's no scheduled_date, allow (no date constraint)
+      if (!s.scheduled_date && ignoreDate) return true;
 
       // Date check
       if (!ignoreDate && s.scheduled_date) {
