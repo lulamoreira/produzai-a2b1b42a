@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Key, RefreshCw, Download, Copy, Eye, EyeOff, Search, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useInstallationTeams, useAllTeamMembers } from "@/components/InstallationTeamDialog";
+import AccessWindowConfig from "@/components/AccessWindowConfig";
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I,O,0,1 to avoid confusion
