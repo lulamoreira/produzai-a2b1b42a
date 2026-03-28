@@ -126,7 +126,7 @@ export default function AppHeader({
 
           {children}
 
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <div className="hidden sm:flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {showNav && (
             <>
               <InviteButton />
