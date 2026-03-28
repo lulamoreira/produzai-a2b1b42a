@@ -27,14 +27,20 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
   const isRootPage = location.pathname === "/" || location.pathname === "/admin" || location.pathname === "/chat" || location.pathname === "/my-campaigns" || location.pathname === "/approvals";
 
   const handleBack = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
-    if (backHref) {
-      navigate(backHref);
-    } else if (window.history.length > 1) {
+
+    if (window.history.state?.idx > 0) {
       navigate(-1);
-    } else {
-      navigate("/");
+      return;
     }
+
+    if (backHref && backHref !== location.pathname) {
+      navigate(backHref);
+      return;
+    }
+
+    navigate("/");
   };
 
   return (
