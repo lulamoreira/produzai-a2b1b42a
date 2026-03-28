@@ -52,6 +52,12 @@ export default function AppSidebar() {
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname, location.search]);
 
+  // Sync body attribute so other components (e.g. back button) can react
+  useEffect(() => {
+    document.body.setAttribute("data-sidebar-mobile-open", mobileOpen ? "true" : "false");
+    return () => { document.body.removeAttribute("data-sidebar-mobile-open"); };
+  }, [mobileOpen]);
+
   // Extract context from URL
   const pathParts = location.pathname.split("/");
   const agencyIdx = pathParts.indexOf("agency");

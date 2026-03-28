@@ -252,3 +252,8 @@
     z-index: 2;
   }
 }
+
+/* Hide mobile back button when sidebar is open */
+body[data-sidebar-mobile-open="true"] .mobile-back-btn {
+  display: none !important;
+}
