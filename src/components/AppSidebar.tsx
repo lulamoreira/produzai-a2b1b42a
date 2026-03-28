@@ -107,6 +107,12 @@ export default function AppSidebar() {
     setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
+  const handleNavigate = useCallback((href?: string) => {
+    if (!href) return;
+    setMobileOpen(false);
+    navigate(href);
+  }, [navigate]);
+
   useEffect(() => {
     if (location.pathname.startsWith("/admin") || location.pathname === "/approvals") {
       setExpandedGroups((prev) => ({ ...prev, admin: true }));
@@ -236,7 +242,7 @@ export default function AppSidebar() {
               {item.children.map((child) => (
                 <button
                   key={child.label}
-                  onClick={() => child.href && navigate(child.href)}
+                  onClick={() => handleNavigate(child.href)}
                   className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all ${
                     child.active
                       ? "bg-sidebar-accent text-sidebar-primary font-semibold"
@@ -256,7 +262,7 @@ export default function AppSidebar() {
     return (
       <button
         key={item.label}
-        onClick={() => item.href && navigate(item.href)}
+        onClick={() => handleNavigate(item.href)}
         className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all relative ${
           item.active
             ? "bg-sidebar-accent text-sidebar-primary"
