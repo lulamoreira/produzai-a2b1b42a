@@ -1405,6 +1405,7 @@ export type Database = {
           can_edit_reporter_data: boolean
           can_edit_schedules: boolean
           can_edit_stores: boolean
+          can_manage_team_codes: boolean
           can_view_campaign_stores: boolean
           can_view_campaigns: boolean
           can_view_clients: boolean
@@ -1435,6 +1436,7 @@ export type Database = {
           can_edit_reporter_data?: boolean
           can_edit_schedules?: boolean
           can_edit_stores?: boolean
+          can_manage_team_codes?: boolean
           can_view_campaign_stores?: boolean
           can_view_campaigns?: boolean
           can_view_clients?: boolean
@@ -1465,6 +1467,7 @@ export type Database = {
           can_edit_reporter_data?: boolean
           can_edit_schedules?: boolean
           can_edit_stores?: boolean
+          can_manage_team_codes?: boolean
           can_view_campaign_stores?: boolean
           can_view_campaigns?: boolean
           can_view_clients?: boolean

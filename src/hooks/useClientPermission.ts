@@ -12,7 +12,8 @@ type PermissionKey =
   | "can_view_occurrences" | "can_edit_occurrences" | "can_delete_occurrences"
   | "can_view_schedules" | "can_edit_schedules" | "can_delete_schedules"
   | "can_view_installations" | "can_edit_installations" | "can_delete_installations"
-  | "can_edit_reporter_data";
+  | "can_edit_reporter_data"
+  | "can_manage_team_codes";
 
 export function useClientPermission(clientId?: string, permission?: PermissionKey) {
   const { user } = useAuth();

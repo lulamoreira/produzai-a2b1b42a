@@ -1,0 +1,1 @@
+ALTER TABLE public.permission_categories ADD COLUMN can_manage_team_codes boolean NOT NULL DEFAULT false;
