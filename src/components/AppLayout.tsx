@@ -45,10 +45,10 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
               {!isRootPage ? (
                 <button
                   onClick={handleBack}
-                  className="lg:hidden flex-shrink-0 w-9 h-9 flex items-center justify-center rounded-full hover:bg-muted transition-colors -ml-1"
+                  className="lg:hidden flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-xl bg-primary/10 hover:bg-primary/20 active:scale-95 transition-all -ml-1 shadow-sm border border-primary/20"
                   aria-label="Voltar"
                 >
-                  <ChevronLeft className="w-5 h-5 text-foreground" />
+                  <ChevronLeft className="w-6 h-6 text-primary" />
                 </button>
               ) : (
                 <div className="w-9 lg:hidden flex-shrink-0" />
