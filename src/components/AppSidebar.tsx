@@ -14,7 +14,7 @@ import {
   Building2, MessageSquare, Shield, LogOut, Users,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
-  CalendarDays, Camera, DollarSign, Home,
+  CalendarDays, Camera, DollarSign, Home, Database,
 } from "lucide-react";
 
 interface NavItem {
@@ -193,7 +193,7 @@ export default function AppSidebar() {
             label: "Painel Admin",
             icon: Shield,
             href: "/admin",
-            active: location.pathname === "/admin",
+            active: location.pathname === "/admin" && !location.search.includes("tab=backup"),
             color: "#f97316",
           },
           {
@@ -203,6 +203,13 @@ export default function AppSidebar() {
             active: location.pathname === "/approvals",
             color: "#22c55e",
           },
+          ...(isAdmin ? [{
+            label: "Backup",
+            icon: Database,
+            href: "/admin?tab=backup",
+            active: location.pathname === "/admin" && location.search.includes("tab=backup"),
+            color: "#6366f1",
+          }] : []),
         ],
       });
     }
