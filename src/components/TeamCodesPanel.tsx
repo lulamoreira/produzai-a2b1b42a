@@ -4,9 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Key, RefreshCw, Download, Copy, Eye, EyeOff, Search } from "lucide-react";
+import { Key, RefreshCw, Download, Copy, Eye, EyeOff, Search, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useInstallationTeams } from "@/components/InstallationTeamDialog";
+import { useInstallationTeams, useAllTeamMembers } from "@/components/InstallationTeamDialog";
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I,O,0,1 to avoid confusion
@@ -28,6 +28,7 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
   const [visibleCodes, setVisibleCodes] = useState<Record<string, boolean>>({});
 
   const { data: teams = [] } = useInstallationTeams(campaignId);
+  const { data: allMembers = {} } = useAllTeamMembers(campaignId);
 
   const { data: codes = [], isLoading } = useQuery({
     queryKey: ["team_codes", campaignId],
@@ -120,6 +121,42 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
   const copyToClipboard = (code: string) => {
     navigator.clipboard.writeText(code);
     toast.success("Código copiado!");
+  };
+
+  const sendWhatsApp = (teamId: string) => {
+    const teamCode = codeMap[teamId];
+    const team = teams.find((t) => t.id === teamId);
+    if (!teamCode || !team) return;
+
+    const members = allMembers[teamId] || [];
+    const leader = members.find((m) => m.is_leader);
+    if (!leader || !leader.phone) {
+      toast.error("Nenhum líder com telefone cadastrado nesta equipe. Defina um líder no cadastro de equipes.");
+      return;
+    }
+
+    const phone = leader.phone.replace(/\D/g, "");
+    const fullPhone = phone.startsWith("55") ? phone : `55${phone}`;
+
+    const message = `🔑 *Código de Acesso Temporário*
+
+Olá ${leader.name}! Segue seu código de acesso para a campanha:
+
+*Equipe:* ${team.name}
+*Código:* ${teamCode.code}
+
+📱 *Como acessar:*
+1. Acesse o link do sistema
+2. Na tela de login, clique em "Acesso Instalador"
+3. Digite o código acima
+4. Você verá as tarefas agendadas para sua equipe
+
+⏰ O acesso é liberado 2h antes do horário agendado e expira 24h após o início.
+
+Em caso de dúvidas, entre em contato com a administração.`;
+
+    const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
   };
 
   const filteredTeams = teams.filter(
@@ -221,6 +258,15 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
                         onClick={() => copyToClipboard(teamCode.code)}
                       >
                         <Copy className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-green-600"
+                        onClick={() => sendWhatsApp(team.id)}
+                        title="Enviar código via WhatsApp para o líder"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
                       </Button>
                     </>
                   ) : (

@@ -1013,6 +1013,7 @@ export type Database = {
           cpf: string | null
           created_at: string
           id: string
+          is_leader: boolean
           is_unified_doc: boolean
           name: string
           phone: string | null
@@ -1023,6 +1024,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           id?: string
+          is_leader?: boolean
           is_unified_doc?: boolean
           name: string
           phone?: string | null
@@ -1033,6 +1035,7 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           id?: string
+          is_leader?: boolean
           is_unified_doc?: boolean
           name?: string
           phone?: string | null
