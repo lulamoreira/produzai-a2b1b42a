@@ -55,9 +55,9 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
               </div>
               {headerRight && <div className="flex items-center gap-2 flex-shrink-0">{headerRight}</div>}
             </div>
-            {/* Current page title - full width, never truncated */}
+            {/* Current page title aligned with breadcrumb text start on mobile */}
             {breadcrumbs && breadcrumbs.length > 0 && (
-              <div className="text-sm font-bold text-foreground leading-tight pl-9 lg:pl-0">
+              <div className="text-sm font-bold text-foreground leading-tight pl-12 lg:pl-0">
                 {breadcrumbs[breadcrumbs.length - 1]?.label}
               </div>
             )}
