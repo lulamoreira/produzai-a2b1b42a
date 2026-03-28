@@ -193,8 +193,8 @@ Em caso de dúvidas, entre em contato com a administração.`;
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Gere códigos alfanuméricos de 10 dígitos para que equipes de instalação acessem suas tarefas do dia.
-        O acesso é liberado 2h antes e expira 24h após o horário agendado.
+        Gere códigos alfanuméricos de 10 dígitos para que equipes de instalação acessem suas tarefas.
+        Configure a janela de acesso abaixo.
       </p>
 
       {teams.length > 5 && (
