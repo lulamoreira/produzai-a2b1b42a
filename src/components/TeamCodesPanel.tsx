@@ -8,6 +8,8 @@ import { Key, RefreshCw, Download, Copy, Eye, EyeOff, Search, MessageCircle } fr
 import { toast } from "sonner";
 import { useInstallationTeams, useAllTeamMembers } from "@/components/InstallationTeamDialog";
 import AccessWindowConfig from "@/components/AccessWindowConfig";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Clock, ChevronDown } from "lucide-react";
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I,O,0,1 to avoid confusion
@@ -27,6 +29,7 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [visibleCodes, setVisibleCodes] = useState<Record<string, boolean>>({});
+  const [accessWindowOpen, setAccessWindowOpen] = useState(false);
 
   const { data: teams = [] } = useInstallationTeams(campaignId);
   const { data: allMembers = {} } = useAllTeamMembers(campaignId);
@@ -166,6 +169,24 @@ Em caso de dúvidas, entre em contato com a administração.`;
 
   return (
     <div className="space-y-4">
+      {/* Access Window – collapsible at the top */}
+      <Collapsible open={accessWindowOpen} onOpenChange={setAccessWindowOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between gap-2 p-3 rounded-lg bg-muted/60 border border-border hover:bg-muted transition-colors">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">Janela de Acesso Temporário</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${accessWindowOpen ? "rotate-180" : ""}`} />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3">
+          <div className="p-4 rounded-lg border border-border bg-card">
+            <AccessWindowConfig campaignId={campaignId} />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
           <Key className="w-5 h-5 text-primary" />
@@ -290,10 +311,6 @@ Em caso de dúvidas, entre em contato com a administração.`;
         </div>
       )}
 
-      {/* Access Window Configuration */}
-      <div className="border-t border-border pt-4 mt-6">
-        <AccessWindowConfig campaignId={campaignId} />
-      </div>
     </div>
   );
 }
