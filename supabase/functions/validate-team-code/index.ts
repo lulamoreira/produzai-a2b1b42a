@@ -95,6 +95,9 @@ Deno.serve(async (req) => {
 
       if (!s.scheduled_date && !ignoreDate) return false;
 
+      // If ignoring date but not time, and there's no scheduled_date, allow (no date constraint)
+      if (!s.scheduled_date && ignoreDate) return true;
+
       // Date check
       if (!ignoreDate && s.scheduled_date) {
         const schedDate = new Date(s.scheduled_date + "T12:00:00Z");
