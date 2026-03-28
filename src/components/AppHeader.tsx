@@ -90,6 +90,7 @@ export default function AppHeader({
   return (
     <header className={`border-b border-white/10 sticky top-0 z-10 ${bgClass || "bg-gradient-to-r from-[#1e3a5f] to-[#5b3f8f]"} text-white`} style={bgStyle}>
       <div className={`${maxWidth} mx-auto px-3 sm:px-4 py-2 sm:py-3`}>
+        {/* Row 1: breadcrumb trail + actions */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {backTo && (
@@ -97,31 +98,24 @@ export default function AppHeader({
                 <ArrowLeft className="w-4 h-4" />
               </Button>
             )}
-            {breadcrumbs && breadcrumbs.length > 0 ? (
-              <div className="min-w-0 flex flex-col items-start">
-                <div className="min-w-0 flex flex-wrap items-center gap-1 text-[10px] sm:text-xs opacity-70">
-                  {breadcrumbs.slice(0, -1).map((crumb, i) => (
-                    <span key={i} className="flex items-center gap-1 min-w-0">
-                      {i > 0 && <ChevronRight className="w-3 h-3 opacity-40 flex-shrink-0" />}
-                      {crumb.href ? (
-                        <button onClick={() => navigate(crumb.href!)} className="hover:opacity-100 transition-opacity break-words text-left">
-                          {crumb.label}
-                        </button>
-                      ) : (
-                        <span className="break-words text-left">{crumb.label}</span>
-                      )}
-                    </span>
-                  ))}
-                </div>
-                <div className="w-full text-sm sm:text-lg font-bold leading-tight break-words text-left">
-                  {breadcrumbs[breadcrumbs.length - 1]?.label}
-                </div>
+            {breadcrumbs && breadcrumbs.length > 1 ? (
+              <div className="min-w-0 flex flex-wrap items-center gap-1 text-[10px] sm:text-xs opacity-70">
+                {breadcrumbs.slice(0, -1).map((crumb, i) => (
+                  <span key={i} className="flex items-center gap-1 min-w-0">
+                    {i > 0 && <ChevronRight className="w-3 h-3 opacity-40 flex-shrink-0" />}
+                    {crumb.href ? (
+                      <button onClick={() => navigate(crumb.href!)} className="hover:opacity-100 transition-opacity truncate max-w-[100px] sm:max-w-[180px] text-left">
+                        {crumb.label}
+                      </button>
+                    ) : (
+                      <span className="truncate max-w-[100px] sm:max-w-[180px] text-left">{crumb.label}</span>
+                    )}
+                  </span>
+                ))}
               </div>
-            ) : (
-              <h1 className="text-sm sm:text-lg font-bold truncate">
-                {title || greeting}
-              </h1>
-            )}
+            ) : !breadcrumbs ? (
+              <h1 className="text-sm sm:text-lg font-bold truncate">{title || greeting}</h1>
+            ) : null}
           </div>
 
           {children}
