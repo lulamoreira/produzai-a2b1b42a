@@ -231,7 +231,7 @@ const MatrixFilterSidebar = ({
 
   if (collapsed) {
     return (
-      <div className="flex flex-col items-center py-3 gap-2 border-r border-border bg-card/50 w-10 shrink-0">
+      <div className="hidden lg:flex flex-col items-center py-3 gap-2 border-r border-border bg-card/50 w-10 shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -265,7 +265,7 @@ const MatrixFilterSidebar = ({
     ));
 
   return (
-    <div className="w-64 shrink-0 border-r border-border bg-card/50 flex flex-col">
+    <div className="hidden lg:flex w-64 shrink-0 border-r border-border bg-card/50 flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
         <div className="flex items-center gap-2">
