@@ -168,6 +168,7 @@ export default function AppHeader({
             </DropdownMenuContent>
           </DropdownMenu>
           <EditProfileDialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen} />
+          </div>
         </div>
       </div>
     </header>
