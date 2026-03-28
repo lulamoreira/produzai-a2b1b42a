@@ -8,6 +8,8 @@ import { Key, RefreshCw, Download, Copy, Eye, EyeOff, Search, MessageCircle } fr
 import { toast } from "sonner";
 import { useInstallationTeams, useAllTeamMembers } from "@/components/InstallationTeamDialog";
 import AccessWindowConfig from "@/components/AccessWindowConfig";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Clock, ChevronDown } from "lucide-react";
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I,O,0,1 to avoid confusion
@@ -27,6 +29,7 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [visibleCodes, setVisibleCodes] = useState<Record<string, boolean>>({});
+  const [accessWindowOpen, setAccessWindowOpen] = useState(false);
 
   const { data: teams = [] } = useInstallationTeams(campaignId);
   const { data: allMembers = {} } = useAllTeamMembers(campaignId);
@@ -290,10 +293,6 @@ Em caso de dúvidas, entre em contato com a administração.`;
         </div>
       )}
 
-      {/* Access Window Configuration */}
-      <div className="border-t border-border pt-4 mt-6">
-        <AccessWindowConfig campaignId={campaignId} />
-      </div>
     </div>
   );
 }
