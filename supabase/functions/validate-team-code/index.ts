@@ -42,26 +42,35 @@ Deno.serve(async (req) => {
     const teamId = teamCode.team_id;
     const campaignId = teamCode.campaign_id;
 
-    // Get today's schedules for this team
+    // Get campaign info with access window config
+    const { data: campaign } = await supabase
+      .from("campaigns")
+      .select("id, name, client_id, access_hours_before, access_hours_after, access_ignore_time, access_days_before, access_days_after, access_ignore_date, clients(name, agency_id, agencies(name))")
+      .eq("id", campaignId)
+      .maybeSingle();
+
+    // Access window config (defaults)
+    const hoursBefore = campaign?.access_hours_before ?? 2;
+    const hoursAfter = campaign?.access_hours_after ?? 24;
+    const ignoreTime = campaign?.access_ignore_time ?? false;
+    const daysBefore = campaign?.access_days_before ?? 0;
+    const daysAfter = campaign?.access_days_after ?? 0;
+    const ignoreDate = campaign?.access_ignore_date ?? false;
+
+    // Get schedules in a wide date range
     const now = new Date();
-    const todayStr = now.toISOString().split("T")[0];
-    
-    // Get schedules for today and tomorrow (to cover the 24h window)
-    const yesterdayDate = new Date(now);
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterdayStr = yesterdayDate.toISOString().split("T")[0];
-    
-    const tomorrowDate = new Date(now);
-    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-    const tomorrowStr = tomorrowDate.toISOString().split("T")[0];
+    const rangeStart = new Date(now);
+    rangeStart.setDate(rangeStart.getDate() - Math.max(daysAfter, 2));
+    const rangeEnd = new Date(now);
+    rangeEnd.setDate(rangeEnd.getDate() + Math.max(daysBefore, 2));
 
     const { data: schedules, error: schedError } = await supabase
       .from("campaign_schedules")
       .select("*, client_stores(*)")
       .eq("campaign_id", campaignId)
       .eq("team_id", teamId)
-      .gte("scheduled_date", yesterdayStr)
-      .lte("scheduled_date", tomorrowStr);
+      .gte("scheduled_date", rangeStart.toISOString().split("T")[0])
+      .lte("scheduled_date", rangeEnd.toISOString().split("T")[0]);
 
     if (schedError) {
       return new Response(
@@ -70,38 +79,56 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Validate temporal access: 2h before start, expires 24h after start
+    // If both date and time are ignored, all schedules are valid
     const validSchedules = (schedules || []).filter((s: any) => {
-      if (!s.scheduled_date) return false;
-      const time = s.scheduled_time || "08:00";
-      const [hours, minutes] = time.split(":").map(Number);
-      const scheduleStart = new Date(s.scheduled_date + "T00:00:00");
-      scheduleStart.setHours(hours, minutes, 0, 0);
+      if (!s.scheduled_date && !ignoreDate) return false;
 
-      const accessStart = new Date(scheduleStart);
-      accessStart.setHours(accessStart.getHours() - 2);
+      // Date check
+      if (!ignoreDate && s.scheduled_date) {
+        const schedDate = new Date(s.scheduled_date + "T12:00:00Z");
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0);
 
-      const accessEnd = new Date(scheduleStart);
-      accessEnd.setHours(accessEnd.getHours() + 24);
+        const dateAccessStart = new Date(schedDate);
+        dateAccessStart.setDate(dateAccessStart.getDate() - daysBefore);
+        dateAccessStart.setHours(0, 0, 0, 0);
 
-      return now >= accessStart && now <= accessEnd;
+        const dateAccessEnd = new Date(schedDate);
+        dateAccessEnd.setDate(dateAccessEnd.getDate() + daysAfter);
+        dateAccessEnd.setHours(23, 59, 59, 999);
+
+        if (now < dateAccessStart || now > dateAccessEnd) return false;
+      }
+
+      // Time check
+      if (!ignoreTime && s.scheduled_date) {
+        const time = s.scheduled_time || "08:00";
+        const [hours, minutes] = time.split(":").map(Number);
+        const scheduleStart = new Date(s.scheduled_date + "T00:00:00");
+        scheduleStart.setHours(hours, minutes, 0, 0);
+
+        const accessStart = new Date(scheduleStart);
+        accessStart.setHours(accessStart.getHours() - hoursBefore);
+
+        const accessEnd = new Date(scheduleStart);
+        accessEnd.setHours(accessEnd.getHours() + hoursAfter);
+
+        if (now < accessStart || now > accessEnd) return false;
+      }
+
+      return true;
     });
 
     if (validSchedules.length === 0) {
+      const msg = ignoreDate && ignoreTime
+        ? "Nenhum agendamento encontrado para esta equipe."
+        : `Nenhum agendamento ativo neste momento. O acesso é liberado ${!ignoreTime ? `${hoursBefore}h antes do horário agendado` : ""}${!ignoreTime && !ignoreDate ? " e " : ""}${!ignoreDate ? `${daysBefore} dia(s) antes da data` : ""}.`;
+
       return new Response(
-        JSON.stringify({
-          error: "Nenhum agendamento ativo neste momento. O acesso é liberado 2h antes do horário agendado.",
-        }),
+        JSON.stringify({ error: msg }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // Get campaign info
-    const { data: campaign } = await supabase
-      .from("campaigns")
-      .select("id, name, client_id, clients(name, agency_id, agencies(name))")
-      .eq("id", campaignId)
-      .maybeSingle();
 
     // Get pieces for the campaign
     const { data: pieces } = await supabase
