@@ -1323,7 +1323,7 @@ const CampaignDetail = () => {
                 {/* Toolbar */}
                 <div className="px-3 py-2.5 border-b border-border bg-muted/30">
                   {renderStoreFilters()}
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <QuickMatrixEditor
                       stores={activeFilteredStores}
                       pieces={matrixPieces}
@@ -1348,11 +1348,11 @@ const CampaignDetail = () => {
                         ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label }] : []),
                       ]}
                     />
-                    <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
-                      <Download className="w-3.5 h-3.5" /> Exportar Matriz
+                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
+                      <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Exportar</span> Matriz
                     </Button>
-                    <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setMatrixCustomExportOpen(true)}>
-                      <Download className="w-3.5 h-3.5" /> Export. Personalizada
+                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setMatrixCustomExportOpen(true)}>
+                      <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Export.</span> Pers.
                     </Button>
                     {canEditCampaign && (
                       <label className="cursor-pointer">
@@ -1369,14 +1369,14 @@ const CampaignDetail = () => {
                           } catch { toast.error("Erro ao importar."); }
                           e.target.value = "";
                         }} />
-                        <Button size="sm" variant="outline" asChild>
-                          <span><Upload className="w-4 h-4 mr-1" /> Importar Matriz</span>
+                        <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" asChild>
+                          <span><Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Importar</span>
                         </Button>
                       </label>
                     )}
                     {canEditCampaign && (
-                      <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => setImportMatrixDialogOpen(true)}>
-                        <Copy className="w-3.5 h-3.5" /> Importar de outra campanha
+                      <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setImportMatrixDialogOpen(true)}>
+                        <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">De outra</span> camp.
                       </Button>
                     )}
                   </div>

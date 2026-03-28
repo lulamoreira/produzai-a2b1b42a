@@ -338,7 +338,7 @@ const QuickMatrixEditor = ({
   return (
     <>
       {/* Toolbar */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
         {!editing ? (
           <Button
             size="sm"
@@ -357,7 +357,7 @@ const QuickMatrixEditor = ({
               disabled={saving || changedCount === 0}
             >
               <Save className="w-3.5 h-3.5" />
-              {saving ? "Salvando..." : `Salvar ${changedCount} alteração(ões)`}
+              {saving ? "Salvando..." : `Salvar (${changedCount})`}
             </Button>
             <Button
               size="sm"
@@ -368,7 +368,7 @@ const QuickMatrixEditor = ({
             >
               <X className="w-3.5 h-3.5" /> Cancelar
             </Button>
-            <span className="text-xs text-muted-foreground ml-2">
+            <span className="text-[10px] text-muted-foreground hidden sm:inline ml-2">
               Tab/Enter = próxima · Setas = navegar · Esc = cancelar
             </span>
           </>
@@ -377,7 +377,7 @@ const QuickMatrixEditor = ({
 
       {/* AI Prompt */}
       {editing && (
-        <div className="flex items-center gap-2 mb-3 p-3 rounded-lg border border-primary/20 bg-primary/5">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mb-3 p-3 rounded-lg border border-primary/20 bg-primary/5">
           <Sparkles className="w-4 h-4 text-primary shrink-0" />
           <input
             type="text"
