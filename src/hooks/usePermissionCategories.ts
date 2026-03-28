@@ -30,6 +30,7 @@ export type PermissionCategory = {
   can_edit_installations: boolean;
   can_delete_installations: boolean;
   can_edit_reporter_data: boolean;
+  can_manage_team_codes: boolean;
   created_at: string;
 };
 

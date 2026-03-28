@@ -50,6 +50,7 @@ const defaultForm = (): Omit<PermissionCategory, "id" | "created_at"> => ({
   can_view_schedules: true, can_edit_schedules: false, can_delete_schedules: false,
   can_view_installations: true, can_edit_installations: false, can_delete_installations: false,
   can_edit_reporter_data: false,
+  can_manage_team_codes: false,
 });
 
 export default function CategoryManager() {
@@ -85,6 +86,7 @@ export default function CategoryManager() {
       }
     }
     if (cat.can_edit_reporter_data) count++;
+    if (cat.can_manage_team_codes) count++;
     return count;
   };
 
@@ -156,6 +158,12 @@ export default function CategoryManager() {
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 border border-amber-500/20">Editar</span>
                   </div>
                 )}
+                {cat.can_manage_team_codes && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs w-28 truncate text-muted-foreground">🔑 Códigos</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-700 border border-indigo-500/20">Gerenciar</span>
+                  </div>
+                )}
               </div>
 
               <p className="text-[10px] text-muted-foreground mt-3">{countPerms(cat)} permissão(ões) ativas</p>
@@ -216,6 +224,14 @@ export default function CategoryManager() {
                 onCheckedChange={checked => setForm(f => ({ ...f, can_edit_reporter_data: !!checked }))}
               />
               <label className="text-sm font-medium">📝 Editar Dados do Lojista (Ocorrências)</label>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={!!form.can_manage_team_codes}
+                onCheckedChange={checked => setForm(f => ({ ...f, can_manage_team_codes: !!checked }))}
+              />
+              <label className="text-sm font-medium">🔑 Gerenciar Códigos de Acesso Temporário</label>
             </div>
 
             <Button onClick={handleSave} className="w-full" disabled={addCategory.isPending || updateCategory.isPending}>
