@@ -563,6 +563,12 @@ export type Database = {
       }
       campaigns: {
         Row: {
+          access_days_after: number | null
+          access_days_before: number | null
+          access_hours_after: number | null
+          access_hours_before: number | null
+          access_ignore_date: boolean | null
+          access_ignore_time: boolean | null
           client_id: string
           color: string | null
           created_at: string
@@ -571,6 +577,12 @@ export type Database = {
           name: string
         }
         Insert: {
+          access_days_after?: number | null
+          access_days_before?: number | null
+          access_hours_after?: number | null
+          access_hours_before?: number | null
+          access_ignore_date?: boolean | null
+          access_ignore_time?: boolean | null
           client_id: string
           color?: string | null
           created_at?: string
@@ -579,6 +591,12 @@ export type Database = {
           name: string
         }
         Update: {
+          access_days_after?: number | null
+          access_days_before?: number | null
+          access_hours_after?: number | null
+          access_hours_before?: number | null
+          access_ignore_date?: boolean | null
+          access_ignore_time?: boolean | null
           client_id?: string
           color?: string | null
           created_at?: string

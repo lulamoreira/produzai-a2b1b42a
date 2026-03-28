@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Key, RefreshCw, Download, Copy, Eye, EyeOff, Search, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useInstallationTeams, useAllTeamMembers } from "@/components/InstallationTeamDialog";
+import AccessWindowConfig from "@/components/AccessWindowConfig";
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I,O,0,1 to avoid confusion
@@ -192,8 +193,8 @@ Em caso de dúvidas, entre em contato com a administração.`;
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Gere códigos alfanuméricos de 10 dígitos para que equipes de instalação acessem suas tarefas do dia.
-        O acesso é liberado 2h antes e expira 24h após o horário agendado.
+        Gere códigos alfanuméricos de 10 dígitos para que equipes de instalação acessem suas tarefas.
+        Configure a janela de acesso abaixo.
       </p>
 
       {teams.length > 5 && (
@@ -288,6 +289,11 @@ Em caso de dúvidas, entre em contato com a administração.`;
           })}
         </div>
       )}
+
+      {/* Access Window Configuration */}
+      <div className="border-t border-border pt-4 mt-6">
+        <AccessWindowConfig campaignId={campaignId} />
+      </div>
     </div>
   );
 }
