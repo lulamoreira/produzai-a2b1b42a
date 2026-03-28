@@ -312,6 +312,30 @@ export default function AppSidebar() {
         </div>
       )}
 
+      {/* Context indicator */}
+      {!collapsed && isInsideAgency && (
+        <div className="px-3 py-2 border-b border-sidebar-border space-y-1">
+          {agencyName && (
+            <div className="flex items-center gap-1.5">
+              <Building2 className="w-3 h-3 text-sidebar-primary/60 flex-shrink-0" />
+              <span className="text-[10px] text-sidebar-foreground/50 truncate">{agencyName}</span>
+            </div>
+          )}
+          {clientName && (
+            <div className="flex items-center gap-1.5 pl-2">
+              <Briefcase className="w-3 h-3 text-purple-400/70 flex-shrink-0" />
+              <span className="text-[10px] font-medium text-sidebar-foreground/70 truncate">{clientName}</span>
+            </div>
+          )}
+          {campaignName && (
+            <div className="flex items-center gap-1.5 pl-4">
+              <Megaphone className="w-3 h-3 text-blue-400/70 flex-shrink-0" />
+              <span className="text-[10px] font-semibold text-sidebar-foreground/90 truncate">{campaignName}</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Navigation */}
       <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
         {navItems.map(renderNavItem)}
