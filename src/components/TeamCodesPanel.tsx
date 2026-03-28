@@ -169,6 +169,24 @@ Em caso de dúvidas, entre em contato com a administração.`;
 
   return (
     <div className="space-y-4">
+      {/* Access Window – collapsible at the top */}
+      <Collapsible open={accessWindowOpen} onOpenChange={setAccessWindowOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between gap-2 p-3 rounded-lg bg-muted/60 border border-border hover:bg-muted transition-colors">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-foreground">Janela de Acesso Temporário</span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${accessWindowOpen ? "rotate-180" : ""}`} />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="pt-3">
+          <div className="p-4 rounded-lg border border-border bg-card">
+            <AccessWindowConfig campaignId={campaignId} />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
           <Key className="w-5 h-5 text-primary" />
