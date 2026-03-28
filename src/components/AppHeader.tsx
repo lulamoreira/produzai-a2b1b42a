@@ -98,27 +98,29 @@ export default function AppHeader({
           )}
           <div className="min-w-0">
             {breadcrumbs && breadcrumbs.length > 0 ? (
-              <div className="flex items-center gap-1 flex-wrap">
-                {breadcrumbs.map((crumb, i) => {
-                  const isLast = i === breadcrumbs.length - 1;
-                  return (
-                    <span key={i} className="flex items-center gap-1">
-                      {i > 0 && <ChevronRight className="w-3 h-3 opacity-40 flex-shrink-0" />}
-                      {isLast ? (
-                        <span className="text-sm sm:text-lg font-bold truncate">{crumb.label}</span>
-                      ) : crumb.href ? (
-                        <button
-                          onClick={() => navigate(crumb.href!)}
-                          className="text-[10px] sm:text-xs opacity-70 hover:opacity-100 transition-opacity truncate max-w-[100px] sm:max-w-[160px]"
-                        >
-                          {crumb.label}
-                        </button>
-                      ) : (
-                        <span className="text-[10px] sm:text-xs opacity-60 truncate max-w-[100px] sm:max-w-[160px]">{crumb.label}</span>
-                      )}
-                    </span>
-                  );
-                })}
+              <div className="flex flex-col">
+                {/* Path breadcrumbs (all except last) */}
+                {breadcrumbs.length > 1 && (
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {breadcrumbs.slice(0, -1).map((crumb, i) => (
+                      <span key={i} className="flex items-center gap-1">
+                        {i > 0 && <ChevronRight className="w-3 h-3 opacity-40 flex-shrink-0" />}
+                        {crumb.href ? (
+                          <button
+                            onClick={() => navigate(crumb.href!)}
+                            className="text-[10px] sm:text-xs opacity-70 hover:opacity-100 transition-opacity truncate max-w-[120px] sm:max-w-[180px]"
+                          >
+                            {crumb.label}
+                          </button>
+                        ) : (
+                          <span className="text-[10px] sm:text-xs opacity-60 truncate max-w-[120px] sm:max-w-[180px]">{crumb.label}</span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {/* Current page title - always fully visible */}
+                <span className="text-sm sm:text-lg font-bold">{breadcrumbs[breadcrumbs.length - 1].label}</span>
               </div>
             ) : (
               <h1 className="text-sm sm:text-lg font-bold truncate">
