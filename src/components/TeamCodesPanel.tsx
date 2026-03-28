@@ -4,9 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Key, RefreshCw, Download, Copy, Eye, EyeOff, Search } from "lucide-react";
+import { Key, RefreshCw, Download, Copy, Eye, EyeOff, Search, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useInstallationTeams } from "@/components/InstallationTeamDialog";
+import { useInstallationTeams, useAllTeamMembers } from "@/components/InstallationTeamDialog";
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I,O,0,1 to avoid confusion
