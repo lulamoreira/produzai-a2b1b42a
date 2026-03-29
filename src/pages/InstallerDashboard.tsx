@@ -208,7 +208,7 @@ export default function InstallerDashboard() {
           if (!store) return null;
           const storePhotos = photosByStore[store.id] || [];
           const isCompleted = completedStores.has(store.id);
-          const catForStore = uploadCategory[store.id] || "during";
+          const catForStore = uploadCategory[store.id] || "before";
           const address = [store.street, store.number, store.complement, store.neighborhood, store.city, store.state]
             .filter(Boolean).join(", ") || "Endereço não informado";
 

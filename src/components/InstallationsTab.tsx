@@ -252,7 +252,7 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
           const storeContacts = contactsByStore[store.id] || [];
           const primaryContact = storeContacts[0];
           const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
-          const catForStore = uploadCategory[store.id] || "during";
+          const catForStore = uploadCategory[store.id] || "before";
 
           return (
             <div
