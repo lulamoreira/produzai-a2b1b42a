@@ -219,7 +219,7 @@ export default function InstallerDashboard() {
             variant="ghost"
             size="sm"
             className="text-sidebar-foreground/60 hover:text-sidebar-foreground text-xs gap-1"
-            onClick={() => { setData(null); setCode(""); setLocalPhotos([]); setCompletedStores(new Set()); }}
+            onClick={() => { setData(null); setCode(""); setLocalPhotos([]); setCompletedStores(new Map()); }}
           >
             <LogOut className="w-3.5 h-3.5" /> Sair
           </Button>
