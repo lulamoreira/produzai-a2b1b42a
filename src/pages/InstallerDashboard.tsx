@@ -395,7 +395,7 @@ export default function InstallerDashboard() {
                   variant={isCompleted ? "default" : "outline"}
                   size="sm"
                   className={`w-full text-xs gap-2 ${isCompleted ? "bg-green-600 hover:bg-green-700" : ""}`}
-                  onClick={() => toggleComplete(store.id)}
+                  onClick={() => toggleComplete(store.id, schedule.id)}
                 >
                   <CheckCircle className="w-4 h-4" />
                   {isCompleted ? "Instalação Concluída ✓" : "Marcar como Concluída"}
