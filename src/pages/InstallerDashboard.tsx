@@ -34,7 +34,7 @@ export default function InstallerDashboard() {
   const [error, setError] = useState("");
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
   const [localPhotos, setLocalPhotos] = useState<any[]>([]);
-  const [completedStores, setCompletedStores] = useState<Set<string>>(new Set());
+  const [completedStores, setCompletedStores] = useState<Map<string, string>>(new Map());
 
   const handleLogin = async () => {
     if (code.length !== 10) {
@@ -61,6 +61,14 @@ export default function InstallerDashboard() {
       } else {
         setData(result);
         setLocalPhotos(result.photos || []);
+        // Initialize completed stores from existing completed_at
+        const initialCompleted = new Map<string, string>();
+        (result.schedules || []).forEach((s: any) => {
+          if (s.completed_at && s.client_stores?.id) {
+            initialCompleted.set(s.client_stores.id, s.completed_at);
+          }
+        });
+        setCompletedStores(initialCompleted);
       }
     } catch {
       setError("Erro de conexão. Tente novamente.");
@@ -100,14 +108,34 @@ export default function InstallerDashboard() {
     toast.success(`${files.length} foto(s) enviada(s)!`);
   };
 
-  const toggleComplete = (storeId: string) => {
-    setCompletedStores((prev) => {
-      const next = new Set(prev);
-      if (next.has(storeId)) next.delete(storeId);
-      else next.add(storeId);
-      return next;
-    });
-    toast.success(completedStores.has(storeId) ? "Marcação removida" : "Instalação marcada como concluída!");
+  const toggleComplete = async (storeId: string, scheduleId: string) => {
+    const isCurrentlyCompleted = completedStores.has(storeId);
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    try {
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/complete-installation`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ schedule_id: scheduleId, completed: !isCurrentlyCompleted }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+
+      setCompletedStores((prev) => {
+        const next = new Map(prev);
+        if (isCurrentlyCompleted) {
+          next.delete(storeId);
+        } else {
+          next.set(storeId, result.completed_at);
+        }
+        return next;
+      });
+      toast.success(isCurrentlyCompleted ? "Marcação removida" : "Instalação marcada como concluída!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao atualizar conclusão");
+    }
   };
 
   const photosByStore = useMemo(() => {
@@ -191,7 +219,7 @@ export default function InstallerDashboard() {
             variant="ghost"
             size="sm"
             className="text-sidebar-foreground/60 hover:text-sidebar-foreground text-xs gap-1"
-            onClick={() => { setData(null); setCode(""); setLocalPhotos([]); setCompletedStores(new Set()); }}
+            onClick={() => { setData(null); setCode(""); setLocalPhotos([]); setCompletedStores(new Map()); }}
           >
             <LogOut className="w-3.5 h-3.5" /> Sair
           </Button>
@@ -367,7 +395,7 @@ export default function InstallerDashboard() {
                   variant={isCompleted ? "default" : "outline"}
                   size="sm"
                   className={`w-full text-xs gap-2 ${isCompleted ? "bg-green-600 hover:bg-green-700" : ""}`}
-                  onClick={() => toggleComplete(store.id)}
+                  onClick={() => toggleComplete(store.id, schedule.id)}
                 >
                   <CheckCircle className="w-4 h-4" />
                   {isCompleted ? "Instalação Concluída ✓" : "Marcar como Concluída"}

@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle,
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
-  Camera, Image, Upload, Plus, Key,
+  Camera, Image, Upload, Plus, Key, CheckCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -53,6 +53,7 @@ type Schedule = {
   team_id: string | null;
   store_approved: boolean;
   team_approved: boolean;
+  completed_at: string | null;
 };
 
 const CATEGORY_OPTIONS = [
@@ -270,6 +271,9 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
                   <span className="font-semibold truncate text-sm">{store.name}</span>
                   <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
                 </div>
+                {schedule?.completed_at && (
+                  <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#22c55e' }} />
+                )}
                 {storePhotos.length > 0 && (
                   <span className="flex items-center gap-1 text-xs font-bold opacity-80">
                     <Image className="w-3.5 h-3.5" /> {storePhotos.length}
@@ -331,6 +335,16 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
                     </span>
                   )}
                 </div>
+
+                {/* Completion status */}
+                {schedule?.completed_at && (
+                  <div className="flex items-center gap-2 text-xs bg-success/10 text-success rounded-lg px-3 py-1.5">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span className="font-medium">
+                      Concluída em {format(new Date(schedule.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </span>
+                  </div>
+                )}
 
                 <hr className="border-border" />
 
