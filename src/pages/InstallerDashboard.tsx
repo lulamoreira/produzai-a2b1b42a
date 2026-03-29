@@ -71,7 +71,7 @@ export default function InstallerDashboard() {
 
   const handleUpload = async (storeId: string, files: FileList | null, method: "upload" | "camera" = "upload") => {
     if (!files || !data) return;
-    const category = uploadCategory[storeId] || "during";
+    const category = uploadCategory[storeId] || "before";
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
     for (const file of Array.from(files)) {
@@ -208,7 +208,7 @@ export default function InstallerDashboard() {
           if (!store) return null;
           const storePhotos = photosByStore[store.id] || [];
           const isCompleted = completedStores.has(store.id);
-          const catForStore = uploadCategory[store.id] || "during";
+          const catForStore = uploadCategory[store.id] || "before";
           const address = [store.street, store.number, store.complement, store.neighborhood, store.city, store.state]
             .filter(Boolean).join(", ") || "Endereço não informado";
 

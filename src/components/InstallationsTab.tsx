@@ -156,7 +156,7 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
 
   const handleUploadPhoto = async (storeId: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const category = uploadCategory[storeId] || "during";
+    const category = uploadCategory[storeId] || "before";
 
     for (const file of Array.from(files)) {
       try {
@@ -252,7 +252,7 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
           const storeContacts = contactsByStore[store.id] || [];
           const primaryContact = storeContacts[0];
           const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
-          const catForStore = uploadCategory[store.id] || "during";
+          const catForStore = uploadCategory[store.id] || "before";
 
           return (
             <div
