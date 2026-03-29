@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, Users, Car, AlertTriangle, ChevronDown, ChevronRight, Edit3, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, normalizeTeamName, normalizeMemberName } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────
 
