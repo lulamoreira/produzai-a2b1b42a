@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, Users, Car, AlertTriangle, ChevronDown, ChevronRight, Edit3, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, normalizeTeamName, normalizeMemberName } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -208,7 +208,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
 
   const addTeam = useMutation({
     mutationFn: async (name: string) => {
-      const { error } = await supabase.from("installation_teams").insert({ campaign_id: campaignId, name });
+      const { error } = await supabase.from("installation_teams").insert({ campaign_id: campaignId, name: normalizeTeamName(name) });
       if (error) throw error;
     },
     onSuccess: () => { invalidateAll(); setNewTeamName(""); toast.success("Equipe criada!"); },
@@ -217,7 +217,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
 
   const updateTeam = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const { error } = await supabase.from("installation_teams").update({ name }).eq("id", id);
+      const { error } = await supabase.from("installation_teams").update({ name: normalizeTeamName(name) }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { invalidateAll(); setEditingTeamId(null); toast.success("Equipe atualizada!"); },
@@ -252,7 +252,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
             <Input
               placeholder="Nome da equipe de instalação"
               value={newTeamName}
-              onChange={(e) => setNewTeamName(e.target.value)}
+              onChange={(e) => setNewTeamName(normalizeTeamName(e.target.value))}
               className="flex-1"
               onKeyDown={(e) => { if (e.key === "Enter" && newTeamName.trim()) addTeam.mutate(newTeamName.trim()); }}
             />
@@ -280,7 +280,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                     <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
                       <Input
                         value={editingTeamName}
-                        onChange={(e) => setEditingTeamName(e.target.value)}
+                        onChange={(e) => setEditingTeamName(normalizeTeamName(e.target.value))}
                         className="h-7 text-sm"
                         autoFocus
                         onKeyDown={(e) => { if (e.key === "Enter" && editingTeamName.trim()) updateTeam.mutate({ id: team.id, name: editingTeamName.trim() }); }}
@@ -491,7 +491,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
       }
       const { error } = await supabase.from("installation_team_members").insert({
         team_id: teamId,
-        name: form.name,
+        name: normalizeMemberName(form.name),
         rg: form.isUnifiedDoc ? "" : form.rg,
         cpf: form.cpf.replace(/\D/g, ""),
         phone: form.phone,
@@ -514,7 +514,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
         await supabase.from("installation_team_members").update({ is_leader: false }).eq("team_id", teamId).eq("is_leader", true);
       }
       const { error } = await supabase.from("installation_team_members").update({
-        name: data.name,
+        name: normalizeMemberName(data.name),
         rg: data.isUnifiedDoc ? "" : data.rg,
         cpf: data.cpf.replace(/\D/g, ""),
         phone: data.phone,
@@ -568,7 +568,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
     <div className="grid grid-cols-2 gap-2">
       <div className="space-y-1">
         <label className="text-xs font-medium">Nome *</label>
-        <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-7 text-xs" placeholder="Nome completo" />
+        <Input value={form.name} onChange={(e) => setForm({ ...form, name: normalizeMemberName(e.target.value) })} className="h-7 text-xs" placeholder="Nome completo" />
       </div>
       <div className="space-y-1 flex items-end gap-2">
         <div className="flex-1 space-y-1">
