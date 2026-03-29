@@ -53,6 +53,7 @@ type Schedule = {
   team_id: string | null;
   store_approved: boolean;
   team_approved: boolean;
+  completed_at: string | null;
 };
 
 const CATEGORY_OPTIONS = [
