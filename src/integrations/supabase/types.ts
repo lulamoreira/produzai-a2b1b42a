@@ -353,6 +353,7 @@ export type Database = {
       campaign_schedules: {
         Row: {
           campaign_id: string
+          completed_at: string | null
           created_at: string
           id: string
           installation_os: string | null
@@ -373,6 +374,7 @@ export type Database = {
         }
         Insert: {
           campaign_id: string
+          completed_at?: string | null
           created_at?: string
           id?: string
           installation_os?: string | null
@@ -393,6 +395,7 @@ export type Database = {
         }
         Update: {
           campaign_id?: string
+          completed_at?: string | null
           created_at?: string
           id?: string
           installation_os?: string | null
