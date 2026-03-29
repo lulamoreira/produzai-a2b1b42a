@@ -252,7 +252,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
             <Input
               placeholder="Nome da equipe de instalação"
               value={newTeamName}
-              onChange={(e) => setNewTeamName(e.target.value)}
+              onChange={(e) => setNewTeamName(normalizeTeamName(e.target.value))}
               className="flex-1"
               onKeyDown={(e) => { if (e.key === "Enter" && newTeamName.trim()) addTeam.mutate(newTeamName.trim()); }}
             />
@@ -280,7 +280,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                     <div className="flex items-center gap-1 flex-1" onClick={(e) => e.stopPropagation()}>
                       <Input
                         value={editingTeamName}
-                        onChange={(e) => setEditingTeamName(e.target.value)}
+                        onChange={(e) => setEditingTeamName(normalizeTeamName(e.target.value))}
                         className="h-7 text-sm"
                         autoFocus
                         onKeyDown={(e) => { if (e.key === "Enter" && editingTeamName.trim()) updateTeam.mutate({ id: team.id, name: editingTeamName.trim() }); }}
@@ -568,7 +568,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
     <div className="grid grid-cols-2 gap-2">
       <div className="space-y-1">
         <label className="text-xs font-medium">Nome *</label>
-        <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-7 text-xs" placeholder="Nome completo" />
+        <Input value={form.name} onChange={(e) => setForm({ ...form, name: normalizeMemberName(e.target.value) })} className="h-7 text-xs" placeholder="Nome completo" />
       </div>
       <div className="space-y-1 flex items-end gap-2">
         <div className="flex-1 space-y-1">
