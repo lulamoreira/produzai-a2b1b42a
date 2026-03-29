@@ -271,6 +271,9 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
                   <span className="font-semibold truncate text-sm">{store.name}</span>
                   <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
                 </div>
+                {schedule?.completed_at && (
+                  <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#22c55e' }} />
+                )}
                 {storePhotos.length > 0 && (
                   <span className="flex items-center gap-1 text-xs font-bold opacity-80">
                     <Image className="w-3.5 h-3.5" /> {storePhotos.length}
