@@ -156,7 +156,7 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
 
   const handleUploadPhoto = async (storeId: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
-    const category = uploadCategory[storeId] || "during";
+    const category = uploadCategory[storeId] || "before";
 
     for (const file of Array.from(files)) {
       try {
