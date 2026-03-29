@@ -138,6 +138,13 @@ export default function InstallerDashboard() {
               placeholder="XXXXXXXXXX"
               className="text-center text-lg font-mono tracking-[0.3em] h-12"
               maxLength={10}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              inputMode="text"
+              data-form-type="other"
+              data-lpignore="true"
             />
             <p className="text-xs text-muted-foreground text-center">{code.length}/10 caracteres</p>
 
