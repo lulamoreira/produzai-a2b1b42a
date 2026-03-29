@@ -208,7 +208,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
 
   const addTeam = useMutation({
     mutationFn: async (name: string) => {
-      const { error } = await supabase.from("installation_teams").insert({ campaign_id: campaignId, name });
+      const { error } = await supabase.from("installation_teams").insert({ campaign_id: campaignId, name: normalizeTeamName(name) });
       if (error) throw error;
     },
     onSuccess: () => { invalidateAll(); setNewTeamName(""); toast.success("Equipe criada!"); },
@@ -217,7 +217,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
 
   const updateTeam = useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const { error } = await supabase.from("installation_teams").update({ name }).eq("id", id);
+      const { error } = await supabase.from("installation_teams").update({ name: normalizeTeamName(name) }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => { invalidateAll(); setEditingTeamId(null); toast.success("Equipe atualizada!"); },
@@ -491,7 +491,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
       }
       const { error } = await supabase.from("installation_team_members").insert({
         team_id: teamId,
-        name: form.name,
+        name: normalizeMemberName(form.name),
         rg: form.isUnifiedDoc ? "" : form.rg,
         cpf: form.cpf.replace(/\D/g, ""),
         phone: form.phone,
@@ -514,7 +514,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
         await supabase.from("installation_team_members").update({ is_leader: false }).eq("team_id", teamId).eq("is_leader", true);
       }
       const { error } = await supabase.from("installation_team_members").update({
-        name: data.name,
+        name: normalizeMemberName(data.name),
         rg: data.isUnifiedDoc ? "" : data.rg,
         cpf: data.cpf.replace(/\D/g, ""),
         phone: data.phone,
