@@ -425,6 +425,18 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             <option value="pending">⚠️ Pendência</option>
             <option value="rejected">❌ Desaprovado</option>
           </select>
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[120px] max-w-[160px]"
+            title="Filtrar por data"
+          />
+          {filterDate && (
+            <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-muted-foreground" onClick={() => setFilterDate("")}>
+              ✕
+            </Button>
+          )}
           <select
             value={filterMessages}
             onChange={(e) => setFilterMessages(e.target.value)}
