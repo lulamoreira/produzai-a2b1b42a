@@ -774,10 +774,14 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
     onMultiUpdate({ [field]: value || null });
   };
 
-  const handleAcceptSuggestion = () => {
+  const handleAcceptSuggestion = (set: 1 | 2) => {
     if (!canEdit) return;
-    const newDate = localSuggestedDate || schedule?.suggested_date;
-    const newTime = localSuggestedTime || schedule?.suggested_time;
+    const newDate = set === 1
+      ? (localSuggestedDate || schedule?.suggested_date)
+      : (localSuggestedDate2 || (schedule as any)?.suggested_date_2);
+    const newTime = set === 1
+      ? (localSuggestedTime || schedule?.suggested_time)
+      : (localSuggestedTime2 || (schedule as any)?.suggested_time_2);
     if (!newDate && !newTime) return;
 
     const now = new Date().toISOString();
@@ -786,6 +790,8 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
       ...(newTime ? { scheduled_time: newTime } : {}),
       suggested_date: null,
       suggested_time: null,
+      suggested_date_2: null,
+      suggested_time_2: null,
       store_approval_status: "under_review",
       store_approved: false,
       store_approved_at: now,
