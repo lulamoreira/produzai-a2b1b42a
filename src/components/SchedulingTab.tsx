@@ -852,6 +852,26 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
     if (!newDate && !newTime) return;
 
     const now = new Date().toISOString();
+
+    // Save history BEFORE mutating state
+    if (user) {
+      let dataPart = "Não definida";
+      if (oldDate) {
+        try {
+          dataPart = format(new Date(oldDate + "T12:00:00"), "dd/MM/yyyy");
+        } catch { dataPart = oldDate; }
+      }
+      const timePart = oldTime || "Não definido";
+      const historyMsg = `📋 Sugestão aceita (Opção ${set}). Data anterior: ${dataPart} | Horário anterior: ${timePart}`;
+      const { error: histErr } = await supabase.from("schedule_history").insert({
+        campaign_id: campaignId,
+        store_id: storeId,
+        user_id: user.id,
+        content: historyMsg,
+      });
+      if (histErr) console.error("Erro ao salvar histórico:", histErr);
+    }
+
     // Optimistic UI: instantly update status and clear suggestions
     setOptimisticStoreStatus("approved");
     setOptimisticTeamStatus("approved");
@@ -874,25 +894,6 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
       team_approved: true,
       team_approved_at: now,
     });
-
-    // Post previous date/time to history log — always register
-    if (user) {
-      let dataPart = "Não definida";
-      if (oldDate) {
-        try {
-          dataPart = format(new Date(oldDate + "T12:00:00"), "dd/MM/yyyy");
-        } catch { dataPart = oldDate; }
-      }
-      const timePart = oldTime || "Não definido";
-      const historyMsg = `📋 Sugestão aceita (Opção ${set}). Data anterior: ${dataPart} | Horário anterior: ${timePart}`;
-      const { error: histErr } = await supabase.from("schedule_history").insert({
-        campaign_id: campaignId,
-        store_id: storeId,
-        user_id: user.id,
-        content: historyMsg,
-      });
-      if (histErr) console.error("Erro ao salvar histórico:", histErr);
-    }
 
     toast.success("Sugestão aceita! Lojista e Equipe aprovados.");
   };
