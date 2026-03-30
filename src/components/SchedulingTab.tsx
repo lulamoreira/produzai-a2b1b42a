@@ -811,6 +811,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
   const sectionDisabled = !canEdit || !hasDateAndTime;
   const showSuggestion = storeStatus === "rejected";
   const hasSuggestionValues = !!(localSuggestedDate || localSuggestedTime);
+  const hasSuggestionValues2 = !!(localSuggestedDate2 || localSuggestedTime2);
 
   return (
     <div className={cn("border-t border-border bg-muted/30 px-4 py-3 space-y-2", !hasDateAndTime && "opacity-50")}>
