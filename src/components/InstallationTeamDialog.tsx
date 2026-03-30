@@ -311,12 +311,14 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                       </Button>
                     </div>
                   ) : (
-                    <span className="font-medium text-sm truncate">{team.name}</span>
-                    {(teamStoreCounts[team.id] ?? 0) > 0 && (
-                      <Badge variant="secondary" className="ml-2 text-xs shrink-0 flex items-center gap-1">
-                        <MapPin className="w-3 h-3" /> {teamStoreCounts[team.id]} {teamStoreCounts[team.id] === 1 ? "loja" : "lojas"}
-                      </Badge>
-                    )}
+                    <>
+                      <span className="font-medium text-sm truncate">{team.name}</span>
+                      {(teamStoreCounts[team.id] ?? 0) > 0 && (
+                        <Badge variant="secondary" className="ml-2 text-xs shrink-0 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> {teamStoreCounts[team.id]} {teamStoreCounts[team.id] === 1 ? "loja" : "lojas"}
+                        </Badge>
+                      )}
+                    </>
                   )}
                 </div>
                 {canEdit && editingTeamId !== team.id && (
