@@ -738,8 +738,23 @@ interface ApprovalTogglesProps {
 
 function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTime, onMultiUpdate }: ApprovalTogglesProps) {
   const { user } = useAuth();
-  const storeStatus = (schedule?.store_approval_status ?? "under_review") as ApprovalStatusValue;
-  const teamStatus = (schedule?.team_approval_status ?? "under_review") as ApprovalStatusValue;
+  const dbStoreStatus = (schedule?.store_approval_status ?? "under_review") as ApprovalStatusValue;
+  const dbTeamStatus = (schedule?.team_approval_status ?? "under_review") as ApprovalStatusValue;
+
+  const [optimisticStoreStatus, setOptimisticStoreStatus] = useState<ApprovalStatusValue | null>(null);
+  const [optimisticTeamStatus, setOptimisticTeamStatus] = useState<ApprovalStatusValue | null>(null);
+
+  const storeStatus = optimisticStoreStatus ?? dbStoreStatus;
+  const teamStatus = optimisticTeamStatus ?? dbTeamStatus;
+
+  // Reset optimistic state when DB catches up
+  useEffect(() => {
+    if (optimisticStoreStatus && dbStoreStatus === optimisticStoreStatus) setOptimisticStoreStatus(null);
+  }, [dbStoreStatus, optimisticStoreStatus]);
+  useEffect(() => {
+    if (optimisticTeamStatus && dbTeamStatus === optimisticTeamStatus) setOptimisticTeamStatus(null);
+  }, [dbTeamStatus, optimisticTeamStatus]);
+
   const hasPendency = storeStatus !== "approved" || teamStatus !== "approved";
   const responsibility = schedule?.responsibility || "team";
 
