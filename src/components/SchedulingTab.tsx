@@ -716,6 +716,15 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
   const hasPendency = storeStatus !== "approved" || teamStatus !== "approved";
   const responsibility = schedule?.responsibility || "team";
 
+  const [localSuggestedDate, setLocalSuggestedDate] = useState(schedule?.suggested_date || "");
+  const [localSuggestedTime, setLocalSuggestedTime] = useState(schedule?.suggested_time || "");
+
+  // Sync local state when schedule changes
+  useMemo(() => {
+    setLocalSuggestedDate(schedule?.suggested_date || "");
+    setLocalSuggestedTime(schedule?.suggested_time || "");
+  }, [schedule?.suggested_date, schedule?.suggested_time]);
+
   const handleSetStatus = (field: "store_approval_status" | "team_approval_status", newVal: ApprovalStatusValue) => {
     if (!canEdit) return;
     const now = new Date().toISOString();
@@ -736,6 +745,12 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
       updates.responsibility_at = null;
     }
 
+    // Clear suggested fields when changing away from rejected
+    if (field === "store_approval_status" && newVal !== "rejected") {
+      updates.suggested_date = null;
+      updates.suggested_time = null;
+    }
+
     onMultiUpdate(updates);
   };
 
@@ -745,6 +760,29 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
       responsibility: value,
       responsibility_at: new Date().toISOString(),
     });
+  };
+
+  const handleSaveSuggested = (field: "suggested_date" | "suggested_time", value: string) => {
+    onMultiUpdate({ [field]: value || null });
+  };
+
+  const handleAcceptSuggestion = () => {
+    if (!canEdit) return;
+    const newDate = localSuggestedDate || schedule?.suggested_date;
+    const newTime = localSuggestedTime || schedule?.suggested_time;
+    if (!newDate && !newTime) return;
+
+    const now = new Date().toISOString();
+    onMultiUpdate({
+      ...(newDate ? { scheduled_date: newDate } : {}),
+      ...(newTime ? { scheduled_time: newTime } : {}),
+      suggested_date: null,
+      suggested_time: null,
+      store_approval_status: "under_review",
+      store_approved: false,
+      store_approved_at: now,
+    });
+    toast.success("Data/horário sugeridos aceitos e transferidos!");
   };
 
   const formatTimestamp = (ts: string | null) => {
@@ -757,6 +795,8 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
   };
 
   const sectionDisabled = !canEdit || !hasDateAndTime;
+  const showSuggestion = storeStatus === "rejected";
+  const hasSuggestionValues = !!(localSuggestedDate || localSuggestedTime);
 
   return (
     <div className={cn("border-t border-border bg-muted/30 px-4 py-3 space-y-2", !hasDateAndTime && "opacity-50")}>
@@ -771,6 +811,53 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
         timestamp={storeStatus === "approved" ? formatTimestamp(schedule?.store_approved_at ?? null) : null}
         disabled={sectionDisabled}
       />
+
+      {/* Suggested date/time when LOJISTA is rejected */}
+      {showSuggestion && (
+        <div className="ml-[78px] space-y-2 p-3 rounded-lg border border-red-500/30 bg-red-500/5">
+          <p className="text-[10px] font-semibold text-destructive uppercase tracking-wide">Sugestão do Lojista</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida</label>
+              <input
+                type="date"
+                disabled={!canEdit}
+                value={localSuggestedDate}
+                onChange={(e) => {
+                  setLocalSuggestedDate(e.target.value);
+                  handleSaveSuggested("suggested_date", e.target.value);
+                }}
+                className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido</label>
+              <input
+                type="time"
+                disabled={!canEdit}
+                value={localSuggestedTime}
+                onChange={(e) => {
+                  setLocalSuggestedTime(e.target.value);
+                  handleSaveSuggested("suggested_time", e.target.value);
+                }}
+                className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
+              />
+            </div>
+          </div>
+          {hasSuggestionValues && canEdit && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7"
+              onClick={handleAcceptSuggestion}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Aceitar sugestão
+            </Button>
+          )}
+        </div>
+      )}
+
       <ThreeStateToggle
         label="Equipe"
         value={teamStatus}
