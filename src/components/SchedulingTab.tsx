@@ -7,6 +7,7 @@ import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
 import ScheduleCardChat from "@/components/ScheduleCardChat";
+import ScheduleHistorySheet from "@/components/ScheduleHistorySheet";
 import { useScheduleChatUnreadCounts, useMarkAsRead } from "@/hooks/useChatReadStatus";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
