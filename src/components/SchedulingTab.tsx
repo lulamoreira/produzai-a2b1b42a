@@ -739,6 +739,15 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         storeId={chatStoreId}
         storeName={chatStoreName}
       />
+
+      {/* Per-card History */}
+      <ScheduleHistorySheet
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        campaignId={campaignId}
+        storeId={historyStoreId}
+        storeName={historyStoreName}
+      />
     </div>
   );
 };
