@@ -208,10 +208,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     if (filterApproval) {
       result = result.filter((s) => {
         const sch = scheduleMap[s.id];
-        const storeOk = (sch?.store_approval_status ?? "under_review") === "approved";
-        const teamOk = (sch?.team_approval_status ?? "under_review") === "approved";
-        if (filterApproval === "approved") return storeOk && teamOk;
-        if (filterApproval === "pending") return !storeOk || !teamOk;
+        const storeStatus = sch?.store_approval_status ?? "under_review";
+        const teamStatus = sch?.team_approval_status ?? "under_review";
+        if (filterApproval === "approved") return storeStatus === "approved" && teamStatus === "approved";
+        if (filterApproval === "pending") return storeStatus !== "approved" || teamStatus !== "approved";
+        if (filterApproval === "rejected") return storeStatus === "rejected" || teamStatus === "rejected";
         return true;
       });
     }
