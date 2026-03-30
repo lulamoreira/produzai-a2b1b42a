@@ -528,6 +528,20 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     </span>
                   )}
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  style={{ color: colors.text }}
+                  title="Histórico"
+                  onClick={() => {
+                    setHistoryStoreId(store.id);
+                    setHistoryStoreName(store.name);
+                    setHistoryOpen(true);
+                  }}
+                >
+                  <History className="w-4 h-4" />
+                </Button>
                 {/* Approval status icon */}
                 {fullyApproved ? (
                   <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
