@@ -7,11 +7,12 @@ import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
 import ScheduleCardChat from "@/components/ScheduleCardChat";
+import ScheduleHistorySheet from "@/components/ScheduleHistorySheet";
 import { useScheduleChatUnreadCounts, useMarkAsRead } from "@/hooks/useChatReadStatus";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -107,6 +108,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterApproval, setFilterApproval] = useState("");
   const [filterMessages, setFilterMessages] = useState("");
   const [filterDate, setFilterDate] = useState("");
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyStoreId, setHistoryStoreId] = useState("");
+  const [historyStoreName, setHistoryStoreName] = useState("");
 
   // Unread message counts
   const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
@@ -524,6 +528,20 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     </span>
                   )}
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 shrink-0"
+                  style={{ color: colors.text }}
+                  title="Histórico"
+                  onClick={() => {
+                    setHistoryStoreId(store.id);
+                    setHistoryStoreName(store.name);
+                    setHistoryOpen(true);
+                  }}
+                >
+                  <History className="w-4 h-4" />
+                </Button>
                 {/* Approval status icon */}
                 {fullyApproved ? (
                   <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
@@ -721,6 +739,15 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         storeId={chatStoreId}
         storeName={chatStoreName}
       />
+
+      {/* Per-card History */}
+      <ScheduleHistorySheet
+        open={historyOpen}
+        onOpenChange={setHistoryOpen}
+        campaignId={campaignId}
+        storeId={historyStoreId}
+        storeName={historyStoreName}
+      />
     </div>
   );
 };
@@ -848,7 +875,7 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
       team_approved_at: now,
     });
 
-    // Post previous date/time to chat for record
+    // Post previous date/time to history log
     const parts: string[] = [];
     if (oldDate) {
       try {
@@ -857,12 +884,12 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
     }
     if (oldTime) parts.push(`Horário anterior: ${oldTime}`);
     if (parts.length > 0 && user) {
-      const chatMsg = `📋 Sugestão aceita (Opção ${set}). ${parts.join(" | ")}`;
-      await supabase.from("schedule_chat_messages").insert({
+      const historyMsg = `📋 Sugestão aceita (Opção ${set}). ${parts.join(" | ")}`;
+      await supabase.from("schedule_history").insert({
         campaign_id: campaignId,
         store_id: storeId,
-        sender_id: user.id,
-        content: chatMsg,
+        user_id: user.id,
+        content: historyMsg,
       });
     }
 
