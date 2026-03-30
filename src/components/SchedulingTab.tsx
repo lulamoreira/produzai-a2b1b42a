@@ -59,6 +59,8 @@ type Schedule = {
   team_approval_status: ApprovalStatusValue;
   responsibility: string | null;
   responsibility_at: string | null;
+  suggested_date: string | null;
+  suggested_time: string | null;
 };
 
 const PREFERENCE_OPTIONS = [
