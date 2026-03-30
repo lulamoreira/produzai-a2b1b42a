@@ -829,47 +829,98 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
 
       {/* Suggested date/time when LOJISTA is rejected */}
       {showSuggestion && (
-        <div className="ml-[78px] space-y-2 p-3 rounded-lg border border-red-500/30 bg-red-500/5">
-          <p className="text-[10px] font-semibold text-destructive uppercase tracking-wide">Sugestão do Lojista</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida</label>
-              <input
-                type="date"
-                disabled={!canEdit}
-                value={localSuggestedDate}
-                onChange={(e) => {
-                  setLocalSuggestedDate(e.target.value);
-                  handleSaveSuggested("suggested_date", e.target.value);
-                }}
-                className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
-              />
+        <div className="ml-[78px] space-y-3 p-3 rounded-lg border border-red-500/30 bg-red-500/5">
+          <p className="text-[10px] font-semibold text-destructive uppercase tracking-wide">Sugestões do Lojista</p>
+          
+          {/* Sugestão 1 */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-medium text-muted-foreground">Opção 1</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida</label>
+                <input
+                  type="date"
+                  disabled={!canEdit}
+                  value={localSuggestedDate}
+                  onChange={(e) => {
+                    setLocalSuggestedDate(e.target.value);
+                    handleSaveSuggested("suggested_date", e.target.value);
+                  }}
+                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido</label>
+                <input
+                  type="time"
+                  disabled={!canEdit}
+                  value={localSuggestedTime}
+                  onChange={(e) => {
+                    setLocalSuggestedTime(e.target.value);
+                    handleSaveSuggested("suggested_time", e.target.value);
+                  }}
+                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                />
+              </div>
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido</label>
-              <input
-                type="time"
-                disabled={!canEdit}
-                value={localSuggestedTime}
-                onChange={(e) => {
-                  setLocalSuggestedTime(e.target.value);
-                  handleSaveSuggested("suggested_time", e.target.value);
-                }}
-                className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
-              />
-            </div>
+            {hasSuggestionValues && canEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7"
+                onClick={() => handleAcceptSuggestion(1)}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Aceitar opção 1
+              </Button>
+            )}
           </div>
-          {hasSuggestionValues && canEdit && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7"
-              onClick={handleAcceptSuggestion}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Aceitar sugestão
-            </Button>
-          )}
+
+          <div className="border-t border-border" />
+
+          {/* Sugestão 2 */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-medium text-muted-foreground">Opção 2</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida 2</label>
+                <input
+                  type="date"
+                  disabled={!canEdit}
+                  value={localSuggestedDate2}
+                  onChange={(e) => {
+                    setLocalSuggestedDate2(e.target.value);
+                    handleSaveSuggested("suggested_date_2" as any, e.target.value);
+                  }}
+                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido 2</label>
+                <input
+                  type="time"
+                  disabled={!canEdit}
+                  value={localSuggestedTime2}
+                  onChange={(e) => {
+                    setLocalSuggestedTime2(e.target.value);
+                    handleSaveSuggested("suggested_time_2" as any, e.target.value);
+                  }}
+                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                />
+              </div>
+            </div>
+            {hasSuggestionValues2 && canEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7"
+                onClick={() => handleAcceptSuggestion(2)}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Aceitar opção 2
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
