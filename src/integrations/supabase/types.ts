@@ -367,7 +367,9 @@ export type Database = {
           store_approved_at: string | null
           store_id: string
           suggested_date: string | null
+          suggested_date_2: string | null
           suggested_time: string | null
+          suggested_time_2: string | null
           team_approval_status: string
           team_approved: boolean
           team_approved_at: string | null
@@ -390,7 +392,9 @@ export type Database = {
           store_approved_at?: string | null
           store_id: string
           suggested_date?: string | null
+          suggested_date_2?: string | null
           suggested_time?: string | null
+          suggested_time_2?: string | null
           team_approval_status?: string
           team_approved?: boolean
           team_approved_at?: string | null
@@ -413,7 +417,9 @@ export type Database = {
           store_approved_at?: string | null
           store_id?: string
           suggested_date?: string | null
+          suggested_date_2?: string | null
           suggested_time?: string | null
+          suggested_time_2?: string | null
           team_approval_status?: string
           team_approved?: boolean
           team_approved_at?: string | null

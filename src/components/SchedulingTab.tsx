@@ -722,12 +722,16 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
 
   const [localSuggestedDate, setLocalSuggestedDate] = useState(schedule?.suggested_date || "");
   const [localSuggestedTime, setLocalSuggestedTime] = useState(schedule?.suggested_time || "");
+  const [localSuggestedDate2, setLocalSuggestedDate2] = useState((schedule as any)?.suggested_date_2 || "");
+  const [localSuggestedTime2, setLocalSuggestedTime2] = useState((schedule as any)?.suggested_time_2 || "");
 
   // Sync local state when schedule changes
   useEffect(() => {
     setLocalSuggestedDate(schedule?.suggested_date || "");
     setLocalSuggestedTime(schedule?.suggested_time || "");
-  }, [schedule?.suggested_date, schedule?.suggested_time]);
+    setLocalSuggestedDate2((schedule as any)?.suggested_date_2 || "");
+    setLocalSuggestedTime2((schedule as any)?.suggested_time_2 || "");
+  }, [schedule?.suggested_date, schedule?.suggested_time, (schedule as any)?.suggested_date_2, (schedule as any)?.suggested_time_2]);
 
   const handleSetStatus = (field: "store_approval_status" | "team_approval_status", newVal: ApprovalStatusValue) => {
     if (!canEdit) return;
@@ -770,10 +774,14 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
     onMultiUpdate({ [field]: value || null });
   };
 
-  const handleAcceptSuggestion = () => {
+  const handleAcceptSuggestion = (set: 1 | 2) => {
     if (!canEdit) return;
-    const newDate = localSuggestedDate || schedule?.suggested_date;
-    const newTime = localSuggestedTime || schedule?.suggested_time;
+    const newDate = set === 1
+      ? (localSuggestedDate || schedule?.suggested_date)
+      : (localSuggestedDate2 || (schedule as any)?.suggested_date_2);
+    const newTime = set === 1
+      ? (localSuggestedTime || schedule?.suggested_time)
+      : (localSuggestedTime2 || (schedule as any)?.suggested_time_2);
     if (!newDate && !newTime) return;
 
     const now = new Date().toISOString();
@@ -782,6 +790,8 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
       ...(newTime ? { scheduled_time: newTime } : {}),
       suggested_date: null,
       suggested_time: null,
+      suggested_date_2: null,
+      suggested_time_2: null,
       store_approval_status: "under_review",
       store_approved: false,
       store_approved_at: now,
@@ -801,6 +811,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
   const sectionDisabled = !canEdit || !hasDateAndTime;
   const showSuggestion = storeStatus === "rejected";
   const hasSuggestionValues = !!(localSuggestedDate || localSuggestedTime);
+  const hasSuggestionValues2 = !!(localSuggestedDate2 || localSuggestedTime2);
 
   return (
     <div className={cn("border-t border-border bg-muted/30 px-4 py-3 space-y-2", !hasDateAndTime && "opacity-50")}>
@@ -818,47 +829,98 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
 
       {/* Suggested date/time when LOJISTA is rejected */}
       {showSuggestion && (
-        <div className="ml-[78px] space-y-2 p-3 rounded-lg border border-red-500/30 bg-red-500/5">
-          <p className="text-[10px] font-semibold text-destructive uppercase tracking-wide">Sugestão do Lojista</p>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida</label>
-              <input
-                type="date"
-                disabled={!canEdit}
-                value={localSuggestedDate}
-                onChange={(e) => {
-                  setLocalSuggestedDate(e.target.value);
-                  handleSaveSuggested("suggested_date", e.target.value);
-                }}
-                className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
-              />
+        <div className="ml-[78px] space-y-3 p-3 rounded-lg border border-red-500/30 bg-red-500/5">
+          <p className="text-[10px] font-semibold text-destructive uppercase tracking-wide">Sugestões do Lojista</p>
+          
+          {/* Sugestão 1 */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-medium text-muted-foreground">Opção 1</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida</label>
+                <input
+                  type="date"
+                  disabled={!canEdit}
+                  value={localSuggestedDate}
+                  onChange={(e) => {
+                    setLocalSuggestedDate(e.target.value);
+                    handleSaveSuggested("suggested_date", e.target.value);
+                  }}
+                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido</label>
+                <input
+                  type="time"
+                  disabled={!canEdit}
+                  value={localSuggestedTime}
+                  onChange={(e) => {
+                    setLocalSuggestedTime(e.target.value);
+                    handleSaveSuggested("suggested_time", e.target.value);
+                  }}
+                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                />
+              </div>
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido</label>
-              <input
-                type="time"
-                disabled={!canEdit}
-                value={localSuggestedTime}
-                onChange={(e) => {
-                  setLocalSuggestedTime(e.target.value);
-                  handleSaveSuggested("suggested_time", e.target.value);
-                }}
-                className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
-              />
-            </div>
+            {hasSuggestionValues && canEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7"
+                onClick={() => handleAcceptSuggestion(1)}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Aceitar opção 1
+              </Button>
+            )}
           </div>
-          {hasSuggestionValues && canEdit && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7"
-              onClick={handleAcceptSuggestion}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Aceitar sugestão
-            </Button>
-          )}
+
+          <div className="border-t border-border" />
+
+          {/* Sugestão 2 */}
+          <div className="space-y-2">
+            <p className="text-[10px] font-medium text-muted-foreground">Opção 2</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida 2</label>
+                <input
+                  type="date"
+                  disabled={!canEdit}
+                  value={localSuggestedDate2}
+                  onChange={(e) => {
+                    setLocalSuggestedDate2(e.target.value);
+                    handleSaveSuggested("suggested_date_2" as any, e.target.value);
+                  }}
+                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido 2</label>
+                <input
+                  type="time"
+                  disabled={!canEdit}
+                  value={localSuggestedTime2}
+                  onChange={(e) => {
+                    setLocalSuggestedTime2(e.target.value);
+                    handleSaveSuggested("suggested_time_2" as any, e.target.value);
+                  }}
+                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                />
+              </div>
+            </div>
+            {hasSuggestionValues2 && canEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7"
+                onClick={() => handleAcceptSuggestion(2)}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                Aceitar opção 2
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
