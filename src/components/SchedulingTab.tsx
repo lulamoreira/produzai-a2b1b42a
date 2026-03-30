@@ -722,12 +722,16 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
 
   const [localSuggestedDate, setLocalSuggestedDate] = useState(schedule?.suggested_date || "");
   const [localSuggestedTime, setLocalSuggestedTime] = useState(schedule?.suggested_time || "");
+  const [localSuggestedDate2, setLocalSuggestedDate2] = useState((schedule as any)?.suggested_date_2 || "");
+  const [localSuggestedTime2, setLocalSuggestedTime2] = useState((schedule as any)?.suggested_time_2 || "");
 
   // Sync local state when schedule changes
   useEffect(() => {
     setLocalSuggestedDate(schedule?.suggested_date || "");
     setLocalSuggestedTime(schedule?.suggested_time || "");
-  }, [schedule?.suggested_date, schedule?.suggested_time]);
+    setLocalSuggestedDate2((schedule as any)?.suggested_date_2 || "");
+    setLocalSuggestedTime2((schedule as any)?.suggested_time_2 || "");
+  }, [schedule?.suggested_date, schedule?.suggested_time, (schedule as any)?.suggested_date_2, (schedule as any)?.suggested_time_2]);
 
   const handleSetStatus = (field: "store_approval_status" | "team_approval_status", newVal: ApprovalStatusValue) => {
     if (!canEdit) return;
