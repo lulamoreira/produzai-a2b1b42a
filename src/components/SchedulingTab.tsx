@@ -825,6 +825,14 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
     if (!newDate && !newTime) return;
 
     const now = new Date().toISOString();
+    // Optimistic UI: instantly update status and clear suggestions
+    setOptimisticStoreStatus("approved");
+    setOptimisticTeamStatus("approved");
+    setLocalSuggestedDate("");
+    setLocalSuggestedTime("");
+    setLocalSuggestedDate2("");
+    setLocalSuggestedTime2("");
+
     onMultiUpdate({
       ...(newDate ? { scheduled_date: newDate } : {}),
       ...(newTime ? { scheduled_time: newTime } : {}),
