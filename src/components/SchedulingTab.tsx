@@ -720,7 +720,7 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
   const [localSuggestedTime, setLocalSuggestedTime] = useState(schedule?.suggested_time || "");
 
   // Sync local state when schedule changes
-  useMemo(() => {
+  useEffect(() => {
     setLocalSuggestedDate(schedule?.suggested_date || "");
     setLocalSuggestedTime(schedule?.suggested_time || "");
   }, [schedule?.suggested_date, schedule?.suggested_time]);
