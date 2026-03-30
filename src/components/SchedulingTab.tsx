@@ -244,6 +244,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       store_approved_at: existing?.store_approved_at ?? null,
       team_approved_at: existing?.team_approved_at ?? null,
       responsibility_at: existing?.responsibility_at ?? null,
+      suggested_date: existing?.suggested_date ?? null,
+      suggested_time: existing?.suggested_time ?? null,
       ...(typeof field === "string" ? { [field]: value } : {}),
     });
   };
