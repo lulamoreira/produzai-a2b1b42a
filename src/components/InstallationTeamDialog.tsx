@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, Users, Car, AlertTriangle, ChevronDown, ChevronRight, Edit3, Check, X } from "lucide-react";
+import { Plus, Trash2, Users, Car, AlertTriangle, ChevronDown, ChevronRight, Edit3, Check, X, MapPin } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn, normalizeTeamName, normalizeMemberName } from "@/lib/utils";
 
