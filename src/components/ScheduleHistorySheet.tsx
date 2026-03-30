@@ -74,7 +74,7 @@ export default function ScheduleHistorySheet({ open, onOpenChange, campaignId, s
             <p className="text-xs text-muted-foreground text-center py-8">Nenhum registro no histórico.</p>
           )}
           {entries.map((entry) => {
-            const authorName = entry.profiles?.nickname || entry.profiles?.display_name || "Sistema";
+            const authorName = entry.authorName || "Sistema";
             return (
               <div key={entry.id} className="rounded-lg border border-border bg-card p-3 space-y-1">
                 <div className="flex items-start justify-between gap-2">
