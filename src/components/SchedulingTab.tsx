@@ -105,6 +105,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [chatStoreName, setChatStoreName] = useState("");
   const [filterApproval, setFilterApproval] = useState("");
   const [filterMessages, setFilterMessages] = useState("");
+  const [filterDate, setFilterDate] = useState("");
 
   // Unread message counts
   const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
