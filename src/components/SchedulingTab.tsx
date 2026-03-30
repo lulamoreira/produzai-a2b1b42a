@@ -16,6 +16,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import * as XLSX from "xlsx";
 import { downloadWorkbook } from "@/lib/downloadWorkbook";
 import { buildExportFileName } from "@/lib/exportFileName";
@@ -690,6 +691,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               <ApprovalToggles
                 schedule={schedule}
                 storeId={store.id}
+                campaignId={campaignId}
                 canEdit={canEdit}
                 hasDateAndTime={!!(schedule?.scheduled_date && schedule?.scheduled_time)}
                 onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
@@ -728,12 +730,14 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 interface ApprovalTogglesProps {
   schedule: Schedule | undefined;
   storeId: string;
+  campaignId: string;
   canEdit: boolean;
   hasDateAndTime: boolean;
   onMultiUpdate: (fields: Record<string, any>) => void;
 }
 
-function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUpdate }: ApprovalTogglesProps) {
+function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTime, onMultiUpdate }: ApprovalTogglesProps) {
+  const { user } = useAuth();
   const storeStatus = (schedule?.store_approval_status ?? "under_review") as ApprovalStatusValue;
   const teamStatus = (schedule?.team_approval_status ?? "under_review") as ApprovalStatusValue;
   const hasPendency = storeStatus !== "approved" || teamStatus !== "approved";
@@ -793,8 +797,10 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
     onMultiUpdate({ [field]: value || null });
   };
 
-  const handleAcceptSuggestion = (set: 1 | 2) => {
+  const handleAcceptSuggestion = async (set: 1 | 2) => {
     if (!canEdit) return;
+    const oldDate = schedule?.scheduled_date || "";
+    const oldTime = schedule?.scheduled_time || "";
     const newDate = set === 1
       ? (localSuggestedDate || schedule?.suggested_date)
       : (localSuggestedDate2 || (schedule as any)?.suggested_date_2);
@@ -811,11 +817,33 @@ function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUp
       suggested_time: null,
       suggested_date_2: null,
       suggested_time_2: null,
-      store_approval_status: "under_review",
-      store_approved: false,
+      store_approval_status: "approved",
+      store_approved: true,
       store_approved_at: now,
+      team_approval_status: "approved",
+      team_approved: true,
+      team_approved_at: now,
     });
-    toast.success("Data/horário sugeridos aceitos e transferidos!");
+
+    // Post previous date/time to chat for record
+    const parts: string[] = [];
+    if (oldDate) {
+      try {
+        parts.push(`Data anterior: ${format(new Date(oldDate + "T12:00:00"), "dd/MM/yyyy")}`);
+      } catch { parts.push(`Data anterior: ${oldDate}`); }
+    }
+    if (oldTime) parts.push(`Horário anterior: ${oldTime}`);
+    if (parts.length > 0 && user) {
+      const chatMsg = `📋 Sugestão aceita (Opção ${set}). ${parts.join(" | ")}`;
+      await supabase.from("schedule_chat_messages").insert({
+        campaign_id: campaignId,
+        store_id: storeId,
+        sender_id: user.id,
+        content: chatMsg,
+      });
+    }
+
+    toast.success("Sugestão aceita! Lojista e Equipe aprovados.");
   };
 
   const formatTimestamp = (ts: string | null) => {
