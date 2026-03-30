@@ -105,6 +105,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [chatStoreName, setChatStoreName] = useState("");
   const [filterApproval, setFilterApproval] = useState("");
   const [filterMessages, setFilterMessages] = useState("");
+  const [filterDate, setFilterDate] = useState("");
 
   // Unread message counts
   const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
@@ -218,13 +219,19 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         return true;
       });
     }
+    if (filterDate) {
+      result = result.filter((s) => {
+        const sch = scheduleMap[s.id];
+        return sch?.scheduled_date === filterDate;
+      });
+    }
     if (filterMessages === "unread") {
       result = result.filter((s) => (chatCounts?.unreadPerStore[s.id] || 0) > 0);
     } else if (filterMessages === "has_messages") {
       result = result.filter((s) => (chatCounts?.totalPerStore[s.id] || 0) > 0);
     }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, searchTerm, filterApproval, filterMessages, scheduleMap, chatCounts]);
+  }, [stores, filterState, filterCity, searchTerm, filterApproval, filterDate, filterMessages, scheduleMap, chatCounts]);
 
   const handleFieldChange = (storeId: string, field: string, value: any) => {
     const existing = scheduleMap[storeId];
@@ -418,6 +425,18 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             <option value="pending">⚠️ Pendência</option>
             <option value="rejected">❌ Desaprovado</option>
           </select>
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[120px] max-w-[160px]"
+            title="Filtrar por data"
+          />
+          {filterDate && (
+            <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-muted-foreground" onClick={() => setFilterDate("")}>
+              ✕
+            </Button>
+          )}
           <select
             value={filterMessages}
             onChange={(e) => setFilterMessages(e.target.value)}
