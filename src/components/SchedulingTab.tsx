@@ -797,8 +797,10 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
     onMultiUpdate({ [field]: value || null });
   };
 
-  const handleAcceptSuggestion = (set: 1 | 2) => {
+  const handleAcceptSuggestion = async (set: 1 | 2) => {
     if (!canEdit) return;
+    const oldDate = schedule?.scheduled_date || "";
+    const oldTime = schedule?.scheduled_time || "";
     const newDate = set === 1
       ? (localSuggestedDate || schedule?.suggested_date)
       : (localSuggestedDate2 || (schedule as any)?.suggested_date_2);
@@ -815,11 +817,33 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
       suggested_time: null,
       suggested_date_2: null,
       suggested_time_2: null,
-      store_approval_status: "under_review",
-      store_approved: false,
+      store_approval_status: "approved",
+      store_approved: true,
       store_approved_at: now,
+      team_approval_status: "approved",
+      team_approved: true,
+      team_approved_at: now,
     });
-    toast.success("Data/horário sugeridos aceitos e transferidos!");
+
+    // Post previous date/time to chat for record
+    const parts: string[] = [];
+    if (oldDate) {
+      try {
+        parts.push(`Data anterior: ${format(new Date(oldDate + "T12:00:00"), "dd/MM/yyyy")}`);
+      } catch { parts.push(`Data anterior: ${oldDate}`); }
+    }
+    if (oldTime) parts.push(`Horário anterior: ${oldTime}`);
+    if (parts.length > 0 && user) {
+      const chatMsg = `📋 Sugestão aceita (Opção ${set}). ${parts.join(" | ")}`;
+      await supabase.from("schedule_chat_messages").insert({
+        campaign_id: campaignId,
+        store_id: storeId,
+        sender_id: user.id,
+        content: chatMsg,
+      });
+    }
+
+    toast.success("Sugestão aceita! Lojista e Equipe aprovados.");
   };
 
   const formatTimestamp = (ts: string | null) => {
