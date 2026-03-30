@@ -28,12 +28,26 @@ export default function ScheduleHistorySheet({ open, onOpenChange, campaignId, s
     queryFn: async () => {
       const { data, error } = await supabase
         .from("schedule_history")
-        .select("*, profiles:user_id(display_name, nickname)")
+        .select("*")
         .eq("campaign_id", campaignId)
         .eq("store_id", storeId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as any[];
+      // Fetch profile names for each unique user_id
+      const userIds = [...new Set((data || []).map((d: any) => d.user_id).filter(Boolean))];
+      let profileMap: Record<string, string> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, nickname")
+          .in("user_id", userIds);
+        if (profiles) {
+          for (const p of profiles) {
+            profileMap[p.user_id] = p.nickname || p.display_name || "Sistema";
+          }
+        }
+      }
+      return (data || []).map((d: any) => ({ ...d, authorName: profileMap[d.user_id] || "Sistema" }));
     },
   });
 
@@ -60,7 +74,7 @@ export default function ScheduleHistorySheet({ open, onOpenChange, campaignId, s
             <p className="text-xs text-muted-foreground text-center py-8">Nenhum registro no histórico.</p>
           )}
           {entries.map((entry) => {
-            const authorName = entry.profiles?.nickname || entry.profiles?.display_name || "Sistema";
+            const authorName = entry.authorName || "Sistema";
             return (
               <div key={entry.id} className="rounded-lg border border-border bg-card p-3 space-y-1">
                 <div className="flex items-start justify-between gap-2">
