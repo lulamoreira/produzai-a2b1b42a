@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, Users, Car, AlertTriangle, ChevronDown, ChevronRight, Edit3, Check, X } from "lucide-react";
+import { Plus, Trash2, Users, Car, AlertTriangle, ChevronDown, ChevronRight, Edit3, Check, X, MapPin } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn, normalizeTeamName, normalizeMemberName } from "@/lib/utils";
 
@@ -195,6 +196,23 @@ interface InstallationTeamDialogProps {
 export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit }: InstallationTeamDialogProps) {
   const queryClient = useQueryClient();
   const { data: teams = [] } = useInstallationTeams(campaignId);
+  const { data: teamStoreCounts = {} } = useQuery({
+    queryKey: ["team_store_counts", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_schedules")
+        .select("team_id")
+        .eq("campaign_id", campaignId)
+        .not("team_id", "is", null);
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      (data || []).forEach((s) => {
+        if (s.team_id) counts[s.team_id] = (counts[s.team_id] || 0) + 1;
+      });
+      return counts;
+    },
+    enabled: !!campaignId,
+  });
   const [newTeamName, setNewTeamName] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
@@ -293,7 +311,14 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                       </Button>
                     </div>
                   ) : (
-                    <span className="font-medium text-sm truncate">{team.name}</span>
+                    <>
+                      <span className="font-medium text-sm truncate">{team.name}</span>
+                      {(teamStoreCounts[team.id] ?? 0) > 0 && (
+                        <Badge variant="secondary" className="ml-2 text-xs shrink-0 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> {teamStoreCounts[team.id]} {teamStoreCounts[team.id] === 1 ? "loja" : "lojas"}
+                        </Badge>
+                      )}
+                    </>
                   )}
                 </div>
                 {canEdit && editingTeamId !== team.id && (
