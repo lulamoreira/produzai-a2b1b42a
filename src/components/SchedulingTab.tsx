@@ -875,7 +875,7 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
       team_approved_at: now,
     });
 
-    // Post previous date/time to chat for record
+    // Post previous date/time to history log
     const parts: string[] = [];
     if (oldDate) {
       try {
@@ -884,12 +884,12 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
     }
     if (oldTime) parts.push(`Horário anterior: ${oldTime}`);
     if (parts.length > 0 && user) {
-      const chatMsg = `📋 Sugestão aceita (Opção ${set}). ${parts.join(" | ")}`;
-      await supabase.from("schedule_chat_messages").insert({
+      const historyMsg = `📋 Sugestão aceita (Opção ${set}). ${parts.join(" | ")}`;
+      await supabase.from("schedule_history").insert({
         campaign_id: campaignId,
         store_id: storeId,
-        sender_id: user.id,
-        content: chatMsg,
+        user_id: user.id,
+        content: historyMsg,
       });
     }
 
