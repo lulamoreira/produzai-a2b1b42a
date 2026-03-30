@@ -196,6 +196,23 @@ interface InstallationTeamDialogProps {
 export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit }: InstallationTeamDialogProps) {
   const queryClient = useQueryClient();
   const { data: teams = [] } = useInstallationTeams(campaignId);
+  const { data: teamStoreCounts = {} } = useQuery({
+    queryKey: ["team_store_counts", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_schedules")
+        .select("team_id")
+        .eq("campaign_id", campaignId)
+        .not("team_id", "is", null);
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      (data || []).forEach((s) => {
+        if (s.team_id) counts[s.team_id] = (counts[s.team_id] || 0) + 1;
+      });
+      return counts;
+    },
+    enabled: !!campaignId,
+  });
   const [newTeamName, setNewTeamName] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
