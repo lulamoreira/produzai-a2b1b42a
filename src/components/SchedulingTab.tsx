@@ -410,6 +410,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             <option value="">Aprovações</option>
             <option value="approved">✅ Aprovado</option>
             <option value="pending">⚠️ Pendência</option>
+            <option value="rejected">❌ Desaprovado</option>
           </select>
           <select
             value={filterMessages}
