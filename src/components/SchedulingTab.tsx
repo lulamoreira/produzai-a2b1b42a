@@ -729,12 +729,14 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 interface ApprovalTogglesProps {
   schedule: Schedule | undefined;
   storeId: string;
+  campaignId: string;
   canEdit: boolean;
   hasDateAndTime: boolean;
   onMultiUpdate: (fields: Record<string, any>) => void;
 }
 
-function ApprovalToggles({ schedule, storeId, canEdit, hasDateAndTime, onMultiUpdate }: ApprovalTogglesProps) {
+function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTime, onMultiUpdate }: ApprovalTogglesProps) {
+  const { user } = useAuth();
   const storeStatus = (schedule?.store_approval_status ?? "under_review") as ApprovalStatusValue;
   const teamStatus = (schedule?.team_approval_status ?? "under_review") as ApprovalStatusValue;
   const hasPendency = storeStatus !== "approved" || teamStatus !== "approved";
