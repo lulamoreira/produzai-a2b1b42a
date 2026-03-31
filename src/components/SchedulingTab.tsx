@@ -72,24 +72,22 @@ const PREFERENCE_OPTIONS = [
   { value: "both", label: "Ambos", icon: Sun },
 ];
 
-function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null) {
+function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string) {
   const firstName = contactName.split(" ")[0];
   const agencyFirst = agencyName.split(" ")[0];
   const clientFirst = clientName.split(" ")[0];
   const dateStr = date ? format(new Date(date + "T12:00:00"), "dd/MM/yyyy") : "(data a definir)";
   const timeStr = time || "(horário a definir)";
 
-  const message = `Olá 😊
-
-Somos da ${agencyFirst}, responsáveis pelo agendamento das instalações da Campanha ${clientFirst} - ${campaignName}.
-
-Gostaríamos de solicitar a autorização para seguir com a instalação da campanha, que está prevista para o dia ${dateStr} às ${timeStr}.
-
-Pode, por gentileza, verificar com o shopping a liberação o quanto antes?
-
-Agradecemos imensamente sua colaboração e aguardamos o retorno dessa mensagem com a autorização/OS para a instalação.
-
-Ficamos à disposição! 🙏🏼`;
+  const message = messageTemplate
+    ? messageTemplate
+        .replace(/\{name\}/g, firstName)
+        .replace(/\{agency\}/g, agencyFirst)
+        .replace(/\{client\}/g, clientFirst)
+        .replace(/\{campaign\}/g, campaignName)
+        .replace(/\{date\}/g, dateStr)
+        .replace(/\{time\}/g, timeStr)
+    : `Olá 😊\n\nSomos da ${agencyFirst}, responsáveis pelo agendamento das instalações da Campanha ${clientFirst} - ${campaignName}.\n\nGostaríamos de solicitar a autorização para seguir com a instalação da campanha, que está prevista para o dia ${dateStr} às ${timeStr}.\n\nPode, por gentileza, verificar com o shopping a liberação o quanto antes?\n\nAgradecemos imensamente sua colaboração e aguardamos o retorno dessa mensagem com a autorização/OS para a instalação.\n\nFicamos à disposição! 🙏🏼`;
 
   const digits = phone.replace(/\D/g, "");
   const fullNumber = digits.startsWith("55") ? digits : `55${digits}`;
@@ -145,6 +143,20 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     });
     return map;
   }, [allContacts]);
+
+  // Fetch WhatsApp scheduling message template
+  const { data: schedulingMsgTemplate } = useQuery({
+    queryKey: ["system_message", "whatsapp_scheduling_authorization"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("system_messages")
+        .select("content")
+        .eq("key", "whatsapp_scheduling_authorization")
+        .is("agency_id", null)
+        .maybeSingle();
+      return data?.content as string | undefined;
+    },
+  });
 
   // Fetch schedules
   const { data: schedules = [] } = useQuery({
@@ -570,6 +582,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   agencyName={agencyName}
                   clientName={clientName}
                   campaignName={campaignName}
+                  messageTemplate={schedulingMsgTemplate}
                 />
 
                 <hr className="border-border" />
@@ -1193,9 +1206,10 @@ interface StoreContactsDisplayProps {
   agencyName: string;
   clientName: string;
   campaignName: string;
+  messageTemplate?: string;
 }
 
-function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, clientName, campaignName }: StoreContactsDisplayProps) {
+function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, clientName, campaignName, messageTemplate }: StoreContactsDisplayProps) {
   const hasContacts = contacts.length > 0;
   const primaryContact = hasContacts ? contacts[0] : null;
 
@@ -1217,6 +1231,7 @@ function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, 
         agencyName={agencyName}
         clientName={clientName}
         campaignName={campaignName}
+        messageTemplate={messageTemplate}
       />
       {contacts.length > 1 && (
         <Popover>
@@ -1239,6 +1254,7 @@ function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, 
                   clientName={clientName}
                   campaignName={campaignName}
                   showRole
+                  messageTemplate={messageTemplate}
                 />
               ))}
             </div>
@@ -1259,9 +1275,10 @@ interface ContactRowProps {
   clientName: string;
   campaignName: string;
   showRole?: boolean;
+  messageTemplate?: string;
 }
 
-function ContactRow({ contact, roleMap, schedule, agencyName, clientName, campaignName, showRole }: ContactRowProps) {
+function ContactRow({ contact, roleMap, schedule, agencyName, clientName, campaignName, showRole, messageTemplate }: ContactRowProps) {
   const roleName = contact.role_id ? roleMap[contact.role_id] : null;
 
   return (
@@ -1278,7 +1295,7 @@ function ContactRow({ contact, roleMap, schedule, agencyName, clientName, campai
             <Phone className="w-3 h-3" />
             {contact.phone}
             <a
-              href={buildWhatsAppUrl(contact.phone, contact.name, agencyName, clientName, campaignName, schedule?.scheduled_date ?? null, schedule?.scheduled_time ?? null)}
+              href={buildWhatsAppUrl(contact.phone, contact.name, agencyName, clientName, campaignName, schedule?.scheduled_date ?? null, schedule?.scheduled_time ?? null, messageTemplate)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-primary-foreground transition-colors"

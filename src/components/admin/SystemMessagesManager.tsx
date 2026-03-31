@@ -24,6 +24,9 @@ const VARIABLES_HELP = [
     { name: "{team}", desc: "Nome da equipe de instalação" },
     { name: "{code}", desc: "Código de acesso gerado para a equipe" },
     { name: "{link}", desc: "Link de acesso ao sistema para a equipe" },
+    { name: "{agency}", desc: "Nome da agência (primeiro nome)" },
+    { name: "{client}", desc: "Nome do cliente (primeiro nome)" },
+    { name: "{time}", desc: "Horário agendado da instalação" },
   ]},
   { category: "E-mail", variables: [
     { name: "{status}", desc: "Nome/label do status atual da ocorrência" },
@@ -61,6 +64,7 @@ const KEY_LABELS: Record<string, string> = {
   whatsapp_occurrence_contact: "Contato sobre ocorrência",
   whatsapp_store_contact: "Saudação ao contato da loja",
   whatsapp_team_code: "Código de acesso da equipe",
+  whatsapp_scheduling_authorization: "Autorização de agendamento",
   ui_auth_login_error: "Erro de login",
   ui_auth_signup_success: "Sucesso ao criar conta",
   ui_auth_recovery_sent: "E-mail de recuperação enviado",
