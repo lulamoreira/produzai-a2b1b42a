@@ -36,9 +36,10 @@ interface Props {
   storeId: string | undefined;
   clientId: string | undefined;
   canEdit: boolean;
+  storeName?: string;
 }
 
-const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
+const StoreContactsSection = ({ storeId, clientId, canEdit, storeName }: Props) => {
   const { data: contacts = [] } = useStoreContacts(storeId);
   const { data: roles = [] } = useStoreContactRoles(clientId);
   const addContact = useAddStoreContact();
@@ -212,7 +213,7 @@ const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
                 />
                 {contact.phone && (
                   <a
-                    href={`https://wa.me/55${contact.phone.replace(/\D/g, "")}?text=${encodeURIComponent((whatsappStoreContactTemplate || 'Olá, {name}, como vai?').replace(/\{name\}/g, contact.name.split(" ")[0]))}`}
+                    href={`https://wa.me/55${contact.phone.replace(/\D/g, "")}?text=${encodeURIComponent((whatsappStoreContactTemplate || 'Olá, {name}, como vai?').replace(/\{name\}/g, contact.name.split(" ")[0]).replace(/\{store\}/g, storeName || ''))}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted transition-colors"

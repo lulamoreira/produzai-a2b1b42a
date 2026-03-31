@@ -432,7 +432,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                       <Link2 className="w-3.5 h-3.5 text-primary" />
                     </Button>
                     <a
-                      href={`https://wa.me/${occ.reporter_phone_ddd && occ.reporter_phone_number ? `55${occ.reporter_phone_ddd}${occ.reporter_phone_number}` : ''}?text=${encodeURIComponent((whatsappLinkTemplate || 'Ocorrência: {url}').replace(/\{url\}/g, `https://produzai.lovable.app/ocorrencia/${occ.id}`).replace(/\{id\}/g, occ.id.slice(0, 8)))}`}
+                      href={`https://wa.me/${occ.reporter_phone_ddd && occ.reporter_phone_number ? `55${occ.reporter_phone_ddd}${occ.reporter_phone_number}` : ''}?text=${encodeURIComponent((whatsappLinkTemplate || 'Ocorrência: {url}').replace(/\{url\}/g, `https://produzai.lovable.app/ocorrencia/${occ.id}`).replace(/\{id\}/g, occ.id.slice(0, 8)).replace(/\{store\}/g, (() => { const s = stores.find(st => st.id === occ.store_id); return s?.nickname || s?.name || ''; })()))}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -442,7 +442,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                     </a>
                     {occ.reporter_phone_ddd && occ.reporter_phone_number && (
                       <a
-                        href={`https://wa.me/55${occ.reporter_phone_ddd}${occ.reporter_phone_number}?text=${encodeURIComponent((whatsappContactTemplate || 'Olá, tudo bem? Gostaríamos de falar sobre a sua ocorrência #{id} da Campanha "{campaign}", registrada em: {date}.').replace(/\{id\}/g, occ.id.slice(0, 8)).replace(/\{campaign\}/g, campaignInfo?.name || '').replace(/\{date\}/g, occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy 'às' HH:mm") : '—'))}`}
+                        href={`https://wa.me/55${occ.reporter_phone_ddd}${occ.reporter_phone_number}?text=${encodeURIComponent((whatsappContactTemplate || 'Olá, tudo bem? Gostaríamos de falar sobre a sua ocorrência #{id} da Campanha "{campaign}", registrada em: {date}.').replace(/\{id\}/g, occ.id.slice(0, 8)).replace(/\{campaign\}/g, campaignInfo?.name || '').replace(/\{date\}/g, occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy 'às' HH:mm") : '—').replace(/\{store\}/g, (() => { const s = stores.find(st => st.id === occ.store_id); return s?.nickname || s?.name || ''; })()))}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

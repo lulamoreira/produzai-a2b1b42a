@@ -72,7 +72,7 @@ const PREFERENCE_OPTIONS = [
   { value: "both", label: "Ambos", icon: Sun },
 ];
 
-function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string) {
+function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string, storeName?: string) {
   const firstName = contactName.split(" ")[0];
   const agencyFirst = agencyName.split(" ")[0];
   const clientFirst = clientName.split(" ")[0];
@@ -82,6 +82,7 @@ function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string
   const message = messageTemplate
     ? messageTemplate
         .replace(/\{name\}/g, firstName)
+        .replace(/\{store\}/g, storeName || "")
         .replace(/\{agency\}/g, agencyFirst)
         .replace(/\{client\}/g, clientFirst)
         .replace(/\{campaign\}/g, campaignName)
@@ -1210,6 +1211,7 @@ interface StoreContactsDisplayProps {
 }
 
 function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, clientName, campaignName, messageTemplate }: StoreContactsDisplayProps) {
+  const storeName = store.nickname || store.name;
   const hasContacts = contacts.length > 0;
   const primaryContact = hasContacts ? contacts[0] : null;
 
@@ -1232,6 +1234,7 @@ function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, 
         clientName={clientName}
         campaignName={campaignName}
         messageTemplate={messageTemplate}
+        storeName={storeName}
       />
       {contacts.length > 1 && (
         <Popover>
@@ -1255,6 +1258,7 @@ function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, 
                   campaignName={campaignName}
                   showRole
                   messageTemplate={messageTemplate}
+                  storeName={storeName}
                 />
               ))}
             </div>
@@ -1276,9 +1280,10 @@ interface ContactRowProps {
   campaignName: string;
   showRole?: boolean;
   messageTemplate?: string;
+  storeName?: string;
 }
 
-function ContactRow({ contact, roleMap, schedule, agencyName, clientName, campaignName, showRole, messageTemplate }: ContactRowProps) {
+function ContactRow({ contact, roleMap, schedule, agencyName, clientName, campaignName, showRole, messageTemplate, storeName }: ContactRowProps) {
   const roleName = contact.role_id ? roleMap[contact.role_id] : null;
 
   return (
@@ -1295,7 +1300,7 @@ function ContactRow({ contact, roleMap, schedule, agencyName, clientName, campai
             <Phone className="w-3 h-3" />
             {contact.phone}
             <a
-              href={buildWhatsAppUrl(contact.phone, contact.name, agencyName, clientName, campaignName, schedule?.scheduled_date ?? null, schedule?.scheduled_time ?? null, messageTemplate)}
+              href={buildWhatsAppUrl(contact.phone, contact.name, agencyName, clientName, campaignName, schedule?.scheduled_date ?? null, schedule?.scheduled_time ?? null, messageTemplate, storeName)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-primary-foreground transition-colors"
