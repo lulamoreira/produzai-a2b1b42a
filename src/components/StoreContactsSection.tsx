@@ -47,6 +47,14 @@ const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
   const addRole = useAddStoreContactRole();
   const deleteRole = useDeleteStoreContactRole();
 
+  const { data: whatsappStoreContactTemplate } = useQuery({
+    queryKey: ["system_message", "whatsapp_store_contact"],
+    queryFn: async () => {
+      const { data } = await supabase.from("system_messages").select("content").eq("key", "whatsapp_store_contact").is("agency_id", null).maybeSingle();
+      return data?.content as string | undefined;
+    },
+  });
+
   const [newContact, setNewContact] = useState({ name: "", phone: "", email: "", role_id: "" });
   const [showAdd, setShowAdd] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
