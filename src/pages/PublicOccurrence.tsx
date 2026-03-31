@@ -281,6 +281,20 @@ const PublicOccurrence = () => {
 
   const clientName = (campaign as any).clients?.name || "";
 
+  if (!isWithinOccurrenceWindow) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center p-8 max-w-md">
+          <div className="w-16 h-16 rounded-full bg-destructive/15 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-destructive" />
+          </div>
+          <h1 className="text-lg font-bold text-foreground mb-2">Período encerrado</h1>
+          <p className="text-sm text-muted-foreground">Infelizmente o período de inclusão de ocorrências terminou, procure contato através do WhatsApp ou e-mail.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
