@@ -23,7 +23,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Building2, Plus, ArrowRight, Trash2, LogOut, Shield, Sparkles, MessageSquare, Upload, Palette, ImageIcon } from "lucide-react";
+import { Building2, Plus, ArrowRight, Trash2, LogOut, Shield, Sparkles, MessageSquare, Upload, Palette, ImageIcon, RotateCcw, Trash, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 const PRESET_COLORS = [
