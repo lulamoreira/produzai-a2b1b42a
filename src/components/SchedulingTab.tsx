@@ -1211,6 +1211,7 @@ interface StoreContactsDisplayProps {
 }
 
 function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, clientName, campaignName, messageTemplate }: StoreContactsDisplayProps) {
+  const storeName = store.nickname || store.name;
   const hasContacts = contacts.length > 0;
   const primaryContact = hasContacts ? contacts[0] : null;
 
