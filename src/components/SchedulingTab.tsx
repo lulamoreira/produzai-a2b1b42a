@@ -582,6 +582,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   agencyName={agencyName}
                   clientName={clientName}
                   campaignName={campaignName}
+                  messageTemplate={schedulingMsgTemplate}
                 />
 
                 <hr className="border-border" />
