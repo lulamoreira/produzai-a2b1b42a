@@ -8,6 +8,7 @@ export type Agency = {
   color: string | null;
   logo_url: string | null;
   created_at: string;
+  deleted_at: string | null;
 };
 
 export function useAgencies() {
