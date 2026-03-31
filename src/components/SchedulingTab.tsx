@@ -429,6 +429,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             <option value="approved">✅ Aprovado</option>
             <option value="pending">⚠️ Pendência</option>
             <option value="rejected">❌ Desaprovado</option>
+            <option value="missing_os">📋 Falta OS</option>
           </select>
           <input
             type="date"
