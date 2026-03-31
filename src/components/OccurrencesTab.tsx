@@ -230,6 +230,31 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           )}
         </div>
         <span className="text-xs text-muted-foreground">{filteredOccurrences.length} de {occurrences.length} ocorrência(s)</span>
+
+        {/* Período de inclusão de ocorrências */}
+        {campaignInfo && (
+          <div className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${
+            campaignInfo.occurrence_start_date || campaignInfo.occurrence_end_date
+              ? 'border-primary/30 bg-primary/5 text-foreground'
+              : 'border-destructive/30 bg-destructive/5 text-destructive'
+          }`}>
+            <Calendar className="w-4 h-4 shrink-0" />
+            {campaignInfo.occurrence_start_date || campaignInfo.occurrence_end_date ? (
+              <span>
+                <strong>Período de inclusão:</strong>{' '}
+                {campaignInfo.occurrence_start_date
+                  ? format(new Date(campaignInfo.occurrence_start_date + 'T12:00:00'), 'dd/MM/yyyy')
+                  : '—'}{' '}
+                até{' '}
+                {campaignInfo.occurrence_end_date
+                  ? format(new Date(campaignInfo.occurrence_end_date + 'T12:00:00'), 'dd/MM/yyyy')
+                  : '—'}
+              </span>
+            ) : (
+              <span><strong>Nenhum período configurado.</strong> A inclusão de ocorrências está bloqueada.</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Dashboard */}
