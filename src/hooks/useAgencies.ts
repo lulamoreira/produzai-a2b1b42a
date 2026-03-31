@@ -8,16 +8,18 @@ export type Agency = {
   color: string | null;
   logo_url: string | null;
   created_at: string;
+  deleted_at: string | null;
 };
 
-export function useAgencies() {
+export function useAgencies(includeDeleted = false) {
   return useQuery({
-    queryKey: ["agencies"],
+    queryKey: ["agencies", includeDeleted],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("agencies")
-        .select("*")
-        .order("name");
+      let query = supabase.from("agencies").select("*").order("name");
+      if (!includeDeleted) {
+        query = query.is("deleted_at", null);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data as Agency[];
     },
@@ -59,12 +61,48 @@ export function useDeleteAgency() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("agencies")
+        .update({ deleted_at: new Date().toISOString() } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agencies"] });
+      toast.success("Agência movida para lixeira! Pode ser recuperada em até 7 dias.");
+    },
+    onError: (e: Error) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useRestoreAgency() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("agencies")
+        .update({ deleted_at: null } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["agencies"] });
+      toast.success("Agência restaurada!");
+    },
+    onError: (e: Error) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function usePermanentDeleteAgency() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase.from("agencies").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["agencies"] });
-      toast.success("Agência removida!");
+      toast.success("Agência excluída permanentemente!");
     },
     onError: (e: Error) => toast.error("Erro: " + e.message),
   });
