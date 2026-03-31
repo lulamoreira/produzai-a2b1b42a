@@ -10,7 +10,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Save, Plus, Trash2, Globe, Building2, Mail, MessageCircle, ShieldAlert, Monitor, Search } from "lucide-react";
+import { Save, Plus, Trash2, Globe, Building2, Mail, MessageCircle, ShieldAlert, Monitor, Search, HelpCircle } from "lucide-react";
+
+const VARIABLES_HELP = [
+  { category: "WhatsApp", variables: [
+    { name: "{name}", desc: "Primeiro nome do contato da loja" },
+    { name: "{store}", desc: "Apelido ou nome da loja destinatária" },
+    { name: "{id}", desc: "ID resumido da ocorrência (8 caracteres)" },
+    { name: "{campaign}", desc: "Nome da campanha" },
+    { name: "{date}", desc: "Data e hora do registro da ocorrência" },
+    { name: "{url}", desc: "Link público da ocorrência" },
+    { name: "{leader}", desc: "Nome do líder da equipe de instalação" },
+    { name: "{team}", desc: "Nome da equipe de instalação" },
+    { name: "{code}", desc: "Código de acesso gerado para a equipe" },
+    { name: "{link}", desc: "Link de acesso ao sistema para a equipe" },
+  ]},
+  { category: "E-mail", variables: [
+    { name: "{status}", desc: "Nome/label do status atual da ocorrência" },
+    { name: "{store}", desc: "Apelido ou nome da loja" },
+    { name: "{campaign}", desc: "Nome da campanha" },
+    { name: "{client}", desc: "Nome do cliente" },
+    { name: "{piece}", desc: "Nome da peça" },
+    { name: "{motive}", desc: "Descrição do motivo da ocorrência" },
+    { name: "{date}", desc: "Data e hora do registro" },
+    { name: "{description}", desc: "Descrição da ocorrência" },
+  ]},
+  { category: "Bloqueio / Interface", variables: [
+    { name: "—", desc: "Mensagens de bloqueio e interface geralmente não usam variáveis. O texto é exibido como está." },
+  ]},
+];
 
 const CATEGORY_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   ui: { label: "Interface (UI)", icon: <Monitor className="w-3.5 h-3.5" />, color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
@@ -55,6 +83,7 @@ export default function SystemMessagesManager() {
   const [search, setSearch] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [newForm, setNewForm] = useState({ key: "", category: "ui", content: "", agency_id: "" });
+  const [showHelp, setShowHelp] = useState(false);
 
   const filteredMessages = useMemo(() => {
     let filtered = messages;
@@ -163,6 +192,9 @@ export default function SystemMessagesManager() {
               className="pl-9 h-9 w-48"
             />
           </div>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowHelp(true)}>
+            <HelpCircle className="w-4 h-4" /> Variáveis
+          </Button>
           <Button size="sm" className="gap-1.5" onClick={() => setShowNew(true)}>
             <Plus className="w-4 h-4" /> Nova mensagem
           </Button>
@@ -290,6 +322,41 @@ export default function SystemMessagesManager() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowNew(false)}>Cancelar</Button>
             <Button onClick={handleCreate} disabled={createMsg.isPending}>Criar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Variables help dialog */}
+      <Dialog open={showHelp} onOpenChange={setShowHelp}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-primary" /> Variáveis Dinâmicas
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1 mb-4">
+            <p className="text-sm text-muted-foreground">
+              Use variáveis entre chaves <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{"{variavel}"}</code> no conteúdo das mensagens. Elas serão substituídas automaticamente pelos dados reais ao enviar.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              <strong>Exemplo:</strong> <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">Olá, {"{name}"}, como vai? Referente à loja {"{store}"}.</code>
+            </p>
+          </div>
+          {VARIABLES_HELP.map(group => (
+            <div key={group.category} className="mb-4">
+              <h3 className="text-sm font-semibold text-foreground mb-2 border-b border-border pb-1">{group.category}</h3>
+              <div className="space-y-1.5">
+                {group.variables.map(v => (
+                  <div key={v.name} className="flex gap-3 items-start text-sm">
+                    <code className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-mono shrink-0 min-w-[100px]">{v.name}</code>
+                    <span className="text-muted-foreground">{v.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHelp(false)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
