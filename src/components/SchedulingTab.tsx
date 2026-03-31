@@ -263,7 +263,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       result = result.filter((s) => (chatCounts?.totalPerStore[s.id] || 0) > 0);
     }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, searchTerm, filterApproval, filterDate, filterMessages, scheduleMap, chatCounts]);
+  }, [stores, filterState, filterCity, searchTerm, filterApproval, filterDate, filterPeriod, filterMessages, scheduleMap, chatCounts]);
 
   const handleFieldChange = (storeId: string, field: string, value: any) => {
     const existing = scheduleMap[storeId];
