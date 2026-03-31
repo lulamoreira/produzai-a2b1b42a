@@ -72,7 +72,7 @@ const PREFERENCE_OPTIONS = [
   { value: "both", label: "Ambos", icon: Sun },
 ];
 
-function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string) {
+function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string, storeName?: string) {
   const firstName = contactName.split(" ")[0];
   const agencyFirst = agencyName.split(" ")[0];
   const clientFirst = clientName.split(" ")[0];
@@ -82,6 +82,7 @@ function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string
   const message = messageTemplate
     ? messageTemplate
         .replace(/\{name\}/g, firstName)
+        .replace(/\{store\}/g, storeName || "")
         .replace(/\{agency\}/g, agencyFirst)
         .replace(/\{client\}/g, clientFirst)
         .replace(/\{campaign\}/g, campaignName)
