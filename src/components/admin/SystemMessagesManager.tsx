@@ -264,8 +264,10 @@ export default function SystemMessagesManager() {
                   )}
                 </div>
               ))}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
         );
       })}
 
