@@ -373,8 +373,6 @@ const AgencySelect = () => {
                               A agência será movida para a lixeira e poderá ser recuperada em até 7 dias.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancelar</AlertDialogCancel>
                             <AlertDialogAction onClick={() => deleteAgency.mutate(agency.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
