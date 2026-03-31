@@ -626,6 +626,44 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                 </div>
               ))}
             </TabsContent>
+
+            <TabsContent value="period" className="space-y-3 mt-4">
+              <p className="text-xs text-muted-foreground">Defina o período em que a inclusão de ocorrências estará liberada. Fora desse período, o formulário será bloqueado.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1 block">Data Início</label>
+                  <Input type="date" value={occStartDate} onChange={(e) => setOccStartDate(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1 block">Data Fim</label>
+                  <Input type="date" value={occEndDate} onChange={(e) => setOccEndDate(e.target.value)} />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={async () => {
+                  const { error } = await supabase.from("campaigns").update({
+                    occurrence_start_date: occStartDate || null,
+                    occurrence_end_date: occEndDate || null,
+                  } as any).eq("id", campaignId);
+                  if (error) { toast.error("Erro ao salvar período."); return; }
+                  toast.success("Período salvo!");
+                  refetchCampaignInfo();
+                }}>Salvar</Button>
+                <Button variant="outline" size="sm" onClick={async () => {
+                  setOccStartDate("");
+                  setOccEndDate("");
+                  await supabase.from("campaigns").update({
+                    occurrence_start_date: null,
+                    occurrence_end_date: null,
+                  } as any).eq("id", campaignId);
+                  toast.success("Período removido!");
+                  refetchCampaignInfo();
+                }}>Limpar</Button>
+              </div>
+              {occStartDate && occEndDate && (
+                <p className="text-xs text-muted-foreground">Ocorrências liberadas de <strong>{format(new Date(occStartDate + "T00:00:00"), "dd/MM/yyyy")}</strong> até <strong>{format(new Date(occEndDate + "T00:00:00"), "dd/MM/yyyy")}</strong>.</p>
+              )}
+            </TabsContent>
           </Tabs>
         </DialogContent>
       </Dialog>
