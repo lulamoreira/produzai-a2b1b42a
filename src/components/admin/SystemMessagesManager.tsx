@@ -10,7 +10,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Save, Plus, Trash2, Globe, Building2, Mail, MessageCircle, ShieldAlert, Monitor, Search } from "lucide-react";
+import { Save, Plus, Trash2, Globe, Building2, Mail, MessageCircle, ShieldAlert, Monitor, Search, HelpCircle } from "lucide-react";
+
+const VARIABLES_HELP = [
+  { category: "WhatsApp", variables: [
+    { name: "{name}", desc: "Primeiro nome do contato da loja" },
+    { name: "{store}", desc: "Apelido ou nome da loja destinatária" },
+    { name: "{id}", desc: "ID resumido da ocorrência (8 caracteres)" },
+    { name: "{campaign}", desc: "Nome da campanha" },
+    { name: "{date}", desc: "Data e hora do registro da ocorrência" },
+    { name: "{url}", desc: "Link público da ocorrência" },
+    { name: "{leader}", desc: "Nome do líder da equipe de instalação" },
+    { name: "{team}", desc: "Nome da equipe de instalação" },
+    { name: "{code}", desc: "Código de acesso gerado para a equipe" },
+    { name: "{link}", desc: "Link de acesso ao sistema para a equipe" },
+  ]},
+  { category: "E-mail", variables: [
+    { name: "{status}", desc: "Nome/label do status atual da ocorrência" },
+    { name: "{store}", desc: "Apelido ou nome da loja" },
+    { name: "{campaign}", desc: "Nome da campanha" },
+    { name: "{client}", desc: "Nome do cliente" },
+    { name: "{piece}", desc: "Nome da peça" },
+    { name: "{motive}", desc: "Descrição do motivo da ocorrência" },
+    { name: "{date}", desc: "Data e hora do registro" },
+    { name: "{description}", desc: "Descrição da ocorrência" },
+  ]},
+  { category: "Bloqueio / Interface", variables: [
+    { name: "—", desc: "Mensagens de bloqueio e interface geralmente não usam variáveis. O texto é exibido como está." },
+  ]},
+];
 
 const CATEGORY_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   ui: { label: "Interface (UI)", icon: <Monitor className="w-3.5 h-3.5" />, color: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300" },
