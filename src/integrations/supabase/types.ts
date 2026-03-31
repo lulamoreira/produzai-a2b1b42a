@@ -1838,6 +1838,44 @@ export type Database = {
         }
         Relationships: []
       }
+      system_messages: {
+        Row: {
+          agency_id: string | null
+          category: string
+          content: string
+          created_at: string
+          id: string
+          key: string
+          updated_at: string
+        }
+        Insert: {
+          agency_id?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          key: string
+          updated_at?: string
+        }
+        Update: {
+          agency_id?: string | null
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_messages_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_agency_access: {
         Row: {
           agency_id: string
