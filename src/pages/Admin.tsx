@@ -7,13 +7,14 @@ import { useUserClientAccess } from "@/hooks/useMultiClientData";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { Users, Tags, Database, UserCheck, Search } from "lucide-react";
+import { Users, Tags, Database, UserCheck, Search, MessageSquareText } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserPermissionCard from "@/components/admin/UserPermissionCard";
 import CategoryManager from "@/components/admin/CategoryManager";
+import SystemMessagesManager from "@/components/admin/SystemMessagesManager";
 
 const Admin = () => {
   const { user } = useAuth();
@@ -70,6 +71,9 @@ const Admin = () => {
             <TabsTrigger value="categories" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
               <Tags className="w-4 h-4" /> Categorias
             </TabsTrigger>
+            <TabsTrigger value="messages" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+              <MessageSquareText className="w-4 h-4" /> Mensagens
+            </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="backup" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
                 <Database className="w-4 h-4" /> Backup
@@ -124,6 +128,11 @@ const Admin = () => {
           {/* ─── Categories Tab ─── */}
           <TabsContent value="categories">
             <CategoryManager />
+          </TabsContent>
+
+          {/* ─── Messages Tab ─── */}
+          <TabsContent value="messages">
+            <SystemMessagesManager />
           </TabsContent>
 
           {/* ─── Backup Tab ─── */}
