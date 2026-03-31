@@ -67,6 +67,19 @@ const AgencySelect = () => {
   const addAgency = useAddAgency();
   const updateAgency = useUpdateAgency();
   const deleteAgency = useDeleteAgency();
+  const restoreAgency = useRestoreAgency();
+  const permanentDeleteAgency = usePermanentDeleteAgency();
+
+  // Deleted agencies within 7 days
+  const deletedAgencies = isAdmin
+    ? allAgenciesIncDeleted.filter((a) => {
+        if (!a.deleted_at) return false;
+        const deletedDate = new Date(a.deleted_at);
+        const now = new Date();
+        const diffDays = (now.getTime() - deletedDate.getTime()) / (1000 * 60 * 60 * 24);
+        return diffDays <= 7;
+      })
+    : [];
 
   // Fetch client-level access to derive agency visibility
   const { data: clientAccess = [], isLoading: loadingClientAccess } = useQuery({
