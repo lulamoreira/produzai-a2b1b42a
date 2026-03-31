@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { useSystemMessages, useUpdateSystemMessage, useCreateSystemMessage, useDeleteSystemMessage, type SystemMessage } from "@/hooks/useSystemMessages";
 import { useAgencies } from "@/hooks/useAgencies";
 import { Button } from "@/components/ui/button";
