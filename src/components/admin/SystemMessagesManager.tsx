@@ -324,6 +324,8 @@ export default function SystemMessagesManager() {
             <Button onClick={handleCreate} disabled={createMsg.isPending}>Criar</Button>
           </DialogFooter>
         </DialogContent>
+      </Dialog>
+
       {/* Variables help dialog */}
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
