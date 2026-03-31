@@ -1297,7 +1297,7 @@ function ContactRow({ contact, roleMap, schedule, agencyName, clientName, campai
             <Phone className="w-3 h-3" />
             {contact.phone}
             <a
-              href={buildWhatsAppUrl(contact.phone, contact.name, agencyName, clientName, campaignName, schedule?.scheduled_date ?? null, schedule?.scheduled_time ?? null, messageTemplate)}
+              href={buildWhatsAppUrl(contact.phone, contact.name, agencyName, clientName, campaignName, schedule?.scheduled_date ?? null, schedule?.scheduled_time ?? null, messageTemplate, storeName)}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-primary-foreground transition-colors"
