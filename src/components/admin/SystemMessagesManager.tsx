@@ -210,17 +210,22 @@ export default function SystemMessagesManager() {
         const items = grouped[cat];
         if (!items || items.length === 0) return null;
         return (
-          <Card key={cat} className="border-border">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Badge className={`gap-1 ${meta.color}`}>
-                  {meta.icon} {meta.label}
-                </Badge>
-                <span className="text-muted-foreground font-normal text-xs">({items.length})</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {items.map(msg => (
+          <Collapsible key={cat} defaultOpen>
+            <Card className="border-border">
+              <CardHeader className="pb-3">
+                <CollapsibleTrigger className="w-full">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2 cursor-pointer group">
+                    <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                    <Badge className={`gap-1 ${meta.color}`}>
+                      {meta.icon} {meta.label}
+                    </Badge>
+                    <span className="text-muted-foreground font-normal text-xs">({items.length})</span>
+                  </CardTitle>
+                </CollapsibleTrigger>
+              </CardHeader>
+              <CollapsibleContent>
+                <CardContent className="space-y-3 pt-0">
+                  {items.map(msg => (
                 <div key={msg.id} className="border border-border rounded-lg p-3 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <div>
