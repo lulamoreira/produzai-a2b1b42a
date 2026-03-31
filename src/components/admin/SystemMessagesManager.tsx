@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { useSystemMessages, useUpdateSystemMessage, useCreateSystemMessage, useDeleteSystemMessage, type SystemMessage } from "@/hooks/useSystemMessages";
 import { useAgencies } from "@/hooks/useAgencies";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Save, Plus, Trash2, Globe, Building2, Mail, MessageCircle, ShieldAlert, Monitor, Search, HelpCircle } from "lucide-react";
+import { Save, Plus, Trash2, Globe, Building2, Mail, MessageCircle, ShieldAlert, Monitor, Search, HelpCircle, ChevronRight } from "lucide-react";
 
 const VARIABLES_HELP = [
   { category: "WhatsApp", variables: [
@@ -210,17 +211,22 @@ export default function SystemMessagesManager() {
         const items = grouped[cat];
         if (!items || items.length === 0) return null;
         return (
-          <Card key={cat} className="border-border">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Badge className={`gap-1 ${meta.color}`}>
-                  {meta.icon} {meta.label}
-                </Badge>
-                <span className="text-muted-foreground font-normal text-xs">({items.length})</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {items.map(msg => (
+          <Collapsible key={cat} defaultOpen>
+            <Card className="border-border">
+              <CardHeader className="pb-3">
+                <CollapsibleTrigger className="w-full">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2 cursor-pointer group">
+                    <ChevronRight className="w-4 h-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-90" />
+                    <Badge className={`gap-1 ${meta.color}`}>
+                      {meta.icon} {meta.label}
+                    </Badge>
+                    <span className="text-muted-foreground font-normal text-xs">({items.length})</span>
+                  </CardTitle>
+                </CollapsibleTrigger>
+              </CardHeader>
+              <CollapsibleContent>
+                <CardContent className="space-y-3 pt-0">
+                  {items.map(msg => (
                 <div key={msg.id} className="border border-border rounded-lg p-3 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <div>
@@ -258,8 +264,10 @@ export default function SystemMessagesManager() {
                   )}
                 </div>
               ))}
-            </CardContent>
-          </Card>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
         );
       })}
 
