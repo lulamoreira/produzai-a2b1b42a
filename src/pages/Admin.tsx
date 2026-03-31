@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserPermissionCard from "@/components/admin/UserPermissionCard";
 import CategoryManager from "@/components/admin/CategoryManager";
+import SystemMessagesManager from "@/components/admin/SystemMessagesManager";
 
 const Admin = () => {
   const { user } = useAuth();
