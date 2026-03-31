@@ -221,6 +221,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         if (filterApproval === "approved") return storeStatus === "approved" && teamStatus === "approved";
         if (filterApproval === "pending") return storeStatus !== "approved" || teamStatus !== "approved";
         if (filterApproval === "rejected") return storeStatus === "rejected" || teamStatus === "rejected";
+        if (filterApproval === "missing_os") return storeStatus === "approved" && teamStatus === "approved" && !sch?.installation_os;
         return true;
       });
     }
@@ -429,6 +430,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             <option value="approved">✅ Aprovado</option>
             <option value="pending">⚠️ Pendência</option>
             <option value="rejected">❌ Desaprovado</option>
+            <option value="missing_os">📋 Falta OS</option>
           </select>
           <input
             type="date"
