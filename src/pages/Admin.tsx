@@ -130,6 +130,11 @@ const Admin = () => {
             <CategoryManager />
           </TabsContent>
 
+          {/* ─── Messages Tab ─── */}
+          <TabsContent value="messages">
+            <SystemMessagesManager />
+          </TabsContent>
+
           {/* ─── Backup Tab ─── */}
           {isAdmin && (
             <TabsContent value="backup">
