@@ -471,6 +471,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             </Button>
           )}
           <select
+            value={filterPeriod}
+            onChange={(e) => setFilterPeriod(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[140px]"
+          >
+            <option value="">Período</option>
+            <option value="morning">🌅 Manhã</option>
+            <option value="afternoon">☀️ Tarde</option>
+            <option value="night">🌙 Noite</option>
+          </select>
+          <select
             value={filterMessages}
             onChange={(e) => setFilterMessages(e.target.value)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
