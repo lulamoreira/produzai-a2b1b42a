@@ -71,6 +71,9 @@ const Admin = () => {
             <TabsTrigger value="categories" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
               <Tags className="w-4 h-4" /> Categorias
             </TabsTrigger>
+            <TabsTrigger value="messages" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+              <MessageSquareText className="w-4 h-4" /> Mensagens
+            </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="backup" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
                 <Database className="w-4 h-4" /> Backup
