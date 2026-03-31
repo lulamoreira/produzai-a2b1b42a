@@ -61,6 +61,7 @@ const KEY_LABELS: Record<string, string> = {
   whatsapp_occurrence_contact: "Contato sobre ocorrência",
   whatsapp_store_contact: "Saudação ao contato da loja",
   whatsapp_team_code: "Código de acesso da equipe",
+  whatsapp_scheduling_authorization: "Autorização de agendamento",
   ui_auth_login_error: "Erro de login",
   ui_auth_signup_success: "Sucesso ao criar conta",
   ui_auth_recovery_sent: "E-mail de recuperação enviado",
