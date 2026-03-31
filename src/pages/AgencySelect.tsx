@@ -370,7 +370,9 @@ const AgencySelect = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Excluir agência?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Todos os clientes, campanhas e dados associados a esta agência serão apagados permanentemente.
+                              A agência será movida para a lixeira e poderá ser recuperada em até 7 dias.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
