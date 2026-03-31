@@ -324,6 +324,39 @@ export default function SystemMessagesManager() {
             <Button onClick={handleCreate} disabled={createMsg.isPending}>Criar</Button>
           </DialogFooter>
         </DialogContent>
+      {/* Variables help dialog */}
+      <Dialog open={showHelp} onOpenChange={setShowHelp}>
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-primary" /> Variáveis Dinâmicas
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1 mb-4">
+            <p className="text-sm text-muted-foreground">
+              Use variáveis entre chaves <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{"{variavel}"}</code> no conteúdo das mensagens. Elas serão substituídas automaticamente pelos dados reais ao enviar.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              <strong>Exemplo:</strong> <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">Olá, {"{name}"}, como vai? Referente à loja {"{store}"}.</code>
+            </p>
+          </div>
+          {VARIABLES_HELP.map(group => (
+            <div key={group.category} className="mb-4">
+              <h3 className="text-sm font-semibold text-foreground mb-2 border-b border-border pb-1">{group.category}</h3>
+              <div className="space-y-1.5">
+                {group.variables.map(v => (
+                  <div key={v.name} className="flex gap-3 items-start text-sm">
+                    <code className="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs font-mono shrink-0 min-w-[100px]">{v.name}</code>
+                    <span className="text-muted-foreground">{v.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowHelp(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </div>
   );
