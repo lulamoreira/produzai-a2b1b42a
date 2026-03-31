@@ -291,6 +291,7 @@ const PublicOccurrence = () => {
           </div>
           <h1 className="text-lg font-bold text-foreground mb-2">Período encerrado</h1>
           <p className="text-sm text-muted-foreground">Infelizmente o período de inclusão de ocorrências terminou, procure contato através do WhatsApp ou e-mail.</p>
+          <Button variant="outline" className="mt-6" onClick={() => window.close()}>Fechar</Button>
         </div>
       </div>
     );
