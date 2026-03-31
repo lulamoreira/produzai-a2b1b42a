@@ -1277,9 +1277,10 @@ interface ContactRowProps {
   campaignName: string;
   showRole?: boolean;
   messageTemplate?: string;
+  storeName?: string;
 }
 
-function ContactRow({ contact, roleMap, schedule, agencyName, clientName, campaignName, showRole, messageTemplate }: ContactRowProps) {
+function ContactRow({ contact, roleMap, schedule, agencyName, clientName, campaignName, showRole, messageTemplate, storeName }: ContactRowProps) {
   const roleName = contact.role_id ? roleMap[contact.role_id] : null;
 
   return (
