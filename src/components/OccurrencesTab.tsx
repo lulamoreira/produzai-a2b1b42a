@@ -466,17 +466,24 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
       </Dialog>
 
       {/* Settings dialog (emails + motives) */}
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+      <Dialog open={settingsOpen} onOpenChange={(open) => {
+        setSettingsOpen(open);
+        if (open && campaignInfo) {
+          setOccStartDate((campaignInfo as any).occurrence_start_date || "");
+          setOccEndDate((campaignInfo as any).occurrence_end_date || "");
+        }
+      }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Configurações de Ocorrências</DialogTitle>
-            <DialogDescription>Gerencie emails, motivos e status.</DialogDescription>
+            <DialogDescription>Gerencie emails, motivos, status e período.</DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="emails">
             <TabsList className="bg-muted/50">
               <TabsTrigger value="emails" className="gap-1.5"><Mail className="w-3.5 h-3.5" /> Emails</TabsTrigger>
               <TabsTrigger value="motives" className="gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Motivos</TabsTrigger>
               <TabsTrigger value="statuses" className="gap-1.5"><CircleDot className="w-3.5 h-3.5" /> Status</TabsTrigger>
+              <TabsTrigger value="period" className="gap-1.5"><Calendar className="w-3.5 h-3.5" /> Período</TabsTrigger>
             </TabsList>
 
             <TabsContent value="emails" className="space-y-3 mt-4">
