@@ -47,6 +47,14 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
     enabled: !!campaignId,
   });
 
+  const { data: whatsappTeamCodeTemplate } = useQuery({
+    queryKey: ["system_message", "whatsapp_team_code"],
+    queryFn: async () => {
+      const { data } = await supabase.from("system_messages").select("content").eq("key", "whatsapp_team_code").is("agency_id", null).maybeSingle();
+      return data?.content as string | undefined;
+    },
+  });
+
   const codeMap = useMemo(() => {
     const map: Record<string, { id: string; code: string; created_at: string }> = {};
     codes.forEach((c) => { map[c.team_id] = c; });
@@ -142,12 +150,12 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
     const phone = leader.phone.replace(/\D/g, "");
     const fullPhone = phone.startsWith("55") ? phone : `55${phone}`;
 
-    const message = `🔑 *Código de Acesso Temporário*
+    const defaultMsg = `🔑 *Código de Acesso Temporário*
 
-Olá ${leader.name}! Segue seu código de acesso para a campanha:
+Olá {leader}! Segue seu código de acesso para a campanha:
 
-*Equipe:* ${team.name}
-*Código:* ${teamCode.code}
+*Equipe:* {team}
+*Código:* {code}
 
 📱 *Como acessar:*
 1. Acesse o link do sistema
@@ -158,6 +166,13 @@ Olá ${leader.name}! Segue seu código de acesso para a campanha:
 ⏰ O acesso é liberado 2h antes do horário agendado e expira 24h após o início.
 
 Em caso de dúvidas, entre em contato com a administração.`;
+
+    const message = (whatsappTeamCodeTemplate || defaultMsg)
+      .replace(/\{leader\}/g, leader.name)
+      .replace(/\{team\}/g, team.name)
+      .replace(/\{code\}/g, teamCode.code)
+      .replace(/\{campaign\}/g, "")
+      .replace(/\{link\}/g, "");
 
     const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");

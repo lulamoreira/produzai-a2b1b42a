@@ -64,6 +64,22 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     },
     enabled: !!campaignId,
   });
+
+  // Fetch WhatsApp message templates
+  const { data: whatsappLinkTemplate } = useQuery({
+    queryKey: ["system_message", "whatsapp_occurrence_link"],
+    queryFn: async () => {
+      const { data } = await supabase.from("system_messages").select("content").eq("key", "whatsapp_occurrence_link").is("agency_id", null).maybeSingle();
+      return data?.content as string | undefined;
+    },
+  });
+  const { data: whatsappContactTemplate } = useQuery({
+    queryKey: ["system_message", "whatsapp_occurrence_contact"],
+    queryFn: async () => {
+      const { data } = await supabase.from("system_messages").select("content").eq("key", "whatsapp_occurrence_contact").is("agency_id", null).maybeSingle();
+      return data?.content as string | undefined;
+    },
+  });
   const activeStatuses = useMemo(() => statuses.filter((s) => s.active), [statuses]);
   const updateStatus = useUpdateOccurrenceStatus();
   const deleteOcc = useDeleteOccurrence();
@@ -416,7 +432,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                       <Link2 className="w-3.5 h-3.5 text-primary" />
                     </Button>
                     <a
-                      href={`https://wa.me/${occ.reporter_phone_ddd && occ.reporter_phone_number ? `55${occ.reporter_phone_ddd}${occ.reporter_phone_number}` : ''}?text=${encodeURIComponent(`Ocorrência: https://produzai.lovable.app/ocorrencia/${occ.id}`)}`}
+                      href={`https://wa.me/${occ.reporter_phone_ddd && occ.reporter_phone_number ? `55${occ.reporter_phone_ddd}${occ.reporter_phone_number}` : ''}?text=${encodeURIComponent((whatsappLinkTemplate || 'Ocorrência: {url}').replace(/\{url\}/g, `https://produzai.lovable.app/ocorrencia/${occ.id}`).replace(/\{id\}/g, occ.id.slice(0, 8)))}`}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -426,7 +442,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                     </a>
                     {occ.reporter_phone_ddd && occ.reporter_phone_number && (
                       <a
-                        href={`https://wa.me/55${occ.reporter_phone_ddd}${occ.reporter_phone_number}?text=${encodeURIComponent(`Olá, tudo bem? Gostaríamos de falar sobre a sua ocorrência #${occ.id.slice(0, 8)} da Campanha "${campaignInfo?.name || ''}", registrada em: ${occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy 'às' HH:mm") : '—'}.`)}`}
+                        href={`https://wa.me/55${occ.reporter_phone_ddd}${occ.reporter_phone_number}?text=${encodeURIComponent((whatsappContactTemplate || 'Olá, tudo bem? Gostaríamos de falar sobre a sua ocorrência #{id} da Campanha "{campaign}", registrada em: {date}.').replace(/\{id\}/g, occ.id.slice(0, 8)).replace(/\{campaign\}/g, campaignInfo?.name || '').replace(/\{date\}/g, occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy 'às' HH:mm") : '—'))}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

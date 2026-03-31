@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
@@ -44,6 +46,14 @@ const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
   const deleteContact = useDeleteStoreContact();
   const addRole = useAddStoreContactRole();
   const deleteRole = useDeleteStoreContactRole();
+
+  const { data: whatsappStoreContactTemplate } = useQuery({
+    queryKey: ["system_message", "whatsapp_store_contact"],
+    queryFn: async () => {
+      const { data } = await supabase.from("system_messages").select("content").eq("key", "whatsapp_store_contact").is("agency_id", null).maybeSingle();
+      return data?.content as string | undefined;
+    },
+  });
 
   const [newContact, setNewContact] = useState({ name: "", phone: "", email: "", role_id: "" });
   const [showAdd, setShowAdd] = useState(false);
@@ -202,7 +212,7 @@ const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
                 />
                 {contact.phone && (
                   <a
-                    href={`https://wa.me/55${contact.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${contact.name.split(" ")[0]}, como vai?`)}`}
+                    href={`https://wa.me/55${contact.phone.replace(/\D/g, "")}?text=${encodeURIComponent((whatsappStoreContactTemplate || 'Olá, {name}, como vai?').replace(/\{name\}/g, contact.name.split(" ")[0]))}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted transition-colors"
