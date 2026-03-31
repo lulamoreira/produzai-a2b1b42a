@@ -24,6 +24,9 @@ const VARIABLES_HELP = [
     { name: "{team}", desc: "Nome da equipe de instalação" },
     { name: "{code}", desc: "Código de acesso gerado para a equipe" },
     { name: "{link}", desc: "Link de acesso ao sistema para a equipe" },
+    { name: "{agency}", desc: "Nome da agência (primeiro nome)" },
+    { name: "{client}", desc: "Nome do cliente (primeiro nome)" },
+    { name: "{time}", desc: "Horário agendado da instalação" },
   ]},
   { category: "E-mail", variables: [
     { name: "{status}", desc: "Nome/label do status atual da ocorrência" },

@@ -72,24 +72,22 @@ const PREFERENCE_OPTIONS = [
   { value: "both", label: "Ambos", icon: Sun },
 ];
 
-function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null) {
+function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string) {
   const firstName = contactName.split(" ")[0];
   const agencyFirst = agencyName.split(" ")[0];
   const clientFirst = clientName.split(" ")[0];
   const dateStr = date ? format(new Date(date + "T12:00:00"), "dd/MM/yyyy") : "(data a definir)";
   const timeStr = time || "(horário a definir)";
 
-  const message = `Olá 😊
-
-Somos da ${agencyFirst}, responsáveis pelo agendamento das instalações da Campanha ${clientFirst} - ${campaignName}.
-
-Gostaríamos de solicitar a autorização para seguir com a instalação da campanha, que está prevista para o dia ${dateStr} às ${timeStr}.
-
-Pode, por gentileza, verificar com o shopping a liberação o quanto antes?
-
-Agradecemos imensamente sua colaboração e aguardamos o retorno dessa mensagem com a autorização/OS para a instalação.
-
-Ficamos à disposição! 🙏🏼`;
+  const message = messageTemplate
+    ? messageTemplate
+        .replace(/\{name\}/g, firstName)
+        .replace(/\{agency\}/g, agencyFirst)
+        .replace(/\{client\}/g, clientFirst)
+        .replace(/\{campaign\}/g, campaignName)
+        .replace(/\{date\}/g, dateStr)
+        .replace(/\{time\}/g, timeStr)
+    : `Olá 😊\n\nSomos da ${agencyFirst}, responsáveis pelo agendamento das instalações da Campanha ${clientFirst} - ${campaignName}.\n\nGostaríamos de solicitar a autorização para seguir com a instalação da campanha, que está prevista para o dia ${dateStr} às ${timeStr}.\n\nPode, por gentileza, verificar com o shopping a liberação o quanto antes?\n\nAgradecemos imensamente sua colaboração e aguardamos o retorno dessa mensagem com a autorização/OS para a instalação.\n\nFicamos à disposição! 🙏🏼`;
 
   const digits = phone.replace(/\D/g, "");
   const fullNumber = digits.startsWith("55") ? digits : `55${digits}`;
