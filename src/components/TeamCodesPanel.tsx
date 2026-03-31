@@ -47,6 +47,14 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
     enabled: !!campaignId,
   });
 
+  const { data: whatsappTeamCodeTemplate } = useQuery({
+    queryKey: ["system_message", "whatsapp_team_code"],
+    queryFn: async () => {
+      const { data } = await supabase.from("system_messages").select("content").eq("key", "whatsapp_team_code").is("agency_id", null).maybeSingle();
+      return data?.content as string | undefined;
+    },
+  });
+
   const codeMap = useMemo(() => {
     const map: Record<string, { id: string; code: string; created_at: string }> = {};
     codes.forEach((c) => { map[c.team_id] = c; });
