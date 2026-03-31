@@ -53,7 +53,8 @@ const PublicOccurrence = () => {
     if (!campaign) return true;
     const startDate = (campaign as any).occurrence_start_date;
     const endDate = (campaign as any).occurrence_end_date;
-    if (!startDate && !endDate) return true;
+    // If no period configured, block submissions
+    if (!startDate && !endDate) return false;
     const today = new Date().toISOString().slice(0, 10);
     if (startDate && today < startDate) return false;
     if (endDate && today > endDate) return false;
