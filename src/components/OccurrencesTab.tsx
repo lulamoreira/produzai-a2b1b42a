@@ -56,10 +56,10 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const { data: motives = [] } = useOccurrenceMotives();
   const { data: emails = [] } = useCampaignEmails(campaignId);
   const { data: statuses = [] } = useOccurrenceStatuses();
-  const { data: campaignInfo } = useQuery({
+  const { data: campaignInfo, refetch: refetchCampaignInfo } = useQuery({
     queryKey: ["campaign_info", campaignId],
     queryFn: async () => {
-      const { data } = await supabase.from("campaigns").select("name").eq("id", campaignId).maybeSingle();
+      const { data } = await supabase.from("campaigns").select("name, occurrence_start_date, occurrence_end_date").eq("id", campaignId).maybeSingle();
       return data;
     },
     enabled: !!campaignId,
