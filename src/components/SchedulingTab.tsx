@@ -824,6 +824,12 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
       updates.suggested_time = null;
     }
 
+    // When team disapproves, set responsibility to client
+    if (field === "team_approval_status" && newVal === "rejected") {
+      updates.responsibility = "client";
+      updates.responsibility_at = now;
+    }
+
     onMultiUpdate(updates);
   };
 
