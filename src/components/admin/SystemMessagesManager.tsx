@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Save, Plus, Trash2, Globe, Building2, Mail, MessageCircle, ShieldAlert, Monitor, Search, HelpCircle } from "lucide-react";
+import { Save, Plus, Trash2, Globe, Building2, Mail, MessageCircle, ShieldAlert, Monitor, Search, HelpCircle, ChevronRight } from "lucide-react";
 
 const VARIABLES_HELP = [
   { category: "WhatsApp", variables: [
