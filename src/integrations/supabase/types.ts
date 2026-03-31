@@ -590,6 +590,8 @@ export type Database = {
           display_order: number | null
           id: string
           name: string
+          occurrence_end_date: string | null
+          occurrence_start_date: string | null
         }
         Insert: {
           access_days_after?: number | null
@@ -604,6 +606,8 @@ export type Database = {
           display_order?: number | null
           id?: string
           name: string
+          occurrence_end_date?: string | null
+          occurrence_start_date?: string | null
         }
         Update: {
           access_days_after?: number | null
@@ -618,6 +622,8 @@ export type Database = {
           display_order?: number | null
           id?: string
           name?: string
+          occurrence_end_date?: string | null
+          occurrence_start_date?: string | null
         }
         Relationships: [
           {

@@ -56,10 +56,10 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const { data: motives = [] } = useOccurrenceMotives();
   const { data: emails = [] } = useCampaignEmails(campaignId);
   const { data: statuses = [] } = useOccurrenceStatuses();
-  const { data: campaignInfo } = useQuery({
+  const { data: campaignInfo, refetch: refetchCampaignInfo } = useQuery({
     queryKey: ["campaign_info", campaignId],
     queryFn: async () => {
-      const { data } = await supabase.from("campaigns").select("name").eq("id", campaignId).maybeSingle();
+      const { data } = await supabase.from("campaigns").select("name, occurrence_start_date, occurrence_end_date").eq("id", campaignId).maybeSingle();
       return data;
     },
     enabled: !!campaignId,
@@ -126,6 +126,8 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const [lightboxPhotos, setLightboxPhotos] = useState<string[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [occStartDate, setOccStartDate] = useState("");
+  const [occEndDate, setOccEndDate] = useState("");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const qrRef = useRef<HTMLDivElement>(null);
 
@@ -464,17 +466,24 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
       </Dialog>
 
       {/* Settings dialog (emails + motives) */}
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+      <Dialog open={settingsOpen} onOpenChange={(open) => {
+        setSettingsOpen(open);
+        if (open && campaignInfo) {
+          setOccStartDate((campaignInfo as any).occurrence_start_date || "");
+          setOccEndDate((campaignInfo as any).occurrence_end_date || "");
+        }
+      }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Configurações de Ocorrências</DialogTitle>
-            <DialogDescription>Gerencie emails, motivos e status.</DialogDescription>
+            <DialogDescription>Gerencie emails, motivos, status e período.</DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="emails">
             <TabsList className="bg-muted/50">
               <TabsTrigger value="emails" className="gap-1.5"><Mail className="w-3.5 h-3.5" /> Emails</TabsTrigger>
               <TabsTrigger value="motives" className="gap-1.5"><AlertTriangle className="w-3.5 h-3.5" /> Motivos</TabsTrigger>
               <TabsTrigger value="statuses" className="gap-1.5"><CircleDot className="w-3.5 h-3.5" /> Status</TabsTrigger>
+              <TabsTrigger value="period" className="gap-1.5"><Calendar className="w-3.5 h-3.5" /> Período</TabsTrigger>
             </TabsList>
 
             <TabsContent value="emails" className="space-y-3 mt-4">
@@ -616,6 +625,44 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   </div>
                 </div>
               ))}
+            </TabsContent>
+
+            <TabsContent value="period" className="space-y-3 mt-4">
+              <p className="text-xs text-muted-foreground">Defina o período em que a inclusão de ocorrências estará liberada. Fora desse período, o formulário será bloqueado.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1 block">Data Início</label>
+                  <Input type="date" value={occStartDate} onChange={(e) => setOccStartDate(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1 block">Data Fim</label>
+                  <Input type="date" value={occEndDate} onChange={(e) => setOccEndDate(e.target.value)} />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={async () => {
+                  const { error } = await supabase.from("campaigns").update({
+                    occurrence_start_date: occStartDate || null,
+                    occurrence_end_date: occEndDate || null,
+                  } as any).eq("id", campaignId);
+                  if (error) { toast.error("Erro ao salvar período."); return; }
+                  toast.success("Período salvo!");
+                  refetchCampaignInfo();
+                }}>Salvar</Button>
+                <Button variant="outline" size="sm" onClick={async () => {
+                  setOccStartDate("");
+                  setOccEndDate("");
+                  await supabase.from("campaigns").update({
+                    occurrence_start_date: null,
+                    occurrence_end_date: null,
+                  } as any).eq("id", campaignId);
+                  toast.success("Período removido!");
+                  refetchCampaignInfo();
+                }}>Limpar</Button>
+              </div>
+              {occStartDate && occEndDate && (
+                <p className="text-xs text-muted-foreground">Ocorrências liberadas de <strong>{format(new Date(occStartDate + "T00:00:00"), "dd/MM/yyyy")}</strong> até <strong>{format(new Date(occEndDate + "T00:00:00"), "dd/MM/yyyy")}</strong>.</p>
+              )}
             </TabsContent>
           </Tabs>
         </DialogContent>
