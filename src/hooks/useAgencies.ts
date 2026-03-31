@@ -11,14 +11,15 @@ export type Agency = {
   deleted_at: string | null;
 };
 
-export function useAgencies() {
+export function useAgencies(includeDeleted = false) {
   return useQuery({
-    queryKey: ["agencies"],
+    queryKey: ["agencies", includeDeleted],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("agencies")
-        .select("*")
-        .order("name");
+      let query = supabase.from("agencies").select("*").order("name");
+      if (!includeDeleted) {
+        query = query.is("deleted_at", null);
+      }
+      const { data, error } = await query;
       if (error) throw error;
       return data as Agency[];
     },
