@@ -36,9 +36,10 @@ interface Props {
   storeId: string | undefined;
   clientId: string | undefined;
   canEdit: boolean;
+  storeName?: string;
 }
 
-const StoreContactsSection = ({ storeId, clientId, canEdit }: Props) => {
+const StoreContactsSection = ({ storeId, clientId, canEdit, storeName }: Props) => {
   const { data: contacts = [] } = useStoreContacts(storeId);
   const { data: roles = [] } = useStoreContactRoles(clientId);
   const addContact = useAddStoreContact();
