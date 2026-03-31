@@ -144,6 +144,20 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     return map;
   }, [allContacts]);
 
+  // Fetch WhatsApp scheduling message template
+  const { data: schedulingMsgTemplate } = useQuery({
+    queryKey: ["system_message", "whatsapp_scheduling_authorization"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("system_messages")
+        .select("content")
+        .eq("key", "whatsapp_scheduling_authorization")
+        .is("agency_id", null)
+        .maybeSingle();
+      return data?.content as string | undefined;
+    },
+  });
+
   // Fetch schedules
   const { data: schedules = [] } = useQuery({
     queryKey: ["campaign_schedules", campaignId],
