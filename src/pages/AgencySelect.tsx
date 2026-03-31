@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import {
-  useAgencies, useAddAgency, useUpdateAgency, useDeleteAgency,
+  useAgencies, useAddAgency, useUpdateAgency, useDeleteAgency, useRestoreAgency, usePermanentDeleteAgency,
   validateAndUploadLogo, MAX_LOGO_SIZE_KB, MAX_LOGO_DIMENSION, MIN_LOGO_DIMENSION,
 } from "@/hooks/useAgencies";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
