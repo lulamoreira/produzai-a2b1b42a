@@ -1230,6 +1230,7 @@ function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, 
         agencyName={agencyName}
         clientName={clientName}
         campaignName={campaignName}
+        messageTemplate={messageTemplate}
       />
       {contacts.length > 1 && (
         <Popover>
