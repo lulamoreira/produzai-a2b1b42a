@@ -64,6 +64,22 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     },
     enabled: !!campaignId,
   });
+
+  // Fetch WhatsApp message templates
+  const { data: whatsappLinkTemplate } = useQuery({
+    queryKey: ["system_message", "whatsapp_occurrence_link"],
+    queryFn: async () => {
+      const { data } = await supabase.from("system_messages").select("content").eq("key", "whatsapp_occurrence_link").is("agency_id", null).maybeSingle();
+      return data?.content as string | undefined;
+    },
+  });
+  const { data: whatsappContactTemplate } = useQuery({
+    queryKey: ["system_message", "whatsapp_occurrence_contact"],
+    queryFn: async () => {
+      const { data } = await supabase.from("system_messages").select("content").eq("key", "whatsapp_occurrence_contact").is("agency_id", null).maybeSingle();
+      return data?.content as string | undefined;
+    },
+  });
   const activeStatuses = useMemo(() => statuses.filter((s) => s.active), [statuses]);
   const updateStatus = useUpdateOccurrenceStatus();
   const deleteOcc = useDeleteOccurrence();
