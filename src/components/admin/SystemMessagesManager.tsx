@@ -192,6 +192,9 @@ export default function SystemMessagesManager() {
               className="pl-9 h-9 w-48"
             />
           </div>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowHelp(true)}>
+            <HelpCircle className="w-4 h-4" /> Variáveis
+          </Button>
           <Button size="sm" className="gap-1.5" onClick={() => setShowNew(true)}>
             <Plus className="w-4 h-4" /> Nova mensagem
           </Button>
