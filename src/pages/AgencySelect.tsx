@@ -45,6 +45,7 @@ const AgencySelect = () => {
   const navigate = useNavigate();
   const { isLimited, campaigns: limitedCampaigns, isLoading: loadingDirectAccess } = useUserDirectAccess();
   const { data: allAgencies = [], isLoading } = useAgencies();
+  const { data: allAgenciesIncDeleted = [] } = useAgencies(true);
 
   // Fetch user's display_name from profile
   const { data: profile } = useQuery({
