@@ -836,7 +836,11 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
   };
 
   const handleSaveSuggested = (field: "suggested_date" | "suggested_time", value: string) => {
-    onMultiUpdate({ [field]: value || null });
+    const updates: Record<string, any> = { [field]: value || null };
+    if (value) {
+      updates.team_approval_status = "pending";
+    }
+    onMultiUpdate(updates);
   };
 
   const handleAcceptSuggestion = async (set: 1 | 2) => {
