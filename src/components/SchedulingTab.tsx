@@ -245,6 +245,18 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         return sch?.scheduled_date === filterDate;
       });
     }
+    if (filterPeriod) {
+      result = result.filter((s) => {
+        const sch = scheduleMap[s.id];
+        const time = sch?.scheduled_time;
+        if (!time) return false;
+        const hour = parseInt(time.split(":")[0], 10);
+        if (filterPeriod === "morning") return hour >= 1 && hour <= 11;
+        if (filterPeriod === "afternoon") return hour >= 12 && hour <= 17;
+        if (filterPeriod === "night") return hour >= 18 && hour <= 23;
+        return true;
+      });
+    }
     if (filterMessages === "unread") {
       result = result.filter((s) => (chatCounts?.unreadPerStore[s.id] || 0) > 0);
     } else if (filterMessages === "has_messages") {
