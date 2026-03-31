@@ -83,6 +83,7 @@ export default function SystemMessagesManager() {
   const [search, setSearch] = useState("");
   const [showNew, setShowNew] = useState(false);
   const [newForm, setNewForm] = useState({ key: "", category: "ui", content: "", agency_id: "" });
+  const [showHelp, setShowHelp] = useState(false);
 
   const filteredMessages = useMemo(() => {
     let filtered = messages;
