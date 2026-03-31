@@ -409,6 +409,85 @@ const AgencySelect = () => {
             })}
           </div>
         )}
+
+        {/* Deleted agencies - recovery section */}
+        {isAdmin && deletedAgencies.length > 0 && (
+          <div className="mt-12">
+            <h3 className="text-sm font-semibold text-muted-foreground mb-4 flex items-center gap-2">
+              <Trash className="w-4 h-4" /> Lixeira ({deletedAgencies.length})
+              <span className="text-xs font-normal">— recuperável por até 7 dias</span>
+            </h3>
+            <div className="flex flex-wrap justify-center gap-4">
+              {deletedAgencies.map((agency) => {
+                const agencyColor = agency.color || PRESET_COLORS[0];
+                const deletedDate = new Date(agency.deleted_at!);
+                const daysLeft = Math.max(0, 7 - Math.floor((Date.now() - deletedDate.getTime()) / (1000 * 60 * 60 * 24)));
+                return (
+                  <div
+                    key={agency.id}
+                    className="aqua-card p-6 border border-border flex flex-col items-center text-center w-[260px] opacity-60"
+                    style={{
+                      background: `linear-gradient(135deg, ${agencyColor}10, ${agencyColor}05)`,
+                      borderColor: `${agencyColor}20`,
+                    }}
+                  >
+                    <div
+                      className="w-16 h-16 aqua-icon flex items-center justify-center shadow-lg overflow-hidden mb-3 grayscale"
+                      style={{ background: `linear-gradient(145deg, ${agencyColor}, ${agencyColor}cc)` }}
+                    >
+                      {agency.logo_url ? (
+                        <img src={agency.logo_url} alt={agency.name} className="w-full h-full object-cover relative z-10" />
+                      ) : (
+                        <Building2 className="w-7 h-7 text-white relative z-10 drop-shadow-sm" />
+                      )}
+                    </div>
+                    <h3 className="font-bold text-foreground text-base mb-0.5 line-through">{agency.name}</h3>
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {daysLeft} dia{daysLeft !== 1 ? "s" : ""} restante{daysLeft !== 1 ? "s" : ""}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      Excluída em {deletedDate.toLocaleDateString("pt-BR")}
+                    </p>
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-xs"
+                        onClick={() => restoreAgency.mutate(agency.id)}
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" /> Restaurar
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="ghost" className="gap-1 text-xs text-destructive hover:text-destructive">
+                            <Trash2 className="w-3.5 h-3.5" /> Excluir
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir permanentemente?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Todos os dados desta agência serão perdidos permanentemente. Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => permanentDeleteAgency.mutate(agency.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              SIM, excluir permanentemente
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </AppLayout>
   );
