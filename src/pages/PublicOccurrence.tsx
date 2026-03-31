@@ -53,7 +53,8 @@ const PublicOccurrence = () => {
     if (!campaign) return true;
     const startDate = (campaign as any).occurrence_start_date;
     const endDate = (campaign as any).occurrence_end_date;
-    if (!startDate && !endDate) return true;
+    // If no period configured, block submissions
+    if (!startDate && !endDate) return false;
     const today = new Date().toISOString().slice(0, 10);
     if (startDate && today < startDate) return false;
     if (endDate && today > endDate) return false;
@@ -290,6 +291,7 @@ const PublicOccurrence = () => {
           </div>
           <h1 className="text-lg font-bold text-foreground mb-2">Período encerrado</h1>
           <p className="text-sm text-muted-foreground">Infelizmente o período de inclusão de ocorrências terminou, procure contato através do WhatsApp ou e-mail.</p>
+          <Button variant="outline" className="mt-6" onClick={() => window.close()}>Fechar</Button>
         </div>
       </div>
     );
