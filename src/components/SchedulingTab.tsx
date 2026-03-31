@@ -1253,6 +1253,7 @@ function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, 
                   clientName={clientName}
                   campaignName={campaignName}
                   showRole
+                  messageTemplate={messageTemplate}
                 />
               ))}
             </div>
