@@ -170,10 +170,10 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
                 <User className="w-3 h-3" /> Nome
               </label>
               {reporterEditing ? (
-                <Input
+                <DebouncedInput
                   className="h-7 text-xs"
                   value={occ.reporter_name || ""}
-                  onChange={(e) => handleFieldUpdate("reporter_name", e.target.value)}
+                  onValueCommit={(v) => handleFieldUpdate("reporter_name", v)}
                   placeholder="Nome do lojista..."
                 />
               ) : (
