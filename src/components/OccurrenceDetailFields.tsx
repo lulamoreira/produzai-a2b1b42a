@@ -243,11 +243,11 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
           <Wrench className="w-3 h-3" /> Ações Tomadas
         </label>
         {canEdit ? (
-          <Textarea
+          <DebouncedTextarea
             className="text-xs min-h-[3.5rem] max-h-[5rem] resize-none"
             rows={3}
             value={occ.actions_taken || ""}
-            onChange={(e) => handleFieldUpdate("actions_taken", e.target.value)}
+            onValueCommit={(v) => handleFieldUpdate("actions_taken", v)}
             placeholder="Descreva as ações tomadas..."
           />
         ) : (
