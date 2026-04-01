@@ -359,11 +359,11 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
           <Building2 className="w-3 h-3" /> Observação da Agência
         </label>
         {canEdit ? (
-          <Textarea
+          <DebouncedTextarea
             className="text-xs min-h-[2rem] max-h-[4rem] resize-none"
             rows={2}
             value={occ.agency_observation || ""}
-            onChange={(e) => handleFieldUpdate("agency_observation", e.target.value)}
+            onValueCommit={(v) => handleFieldUpdate("agency_observation", v)}
             placeholder="Observação da agência..."
           />
         ) : (
