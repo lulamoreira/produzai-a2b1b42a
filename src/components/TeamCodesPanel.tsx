@@ -63,20 +63,15 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
 
   const generateMutation = useMutation({
     mutationFn: async (teamId: string) => {
-      const code = generateCode();
-      const existing = codeMap[teamId];
-      if (existing) {
-        const { error } = await supabase
-          .from("installation_team_codes")
-          .update({ code, created_by: user?.id, created_at: new Date().toISOString() })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("installation_team_codes")
-          .insert({ team_id: teamId, campaign_id: campaignId, code, created_by: user?.id });
-        if (error) throw error;
+      if (codeMap[teamId]) {
+        toast.info("Esta equipe já possui um código gerado.");
+        return;
       }
+      const code = generateCode();
+      const { error } = await supabase
+        .from("installation_team_codes")
+        .insert({ team_id: teamId, campaign_id: campaignId, code, created_by: user?.id });
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team_codes", campaignId] });
@@ -85,26 +80,23 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
     onError: () => toast.error("Erro ao gerar código"),
   });
 
+  const teamsWithoutCode = useMemo(
+    () => teams.filter((t) => !codeMap[t.id]),
+    [teams, codeMap]
+  );
+
   const generateAllMutation = useMutation({
     mutationFn: async () => {
-      for (const team of teams) {
+      for (const team of teamsWithoutCode) {
         const code = generateCode();
-        const existing = codeMap[team.id];
-        if (existing) {
-          await supabase
-            .from("installation_team_codes")
-            .update({ code, created_by: user?.id, created_at: new Date().toISOString() })
-            .eq("id", existing.id);
-        } else {
-          await supabase
-            .from("installation_team_codes")
-            .insert({ team_id: team.id, campaign_id: campaignId, code, created_by: user?.id });
-        }
+        await supabase
+          .from("installation_team_codes")
+          .insert({ team_id: team.id, campaign_id: campaignId, code, created_by: user?.id });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team_codes", campaignId] });
-      toast.success("Todos os códigos foram gerados!");
+      toast.success(teamsWithoutCode.length === 0 ? "Todos os códigos já foram gerados!" : "Códigos gerados para as novas equipes!");
     },
     onError: () => toast.error("Erro ao gerar códigos"),
   });
@@ -207,16 +199,18 @@ Em caso de dúvidas, entre em contato com a administração.`;
           <Key className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-bold text-foreground">Códigos de Acesso Temporário</h3>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-xs gap-1.5"
-          onClick={() => generateAllMutation.mutate()}
-          disabled={generateAllMutation.isPending || teams.length === 0}
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${generateAllMutation.isPending ? "animate-spin" : ""}`} />
-          Gerar Todos
-        </Button>
+        {teamsWithoutCode.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs gap-1.5"
+            onClick={() => generateAllMutation.mutate()}
+            disabled={generateAllMutation.isPending}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${generateAllMutation.isPending ? "animate-spin" : ""}`} />
+            {codes.length === 0 ? "Gerar Todos" : `Gerar ${teamsWithoutCode.length} Pendente${teamsWithoutCode.length > 1 ? "s" : ""}`}
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -309,16 +303,18 @@ Em caso de dúvidas, entre em contato com a administração.`;
                   ) : (
                     <span className="text-xs text-muted-foreground italic">Sem código</span>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs gap-1"
-                    onClick={() => generateMutation.mutate(team.id)}
-                    disabled={generateMutation.isPending}
-                  >
-                    <RefreshCw className={`w-3 h-3 ${generateMutation.isPending ? "animate-spin" : ""}`} />
-                    {teamCode ? "Resetar" : "Gerar"}
-                  </Button>
+                  {!teamCode && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1"
+                      onClick={() => generateMutation.mutate(team.id)}
+                      disabled={generateMutation.isPending}
+                    >
+                      <RefreshCw className={`w-3 h-3 ${generateMutation.isPending ? "animate-spin" : ""}`} />
+                      Gerar
+                    </Button>
+                  )}
                 </div>
               </div>
             );
