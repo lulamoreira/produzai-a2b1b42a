@@ -215,10 +215,10 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
                 <Mail className="w-3 h-3" /> E-mail da Loja
               </label>
               {reporterEditing ? (
-                <Input
+                <DebouncedInput
                   className="h-7 text-xs"
                   value={occ.reporter_email || ""}
-                  onChange={(e) => handleFieldUpdate("reporter_email", e.target.value)}
+                  onValueCommit={(v) => handleFieldUpdate("reporter_email", v)}
                   placeholder="email@loja.com"
                 />
               ) : (
