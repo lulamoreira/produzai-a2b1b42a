@@ -197,7 +197,7 @@ Em caso de dúvidas, entre em contato com a administração.`;
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex items-center gap-2 flex-1 min-w-[200px]">
           <Key className="w-5 h-5 text-primary" />
-          <h3 className="text-sm font-bold text-foreground"><h3 className="text-sm font-bold text-foreground">Config Acesso Temporário</h3></h3>
+          <h3 className="text-sm font-bold text-foreground">Config Acesso Temporário</h3>
         </div>
         {teamsWithoutCode.length > 0 && (
           <Button
