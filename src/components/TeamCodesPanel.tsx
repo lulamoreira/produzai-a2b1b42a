@@ -308,16 +308,18 @@ Em caso de dúvidas, entre em contato com a administração.`;
                   ) : (
                     <span className="text-xs text-muted-foreground italic">Sem código</span>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-xs gap-1"
-                    onClick={() => generateMutation.mutate(team.id)}
-                    disabled={generateMutation.isPending}
-                  >
-                    <RefreshCw className={`w-3 h-3 ${generateMutation.isPending ? "animate-spin" : ""}`} />
-                    {teamCode ? "Resetar" : "Gerar"}
-                  </Button>
+                  {!teamCode && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1"
+                      onClick={() => generateMutation.mutate(team.id)}
+                      disabled={generateMutation.isPending}
+                    >
+                      <RefreshCw className={`w-3 h-3 ${generateMutation.isPending ? "animate-spin" : ""}`} />
+                      Gerar
+                    </Button>
+                  )}
                 </div>
               </div>
             );
