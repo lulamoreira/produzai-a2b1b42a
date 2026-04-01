@@ -14,8 +14,8 @@ import {
 import type { CampaignPiece } from "@/hooks/useMultiClientData";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import DebouncedInput from "@/components/DebouncedInput";
+import DebouncedTextarea from "@/components/DebouncedTextarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
