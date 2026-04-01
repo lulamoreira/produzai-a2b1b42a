@@ -25,7 +25,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  MapPin, Wrench, RotateCcw, FileText, Building2, CalendarClock, CalendarCheck,
+  Wrench, RotateCcw, Building2, CalendarClock, CalendarCheck,
   MessageSquare, ImagePlus, Send, ChevronUp, ChevronDown, CalendarIcon, User, Phone, Mail,
 } from "lucide-react";
 import { toast } from "sonner";
