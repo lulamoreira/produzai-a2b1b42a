@@ -198,7 +198,7 @@ const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: Installatio
             onClick={() => setShowCodes(!showCodes)}
           >
             <Key className="w-3.5 h-3.5" />
-            {showCodes ? "Ocultar Códigos de Acesso" : "Códigos de Acesso Temporário"}
+            {showCodes ? "Ocultar Config Acesso" : "Config Acesso Temporário"}
           </Button>
           {showCodes && (
             <div className="aqua-card p-4">
