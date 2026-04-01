@@ -593,7 +593,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
     <div className="grid grid-cols-2 gap-2">
       <div className="space-y-1">
         <label className="text-xs font-medium">Nome *</label>
-        <Input value={form.name} onChange={(e) => setForm({ ...form, name: normalizeMemberName(e.target.value) })} className="h-7 text-xs" placeholder="Nome completo" />
+        <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} onBlur={(e) => setForm((f) => ({ ...f, name: normalizeMemberName(f.name) }))} className="h-7 text-xs" placeholder="Nome completo" />
       </div>
       <div className="space-y-1 flex items-end gap-2">
         <div className="flex-1 space-y-1">
