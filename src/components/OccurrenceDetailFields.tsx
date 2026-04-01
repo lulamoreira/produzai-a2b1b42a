@@ -428,7 +428,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
       </div>
 
       {/* 7 - Resolvido dia (com hora) - só aparece se status = resolvida */}
-      {occ.status === "resolvida" && (
+      {occ.status === "resolved" && (
         <div className="bg-success/10 rounded-lg p-2 border border-success/20">
           <label className="text-[10px] font-bold text-success uppercase tracking-wider flex items-center gap-1 mb-1">
             <CalendarCheck className="w-3 h-3" /> Resolvido dia:
