@@ -433,8 +433,8 @@ const PublicOccurrence = () => {
                   <p className="text-[11px] text-muted-foreground mt-1">Informe o e-mail da loja, não o pessoal.</p>
                 </div>
               </>
-            )
-            </div>
+            )}
+          </div>
           </div>
 
           {/* ── Ocorrências ── */}
