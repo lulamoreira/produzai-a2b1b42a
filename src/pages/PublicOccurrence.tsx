@@ -153,12 +153,18 @@ const PublicOccurrence = () => {
   const activeMotives = useMemo(() => motives.filter((m) => m.active), [motives]);
   const addOccurrence = useAddOccurrence();
 
+  const SPECIAL_AGENCY = "__agency__";
+  const SPECIAL_FORNECEDOR = "__fornecedor__";
+  const agencyName = (campaign as any)?.clients?.agencies?.name || "Agência";
+
   // Reporter info (shared)
   const [storeId, setStoreId] = useState("");
   const [reporterName, setReporterName] = useState("");
   const [phoneDDD, setPhoneDDD] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [reporterEmail, setReporterEmail] = useState("");
+
+  const isSpecialReporter = storeId === SPECIAL_AGENCY || storeId === SPECIAL_FORNECEDOR;
 
   // Multiple occurrences
   const [entries, setEntries] = useState<OccurrenceEntry[]>([emptyEntry()]);
