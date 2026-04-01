@@ -31,7 +31,7 @@ const PublicOccurrenceDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("campaigns")
-        .select("id, name, client_id, clients(name)")
+        .select("id, name, client_id, clients(name, agency_id, agencies(name))")
         .eq("id", occurrence!.campaign_id)
         .maybeSingle();
       if (error) throw error;
