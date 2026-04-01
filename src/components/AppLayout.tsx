@@ -35,6 +35,11 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
     e.preventDefault();
     e.stopPropagation();
 
+    if (location.key !== "default") {
+      navigate(-1);
+      return;
+    }
+
     if (from && from !== currentUrl) {
       navigate(from, { replace: true });
       return;
@@ -42,11 +47,6 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
 
     if (sectionBaseHref && sectionBaseHref !== currentUrl) {
       navigate(sectionBaseHref, { replace: true });
-      return;
-    }
-
-    if (location.key !== "default") {
-      navigate(-1);
       return;
     }
 
