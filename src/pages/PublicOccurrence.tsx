@@ -260,7 +260,6 @@ const PublicOccurrence = () => {
           const photoRows = entry.photos.map((p) => ({ occurrence_id: occId, photo_url: p.url }));
           await supabase.from("occurrence_photos").insert(photoRows);
         }
-        }
       }
       setSubmitted(true);
     } catch {
