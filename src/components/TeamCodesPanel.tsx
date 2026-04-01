@@ -208,7 +208,7 @@ Em caso de dúvidas, entre em contato com a administração.`;
             disabled={generateAllMutation.isPending}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${generateAllMutation.isPending ? "animate-spin" : ""}`} />
-            {codes.length === 0 ? "Gerar Todos" : `Gerar ${teamsWithoutCode.length} Pendente${teamsWithoutCode.length > 1 ? "s" : ""}`}
+            {codes.length === 0 ? "Gerar Códigos" : `Gerar ${teamsWithoutCode.length} Pendente${teamsWithoutCode.length > 1 ? "s" : ""}`}
           </Button>
         )}
         <Button
