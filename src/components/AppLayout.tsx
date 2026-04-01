@@ -75,7 +75,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
       )}
 
       <div className="min-h-dvh lg:pl-[220px] transition-all duration-300">
-        {(breadcrumbs || title || headerRight) && (
+        {(breadcrumbs || title || headerRight || !isRootPage) && (
           <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-2">
             <div className="flex items-center justify-between gap-3">
               {!isRootPage && (
