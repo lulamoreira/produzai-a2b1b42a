@@ -1350,9 +1350,10 @@ export type Database = {
           reporter_name: string | null
           reporter_phone_ddd: string | null
           reporter_phone_number: string | null
+          reporter_type: string
           resolved_date: string | null
           status: string | null
-          store_id: string
+          store_id: string | null
         }
         Insert: {
           actions_taken?: string | null
@@ -1373,9 +1374,10 @@ export type Database = {
           reporter_name?: string | null
           reporter_phone_ddd?: string | null
           reporter_phone_number?: string | null
+          reporter_type?: string
           resolved_date?: string | null
           status?: string | null
-          store_id: string
+          store_id?: string | null
         }
         Update: {
           actions_taken?: string | null
@@ -1396,9 +1398,10 @@ export type Database = {
           reporter_name?: string | null
           reporter_phone_ddd?: string | null
           reporter_phone_number?: string | null
+          reporter_type?: string
           resolved_date?: string | null
           status?: string | null
-          store_id?: string
+          store_id?: string | null
         }
         Relationships: [
           {

@@ -31,7 +31,7 @@ const PublicOccurrenceDetail = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("campaigns")
-        .select("id, name, client_id, clients(name)")
+        .select("id, name, client_id, clients(name, agency_id, agencies(name))")
         .eq("id", occurrence!.campaign_id)
         .maybeSingle();
       if (error) throw error;
@@ -184,7 +184,13 @@ const PublicOccurrenceDetail = () => {
             </div>
             <div className="min-w-0">
               <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Loja</p>
-              <p className="text-sm font-semibold text-foreground truncate">{store?.nickname || store?.name || "—"}</p>
+              <p className="text-sm font-semibold text-foreground truncate">
+                {(occurrence as any).reporter_type === "agency"
+                  ? ((campaign as any)?.clients?.agencies?.name || "Agência")
+                  : (occurrence as any).reporter_type === "fornecedor"
+                    ? "Fornecedor"
+                    : (store?.nickname || store?.name || "—")}
+              </p>
             </div>
           </div>
 

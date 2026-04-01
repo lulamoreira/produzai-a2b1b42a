@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator,
 } from "@/components/ui/select";
 import { AlertTriangle, CheckCircle2, Send, Package, X, ImagePlus, Plus, Trash2, Boxes } from "lucide-react";
 import { toast } from "sonner";
@@ -39,7 +39,7 @@ const PublicOccurrence = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("campaigns")
-        .select("id, name, client_id, occurrence_start_date, occurrence_end_date, clients(name)")
+        .select("id, name, client_id, occurrence_start_date, occurrence_end_date, clients(name, agency_id, agencies(name))")
         .eq("id", campaignId!)
         .maybeSingle();
       if (error) throw error;
@@ -153,12 +153,18 @@ const PublicOccurrence = () => {
   const activeMotives = useMemo(() => motives.filter((m) => m.active), [motives]);
   const addOccurrence = useAddOccurrence();
 
+  const SPECIAL_AGENCY = "__agency__";
+  const SPECIAL_FORNECEDOR = "__fornecedor__";
+  const agencyName = (campaign as any)?.clients?.agencies?.name || "Agência";
+
   // Reporter info (shared)
   const [storeId, setStoreId] = useState("");
   const [reporterName, setReporterName] = useState("");
   const [phoneDDD, setPhoneDDD] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [reporterEmail, setReporterEmail] = useState("");
+
+  const isSpecialReporter = storeId === SPECIAL_AGENCY || storeId === SPECIAL_FORNECEDOR;
 
   // Multiple occurrences
   const [entries, setEntries] = useState<OccurrenceEntry[]>([emptyEntry()]);
@@ -217,7 +223,9 @@ const PublicOccurrence = () => {
   };
 
   const allEntriesValid = entries.every((e) => e.pieceId && e.motiveId && (locations.length === 0 || e.locationInStore));
-  const reporterValid = storeId && reporterName.trim() && phoneDDD.trim() && phoneNumber.trim() && reporterEmail.trim();
+  const reporterValid = isSpecialReporter
+    ? !!storeId
+    : storeId && reporterName.trim() && phoneDDD.trim() && phoneNumber.trim() && reporterEmail.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -227,21 +235,27 @@ const PublicOccurrence = () => {
     }
     setSubmitting(true);
     try {
+      const reporterType = storeId === SPECIAL_AGENCY ? "agency" : storeId === SPECIAL_FORNECEDOR ? "fornecedor" : "store";
       for (const entry of entries) {
-        const occurrenceData = {
+        const occurrenceData: Record<string, unknown> = {
           campaign_id: campaignId,
-          store_id: storeId,
           piece_id: entry.pieceId,
           motive_id: entry.motiveId,
           description: entry.description || undefined,
           location_in_store: entry.locationInStore || undefined,
           photo_url: entry.photos[0]?.url || undefined,
-          reporter_name: reporterName.trim(),
-          reporter_phone_ddd: phoneDDD.trim(),
-          reporter_phone_number: phoneNumber.trim(),
-          reporter_email: reporterEmail.trim(),
+          reporter_type: reporterType,
         };
-        const occId = await addOccurrence.mutateAsync(occurrenceData);
+        if (isSpecialReporter) {
+          // No store_id or reporter fields for agency/fornecedor
+        } else {
+          occurrenceData.store_id = storeId;
+          occurrenceData.reporter_name = reporterName.trim();
+          occurrenceData.reporter_phone_ddd = phoneDDD.trim();
+          occurrenceData.reporter_phone_number = phoneNumber.trim();
+          occurrenceData.reporter_email = reporterEmail.trim();
+        }
+        const occId = await addOccurrence.mutateAsync(occurrenceData as any);
         if (occId && entry.photos.length > 0) {
           const photoRows = entry.photos.map((p) => ({ occurrence_id: occId, photo_url: p.url }));
           await supabase.from("occurrence_photos").insert(photoRows);
@@ -333,21 +347,31 @@ const PublicOccurrence = () => {
             <h2 className="text-sm font-semibold text-foreground">Seus dados</h2>
 
             <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Identifique sua loja *</label>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Identifique-se *</label>
               <Select value={storeId} onValueChange={(val) => {
                 setStoreId(val);
-                const selected = stores.find((s) => s.id === val);
-                if (selected) {
-                  if (selected.phone) {
-                    const digits = selected.phone.replace(/\D/g, "");
-                    setPhoneDDD(digits.slice(0, 2));
-                    setPhoneNumber(digits.slice(2));
+                if (val === SPECIAL_AGENCY || val === SPECIAL_FORNECEDOR) {
+                  setReporterName("");
+                  setPhoneDDD("");
+                  setPhoneNumber("");
+                  setReporterEmail("");
+                } else {
+                  const selected = stores.find((s) => s.id === val);
+                  if (selected) {
+                    if (selected.phone) {
+                      const digits = selected.phone.replace(/\D/g, "");
+                      setPhoneDDD(digits.slice(0, 2));
+                      setPhoneNumber(digits.slice(2));
+                    }
+                    if (selected.email) setReporterEmail(selected.email);
                   }
-                  if (selected.email) setReporterEmail(selected.email);
                 }
               }}>
-                <SelectTrigger><SelectValue placeholder="Selecione pelo apelido da loja" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecione quem está reportando" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={SPECIAL_AGENCY}>{agencyName}</SelectItem>
+                  <SelectItem value={SPECIAL_FORNECEDOR}>Fornecedor</SelectItem>
+                  <SelectSeparator />
                   {stores.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.nickname || s.name}</SelectItem>
                   ))}
@@ -355,57 +379,61 @@ const PublicOccurrence = () => {
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Seu nome *</label>
-              <Input
-                value={reporterName}
-                onChange={(e) => setReporterName(e.target.value)}
-                placeholder="Nome completo"
-                required
-              />
-            </div>
+            {!isSpecialReporter && (
+              <>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Seu nome *</label>
+                  <Input
+                    value={reporterName}
+                    onChange={(e) => setReporterName(e.target.value)}
+                    placeholder="Nome completo"
+                    required={!isSpecialReporter}
+                  />
+                </div>
 
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">WhatsApp *</label>
-              <div className="flex gap-2">
-                <Input
-                  value={phoneDDD}
-                  onChange={(e) => {
-                    const v = e.target.value.replace(/\D/g, "").slice(0, 2);
-                    setPhoneDDD(v);
-                  }}
-                  placeholder="DDD"
-                  className="w-20 text-center"
-                  inputMode="numeric"
-                  maxLength={2}
-                  required
-                />
-                <Input
-                  value={phoneNumber}
-                  onChange={(e) => {
-                    const v = e.target.value.replace(/\D/g, "").slice(0, 9);
-                    setPhoneNumber(v);
-                  }}
-                  placeholder="Número"
-                  className="flex-1"
-                  inputMode="numeric"
-                  maxLength={9}
-                  required
-                />
-              </div>
-            </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">WhatsApp *</label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={phoneDDD}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, "").slice(0, 2);
+                        setPhoneDDD(v);
+                      }}
+                      placeholder="DDD"
+                      className="w-20 text-center"
+                      inputMode="numeric"
+                      maxLength={2}
+                      required={!isSpecialReporter}
+                    />
+                    <Input
+                      value={phoneNumber}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, "").slice(0, 9);
+                        setPhoneNumber(v);
+                      }}
+                      placeholder="Número"
+                      className="flex-1"
+                      inputMode="numeric"
+                      maxLength={9}
+                      required={!isSpecialReporter}
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">E-mail da loja *</label>
-              <Input
-                type="email"
-                value={reporterEmail}
-                onChange={(e) => setReporterEmail(e.target.value)}
-                placeholder="email@daloja.com.br"
-                required
-              />
-              <p className="text-[11px] text-muted-foreground mt-1">Informe o e-mail da loja, não o pessoal.</p>
-            </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">E-mail da loja *</label>
+                  <Input
+                    type="email"
+                    value={reporterEmail}
+                    onChange={(e) => setReporterEmail(e.target.value)}
+                    placeholder="email@daloja.com.br"
+                    required={!isSpecialReporter}
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">Informe o e-mail da loja, não o pessoal.</p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* ── Ocorrências ── */}

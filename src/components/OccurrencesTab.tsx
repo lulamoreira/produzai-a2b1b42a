@@ -59,11 +59,12 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const { data: campaignInfo, refetch: refetchCampaignInfo } = useQuery({
     queryKey: ["campaign_info", campaignId],
     queryFn: async () => {
-      const { data } = await supabase.from("campaigns").select("name, occurrence_start_date, occurrence_end_date").eq("id", campaignId).maybeSingle();
+      const { data } = await supabase.from("campaigns").select("name, occurrence_start_date, occurrence_end_date, clients(agency_id, agencies(name))").eq("id", campaignId).maybeSingle();
       return data;
     },
     enabled: !!campaignId,
   });
+  const agencyName = (campaignInfo as any)?.clients?.agencies?.name || "Agência";
 
   // Fetch WhatsApp message templates
   const { data: whatsappLinkTemplate } = useQuery({
@@ -208,7 +209,10 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     addMotive.mutate(newMotive.trim(), { onSuccess: () => setNewMotive("") });
   };
 
-  const getStoreName = (id: string) => {
+  const getStoreName = (id: string | null, reporterType?: string) => {
+    if (reporterType === "agency") return agencyName;
+    if (reporterType === "fornecedor") return "Fornecedor";
+    if (!id) return "—";
     const s = stores.find((s) => s.id === id);
     return s?.nickname || s?.name || "—";
   };
@@ -368,7 +372,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                 <div className="space-y-1.5 mb-3">
                   <div className="flex items-center gap-1.5">
                     <Store className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                    <span className="text-sm font-semibold text-foreground truncate">{getStoreName(occ.store_id)}</span>
+                    <span className="text-sm font-semibold text-foreground truncate">{getStoreName(occ.store_id, (occ as any).reporter_type)}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Puzzle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
