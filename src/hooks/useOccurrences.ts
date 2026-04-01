@@ -182,7 +182,7 @@ export function useAddOccurrence() {
   return useMutation({
     mutationFn: async (data: {
       campaign_id: string;
-      store_id: string;
+      store_id?: string;
       piece_id: string;
       motive_id: string;
       description?: string;
@@ -191,6 +191,7 @@ export function useAddOccurrence() {
       reporter_phone_ddd?: string;
       reporter_phone_number?: string;
       reporter_email?: string;
+      reporter_type?: string;
     }): Promise<string | null> => {
       const { data: inserted, error } = await supabase.from("occurrences").insert(data).select("id").maybeSingle();
       if (error) {
