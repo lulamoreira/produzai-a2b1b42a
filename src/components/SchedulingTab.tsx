@@ -1114,8 +1114,10 @@ const STATUS_CONFIG: Record<ApprovalStatusValue, { label: string; bg: string; bo
 
 function ThreeStateToggle({ label, value, onChange, timestamp, disabled }: ThreeStateToggleProps) {
   const options: ApprovalStatusValue[] = ["approved", "under_review", "rejected"];
-  const activeIdx = options.indexOf(value);
-  const cfg = STATUS_CONFIG[value];
+  // Fallback for legacy DB values like "pending"
+  const safeValue: ApprovalStatusValue = STATUS_CONFIG[value] ? value : "under_review";
+  const activeIdx = options.indexOf(safeValue);
+  const cfg = STATUS_CONFIG[safeValue];
 
   return (
     <div className="flex items-center gap-2">
