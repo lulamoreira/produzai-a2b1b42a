@@ -85,26 +85,23 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
     onError: () => toast.error("Erro ao gerar código"),
   });
 
+  const teamsWithoutCode = useMemo(
+    () => teams.filter((t) => !codeMap[t.id]),
+    [teams, codeMap]
+  );
+
   const generateAllMutation = useMutation({
     mutationFn: async () => {
-      for (const team of teams) {
+      for (const team of teamsWithoutCode) {
         const code = generateCode();
-        const existing = codeMap[team.id];
-        if (existing) {
-          await supabase
-            .from("installation_team_codes")
-            .update({ code, created_by: user?.id, created_at: new Date().toISOString() })
-            .eq("id", existing.id);
-        } else {
-          await supabase
-            .from("installation_team_codes")
-            .insert({ team_id: team.id, campaign_id: campaignId, code, created_by: user?.id });
-        }
+        await supabase
+          .from("installation_team_codes")
+          .insert({ team_id: team.id, campaign_id: campaignId, code, created_by: user?.id });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team_codes", campaignId] });
-      toast.success("Todos os códigos foram gerados!");
+      toast.success(teamsWithoutCode.length === 0 ? "Todos os códigos já foram gerados!" : "Códigos gerados para as novas equipes!");
     },
     onError: () => toast.error("Erro ao gerar códigos"),
   });
