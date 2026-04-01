@@ -347,21 +347,31 @@ const PublicOccurrence = () => {
             <h2 className="text-sm font-semibold text-foreground">Seus dados</h2>
 
             <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Identifique sua loja *</label>
+              <label className="text-sm font-medium text-foreground mb-1.5 block">Identifique-se *</label>
               <Select value={storeId} onValueChange={(val) => {
                 setStoreId(val);
-                const selected = stores.find((s) => s.id === val);
-                if (selected) {
-                  if (selected.phone) {
-                    const digits = selected.phone.replace(/\D/g, "");
-                    setPhoneDDD(digits.slice(0, 2));
-                    setPhoneNumber(digits.slice(2));
+                if (val === SPECIAL_AGENCY || val === SPECIAL_FORNECEDOR) {
+                  setReporterName("");
+                  setPhoneDDD("");
+                  setPhoneNumber("");
+                  setReporterEmail("");
+                } else {
+                  const selected = stores.find((s) => s.id === val);
+                  if (selected) {
+                    if (selected.phone) {
+                      const digits = selected.phone.replace(/\D/g, "");
+                      setPhoneDDD(digits.slice(0, 2));
+                      setPhoneNumber(digits.slice(2));
+                    }
+                    if (selected.email) setReporterEmail(selected.email);
                   }
-                  if (selected.email) setReporterEmail(selected.email);
                 }
               }}>
-                <SelectTrigger><SelectValue placeholder="Selecione pelo apelido da loja" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecione quem está reportando" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={SPECIAL_AGENCY}>{agencyName}</SelectItem>
+                  <SelectItem value={SPECIAL_FORNECEDOR}>Fornecedor</SelectItem>
+                  <SelectSeparator />
                   {stores.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.nickname || s.name}</SelectItem>
                   ))}
@@ -369,56 +379,61 @@ const PublicOccurrence = () => {
               </Select>
             </div>
 
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">Seu nome *</label>
-              <Input
-                value={reporterName}
-                onChange={(e) => setReporterName(e.target.value)}
-                placeholder="Nome completo"
-                required
-              />
-            </div>
+            {!isSpecialReporter && (
+              <>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Seu nome *</label>
+                  <Input
+                    value={reporterName}
+                    onChange={(e) => setReporterName(e.target.value)}
+                    placeholder="Nome completo"
+                    required={!isSpecialReporter}
+                  />
+                </div>
 
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">WhatsApp *</label>
-              <div className="flex gap-2">
-                <Input
-                  value={phoneDDD}
-                  onChange={(e) => {
-                    const v = e.target.value.replace(/\D/g, "").slice(0, 2);
-                    setPhoneDDD(v);
-                  }}
-                  placeholder="DDD"
-                  className="w-20 text-center"
-                  inputMode="numeric"
-                  maxLength={2}
-                  required
-                />
-                <Input
-                  value={phoneNumber}
-                  onChange={(e) => {
-                    const v = e.target.value.replace(/\D/g, "").slice(0, 9);
-                    setPhoneNumber(v);
-                  }}
-                  placeholder="Número"
-                  className="flex-1"
-                  inputMode="numeric"
-                  maxLength={9}
-                  required
-                />
-              </div>
-            </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">WhatsApp *</label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={phoneDDD}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, "").slice(0, 2);
+                        setPhoneDDD(v);
+                      }}
+                      placeholder="DDD"
+                      className="w-20 text-center"
+                      inputMode="numeric"
+                      maxLength={2}
+                      required={!isSpecialReporter}
+                    />
+                    <Input
+                      value={phoneNumber}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, "").slice(0, 9);
+                        setPhoneNumber(v);
+                      }}
+                      placeholder="Número"
+                      className="flex-1"
+                      inputMode="numeric"
+                      maxLength={9}
+                      required={!isSpecialReporter}
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1.5 block">E-mail da loja *</label>
-              <Input
-                type="email"
-                value={reporterEmail}
-                onChange={(e) => setReporterEmail(e.target.value)}
-                placeholder="email@daloja.com.br"
-                required
-              />
-              <p className="text-[11px] text-muted-foreground mt-1">Informe o e-mail da loja, não o pessoal.</p>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">E-mail da loja *</label>
+                  <Input
+                    type="email"
+                    value={reporterEmail}
+                    onChange={(e) => setReporterEmail(e.target.value)}
+                    placeholder="email@daloja.com.br"
+                    required={!isSpecialReporter}
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">Informe o e-mail da loja, não o pessoal.</p>
+                </div>
+              </>
+            )
             </div>
           </div>
 
