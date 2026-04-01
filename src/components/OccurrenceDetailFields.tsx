@@ -187,17 +187,17 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
               </label>
               {reporterEditing ? (
                 <div className="flex gap-1.5">
-                  <Input
+                  <DebouncedInput
                     className="h-7 text-xs w-16"
                     value={occ.reporter_phone_ddd || ""}
-                    onChange={(e) => handleFieldUpdate("reporter_phone_ddd", e.target.value)}
+                    onValueCommit={(v) => handleFieldUpdate("reporter_phone_ddd", v)}
                     placeholder="DDD"
                     maxLength={2}
                   />
-                  <Input
+                  <DebouncedInput
                     className="h-7 text-xs flex-1"
                     value={occ.reporter_phone_number || ""}
-                    onChange={(e) => handleFieldUpdate("reporter_phone_number", e.target.value)}
+                    onValueCommit={(v) => handleFieldUpdate("reporter_phone_number", v)}
                     placeholder="Número"
                   />
                 </div>
