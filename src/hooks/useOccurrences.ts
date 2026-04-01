@@ -23,7 +23,7 @@ export type OccurrenceStatus = {
 export type Occurrence = {
   id: string;
   campaign_id: string;
-  store_id: string;
+  store_id: string | null;
   piece_id: string;
   motive_id: string | null;
   description: string | null;
@@ -42,6 +42,7 @@ export type Occurrence = {
   reporter_phone_ddd: string | null;
   reporter_phone_number: string | null;
   reporter_email: string | null;
+  reporter_type: string;
 };
 
 export type OccurrenceComment = {
