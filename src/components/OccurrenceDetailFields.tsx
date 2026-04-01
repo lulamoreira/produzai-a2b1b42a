@@ -290,10 +290,10 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
             <div>
               <label className="text-[10px] text-muted-foreground mb-0.5 block">Nova OS para Reinstalação</label>
               {canEdit ? (
-                <Input
+                <DebouncedInput
                   className="h-7 text-xs"
                   value={occ.reinstallation_os || ""}
-                  onChange={(e) => handleFieldUpdate("reinstallation_os", e.target.value)}
+                  onValueCommit={(v) => handleFieldUpdate("reinstallation_os", v)}
                   placeholder="Número da OS..."
                 />
               ) : (
