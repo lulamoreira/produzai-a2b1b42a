@@ -435,7 +435,6 @@ const PublicOccurrence = () => {
               </>
             )}
           </div>
-          </div>
 
           {/* ── Ocorrências ── */}
           {entries.map((entry, idx) => (
