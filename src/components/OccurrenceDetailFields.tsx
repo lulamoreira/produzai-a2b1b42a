@@ -427,60 +427,62 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
         )}
       </div>
 
-      {/* 7 - Resolvido dia (com hora) */}
-      <div className="bg-success/10 rounded-lg p-2 border border-success/20">
-        <label className="text-[10px] font-bold text-success uppercase tracking-wider flex items-center gap-1 mb-1">
-          <CalendarCheck className="w-3 h-3" /> Resolvido dia:
-        </label>
-        {canEdit ? (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="h-7 text-xs w-full justify-start">
-                <CalendarIcon className="w-3 h-3 mr-1.5" />
-                {occ.resolved_date
-                  ? format(new Date(occ.resolved_date), "dd/MM/yyyy HH:mm", { locale: ptBR })
-                  : "Selecione uma data"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={occ.resolved_date ? new Date(occ.resolved_date) : undefined}
-                onSelect={(date) => {
-                  if (date) {
-                    const existing = occ.resolved_date ? new Date(occ.resolved_date) : new Date();
-                    date.setHours(existing.getHours(), existing.getMinutes());
-                    handleFieldUpdate("resolved_date", date.toISOString());
-                  } else {
-                    handleFieldUpdate("resolved_date", null);
-                  }
-                }}
-                className="p-3 pointer-events-auto"
-              />
-              <div className="p-3 border-t flex gap-2 items-center">
-                <label className="text-xs text-muted-foreground">Hora:</label>
-                <Input
-                  type="time"
-                  className="h-7 text-xs w-auto"
-                  value={occ.resolved_date ? format(new Date(occ.resolved_date), "HH:mm") : ""}
-                  onChange={(e) => {
-                    const [h, m] = e.target.value.split(":").map(Number);
-                    const d = occ.resolved_date ? new Date(occ.resolved_date) : new Date();
-                    d.setHours(h, m);
-                    handleFieldUpdate("resolved_date", d.toISOString());
+      {/* 7 - Resolvido dia (com hora) - só aparece se status = resolvida */}
+      {occ.status === "resolvida" && (
+        <div className="bg-success/10 rounded-lg p-2 border border-success/20">
+          <label className="text-[10px] font-bold text-success uppercase tracking-wider flex items-center gap-1 mb-1">
+            <CalendarCheck className="w-3 h-3" /> Resolvido dia:
+          </label>
+          {canEdit ? (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="h-7 text-xs w-full justify-start">
+                  <CalendarIcon className="w-3 h-3 mr-1.5" />
+                  {occ.resolved_date
+                    ? format(new Date(occ.resolved_date), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                    : "Selecione uma data"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={occ.resolved_date ? new Date(occ.resolved_date) : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      const existing = occ.resolved_date ? new Date(occ.resolved_date) : new Date();
+                      date.setHours(existing.getHours(), existing.getMinutes());
+                      handleFieldUpdate("resolved_date", date.toISOString());
+                    } else {
+                      handleFieldUpdate("resolved_date", null);
+                    }
                   }}
+                  className="p-3 pointer-events-auto"
                 />
-              </div>
-            </PopoverContent>
-          </Popover>
-        ) : (
-          <span className="text-xs font-semibold">
-            {occ.resolved_date
-              ? format(new Date(occ.resolved_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-              : "—"}
-          </span>
-        )}
-      </div>
+                <div className="p-3 border-t flex gap-2 items-center">
+                  <label className="text-xs text-muted-foreground">Hora:</label>
+                  <Input
+                    type="time"
+                    className="h-7 text-xs w-auto"
+                    value={occ.resolved_date ? format(new Date(occ.resolved_date), "HH:mm") : ""}
+                    onChange={(e) => {
+                      const [h, m] = e.target.value.split(":").map(Number);
+                      const d = occ.resolved_date ? new Date(occ.resolved_date) : new Date();
+                      d.setHours(h, m);
+                      handleFieldUpdate("resolved_date", d.toISOString());
+                    }}
+                  />
+                </div>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <span className="text-xs font-semibold">
+              {occ.resolved_date
+                ? format(new Date(occ.resolved_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+                : "—"}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* 8 - Fotos de Resolução / Problema */}
       <div>
