@@ -63,20 +63,15 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
 
   const generateMutation = useMutation({
     mutationFn: async (teamId: string) => {
-      const code = generateCode();
-      const existing = codeMap[teamId];
-      if (existing) {
-        const { error } = await supabase
-          .from("installation_team_codes")
-          .update({ code, created_by: user?.id, created_at: new Date().toISOString() })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("installation_team_codes")
-          .insert({ team_id: teamId, campaign_id: campaignId, code, created_by: user?.id });
-        if (error) throw error;
+      if (codeMap[teamId]) {
+        toast.info("Esta equipe já possui um código gerado.");
+        return;
       }
+      const code = generateCode();
+      const { error } = await supabase
+        .from("installation_team_codes")
+        .insert({ team_id: teamId, campaign_id: campaignId, code, created_by: user?.id });
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["team_codes", campaignId] });
