@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle, Phone } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle, Phone, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
@@ -338,12 +338,17 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                 key={occ.id}
                 className={`group aqua-card bg-gradient-to-br ${motiveColor} border border-border border-l-4 p-4 hover:shadow-lg transition-all duration-200`}
               >
-                {/* Header: date + status */}
-                <div className="flex items-center justify-between mb-3">
+                {/* Header: date */}
+                <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
                     {occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}
                   </span>
+                </div>
+
+                {/* Status da Ocorrência */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Status da Ocorrência:</span>
                   {canEdit ? (
                     <Select
                       value={occ.status || defaultStatus}
@@ -368,16 +373,24 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   )}
                 </div>
 
-                {/* Store + Piece */}
-                <div className="space-y-1.5 mb-3">
-                  <div className="flex items-center gap-1.5">
-                    <Store className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                    <span className="text-sm font-semibold text-foreground truncate">{getStoreName(occ.store_id, (occ as any).reporter_type)}</span>
+                {/* Store */}
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <Store className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-sm font-semibold text-foreground truncate">{getStoreName(occ.store_id, (occ as any).reporter_type)}</span>
+                </div>
+
+                {/* Localização na Loja */}
+                {occ.location_in_store && (
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                    <span className="text-xs text-muted-foreground truncate">{occ.location_in_store}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <Puzzle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                    <span className="text-xs text-muted-foreground truncate">{getPieceName(occ.piece_id)}</span>
-                  </div>
+                )}
+
+                {/* Piece */}
+                <div className="flex items-center gap-1.5 mb-3">
+                  <Puzzle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-xs text-muted-foreground truncate">{getPieceName(occ.piece_id)}</span>
                 </div>
 
                 {/* Motive badge */}

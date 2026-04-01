@@ -25,7 +25,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  MapPin, Wrench, RotateCcw, FileText, Building2, CalendarClock, CalendarCheck,
+  Wrench, RotateCcw, Building2, CalendarClock, CalendarCheck,
   MessageSquare, ImagePlus, Send, ChevronUp, ChevronDown, CalendarIcon, User, Phone, Mail,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -138,7 +138,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
 
   return (
     <div className="space-y-3 mt-3 pt-3 border-t border-border/50">
-      {/* 0 - Dados do Lojista */}
+      {/* 1 - Dados do Reclamante */}
       <div className="rounded-lg border border-border overflow-hidden">
         <button
           type="button"
@@ -146,7 +146,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
           onClick={() => setReporterOpen(!reporterOpen)}
         >
           <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-            <User className="w-3 h-3" /> Dados do Lojista
+            <User className="w-3 h-3" /> Dados do Reclamante
           </span>
           {reporterOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
         </button>
@@ -165,7 +165,6 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
                 </Button>
               </div>
             )}
-            {/* Nome */}
             <div>
               <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
                 <User className="w-3 h-3" /> Nome
@@ -175,13 +174,12 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
                   className="h-7 text-xs"
                   value={occ.reporter_name || ""}
                   onValueCommit={(v) => handleFieldUpdate("reporter_name", v)}
-                  placeholder="Nome do lojista..."
+                  placeholder="Nome do reclamante..."
                 />
               ) : (
                 <span className="text-xs font-medium">{occ.reporter_name || "—"}</span>
               )}
             </div>
-            {/* Telefone */}
             <div>
               <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
                 <Phone className="w-3 h-3" /> WhatsApp
@@ -210,10 +208,9 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
                 </span>
               )}
             </div>
-            {/* Email */}
             <div>
               <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
-                <Mail className="w-3 h-3" /> E-mail da Loja
+                <Mail className="w-3 h-3" /> E-mail
               </label>
               {reporterEditing ? (
                 <DebouncedInput
@@ -230,15 +227,25 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
         )}
       </div>
 
-      {/* 1 - Localização na Loja */}
+      {/* 2 - Observação da Agência */}
       <div>
         <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
-          <MapPin className="w-3 h-3" /> Localização na Loja
+          <Building2 className="w-3 h-3" /> Observação da Agência
         </label>
-        <span className="text-xs">{occ.location_in_store || "—"}</span>
+        {canEdit ? (
+          <DebouncedTextarea
+            className="text-xs min-h-[2rem] max-h-[4rem] resize-none"
+            rows={2}
+            value={occ.agency_observation || ""}
+            onValueCommit={(v) => handleFieldUpdate("agency_observation", v)}
+            placeholder="Observação da agência..."
+          />
+        ) : (
+          <span className="text-xs text-muted-foreground">{occ.agency_observation || "—"}</span>
+        )}
       </div>
 
-      {/* 2 - Ações Tomadas */}
+      {/* 3 - Ações Tomadas */}
       <div>
         <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
           <Wrench className="w-3 h-3" /> Ações Tomadas
@@ -265,7 +272,40 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
         )}
       </div>
 
-      {/* 3 - Precisa de Reinstalação */}
+      {/* 4 - Resolução Prevista */}
+      <div className="bg-warning/10 rounded-lg p-2 border border-warning/20">
+        <label className="text-[10px] font-bold text-warning uppercase tracking-wider flex items-center gap-1 mb-1">
+          <CalendarClock className="w-3 h-3" /> Resolução prevista para:
+        </label>
+        {canEdit ? (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-7 text-xs w-full justify-start">
+                <CalendarIcon className="w-3 h-3 mr-1.5" />
+                {occ.expected_resolution_date
+                  ? format(new Date(occ.expected_resolution_date), "dd/MM/yyyy", { locale: ptBR })
+                  : "Selecione uma data"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={occ.expected_resolution_date ? new Date(occ.expected_resolution_date) : undefined}
+                onSelect={(date) => handleFieldUpdate("expected_resolution_date", date ? format(date, "yyyy-MM-dd") : null)}
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        ) : (
+          <span className="text-xs font-semibold">
+            {occ.expected_resolution_date
+              ? format(new Date(occ.expected_resolution_date), "dd/MM/yyyy", { locale: ptBR })
+              : "—"}
+          </span>
+        )}
+      </div>
+
+      {/* 5 - Precisa de Reinstalação */}
       <div>
         <div className="flex items-center gap-2">
           <Checkbox
@@ -284,8 +324,6 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
             <RotateCcw className="w-3 h-3 text-warning" /> Precisa de Reinstalação
           </label>
         </div>
-
-        {/* 4 - Campos condicionais de reinstalação */}
         {occ.needs_reinstallation && (
           <div className="ml-6 mt-2 space-y-2 pl-2 border-l-2 border-warning/30">
             <div>
@@ -354,91 +392,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
         )}
       </div>
 
-      {/* 5 - Observação da Agência */}
-      <div>
-        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
-          <Building2 className="w-3 h-3" /> Observação da Agência
-        </label>
-        {canEdit ? (
-          <DebouncedTextarea
-            className="text-xs min-h-[2rem] max-h-[4rem] resize-none"
-            rows={2}
-            value={occ.agency_observation || ""}
-            onValueCommit={(v) => handleFieldUpdate("agency_observation", v)}
-            placeholder="Observação da agência..."
-          />
-        ) : (
-          <span className="text-xs text-muted-foreground">{occ.agency_observation || "—"}</span>
-        )}
-      </div>
-
-      {/* 6 - Resolução Prevista */}
-      <div className="bg-warning/10 rounded-lg p-2 border border-warning/20">
-        <label className="text-[10px] font-bold text-warning uppercase tracking-wider flex items-center gap-1 mb-1">
-          <CalendarClock className="w-3 h-3" /> Resolução prevista para:
-        </label>
-        {canEdit ? (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="h-7 text-xs w-full justify-start">
-                <CalendarIcon className="w-3 h-3 mr-1.5" />
-                {occ.expected_resolution_date
-                  ? format(new Date(occ.expected_resolution_date), "dd/MM/yyyy", { locale: ptBR })
-                  : "Selecione uma data"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={occ.expected_resolution_date ? new Date(occ.expected_resolution_date) : undefined}
-                onSelect={(date) => handleFieldUpdate("expected_resolution_date", date ? format(date, "yyyy-MM-dd") : null)}
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-        ) : (
-          <span className="text-xs font-semibold">
-            {occ.expected_resolution_date
-              ? format(new Date(occ.expected_resolution_date), "dd/MM/yyyy", { locale: ptBR })
-              : "—"}
-          </span>
-        )}
-      </div>
-
-      {/* 7 - Resolvido dia */}
-      <div className="bg-success/10 rounded-lg p-2 border border-success/20">
-        <label className="text-[10px] font-bold text-success uppercase tracking-wider flex items-center gap-1 mb-1">
-          <CalendarCheck className="w-3 h-3" /> Resolvido dia:
-        </label>
-        {canEdit ? (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="h-7 text-xs w-full justify-start">
-                <CalendarIcon className="w-3 h-3 mr-1.5" />
-                {occ.resolved_date
-                  ? format(new Date(occ.resolved_date), "dd/MM/yyyy", { locale: ptBR })
-                  : "Selecione uma data"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={occ.resolved_date ? new Date(occ.resolved_date) : undefined}
-                onSelect={(date) => handleFieldUpdate("resolved_date", date ? format(date, "yyyy-MM-dd") : null)}
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-        ) : (
-          <span className="text-xs font-semibold">
-            {occ.resolved_date
-              ? format(new Date(occ.resolved_date), "dd/MM/yyyy", { locale: ptBR })
-              : "—"}
-          </span>
-        )}
-      </div>
-
-      {/* 8 - Observações (Chat) */}
+      {/* 6 - Observações (Chat) */}
       <div>
         <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
           <MessageSquare className="w-3 h-3" /> Observações
@@ -473,7 +427,62 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
         )}
       </div>
 
-      {/* 9 - Fotos de Resolução */}
+      {/* 7 - Resolvido dia (com hora) */}
+      <div className="bg-success/10 rounded-lg p-2 border border-success/20">
+        <label className="text-[10px] font-bold text-success uppercase tracking-wider flex items-center gap-1 mb-1">
+          <CalendarCheck className="w-3 h-3" /> Resolvido dia:
+        </label>
+        {canEdit ? (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-7 text-xs w-full justify-start">
+                <CalendarIcon className="w-3 h-3 mr-1.5" />
+                {occ.resolved_date
+                  ? format(new Date(occ.resolved_date), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                  : "Selecione uma data"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={occ.resolved_date ? new Date(occ.resolved_date) : undefined}
+                onSelect={(date) => {
+                  if (date) {
+                    const existing = occ.resolved_date ? new Date(occ.resolved_date) : new Date();
+                    date.setHours(existing.getHours(), existing.getMinutes());
+                    handleFieldUpdate("resolved_date", date.toISOString());
+                  } else {
+                    handleFieldUpdate("resolved_date", null);
+                  }
+                }}
+                className="p-3 pointer-events-auto"
+              />
+              <div className="p-3 border-t flex gap-2 items-center">
+                <label className="text-xs text-muted-foreground">Hora:</label>
+                <Input
+                  type="time"
+                  className="h-7 text-xs w-auto"
+                  value={occ.resolved_date ? format(new Date(occ.resolved_date), "HH:mm") : ""}
+                  onChange={(e) => {
+                    const [h, m] = e.target.value.split(":").map(Number);
+                    const d = occ.resolved_date ? new Date(occ.resolved_date) : new Date();
+                    d.setHours(h, m);
+                    handleFieldUpdate("resolved_date", d.toISOString());
+                  }}
+                />
+              </div>
+            </PopoverContent>
+          </Popover>
+        ) : (
+          <span className="text-xs font-semibold">
+            {occ.resolved_date
+              ? format(new Date(occ.resolved_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+              : "—"}
+          </span>
+        )}
+      </div>
+
+      {/* 8 - Fotos de Resolução / Problema */}
       <div>
         <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
           <ImagePlus className="w-3 h-3" /> Fotos da Resolução / Problema
