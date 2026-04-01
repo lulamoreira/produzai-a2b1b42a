@@ -223,7 +223,9 @@ const PublicOccurrence = () => {
   };
 
   const allEntriesValid = entries.every((e) => e.pieceId && e.motiveId && (locations.length === 0 || e.locationInStore));
-  const reporterValid = storeId && reporterName.trim() && phoneDDD.trim() && phoneNumber.trim() && reporterEmail.trim();
+  const reporterValid = isSpecialReporter
+    ? !!storeId
+    : storeId && reporterName.trim() && phoneDDD.trim() && phoneNumber.trim() && reporterEmail.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -233,24 +235,31 @@ const PublicOccurrence = () => {
     }
     setSubmitting(true);
     try {
+      const reporterType = storeId === SPECIAL_AGENCY ? "agency" : storeId === SPECIAL_FORNECEDOR ? "fornecedor" : "store";
       for (const entry of entries) {
-        const occurrenceData = {
+        const occurrenceData: Record<string, unknown> = {
           campaign_id: campaignId,
-          store_id: storeId,
           piece_id: entry.pieceId,
           motive_id: entry.motiveId,
           description: entry.description || undefined,
           location_in_store: entry.locationInStore || undefined,
           photo_url: entry.photos[0]?.url || undefined,
-          reporter_name: reporterName.trim(),
-          reporter_phone_ddd: phoneDDD.trim(),
-          reporter_phone_number: phoneNumber.trim(),
-          reporter_email: reporterEmail.trim(),
+          reporter_type: reporterType,
         };
-        const occId = await addOccurrence.mutateAsync(occurrenceData);
+        if (isSpecialReporter) {
+          // No store_id or reporter fields for agency/fornecedor
+        } else {
+          occurrenceData.store_id = storeId;
+          occurrenceData.reporter_name = reporterName.trim();
+          occurrenceData.reporter_phone_ddd = phoneDDD.trim();
+          occurrenceData.reporter_phone_number = phoneNumber.trim();
+          occurrenceData.reporter_email = reporterEmail.trim();
+        }
+        const occId = await addOccurrence.mutateAsync(occurrenceData as any);
         if (occId && entry.photos.length > 0) {
           const photoRows = entry.photos.map((p) => ({ occurrence_id: occId, photo_url: p.url }));
           await supabase.from("occurrence_photos").insert(photoRows);
+        }
         }
       }
       setSubmitted(true);
