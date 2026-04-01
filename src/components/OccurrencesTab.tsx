@@ -59,11 +59,12 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const { data: campaignInfo, refetch: refetchCampaignInfo } = useQuery({
     queryKey: ["campaign_info", campaignId],
     queryFn: async () => {
-      const { data } = await supabase.from("campaigns").select("name, occurrence_start_date, occurrence_end_date").eq("id", campaignId).maybeSingle();
+      const { data } = await supabase.from("campaigns").select("name, occurrence_start_date, occurrence_end_date, clients(agency_id, agencies(name))").eq("id", campaignId).maybeSingle();
       return data;
     },
     enabled: !!campaignId,
   });
+  const agencyName = (campaignInfo as any)?.clients?.agencies?.name || "Agência";
 
   // Fetch WhatsApp message templates
   const { data: whatsappLinkTemplate } = useQuery({
