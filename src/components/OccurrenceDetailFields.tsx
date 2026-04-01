@@ -15,7 +15,8 @@ import type { CampaignPiece } from "@/hooks/useMultiClientData";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import DebouncedInput from "@/components/DebouncedInput";
+import DebouncedTextarea from "@/components/DebouncedTextarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
@@ -170,10 +171,10 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
                 <User className="w-3 h-3" /> Nome
               </label>
               {reporterEditing ? (
-                <Input
+                <DebouncedInput
                   className="h-7 text-xs"
                   value={occ.reporter_name || ""}
-                  onChange={(e) => handleFieldUpdate("reporter_name", e.target.value)}
+                  onValueCommit={(v) => handleFieldUpdate("reporter_name", v)}
                   placeholder="Nome do lojista..."
                 />
               ) : (
@@ -187,17 +188,17 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
               </label>
               {reporterEditing ? (
                 <div className="flex gap-1.5">
-                  <Input
+                  <DebouncedInput
                     className="h-7 text-xs w-16"
                     value={occ.reporter_phone_ddd || ""}
-                    onChange={(e) => handleFieldUpdate("reporter_phone_ddd", e.target.value)}
+                    onValueCommit={(v) => handleFieldUpdate("reporter_phone_ddd", v)}
                     placeholder="DDD"
                     maxLength={2}
                   />
-                  <Input
+                  <DebouncedInput
                     className="h-7 text-xs flex-1"
                     value={occ.reporter_phone_number || ""}
-                    onChange={(e) => handleFieldUpdate("reporter_phone_number", e.target.value)}
+                    onValueCommit={(v) => handleFieldUpdate("reporter_phone_number", v)}
                     placeholder="Número"
                   />
                 </div>
@@ -215,10 +216,10 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
                 <Mail className="w-3 h-3" /> E-mail da Loja
               </label>
               {reporterEditing ? (
-                <Input
+                <DebouncedInput
                   className="h-7 text-xs"
                   value={occ.reporter_email || ""}
-                  onChange={(e) => handleFieldUpdate("reporter_email", e.target.value)}
+                  onValueCommit={(v) => handleFieldUpdate("reporter_email", v)}
                   placeholder="email@loja.com"
                 />
               ) : (
@@ -243,11 +244,11 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
           <Wrench className="w-3 h-3" /> Ações Tomadas
         </label>
         {canEdit ? (
-          <Textarea
+          <DebouncedTextarea
             className="text-xs min-h-[3.5rem] max-h-[5rem] resize-none"
             rows={3}
             value={occ.actions_taken || ""}
-            onChange={(e) => handleFieldUpdate("actions_taken", e.target.value)}
+            onValueCommit={(v) => handleFieldUpdate("actions_taken", v)}
             placeholder="Descreva as ações tomadas..."
           />
         ) : (
@@ -290,10 +291,10 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
             <div>
               <label className="text-[10px] text-muted-foreground mb-0.5 block">Nova OS para Reinstalação</label>
               {canEdit ? (
-                <Input
+                <DebouncedInput
                   className="h-7 text-xs"
                   value={occ.reinstallation_os || ""}
-                  onChange={(e) => handleFieldUpdate("reinstallation_os", e.target.value)}
+                  onValueCommit={(v) => handleFieldUpdate("reinstallation_os", v)}
                   placeholder="Número da OS..."
                 />
               ) : (
@@ -359,11 +360,11 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
           <Building2 className="w-3 h-3" /> Observação da Agência
         </label>
         {canEdit ? (
-          <Textarea
+          <DebouncedTextarea
             className="text-xs min-h-[2rem] max-h-[4rem] resize-none"
             rows={2}
             value={occ.agency_observation || ""}
-            onChange={(e) => handleFieldUpdate("agency_observation", e.target.value)}
+            onValueCommit={(v) => handleFieldUpdate("agency_observation", v)}
             placeholder="Observação da agência..."
           />
         ) : (
