@@ -204,16 +204,18 @@ Em caso de dúvidas, entre em contato com a administração.`;
           <Key className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-bold text-foreground">Códigos de Acesso Temporário</h3>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-xs gap-1.5"
-          onClick={() => generateAllMutation.mutate()}
-          disabled={generateAllMutation.isPending || teams.length === 0}
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${generateAllMutation.isPending ? "animate-spin" : ""}`} />
-          Gerar Todos
-        </Button>
+        {teamsWithoutCode.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs gap-1.5"
+            onClick={() => generateAllMutation.mutate()}
+            disabled={generateAllMutation.isPending}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${generateAllMutation.isPending ? "animate-spin" : ""}`} />
+            {codes.length === 0 ? "Gerar Todos" : `Gerar ${teamsWithoutCode.length} Pendente${teamsWithoutCode.length > 1 ? "s" : ""}`}
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
