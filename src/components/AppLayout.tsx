@@ -78,6 +78,16 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
         {(breadcrumbs || title || headerRight) && (
           <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-2">
             <div className="flex items-center justify-between gap-3">
+              {!isRootPage && (
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted transition-colors flex-shrink-0"
+                  aria-label="Voltar"
+                >
+                  <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+                </button>
+              )}
               <div className="w-9 lg:hidden flex-shrink-0" />
               <div className="flex items-center gap-1 min-w-0 flex-1">
                 {breadcrumbs && breadcrumbs.length > 1 ? (
