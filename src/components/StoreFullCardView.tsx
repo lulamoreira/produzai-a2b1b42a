@@ -115,11 +115,24 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
                       <p className="text-xs text-muted-foreground">({store.nickname})</p>
                     )}
                   </div>
-                  {store.store_model && (
-                    <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full shrink-0">
-                      {store.store_model}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {canEdit && onEditStore && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-primary"
+                        onClick={() => onEditStore(store)}
+                        title="Editar loja"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    {store.store_model && (
+                      <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                        {store.store_model}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Store data */}
