@@ -33,7 +33,8 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users } from "lucide-react";
+import StoreContactsCardView from "@/components/StoreContactsCardView";
 import BudgetsTab from "@/components/BudgetsTab";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
@@ -182,6 +183,7 @@ const CampaignDetail = () => {
 
   // ─── Store detail view ────────────────────────────────
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+  const [storesViewMode, setStoresViewMode] = useState<"table" | "contacts">("table");
   const [deactivateStoreId, setDeactivateStoreId] = useState<string | null>(null);
   const [addPieceToStoreOpen, setAddPieceToStoreOpen] = useState(false);
   const [storeEditingPieceId, setStoreEditingPieceId] = useState<string | null>(null);
@@ -920,6 +922,35 @@ const CampaignDetail = () => {
 
           {/* ─── TAB: LOJAS ─── */}
           {activeSection === "stores" && (<>
+            {/* View mode toggle */}
+            <div className="flex items-center gap-2 mb-3">
+              <Button
+                size="sm"
+                variant={storesViewMode === "table" ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => setStoresViewMode("table")}
+              >
+                <Store className="w-3.5 h-3.5 mr-1" /> Lojas
+              </Button>
+              <Button
+                size="sm"
+                variant={storesViewMode === "contacts" ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => setStoresViewMode("contacts")}
+              >
+                <Users className="w-3.5 h-3.5 mr-1" /> Contatos
+              </Button>
+            </div>
+
+            {storesViewMode === "contacts" ? (
+              <StoreContactsCardView
+                clientId={clientId}
+                stores={stores}
+                agencyName={agency?.name || ""}
+                clientName={client?.name || ""}
+              />
+            ) : (
+            <>
             {renderStoreFilters()}
 
             {filteredStores.length === 0 ? (
@@ -1029,6 +1060,8 @@ const CampaignDetail = () => {
                   </TableBody>
                 </Table>
               </div>
+            )}
+            </>
             )}
 
             {/* ─── Store Detail Panel ─── */}
