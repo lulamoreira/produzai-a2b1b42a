@@ -23,6 +23,8 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Reset the input so the same file can be re-selected
+    e.target.value = "";
 
     setUploading(true);
     try {
@@ -53,7 +55,11 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
   };
 
   const handleRemove = async () => {
-    await updateImage.mutateAsync({ pieceId: piece.id, imageUrl: null });
+    try {
+      await updateImage.mutateAsync({ pieceId: piece.id, imageUrl: null });
+    } catch {
+      // error handled by mutation
+    }
     setOpen(false);
   };
 
