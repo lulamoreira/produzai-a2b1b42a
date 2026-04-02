@@ -992,6 +992,38 @@ const ClientDetail = () => {
               </div>
             )}
 
+            {/* View mode toggle */}
+            <div className="flex items-center gap-2 mb-3">
+              <Button
+                size="sm"
+                variant={storesViewMode === "table" ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => setStoresViewMode("table")}
+              >
+                <Store className="w-3.5 h-3.5 mr-1" /> Tabela
+              </Button>
+              <Button
+                size="sm"
+                variant={storesViewMode === "cards" ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => setStoresViewMode("cards")}
+              >
+                <Users className="w-3.5 h-3.5 mr-1" /> Cards / Contatos
+              </Button>
+            </div>
+
+            {storesViewMode === "cards" ? (
+              <StoreFullCardView
+                clientId={clientId!}
+                stores={stores}
+                agencyName={agencyInfo?.name || ""}
+                clientName={client.name}
+                customFields={customFieldsParsed
+                  .map((cf, i) => ({ label: cf.name, index: i + 1 }))
+                  .filter((cf) => cf.label)}
+              />
+            ) : (
+            <>
             {loadingStores ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
             ) : filteredStoresCount === 0 ? (
@@ -1013,6 +1045,8 @@ const ClientDetail = () => {
                 storeStateFilter={storeStateFilter}
                 onDisplayOrderChange={setDisplayOrderStores}
                />
+            )}
+            </>
             )}
 
             <CustomExportDialog
