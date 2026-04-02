@@ -48,6 +48,16 @@ export default function PhotoCheckin() {
   });
 
   const { data: photos = [], isLoading: loadingPhotos } = useInstallationPhotos(campaignId!);
+  
+  const { data: campaign } = useQuery({
+    queryKey: ["campaign-name", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("campaigns").select("name").eq("id", campaignId!).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!campaignId,
+  });
   const addPhoto = useAddInstallationPhoto();
   const updatePhoto = useUpdateInstallationPhoto();
   const deletePhoto = useDeleteInstallationPhoto();
