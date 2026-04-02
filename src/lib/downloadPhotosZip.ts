@@ -29,7 +29,7 @@ export async function downloadPhotosAsZip(
       const blob = await response.blob();
       const ext = photo.photo_url.match(/\.(jpg|jpeg|png|webp|gif)/i)?.[1] || "jpg";
       const cat = photo.category || "foto";
-      const name = `${cat}_${String(i + 1).padStart(3, "0")}.${ext}`;
+      const name = `${fileName}_${cat}_${String(i + 1).padStart(3, "0")}.${ext}`;
       zip.file(name, blob);
     } catch {
       console.warn("Failed to fetch photo:", photo.photo_url);
