@@ -23,8 +23,9 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users } from "lucide-react";
 import StoresMatrixTable from "@/components/StoresMatrixTable";
+import StoreFullCardView from "@/components/StoreFullCardView";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
@@ -279,6 +280,7 @@ const ClientDetail = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [storeSearch, setStoreSearch] = useState("");
   const [storeStateFilter, setStoreStateFilter] = useState("");
+  const [storesViewMode, setStoresViewMode] = useState<"table" | "cards">("table");
   const [storeModelDialogOpen, setStoreModelDialogOpen] = useState(false);
   const [newModelName, setNewModelName] = useState("");
   const [enriching, setEnriching] = useState(false);
@@ -990,6 +992,38 @@ const ClientDetail = () => {
               </div>
             )}
 
+            {/* View mode toggle */}
+            <div className="flex items-center gap-2 mb-3">
+              <Button
+                size="sm"
+                variant={storesViewMode === "table" ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => setStoresViewMode("table")}
+              >
+                <Store className="w-3.5 h-3.5 mr-1" /> Tabela
+              </Button>
+              <Button
+                size="sm"
+                variant={storesViewMode === "cards" ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => setStoresViewMode("cards")}
+              >
+                <Users className="w-3.5 h-3.5 mr-1" /> Cards / Contatos
+              </Button>
+            </div>
+
+            {storesViewMode === "cards" ? (
+              <StoreFullCardView
+                clientId={clientId!}
+                stores={stores}
+                agencyName={agencyInfo?.name || ""}
+                clientName={client.name}
+                customFields={customFieldsParsed
+                  .map((cf, i) => ({ label: cf.name, index: i + 1 }))
+                  .filter((cf) => cf.label)}
+              />
+            ) : (
+            <>
             {loadingStores ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
             ) : filteredStoresCount === 0 ? (
@@ -1011,6 +1045,8 @@ const ClientDetail = () => {
                 storeStateFilter={storeStateFilter}
                 onDisplayOrderChange={setDisplayOrderStores}
                />
+            )}
+            </>
             )}
 
             <CustomExportDialog
