@@ -82,6 +82,7 @@ const CampaignDetail = () => {
   const { hasPermission: canEditPieces } = useClientPermission(clientId, "can_edit_pieces");
   const { hasPermission: canDeletePieces } = useClientPermission(clientId, "can_delete_pieces");
   const { hasPermission: canEditCampaignStores } = useClientPermission(clientId, "can_edit_campaign_stores");
+  const { hasPermission: canEditStores } = useClientPermission(clientId, "can_edit_stores");
   const { hasPermission: canEditSchedules } = useClientPermission(clientId, "can_edit_schedules");
 
   // View permissions for module visibility
