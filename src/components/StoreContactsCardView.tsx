@@ -2,8 +2,9 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreContactsByClient, useStoreContactRoles } from "@/hooks/useStoreContacts";
-import { Search, UserPlus, MapPin, Phone, Mail, Building2 } from "lucide-react";
+import { Search, UserPlus, MapPin, Phone, Mail, Building2, Edit3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { ClientStore } from "@/hooks/useMultiClientData";
 
@@ -19,9 +20,11 @@ interface Props {
   stores: ClientStore[];
   agencyName: string;
   clientName: string;
+  canEdit?: boolean;
+  onEditStore?: (store: ClientStore) => void;
 }
 
-const StoreContactsCardView = ({ clientId, stores, agencyName, clientName }: Props) => {
+const StoreContactsCardView = ({ clientId, stores, agencyName, clientName, canEdit = false, onEditStore }: Props) => {
   const { data: contacts = [] } = useStoreContactsByClient(clientId);
   const { data: roles = [] } = useStoreContactRoles(clientId);
   const [search, setSearch] = useState("");
