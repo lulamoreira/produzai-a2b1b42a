@@ -983,6 +983,8 @@ const CampaignDetail = () => {
                 stores={stores}
                 agencyName={agency?.name || ""}
                 clientName={client?.name || ""}
+                canEdit={canEditStores}
+                onEditStore={handleOpenEditStore}
               />
             ) : (
             <>
