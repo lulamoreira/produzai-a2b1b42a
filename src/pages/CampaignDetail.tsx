@@ -922,6 +922,35 @@ const CampaignDetail = () => {
 
           {/* ─── TAB: LOJAS ─── */}
           {activeSection === "stores" && (<>
+            {/* View mode toggle */}
+            <div className="flex items-center gap-2 mb-3">
+              <Button
+                size="sm"
+                variant={storesViewMode === "table" ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => setStoresViewMode("table")}
+              >
+                <Store className="w-3.5 h-3.5 mr-1" /> Lojas
+              </Button>
+              <Button
+                size="sm"
+                variant={storesViewMode === "contacts" ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => setStoresViewMode("contacts")}
+              >
+                <Users className="w-3.5 h-3.5 mr-1" /> Contatos
+              </Button>
+            </div>
+
+            {storesViewMode === "contacts" ? (
+              <StoreContactsCardView
+                clientId={clientId}
+                stores={stores}
+                agencyName={agency?.name || ""}
+                clientName={client?.name || ""}
+              />
+            ) : (
+            <>
             {renderStoreFilters()}
 
             {filteredStores.length === 0 ? (
