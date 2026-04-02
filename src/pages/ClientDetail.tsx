@@ -1021,6 +1021,8 @@ const ClientDetail = () => {
                 customFields={customFieldsParsed
                   .map((cf, i) => ({ label: cf.name, index: i + 1 }))
                   .filter((cf) => cf.label)}
+                canEdit={canEditStores}
+                onEditStore={handleOpenEditStore}
               />
             ) : (
             <>
