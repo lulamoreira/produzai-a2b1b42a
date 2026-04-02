@@ -2,8 +2,9 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreContactsByClient, useStoreContactRoles } from "@/hooks/useStoreContacts";
-import { Search, UserPlus, MapPin, Phone, Mail, Building2 } from "lucide-react";
+import { Search, UserPlus, MapPin, Phone, Mail, Building2, Edit3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { ClientStore } from "@/hooks/useMultiClientData";
 
@@ -19,9 +20,11 @@ interface Props {
   stores: ClientStore[];
   agencyName: string;
   clientName: string;
+  canEdit?: boolean;
+  onEditStore?: (store: ClientStore) => void;
 }
 
-const StoreContactsCardView = ({ clientId, stores, agencyName, clientName }: Props) => {
+const StoreContactsCardView = ({ clientId, stores, agencyName, clientName, canEdit = false, onEditStore }: Props) => {
   const { data: contacts = [] } = useStoreContactsByClient(clientId);
   const { data: roles = [] } = useStoreContactRoles(clientId);
   const [search, setSearch] = useState("");
@@ -113,6 +116,17 @@ const StoreContactsCardView = ({ clientId, stores, agencyName, clientName }: Pro
                       <span className="text-xs text-muted-foreground ml-1.5">({store.nickname})</span>
                     )}
                   </div>
+                  {canEdit && onEditStore && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-primary shrink-0"
+                      onClick={() => onEditStore(store)}
+                      title="Editar loja"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
                   {(store.city || store.state) && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                       <MapPin className="w-3 h-3" />

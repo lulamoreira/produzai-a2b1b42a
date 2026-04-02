@@ -56,6 +56,7 @@ import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaig
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters } from "@/components/MatrixFilterSidebar";
 import ModuleGrid from "@/components/ModuleGrid";
 import CampaignChatSection from "@/components/CampaignChatSection";
+import StoreContactsSection from "@/components/StoreContactsSection";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -82,6 +83,7 @@ const CampaignDetail = () => {
   const { hasPermission: canEditPieces } = useClientPermission(clientId, "can_edit_pieces");
   const { hasPermission: canDeletePieces } = useClientPermission(clientId, "can_delete_pieces");
   const { hasPermission: canEditCampaignStores } = useClientPermission(clientId, "can_edit_campaign_stores");
+  const { hasPermission: canEditStores } = useClientPermission(clientId, "can_edit_stores");
   const { hasPermission: canEditSchedules } = useClientPermission(clientId, "can_edit_schedules");
 
   // View permissions for module visibility
@@ -188,6 +190,40 @@ const CampaignDetail = () => {
   const [addPieceToStoreOpen, setAddPieceToStoreOpen] = useState(false);
   const [storeEditingPieceId, setStoreEditingPieceId] = useState<string | null>(null);
   const [storeEditQtyValue, setStoreEditQtyValue] = useState("");
+
+  // ─── Edit store from card views ───────────────────────
+  const [editStoreDialogOpen, setEditStoreDialogOpen] = useState(false);
+  const [editStoreId, setEditStoreId] = useState<string | null>(null);
+  const [editStoreForm, setEditStoreForm] = useState({
+    name: "", nickname: "", cnpj: "", state_registration: "",
+    zip_code: "", street: "", number: "", complement: "", neighborhood: "",
+    city: "", state: "", phone: "", manager_name: "",
+    store_model: "", country: "", store_code: "", email: "", observations: "",
+  });
+
+  const handleOpenEditStore = useCallback((store: ClientStore) => {
+    setEditStoreId(store.id);
+    setEditStoreForm({
+      name: store.name || "", nickname: store.nickname || "",
+      cnpj: store.cnpj || "", state_registration: store.state_registration || "",
+      zip_code: store.zip_code || "", street: store.street || "",
+      number: store.number || "", complement: store.complement || "",
+      neighborhood: store.neighborhood || "", city: store.city || "",
+      state: store.state || "", phone: store.phone || "",
+      manager_name: store.manager_name || "", store_model: store.store_model || "",
+      country: store.country || "", store_code: store.store_code || "",
+      email: (store as any).email || "", observations: (store as any).observations || "",
+    });
+    setEditStoreDialogOpen(true);
+  }, []);
+
+  const handleEditStoreSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editStoreId) return;
+    await updateClientStore.mutateAsync({ id: editStoreId, ...editStoreForm });
+    setEditStoreDialogOpen(false);
+    setEditStoreId(null);
+  };
 
   // ─── Active section (null = home) ──────────────────────
   const searchParams = new URLSearchParams(location.search);
@@ -948,6 +984,8 @@ const CampaignDetail = () => {
                 stores={stores}
                 agencyName={agency?.name || ""}
                 clientName={client?.name || ""}
+                canEdit={canEditStores}
+                onEditStore={handleOpenEditStore}
               />
             ) : (
             <>
@@ -1063,6 +1101,103 @@ const CampaignDetail = () => {
             )}
             </>
             )}
+
+            {/* Edit Store Dialog */}
+            <Dialog open={editStoreDialogOpen} onOpenChange={setEditStoreDialogOpen}>
+              <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                <DialogHeader><DialogTitle>Editar Loja</DialogTitle></DialogHeader>
+                <form onSubmit={handleEditStoreSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome *</label>
+                      <Input value={editStoreForm.name} onChange={(e) => setEditStoreForm(f => ({ ...f, name: e.target.value }))} required />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Apelido</label>
+                      <Input value={editStoreForm.nickname} onChange={(e) => setEditStoreForm(f => ({ ...f, nickname: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">CNPJ</label>
+                      <Input value={editStoreForm.cnpj} onChange={(e) => setEditStoreForm(f => ({ ...f, cnpj: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Inscrição Estadual</label>
+                      <Input value={editStoreForm.state_registration} onChange={(e) => setEditStoreForm(f => ({ ...f, state_registration: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP</label>
+                      <Input value={editStoreForm.zip_code} onChange={(e) => setEditStoreForm(f => ({ ...f, zip_code: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Rua</label>
+                      <Input value={editStoreForm.street} onChange={(e) => setEditStoreForm(f => ({ ...f, street: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Número</label>
+                      <Input value={editStoreForm.number} onChange={(e) => setEditStoreForm(f => ({ ...f, number: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Complemento</label>
+                      <Input value={editStoreForm.complement} onChange={(e) => setEditStoreForm(f => ({ ...f, complement: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Bairro</label>
+                      <Input value={editStoreForm.neighborhood} onChange={(e) => setEditStoreForm(f => ({ ...f, neighborhood: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Cidade</label>
+                      <Input value={editStoreForm.city} onChange={(e) => setEditStoreForm(f => ({ ...f, city: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Estado</label>
+                      <Input value={editStoreForm.state} onChange={(e) => setEditStoreForm(f => ({ ...f, state: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
+                      <Input value={editStoreForm.country} onChange={(e) => setEditStoreForm(f => ({ ...f, country: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefone</label>
+                      <Input value={editStoreForm.phone} onChange={(e) => setEditStoreForm(f => ({ ...f, phone: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">E-mail</label>
+                      <Input value={editStoreForm.email} onChange={(e) => setEditStoreForm(f => ({ ...f, email: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Contato</label>
+                      <Input value={editStoreForm.manager_name} onChange={(e) => setEditStoreForm(f => ({ ...f, manager_name: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
+                      <Select value={editStoreForm.store_model || ""} onValueChange={(val) => setEditStoreForm(f => ({ ...f, store_model: val === "__none__" ? "" : val }))}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Nenhum</SelectItem>
+                          {clientStoreModels.map((m) => (
+                            <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Código da Loja</label>
+                      <Input value={editStoreForm.store_code} onChange={(e) => setEditStoreForm(f => ({ ...f, store_code: e.target.value }))} />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
+                      <textarea
+                        className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        value={editStoreForm.observations}
+                        onChange={(e) => setEditStoreForm(f => ({ ...f, observations: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                  <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} storeName={editStoreForm.nickname || editStoreForm.name} />
+                  <Button type="submit" className="w-full" disabled={updateClientStore.isPending}>Salvar Alterações</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
 
             {/* ─── Store Detail Panel ─── */}
             {selectedStoreId && (() => {
