@@ -55,7 +55,11 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
   };
 
   const handleRemove = async () => {
-    await updateImage.mutateAsync({ pieceId: piece.id, imageUrl: null });
+    try {
+      await updateImage.mutateAsync({ pieceId: piece.id, imageUrl: null });
+    } catch {
+      // error handled by mutation
+    }
     setOpen(false);
   };
 
