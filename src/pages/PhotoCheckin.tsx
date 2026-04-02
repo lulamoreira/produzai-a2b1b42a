@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Camera, Upload, Trash2, Edit3, X, ChevronLeft, ChevronRight, Image } from "lucide-react";
+import { ArrowLeft, Camera, Upload, Trash2, Edit3, X, ChevronLeft, ChevronRight, Image, Download } from "lucide-react";
+import { downloadPhotosAsZip } from "@/lib/downloadPhotosZip";
 
 const CATEGORIES = [
   { value: "before", label: "Antes" },
