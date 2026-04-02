@@ -116,6 +116,17 @@ const StoreContactsCardView = ({ clientId, stores, agencyName, clientName, canEd
                       <span className="text-xs text-muted-foreground ml-1.5">({store.nickname})</span>
                     )}
                   </div>
+                  {canEdit && onEditStore && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-primary shrink-0"
+                      onClick={() => onEditStore(store)}
+                      title="Editar loja"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
                   {(store.city || store.state) && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                       <MapPin className="w-3 h-3" />
