@@ -190,6 +190,40 @@ const CampaignDetail = () => {
   const [storeEditingPieceId, setStoreEditingPieceId] = useState<string | null>(null);
   const [storeEditQtyValue, setStoreEditQtyValue] = useState("");
 
+  // ─── Edit store from card views ───────────────────────
+  const [editStoreDialogOpen, setEditStoreDialogOpen] = useState(false);
+  const [editStoreId, setEditStoreId] = useState<string | null>(null);
+  const [editStoreForm, setEditStoreForm] = useState({
+    name: "", nickname: "", cnpj: "", state_registration: "",
+    zip_code: "", street: "", number: "", complement: "", neighborhood: "",
+    city: "", state: "", phone: "", manager_name: "",
+    store_model: "", country: "", store_code: "", email: "", observations: "",
+  });
+
+  const handleOpenEditStore = useCallback((store: ClientStore) => {
+    setEditStoreId(store.id);
+    setEditStoreForm({
+      name: store.name || "", nickname: store.nickname || "",
+      cnpj: store.cnpj || "", state_registration: store.state_registration || "",
+      zip_code: store.zip_code || "", street: store.street || "",
+      number: store.number || "", complement: store.complement || "",
+      neighborhood: store.neighborhood || "", city: store.city || "",
+      state: store.state || "", phone: store.phone || "",
+      manager_name: store.manager_name || "", store_model: store.store_model || "",
+      country: store.country || "", store_code: store.store_code || "",
+      email: (store as any).email || "", observations: (store as any).observations || "",
+    });
+    setEditStoreDialogOpen(true);
+  }, []);
+
+  const handleEditStoreSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editStoreId) return;
+    await updateClientStore.mutateAsync({ id: editStoreId, ...editStoreForm });
+    setEditStoreDialogOpen(false);
+    setEditStoreId(null);
+  };
+
   // ─── Active section (null = home) ──────────────────────
   const searchParams = new URLSearchParams(location.search);
   const sectionFromUrl = searchParams.get("section");
