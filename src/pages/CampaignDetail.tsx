@@ -56,6 +56,7 @@ import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaig
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters } from "@/components/MatrixFilterSidebar";
 import ModuleGrid from "@/components/ModuleGrid";
 import CampaignChatSection from "@/components/CampaignChatSection";
+import StoreContactsSection from "@/components/StoreContactsSection";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
