@@ -23,6 +23,8 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Reset the input so the same file can be re-selected
+    e.target.value = "";
 
     setUploading(true);
     try {

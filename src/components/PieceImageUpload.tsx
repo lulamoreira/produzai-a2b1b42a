@@ -20,6 +20,8 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // Reset the input so the same file can be re-selected
+    e.target.value = "";
 
     setUploading(true);
     try {
@@ -35,8 +37,8 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
       const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
       await updateImage.mutateAsync({ pieceId: piece.id, imageUrl: urlData.publicUrl });
       setOpen(false);
-    } catch {
-      // silently fail
+    } catch (err: any) {
+      console.error("Upload error:", err);
     } finally {
       setUploading(false);
     }
