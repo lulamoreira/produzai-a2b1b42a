@@ -352,24 +352,42 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
 
                 {/* Photo thumbnails */}
                 {storePhotos.length > 0 && (
-                  <div className="flex gap-1.5 flex-wrap">
-                    {storePhotos.slice(0, 6).map((photo) => (
-                      <img
-                        key={photo.id}
-                        src={photo.photo_url}
-                        alt=""
-                        className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
-                        onClick={() => window.open(`/checkin/${campaignId}/${store.id}`, '_blank')}
-                      />
-                    ))}
-                    {storePhotos.length > 6 && (
-                      <button
-                        className="w-12 h-12 rounded-md bg-muted border border-border flex items-center justify-center text-xs font-bold text-muted-foreground hover:bg-muted/80"
-                        onClick={() => window.open(`/checkin/${campaignId}/${store.id}`, '_blank')}
-                      >
-                        +{storePhotos.length - 6}
-                      </button>
-                    )}
+                  <div className="space-y-1.5">
+                    <div className="flex gap-1.5 flex-wrap">
+                      {storePhotos.slice(0, 6).map((photo) => (
+                        <img
+                          key={photo.id}
+                          src={photo.photo_url}
+                          alt=""
+                          className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
+                          onClick={() => window.open(`/checkin/${campaignId}/${store.id}`, '_blank')}
+                        />
+                      ))}
+                      {storePhotos.length > 6 && (
+                        <button
+                          className="w-12 h-12 rounded-md bg-muted border border-border flex items-center justify-center text-xs font-bold text-muted-foreground hover:bg-muted/80"
+                          onClick={() => window.open(`/checkin/${campaignId}/${store.id}`, '_blank')}
+                        >
+                          +{storePhotos.length - 6}
+                        </button>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1.5 w-full"
+                      onClick={() => {
+                        toast.info("Preparando download...");
+                        downloadPhotosAsZip(storePhotos, {
+                          module: "Instalacao",
+                          campaignName,
+                          storeName: store.name,
+                        }).then(() => toast.success("Download concluído!")).catch(() => toast.error("Erro ao baixar fotos"));
+                      }}
+                    >
+                      <Download className="w-3 h-3" />
+                      Baixar {storePhotos.length} foto(s) (.zip)
+                    </Button>
                   </div>
                 )}
 

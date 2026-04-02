@@ -2142,6 +2142,7 @@ const CampaignDetail = () => {
           {activeSection === "installations" && (
             <InstallationsTab
               campaignId={campaignId!}
+              campaignName={campaign?.name || ""}
               stores={stores.filter((s) => isStoreEnabled(s.id))}
               canEdit={canEditInstallations}
               clientId={clientId!}
