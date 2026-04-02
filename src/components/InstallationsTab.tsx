@@ -18,8 +18,9 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle,
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
-  Camera, Image, Upload, Plus, Key, CheckCircle,
+  Camera, Image, Upload, Plus, Key, CheckCircle, Download,
 } from "lucide-react";
+import { downloadPhotosAsZip } from "@/lib/downloadPhotosZip";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
