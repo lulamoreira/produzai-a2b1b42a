@@ -38,6 +38,7 @@ import {
 
 interface InstallationsTabProps {
   campaignId: string;
+  campaignName: string;
   stores: ClientStore[];
   canEdit: boolean;
   clientId: string;
