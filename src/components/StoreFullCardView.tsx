@@ -18,6 +18,8 @@ interface Props {
   agencyName: string;
   clientName: string;
   customFields?: { label: string; index: number }[];
+  canEdit?: boolean;
+  onEditStore?: (store: ClientStore) => void;
 }
 
 const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFields = [] }: Props) => {
