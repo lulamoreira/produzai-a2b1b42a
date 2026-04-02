@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { useStoreContactsByClient, useStoreContactRoles } from "@/hooks/useStoreContacts";
-import { Search, UserPlus, MapPin, Phone, Mail, Building2, Hash, FileText } from "lucide-react";
+import { Search, UserPlus, MapPin, Phone, Mail, Building2, Hash, FileText, Edit3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import type { ClientStore } from "@/hooks/useMultiClientData";
 
 function formatPhoneDisplay(phone: string): string {
