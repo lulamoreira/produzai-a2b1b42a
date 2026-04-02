@@ -70,7 +70,7 @@ function buildAddress(store: ClientStore) {
     .join(", ") || "Endereço não cadastrado";
 }
 
-const InstallationsTab = ({ campaignId, stores, canEdit, clientId }: InstallationsTabProps) => {
+const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId }: InstallationsTabProps) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
