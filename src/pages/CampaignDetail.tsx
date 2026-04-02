@@ -183,6 +183,7 @@ const CampaignDetail = () => {
 
   // ─── Store detail view ────────────────────────────────
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+  const [storesViewMode, setStoresViewMode] = useState<"table" | "contacts">("table");
   const [deactivateStoreId, setDeactivateStoreId] = useState<string | null>(null);
   const [addPieceToStoreOpen, setAddPieceToStoreOpen] = useState(false);
   const [storeEditingPieceId, setStoreEditingPieceId] = useState<string | null>(null);
