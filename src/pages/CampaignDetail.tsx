@@ -419,6 +419,7 @@ const CampaignDetail = () => {
       installation_instructions: editPieceForm.installation_instructions,
       kit_only: editPieceForm.kit_only,
       is_mockup: editPieceForm.is_mockup,
+      image_url: editPieceForm.image_url || null,
     });
     setEditPieceDialogOpen(false);
   };
