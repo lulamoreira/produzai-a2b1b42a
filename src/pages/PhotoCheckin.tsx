@@ -214,6 +214,24 @@ export default function PhotoCheckin() {
               </Button>
             );
           })}
+          {storePhotos.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs gap-1.5"
+              onClick={() => {
+                toast.info("Preparando download...");
+                downloadPhotosAsZip(storePhotos, {
+                  module: "Instalacao",
+                  campaignName: campaign?.name || "",
+                  storeName: store.name,
+                }).then(() => toast.success("Download concluído!")).catch(() => toast.error("Erro ao baixar fotos"));
+              }}
+            >
+              <Download className="w-3.5 h-3.5" />
+              Baixar todas ({storePhotos.length})
+            </Button>
+          )}
         </div>
 
         {/* Photo grid */}
