@@ -22,7 +22,7 @@ interface Props {
   onEditStore?: (store: ClientStore) => void;
 }
 
-const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFields = [] }: Props) => {
+const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFields = [], canEdit = false, onEditStore }: Props) => {
   const { data: allContacts = [] } = useStoreContactsByClient(clientId);
   const { data: roles = [] } = useStoreContactRoles(clientId);
   const [search, setSearch] = useState("");
