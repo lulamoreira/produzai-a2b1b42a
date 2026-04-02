@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Camera, Upload, Trash2, Edit3, X, ChevronLeft, ChevronRight, Image } from "lucide-react";
+import { ArrowLeft, Camera, Upload, Trash2, Edit3, X, ChevronLeft, ChevronRight, Image, Download } from "lucide-react";
+import { downloadPhotosAsZip } from "@/lib/downloadPhotosZip";
 
 const CATEGORIES = [
   { value: "before", label: "Antes" },
@@ -47,6 +48,16 @@ export default function PhotoCheckin() {
   });
 
   const { data: photos = [], isLoading: loadingPhotos } = useInstallationPhotos(campaignId!);
+  
+  const { data: campaign } = useQuery({
+    queryKey: ["campaign-name", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("campaigns").select("name").eq("id", campaignId!).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!campaignId,
+  });
   const addPhoto = useAddInstallationPhoto();
   const updatePhoto = useUpdateInstallationPhoto();
   const deletePhoto = useDeleteInstallationPhoto();
@@ -203,6 +214,24 @@ export default function PhotoCheckin() {
               </Button>
             );
           })}
+          {storePhotos.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs gap-1.5"
+              onClick={() => {
+                toast.info("Preparando download...");
+                downloadPhotosAsZip(storePhotos, {
+                  module: "Instalacao",
+                  campaignName: campaign?.name || "",
+                  storeName: store.name,
+                }).then(() => toast.success("Download concluído!")).catch(() => toast.error("Erro ao baixar fotos"));
+              }}
+            >
+              <Download className="w-3.5 h-3.5" />
+              Baixar todas ({storePhotos.length})
+            </Button>
+          )}
         </div>
 
         {/* Photo grid */}
