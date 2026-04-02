@@ -1061,6 +1061,8 @@ const CampaignDetail = () => {
                 </Table>
               </div>
             )}
+            </>
+            )}
 
             {/* ─── Store Detail Panel ─── */}
             {selectedStoreId && (() => {
