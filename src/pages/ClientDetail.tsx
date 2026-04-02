@@ -280,6 +280,7 @@ const ClientDetail = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [storeSearch, setStoreSearch] = useState("");
   const [storeStateFilter, setStoreStateFilter] = useState("");
+  const [storesViewMode, setStoresViewMode] = useState<"table" | "cards">("table");
   const [storeModelDialogOpen, setStoreModelDialogOpen] = useState(false);
   const [newModelName, setNewModelName] = useState("");
   const [enriching, setEnriching] = useState(false);
