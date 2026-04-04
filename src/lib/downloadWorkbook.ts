@@ -17,23 +17,30 @@ function canShareFiles(blob: Blob, fileName: string) {
   if (
     typeof navigator === "undefined" ||
     typeof navigator.share !== "function" ||
-    typeof navigator.canShare !== "function" ||
     typeof File === "undefined"
   ) {
     return false;
   }
 
-  const file = new File([blob], fileName, { type: XLSX_MIME_TYPE });
+  try {
+    const file = new File([blob], fileName, { type: XLSX_MIME_TYPE });
 
-  if (!navigator.canShare({ files: [file] })) {
+    if (typeof navigator.canShare === "function") {
+      const canShare = navigator.canShare({ files: [file] });
+      if (!canShare) {
+        return false;
+      }
+    }
+
+    void navigator.share({ files: [file], title: fileName }).catch(() => {
+      triggerBrowserDownload(blob, fileName);
+    });
+
+    return true;
+  } catch (error) {
+    console.error("Share export fallback:", error);
     return false;
   }
-
-  void navigator.share({ files: [file], title: fileName }).catch(() => {
-    triggerBrowserDownload(blob, fileName);
-  });
-
-  return true;
 }
 
 function triggerBrowserDownload(blob: Blob, fileName: string) {
