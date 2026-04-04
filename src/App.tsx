@@ -42,7 +42,7 @@ const PendingApprovalScreen = () => {
   const { signOut } = useAuth();
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="max-w-md text-center p-8">
+      <div className="max-w-md text-center px-6 py-8 w-full">
         <div className="w-16 h-16 rounded-full bg-yellow-500/15 flex items-center justify-center mx-auto mb-4">
           <Clock className="w-8 h-8 text-yellow-600" />
         </div>
