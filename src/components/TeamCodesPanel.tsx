@@ -120,7 +120,8 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
       XLSX.utils.book_append_sheet(wb, ws, "Códigos de Equipe");
       downloadWorkbook(wb, `Codigos_Equipes_${new Date().toISOString().slice(0, 10)}.xlsx`);
       toast.success("Planilha exportada!");
-    } catch {
+    } catch (err) {
+      console.error("Export error:", err);
       toast.error("Erro ao exportar");
     }
   };
