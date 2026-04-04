@@ -103,7 +103,7 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
 
   const handleExportExcel = async () => {
     try {
-      const [{ utils, write }, { downloadWorkbook }] = await Promise.all([
+      const [{ utils }, { downloadWorkbook }] = await Promise.all([
         import("xlsx"),
         import("@/lib/downloadWorkbook"),
       ]);
