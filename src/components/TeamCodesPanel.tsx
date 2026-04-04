@@ -103,7 +103,7 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
 
   const handleExportExcel = async () => {
     try {
-      const [{ default: XLSX }, { downloadWorkbook }] = await Promise.all([
+      const [{ utils }, { downloadWorkbook }] = await Promise.all([
         import("xlsx"),
         import("@/lib/downloadWorkbook"),
       ]);
@@ -114,10 +114,10 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
           ? new Date(codeMap[t.id].created_at).toLocaleString("pt-BR")
           : "",
       }));
-      const ws = XLSX.utils.json_to_sheet(rows);
+      const ws = utils.json_to_sheet(rows);
       ws["!cols"] = [{ wch: 30 }, { wch: 15 }, { wch: 22 }];
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Códigos de Equipe");
+      const wb = utils.book_new();
+      utils.book_append_sheet(wb, ws, "Códigos de Equipe");
       downloadWorkbook(wb, `Codigos_Equipes_${new Date().toISOString().slice(0, 10)}.xlsx`);
       toast.success("Planilha exportada!");
     } catch (err) {
