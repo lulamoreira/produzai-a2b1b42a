@@ -103,7 +103,10 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
 
   const handleExportExcel = async () => {
     try {
-      const { default: XLSX } = await import("xlsx");
+      const [{ default: XLSX }, { downloadWorkbook }] = await Promise.all([
+        import("xlsx"),
+        import("@/lib/downloadWorkbook"),
+      ]);
       const rows = teams.map((t) => ({
         Equipe: t.name,
         Código: codeMap[t.id]?.code || "— Não gerado —",
@@ -115,7 +118,7 @@ export default function TeamCodesPanel({ campaignId }: TeamCodesPanelProps) {
       ws["!cols"] = [{ wch: 30 }, { wch: 15 }, { wch: 22 }];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Códigos de Equipe");
-      XLSX.writeFile(wb, `Codigos_Equipes_${new Date().toISOString().slice(0, 10)}.xlsx`);
+      downloadWorkbook(wb, `Codigos_Equipes_${new Date().toISOString().slice(0, 10)}.xlsx`);
       toast.success("Planilha exportada!");
     } catch {
       toast.error("Erro ao exportar");
