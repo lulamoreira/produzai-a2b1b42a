@@ -510,7 +510,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                       try {
                         const { error } = await supabase
                           .from("campaign_schedules")
-                          .update({ completed_at: isCompleted ? null : new Date().toISOString() })
+                          .update({
+                            completed_at: isCompleted ? null : new Date().toISOString(),
+                            completed_by: isCompleted ? null : "agency",
+                          })
                           .eq("id", schedule.id);
                         if (error) throw error;
                         queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
