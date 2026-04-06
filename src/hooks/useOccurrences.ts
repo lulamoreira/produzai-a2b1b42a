@@ -174,7 +174,20 @@ export function useDeleteOccurrenceStatusItem() {
   });
 }
 
-// ─── Occurrences ─────────────────────────────────────────
+export function useReorderOccurrenceStatuses() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; order: number }[]) => {
+      for (const item of items) {
+        const { error } = await supabase.from("occurrence_statuses").update({ order: item.order }).eq("id", item.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["occurrence_statuses"] }),
+  });
+}
+
+
 export function useOccurrences(campaignId?: string) {
   return useQuery({
     queryKey: ["occurrences", campaignId],
