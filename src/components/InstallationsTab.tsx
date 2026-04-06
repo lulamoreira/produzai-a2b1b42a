@@ -258,6 +258,16 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
             <option value="">Todas cidades</option>
             {cities.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as any)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+          >
+            <option value="">Todos status</option>
+            <option value="completed">✅ Concluídas</option>
+            <option value="pending">⏳ Pendentes</option>
+            <option value="no_photo">📷 Sem fotos</option>
+          </select>
         </div>
       </div>
 
