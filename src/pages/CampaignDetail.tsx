@@ -1025,6 +1025,7 @@ const CampaignDetail = () => {
                         </div>
                       </TableHead>
                       <TableHead className="text-center">Auto</TableHead>
+                      <TableHead className="text-center">Agend.</TableHead>
                       <TableHead className="text-center">Peças</TableHead>
                       <TableHead className="text-center">Qtd Total</TableHead>
                     </TableRow>
