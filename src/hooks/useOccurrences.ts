@@ -6,6 +6,7 @@ export type OccurrenceMotive = {
   id: string;
   description: string;
   active: boolean;
+  display_order: number;
   created_at: string;
 };
 
