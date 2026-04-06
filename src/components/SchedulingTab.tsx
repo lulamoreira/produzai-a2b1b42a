@@ -273,8 +273,31 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
   }, [stores, filterState, filterCity, searchTerm, filterApproval, filterDate, filterPeriod, filterMessages, scheduleMap, chatCounts]);
 
+  const fieldLabels: Record<string, string> = {
+    scheduled_date: "Data",
+    scheduled_time: "Horário",
+    installation_os: "OS Instalação",
+    installation_preference: "Preferência",
+    team_id: "Equipe",
+    store_approval_status: "Aprovação Lojista",
+    team_approval_status: "Aprovação Equipe",
+    responsibility: "Responsável",
+    suggested_date: "Data Sugerida",
+    suggested_time: "Horário Sugerido",
+  };
+
   const handleFieldChange = (storeId: string, field: string, value: any) => {
     const existing = scheduleMap[storeId];
+    const storeName = stores.find(s => s.id === storeId)?.name || storeId;
+    const label = fieldLabels[field] || field;
+    const oldVal = existing ? (existing as any)[field] : null;
+    logActivity.mutate({
+      campaign_id: campaignId,
+      store_id: storeId,
+      module: "scheduling",
+      action: `Alterou "${label}"`,
+      details: `${oldVal ?? "(vazio)"} → ${value ?? "(vazio)"}`,
+    });
     upsertSchedule.mutate({
       campaign_id: campaignId,
       store_id: storeId,
