@@ -868,6 +868,7 @@ export type Database = {
           number: string | null
           observations: string | null
           phone: string | null
+          show_in_scheduling: boolean
           state: string | null
           state_registration: string | null
           store_code: string | null
@@ -897,6 +898,7 @@ export type Database = {
           number?: string | null
           observations?: string | null
           phone?: string | null
+          show_in_scheduling?: boolean
           state?: string | null
           state_registration?: string | null
           store_code?: string | null
@@ -926,6 +928,7 @@ export type Database = {
           number?: string | null
           observations?: string | null
           phone?: string | null
+          show_in_scheduling?: boolean
           state?: string | null
           state_registration?: string | null
           store_code?: string | null
