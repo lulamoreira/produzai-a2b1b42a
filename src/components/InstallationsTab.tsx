@@ -191,6 +191,13 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
         toast.error("Erro ao enviar foto");
       }
     }
+    logActivity.mutate({
+      campaign_id: campaignId,
+      store_id: storeId,
+      module: "installations",
+      action: `Enviou ${files.length} foto(s)`,
+      details: `Categoria: ${category}`,
+    });
     toast.success(`${files.length} foto(s) enviada(s)!`);
   };
 
