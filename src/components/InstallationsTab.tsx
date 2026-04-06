@@ -157,11 +157,29 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
       const matchesState = !filterState || s.state?.trim() === filterState;
       const matchesCity = !filterCity || s.city === filterCity;
       const schedule = scheduleMap[s.id];
-      const matchesStatus =
-        !filterStatus ||
-        (filterStatus === "completed" && !!schedule?.completed_at) ||
-        (filterStatus === "pending" && !schedule?.completed_at) ||
-        (filterStatus === "no_photo" && (photosByStore[s.id] || []).length === 0);
+      let matchesStatus = true;
+      if (filterStatus === "completed") {
+        matchesStatus = !!schedule?.completed_at;
+      } else if (filterStatus === "pending") {
+        // Pendentes: data de hoje, horário agendado já passou há 3+ horas, e não concluída
+        if (!schedule || schedule.completed_at) {
+          matchesStatus = false;
+        } else {
+          const today = new Date();
+          const todayStr = today.toISOString().slice(0, 10);
+          const isToday = schedule.scheduled_date === todayStr;
+          if (!isToday || !schedule.scheduled_time) {
+            matchesStatus = false;
+          } else {
+            const [h, m] = schedule.scheduled_time.split(":").map(Number);
+            const scheduledMs = new Date(today.getFullYear(), today.getMonth(), today.getDate(), h, m).getTime();
+            const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
+            matchesStatus = scheduledMs <= threeHoursAgo;
+          }
+        }
+      } else if (filterStatus === "no_photo") {
+        matchesStatus = (photosByStore[s.id] || []).length === 0;
+      }
       return matchesSearch && matchesState && matchesCity && matchesStatus;
     }).sort((a, b) => {
       const stateComp = (a.state || "").localeCompare(b.state || "");
