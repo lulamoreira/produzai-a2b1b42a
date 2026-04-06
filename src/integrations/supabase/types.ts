@@ -390,6 +390,7 @@ export type Database = {
         Row: {
           campaign_id: string
           completed_at: string | null
+          completed_by: string | null
           created_at: string
           id: string
           installation_os: string | null
@@ -415,6 +416,7 @@ export type Database = {
         Insert: {
           campaign_id: string
           completed_at?: string | null
+          completed_by?: string | null
           created_at?: string
           id?: string
           installation_os?: string | null
@@ -440,6 +442,7 @@ export type Database = {
         Update: {
           campaign_id?: string
           completed_at?: string | null
+          completed_by?: string | null
           created_at?: string
           id?: string
           installation_os?: string | null
