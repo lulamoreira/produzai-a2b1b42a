@@ -228,8 +228,8 @@ const PublicOccurrence = () => {
 
   const allEntriesValid = entries.every((e) => e.pieceId && e.motiveId && (locations.length === 0 || e.locationInStore));
   const reporterValid = isSpecialReporter
-    ? !!storeId
-    : storeId && reporterName.trim() && phoneDDD.trim() && phoneNumber.trim() && reporterEmail.trim();
+    ? !!reporterType && !!specialStoreId
+    : !!storeId && reporterName.trim() && phoneDDD.trim() && phoneNumber.trim() && reporterEmail.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
