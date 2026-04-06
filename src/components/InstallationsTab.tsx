@@ -510,8 +510,13 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                           .eq("id", schedule.id);
                         if (error) throw error;
                         queryClient.invalidateQueries({ queryKey: ["schedules", campaignId] });
-                        logActivity(store.id, store.name, isCompleted ? "remove_completion" : "mark_completed",
-                          isCompleted ? "Removeu marcação de concluída" : "Marcou instalação como concluída");
+                        logActivity.mutate({
+                          campaign_id: campaignId,
+                          store_id: store.id,
+                          module: "installations",
+                          action: isCompleted ? "remove_completion" : "mark_completed",
+                          details: isCompleted ? "Removeu marcação de concluída" : "Marcou instalação como concluída",
+                        });
                         toast.success(isCompleted ? "Marcação removida" : "Instalação marcada como concluída!");
                       } catch {
                         toast.error("Erro ao atualizar conclusão");
