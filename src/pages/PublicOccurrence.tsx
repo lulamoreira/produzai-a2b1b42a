@@ -155,16 +155,20 @@ const PublicOccurrence = () => {
 
   const SPECIAL_AGENCY = "__agency__";
   const SPECIAL_FORNECEDOR = "__fornecedor__";
+  const SPECIAL_CLIENTE = "__cliente__";
   const agencyName = (campaign as any)?.clients?.agencies?.name || "Agência";
+  const clientName2 = (campaign as any)?.clients?.name || "Cliente";
 
   // Reporter info (shared)
+  const [reporterType, setReporterType] = useState("");
+  const [specialStoreId, setSpecialStoreId] = useState("");
   const [storeId, setStoreId] = useState("");
   const [reporterName, setReporterName] = useState("");
   const [phoneDDD, setPhoneDDD] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [reporterEmail, setReporterEmail] = useState("");
 
-  const isSpecialReporter = storeId === SPECIAL_AGENCY || storeId === SPECIAL_FORNECEDOR;
+  const isSpecialReporter = reporterType === SPECIAL_AGENCY || reporterType === SPECIAL_FORNECEDOR || reporterType === SPECIAL_CLIENTE;
 
   // Multiple occurrences
   const [entries, setEntries] = useState<OccurrenceEntry[]>([emptyEntry()]);
@@ -224,8 +228,8 @@ const PublicOccurrence = () => {
 
   const allEntriesValid = entries.every((e) => e.pieceId && e.motiveId && (locations.length === 0 || e.locationInStore));
   const reporterValid = isSpecialReporter
-    ? !!storeId
-    : storeId && reporterName.trim() && phoneDDD.trim() && phoneNumber.trim() && reporterEmail.trim();
+    ? !!reporterType && !!specialStoreId
+    : !!storeId && reporterName.trim() && phoneDDD.trim() && phoneNumber.trim() && reporterEmail.trim();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -235,7 +239,7 @@ const PublicOccurrence = () => {
     }
     setSubmitting(true);
     try {
-      const reporterType = storeId === SPECIAL_AGENCY ? "agency" : storeId === SPECIAL_FORNECEDOR ? "fornecedor" : "store";
+      const rType = reporterType === SPECIAL_AGENCY ? "agency" : reporterType === SPECIAL_FORNECEDOR ? "fornecedor" : reporterType === SPECIAL_CLIENTE ? "cliente" : "store";
       for (const entry of entries) {
         const occurrenceData: Record<string, unknown> = {
           campaign_id: campaignId,
@@ -244,10 +248,10 @@ const PublicOccurrence = () => {
           description: entry.description || undefined,
           location_in_store: entry.locationInStore || undefined,
           photo_url: entry.photos[0]?.url || undefined,
-          reporter_type: reporterType,
+          reporter_type: rType,
         };
         if (isSpecialReporter) {
-          // No store_id or reporter fields for agency/fornecedor
+          occurrenceData.store_id = specialStoreId;
         } else {
           occurrenceData.store_id = storeId;
           occurrenceData.reporter_name = reporterName.trim();
@@ -271,6 +275,9 @@ const PublicOccurrence = () => {
 
   const handleNew = () => {
     setEntries([emptyEntry()]);
+    setReporterType("");
+    setStoreId("");
+    setSpecialStoreId("");
     setSubmitted(false);
   };
 
@@ -348,14 +355,19 @@ const PublicOccurrence = () => {
 
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">Identifique-se *</label>
-              <Select value={storeId} onValueChange={(val) => {
-                setStoreId(val);
-                if (val === SPECIAL_AGENCY || val === SPECIAL_FORNECEDOR) {
+              <Select value={reporterType || storeId} onValueChange={(val) => {
+                if (val === SPECIAL_AGENCY || val === SPECIAL_FORNECEDOR || val === SPECIAL_CLIENTE) {
+                  setReporterType(val);
+                  setStoreId("");
+                  setSpecialStoreId("");
                   setReporterName("");
                   setPhoneDDD("");
                   setPhoneNumber("");
                   setReporterEmail("");
                 } else {
+                  setReporterType("");
+                  setStoreId(val);
+                  setSpecialStoreId("");
                   const selected = stores.find((s) => s.id === val);
                   if (selected) {
                     if (selected.phone) {
@@ -370,6 +382,7 @@ const PublicOccurrence = () => {
                 <SelectTrigger><SelectValue placeholder="Selecione quem está reportando" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value={SPECIAL_AGENCY}>{agencyName}</SelectItem>
+                  <SelectItem value={SPECIAL_CLIENTE}>{clientName2}</SelectItem>
                   <SelectItem value={SPECIAL_FORNECEDOR}>Fornecedor</SelectItem>
                   <SelectSeparator />
                   {stores.map((s) => (
@@ -379,7 +392,21 @@ const PublicOccurrence = () => {
               </Select>
             </div>
 
-            {!isSpecialReporter && (
+            {isSpecialReporter && (
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Loja relacionada *</label>
+                <Select value={specialStoreId} onValueChange={setSpecialStoreId}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a loja" /></SelectTrigger>
+                  <SelectContent>
+                    {stores.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.nickname || s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {!isSpecialReporter && storeId && (
               <>
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">Seu nome *</label>
