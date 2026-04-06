@@ -44,6 +44,19 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
+function SortableConfigItem({ id, children }: { id: string; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
+      <button type="button" className="cursor-grab touch-none mr-2 text-muted-foreground hover:text-foreground" {...attributes} {...listeners}>
+        <GripVertical className="w-4 h-4" />
+      </button>
+      {children}
+    </div>
+  );
+}
+
 interface Props {
   campaignId: string;
   clientId?: string;
