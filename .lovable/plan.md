@@ -1,25 +1,27 @@
 
 
-## Manual Pratico - Campanha Pistache (PPTX)
+## Correção: Autenticação entre Edge Functions
 
-Vou criar uma apresentacao PPTX com um manual visual passo a passo de como registrar ocorrencias na campanha Pistache, usando o link direto.
+### Problema
+A função `notify-occurrence` chama `send-transactional-email` via `supabase.functions.invoke()`, mas `send-transactional-email` exige JWT válido (`verify_jwt = true`). A chamada server-to-server está retornando 401.
 
-### Conteudo dos Slides (8 slides)
+### Solução
 
-1. **Capa** - "Manual de Registro de Ocorrencias - Campanha Pistache" com branding ProduzAI
-2. **Link Direto** - Mostra o link completo `https://produzai.lovable.app/ocorrencias/4fd48f8b-2a8c-4efd-a046-eaf012c9f824` e como acessar pelo navegador
-3. **Passo 1: Identifique-se** - Explica o seletor (Agencia/Fornecedor/Loja) e quando os campos de contato aparecem ou somem
-4. **Passo 2: Dados do Reclamante** - Preenchimento de Nome, WhatsApp (DDD + Numero) e E-mail da loja (quando e lojista)
-5. **Passo 3: Localizacao e Peca** - Selecionar localizacao na loja e a peca com problema (com suporte a Kits)
-6. **Passo 4: Motivo e Descricao** - Selecionar o motivo da ocorrencia e descrever o problema
-7. **Passo 5: Fotos e Envio** - Upload de ate 3 fotos, opcao de adicionar mais ocorrencias, e botao Enviar
-8. **Confirmacao e Dicas** - Tela de sucesso e dicas praticas
+1. **Alterar `notify-occurrence/index.ts`** para passar explicitamente o header de Authorization com o service role key ao invocar `send-transactional-email`:
 
-### Detalhes Tecnicos
+   Em vez de usar `supabase.functions.invoke(...)` (que pode não propagar o token corretamente entre edge functions), fazer a chamada HTTP direta com `fetch()` passando o `SUPABASE_SERVICE_ROLE_KEY` como Bearer token. Ou, mais simples: alterar o header na invocação do supabase client.
 
-- Gerar com pptxgenjs usando Node.js
-- Paleta de cores do ProduzAI (roxo/violeta primario)
-- Incluir diagramas esquematicos dos campos do formulario em cada slide (representados como wireframes simplificados com shapes)
-- Salvar em `/mnt/documents/Manual_Ocorrencias_Pistache.pptx`
-- QA visual com conversao para imagens
+2. **Alternativa mais simples**: Mudar a invocação para usar `fetch` direto com o service role key no header Authorization, garantindo que o JWT é passado corretamente ao gateway.
+
+### Detalhes Tecnico
+
+- Arquivo: `supabase/functions/notify-occurrence/index.ts`
+- Substituir `supabase.functions.invoke("send-transactional-email", { body })` por uma chamada `fetch` direta ao endpoint da função, incluindo o header `Authorization: Bearer {serviceKey}`
+- Redeployar a função `notify-occurrence`
+
+### Sobre o DNS
+- O domínio `notify.produzai.app` ainda está em verificação
+- Os emails só começarão a ser entregues de fato quando a verificação DNS completar
+- O usuário pode acompanhar o progresso em **Cloud → Emails**
+- Enquanto isso, a fila funciona normalmente — os emails serão processados assim que o domínio estiver ativo
 
