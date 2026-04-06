@@ -2153,7 +2153,7 @@ const CampaignDetail = () => {
             <InstallationsTab
               campaignId={campaignId!}
               campaignName={campaign?.name || ""}
-              stores={stores.filter((s) => isStoreEnabled(s.id))}
+              stores={stores.filter((s) => isStoreEnabled(s.id) && s.show_in_scheduling)}
               canEdit={canEditInstallations}
               clientId={clientId!}
             />
