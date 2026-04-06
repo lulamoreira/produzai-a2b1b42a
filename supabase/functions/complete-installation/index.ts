@@ -27,9 +27,12 @@ Deno.serve(async (req) => {
 
     const { data, error } = await supabase
       .from("campaign_schedules")
-      .update({ completed_at: completed ? new Date().toISOString() : null })
+      .update({
+        completed_at: completed ? new Date().toISOString() : null,
+        completed_by: completed ? "installer" : null,
+      })
       .eq("id", schedule_id)
-      .select("id, completed_at")
+      .select("id, completed_at, completed_by")
       .single();
 
     if (error) {
