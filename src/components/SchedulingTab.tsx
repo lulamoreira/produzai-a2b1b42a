@@ -350,27 +350,28 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 
   const formatFieldValue = (field: string, value: any): string => {
     if (value === null || value === undefined || value === "") return "(vazio)";
-    if (field === "store_approval_status" || field === "team_approval_status") {
+    if (field === "store_approval_status" || field === "team_approval_status" || field === "reschedule_store_approval_status" || field === "reschedule_team_approval_status") {
       if (value === "approved") return "Aprovado";
       if (value === "rejected") return "Desaprovado";
       if (value === "under_review") return "Em análise";
       if (value === "pending") return "Pendente";
       return String(value);
     }
-    if (field === "responsibility") {
+    if (field === "responsibility" || field === "reschedule_responsibility") {
       if (value === "team") return "Equipe";
       if (value === "client") return "Cliente";
       return String(value);
     }
-    if (field === "installation_preference") return prefLabel(value);
+    if (field === "installation_preference" || field === "reschedule_preference") return prefLabel(value);
     if (field === "team_id") {
       const team = value ? teamMap[value] : null;
       return team?.name || "(nenhuma)";
     }
-    if ((field === "scheduled_date" || field === "suggested_date" || field === "suggested_date_2") && value) {
+    if ((field === "scheduled_date" || field === "suggested_date" || field === "suggested_date_2" || field === "reschedule_date" || field === "reschedule_suggested_date" || field === "reschedule_suggested_date_2") && value) {
       try { return format(new Date(value + "T12:00:00"), "dd/MM/yyyy"); } catch { return String(value); }
     }
     if (field === "store_approved" || field === "team_approved") return value ? "Sim" : "Não";
+    if (field === "reschedule_enabled") return value ? "Sim" : "Não";
     return String(value);
   };
 
