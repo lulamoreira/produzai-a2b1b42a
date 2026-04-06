@@ -294,9 +294,23 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                     <Image className="w-3.5 h-3.5" /> {storePhotos.length}
                   </span>
                 )}
+                {isAdminOrMaster && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    style={{ color: colors.text }}
+                    title="Log de Atividades"
+                    onClick={() => {
+                      setLogStoreId(store.id);
+                      setLogStoreName(store.name);
+                      setLogOpen(true);
+                    }}
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
-
-              {/* Body */}
               <div className="p-4 space-y-3 bg-card flex-1">
                 {/* Address */}
                 <div className="text-xs text-muted-foreground">
