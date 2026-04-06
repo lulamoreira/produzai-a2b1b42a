@@ -314,7 +314,11 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
           const storePhotos = photosByStore[store.id] || [];
           const storeContacts = contactsByStore[store.id] || [];
           const primaryContact = storeContacts[0];
-          const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
+          const isReschedule = !!schedule?.reschedule_enabled;
+          const effectiveDate = isReschedule ? schedule?.reschedule_date : schedule?.scheduled_date;
+          const effectiveTime = isReschedule ? schedule?.reschedule_time : schedule?.scheduled_time;
+          const effectiveOs = isReschedule ? schedule?.reschedule_os : schedule?.installation_os;
+          const selectedDate = effectiveDate ? new Date(effectiveDate + "T12:00:00") : undefined;
           const catForStore = uploadCategory[store.id] || "before";
 
           return (
