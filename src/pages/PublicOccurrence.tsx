@@ -239,7 +239,7 @@ const PublicOccurrence = () => {
     }
     setSubmitting(true);
     try {
-      const reporterType = storeId === SPECIAL_AGENCY ? "agency" : storeId === SPECIAL_FORNECEDOR ? "fornecedor" : "store";
+      const rType = reporterType === SPECIAL_AGENCY ? "agency" : reporterType === SPECIAL_FORNECEDOR ? "fornecedor" : reporterType === SPECIAL_CLIENTE ? "cliente" : "store";
       for (const entry of entries) {
         const occurrenceData: Record<string, unknown> = {
           campaign_id: campaignId,
@@ -248,10 +248,10 @@ const PublicOccurrence = () => {
           description: entry.description || undefined,
           location_in_store: entry.locationInStore || undefined,
           photo_url: entry.photos[0]?.url || undefined,
-          reporter_type: reporterType,
+          reporter_type: rType,
         };
         if (isSpecialReporter) {
-          // No store_id or reporter fields for agency/fornecedor
+          occurrenceData.store_id = specialStoreId;
         } else {
           occurrenceData.store_id = storeId;
           occurrenceData.reporter_name = reporterName.trim();
