@@ -493,8 +493,35 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                 )}
               </div>
 
-              {/* Footer - Checkin button */}
-              <div className="border-t border-border bg-muted/30 px-4 py-3">
+              {/* Footer */}
+              <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-2">
+                {/* Mark complete - admin/master only */}
+                {isAdminOrMaster && schedule && (
+                  <Button
+                    variant={schedule.completed_at ? "default" : "outline"}
+                    size="sm"
+                    className={cn("w-full text-xs gap-2", schedule.completed_at && "bg-green-600 hover:bg-green-700")}
+                    onClick={async () => {
+                      const isCompleted = !!schedule.completed_at;
+                      try {
+                        const { error } = await supabase
+                          .from("campaign_schedules")
+                          .update({ completed_at: isCompleted ? null : new Date().toISOString() })
+                          .eq("id", schedule.id);
+                        if (error) throw error;
+                        queryClient.invalidateQueries({ queryKey: ["schedules", campaignId] });
+                        logActivity(store.id, store.name, isCompleted ? "remove_completion" : "mark_completed",
+                          isCompleted ? "Removeu marcação de concluída" : "Marcou instalação como concluída");
+                        toast.success(isCompleted ? "Marcação removida" : "Instalação marcada como concluída!");
+                      } catch {
+                        toast.error("Erro ao atualizar conclusão");
+                      }
+                    }}
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    {schedule.completed_at ? "Instalação Concluída ✓" : "Marcar como Concluída"}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
