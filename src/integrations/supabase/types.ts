@@ -395,6 +395,21 @@ export type Database = {
           id: string
           installation_os: string | null
           installation_preference: string | null
+          reschedule_date: string | null
+          reschedule_enabled: boolean
+          reschedule_os: string | null
+          reschedule_preference: string | null
+          reschedule_responsibility: string | null
+          reschedule_responsibility_at: string | null
+          reschedule_store_approval_status: string
+          reschedule_store_approved_at: string | null
+          reschedule_suggested_date: string | null
+          reschedule_suggested_date_2: string | null
+          reschedule_suggested_time: string | null
+          reschedule_suggested_time_2: string | null
+          reschedule_team_approval_status: string
+          reschedule_team_approved_at: string | null
+          reschedule_time: string | null
           responsibility: string | null
           responsibility_at: string | null
           scheduled_date: string | null
@@ -421,6 +436,21 @@ export type Database = {
           id?: string
           installation_os?: string | null
           installation_preference?: string | null
+          reschedule_date?: string | null
+          reschedule_enabled?: boolean
+          reschedule_os?: string | null
+          reschedule_preference?: string | null
+          reschedule_responsibility?: string | null
+          reschedule_responsibility_at?: string | null
+          reschedule_store_approval_status?: string
+          reschedule_store_approved_at?: string | null
+          reschedule_suggested_date?: string | null
+          reschedule_suggested_date_2?: string | null
+          reschedule_suggested_time?: string | null
+          reschedule_suggested_time_2?: string | null
+          reschedule_team_approval_status?: string
+          reschedule_team_approved_at?: string | null
+          reschedule_time?: string | null
           responsibility?: string | null
           responsibility_at?: string | null
           scheduled_date?: string | null
@@ -447,6 +477,21 @@ export type Database = {
           id?: string
           installation_os?: string | null
           installation_preference?: string | null
+          reschedule_date?: string | null
+          reschedule_enabled?: boolean
+          reschedule_os?: string | null
+          reschedule_preference?: string | null
+          reschedule_responsibility?: string | null
+          reschedule_responsibility_at?: string | null
+          reschedule_store_approval_status?: string
+          reschedule_store_approved_at?: string | null
+          reschedule_suggested_date?: string | null
+          reschedule_suggested_date_2?: string | null
+          reschedule_suggested_time?: string | null
+          reschedule_suggested_time_2?: string | null
+          reschedule_team_approval_status?: string
+          reschedule_team_approved_at?: string | null
+          reschedule_time?: string | null
           responsibility?: string | null
           responsibility_at?: string | null
           scheduled_date?: string | null

@@ -59,6 +59,14 @@ type Schedule = {
   team_approved: boolean;
   completed_at: string | null;
   completed_by: string | null;
+  // Reschedule fields
+  reschedule_enabled: boolean;
+  reschedule_date: string | null;
+  reschedule_time: string | null;
+  reschedule_os: string | null;
+  reschedule_preference: string | null;
+  reschedule_store_approval_status: string | null;
+  reschedule_team_approval_status: string | null;
 };
 
 const CATEGORY_OPTIONS = [
@@ -306,7 +314,11 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
           const storePhotos = photosByStore[store.id] || [];
           const storeContacts = contactsByStore[store.id] || [];
           const primaryContact = storeContacts[0];
-          const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
+          const isReschedule = !!schedule?.reschedule_enabled;
+          const effectiveDate = isReschedule ? schedule?.reschedule_date : schedule?.scheduled_date;
+          const effectiveTime = isReschedule ? schedule?.reschedule_time : schedule?.scheduled_time;
+          const effectiveOs = isReschedule ? schedule?.reschedule_os : schedule?.installation_os;
+          const selectedDate = effectiveDate ? new Date(effectiveDate + "T12:00:00") : undefined;
           const catForStore = uploadCategory[store.id] || "before";
 
           return (
@@ -390,17 +402,20 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                       <span className="font-medium text-foreground">{format(selectedDate, "dd/MM/yyyy")}</span>
                     </span>
                   )}
-                  {schedule?.scheduled_time && (
+                  {effectiveTime && (
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      <span className="font-medium text-foreground">{schedule.scheduled_time}</span>
+                      <span className="font-medium text-foreground">{effectiveTime}</span>
                     </span>
                   )}
-                  {schedule?.installation_os && (
+                  {effectiveOs && (
                     <span className="flex items-center gap-1">
                       <FileText className="w-3 h-3" />
-                      <span className="font-medium text-foreground">OS: {schedule.installation_os}</span>
+                      <span className="font-medium text-foreground">OS: {effectiveOs}</span>
                     </span>
+                  )}
+                  {isReschedule && (
+                    <span className="text-[10px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full">REMARCAÇÃO</span>
                   )}
                 </div>
 
