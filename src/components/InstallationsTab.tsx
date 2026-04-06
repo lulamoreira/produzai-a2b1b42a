@@ -402,17 +402,20 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                       <span className="font-medium text-foreground">{format(selectedDate, "dd/MM/yyyy")}</span>
                     </span>
                   )}
-                  {schedule?.scheduled_time && (
+                  {effectiveTime && (
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      <span className="font-medium text-foreground">{schedule.scheduled_time}</span>
+                      <span className="font-medium text-foreground">{effectiveTime}</span>
                     </span>
                   )}
-                  {schedule?.installation_os && (
+                  {effectiveOs && (
                     <span className="flex items-center gap-1">
                       <FileText className="w-3 h-3" />
-                      <span className="font-medium text-foreground">OS: {schedule.installation_os}</span>
+                      <span className="font-medium text-foreground">OS: {effectiveOs}</span>
                     </span>
+                  )}
+                  {isReschedule && (
+                    <span className="text-[10px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full">REMARCAÇÃO</span>
                   )}
                 </div>
 
