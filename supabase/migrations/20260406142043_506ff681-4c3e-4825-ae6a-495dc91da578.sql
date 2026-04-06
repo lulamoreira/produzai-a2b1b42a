@@ -1,0 +1,1 @@
+ALTER TABLE public.campaign_schedules ADD COLUMN completed_by text DEFAULT null;

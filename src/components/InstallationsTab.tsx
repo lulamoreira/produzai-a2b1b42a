@@ -58,6 +58,7 @@ type Schedule = {
   store_approved: boolean;
   team_approved: boolean;
   completed_at: string | null;
+  completed_by: string | null;
 };
 
 const CATEGORY_OPTIONS = [
@@ -405,7 +406,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                   <div className="flex items-center gap-2 text-xs bg-success/10 text-success rounded-lg px-3 py-1.5">
                     <CheckCircle className="w-3.5 h-3.5" />
                     <span className="font-medium">
-                      Concluída em {format(new Date(schedule.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {schedule.completed_by === "agency"
+                        ? `Marcada manualmente como concluída pela equipe da Agência, em: ${format(new Date(schedule.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
+                        : `Concluída em ${format(new Date(schedule.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
+                      }
                     </span>
                   </div>
                 )}
@@ -506,7 +510,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                       try {
                         const { error } = await supabase
                           .from("campaign_schedules")
-                          .update({ completed_at: isCompleted ? null : new Date().toISOString() })
+                          .update({
+                            completed_at: isCompleted ? null : new Date().toISOString(),
+                            completed_by: isCompleted ? null : "agency",
+                          })
                           .eq("id", schedule.id);
                         if (error) throw error;
                         queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
