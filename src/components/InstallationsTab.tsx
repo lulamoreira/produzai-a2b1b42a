@@ -11,6 +11,8 @@ import DebouncedInput from "@/components/DebouncedInput";
 import TeamCodesPanel from "@/components/TeamCodesPanel";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useClientPermission } from "@/hooks/useClientPermission";
+import { useLogActivity } from "@/hooks/useActivityLogs";
+import ActivityLogPanel from "@/components/ActivityLogPanel";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
