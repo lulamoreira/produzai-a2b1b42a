@@ -300,6 +300,18 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     responsibility: "Responsável",
     suggested_date: "Data Sugerida",
     suggested_time: "Horário Sugerido",
+    reschedule_enabled: "Remarcação",
+    reschedule_date: "Data (Remarcação)",
+    reschedule_time: "Horário (Remarcação)",
+    reschedule_os: "OS (Remarcação)",
+    reschedule_preference: "Preferência (Remarcação)",
+    reschedule_store_approval_status: "Aprovação Lojista (Remarcação)",
+    reschedule_team_approval_status: "Aprovação Equipe (Remarcação)",
+    reschedule_responsibility: "Responsável (Remarcação)",
+    reschedule_suggested_date: "Data Sugerida (Remarcação)",
+    reschedule_suggested_time: "Horário Sugerido (Remarcação)",
+    reschedule_suggested_date_2: "Data Sugerida 2 (Remarcação)",
+    reschedule_suggested_time_2: "Horário Sugerido 2 (Remarcação)",
   };
 
   const handleFieldChange = (storeId: string, field: string, value: any) => {
