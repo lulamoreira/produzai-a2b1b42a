@@ -119,10 +119,14 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
     return map;
   }, [schedules]);
 
-  // Only show stores that have a schedule
+  // Only show stores that have a schedule with date AND time (original or reschedule)
   const scheduledStores = useMemo(() => stores.filter((s) => {
     const sch = scheduleMap[s.id];
-    return sch && sch.scheduled_date && sch.scheduled_time;
+    if (!sch) return false;
+    if (sch.reschedule_enabled) {
+      return !!sch.reschedule_date && !!sch.reschedule_time;
+    }
+    return !!sch.scheduled_date && !!sch.scheduled_time;
   }), [stores, scheduleMap]);
 
   const { data: teams = [] } = useInstallationTeams(campaignId);
