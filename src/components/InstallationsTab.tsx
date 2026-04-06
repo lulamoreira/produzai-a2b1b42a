@@ -509,7 +509,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                           .update({ completed_at: isCompleted ? null : new Date().toISOString() })
                           .eq("id", schedule.id);
                         if (error) throw error;
-                        queryClient.invalidateQueries({ queryKey: ["schedules", campaignId] });
+                        queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
                         logActivity.mutate({
                           campaign_id: campaignId,
                           store_id: store.id,
