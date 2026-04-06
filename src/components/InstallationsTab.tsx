@@ -112,7 +112,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
   }, [schedules]);
 
   // Only show stores that have a schedule
-  const scheduledStores = useMemo(() => stores.filter((s) => scheduleMap[s.id]), [stores, scheduleMap]);
+  const scheduledStores = useMemo(() => stores.filter((s) => {
+    const sch = scheduleMap[s.id];
+    return sch && sch.scheduled_date && sch.scheduled_time;
+  }), [stores, scheduleMap]);
 
   const { data: teams = [] } = useInstallationTeams(campaignId);
   const { data: allMembersMap = {} } = useAllTeamMembers(campaignId);
