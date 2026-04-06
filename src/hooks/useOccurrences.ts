@@ -113,6 +113,19 @@ export function useDeleteOccurrenceMotive() {
   });
 }
 
+export function useReorderOccurrenceMotives() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; display_order: number }[]) => {
+      for (const item of items) {
+        const { error } = await supabase.from("occurrence_motives").update({ display_order: item.display_order }).eq("id", item.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["occurrence_motives"] }),
+  });
+}
+
 // ─── Occurrence Statuses ─────────────────────────────────
 export function useOccurrenceStatuses() {
   return useQuery({
