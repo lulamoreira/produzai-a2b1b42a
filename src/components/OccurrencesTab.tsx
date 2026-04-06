@@ -113,8 +113,36 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const addStatusItem = useAddOccurrenceStatus();
   const updateStatusItem = useUpdateOccurrenceStatus2();
   const deleteStatusItem = useDeleteOccurrenceStatusItem();
+  const reorderMotives = useReorderOccurrenceMotives();
+  const reorderStatuses = useReorderOccurrenceStatuses();
+  const queryClient = useQueryClient();
 
-  const getStatusLabel = (value: string) => {
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleMotiveDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = motives.findIndex((m) => m.id === active.id);
+    const newIndex = motives.findIndex((m) => m.id === over.id);
+    const reordered = arrayMove(motives, oldIndex, newIndex);
+    queryClient.setQueryData(["occurrence_motives"], reordered);
+    reorderMotives.mutate(reordered.map((m, i) => ({ id: m.id, display_order: i })));
+  };
+
+  const handleStatusDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = statuses.findIndex((s) => s.id === active.id);
+    const newIndex = statuses.findIndex((s) => s.id === over.id);
+    const reordered = arrayMove(statuses, oldIndex, newIndex);
+    queryClient.setQueryData(["occurrence_statuses"], reordered);
+    reorderStatuses.mutate(reordered.map((s, i) => ({ id: s.id, order: i })));
+  };
+
+
     return statuses.find((s) => s.value === value)?.label || value;
   };
   const getStatusColor = (value: string) => {
