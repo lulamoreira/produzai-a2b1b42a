@@ -725,10 +725,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 {/* Approval status icon */}
                 {fullyApproved ? (
                   <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
-                ) : (storeApprovalStatus === "approved" && teamApprovalStatus === "approved" && !hasOs && schedule?.scheduled_date && schedule?.scheduled_time) ? (
+                ) : (effectiveStoreStatus === "approved" && effectiveTeamStatus === "approved" && !hasOs && effectiveDate && effectiveTime) ? (
                   <span className="text-[10px] font-bold text-destructive whitespace-nowrap leading-tight text-center shrink-0 bg-destructive/10 px-1.5 py-0.5 rounded">FALTA<br/>OS</span>
                 ) : (
                   <AlertCircle className="w-6 h-6 shrink-0 text-amber-500 drop-shadow" />
+                )}
+                {isReschedule && (
+                  <span className="absolute top-1 right-1 text-[8px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full leading-none">REM</span>
                 )}
               </div>
 
