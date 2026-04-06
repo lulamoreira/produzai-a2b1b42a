@@ -1265,7 +1265,408 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
   );
 }
 
-// ─── Sub-component: Three State Toggle ──────────────────
+// ─── Sub-component: Reschedule Section ──────────────────
+
+interface RescheduleSectionProps {
+  schedule: Schedule | undefined;
+  storeId: string;
+  campaignId: string;
+  canEdit: boolean;
+  teams: InstallationTeam[];
+  teamMap: Record<string, InstallationTeam>;
+  onFieldChange: (field: string, value: any) => void;
+  onMultiUpdate: (fields: Record<string, any>) => void;
+}
+
+function RescheduleSection({ schedule, storeId, campaignId, canEdit, teams, teamMap, onFieldChange, onMultiUpdate }: RescheduleSectionProps) {
+  const { user } = useAuth();
+  const isEnabled = !!schedule?.reschedule_enabled;
+
+  const handleToggleReschedule = (enabled: boolean) => {
+    if (!canEdit) return;
+    const updates: Record<string, any> = { reschedule_enabled: enabled };
+    if (!enabled) {
+      // Clear all reschedule fields
+      updates.reschedule_date = null;
+      updates.reschedule_time = null;
+      updates.reschedule_os = null;
+      updates.reschedule_preference = "not_informed";
+      updates.reschedule_store_approval_status = "under_review";
+      updates.reschedule_store_approved_at = null;
+      updates.reschedule_team_approval_status = "under_review";
+      updates.reschedule_team_approved_at = null;
+      updates.reschedule_responsibility = null;
+      updates.reschedule_responsibility_at = null;
+      updates.reschedule_suggested_date = null;
+      updates.reschedule_suggested_time = null;
+      updates.reschedule_suggested_date_2 = null;
+      updates.reschedule_suggested_time_2 = null;
+    }
+    onMultiUpdate(updates);
+  };
+
+  const rescheduleDate = schedule?.reschedule_date ? new Date(schedule.reschedule_date + "T12:00:00") : undefined;
+  const hasRescheduleDateTime = !!(schedule?.reschedule_date && schedule?.reschedule_time);
+
+  return (
+    <div className="border-t-2 border-orange-400/50">
+      {/* Toggle */}
+      <div className="px-4 py-2 flex items-center justify-between bg-orange-500/5">
+        <span className="text-[11px] font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
+          🔄 Remarcação da Instalação
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            disabled={!canEdit}
+            onClick={() => handleToggleReschedule(!isEnabled)}
+            className={cn(
+              "relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors",
+              isEnabled ? "bg-orange-500" : "bg-muted",
+              !canEdit && "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <span
+              className={cn(
+                "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition-transform",
+                isEnabled ? "translate-x-5" : "translate-x-0"
+              )}
+            />
+          </button>
+          <span className="text-[10px] font-bold text-muted-foreground">{isEnabled ? "SIM" : "NÃO"}</span>
+        </div>
+      </div>
+
+      {isEnabled && (
+        <div className="px-4 py-3 space-y-3 bg-orange-500/5">
+          {/* Reschedule fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Date */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                <CalendarIcon className="w-3 h-3" /> Data
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!canEdit}
+                    className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !rescheduleDate && "text-muted-foreground")}
+                  >
+                    <span className="truncate">{rescheduleDate ? format(rescheduleDate, "dd/MM/yyyy") : "Selecionar"}</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={rescheduleDate}
+                    onSelect={(date) => onFieldChange("reschedule_date", date ? format(date, "yyyy-MM-dd") : null)}
+                    locale={ptBR}
+                    className="p-3 pointer-events-auto"
+                  />
+                  {rescheduleDate && (
+                    <div className="px-3 pb-3">
+                      <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => onFieldChange("reschedule_date", null)}>
+                        Limpar data
+                      </Button>
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Time */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                <Clock className="w-3 h-3" /> Horário
+              </label>
+              <div className="flex items-center gap-1">
+                <DebouncedInput
+                  type="time"
+                  disabled={!canEdit}
+                  value={schedule?.reschedule_time || ""}
+                  onValueCommit={(val) => onFieldChange("reschedule_time", val || null)}
+                  className="h-8 text-xs flex-1"
+                />
+                {schedule?.reschedule_time && canEdit && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => onFieldChange("reschedule_time", null)} title="Limpar horário">
+                    ✕
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* OS */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                <FileText className="w-3 h-3" /> OS Instalação
+              </label>
+              <DebouncedInput
+                disabled={!canEdit}
+                placeholder="Nº OS"
+                value={schedule?.reschedule_os || ""}
+                onValueCommit={(val) => onFieldChange("reschedule_os", val || null)}
+                className="h-8 text-xs"
+              />
+            </div>
+
+            {/* Preference */}
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                <Sun className="w-3 h-3" /> Preferência
+              </label>
+              <select
+                disabled={!canEdit}
+                value={schedule?.reschedule_preference || "not_informed"}
+                onChange={(e) => onFieldChange("reschedule_preference", e.target.value)}
+                className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
+              >
+                {PREFERENCE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Reschedule Approval Toggles */}
+          <RescheduleApprovalToggles
+            schedule={schedule}
+            storeId={storeId}
+            campaignId={campaignId}
+            canEdit={canEdit}
+            hasDateAndTime={hasRescheduleDateTime}
+            onMultiUpdate={onMultiUpdate}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-component: Reschedule Approval Toggles ─────────
+
+interface RescheduleApprovalTogglesProps {
+  schedule: Schedule | undefined;
+  storeId: string;
+  campaignId: string;
+  canEdit: boolean;
+  hasDateAndTime: boolean;
+  onMultiUpdate: (fields: Record<string, any>) => void;
+}
+
+function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTime, onMultiUpdate }: RescheduleApprovalTogglesProps) {
+  const { user } = useAuth();
+  const dbStoreStatus = (schedule?.reschedule_store_approval_status ?? "under_review") as ApprovalStatusValue;
+  const dbTeamStatus = (schedule?.reschedule_team_approval_status ?? "under_review") as ApprovalStatusValue;
+
+  const [optimisticStoreStatus, setOptimisticStoreStatus] = useState<ApprovalStatusValue | null>(null);
+  const [optimisticTeamStatus, setOptimisticTeamStatus] = useState<ApprovalStatusValue | null>(null);
+
+  const storeStatus = optimisticStoreStatus ?? dbStoreStatus;
+  const teamStatus = optimisticTeamStatus ?? dbTeamStatus;
+
+  useEffect(() => {
+    if (optimisticStoreStatus && dbStoreStatus === optimisticStoreStatus) setOptimisticStoreStatus(null);
+  }, [dbStoreStatus, optimisticStoreStatus]);
+  useEffect(() => {
+    if (optimisticTeamStatus && dbTeamStatus === optimisticTeamStatus) setOptimisticTeamStatus(null);
+  }, [dbTeamStatus, optimisticTeamStatus]);
+
+  const hasPendency = storeStatus !== "approved" || teamStatus !== "approved";
+  const responsibility = schedule?.reschedule_responsibility || "team";
+
+  const [localSuggestedDate, setLocalSuggestedDate] = useState(schedule?.reschedule_suggested_date || "");
+  const [localSuggestedTime, setLocalSuggestedTime] = useState(schedule?.reschedule_suggested_time || "");
+  const [localSuggestedDate2, setLocalSuggestedDate2] = useState(schedule?.reschedule_suggested_date_2 || "");
+  const [localSuggestedTime2, setLocalSuggestedTime2] = useState(schedule?.reschedule_suggested_time_2 || "");
+
+  useEffect(() => {
+    setLocalSuggestedDate(schedule?.reschedule_suggested_date || "");
+    setLocalSuggestedTime(schedule?.reschedule_suggested_time || "");
+    setLocalSuggestedDate2(schedule?.reschedule_suggested_date_2 || "");
+    setLocalSuggestedTime2(schedule?.reschedule_suggested_time_2 || "");
+  }, [schedule?.reschedule_suggested_date, schedule?.reschedule_suggested_time, schedule?.reschedule_suggested_date_2, schedule?.reschedule_suggested_time_2]);
+
+  const handleSetStatus = (field: "reschedule_store_approval_status" | "reschedule_team_approval_status", newVal: ApprovalStatusValue) => {
+    if (!canEdit) return;
+    const now = new Date().toISOString();
+    const atField = field === "reschedule_store_approval_status" ? "reschedule_store_approved_at" : "reschedule_team_approved_at";
+
+    const updates: Record<string, any> = {
+      [field]: newVal,
+      [atField]: now,
+    };
+
+    if (newVal === "approved") {
+      const otherStatus = field === "reschedule_store_approval_status"
+        ? (schedule?.reschedule_team_approval_status ?? "under_review")
+        : (schedule?.reschedule_store_approval_status ?? "under_review");
+      if (otherStatus === "approved") {
+        updates.reschedule_responsibility = null;
+        updates.reschedule_responsibility_at = null;
+      }
+    }
+
+    if (field === "reschedule_store_approval_status" && newVal !== "rejected") {
+      updates.reschedule_suggested_date = null;
+      updates.reschedule_suggested_time = null;
+    }
+
+    if (field === "reschedule_team_approval_status" && newVal === "rejected") {
+      updates.reschedule_responsibility = "client";
+      updates.reschedule_responsibility_at = now;
+    }
+
+    onMultiUpdate(updates);
+  };
+
+  const handleSetResponsibility = (value: string) => {
+    if (!canEdit) return;
+    onMultiUpdate({
+      reschedule_responsibility: value,
+      reschedule_responsibility_at: new Date().toISOString(),
+    });
+  };
+
+  const handleSaveSuggested = (field: string, value: string) => {
+    const updates: Record<string, any> = { [field]: value || null };
+    if (value) {
+      updates.reschedule_team_approval_status = "pending";
+    }
+    onMultiUpdate(updates);
+  };
+
+  const handleAcceptSuggestion = async (set: 1 | 2) => {
+    if (!canEdit) return;
+    const newDate = set === 1 ? localSuggestedDate : localSuggestedDate2;
+    const newTime = set === 1 ? localSuggestedTime : localSuggestedTime2;
+    if (!newDate && !newTime) return;
+
+    const now = new Date().toISOString();
+
+    setOptimisticStoreStatus("approved");
+    setOptimisticTeamStatus("approved");
+    setLocalSuggestedDate("");
+    setLocalSuggestedTime("");
+    setLocalSuggestedDate2("");
+    setLocalSuggestedTime2("");
+
+    onMultiUpdate({
+      ...(newDate ? { reschedule_date: newDate } : {}),
+      ...(newTime ? { reschedule_time: newTime } : {}),
+      reschedule_suggested_date: null,
+      reschedule_suggested_time: null,
+      reschedule_suggested_date_2: null,
+      reschedule_suggested_time_2: null,
+      reschedule_store_approval_status: "approved",
+      reschedule_store_approved_at: now,
+      reschedule_team_approval_status: "approved",
+      reschedule_team_approved_at: now,
+    });
+
+    toast.success("Sugestão aceita! Lojista e Equipe aprovados (Remarcação).");
+  };
+
+  const formatTimestamp = (ts: string | null) => {
+    if (!ts) return null;
+    try { return format(new Date(ts), "dd/MM/yy HH:mm", { locale: ptBR }); } catch { return null; }
+  };
+
+  const sectionDisabled = !canEdit || !hasDateAndTime;
+  const showSuggestion = storeStatus === "rejected";
+  const hasSuggestionValues = !!(localSuggestedDate || localSuggestedTime);
+  const hasSuggestionValues2 = !!(localSuggestedDate2 || localSuggestedTime2);
+
+  return (
+    <div className={cn("border-t border-orange-400/30 pt-2 space-y-2", !hasDateAndTime && "opacity-50")}>
+      <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide mb-1">
+        Status de aprovação (Remarcação)
+        {!hasDateAndTime && <span className="ml-2 text-muted-foreground font-normal normal-case">(preencha data e horário)</span>}
+      </p>
+      <ThreeStateToggle
+        label="Lojista"
+        value={storeStatus}
+        onChange={(val) => handleSetStatus("reschedule_store_approval_status", val)}
+        timestamp={storeStatus === "approved" ? formatTimestamp(schedule?.reschedule_store_approved_at ?? null) : null}
+        disabled={sectionDisabled}
+      />
+
+      {showSuggestion && (
+        <div className="ml-[78px] space-y-3 p-3 rounded-lg border border-red-500/30 bg-red-500/5">
+          <p className="text-[10px] font-semibold text-destructive uppercase tracking-wide">Sugestões do Lojista (Remarcação)</p>
+          <div className="space-y-2">
+            <p className="text-[10px] font-medium text-muted-foreground">Opção 1</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida</label>
+                <input type="date" disabled={!canEdit} value={localSuggestedDate}
+                  onChange={(e) => { setLocalSuggestedDate(e.target.value); handleSaveSuggested("reschedule_suggested_date", e.target.value); }}
+                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido</label>
+                <input type="time" disabled={!canEdit} value={localSuggestedTime}
+                  onChange={(e) => { setLocalSuggestedTime(e.target.value); handleSaveSuggested("reschedule_suggested_time", e.target.value); }}
+                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
+              </div>
+            </div>
+            {hasSuggestionValues && canEdit && (
+              <Button variant="outline" size="sm" className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7" onClick={() => handleAcceptSuggestion(1)}>
+                <CheckCircle2 className="w-3.5 h-3.5" /> Aceitar opção 1
+              </Button>
+            )}
+          </div>
+          <div className="border-t border-border" />
+          <div className="space-y-2">
+            <p className="text-[10px] font-medium text-muted-foreground">Opção 2</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida 2</label>
+                <input type="date" disabled={!canEdit} value={localSuggestedDate2}
+                  onChange={(e) => { setLocalSuggestedDate2(e.target.value); handleSaveSuggested("reschedule_suggested_date_2", e.target.value); }}
+                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido 2</label>
+                <input type="time" disabled={!canEdit} value={localSuggestedTime2}
+                  onChange={(e) => { setLocalSuggestedTime2(e.target.value); handleSaveSuggested("reschedule_suggested_time_2", e.target.value); }}
+                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
+              </div>
+            </div>
+            {hasSuggestionValues2 && canEdit && (
+              <Button variant="outline" size="sm" className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7" onClick={() => handleAcceptSuggestion(2)}>
+                <CheckCircle2 className="w-3.5 h-3.5" /> Aceitar opção 2
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <ThreeStateToggle
+        label="Equipe"
+        value={teamStatus}
+        onChange={(val) => handleSetStatus("reschedule_team_approval_status", val)}
+        timestamp={teamStatus === "approved" ? formatTimestamp(schedule?.reschedule_team_approved_at ?? null) : null}
+        disabled={sectionDisabled}
+      />
+
+      {hasPendency && (
+        <ToggleSwitch
+          label="Responsável"
+          leftLabel="Cliente"
+          rightLabel="Equipe"
+          isLeft={responsibility !== "team"}
+          onClickLeft={() => handleSetResponsibility("client")}
+          onClickRight={() => handleSetResponsibility("team")}
+          timestamp={formatTimestamp(schedule?.reschedule_responsibility_at ?? null)}
+          disabled={sectionDisabled}
+        />
+      )}
+    </div>
+  );
+}
+
 
 interface ThreeStateToggleProps {
   label: string;
