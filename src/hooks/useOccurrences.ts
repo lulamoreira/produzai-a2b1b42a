@@ -70,7 +70,7 @@ export function useOccurrenceMotives() {
       const { data, error } = await supabase
         .from("occurrence_motives")
         .select("*")
-        .order("description");
+        .order("display_order");
       if (error) throw error;
       return data as OccurrenceMotive[];
     },
