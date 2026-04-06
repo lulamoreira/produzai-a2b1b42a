@@ -631,11 +631,23 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const teamVehicles: TeamVehicle[] = schedule?.team_id ? (allVehiclesMap[schedule.team_id] || []) : [];
           const teamIncomplete = assignedTeam ? isTeamIncomplete(teamMembers) : false;
 
+          // Determine effective status: use reschedule if enabled
+          const isReschedule = !!schedule?.reschedule_enabled;
+          const effectiveStoreStatus = isReschedule
+            ? ((schedule?.reschedule_store_approval_status ?? "under_review") as ApprovalStatusValue)
+            : ((schedule?.store_approval_status ?? "under_review") as ApprovalStatusValue);
+          const effectiveTeamStatus = isReschedule
+            ? ((schedule?.reschedule_team_approval_status ?? "under_review") as ApprovalStatusValue)
+            : ((schedule?.team_approval_status ?? "under_review") as ApprovalStatusValue);
+          const effectiveOs = isReschedule ? schedule?.reschedule_os : schedule?.installation_os;
+          const effectiveDate = isReschedule ? schedule?.reschedule_date : schedule?.scheduled_date;
+          const effectiveTime = isReschedule ? schedule?.reschedule_time : schedule?.scheduled_time;
+
           const storeApprovalStatus = (schedule?.store_approval_status ?? "under_review") as ApprovalStatusValue;
           const teamApprovalStatus = (schedule?.team_approval_status ?? "under_review") as ApprovalStatusValue;
-          const storeApproved = storeApprovalStatus === "approved";
-          const teamApproved = teamApprovalStatus === "approved";
-          const hasOs = !!(schedule?.installation_os?.trim());
+          const storeApproved = effectiveStoreStatus === "approved";
+          const teamApproved = effectiveTeamStatus === "approved";
+          const hasOs = !!(effectiveOs?.trim());
           const fullyApproved = storeApproved && teamApproved && hasOs;
           const hasPendency = !fullyApproved;
 
