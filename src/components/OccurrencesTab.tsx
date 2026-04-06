@@ -260,11 +260,11 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   };
 
   const getStoreName = (id: string | null, reporterType?: string) => {
-    if (reporterType === "agency") return agencyName;
-    if (reporterType === "fornecedor") return "Fornecedor";
-    if (!id) return "—";
-    const s = stores.find((s) => s.id === id);
-    return s?.nickname || s?.name || "—";
+    const storeName = id ? (stores.find((s) => s.id === id)?.nickname || stores.find((s) => s.id === id)?.name || "—") : "—";
+    if (reporterType === "agency") return `${agencyName} → ${storeName}`;
+    if (reporterType === "fornecedor") return `Fornecedor → ${storeName}`;
+    if (reporterType === "cliente") return `${clientName} → ${storeName}`;
+    return storeName;
   };
 
   const getPieceName = (id: string) => {
