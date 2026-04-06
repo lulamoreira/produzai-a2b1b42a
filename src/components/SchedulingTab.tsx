@@ -611,6 +611,22 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 >
                   <History className="w-4 h-4" />
                 </Button>
+                {isAdminOrMaster && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    style={{ color: colors.text }}
+                    title="Log de Atividades"
+                    onClick={() => {
+                      setLogStoreId(store.id);
+                      setLogStoreName(store.name);
+                      setLogOpen(true);
+                    }}
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                  </Button>
+                )}
                 {/* Approval status icon */}
                 {fullyApproved ? (
                   <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
