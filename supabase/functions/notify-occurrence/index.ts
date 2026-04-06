@@ -63,31 +63,42 @@ serve(async (req) => {
       ? `https://produzai.lovable.app/ocorrencia/${occurrenceId}`
       : undefined;
 
-    // Send one transactional email per recipient
+    // Send one transactional email per recipient using direct fetch with service role key
     const results = [];
+    const sendUrl = `${supabaseUrl}/functions/v1/send-transactional-email`;
     for (const email of emails) {
       const idempotencyKey = `occurrence-${eventType}-${occurrenceId}-${email}`;
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "occurrence-notification",
-          recipientEmail: email,
-          idempotencyKey,
-          templateData: {
-            eventType,
-            date,
-            clientName,
-            campaignName,
-            storeName,
-            pieceName,
-            motiveDesc,
-            statusLabel,
-            statusColor,
-            description,
-            publicUrl,
+      try {
+        const res = await fetch(sendUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${serviceKey}`,
           },
-        },
-      });
-      results.push({ email, error: error?.message || null });
+          body: JSON.stringify({
+            templateName: "occurrence-notification",
+            recipientEmail: email,
+            idempotencyKey,
+            templateData: {
+              eventType,
+              date,
+              clientName,
+              campaignName,
+              storeName,
+              pieceName,
+              motiveDesc,
+              statusLabel,
+              statusColor,
+              description,
+              publicUrl,
+            },
+          }),
+        });
+        const resBody = await res.json().catch(() => ({}));
+        results.push({ email, error: res.ok ? null : (resBody.error || `HTTP ${res.status}`) });
+      } catch (err) {
+        results.push({ email, error: err.message });
+      }
     }
 
     console.log("Occurrence notification queued:", { eventType, occurrenceId, recipients: emails.length });
