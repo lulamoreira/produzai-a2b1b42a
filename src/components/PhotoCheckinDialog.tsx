@@ -24,6 +24,7 @@ interface Props {
 }
 
 export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }: Props) {
+  const { isAdminOrMaster } = useUserRole();
   const updatePhoto = useUpdateInstallationPhoto();
   const deletePhoto = useDeleteInstallationPhoto();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
