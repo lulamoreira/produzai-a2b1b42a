@@ -4,8 +4,9 @@ import {
   useCampaignEmails, useAddCampaignEmail, useDeleteCampaignEmail,
   useOccurrenceMotives, useAddOccurrenceMotive, useUpdateOccurrenceMotive, useDeleteOccurrenceMotive,
   useOccurrenceStatuses, useAddOccurrenceStatus, useUpdateOccurrenceStatus2, useDeleteOccurrenceStatusItem,
+  useReorderOccurrenceMotives, useReorderOccurrenceStatuses,
 } from "@/hooks/useOccurrences";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 import { useCampaignPieceLocations } from "@/hooks/useMultiClientData";
@@ -29,12 +30,32 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle, Phone, MapPin } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle, Phone, MapPin, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
 import OccurrencesDashboard from "./OccurrencesDashboard";
 import PhotoLightbox from "./PhotoLightbox";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+function SortableConfigItem({ id, children }: { id: string; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
+      <button type="button" className="cursor-grab touch-none mr-2 text-muted-foreground hover:text-foreground" {...attributes} {...listeners}>
+        <GripVertical className="w-4 h-4" />
+      </button>
+      {children}
+    </div>
+  );
+}
 
 interface Props {
   campaignId: string;
@@ -92,8 +113,36 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const addStatusItem = useAddOccurrenceStatus();
   const updateStatusItem = useUpdateOccurrenceStatus2();
   const deleteStatusItem = useDeleteOccurrenceStatusItem();
+  const reorderMotives = useReorderOccurrenceMotives();
+  const reorderStatuses = useReorderOccurrenceStatuses();
+  const queryClient = useQueryClient();
 
-  const getStatusLabel = (value: string) => {
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleMotiveDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = motives.findIndex((m) => m.id === active.id);
+    const newIndex = motives.findIndex((m) => m.id === over.id);
+    const reordered = arrayMove(motives, oldIndex, newIndex);
+    queryClient.setQueryData(["occurrence_motives"], reordered);
+    reorderMotives.mutate(reordered.map((m, i) => ({ id: m.id, display_order: i })));
+  };
+
+  const handleStatusDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = statuses.findIndex((s) => s.id === active.id);
+    const newIndex = statuses.findIndex((s) => s.id === over.id);
+    const reordered = arrayMove(statuses, oldIndex, newIndex);
+    queryClient.setQueryData(["occurrence_statuses"], reordered);
+    reorderStatuses.mutate(reordered.map((s, i) => ({ id: s.id, order: i })));
+  };
+
+
     return statuses.find((s) => s.value === value)?.label || value;
   };
   const getStatusColor = (value: string) => {
@@ -580,36 +629,40 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
-              {motives.map((m) => (
-                <div key={m.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
-                  <span className="text-sm">{m.description}</span>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={m.active}
-                      onCheckedChange={(checked) => updateMotive.mutate({ id: m.id, active: checked })}
-                    />
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir motivo?</AlertDialogTitle>
-                          <AlertDialogDescription>Ocorrências existentes com este motivo não serão afetadas.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteMotive.mutate(m.id)}>
-                            SIM
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              ))}
+              <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleMotiveDragEnd}>
+                <SortableContext items={motives.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+                  {motives.map((m) => (
+                    <SortableConfigItem key={m.id} id={m.id}>
+                      <span className="text-sm flex-1">{m.description}</span>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={m.active}
+                          onCheckedChange={(checked) => updateMotive.mutate({ id: m.id, active: checked })}
+                        />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir motivo?</AlertDialogTitle>
+                              <AlertDialogDescription>Ocorrências existentes com este motivo não serão afetadas.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteMotive.mutate(m.id)}>
+                                SIM
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </SortableConfigItem>
+                  ))}
+                </SortableContext>
+              </DndContext>
             </TabsContent>
 
             <TabsContent value="statuses" className="space-y-3 mt-4">
@@ -643,46 +696,50 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
-              {statuses.map((s) => (
-                <div key={s.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
-                    <span className="text-sm font-medium">{s.label}</span>
-                    <span className="text-[10px] text-muted-foreground">({s.value})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={s.color}
-                      onChange={(e) => updateStatusItem.mutate({ id: s.id, color: e.target.value })}
-                      className="w-7 h-7 rounded border border-input cursor-pointer p-0.5"
-                    />
-                    <Switch
-                      checked={s.active}
-                      onCheckedChange={(checked) => updateStatusItem.mutate({ id: s.id, active: checked })}
-                    />
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir status "{s.label}"?</AlertDialogTitle>
-                          <AlertDialogDescription>Ocorrências existentes com este status não serão afetadas.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteStatusItem.mutate(s.id)}>
-                            SIM
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              ))}
+              <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleStatusDragEnd}>
+                <SortableContext items={statuses.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                  {statuses.map((s) => (
+                    <SortableConfigItem key={s.id} id={s.id}>
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
+                        <span className="text-sm font-medium">{s.label}</span>
+                        <span className="text-[10px] text-muted-foreground">({s.value})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={s.color}
+                          onChange={(e) => updateStatusItem.mutate({ id: s.id, color: e.target.value })}
+                          className="w-7 h-7 rounded border border-input cursor-pointer p-0.5"
+                        />
+                        <Switch
+                          checked={s.active}
+                          onCheckedChange={(checked) => updateStatusItem.mutate({ id: s.id, active: checked })}
+                        />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir status "{s.label}"?</AlertDialogTitle>
+                              <AlertDialogDescription>Ocorrências existentes com este status não serão afetadas.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteStatusItem.mutate(s.id)}>
+                                SIM
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </SortableConfigItem>
+                  ))}
+                </SortableContext>
+              </DndContext>
             </TabsContent>
 
             <TabsContent value="period" className="space-y-3 mt-4">

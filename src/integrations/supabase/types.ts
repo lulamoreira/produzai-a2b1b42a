@@ -1285,18 +1285,21 @@ export type Database = {
           active: boolean | null
           created_at: string | null
           description: string
+          display_order: number
           id: string
         }
         Insert: {
           active?: boolean | null
           created_at?: string | null
           description: string
+          display_order?: number
           id?: string
         }
         Update: {
           active?: boolean | null
           created_at?: string | null
           description?: string
+          display_order?: number
           id?: string
         }
         Relationships: []

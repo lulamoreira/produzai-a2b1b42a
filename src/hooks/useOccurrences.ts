@@ -6,6 +6,7 @@ export type OccurrenceMotive = {
   id: string;
   description: string;
   active: boolean;
+  display_order: number;
   created_at: string;
 };
 
@@ -69,7 +70,7 @@ export function useOccurrenceMotives() {
       const { data, error } = await supabase
         .from("occurrence_motives")
         .select("*")
-        .order("description");
+        .order("display_order");
       if (error) throw error;
       return data as OccurrenceMotive[];
     },
@@ -107,6 +108,19 @@ export function useDeleteOccurrenceMotive() {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("occurrence_motives").delete().eq("id", id);
       if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["occurrence_motives"] }),
+  });
+}
+
+export function useReorderOccurrenceMotives() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; display_order: number }[]) => {
+      for (const item of items) {
+        const { error } = await supabase.from("occurrence_motives").update({ display_order: item.display_order }).eq("id", item.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["occurrence_motives"] }),
   });
@@ -160,7 +174,20 @@ export function useDeleteOccurrenceStatusItem() {
   });
 }
 
-// ─── Occurrences ─────────────────────────────────────────
+export function useReorderOccurrenceStatuses() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; order: number }[]) => {
+      for (const item of items) {
+        const { error } = await supabase.from("occurrence_statuses").update({ order: item.order }).eq("id", item.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["occurrence_statuses"] }),
+  });
+}
+
+
 export function useOccurrences(campaignId?: string) {
   return useQuery({
     queryKey: ["occurrences", campaignId],
