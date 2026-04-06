@@ -629,36 +629,40 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
-              {motives.map((m) => (
-                <div key={m.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
-                  <span className="text-sm">{m.description}</span>
-                  <div className="flex items-center gap-2">
-                    <Switch
-                      checked={m.active}
-                      onCheckedChange={(checked) => updateMotive.mutate({ id: m.id, active: checked })}
-                    />
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir motivo?</AlertDialogTitle>
-                          <AlertDialogDescription>Ocorrências existentes com este motivo não serão afetadas.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteMotive.mutate(m.id)}>
-                            SIM
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              ))}
+              <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleMotiveDragEnd}>
+                <SortableContext items={motives.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+                  {motives.map((m) => (
+                    <SortableConfigItem key={m.id} id={m.id}>
+                      <span className="text-sm flex-1">{m.description}</span>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={m.active}
+                          onCheckedChange={(checked) => updateMotive.mutate({ id: m.id, active: checked })}
+                        />
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Excluir motivo?</AlertDialogTitle>
+                              <AlertDialogDescription>Ocorrências existentes com este motivo não serão afetadas.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteMotive.mutate(m.id)}>
+                                SIM
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </SortableConfigItem>
+                  ))}
+                </SortableContext>
+              </DndContext>
             </TabsContent>
 
             <TabsContent value="statuses" className="space-y-3 mt-4">
