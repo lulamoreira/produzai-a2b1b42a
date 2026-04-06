@@ -155,16 +155,20 @@ const PublicOccurrence = () => {
 
   const SPECIAL_AGENCY = "__agency__";
   const SPECIAL_FORNECEDOR = "__fornecedor__";
+  const SPECIAL_CLIENTE = "__cliente__";
   const agencyName = (campaign as any)?.clients?.agencies?.name || "Agência";
+  const clientName2 = (campaign as any)?.clients?.name || "Cliente";
 
   // Reporter info (shared)
+  const [reporterType, setReporterType] = useState("");
+  const [specialStoreId, setSpecialStoreId] = useState("");
   const [storeId, setStoreId] = useState("");
   const [reporterName, setReporterName] = useState("");
   const [phoneDDD, setPhoneDDD] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [reporterEmail, setReporterEmail] = useState("");
 
-  const isSpecialReporter = storeId === SPECIAL_AGENCY || storeId === SPECIAL_FORNECEDOR;
+  const isSpecialReporter = reporterType === SPECIAL_AGENCY || reporterType === SPECIAL_FORNECEDOR || reporterType === SPECIAL_CLIENTE;
 
   // Multiple occurrences
   const [entries, setEntries] = useState<OccurrenceEntry[]>([emptyEntry()]);
