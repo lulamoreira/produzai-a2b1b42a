@@ -275,6 +275,9 @@ const PublicOccurrence = () => {
 
   const handleNew = () => {
     setEntries([emptyEntry()]);
+    setReporterType("");
+    setStoreId("");
+    setSpecialStoreId("");
     setSubmitted(false);
   };
 
