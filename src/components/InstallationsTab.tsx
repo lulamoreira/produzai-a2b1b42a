@@ -78,8 +78,12 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
   const { isAdminOrMaster } = useUserRole();
   const { hasPermission: canManageTeamCodes } = useClientPermission(clientId, "can_manage_team_codes");
   const showTeamCodesPanel = isAdminOrMaster || canManageTeamCodes;
+  const logActivity = useLogActivity();
   const [searchTerm, setSearchTerm] = useState("");
   const [showCodes, setShowCodes] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
+  const [logStoreId, setLogStoreId] = useState("");
+  const [logStoreName, setLogStoreName] = useState("");
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
   
