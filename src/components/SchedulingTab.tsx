@@ -320,8 +320,63 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     });
   };
 
+  const formatFieldValue = (field: string, value: any): string => {
+    if (value === null || value === undefined || value === "") return "(vazio)";
+    if (field === "store_approval_status" || field === "team_approval_status") {
+      if (value === "approved") return "Aprovado";
+      if (value === "rejected") return "Desaprovado";
+      if (value === "under_review") return "Em análise";
+      if (value === "pending") return "Pendente";
+      return String(value);
+    }
+    if (field === "responsibility") {
+      if (value === "team") return "Equipe";
+      if (value === "client") return "Cliente";
+      return String(value);
+    }
+    if (field === "installation_preference") return prefLabel(value);
+    if (field === "team_id") {
+      const team = value ? teamMap[value] : null;
+      return team?.name || "(nenhuma)";
+    }
+    if ((field === "scheduled_date" || field === "suggested_date" || field === "suggested_date_2") && value) {
+      try { return format(new Date(value + "T12:00:00"), "dd/MM/yyyy"); } catch { return String(value); }
+    }
+    if (field === "store_approved" || field === "team_approved") return value ? "Sim" : "Não";
+    return String(value);
+  };
+
   const handleMultiFieldChange = (storeId: string, fields: Record<string, any>) => {
     const existing = scheduleMap[storeId];
+
+    // Log each meaningful field change
+    const loggableFields: Record<string, string> = {
+      ...fieldLabels,
+      suggested_date_2: "Data Sugerida 2",
+      suggested_time_2: "Horário Sugerido 2",
+      store_approved: "Aprovação Lojista (bool)",
+      team_approved: "Aprovação Equipe (bool)",
+    };
+    const skipFields = ["store_approved_at", "team_approved_at", "responsibility_at", "store_approved", "team_approved"];
+    const changedDetails: string[] = [];
+    for (const [key, newVal] of Object.entries(fields)) {
+      if (skipFields.includes(key)) continue;
+      const label = loggableFields[key];
+      if (!label) continue;
+      const oldVal = existing ? (existing as any)[key] : null;
+      if (oldVal === newVal) continue;
+      changedDetails.push(`${label}: ${formatFieldValue(key, oldVal)} → ${formatFieldValue(key, newVal)}`);
+    }
+    if (changedDetails.length > 0) {
+      logActivity.mutate({
+        campaign_id: campaignId,
+        store_id: storeId,
+        module: "scheduling",
+        action: changedDetails.length === 1 ? `Alterou "${changedDetails[0].split(":")[0]}"` : "Alteração múltipla",
+        details: changedDetails.join("\n"),
+      });
+    }
+
     upsertSchedule.mutate({
       campaign_id: campaignId,
       store_id: storeId,
