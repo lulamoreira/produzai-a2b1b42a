@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle, Phone, MapPin, GripVertical } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle, Phone, MapPin, GripVertical, User } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
@@ -260,12 +260,17 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     addMotive.mutate(newMotive.trim(), { onSuccess: () => setNewMotive("") });
   };
 
-  const getStoreName = (id: string | null, reporterType?: string) => {
-    const storeName = id ? (stores.find((s) => s.id === id)?.nickname || stores.find((s) => s.id === id)?.name || "—") : "—";
-    if (reporterType === "agency") return `${agencyName} → ${storeName}`;
-    if (reporterType === "fornecedor") return `Fornecedor → ${storeName}`;
-    if (reporterType === "cliente") return `${clientName} → ${storeName}`;
-    return storeName;
+  const getReporterLabel = (reporterType?: string) => {
+    if (reporterType === "agency") return agencyName;
+    if (reporterType === "fornecedor") return "Fornecedor";
+    if (reporterType === "cliente") return clientName;
+    return null;
+  };
+
+  const getStoreName = (id: string | null) => {
+    if (!id) return "—";
+    const s = stores.find((s) => s.id === id);
+    return s?.nickname || s?.name || "—";
   };
 
   const getPieceName = (id: string) => {
@@ -424,10 +429,16 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   )}
                 </div>
 
-                {/* Store */}
+                {/* Reporter + Store */}
+                {getReporterLabel((occ as any).reporter_type) && (
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                    <span className="text-xs text-muted-foreground truncate">{getReporterLabel((occ as any).reporter_type)}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <Store className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                  <span className="text-sm font-semibold text-foreground truncate">{getStoreName(occ.store_id, (occ as any).reporter_type)}</span>
+                  <span className="text-sm font-semibold text-foreground truncate">{getStoreName(occ.store_id)}</span>
                 </div>
 
                 {/* Localização na Loja */}
