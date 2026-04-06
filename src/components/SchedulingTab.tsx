@@ -66,6 +66,22 @@ type Schedule = {
   responsibility_at: string | null;
   suggested_date: string | null;
   suggested_time: string | null;
+  // Reschedule fields
+  reschedule_enabled: boolean;
+  reschedule_date: string | null;
+  reschedule_time: string | null;
+  reschedule_os: string | null;
+  reschedule_preference: string | null;
+  reschedule_store_approval_status: ApprovalStatusValue;
+  reschedule_store_approved_at: string | null;
+  reschedule_team_approval_status: ApprovalStatusValue;
+  reschedule_team_approved_at: string | null;
+  reschedule_responsibility: string | null;
+  reschedule_responsibility_at: string | null;
+  reschedule_suggested_date: string | null;
+  reschedule_suggested_time: string | null;
+  reschedule_suggested_date_2: string | null;
+  reschedule_suggested_time_2: string | null;
 };
 
 const PREFERENCE_OPTIONS = [
