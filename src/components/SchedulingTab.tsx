@@ -114,6 +114,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyStoreId, setHistoryStoreId] = useState("");
   const [historyStoreName, setHistoryStoreName] = useState("");
+  const [logOpen, setLogOpen] = useState(false);
+  const [logStoreId, setLogStoreId] = useState("");
+  const [logStoreName, setLogStoreName] = useState("");
+  const { isAdminOrMaster } = useUserRole();
+  const logActivity = useLogActivity();
 
   // Unread message counts
   const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
