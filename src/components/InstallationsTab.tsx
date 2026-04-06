@@ -59,6 +59,14 @@ type Schedule = {
   team_approved: boolean;
   completed_at: string | null;
   completed_by: string | null;
+  // Reschedule fields
+  reschedule_enabled: boolean;
+  reschedule_date: string | null;
+  reschedule_time: string | null;
+  reschedule_os: string | null;
+  reschedule_preference: string | null;
+  reschedule_store_approval_status: string | null;
+  reschedule_team_approval_status: string | null;
 };
 
 const CATEGORY_OPTIONS = [
