@@ -8,11 +8,14 @@ import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
 import ScheduleCardChat from "@/components/ScheduleCardChat";
 import ScheduleHistorySheet from "@/components/ScheduleHistorySheet";
+import ActivityLogPanel from "@/components/ActivityLogPanel";
 import { useScheduleChatUnreadCounts, useMarkAsRead } from "@/hooks/useChatReadStatus";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useLogActivity } from "@/hooks/useActivityLogs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -111,6 +114,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyStoreId, setHistoryStoreId] = useState("");
   const [historyStoreName, setHistoryStoreName] = useState("");
+  const [logOpen, setLogOpen] = useState(false);
+  const [logStoreId, setLogStoreId] = useState("");
+  const [logStoreName, setLogStoreName] = useState("");
+  const { isAdminOrMaster } = useUserRole();
+  const logActivity = useLogActivity();
 
   // Unread message counts
   const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
@@ -265,8 +273,31 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
   }, [stores, filterState, filterCity, searchTerm, filterApproval, filterDate, filterPeriod, filterMessages, scheduleMap, chatCounts]);
 
+  const fieldLabels: Record<string, string> = {
+    scheduled_date: "Data",
+    scheduled_time: "Horário",
+    installation_os: "OS Instalação",
+    installation_preference: "Preferência",
+    team_id: "Equipe",
+    store_approval_status: "Aprovação Lojista",
+    team_approval_status: "Aprovação Equipe",
+    responsibility: "Responsável",
+    suggested_date: "Data Sugerida",
+    suggested_time: "Horário Sugerido",
+  };
+
   const handleFieldChange = (storeId: string, field: string, value: any) => {
     const existing = scheduleMap[storeId];
+    const storeName = stores.find(s => s.id === storeId)?.name || storeId;
+    const label = fieldLabels[field] || field;
+    const oldVal = existing ? (existing as any)[field] : null;
+    logActivity.mutate({
+      campaign_id: campaignId,
+      store_id: storeId,
+      module: "scheduling",
+      action: `Alterou "${label}"`,
+      details: `${oldVal ?? "(vazio)"} → ${value ?? "(vazio)"}`,
+    });
     upsertSchedule.mutate({
       campaign_id: campaignId,
       store_id: storeId,
@@ -580,6 +611,22 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 >
                   <History className="w-4 h-4" />
                 </Button>
+                {isAdminOrMaster && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    style={{ color: colors.text }}
+                    title="Log de Atividades"
+                    onClick={() => {
+                      setLogStoreId(store.id);
+                      setLogStoreName(store.name);
+                      setLogOpen(true);
+                    }}
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                  </Button>
+                )}
                 {/* Approval status icon */}
                 {fullyApproved ? (
                   <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
@@ -787,6 +834,18 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         storeId={historyStoreId}
         storeName={historyStoreName}
       />
+
+      {/* Per-card Activity Log (admin/master only) */}
+      {isAdminOrMaster && (
+        <ActivityLogPanel
+          open={logOpen}
+          onOpenChange={setLogOpen}
+          campaignId={campaignId}
+          storeId={logStoreId}
+          storeName={logStoreName}
+          module="scheduling"
+        />
+      )}
     </div>
   );
 };

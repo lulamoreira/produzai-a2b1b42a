@@ -11,6 +11,8 @@ import DebouncedInput from "@/components/DebouncedInput";
 import TeamCodesPanel from "@/components/TeamCodesPanel";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useClientPermission } from "@/hooks/useClientPermission";
+import { useLogActivity } from "@/hooks/useActivityLogs";
+import ActivityLogPanel from "@/components/ActivityLogPanel";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle,
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
-  Camera, Image, Upload, Plus, Key, CheckCircle, Download,
+  Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList,
 } from "lucide-react";
 import { downloadPhotosAsZip } from "@/lib/downloadPhotosZip";
 import { format } from "date-fns";
@@ -76,8 +78,12 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
   const { isAdminOrMaster } = useUserRole();
   const { hasPermission: canManageTeamCodes } = useClientPermission(clientId, "can_manage_team_codes");
   const showTeamCodesPanel = isAdminOrMaster || canManageTeamCodes;
+  const logActivity = useLogActivity();
   const [searchTerm, setSearchTerm] = useState("");
   const [showCodes, setShowCodes] = useState(false);
+  const [logOpen, setLogOpen] = useState(false);
+  const [logStoreId, setLogStoreId] = useState("");
+  const [logStoreName, setLogStoreName] = useState("");
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
   
@@ -185,6 +191,13 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
         toast.error("Erro ao enviar foto");
       }
     }
+    logActivity.mutate({
+      campaign_id: campaignId,
+      store_id: storeId,
+      module: "installations",
+      action: `Enviou ${files.length} foto(s)`,
+      details: `Categoria: ${category}`,
+    });
     toast.success(`${files.length} foto(s) enviada(s)!`);
   };
 
@@ -281,9 +294,23 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                     <Image className="w-3.5 h-3.5" /> {storePhotos.length}
                   </span>
                 )}
+                {isAdminOrMaster && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    style={{ color: colors.text }}
+                    title="Log de Atividades"
+                    onClick={() => {
+                      setLogStoreId(store.id);
+                      setLogStoreName(store.name);
+                      setLogOpen(true);
+                    }}
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
-
-              {/* Body */}
               <div className="p-4 space-y-3 bg-card flex-1">
                 {/* Address */}
                 <div className="text-xs text-muted-foreground">
@@ -459,6 +486,17 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
         </p>
       )}
 
+      {/* Activity Log (admin/master only) */}
+      {isAdminOrMaster && (
+        <ActivityLogPanel
+          open={logOpen}
+          onOpenChange={setLogOpen}
+          campaignId={campaignId}
+          storeId={logStoreId}
+          storeName={logStoreName}
+          module="installations"
+        />
+      )}
     </div>
   );
 };
