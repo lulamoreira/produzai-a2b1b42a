@@ -1,0 +1,16 @@
+ALTER TABLE public.campaign_schedules
+  ADD COLUMN reschedule_enabled boolean NOT NULL DEFAULT false,
+  ADD COLUMN reschedule_date text,
+  ADD COLUMN reschedule_time text,
+  ADD COLUMN reschedule_os text,
+  ADD COLUMN reschedule_preference text DEFAULT 'not_informed',
+  ADD COLUMN reschedule_store_approval_status text NOT NULL DEFAULT 'under_review',
+  ADD COLUMN reschedule_store_approved_at timestamptz,
+  ADD COLUMN reschedule_team_approval_status text NOT NULL DEFAULT 'under_review',
+  ADD COLUMN reschedule_team_approved_at timestamptz,
+  ADD COLUMN reschedule_responsibility text,
+  ADD COLUMN reschedule_responsibility_at timestamptz,
+  ADD COLUMN reschedule_suggested_date text,
+  ADD COLUMN reschedule_suggested_time text,
+  ADD COLUMN reschedule_suggested_date_2 text,
+  ADD COLUMN reschedule_suggested_time_2 text;
