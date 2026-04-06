@@ -54,6 +54,7 @@ export type ClientStore = {
   custom_field_5: string | null;
   observations: string | null;
   auto_distribute: boolean;
+  show_in_scheduling: boolean;
   created_at: string;
 };
 

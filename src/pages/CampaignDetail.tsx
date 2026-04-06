@@ -1025,6 +1025,7 @@ const CampaignDetail = () => {
                         </div>
                       </TableHead>
                       <TableHead className="text-center">Auto</TableHead>
+                      <TableHead className="text-center">Agend.</TableHead>
                       <TableHead className="text-center">Peças</TableHead>
                       <TableHead className="text-center">Qtd Total</TableHead>
                     </TableRow>
@@ -1079,6 +1080,15 @@ const CampaignDetail = () => {
                               checked={store.auto_distribute}
                               onCheckedChange={(checked) => {
                                 updateClientStore.mutate({ id: store.id, auto_distribute: checked });
+                              }}
+                              disabled={!canEditCampaignStores}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Switch
+                              checked={store.show_in_scheduling}
+                              onCheckedChange={(checked) => {
+                                updateClientStore.mutate({ id: store.id, show_in_scheduling: checked });
                               }}
                               disabled={!canEditCampaignStores}
                             />
@@ -2129,7 +2139,7 @@ const CampaignDetail = () => {
           {activeSection === "scheduling" && (
             <SchedulingTab
               campaignId={campaignId!}
-              stores={stores.filter((s) => isStoreEnabled(s.id))}
+              stores={stores.filter((s) => isStoreEnabled(s.id) && s.show_in_scheduling)}
               canEdit={canEditSchedules}
               agencyName={agency?.name || ""}
               clientName={client?.name || ""}
@@ -2143,7 +2153,7 @@ const CampaignDetail = () => {
             <InstallationsTab
               campaignId={campaignId!}
               campaignName={campaign?.name || ""}
-              stores={stores.filter((s) => isStoreEnabled(s.id))}
+              stores={stores.filter((s) => isStoreEnabled(s.id) && s.show_in_scheduling)}
               canEdit={canEditInstallations}
               clientId={clientId!}
             />
