@@ -128,6 +128,7 @@ const App = () => (
             <Route path="/installer" element={<InstallerDashboard />} />
             <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
             <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
