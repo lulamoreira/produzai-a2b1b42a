@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          campaign_id: string
+          created_at: string
+          details: string | null
+          id: string
+          module: string
+          store_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          campaign_id: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          module: string
+          store_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          campaign_id?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          module?: string
+          store_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       agencies: {
         Row: {
           color: string | null
