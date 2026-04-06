@@ -86,6 +86,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
   const [logStoreName, setLogStoreName] = useState("");
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"" | "completed" | "pending" | "no_photo">("");
   
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
 
