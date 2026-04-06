@@ -834,6 +834,18 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         storeId={historyStoreId}
         storeName={historyStoreName}
       />
+
+      {/* Per-card Activity Log (admin/master only) */}
+      {isAdminOrMaster && (
+        <ActivityLogPanel
+          open={logOpen}
+          onOpenChange={setLogOpen}
+          campaignId={campaignId}
+          storeId={logStoreId}
+          storeName={logStoreName}
+          module="scheduling"
+        />
+      )}
     </div>
   );
 };
