@@ -183,11 +183,13 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
         } else {
           const today = new Date();
           const todayStr = today.toISOString().slice(0, 10);
-          const isToday = schedule.scheduled_date === todayStr;
-          if (!isToday || !schedule.scheduled_time) {
+          const effDate = schedule.reschedule_enabled ? schedule.reschedule_date : schedule.scheduled_date;
+          const effTime = schedule.reschedule_enabled ? schedule.reschedule_time : schedule.scheduled_time;
+          const isToday = effDate === todayStr;
+          if (!isToday || !effTime) {
             matchesStatus = false;
           } else {
-            const [h, m] = schedule.scheduled_time.split(":").map(Number);
+            const [h, m] = effTime.split(":").map(Number);
             const scheduledMs = new Date(today.getFullYear(), today.getMonth(), today.getDate(), h, m).getTime();
             const threeHoursAgo = Date.now() - 3 * 60 * 60 * 1000;
             matchesStatus = scheduledMs <= threeHoursAgo;
