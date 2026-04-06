@@ -86,6 +86,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
   const [logStoreName, setLogStoreName] = useState("");
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"" | "completed" | "pending" | "no_photo">("");
   
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
 
@@ -155,13 +156,19 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
         s.store_code?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesState = !filterState || s.state?.trim() === filterState;
       const matchesCity = !filterCity || s.city === filterCity;
-      return matchesSearch && matchesState && matchesCity;
+      const schedule = scheduleMap[s.id];
+      const matchesStatus =
+        !filterStatus ||
+        (filterStatus === "completed" && !!schedule?.completed_at) ||
+        (filterStatus === "pending" && !schedule?.completed_at) ||
+        (filterStatus === "no_photo" && (photosByStore[s.id] || []).length === 0);
+      return matchesSearch && matchesState && matchesCity && matchesStatus;
     }).sort((a, b) => {
       const stateComp = (a.state || "").localeCompare(b.state || "");
       if (stateComp !== 0) return stateComp;
       return a.name.localeCompare(b.name);
     });
-  }, [scheduledStores, searchTerm, filterState, filterCity]);
+  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, scheduleMap, photosByStore]);
 
   const handleUploadPhoto = async (storeId: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -250,6 +257,16 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
           >
             <option value="">Todas cidades</option>
             {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as any)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+          >
+            <option value="">Todos status</option>
+            <option value="completed">✅ Concluídas</option>
+            <option value="pending">⏳ Pendentes</option>
+            <option value="no_photo">📷 Sem fotos</option>
           </select>
         </div>
       </div>
