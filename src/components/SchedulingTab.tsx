@@ -386,7 +386,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       store_approved: "Aprovação Lojista (bool)",
       team_approved: "Aprovação Equipe (bool)",
     };
-    const skipFields = ["store_approved_at", "team_approved_at", "responsibility_at", "store_approved", "team_approved"];
+    const skipFields = ["store_approved_at", "team_approved_at", "responsibility_at", "store_approved", "team_approved", "reschedule_store_approved_at", "reschedule_team_approved_at", "reschedule_responsibility_at"];
     const changedDetails: string[] = [];
     for (const [key, newVal] of Object.entries(fields)) {
       if (skipFields.includes(key)) continue;
