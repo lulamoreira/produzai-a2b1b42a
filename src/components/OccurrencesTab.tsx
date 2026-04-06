@@ -143,6 +143,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   };
 
 
+  const getStatusLabel = (value: string) => {
     return statuses.find((s) => s.value === value)?.label || value;
   };
   const getStatusColor = (value: string) => {
