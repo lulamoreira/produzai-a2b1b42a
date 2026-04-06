@@ -156,13 +156,19 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
         s.store_code?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesState = !filterState || s.state?.trim() === filterState;
       const matchesCity = !filterCity || s.city === filterCity;
-      return matchesSearch && matchesState && matchesCity;
+      const schedule = scheduleMap[s.id];
+      const matchesStatus =
+        !filterStatus ||
+        (filterStatus === "completed" && !!schedule?.completed_at) ||
+        (filterStatus === "pending" && !schedule?.completed_at) ||
+        (filterStatus === "no_photo" && (photosByStore[s.id] || []).length === 0);
+      return matchesSearch && matchesState && matchesCity && matchesStatus;
     }).sort((a, b) => {
       const stateComp = (a.state || "").localeCompare(b.state || "");
       if (stateComp !== 0) return stateComp;
       return a.name.localeCompare(b.name);
     });
-  }, [scheduledStores, searchTerm, filterState, filterCity]);
+  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, scheduleMap, photosByStore]);
 
   const handleUploadPhoto = async (storeId: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
