@@ -24,6 +24,7 @@ import Chat from "./pages/Chat";
 import MyCampaigns from "./pages/MyCampaigns";
 import PhotoCheckin from "./pages/PhotoCheckin";
 import InstallerDashboard from "./pages/InstallerDashboard";
+import Unsubscribe from "./pages/Unsubscribe";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -127,6 +128,7 @@ const App = () => (
             <Route path="/installer" element={<InstallerDashboard />} />
             <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
             <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
