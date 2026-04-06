@@ -122,15 +122,41 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
                     className="w-full aspect-square object-cover cursor-pointer transition-transform hover:scale-105"
                     onClick={() => setLightboxIndex(i)}
                   />
-                  {/* Category badge */}
-                  <span className={cn(
-                    "absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white",
-                    photo.category === "before" && "bg-blue-500",
-                    photo.category === "during" && "bg-amber-500",
-                    photo.category === "after" && "bg-emerald-500",
-                  )}>
-                    {CATEGORIES.find((c) => c.value === photo.category)?.label || photo.category}
-                  </span>
+                  {/* Category badge - clickable dropdown for Admin/Master */}
+                  {isAdminOrMaster ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <button className={cn(
+                          "absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white cursor-pointer hover:opacity-80 transition-opacity",
+                          photo.category === "before" && "bg-blue-500",
+                          photo.category === "during" && "bg-amber-500",
+                          photo.category === "after" && "bg-emerald-500",
+                        )}>
+                          {CATEGORIES.find((c) => c.value === photo.category)?.label || photo.category}
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="min-w-[100px]">
+                        {CATEGORIES.map((cat) => (
+                          <DropdownMenuItem
+                            key={cat.value}
+                            className={cn("text-xs", photo.category === cat.value && "font-bold")}
+                            onClick={(e) => { e.stopPropagation(); handleChangeCategory(photo, cat.value); }}
+                          >
+                            {cat.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : (
+                    <span className={cn(
+                      "absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white",
+                      photo.category === "before" && "bg-blue-500",
+                      photo.category === "during" && "bg-amber-500",
+                      photo.category === "after" && "bg-emerald-500",
+                    )}>
+                      {CATEGORIES.find((c) => c.value === photo.category)?.label || photo.category}
+                    </span>
+                  )}
                   {/* Action buttons on hover */}
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
