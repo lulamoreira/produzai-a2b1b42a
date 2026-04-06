@@ -24,6 +24,7 @@ import Chat from "./pages/Chat";
 import MyCampaigns from "./pages/MyCampaigns";
 import PhotoCheckin from "./pages/PhotoCheckin";
 import InstallerDashboard from "./pages/InstallerDashboard";
+import Unsubscribe from "./pages/Unsubscribe";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
