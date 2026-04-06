@@ -58,6 +58,7 @@ type Schedule = {
   store_approved: boolean;
   team_approved: boolean;
   completed_at: string | null;
+  completed_by: string | null;
 };
 
 const CATEGORY_OPTIONS = [
