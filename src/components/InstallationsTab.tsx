@@ -486,6 +486,17 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
         </p>
       )}
 
+      {/* Activity Log (admin/master only) */}
+      {isAdminOrMaster && (
+        <ActivityLogPanel
+          open={logOpen}
+          onOpenChange={setLogOpen}
+          campaignId={campaignId}
+          storeId={logStoreId}
+          storeName={logStoreName}
+          module="installations"
+        />
+      )}
     </div>
   );
 };
