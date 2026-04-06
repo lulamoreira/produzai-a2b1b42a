@@ -1085,6 +1085,15 @@ const CampaignDetail = () => {
                             />
                           </TableCell>
                           <TableCell className="text-center">
+                            <Switch
+                              checked={store.show_in_scheduling}
+                              onCheckedChange={(checked) => {
+                                updateClientStore.mutate({ id: store.id, show_in_scheduling: checked });
+                              }}
+                              disabled={!canEditCampaignStores}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
                             <span className={`text-sm font-medium ${stats.pieceCount > 0 ? "text-primary" : "text-muted-foreground"}`}>
                               {stats.pieceCount} / {visiblePieces.length + kits.length}
                             </span>
