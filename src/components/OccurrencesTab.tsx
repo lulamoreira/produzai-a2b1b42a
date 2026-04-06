@@ -86,6 +86,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     enabled: !!campaignId,
   });
   const agencyName = (campaignInfo as any)?.clients?.agencies?.name || "Agência";
+  const clientName = (campaignInfo as any)?.clients?.name || "Cliente";
 
   // Fetch WhatsApp message templates
   const { data: whatsappLinkTemplate } = useQuery({
