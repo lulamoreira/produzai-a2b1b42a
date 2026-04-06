@@ -2139,7 +2139,7 @@ const CampaignDetail = () => {
           {activeSection === "scheduling" && (
             <SchedulingTab
               campaignId={campaignId!}
-              stores={stores.filter((s) => isStoreEnabled(s.id))}
+              stores={stores.filter((s) => isStoreEnabled(s.id) && s.show_in_scheduling)}
               canEdit={canEditSchedules}
               agencyName={agency?.name || ""}
               clientName={client?.name || ""}
