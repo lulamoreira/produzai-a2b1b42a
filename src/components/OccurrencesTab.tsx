@@ -429,10 +429,16 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   )}
                 </div>
 
-                {/* Store */}
+                {/* Reporter + Store */}
+                {getReporterLabel((occ as any).reporter_type) && (
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                    <span className="text-xs text-muted-foreground truncate">{getReporterLabel((occ as any).reporter_type)}</span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <Store className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                  <span className="text-sm font-semibold text-foreground truncate">{getStoreName(occ.store_id, (occ as any).reporter_type)}</span>
+                  <span className="text-sm font-semibold text-foreground truncate">{getStoreName(occ.store_id)}</span>
                 </div>
 
                 {/* Localização na Loja */}
