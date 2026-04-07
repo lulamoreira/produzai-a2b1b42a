@@ -230,7 +230,7 @@ const PublicOccurrence = () => {
   const allEntriesValid = entries.every((e) => {
     const isGeral = e.locationInStore === GERAL_LOCATION;
     const hasPiece = isGeral || !!e.pieceId;
-    const hasLocation = locations.length === 0 || !!e.locationInStore;
+    const hasLocation = !!e.locationInStore;
     return hasPiece && e.motiveId && hasLocation;
   });
   const reporterValid = isSpecialReporter
@@ -484,23 +484,21 @@ const PublicOccurrence = () => {
                 )}
               </div>
 
-              {locations.length > 0 && (
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">Localização na Loja *</label>
-                  <Select value={entry.locationInStore} onValueChange={(v) => updateEntry(idx, { locationInStore: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a localização" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={GERAL_LOCATION}>
-                        <span className="font-bold text-primary">🏪 GERAL - NA LOJA TODA</span>
-                      </SelectItem>
-                      <SelectSeparator />
-                      {locations.map((loc) => (
-                        <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Localização na Loja *</label>
+                <Select value={entry.locationInStore} onValueChange={(v) => updateEntry(idx, { locationInStore: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a localização" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={GERAL_LOCATION}>
+                      <span className="font-bold text-primary">🏪 GERAL - NA LOJA TODA</span>
+                    </SelectItem>
+                    {locations.length > 0 && <SelectSeparator />}
+                    {locations.map((loc) => (
+                      <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {entry.locationInStore === GERAL_LOCATION ? (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
@@ -516,10 +514,10 @@ const PublicOccurrence = () => {
                   <Select
                     value={entry.pieceId}
                     onValueChange={(v) => updateEntry(idx, { pieceId: v })}
-                    disabled={locations.length > 0 && !entry.locationInStore}
+                    disabled={!entry.locationInStore}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={locations.length > 0 && !entry.locationInStore ? "Selecione a localização primeiro" : "Selecione a peça"} />
+                      <SelectValue placeholder={!entry.locationInStore ? "Selecione a localização primeiro" : "Selecione a peça"} />
                     </SelectTrigger>
                     <SelectContent>
                       {(() => {
