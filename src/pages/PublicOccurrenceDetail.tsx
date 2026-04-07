@@ -339,7 +339,19 @@ const PublicOccurrenceDetail = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-center gap-3 pt-4 pb-2">
+        <div className="flex items-center justify-center gap-3 pt-4 pb-2 flex-wrap">
+          {occurrence.reporter_email && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              disabled={sendTrackingEmail.isPending || emailSent}
+              onClick={() => sendTrackingEmail.mutate()}
+            >
+              <Mail className="w-4 h-4" />
+              {emailSent ? "Email Enviado ✓" : sendTrackingEmail.isPending ? "Enviando..." : "Enviar por Email"}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
