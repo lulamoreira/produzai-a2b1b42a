@@ -17,12 +17,7 @@ export async function compressVideo(
   }
 
   // Check browser support
-  if (
-    typeof VideoFrame === "undefined" ||
-    typeof MediaStreamTrackGenerator === "undefined" ||
-    !("MediaRecorder" in window)
-  ) {
-    // Fallback: just return original if APIs not available
+  if (!("MediaRecorder" in window)) {
     console.warn("Video compression APIs not supported, uploading original");
     return file;
   }
