@@ -313,7 +313,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
       <p className="text-xs text-muted-foreground">{filteredStores.length} loja(s) com agendamento</p>
 
       {/* Store Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4">
         {filteredStores.map((store) => {
           const colors = getStateColor(store.state);
           const schedule = scheduleMap[store.id];
