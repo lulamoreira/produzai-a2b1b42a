@@ -780,6 +780,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 {isReschedule && (
                   <span className="absolute top-1 right-1 text-[8px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full leading-none">REM</span>
                 )}
+                {isCardLocked && !isReschedule && (
+                  <span className="absolute top-1 right-1 text-[8px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5">
+                    <Lock className="w-2.5 h-2.5" /> BLOQ
+                  </span>
+                )}
+                {isCardLocked && isReschedule && (
+                  <span className="absolute top-1 left-1 text-[8px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5">
+                    <Lock className="w-2.5 h-2.5" /> BLOQ
+                  </span>
+                )}
               </div>
 
               {/* Body */}
