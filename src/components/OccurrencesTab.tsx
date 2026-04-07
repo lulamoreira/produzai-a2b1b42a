@@ -105,9 +105,6 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     },
   });
   const activeStatuses = useMemo(() => statuses.filter((s) => s.active), [statuses]);
-  const updateStatus = useUpdateOccurrenceStatus();
-  const updateFields = useUpdateOccurrenceFields();
-  const deleteOcc = useDeleteOccurrence();
   const addEmail = useAddCampaignEmail();
   const deleteEmail = useDeleteCampaignEmail();
   const addMotive = useAddOccurrenceMotive();
