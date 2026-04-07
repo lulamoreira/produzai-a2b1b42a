@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import AppSidebar from "@/components/AppSidebar";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useSidebarState } from "@/hooks/useSidebarState";
 
 export interface BreadcrumbItem {
   label: string;
@@ -18,6 +19,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children, breadcrumbs, title, headerRight }: AppLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { collapsed } = useSidebarState();
 
   const isRootPage = location.pathname === "/" || location.pathname === "/admin" || location.pathname === "/chat" || location.pathname === "/my-campaigns" || location.pathname === "/approvals";
 
@@ -74,7 +76,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
         </button>
       )}
 
-      <div className="min-h-dvh lg:pl-[220px] transition-all duration-300">
+      <div className={`min-h-dvh transition-all duration-300 ${collapsed ? "lg:pl-[60px]" : "lg:pl-[220px]"}`}>
         {(breadcrumbs || title || headerRight || !isRootPage) && (
           <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-2">
             <div className="flex items-center justify-between gap-3">

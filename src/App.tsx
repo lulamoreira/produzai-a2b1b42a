@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { SidebarStateProvider } from "@/hooks/useSidebarState";
 import { useUserApprovalStatus } from "@/hooks/useUserApproval";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useProcessInvite } from "@/hooks/useProcessInvite";
@@ -113,6 +114,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <SidebarStateProvider>
           <Routes>
             <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
@@ -132,6 +134,7 @@ const App = () => (
             <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </SidebarStateProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

@@ -459,7 +459,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           <p className="text-muted-foreground text-sm">Nenhuma ocorrência registrada.</p>
         </div>
       ) : (
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 grid-cols-1 md:grid-cols-2 2xl:grid-cols-3">
           {filteredOccurrences.map((occ) => {
             const motiveIdx = motives.findIndex((m) => m.id === occ.motive_id);
             const MOTIVE_COLORS = [

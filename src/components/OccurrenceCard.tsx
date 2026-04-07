@@ -405,18 +405,18 @@ export default function OccurrenceCard({
 
       {/* Reporter + Store */}
       {getReporterLabel((occ as any).reporter_type) && (
-        <div className="flex items-center gap-1.5 mb-1">
+        <div className="flex items-start gap-1.5 mb-1">
           <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-          <span className="text-xs text-muted-foreground truncate">{getReporterLabel((occ as any).reporter_type)}</span>
+          <span className="text-xs text-muted-foreground break-words">{getReporterLabel((occ as any).reporter_type)}</span>
         </div>
       )}
-      <div className="flex items-center gap-1.5 mb-1.5">
+      <div className="flex items-start gap-1.5 mb-1.5">
         <Store className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-        <span className="text-sm font-semibold text-foreground truncate">{getStoreName(occ.store_id)}</span>
+        <span className="text-sm font-semibold text-foreground break-words">{getStoreName(occ.store_id)}</span>
       </div>
 
       {/* Editable Location */}
-      <div className="flex items-center gap-1.5 mb-1.5">
+      <div className="flex items-start gap-1.5 mb-1.5">
         <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
         {editingLocation ? (
           <Select value={merged.location_in_store || ""} onValueChange={handleLocationChange}>
@@ -429,7 +429,7 @@ export default function OccurrenceCard({
           </Select>
         ) : (
           <>
-            <span className="text-xs text-muted-foreground truncate">{merged.location_in_store || "—"}</span>
+            <span className="text-xs text-muted-foreground break-words">{merged.location_in_store || "—"}</span>
             {canEdit && (
               <button type="button" onClick={() => setEditingLocation(true)} className="text-muted-foreground hover:text-primary transition-colors ml-auto flex-shrink-0">
                 <Pencil className="w-3 h-3" />
@@ -441,7 +441,7 @@ export default function OccurrenceCard({
 
       {/* Editable Piece */}
       {!isGeral ? (
-        <div className="flex items-center gap-1.5 mb-3">
+        <div className="flex items-start gap-1.5 mb-3">
           <Puzzle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           {editingPiece ? (
             <Select
@@ -457,7 +457,7 @@ export default function OccurrenceCard({
             </Select>
           ) : (
             <>
-              <span className="text-xs text-muted-foreground truncate">{pieceDisplayName}</span>
+              <span className="text-xs text-muted-foreground break-words">{pieceDisplayName}</span>
               {canEdit && (
                 <button type="button" onClick={() => setEditingPiece(true)} className="text-muted-foreground hover:text-primary transition-colors ml-auto flex-shrink-0">
                   <Pencil className="w-3 h-3" />
