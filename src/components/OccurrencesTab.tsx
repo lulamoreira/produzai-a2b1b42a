@@ -311,10 +311,29 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     );
   };
 
+  const PRIORITY_OPTIONS = [
+    { value: "critica", label: "Crítica", color: "#dc2626" },
+    { value: "alta", label: "Alta", color: "#f97316" },
+    { value: "media", label: "Média", color: "#eab308" },
+    { value: "baixa", label: "Baixa", color: "#22c55e" },
+  ];
+
+  const togglePriority = (value: string) => {
+    setSelectedPriorities((prev) =>
+      prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value]
+    );
+  };
+
   const filteredOccurrences = useMemo(() => {
-    if (selectedStatuses.length === 0) return occurrences;
-    return occurrences.filter((occ) => selectedStatuses.includes(occ.status || defaultStatus));
-  }, [occurrences, selectedStatuses, defaultStatus]);
+    let result = occurrences;
+    if (selectedStatuses.length > 0) {
+      result = result.filter((occ) => selectedStatuses.includes(occ.status || defaultStatus));
+    }
+    if (selectedPriorities.length > 0) {
+      result = result.filter((occ) => selectedPriorities.includes((occ as any).priority || "media"));
+    }
+    return result;
+  }, [occurrences, selectedStatuses, selectedPriorities, defaultStatus]);
 
   const handleDownloadQR = () => {
     const svg = qrRef.current?.querySelector("svg");
