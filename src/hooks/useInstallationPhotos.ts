@@ -11,7 +11,12 @@ export type InstallationPhoto = {
   created_at: string;
   uploaded_by: string | null;
   upload_method: string;
+  media_type: string;
 };
+
+export function isVideo(photo: InstallationPhoto) {
+  return photo.media_type === "video";
+}
 
 export function useInstallationPhotos(campaignId: string | undefined) {
   return useQuery({
@@ -41,6 +46,7 @@ export function useAddInstallationPhoto() {
       caption?: string;
       uploaded_by?: string;
       upload_method?: string;
+      media_type?: string;
     }) => {
       const { data, error } = await supabase
         .from("installation_photos")

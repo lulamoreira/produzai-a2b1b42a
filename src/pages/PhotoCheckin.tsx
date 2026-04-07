@@ -2,16 +2,17 @@ import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useInstallationPhotos, useAddInstallationPhoto, useUpdateInstallationPhoto, useDeleteInstallationPhoto, type InstallationPhoto } from "@/hooks/useInstallationPhotos";
+import { useInstallationPhotos, useAddInstallationPhoto, useUpdateInstallationPhoto, useDeleteInstallationPhoto, type InstallationPhoto, isVideo } from "@/hooks/useInstallationPhotos";
 import { useAuth } from "@/hooks/useAuth";
 import { compressImage } from "@/lib/compressImage";
+import { compressVideo } from "@/lib/compressVideo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Camera, Upload, Trash2, Edit3, X, ChevronLeft, ChevronRight, Image, Download } from "lucide-react";
+import { ArrowLeft, Camera, Upload, Trash2, Edit3, X, ChevronLeft, ChevronRight, Image, Download, Video } from "lucide-react";
 import { downloadPhotosAsZip } from "@/lib/downloadPhotosZip";
 
 const CATEGORIES = [
@@ -78,10 +79,18 @@ export default function PhotoCheckin() {
     if (!files || !campaignId || !storeId || !user) return;
     for (const file of Array.from(files)) {
       try {
-        const compressed = await compressImage(file);
-        const ext = file.name.split(".").pop() || "jpg";
+        const fileIsVideo = file.type.startsWith("video/");
+        let blob: Blob;
+        if (fileIsVideo) {
+          toast.info("Processando vídeo, aguarde...");
+          blob = await compressVideo(file);
+        } else {
+          blob = await compressImage(file);
+        }
+        const ext = fileIsVideo ? "webm" : (file.name.split(".").pop() || "jpg");
         const path = `${campaignId}/${storeId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: upErr } = await supabase.storage.from("installation-photos").upload(path, compressed);
+        const contentType = fileIsVideo ? (blob.type || "video/webm") : "image/jpeg";
+        const { error: upErr } = await supabase.storage.from("installation-photos").upload(path, blob, { contentType });
         if (upErr) throw upErr;
         const { data: urlData } = supabase.storage.from("installation-photos").getPublicUrl(path);
         await addPhoto.mutateAsync({
@@ -91,10 +100,11 @@ export default function PhotoCheckin() {
           category,
           uploaded_by: user.id,
           upload_method: method,
+          media_type: fileIsVideo ? "video" : "photo",
         });
-        toast.success("Foto enviada!");
+        toast.success(fileIsVideo ? "Vídeo enviado!" : "Foto enviada!");
       } catch (err: any) {
-        toast.error("Erro ao enviar foto: " + err.message);
+        toast.error("Erro ao enviar: " + err.message);
       }
     }
   };
@@ -168,7 +178,7 @@ export default function PhotoCheckin() {
 
         {/* Upload controls */}
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <h2 className="text-sm font-semibold">Adicionar fotos</h2>
+          <h2 className="text-sm font-semibold">Adicionar fotos e vídeos</h2>
           <div className="flex items-center gap-2 flex-wrap">
             <select
               value={uploadCategory}
@@ -183,11 +193,12 @@ export default function PhotoCheckin() {
               <Upload className="w-3.5 h-3.5" /> Enviar arquivo
             </Button>
             <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => cameraRef.current?.click()}>
-              <Camera className="w-3.5 h-3.5" /> Tirar foto
+              <Camera className="w-3.5 h-3.5" /> Tirar foto/vídeo
             </Button>
           </div>
-          <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory, "upload")} />
-          <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory, "camera")} />
+          <p className="text-[10px] text-muted-foreground">Aceita imagens e vídeos (MP4, MOV, WebM). Vídeos acima de 10 MB serão comprimidos automaticamente.</p>
+          <input ref={fileRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory, "upload")} />
+          <input ref={cameraRef} type="file" accept="image/*,video/*" capture="environment" className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory, "camera")} />
         </div>
 
         {/* Category filter */}
@@ -244,12 +255,21 @@ export default function PhotoCheckin() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {filteredPhotos.map((photo, i) => (
               <div key={photo.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted/30">
-                <img
-                  src={photo.photo_url}
-                  alt={photo.caption || `Foto ${i + 1}`}
-                  className="w-full aspect-square object-cover cursor-pointer transition-transform hover:scale-105"
-                  onClick={() => setLightboxIndex(i)}
-                />
+                {isVideo(photo) ? (
+                  <div className="w-full aspect-square relative cursor-pointer bg-black flex items-center justify-center" onClick={() => setLightboxIndex(i)}>
+                    <video src={photo.photo_url} className="w-full h-full object-cover" muted preload="metadata" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <Video className="w-8 h-8 text-white" />
+                    </div>
+                  </div>
+                ) : (
+                  <img
+                    src={photo.photo_url}
+                    alt={photo.caption || `Foto ${i + 1}`}
+                    className="w-full aspect-square object-cover cursor-pointer transition-transform hover:scale-105"
+                    onClick={() => setLightboxIndex(i)}
+                  />
+                )}
                 <span className={cn(
                   "absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white",
                   photo.category === "before" && "bg-blue-500",
@@ -316,12 +336,22 @@ export default function PhotoCheckin() {
             </>
           )}
 
-          <img
-            src={currentLightbox.photo_url}
-            alt={currentLightbox.caption || "Foto"}
-            className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {isVideo(currentLightbox) ? (
+            <video
+              src={currentLightbox.photo_url}
+              controls
+              autoPlay
+              className="max-w-[90vw] max-h-[75vh] rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <img
+              src={currentLightbox.photo_url}
+              alt={currentLightbox.caption || "Foto"}
+              className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
 
           <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-4 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
             <p className="text-center text-xs text-white/70 flex items-center justify-center gap-1.5">

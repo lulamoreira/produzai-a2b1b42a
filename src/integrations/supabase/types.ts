@@ -1135,6 +1135,7 @@ export type Database = {
           category: string
           created_at: string
           id: string
+          media_type: string
           photo_url: string
           store_id: string
           upload_method: string
@@ -1146,6 +1147,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          media_type?: string
           photo_url: string
           store_id: string
           upload_method?: string
@@ -1157,6 +1159,7 @@ export type Database = {
           category?: string
           created_at?: string
           id?: string
+          media_type?: string
           photo_url?: string
           store_id?: string
           upload_method?: string
