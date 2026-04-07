@@ -64,6 +64,19 @@ const PublicOccurrenceDetail = () => {
     enabled: !!occurrenceId,
   });
 
+  // Fetch notification emails for the campaign (for CC options)
+  const { data: notificationEmails = [] } = useQuery({
+    queryKey: ["public_occ_notif_emails", occurrence?.campaign_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaign_notification_emails")
+        .select("email")
+        .eq("campaign_id", occurrence!.campaign_id);
+      return (data || []).map((e: any) => e.email).filter((e: string) => e !== occurrence?.reporter_email);
+    },
+    enabled: !!occurrence?.campaign_id,
+  });
+
   const { data: campaign } = useQuery({
     queryKey: ["public_occ_campaign", occurrence?.campaign_id],
     queryFn: async () => {
@@ -359,10 +372,14 @@ const PublicOccurrenceDetail = () => {
               size="sm"
               className="gap-2"
               disabled={sendTrackingEmail.isPending || emailSent}
-              onClick={() => sendTrackingEmail.mutate()}
+              onClick={() => {
+                setSelectedCcEmails([]);
+                setCustomEmail("");
+                setShowEmailDialog(true);
+              }}
             >
               <Mail className="w-4 h-4" />
-              {emailSent ? "Email Enviado ✓" : sendTrackingEmail.isPending ? "Enviando..." : "Enviar por Email"}
+              {emailSent ? "Email Enviado ✓" : "Enviar por Email"}
             </Button>
           )}
           <Button
@@ -402,6 +419,94 @@ const PublicOccurrenceDetail = () => {
             Fechar
           </Button>
         </div>
+
+        {/* Email Dialog */}
+        <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-primary" />
+                Enviar Email de Acompanhamento
+              </DialogTitle>
+              <DialogDescription>
+                O email será enviado para <strong>{occurrence.reporter_email}</strong>.
+                Deseja enviar cópia para mais alguém?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Registered emails */}
+              {notificationEmails.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Emails cadastrados:</p>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {notificationEmails.map((email: string) => (
+                      <label key={email} className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                        <Checkbox
+                          checked={selectedCcEmails.includes(email)}
+                          onCheckedChange={(checked) => {
+                            setSelectedCcEmails(prev =>
+                              checked ? [...prev, email] : prev.filter(e => e !== email)
+                            );
+                          }}
+                        />
+                        <span className="text-sm text-foreground truncate">{email}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Custom email */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Outro email:</p>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="email@exemplo.com"
+                    value={customEmail}
+                    onChange={(e) => setCustomEmail(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!customEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customEmail) || selectedCcEmails.includes(customEmail)}
+                    onClick={() => {
+                      if (customEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customEmail)) {
+                        setSelectedCcEmails(prev => [...prev, customEmail]);
+                        setCustomEmail("");
+                      }
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                {/* Show added custom emails */}
+                {selectedCcEmails.filter(e => !notificationEmails.includes(e)).map(email => (
+                  <div key={email} className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-3 py-1.5">
+                    <Check className="w-3 h-3 text-primary" />
+                    <span className="flex-1 truncate">{email}</span>
+                    <button onClick={() => setSelectedCcEmails(prev => prev.filter(e => e !== email))} className="text-muted-foreground hover:text-destructive">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="ghost" onClick={() => setShowEmailDialog(false)}>Cancelar</Button>
+              <Button
+                disabled={sendTrackingEmail.isPending}
+                onClick={() => sendTrackingEmail.mutate(selectedCcEmails)}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                {sendTrackingEmail.isPending ? "Enviando..." : `Enviar${selectedCcEmails.length > 0 ? ` (${1 + selectedCcEmails.length})` : ""}`}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Footer */}
         <div className="text-center pb-8">
