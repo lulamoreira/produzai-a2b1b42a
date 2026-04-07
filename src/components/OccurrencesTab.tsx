@@ -8,8 +8,8 @@ import {
 } from "@/hooks/useOccurrences";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
-import { useCampaignPieceLocations } from "@/hooks/useMultiClientData";
+import type { CampaignKit, CampaignKitPiece, CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
+import { useCampaignKitPieces, useCampaignKits, useCampaignPieceLocations } from "@/hooks/useMultiClientData";
 import OccurrenceDetailFields from "./OccurrenceDetailFields";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
@@ -57,16 +57,91 @@ function SortableConfigItem({ id, children }: { id: string; children: React.Reac
   );
 }
 
+const GERAL_LOCATION = "GERAL - NA LOJA TODA";
+
+type OccurrencePieceOption = {
+  value: string;
+  label: string;
+  sortOrder: number;
+};
+
+function getOccurrencePieceOptions({
+  location,
+  pieces,
+  kits,
+  kitPieces,
+}: {
+  location: string | null | undefined;
+  pieces: CampaignPiece[];
+  kits: CampaignKit[];
+  kitPieces: CampaignKitPiece[];
+}) {
+  if (!location || location === GERAL_LOCATION) return [] as OccurrencePieceOption[];
+
+  const filteredPieces = pieces.filter((piece) => piece.category === location);
+  const kitPieceIds = new Set(kitPieces.map((kitPiece) => kitPiece.piece_id));
+
+  const standalonePieces: OccurrencePieceOption[] = filteredPieces
+    .filter((piece) => !piece.kit_only && !kitPieceIds.has(piece.id))
+    .map((piece) => ({
+      value: piece.id,
+      label: `${piece.code} - ${piece.name}`,
+      sortOrder: piece.display_order,
+    }));
+
+  const kitItems: OccurrencePieceOption[] = kits
+    .map((kit) => {
+      const memberPieceIds = kitPieces
+        .filter((kitPiece) => kitPiece.kit_id === kit.id)
+        .map((kitPiece) => kitPiece.piece_id);
+      const firstMemberPiece = filteredPieces.find((piece) => memberPieceIds.includes(piece.id));
+
+      if (!firstMemberPiece) return null;
+
+      return {
+        value: firstMemberPiece.id,
+        label: `Kit ${kit.code} - ${kit.name}`,
+        sortOrder: kit.display_order,
+      } satisfies OccurrencePieceOption;
+    })
+    .filter((item): item is OccurrencePieceOption => item !== null);
+
+  return [...standalonePieces, ...kitItems].sort(
+    (a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label, "pt-BR")
+  );
+}
+
 function EditableLocationPiece({
-  occ, campaignId, pieceLocations, pieces, canEdit, getPieceName, updateFields,
+  occ, campaignId, pieceLocations, pieces, kits, kitPieces, canEdit, getPieceName, updateFields,
 }: {
   occ: any; campaignId: string; pieceLocations: { id: string; name: string }[];
-  pieces: CampaignPiece[]; canEdit: boolean; getPieceName: (id: string) => string;
+  pieces: CampaignPiece[]; kits: CampaignKit[]; kitPieces: CampaignKitPiece[]; canEdit: boolean; getPieceName: (id: string | null) => string;
   updateFields: any;
 }) {
   const [editingLocation, setEditingLocation] = useState(false);
   const [editingPiece, setEditingPiece] = useState(false);
-  const isGeral = occ.location_in_store === "GERAL - NA LOJA TODA";
+  const isGeral = occ.location_in_store === GERAL_LOCATION;
+  const pieceOptions = useMemo(
+    () => getOccurrencePieceOptions({ location: occ.location_in_store, pieces, kits, kitPieces }),
+    [occ.location_in_store, pieces, kits, kitPieces]
+  );
+  const selectedPieceOption = pieceOptions.find((option) => option.value === occ.piece_id);
+  const pieceDisplayName = selectedPieceOption?.label ?? (occ.location_in_store ? "—" : getPieceName(occ.piece_id));
+
+  const handleLocationChange = (value: string) => {
+    const nextOptions = getOccurrencePieceOptions({ location: value, pieces, kits, kitPieces });
+    const shouldClearPiece = value === GERAL_LOCATION || !occ.piece_id || !nextOptions.some((option) => option.value === occ.piece_id);
+
+    updateFields.mutate({
+      id: occ.id,
+      campaignId,
+      location_in_store: value,
+      ...(shouldClearPiece ? { piece_id: null } : {}),
+    });
+
+    setEditingLocation(false);
+    if (shouldClearPiece) setEditingPiece(false);
+  };
 
   return (
     <>
@@ -75,19 +150,13 @@ function EditableLocationPiece({
         {editingLocation ? (
           <Select
             value={occ.location_in_store || ""}
-            onValueChange={(val) => {
-              updateFields.mutate({ id: occ.id, campaignId, location_in_store: val });
-              if (val === "GERAL - NA LOJA TODA") {
-                updateFields.mutate({ id: occ.id, campaignId, piece_id: null });
-              }
-              setEditingLocation(false);
-            }}
+            onValueChange={handleLocationChange}
           >
             <SelectTrigger className="h-6 text-xs border-0 bg-muted/50 flex-1 min-w-0">
               <SelectValue placeholder="Selecione local..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="GERAL - NA LOJA TODA">🏪 GERAL - NA LOJA TODA</SelectItem>
+              <SelectItem value={GERAL_LOCATION}>🏪 GERAL - NA LOJA TODA</SelectItem>
               {pieceLocations.map((loc) => (
                 <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
               ))}
@@ -110,24 +179,30 @@ function EditableLocationPiece({
           <Puzzle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           {editingPiece ? (
             <Select
-              value={occ.piece_id || ""}
+              value={selectedPieceOption?.value || ""}
               onValueChange={(val) => {
                 updateFields.mutate({ id: occ.id, campaignId, piece_id: val });
                 setEditingPiece(false);
               }}
             >
               <SelectTrigger className="h-6 text-xs border-0 bg-muted/50 flex-1 min-w-0">
-                <SelectValue placeholder="Selecione peça..." />
+                <SelectValue placeholder="Selecione a peça ou kit..." />
               </SelectTrigger>
               <SelectContent>
-                {pieces.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
+                {pieceOptions.length > 0 ? (
+                  pieceOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))
+                ) : (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    Nenhuma peça ou kit disponível para este local.
+                  </div>
+                )}
               </SelectContent>
             </Select>
           ) : (
             <>
-              <span className="text-xs text-muted-foreground truncate">{getPieceName(occ.piece_id)}</span>
+              <span className="text-xs text-muted-foreground truncate">{pieceDisplayName}</span>
               {canEdit && (
                 <button type="button" onClick={() => setEditingPiece(true)} className="text-muted-foreground hover:text-primary transition-colors ml-auto flex-shrink-0">
                   <Pencil className="w-3 h-3" />
@@ -163,6 +238,8 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const canEditReporter = canEditReporterProp ?? isAdminOrMaster;
   const { data: occurrences = [], isLoading } = useOccurrences(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
+  const { data: kits = [] } = useCampaignKits(campaignId);
+  const { data: kitPieces = [] } = useCampaignKitPieces(campaignId);
   const { data: motives = [] } = useOccurrenceMotives();
   const { data: emails = [] } = useCampaignEmails(campaignId);
   const { data: statuses = [] } = useOccurrenceStatuses();
@@ -399,7 +476,27 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     return s?.nickname || s?.name || "—";
   };
 
-  const getPieceName = (id: string) => {
+  const firstPieceKitLabels = useMemo(() => {
+    const labels = new Map<string, string>();
+
+    kits.forEach((kit) => {
+      const memberPieceIds = kitPieces
+        .filter((kitPiece) => kitPiece.kit_id === kit.id)
+        .map((kitPiece) => kitPiece.piece_id);
+      const firstMemberPiece = pieces.find((piece) => memberPieceIds.includes(piece.id));
+
+      if (firstMemberPiece) {
+        labels.set(firstMemberPiece.id, `Kit ${kit.code} - ${kit.name}`);
+      }
+    });
+
+    return labels;
+  }, [kits, kitPieces, pieces]);
+
+  const getPieceName = (id: string | null) => {
+    if (!id) return "—";
+    const kitLabel = firstPieceKitLabels.get(id);
+    if (kitLabel) return kitLabel;
     const p = pieces.find((p) => p.id === id);
     return p?.name || "—";
   };
@@ -627,6 +724,8 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   campaignId={campaignId}
                   pieceLocations={pieceLocations}
                   pieces={pieces}
+                  kits={kits}
+                  kitPieces={kitPieces}
                   canEdit={canEdit}
                   getPieceName={getPieceName}
                   updateFields={updateFields}
