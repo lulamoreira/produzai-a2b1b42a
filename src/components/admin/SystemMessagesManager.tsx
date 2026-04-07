@@ -56,6 +56,7 @@ const KEY_LABELS: Record<string, string> = {
   occurrence_period_closed_title: "Título: período encerrado",
   occurrence_no_period_configured: "Período não configurado",
   email_occurrence_subject: "Assunto do e-mail de ocorrência",
+  email_occurrence_title: "Título do e-mail de ocorrência",
   email_occurrence_new_banner: "Banner: nova ocorrência",
   email_occurrence_status_banner: "Banner: status atualizado",
   email_occurrence_updated_banner: "Banner: ocorrência atualizada",
