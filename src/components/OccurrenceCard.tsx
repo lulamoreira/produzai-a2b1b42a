@@ -476,7 +476,7 @@ export default function OccurrenceCard({
       </Badge>
 
       {/* Description */}
-      {occ.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{occ.description}</p>}
+      {occ.description && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap break-words">{occ.description}</p>}
 
       {/* Photo thumbnails */}
       {(photosMap[occ.id]?.length ?? 0) > 0 && (
