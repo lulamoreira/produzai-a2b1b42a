@@ -329,16 +329,44 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
           const effectiveOs = isReschedule ? schedule?.reschedule_os : schedule?.installation_os;
           const selectedDate = effectiveDate ? new Date(effectiveDate + "T12:00:00") : undefined;
           const catForStore = uploadCategory[store.id] || "before";
+          const isCardLocked = !!schedule?.locked;
+          const cardCanEdit = canEdit && !isCardLocked;
+
+          const handleToggleLock = async () => {
+            if (!schedule) return;
+            setLockLoading(prev => ({ ...prev, [store.id]: true }));
+            try {
+              const newLocked = !isCardLocked;
+              const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).eq("id", schedule.id);
+              if (error) throw error;
+              if (user) {
+                await supabase.from("activity_logs").insert({
+                  campaign_id: campaignId,
+                  store_id: store.id,
+                  user_id: user.id,
+                  module: "installations",
+                  action: newLocked ? "Card bloqueado" : "Card desbloqueado",
+                  details: newLocked ? "Card bloqueado para edição" : "Card desbloqueado para edição",
+                });
+              }
+              queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+              toast.success(newLocked ? "Card bloqueado!" : "Card desbloqueado!");
+            } catch (err: any) {
+              toast.error(err.message || "Erro ao alterar bloqueio.");
+            } finally {
+              setLockLoading(prev => ({ ...prev, [store.id]: false }));
+            }
+          };
 
           return (
             <div
               key={store.id}
-              className="aqua-card overflow-hidden shadow-sm flex flex-col"
+              className={`aqua-card overflow-hidden shadow-sm flex flex-col ${isCardLocked ? "opacity-80" : ""}`}
               style={{ borderColor: colors.text, borderWidth: 2, border: `2px solid ${colors.text}` }}
             >
               {/* Header */}
               <div
-                className="px-4 py-3 flex items-center gap-3"
+                className="px-4 py-3 flex items-center gap-3 relative"
                 style={{ backgroundColor: colors.bg, color: colors.text }}
               >
                 <span className="font-bold text-lg">{store.store_code || "—"}</span>
@@ -353,6 +381,19 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                   <span className="flex items-center gap-1 text-xs font-bold opacity-80">
                     <Image className="w-3.5 h-3.5" /> {storePhotos.length}
                   </span>
+                )}
+                {canLockCards && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-7 w-7 shrink-0 ${isCardLocked ? "text-destructive" : ""}`}
+                    style={!isCardLocked ? { color: colors.text } : undefined}
+                    title={isCardLocked ? "Desbloquear card" : "Bloquear card"}
+                    onClick={handleToggleLock}
+                    disabled={!!lockLoading[store.id]}
+                  >
+                    {isCardLocked ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
+                  </Button>
                 )}
                 {isAdminOrMaster && (
                   <Button
@@ -369,6 +410,11 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                   >
                     <ClipboardList className="w-4 h-4" />
                   </Button>
+                )}
+                {isCardLocked && (
+                  <span className="absolute top-1 right-1 text-[8px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5">
+                    <Lock className="w-2.5 h-2.5" /> BLOQ
+                  </span>
                 )}
               </div>
               <div className="p-4 space-y-3 bg-card flex-1">
