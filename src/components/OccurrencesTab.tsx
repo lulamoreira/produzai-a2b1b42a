@@ -118,6 +118,22 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const reorderStatuses = useReorderOccurrenceStatuses();
   const queryClient = useQueryClient();
 
+  // Realtime subscription for occurrences
+  useEffect(() => {
+    const channel = supabase
+      .channel(`occurrences-realtime-${campaignId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'occurrences', filter: `campaign_id=eq.${campaignId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["occurrences", campaignId] });
+          queryClient.invalidateQueries({ queryKey: ["occurrence_photos", campaignId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [campaignId, queryClient]);
+
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
