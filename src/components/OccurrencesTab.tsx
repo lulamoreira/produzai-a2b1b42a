@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import {
   useOccurrences, useUpdateOccurrenceStatus, useDeleteOccurrence,
   useCampaignEmails, useAddCampaignEmail, useDeleteCampaignEmail,
@@ -69,9 +69,10 @@ interface Props {
 
 
 const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEditProp, canDelete: canDeleteProp, canEditReporter: canEditReporterProp }: Props) => {
-  const { isAdmin } = useUserRole();
-  const canEdit = canEditProp ?? isAdmin;
+  const { isAdmin, isAdminOrMaster } = useUserRole();
+  const canEdit = canEditProp ?? isAdminOrMaster;
   const canDelete = canDeleteProp ?? isAdmin;
+  const canEditReporter = canEditReporterProp ?? isAdminOrMaster;
   const { data: occurrences = [], isLoading } = useOccurrences(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: motives = [] } = useOccurrenceMotives();
@@ -117,6 +118,22 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const reorderMotives = useReorderOccurrenceMotives();
   const reorderStatuses = useReorderOccurrenceStatuses();
   const queryClient = useQueryClient();
+
+  // Realtime subscription for occurrences
+  useEffect(() => {
+    const channel = supabase
+      .channel(`occurrences-realtime-${campaignId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'occurrences', filter: `campaign_id=eq.${campaignId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["occurrences", campaignId] });
+          queryClient.invalidateQueries({ queryKey: ["occurrence_photos", campaignId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [campaignId, queryClient]);
 
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -487,7 +504,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   campaignId={campaignId}
                   pieceLocations={pieceLocations}
                   canEdit={canEdit}
-                  canEditReporter={canEditReporterProp}
+                  canEditReporter={canEditReporter}
                 />
 
 

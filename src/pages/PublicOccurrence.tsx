@@ -226,7 +226,13 @@ const PublicOccurrence = () => {
     updateEntry(entryIdx, { photos: entry.photos.filter((_, i) => i !== photoIdx) });
   };
 
-  const allEntriesValid = entries.every((e) => e.pieceId && e.motiveId && (locations.length === 0 || e.locationInStore));
+  const GERAL_LOCATION = "__GERAL__";
+  const allEntriesValid = entries.every((e) => {
+    const isGeral = e.locationInStore === GERAL_LOCATION;
+    const hasPiece = isGeral || !!e.pieceId;
+    const hasLocation = locations.length === 0 || !!e.locationInStore;
+    return hasPiece && e.motiveId && hasLocation;
+  });
   const reporterValid = isSpecialReporter
     ? !!reporterType && !!specialStoreId
     : !!storeId && reporterName.trim() && phoneDDD.trim() && phoneNumber.trim() && reporterEmail.trim();
@@ -241,12 +247,13 @@ const PublicOccurrence = () => {
     try {
       const rType = reporterType === SPECIAL_AGENCY ? "agency" : reporterType === SPECIAL_FORNECEDOR ? "fornecedor" : reporterType === SPECIAL_CLIENTE ? "cliente" : "store";
       for (const entry of entries) {
+        const isGeral = entry.locationInStore === GERAL_LOCATION;
         const occurrenceData: Record<string, unknown> = {
           campaign_id: campaignId,
-          piece_id: entry.pieceId,
+          piece_id: isGeral ? pieces[0]?.id || entry.pieceId : entry.pieceId,
           motive_id: entry.motiveId,
           description: entry.description || undefined,
-          location_in_store: entry.locationInStore || undefined,
+          location_in_store: isGeral ? "GERAL - NA LOJA TODA" : (entry.locationInStore || undefined),
           photo_url: entry.photos[0]?.url || undefined,
           reporter_type: rType,
         };
@@ -483,6 +490,10 @@ const PublicOccurrence = () => {
                   <Select value={entry.locationInStore} onValueChange={(v) => updateEntry(idx, { locationInStore: v })}>
                     <SelectTrigger><SelectValue placeholder="Selecione a localização" /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value={GERAL_LOCATION}>
+                        <span className="font-bold text-primary">🏪 GERAL - NA LOJA TODA</span>
+                      </SelectItem>
+                      <SelectSeparator />
                       {locations.map((loc) => (
                         <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
                       ))}
@@ -491,64 +502,74 @@ const PublicOccurrence = () => {
                 </div>
               )}
 
-              <div>
-                <label className="text-sm font-medium text-foreground mb-1.5 block">Peça *</label>
-                <Select
-                  value={entry.pieceId}
-                  onValueChange={(v) => updateEntry(idx, { pieceId: v })}
-                  disabled={locations.length > 0 && !entry.locationInStore}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={locations.length > 0 && !entry.locationInStore ? "Selecione a localização primeiro" : "Selecione a peça"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(() => {
-                      const groupedPieceOptions = buildGroupedPieceOptions(entry.locationInStore);
-                      return (
-                        <>
-                          {groupedPieceOptions.standalonePieces.length > 0 && (
-                            <SelectGroup>
-                              <SelectLabel className="text-xs text-muted-foreground">Peças avulsas</SelectLabel>
-                              {groupedPieceOptions.standalonePieces.map((p) => (
-                                <SelectItem key={p.id} value={p.id}>
-                                  <div className="flex items-center gap-2">
-                                    {p.image_url ? (
-                                      <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
-                                    ) : (
-                                      <Package className="w-4 h-4 text-muted-foreground" />
-                                    )}
-                                    <span>{p.code} - {p.name}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          )}
-                          {groupedPieceOptions.kitGroups.map((group) => (
-                            <SelectGroup key={group.kit.id}>
-                              <SelectLabel className="text-xs font-bold text-white bg-[#1e3a5f] flex items-center gap-1.5 mt-2 px-2 py-1.5 rounded-md mx-1">
-                                <Boxes className="w-3.5 h-3.5" />
-                                Kit {group.kit.code} - {group.kit.name}
-                              </SelectLabel>
-                              {group.memberPieces.map((p) => (
-                                <SelectItem key={p.id} value={p.id} className="border-l-2 border-[#1e3a5f]/30 ml-3">
-                                  <div className="flex items-center gap-2 pl-1">
-                                    {p.image_url ? (
-                                      <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
-                                    ) : (
-                                      <Package className="w-4 h-4 text-muted-foreground" />
-                                    )}
-                                    <span className="text-sm">{p.code} - {p.name}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          ))}
-                        </>
-                      );
-                    })()}
-                  </SelectContent>
-                </Select>
-              </div>
+              {entry.locationInStore === GERAL_LOCATION ? (
+                <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                  <p className="text-sm text-muted-foreground">
+                    😊 Como você selecionou <strong>"Geral"</strong>, não é necessário indicar uma peça específica. 
+                    Se o problema for em uma peça específica, volte e selecione o local exato. 
+                    Caso contrário, descreva abaixo o que aconteceu!
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1.5 block">Peça *</label>
+                  <Select
+                    value={entry.pieceId}
+                    onValueChange={(v) => updateEntry(idx, { pieceId: v })}
+                    disabled={locations.length > 0 && !entry.locationInStore}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={locations.length > 0 && !entry.locationInStore ? "Selecione a localização primeiro" : "Selecione a peça"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(() => {
+                        const groupedPieceOptions = buildGroupedPieceOptions(entry.locationInStore);
+                        return (
+                          <>
+                            {groupedPieceOptions.standalonePieces.length > 0 && (
+                              <SelectGroup>
+                                <SelectLabel className="text-xs text-muted-foreground">Peças avulsas</SelectLabel>
+                                {groupedPieceOptions.standalonePieces.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    <div className="flex items-center gap-2">
+                                      {p.image_url ? (
+                                        <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
+                                      ) : (
+                                        <Package className="w-4 h-4 text-muted-foreground" />
+                                      )}
+                                      <span>{p.code} - {p.name}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            )}
+                            {groupedPieceOptions.kitGroups.map((group) => (
+                              <SelectGroup key={group.kit.id}>
+                                <SelectLabel className="text-xs font-bold text-white bg-[#1e3a5f] flex items-center gap-1.5 mt-2 px-2 py-1.5 rounded-md mx-1">
+                                  <Boxes className="w-3.5 h-3.5" />
+                                  Kit {group.kit.code} - {group.kit.name}
+                                </SelectLabel>
+                                {group.memberPieces.map((p) => (
+                                  <SelectItem key={p.id} value={p.id} className="border-l-2 border-[#1e3a5f]/30 ml-3">
+                                    <div className="flex items-center gap-2 pl-1">
+                                      {p.image_url ? (
+                                        <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
+                                      ) : (
+                                        <Package className="w-4 h-4 text-muted-foreground" />
+                                      )}
+                                      <span className="text-sm">{p.code} - {p.name}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectGroup>
+                            ))}
+                          </>
+                        );
+                      })()}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">Motivo *</label>
