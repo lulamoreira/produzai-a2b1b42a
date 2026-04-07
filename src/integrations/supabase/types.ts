@@ -395,6 +395,7 @@ export type Database = {
           id: string
           installation_os: string | null
           installation_preference: string | null
+          locked: boolean
           reschedule_date: string | null
           reschedule_enabled: boolean
           reschedule_os: string | null
@@ -436,6 +437,7 @@ export type Database = {
           id?: string
           installation_os?: string | null
           installation_preference?: string | null
+          locked?: boolean
           reschedule_date?: string | null
           reschedule_enabled?: boolean
           reschedule_os?: string | null
@@ -477,6 +479,7 @@ export type Database = {
           id?: string
           installation_os?: string | null
           installation_preference?: string | null
+          locked?: boolean
           reschedule_date?: string | null
           reschedule_enabled?: boolean
           reschedule_os?: string | null
@@ -1517,6 +1520,7 @@ export type Database = {
           expected_resolution_date: string | null
           id: string
           location_in_store: string | null
+          locked: boolean
           motive_id: string | null
           needs_reinstallation: boolean | null
           photo_url: string | null
@@ -1542,6 +1546,7 @@ export type Database = {
           expected_resolution_date?: string | null
           id?: string
           location_in_store?: string | null
+          locked?: boolean
           motive_id?: string | null
           needs_reinstallation?: boolean | null
           photo_url?: string | null
@@ -1567,6 +1572,7 @@ export type Database = {
           expected_resolution_date?: string | null
           id?: string
           location_in_store?: string | null
+          locked?: boolean
           motive_id?: string | null
           needs_reinstallation?: boolean | null
           photo_url?: string | null
@@ -1633,6 +1639,7 @@ export type Database = {
           can_edit_reporter_data: boolean
           can_edit_schedules: boolean
           can_edit_stores: boolean
+          can_lock_cards: boolean
           can_manage_team_codes: boolean
           can_view_campaign_stores: boolean
           can_view_campaigns: boolean
@@ -1664,6 +1671,7 @@ export type Database = {
           can_edit_reporter_data?: boolean
           can_edit_schedules?: boolean
           can_edit_stores?: boolean
+          can_lock_cards?: boolean
           can_manage_team_codes?: boolean
           can_view_campaign_stores?: boolean
           can_view_campaigns?: boolean
@@ -1695,6 +1703,7 @@ export type Database = {
           can_edit_reporter_data?: boolean
           can_edit_schedules?: boolean
           can_edit_stores?: boolean
+          can_lock_cards?: boolean
           can_manage_team_codes?: boolean
           can_view_campaign_stores?: boolean
           can_view_campaigns?: boolean

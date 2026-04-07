@@ -20,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle,
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
-  Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList,
+  Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList, Lock, LockOpen,
 } from "lucide-react";
 import { downloadPhotosAsZip } from "@/lib/downloadPhotosZip";
 import { format } from "date-fns";
@@ -67,6 +67,7 @@ type Schedule = {
   reschedule_preference: string | null;
   reschedule_store_approval_status: string | null;
   reschedule_team_approval_status: string | null;
+  locked: boolean;
 };
 
 const CATEGORY_OPTIONS = [
@@ -86,6 +87,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
   const { hasPermission: canManageTeamCodes } = useClientPermission(clientId, "can_manage_team_codes");
+  const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const showTeamCodesPanel = isAdminOrMaster || canManageTeamCodes;
   const logActivity = useLogActivity();
   const [searchTerm, setSearchTerm] = useState("");
@@ -96,6 +98,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [filterStatus, setFilterStatus] = useState<"" | "completed" | "pending" | "no_photo">("");
+  const [lockLoading, setLockLoading] = useState<Record<string, boolean>>({});
   
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
 
@@ -326,16 +329,44 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
           const effectiveOs = isReschedule ? schedule?.reschedule_os : schedule?.installation_os;
           const selectedDate = effectiveDate ? new Date(effectiveDate + "T12:00:00") : undefined;
           const catForStore = uploadCategory[store.id] || "before";
+          const isCardLocked = !!schedule?.locked;
+          const cardCanEdit = canEdit && !isCardLocked;
+
+          const handleToggleLock = async () => {
+            if (!schedule) return;
+            setLockLoading(prev => ({ ...prev, [store.id]: true }));
+            try {
+              const newLocked = !isCardLocked;
+              const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).eq("id", schedule.id);
+              if (error) throw error;
+              if (user) {
+                await supabase.from("activity_logs").insert({
+                  campaign_id: campaignId,
+                  store_id: store.id,
+                  user_id: user.id,
+                  module: "installations",
+                  action: newLocked ? "Card bloqueado" : "Card desbloqueado",
+                  details: newLocked ? "Card bloqueado para edição" : "Card desbloqueado para edição",
+                });
+              }
+              queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+              toast.success(newLocked ? "Card bloqueado!" : "Card desbloqueado!");
+            } catch (err: any) {
+              toast.error(err.message || "Erro ao alterar bloqueio.");
+            } finally {
+              setLockLoading(prev => ({ ...prev, [store.id]: false }));
+            }
+          };
 
           return (
             <div
               key={store.id}
-              className="aqua-card overflow-hidden shadow-sm flex flex-col"
+              className={`aqua-card overflow-hidden shadow-sm flex flex-col ${isCardLocked ? "opacity-80" : ""}`}
               style={{ borderColor: colors.text, borderWidth: 2, border: `2px solid ${colors.text}` }}
             >
               {/* Header */}
               <div
-                className="px-4 py-3 flex items-center gap-3"
+                className="px-4 py-3 flex items-center gap-3 relative"
                 style={{ backgroundColor: colors.bg, color: colors.text }}
               >
                 <span className="font-bold text-lg">{store.store_code || "—"}</span>
@@ -350,6 +381,19 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                   <span className="flex items-center gap-1 text-xs font-bold opacity-80">
                     <Image className="w-3.5 h-3.5" /> {storePhotos.length}
                   </span>
+                )}
+                {canLockCards && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-7 w-7 shrink-0 ${isCardLocked ? "text-destructive" : ""}`}
+                    style={!isCardLocked ? { color: colors.text } : undefined}
+                    title={isCardLocked ? "Desbloquear card" : "Bloquear card"}
+                    onClick={handleToggleLock}
+                    disabled={!!lockLoading[store.id]}
+                  >
+                    {isCardLocked ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
+                  </Button>
                 )}
                 {isAdminOrMaster && (
                   <Button
@@ -366,6 +410,11 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                   >
                     <ClipboardList className="w-4 h-4" />
                   </Button>
+                )}
+                {isCardLocked && (
+                  <span className="absolute top-1 right-1 text-[8px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5">
+                    <Lock className="w-2.5 h-2.5" /> BLOQ
+                  </span>
                 )}
               </div>
               <div className="p-4 space-y-3 bg-card flex-1">
@@ -482,7 +531,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                 )}
 
                 {/* Upload section */}
-                {canEdit && (
+                {cardCanEdit && (
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <select
                       value={catForStore}

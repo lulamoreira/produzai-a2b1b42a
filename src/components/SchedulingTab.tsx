@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { type ClientStore } from "@/hooks/useMultiClientData";
 import { getStateColor } from "@/lib/stateColors";
 import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type StoreContactRole } from "@/hooks/useStoreContacts";
+import { useClientPermission } from "@/hooks/useClientPermission";
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
 import ScheduleCardChat from "@/components/ScheduleCardChat";
@@ -15,7 +16,7 @@ import { useLogActivity } from "@/hooks/useActivityLogs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -82,6 +83,7 @@ type Schedule = {
   reschedule_suggested_time: string | null;
   reschedule_suggested_date_2: string | null;
   reschedule_suggested_time_2: string | null;
+  locked: boolean;
 };
 
 const PREFERENCE_OPTIONS = [
@@ -134,7 +136,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [logStoreId, setLogStoreId] = useState("");
   const [logStoreName, setLogStoreName] = useState("");
   const { isAdminOrMaster } = useUserRole();
+  const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const logActivity = useLogActivity();
+  const [lockLoading, setLockLoading] = useState<Record<string, boolean>>({});
 
   // Unread message counts
   const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
@@ -651,11 +655,40 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const hasOs = !!(effectiveOs?.trim());
           const fullyApproved = storeApproved && teamApproved && hasOs;
           const hasPendency = !fullyApproved;
+          const isCardLocked = !!schedule?.locked;
+          const cardCanEdit = canEdit && !isCardLocked;
+
+          const handleToggleLock = async () => {
+            if (!schedule) return;
+            setLockLoading(prev => ({ ...prev, [store.id]: true }));
+            try {
+              const newLocked = !isCardLocked;
+              const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).eq("id", schedule.id);
+              if (error) throw error;
+              const { data: { user: currentUser } } = await supabase.auth.getUser();
+              if (currentUser) {
+                await supabase.from("activity_logs").insert({
+                  campaign_id: campaignId,
+                  store_id: store.id,
+                  user_id: currentUser.id,
+                  module: "schedules",
+                  action: newLocked ? "Card bloqueado" : "Card desbloqueado",
+                  details: newLocked ? "Card bloqueado para edição" : "Card desbloqueado para edição",
+                });
+              }
+              queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+              toast.success(newLocked ? "Card bloqueado!" : "Card desbloqueado!");
+            } catch (err: any) {
+              toast.error(err.message || "Erro ao alterar bloqueio.");
+            } finally {
+              setLockLoading(prev => ({ ...prev, [store.id]: false }));
+            }
+          };
 
           return (
             <div
               key={store.id}
-              className="aqua-card overflow-hidden shadow-sm flex flex-col"
+              className={`aqua-card overflow-hidden shadow-sm flex flex-col ${isCardLocked ? "opacity-80" : ""}`}
               style={{ borderColor: colors.text, borderWidth: 2, border: `2px solid ${colors.text}` }}
             >
               {/* Header */}
@@ -723,6 +756,19 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     <ClipboardList className="w-4 h-4" />
                   </Button>
                 )}
+                {canLockCards && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-7 w-7 shrink-0 ${isCardLocked ? "text-destructive" : ""}`}
+                    style={!isCardLocked ? { color: colors.text } : undefined}
+                    title={isCardLocked ? "Desbloquear card" : "Bloquear card"}
+                    onClick={handleToggleLock}
+                    disabled={!!lockLoading[store.id]}
+                  >
+                    {isCardLocked ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
+                  </Button>
+                )}
                 {/* Approval status icon */}
                 {fullyApproved ? (
                   <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
@@ -733,6 +779,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 )}
                 {isReschedule && (
                   <span className="absolute top-1 right-1 text-[8px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full leading-none">REM</span>
+                )}
+                {isCardLocked && !isReschedule && (
+                  <span className="absolute top-1 right-1 text-[8px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5">
+                    <Lock className="w-2.5 h-2.5" /> BLOQ
+                  </span>
+                )}
+                {isCardLocked && isReschedule && (
+                  <span className="absolute top-1 left-1 text-[8px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5">
+                    <Lock className="w-2.5 h-2.5" /> BLOQ
+                  </span>
                 )}
               </div>
 
@@ -764,7 +820,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   </label>
                   <div className="flex items-center gap-2">
                     <select
-                      disabled={!canEdit}
+                      disabled={!cardCanEdit}
                       value={schedule?.team_id || ""}
                       onChange={(e) => handleFieldChange(store.id, "team_id", e.target.value || null)}
                       className="flex-1 h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
@@ -808,7 +864,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         <Button
                           variant="outline"
                           size="sm"
-                          disabled={!canEdit}
+                          disabled={!cardCanEdit}
                           className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !selectedDate && "text-muted-foreground")}
                         >
                           <span className="truncate">{selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar"}</span>
@@ -841,12 +897,12 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     <div className="flex items-center gap-1">
                       <DebouncedInput
                         type="time"
-                        disabled={!canEdit}
+                        disabled={!cardCanEdit}
                         value={schedule?.scheduled_time || ""}
                         onValueCommit={(val) => handleFieldChange(store.id, "scheduled_time", val || null)}
                         className="h-8 text-xs flex-1"
                       />
-                      {schedule?.scheduled_time && canEdit && (
+                      {schedule?.scheduled_time && cardCanEdit && (
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "scheduled_time", null)} title="Limpar horário">
                           ✕
                         </Button>
@@ -863,7 +919,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       )}
                     </label>
                     <DebouncedInput
-                      disabled={!canEdit}
+                      disabled={!cardCanEdit}
                       placeholder="Nº OS"
                       value={schedule?.installation_os || ""}
                       onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)}
@@ -877,7 +933,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       <Sun className="w-3 h-3" /> Preferência
                     </label>
                     <select
-                      disabled={!canEdit}
+                      disabled={!cardCanEdit}
                       value={schedule?.installation_preference || "not_informed"}
                       onChange={(e) => handleFieldChange(store.id, "installation_preference", e.target.value)}
                       className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
@@ -895,7 +951,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 schedule={schedule}
                 storeId={store.id}
                 campaignId={campaignId}
-                canEdit={canEdit}
+                canEdit={cardCanEdit}
                 hasDateAndTime={!!(schedule?.scheduled_date && schedule?.scheduled_time)}
                 onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
               />
@@ -905,7 +961,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 schedule={schedule}
                 storeId={store.id}
                 campaignId={campaignId}
-                canEdit={canEdit}
+                canEdit={cardCanEdit}
                 teams={teams}
                 teamMap={teamMap}
                 onFieldChange={(field, value) => handleFieldChange(store.id, field, value)}

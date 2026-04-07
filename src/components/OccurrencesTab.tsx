@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from "react";
+import { useClientPermission } from "@/hooks/useClientPermission";
 import {
   useOccurrences,
   useCampaignEmails, useAddCampaignEmail, useDeleteCampaignEmail,
@@ -71,6 +72,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const canEdit = canEditProp ?? isAdminOrMaster;
   const canDelete = canDeleteProp ?? isAdmin;
   const canEditReporter = canEditReporterProp ?? isAdminOrMaster;
+  const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const { data: occurrences = [], isLoading } = useOccurrences(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: kits = [] } = useCampaignKits(campaignId);
@@ -499,6 +501,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                 onOpenLightbox={(photos, index) => { setLightboxPhotos(photos); setLightboxIndex(index); setLightboxOpen(true); }}
                 motiveColor={motiveColor}
                 PRIORITY_OPTIONS={PRIORITY_OPTIONS}
+                canLockCards={canLockCards}
               />
             );
           })}
