@@ -1,0 +1,1 @@
+ALTER TABLE public.installation_photos ADD COLUMN media_type text NOT NULL DEFAULT 'photo';
