@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle, Phone, MapPin, GripVertical, User, Pencil } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle, Phone, MapPin, GripVertical, User, Pencil, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
@@ -303,6 +303,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const [occStartDate, setOccStartDate] = useState("");
   const [occEndDate, setOccEndDate] = useState("");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const qrRef = useRef<HTMLDivElement>(null);
 
   const toggleStatus = (value: string) => {
@@ -311,10 +312,29 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     );
   };
 
+  const PRIORITY_OPTIONS = [
+    { value: "critica", label: "Crítica", color: "#dc2626" },
+    { value: "alta", label: "Alta", color: "#f97316" },
+    { value: "media", label: "Média", color: "#eab308" },
+    { value: "baixa", label: "Baixa", color: "#22c55e" },
+  ];
+
+  const togglePriority = (value: string) => {
+    setSelectedPriorities((prev) =>
+      prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value]
+    );
+  };
+
   const filteredOccurrences = useMemo(() => {
-    if (selectedStatuses.length === 0) return occurrences;
-    return occurrences.filter((occ) => selectedStatuses.includes(occ.status || defaultStatus));
-  }, [occurrences, selectedStatuses, defaultStatus]);
+    let result = occurrences;
+    if (selectedStatuses.length > 0) {
+      result = result.filter((occ) => selectedStatuses.includes(occ.status || defaultStatus));
+    }
+    if (selectedPriorities.length > 0) {
+      result = result.filter((occ) => selectedPriorities.includes((occ as any).priority || "media"));
+    }
+    return result;
+  }, [occurrences, selectedStatuses, selectedPriorities, defaultStatus]);
 
   const handleDownloadQR = () => {
     const svg = qrRef.current?.querySelector("svg");
@@ -467,6 +487,34 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
         </div>
       )}
 
+      {/* Priority filter buttons */}
+      {!isLoading && occurrences.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="text-xs text-muted-foreground font-medium mr-1"><Flag className="w-3.5 h-3.5 inline mr-1" />Prioridade:</span>
+          <Button
+            variant={selectedPriorities.length === 0 ? "default" : "outline"}
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => setSelectedPriorities([])}
+          >
+            Todas
+          </Button>
+          {PRIORITY_OPTIONS.map((p) => (
+            <Button
+              key={p.value}
+              variant={selectedPriorities.includes(p.value) ? "default" : "outline"}
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              style={selectedPriorities.includes(p.value) ? { backgroundColor: p.color, borderColor: p.color, color: '#fff' } : { borderColor: p.color, color: p.color }}
+              onClick={() => togglePriority(p.value)}
+            >
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedPriorities.includes(p.value) ? '#fff' : p.color }} />
+              {p.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
       {!isLoading && occurrences.length > 0 && (
         <OccurrencesDashboard occurrences={filteredOccurrences} stores={stores} pieces={pieces} motives={motives} statuses={statuses} />
       )}
@@ -506,6 +554,33 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                     <Calendar className="w-3 h-3" />
                     {occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}
                   </span>
+                </div>
+
+                {/* Priority */}
+                <div className="flex items-center gap-2 mb-2">
+                  <Flag className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                  {canEdit ? (
+                    <Select
+                      value={(occ as any).priority || "media"}
+                      onValueChange={(val) => updateFields.mutate({ id: occ.id, campaignId, priority: val })}
+                    >
+                      <SelectTrigger className="h-6 text-[10px] border-0 bg-muted/50 w-[100px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {PRIORITY_OPTIONS.map((p) => (
+                          <SelectItem key={p.value} value={p.value}>
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                              {p.label}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] px-2 py-0" style={{ borderColor: PRIORITY_OPTIONS.find(p => p.value === ((occ as any).priority || "media"))?.color, color: PRIORITY_OPTIONS.find(p => p.value === ((occ as any).priority || "media"))?.color }}>
+                      {PRIORITY_OPTIONS.find(p => p.value === ((occ as any).priority || "media"))?.label || "Média"}
+                    </Badge>
+                  )}
                 </div>
 
                 {/* Status da Ocorrência */}

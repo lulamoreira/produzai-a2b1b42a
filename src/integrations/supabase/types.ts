@@ -1518,6 +1518,7 @@ export type Database = {
           needs_reinstallation: boolean | null
           photo_url: string | null
           piece_id: string
+          priority: string
           reinstallation_datetime: string | null
           reinstallation_os: string | null
           reporter_email: string | null
@@ -1542,6 +1543,7 @@ export type Database = {
           needs_reinstallation?: boolean | null
           photo_url?: string | null
           piece_id: string
+          priority?: string
           reinstallation_datetime?: string | null
           reinstallation_os?: string | null
           reporter_email?: string | null
@@ -1566,6 +1568,7 @@ export type Database = {
           needs_reinstallation?: boolean | null
           photo_url?: string | null
           piece_id?: string
+          priority?: string
           reinstallation_datetime?: string | null
           reinstallation_os?: string | null
           reporter_email?: string | null
