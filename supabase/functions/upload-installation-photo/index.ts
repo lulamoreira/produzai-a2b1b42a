@@ -18,6 +18,7 @@ Deno.serve(async (req) => {
     const category = (form.get("category") as string) || "during";
     const uploadMethod = (form.get("upload_method") as string) || "upload";
     const photo = form.get("photo") as File | null;
+    const mediaType = (form.get("media_type") as string) || "photo";
 
     if (!teamCode || !storeId || !photo) {
       return new Response(
@@ -87,6 +88,7 @@ Deno.serve(async (req) => {
         photo_url: urlData.publicUrl,
         category,
         upload_method: uploadMethod,
+        media_type: mediaType,
       })
       .select()
       .single();
