@@ -83,7 +83,7 @@ const OccurrenceNotificationEmail = ({
               <Text style={rowAlt}>📝 <strong>Descrição:</strong> {description}</Text>
             )}
             {actionsTaken && (
-              <Text style={row}>🔧 <strong>Ações Tomadas:</strong> {actionsTaken}</Text>
+              <Text style={{ ...row, whiteSpace: 'pre-wrap' as const, wordBreak: 'break-word' as const }}>🔧 <strong>Ações Tomadas:</strong> {actionsTaken}</Text>
             )}
             {expectedResolutionDate && (
               <Text style={rowAlt}>📆 <strong>Previsão de Resolução:</strong> {expectedResolutionDate}</Text>
