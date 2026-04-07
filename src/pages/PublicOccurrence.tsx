@@ -484,23 +484,21 @@ const PublicOccurrence = () => {
                 )}
               </div>
 
-              {locations.length > 0 && (
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-1.5 block">Localização na Loja *</label>
-                  <Select value={entry.locationInStore} onValueChange={(v) => updateEntry(idx, { locationInStore: v })}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a localização" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={GERAL_LOCATION}>
-                        <span className="font-bold text-primary">🏪 GERAL - NA LOJA TODA</span>
-                      </SelectItem>
-                      <SelectSeparator />
-                      {locations.map((loc) => (
-                        <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">Localização na Loja *</label>
+                <Select value={entry.locationInStore} onValueChange={(v) => updateEntry(idx, { locationInStore: v })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione a localização" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={GERAL_LOCATION}>
+                      <span className="font-bold text-primary">🏪 GERAL - NA LOJA TODA</span>
+                    </SelectItem>
+                    {locations.length > 0 && <SelectSeparator />}
+                    {locations.map((loc) => (
+                      <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
               {entry.locationInStore === GERAL_LOCATION ? (
                 <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
