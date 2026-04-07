@@ -514,10 +514,10 @@ const PublicOccurrence = () => {
                   <Select
                     value={entry.pieceId}
                     onValueChange={(v) => updateEntry(idx, { pieceId: v })}
-                    disabled={locations.length > 0 && !entry.locationInStore}
+                    disabled={!entry.locationInStore}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder={locations.length > 0 && !entry.locationInStore ? "Selecione a localização primeiro" : "Selecione a peça"} />
+                      <SelectValue placeholder={!entry.locationInStore ? "Selecione a localização primeiro" : "Selecione a peça"} />
                     </SelectTrigger>
                     <SelectContent>
                       {(() => {
