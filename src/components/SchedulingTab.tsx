@@ -810,7 +810,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   </label>
                   <div className="flex items-center gap-2">
                     <select
-                      disabled={!canEdit}
+                      disabled={!cardCanEdit}
                       value={schedule?.team_id || ""}
                       onChange={(e) => handleFieldChange(store.id, "team_id", e.target.value || null)}
                       className="flex-1 h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
@@ -854,7 +854,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         <Button
                           variant="outline"
                           size="sm"
-                          disabled={!canEdit}
+                          disabled={!cardCanEdit}
                           className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !selectedDate && "text-muted-foreground")}
                         >
                           <span className="truncate">{selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar"}</span>
@@ -887,12 +887,12 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     <div className="flex items-center gap-1">
                       <DebouncedInput
                         type="time"
-                        disabled={!canEdit}
+                        disabled={!cardCanEdit}
                         value={schedule?.scheduled_time || ""}
                         onValueCommit={(val) => handleFieldChange(store.id, "scheduled_time", val || null)}
                         className="h-8 text-xs flex-1"
                       />
-                      {schedule?.scheduled_time && canEdit && (
+                      {schedule?.scheduled_time && cardCanEdit && (
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "scheduled_time", null)} title="Limpar horário">
                           ✕
                         </Button>
@@ -909,7 +909,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       )}
                     </label>
                     <DebouncedInput
-                      disabled={!canEdit}
+                      disabled={!cardCanEdit}
                       placeholder="Nº OS"
                       value={schedule?.installation_os || ""}
                       onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)}
@@ -923,7 +923,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       <Sun className="w-3 h-3" /> Preferência
                     </label>
                     <select
-                      disabled={!canEdit}
+                      disabled={!cardCanEdit}
                       value={schedule?.installation_preference || "not_informed"}
                       onChange={(e) => handleFieldChange(store.id, "installation_preference", e.target.value)}
                       className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
@@ -941,7 +941,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 schedule={schedule}
                 storeId={store.id}
                 campaignId={campaignId}
-                canEdit={canEdit}
+                cardCanEdit={canEdit}
                 hasDateAndTime={!!(schedule?.scheduled_date && schedule?.scheduled_time)}
                 onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
               />
@@ -951,7 +951,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 schedule={schedule}
                 storeId={store.id}
                 campaignId={campaignId}
-                canEdit={canEdit}
+                cardCanEdit={canEdit}
                 teams={teams}
                 teamMap={teamMap}
                 onFieldChange={(field, value) => handleFieldChange(store.id, field, value)}
