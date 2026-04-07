@@ -44,6 +44,7 @@ export type Occurrence = {
   reporter_phone_number: string | null;
   reporter_email: string | null;
   reporter_type: string;
+  priority: string;
 };
 
 export type OccurrenceComment = {
