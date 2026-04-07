@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Store, Puzzle, Calendar, MessageSquare, Camera, Tag, CircleDot, Link2, X } from "lucide-react";
+import { AlertTriangle, Store, Puzzle, Calendar, MessageSquare, Camera, Tag, CircleDot, Link2, X, Wrench, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,8 @@ const PublicOccurrenceDetail = () => {
     enabled: !!occurrence?.store_id,
   });
 
+  const isGeral = occurrence?.location_in_store === "GERAL - NA LOJA TODA";
+
   const { data: piece } = useQuery({
     queryKey: ["public_occ_piece", occurrence?.piece_id],
     queryFn: async () => {
@@ -65,7 +67,7 @@ const PublicOccurrenceDetail = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!occurrence?.piece_id,
+    enabled: !!occurrence?.piece_id && !isGeral,
   });
 
   const { data: motive } = useQuery({
@@ -205,7 +207,9 @@ const PublicOccurrenceDetail = () => {
           {/* Piece */}
           <div className="bg-card border border-border rounded-xl p-4 flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-accent/30 flex items-center justify-center flex-shrink-0">
-              {piece?.image_url ? (
+              {isGeral ? (
+                <Store className="w-5 h-5 text-accent-foreground" />
+              ) : piece?.image_url ? (
                 <img src={piece.image_url} alt={piece.name} className="w-10 h-10 rounded-xl object-cover" />
               ) : (
                 <Puzzle className="w-5 h-5 text-accent-foreground" />
@@ -213,8 +217,10 @@ const PublicOccurrenceDetail = () => {
             </div>
             <div className="min-w-0">
               <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Peça</p>
-              <p className="text-sm font-semibold text-foreground truncate">{piece?.name || "—"}</p>
-              {piece?.code && <p className="text-[11px] text-muted-foreground">Código: {piece.code}</p>}
+              <p className="text-sm font-semibold text-foreground truncate">
+                {isGeral ? "GERAL - NA LOJA TODA" : (piece?.name || "—")}
+              </p>
+              {!isGeral && piece?.code && <p className="text-[11px] text-muted-foreground">Código: {piece.code}</p>}
             </div>
           </div>
 
@@ -251,6 +257,30 @@ const PublicOccurrenceDetail = () => {
               <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Descrição</p>
             </div>
             <p className="text-sm text-foreground leading-relaxed">{occurrence.description}</p>
+          </div>
+        )}
+
+        {/* Actions taken */}
+        {occurrence.actions_taken && (
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Wrench className="w-4 h-4 text-primary" />
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Ações Tomadas</p>
+            </div>
+            <p className="text-sm text-foreground leading-relaxed">{occurrence.actions_taken}</p>
+          </div>
+        )}
+
+        {/* Expected resolution date */}
+        {occurrence.expected_resolution_date && (
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="w-4 h-4 text-primary" />
+              <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Previsão de Resolução</p>
+            </div>
+            <p className="text-sm font-semibold text-foreground">
+              {format(new Date(occurrence.expected_resolution_date), "dd/MM/yyyy")}
+            </p>
           </div>
         )}
 
