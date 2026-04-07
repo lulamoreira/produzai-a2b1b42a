@@ -1,38 +1,51 @@
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Store, Puzzle, Calendar, MessageSquare, Camera, Tag, CircleDot, Link2, X, Wrench, Clock, Mail } from "lucide-react";
+import { AlertTriangle, Store, Puzzle, Calendar, MessageSquare, Camera, Tag, CircleDot, Link2, X, Wrench, Clock, Mail, Plus, Check } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 
 const PublicOccurrenceDetail = () => {
   const { occurrenceId } = useParams<{ occurrenceId: string }>();
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [selectedCcEmails, setSelectedCcEmails] = useState<string[]>([]);
+  const [customEmail, setCustomEmail] = useState("");
 
   const sendTrackingEmail = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (ccEmails: string[]) => {
       if (!occurrence?.reporter_email || !campaign) throw new Error("Dados insuficientes");
       const publicUrl = `${window.location.origin}/ocorrencia/${occurrenceId}`;
       const storeName = store?.nickname || store?.name || "";
       const campaignName = campaign.name || "";
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "occurrence-tracking",
-          recipientEmail: occurrence.reporter_email,
-          idempotencyKey: `occ-tracking-${occurrenceId}-${Date.now()}`,
-          templateData: { campaignName, publicUrl, storeName },
-        },
-      });
-      if (error) throw error;
+      const allRecipients = [occurrence.reporter_email, ...ccEmails];
+      const uniqueRecipients = [...new Set(allRecipients)];
+
+      for (const email of uniqueRecipients) {
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "occurrence-tracking",
+            recipientEmail: email,
+            idempotencyKey: `occ-tracking-${occurrenceId}-${email}-${Date.now()}`,
+            templateData: { campaignName, publicUrl, storeName },
+          },
+        });
+      }
     },
     onSuccess: () => {
       setEmailSent(true);
-      toast.success("Email de acompanhamento enviado!");
+      setShowEmailDialog(false);
+      toast.success("Email(s) de acompanhamento enviado(s)!");
     },
     onError: () => toast.error("Erro ao enviar email"),
   });
