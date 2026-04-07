@@ -58,6 +58,7 @@ function SortableConfigItem({ id, children }: { id: string; children: React.Reac
 }
 
 const GERAL_LOCATION = "GERAL - NA LOJA TODA";
+const NAO_SEI_LOCATION = "NÃO SEI O LOCAL";
 
 type OccurrencePieceOption = {
   value: string;
@@ -78,7 +79,8 @@ function getOccurrencePieceOptions({
 }) {
   if (!location || location === GERAL_LOCATION) return [] as OccurrencePieceOption[];
 
-  const filteredPieces = pieces.filter((piece) => piece.category === location);
+  const showAll = location === NAO_SEI_LOCATION;
+  const filteredPieces = showAll ? pieces : pieces.filter((piece) => piece.category === location);
   const kitPieceIds = new Set(kitPieces.map((kitPiece) => kitPiece.piece_id));
 
   const standalonePieces: OccurrencePieceOption[] = filteredPieces
@@ -121,6 +123,7 @@ function EditableLocationPiece({
   const [editingLocation, setEditingLocation] = useState(false);
   const [editingPiece, setEditingPiece] = useState(false);
   const isGeral = occ.location_in_store === GERAL_LOCATION;
+  const isNaoSei = occ.location_in_store === NAO_SEI_LOCATION;
   const pieceOptions = useMemo(
     () => getOccurrencePieceOptions({ location: occ.location_in_store, pieces, kits, kitPieces }),
     [occ.location_in_store, pieces, kits, kitPieces]
@@ -157,6 +160,7 @@ function EditableLocationPiece({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={GERAL_LOCATION}>🏪 GERAL - NA LOJA TODA</SelectItem>
+              <SelectItem value={NAO_SEI_LOCATION}>❓ NÃO SEI O LOCAL</SelectItem>
               {pieceLocations.map((loc) => (
                 <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
               ))}
