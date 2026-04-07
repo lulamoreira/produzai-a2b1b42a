@@ -756,6 +756,19 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     <ClipboardList className="w-4 h-4" />
                   </Button>
                 )}
+                {canLockCards && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-7 w-7 shrink-0 ${isCardLocked ? "text-destructive" : ""}`}
+                    style={!isCardLocked ? { color: colors.text } : undefined}
+                    title={isCardLocked ? "Desbloquear card" : "Bloquear card"}
+                    onClick={handleToggleLock}
+                    disabled={!!lockLoading[store.id]}
+                  >
+                    {isCardLocked ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
+                  </Button>
+                )}
                 {/* Approval status icon */}
                 {fullyApproved ? (
                   <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
