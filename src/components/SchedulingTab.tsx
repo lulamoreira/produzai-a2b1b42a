@@ -693,14 +693,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             >
               {/* Header */}
               <div
-                className="px-4 py-3 flex flex-col gap-1 relative"
+                className="px-4 py-3 relative"
                 style={{ backgroundColor: colors.bg, color: colors.text }}
               >
                 <div className="font-semibold text-sm break-words leading-snug">{store.name}</div>
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-lg leading-none">{store.store_code || "—"}</span>
-                  <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
-                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-lg leading-none">{store.store_code || "—"}</span>
+                    <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
                 <Button
                   variant="ghost"
                   size="icon"
