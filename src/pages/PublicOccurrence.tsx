@@ -227,6 +227,7 @@ const PublicOccurrence = () => {
   };
 
   const GERAL_LOCATION = "__GERAL__";
+  const NAO_SEI_LOCATION = "__NAO_SEI__";
   const allEntriesValid = entries.every((e) => {
     const isGeral = e.locationInStore === GERAL_LOCATION;
     const hasPiece = isGeral || !!e.pieceId;
@@ -248,12 +249,13 @@ const PublicOccurrence = () => {
       const rType = reporterType === SPECIAL_AGENCY ? "agency" : reporterType === SPECIAL_FORNECEDOR ? "fornecedor" : reporterType === SPECIAL_CLIENTE ? "cliente" : "store";
       for (const entry of entries) {
         const isGeral = entry.locationInStore === GERAL_LOCATION;
+        const isNaoSei = entry.locationInStore === NAO_SEI_LOCATION;
         const occurrenceData: Record<string, unknown> = {
           campaign_id: campaignId,
           piece_id: isGeral ? pieces[0]?.id || entry.pieceId : entry.pieceId,
           motive_id: entry.motiveId,
           description: entry.description || undefined,
-          location_in_store: isGeral ? "GERAL - NA LOJA TODA" : (entry.locationInStore || undefined),
+          location_in_store: isGeral ? "GERAL - NA LOJA TODA" : isNaoSei ? "NÃO SEI O LOCAL" : (entry.locationInStore || undefined),
           photo_url: entry.photos[0]?.url || undefined,
           reporter_type: rType,
         };
@@ -492,6 +494,9 @@ const PublicOccurrence = () => {
                     <SelectItem value={GERAL_LOCATION}>
                       <span className="font-bold text-primary">🏪 GERAL - NA LOJA TODA</span>
                     </SelectItem>
+                    <SelectItem value={NAO_SEI_LOCATION}>
+                      <span className="font-medium text-orange-600">❓ NÃO SEI O LOCAL</span>
+                    </SelectItem>
                     {locations.length > 0 && <SelectSeparator />}
                     {locations.map((loc) => (
                       <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
@@ -521,7 +526,8 @@ const PublicOccurrence = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {(() => {
-                        const groupedPieceOptions = buildGroupedPieceOptions(entry.locationInStore);
+                        const isNaoSei = entry.locationInStore === NAO_SEI_LOCATION;
+                        const groupedPieceOptions = buildGroupedPieceOptions(isNaoSei ? "" : entry.locationInStore);
                         return (
                           <>
                             {groupedPieceOptions.standalonePieces.length > 0 && (
