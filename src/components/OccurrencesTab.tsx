@@ -501,6 +501,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                 onOpenLightbox={(photos, index) => { setLightboxPhotos(photos); setLightboxIndex(index); setLightboxOpen(true); }}
                 motiveColor={motiveColor}
                 PRIORITY_OPTIONS={PRIORITY_OPTIONS}
+                canLockCards={canLockCards}
               />
             );
           })}
