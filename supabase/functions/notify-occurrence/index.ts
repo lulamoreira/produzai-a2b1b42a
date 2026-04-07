@@ -29,10 +29,14 @@ serve(async (req) => {
     const campaignId = record.campaign_id;
     const occurrenceId = record.id;
 
+    const isGeral = record.location_in_store === "GERAL - NA LOJA TODA";
+
     const [campaignRes, storeRes, pieceRes, motiveRes, emailsRes, statusRes, sysMessagesRes] = await Promise.all([
       supabase.from("campaigns").select("name, client_id, clients(name)").eq("id", campaignId).single(),
       supabase.from("client_stores").select("name, nickname").eq("id", record.store_id).single(),
-      supabase.from("campaign_pieces").select("name").eq("id", record.piece_id).single(),
+      !isGeral && record.piece_id
+        ? supabase.from("campaign_pieces").select("name").eq("id", record.piece_id).single()
+        : Promise.resolve({ data: null }),
       record.motive_id
         ? supabase.from("occurrence_motives").select("description").eq("id", record.motive_id).single()
         : Promise.resolve({ data: null }),
@@ -65,11 +69,15 @@ serve(async (req) => {
     const clientName = (campaign as any)?.clients?.name || "—";
     const storeName = store?.nickname || store?.name || "—";
     const campaignName = campaign?.name || "—";
-    const pieceName = piece?.name || "—";
+    const pieceName = isGeral ? "GERAL - NA LOJA TODA" : (piece?.name || "—");
     const motiveDesc = motive?.description || "—";
     const statusLabel = statusData?.label || record.status || undefined;
     const statusColor = statusData?.color || "#6366f1";
     const description = record.description || undefined;
+    const actionsTaken = record.actions_taken || undefined;
+    const expectedResolutionDate = record.expected_resolution_date
+      ? new Date(record.expected_resolution_date).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })
+      : undefined;
     const date = new Date(record.created_at || new Date().toISOString()).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
     const shortId = occurrenceId?.substring(0, 8) || "";
 
@@ -148,6 +156,8 @@ serve(async (req) => {
               statusColor,
               description,
               publicUrl,
+              actionsTaken,
+              expectedResolutionDate,
               subjectText,
               emailTitle,
               bannerText,
