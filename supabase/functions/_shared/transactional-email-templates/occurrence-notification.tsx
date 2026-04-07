@@ -4,8 +4,6 @@ import {
 } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
-const SITE_NAME = "ProduzAI"
-
 interface OccurrenceNotificationProps {
   eventType?: 'created' | 'updated' | 'status_changed'
   date?: string
@@ -18,6 +16,12 @@ interface OccurrenceNotificationProps {
   statusColor?: string
   description?: string
   publicUrl?: string
+  // Overridable text from system_messages
+  emailTitle?: string
+  bannerText?: string
+  footerText?: string
+  buttonText?: string
+  subjectText?: string
 }
 
 const OccurrenceNotificationEmail = ({
@@ -32,12 +36,18 @@ const OccurrenceNotificationEmail = ({
   statusColor = '#6366f1',
   description,
   publicUrl,
+  emailTitle = 'Sua ocorrência teve uma atualização',
+  bannerText,
+  footerText = 'Este é um email automático do ProduzAI.',
+  buttonText = '📋 Visualizar Ocorrência',
 }: OccurrenceNotificationProps) => {
-  const bannerText = eventType === 'created'
+  const defaultBanner = eventType === 'created'
     ? '🆕 Nova Ocorrência Registrada'
     : eventType === 'status_changed'
     ? `🔄 Status Atualizado para: ${statusLabel || '—'}`
     : '✏️ Ocorrência Atualizada'
+
+  const resolvedBanner = bannerText || defaultBanner
 
   const bannerBg = eventType === 'created' ? '#dcfce7' : eventType === 'status_changed' ? '#dbeafe' : '#fef9c3'
   const bannerBorder = eventType === 'created' ? '#22c55e' : eventType === 'status_changed' ? '#3b82f6' : '#eab308'
@@ -46,13 +56,13 @@ const OccurrenceNotificationEmail = ({
   return (
     <Html lang="pt-BR" dir="ltr">
       <Head />
-      <Preview>Sua ocorrência teve uma atualização - {campaignName}</Preview>
+      <Preview>{emailTitle} - {campaignName}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Sua ocorrência teve uma atualização</Heading>
+          <Heading style={h1}>{emailTitle}</Heading>
 
           <Section style={{ ...banner, backgroundColor: bannerBg, borderLeftColor: bannerBorder }}>
-            <Text style={{ ...bannerText2, color: bannerColor }}>{bannerText}</Text>
+            <Text style={{ ...bannerText2, color: bannerColor }}>{resolvedBanner}</Text>
           </Section>
 
           <Section style={tableSection}>
@@ -73,13 +83,13 @@ const OccurrenceNotificationEmail = ({
           {publicUrl && (
             <Section style={{ textAlign: 'center' as const, marginTop: '25px' }}>
               <Button href={publicUrl} style={button}>
-                📋 Visualizar Ocorrência
+                {buttonText}
               </Button>
             </Section>
           )}
 
           <Hr style={hr} />
-          <Text style={footer}>Este é um email automático do {SITE_NAME}.</Text>
+          <Text style={footer}>{footerText}</Text>
         </Container>
       </Body>
     </Html>
@@ -88,7 +98,7 @@ const OccurrenceNotificationEmail = ({
 
 export const template = {
   component: OccurrenceNotificationEmail,
-  subject: 'Sua ocorrência teve uma atualização',
+  subject: (data: Record<string, any>) => data.subjectText || 'Sua ocorrência teve uma atualização',
   displayName: 'Notificação de Ocorrência',
   previewData: {
     eventType: 'created',
