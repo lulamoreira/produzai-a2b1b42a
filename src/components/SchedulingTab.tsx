@@ -693,90 +693,93 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             >
               {/* Header */}
               <div
-                className="px-4 py-3 flex items-center gap-3 relative"
+                className="px-4 py-3 relative"
                 style={{ backgroundColor: colors.bg, color: colors.text }}
               >
-                <span className="font-bold text-lg">{store.store_code || "—"}</span>
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className="font-semibold text-sm break-words">{store.name}</span>
-                  <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
+                <div className="font-semibold text-sm break-words leading-snug">{store.name}</div>
+                <div className="flex items-center justify-between mt-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-lg leading-none">{store.store_code || "—"}</span>
+                    <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0 relative"
+                      style={{ color: colors.text }}
+                      title="Abrir chat"
+                      onClick={() => {
+                        setChatStoreId(store.id);
+                        setChatStoreName(store.name);
+                        setChatOpen(true);
+                        markAsRead.mutate({ contextType: "schedule_chat", contextId: `${campaignId}:${store.id}` });
+                      }}
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      {(chatCounts?.unreadPerStore[store.id] || 0) > 0 && (
+                        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center px-0.5">
+                          {chatCounts!.unreadPerStore[store.id]}
+                        </span>
+                      )}
+                      {(chatCounts?.totalPerStore[store.id] || 0) > 0 && !(chatCounts?.unreadPerStore[store.id]) && (
+                        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-muted text-muted-foreground text-[9px] font-bold flex items-center justify-center px-0.5">
+                          {chatCounts!.totalPerStore[store.id]}
+                        </span>
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0"
+                      style={{ color: colors.text }}
+                      title="Histórico"
+                      onClick={() => {
+                        setHistoryStoreId(store.id);
+                        setHistoryStoreName(store.name);
+                        setHistoryOpen(true);
+                      }}
+                    >
+                      <History className="w-4 h-4" />
+                    </Button>
+                    {isAdminOrMaster && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0"
+                        style={{ color: colors.text }}
+                        title="Log de Atividades"
+                        onClick={() => {
+                          setLogStoreId(store.id);
+                          setLogStoreName(store.name);
+                          setLogOpen(true);
+                        }}
+                      >
+                        <ClipboardList className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {canLockCards && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`h-7 w-7 shrink-0 ${isCardLocked ? "text-destructive" : ""}`}
+                        style={!isCardLocked ? { color: colors.text } : undefined}
+                        title={isCardLocked ? "Desbloquear card" : "Bloquear card"}
+                        onClick={handleToggleLock}
+                        disabled={!!lockLoading[store.id]}
+                      >
+                        {isCardLocked ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
+                      </Button>
+                    )}
+                    {fullyApproved ? (
+                      <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
+                    ) : (effectiveStoreStatus === "approved" && effectiveTeamStatus === "approved" && !hasOs && effectiveDate && effectiveTime) ? (
+                      <span className="text-[10px] font-bold text-destructive whitespace-nowrap leading-tight text-center shrink-0 bg-destructive/10 px-1.5 py-0.5 rounded">FALTA<br/>OS</span>
+                    ) : (
+                      <AlertCircle className="w-6 h-6 shrink-0 text-amber-500 drop-shadow" />
+                    )}
+                  </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 shrink-0 relative"
-                  style={{ color: colors.text }}
-                  title="Abrir chat"
-                  onClick={() => {
-                    setChatStoreId(store.id);
-                    setChatStoreName(store.name);
-                    setChatOpen(true);
-                    markAsRead.mutate({ contextType: "schedule_chat", contextId: `${campaignId}:${store.id}` });
-                  }}
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  {(chatCounts?.unreadPerStore[store.id] || 0) > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5">
-                      {chatCounts!.unreadPerStore[store.id]}
-                    </span>
-                  )}
-                  {(chatCounts?.totalPerStore[store.id] || 0) > 0 && !(chatCounts?.unreadPerStore[store.id]) && (
-                    <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-muted text-muted-foreground text-[9px] font-bold flex items-center justify-center px-0.5">
-                      {chatCounts!.totalPerStore[store.id]}
-                    </span>
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 shrink-0"
-                  style={{ color: colors.text }}
-                  title="Histórico"
-                  onClick={() => {
-                    setHistoryStoreId(store.id);
-                    setHistoryStoreName(store.name);
-                    setHistoryOpen(true);
-                  }}
-                >
-                  <History className="w-4 h-4" />
-                </Button>
-                {isAdminOrMaster && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 shrink-0"
-                    style={{ color: colors.text }}
-                    title="Log de Atividades"
-                    onClick={() => {
-                      setLogStoreId(store.id);
-                      setLogStoreName(store.name);
-                      setLogOpen(true);
-                    }}
-                  >
-                    <ClipboardList className="w-4 h-4" />
-                  </Button>
-                )}
-                {canLockCards && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`h-7 w-7 shrink-0 ${isCardLocked ? "text-destructive" : ""}`}
-                    style={!isCardLocked ? { color: colors.text } : undefined}
-                    title={isCardLocked ? "Desbloquear card" : "Bloquear card"}
-                    onClick={handleToggleLock}
-                    disabled={!!lockLoading[store.id]}
-                  >
-                    {isCardLocked ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
-                  </Button>
-                )}
-                {/* Approval status icon */}
-                {fullyApproved ? (
-                  <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
-                ) : (effectiveStoreStatus === "approved" && effectiveTeamStatus === "approved" && !hasOs && effectiveDate && effectiveTime) ? (
-                  <span className="text-[10px] font-bold text-destructive whitespace-nowrap leading-tight text-center shrink-0 bg-destructive/10 px-1.5 py-0.5 rounded">FALTA<br/>OS</span>
-                ) : (
-                  <AlertCircle className="w-6 h-6 shrink-0 text-amber-500 drop-shadow" />
-                )}
                 {isReschedule && (
                   <span className="absolute top-1 right-1 text-[8px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full leading-none">REM</span>
                 )}
