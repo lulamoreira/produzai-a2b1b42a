@@ -195,7 +195,7 @@ export default function OccurrenceCard({
       }
       
       if (status !== undefined) {
-        const { error } = await supabase.from("occurrences").update({ status }).eq("id", occ.id);
+        const { error } = await supabase.from("occurrences").update({ status: status as string }).eq("id", occ.id);
         if (error) throw error;
       }
 
