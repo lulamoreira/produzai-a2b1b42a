@@ -1,38 +1,51 @@
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Store, Puzzle, Calendar, MessageSquare, Camera, Tag, CircleDot, Link2, X, Wrench, Clock, Mail } from "lucide-react";
+import { AlertTriangle, Store, Puzzle, Calendar, MessageSquare, Camera, Tag, CircleDot, Link2, X, Wrench, Clock, Mail, Plus, Check } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 
 const PublicOccurrenceDetail = () => {
   const { occurrenceId } = useParams<{ occurrenceId: string }>();
   const [selectedPhoto, setSelectedPhoto] = useState<number | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [selectedCcEmails, setSelectedCcEmails] = useState<string[]>([]);
+  const [customEmail, setCustomEmail] = useState("");
 
   const sendTrackingEmail = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (ccEmails: string[]) => {
       if (!occurrence?.reporter_email || !campaign) throw new Error("Dados insuficientes");
       const publicUrl = `${window.location.origin}/ocorrencia/${occurrenceId}`;
       const storeName = store?.nickname || store?.name || "";
       const campaignName = campaign.name || "";
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "occurrence-tracking",
-          recipientEmail: occurrence.reporter_email,
-          idempotencyKey: `occ-tracking-${occurrenceId}-${Date.now()}`,
-          templateData: { campaignName, publicUrl, storeName },
-        },
-      });
-      if (error) throw error;
+      const allRecipients = [occurrence.reporter_email, ...ccEmails];
+      const uniqueRecipients = [...new Set(allRecipients)];
+
+      for (const email of uniqueRecipients) {
+        await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "occurrence-tracking",
+            recipientEmail: email,
+            idempotencyKey: `occ-tracking-${occurrenceId}-${email}-${Date.now()}`,
+            templateData: { campaignName, publicUrl, storeName },
+          },
+        });
+      }
     },
     onSuccess: () => {
       setEmailSent(true);
-      toast.success("Email de acompanhamento enviado!");
+      setShowEmailDialog(false);
+      toast.success("Email(s) de acompanhamento enviado(s)!");
     },
     onError: () => toast.error("Erro ao enviar email"),
   });
@@ -49,6 +62,19 @@ const PublicOccurrenceDetail = () => {
       return data;
     },
     enabled: !!occurrenceId,
+  });
+
+  // Fetch notification emails for the campaign (for CC options)
+  const { data: notificationEmails = [] } = useQuery({
+    queryKey: ["public_occ_notif_emails", occurrence?.campaign_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaign_notification_emails")
+        .select("email")
+        .eq("campaign_id", occurrence!.campaign_id);
+      return (data || []).map((e: any) => e.email).filter((e: string) => e !== occurrence?.reporter_email);
+    },
+    enabled: !!occurrence?.campaign_id,
   });
 
   const { data: campaign } = useQuery({
@@ -346,10 +372,14 @@ const PublicOccurrenceDetail = () => {
               size="sm"
               className="gap-2"
               disabled={sendTrackingEmail.isPending || emailSent}
-              onClick={() => sendTrackingEmail.mutate()}
+              onClick={() => {
+                setSelectedCcEmails([]);
+                setCustomEmail("");
+                setShowEmailDialog(true);
+              }}
             >
               <Mail className="w-4 h-4" />
-              {emailSent ? "Email Enviado ✓" : sendTrackingEmail.isPending ? "Enviando..." : "Enviar por Email"}
+              {emailSent ? "Email Enviado ✓" : "Enviar por Email"}
             </Button>
           )}
           <Button
@@ -389,6 +419,94 @@ const PublicOccurrenceDetail = () => {
             Fechar
           </Button>
         </div>
+
+        {/* Email Dialog */}
+        <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-primary" />
+                Enviar Email de Acompanhamento
+              </DialogTitle>
+              <DialogDescription>
+                O email será enviado para <strong>{occurrence.reporter_email}</strong>.
+                Deseja enviar cópia para mais alguém?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              {/* Registered emails */}
+              {notificationEmails.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-foreground">Emails cadastrados:</p>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {notificationEmails.map((email: string) => (
+                      <label key={email} className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-muted/50 transition-colors">
+                        <Checkbox
+                          checked={selectedCcEmails.includes(email)}
+                          onCheckedChange={(checked) => {
+                            setSelectedCcEmails(prev =>
+                              checked ? [...prev, email] : prev.filter(e => e !== email)
+                            );
+                          }}
+                        />
+                        <span className="text-sm text-foreground truncate">{email}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Custom email */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground">Outro email:</p>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="email@exemplo.com"
+                    value={customEmail}
+                    onChange={(e) => setCustomEmail(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={!customEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customEmail) || selectedCcEmails.includes(customEmail)}
+                    onClick={() => {
+                      if (customEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customEmail)) {
+                        setSelectedCcEmails(prev => [...prev, customEmail]);
+                        setCustomEmail("");
+                      }
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+                {/* Show added custom emails */}
+                {selectedCcEmails.filter(e => !notificationEmails.includes(e)).map(email => (
+                  <div key={email} className="flex items-center gap-2 text-sm bg-muted/50 rounded-lg px-3 py-1.5">
+                    <Check className="w-3 h-3 text-primary" />
+                    <span className="flex-1 truncate">{email}</span>
+                    <button onClick={() => setSelectedCcEmails(prev => prev.filter(e => e !== email))} className="text-muted-foreground hover:text-destructive">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="ghost" onClick={() => setShowEmailDialog(false)}>Cancelar</Button>
+              <Button
+                disabled={sendTrackingEmail.isPending}
+                onClick={() => sendTrackingEmail.mutate(selectedCcEmails)}
+              >
+                <Mail className="w-4 h-4 mr-2" />
+                {sendTrackingEmail.isPending ? "Enviando..." : `Enviar${selectedCcEmails.length > 0 ? ` (${1 + selectedCcEmails.length})` : ""}`}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Footer */}
         <div className="text-center pb-8">
