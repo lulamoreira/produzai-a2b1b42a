@@ -283,23 +283,70 @@ export default function OccurrenceCard({
   const getStatusColor = (v: string) => statuses.find((s) => s.value === v)?.color || "#6366f1";
   const getStatusLabel = (v: string) => statuses.find((s) => s.value === v)?.label || v;
 
+  const handleToggleLock = async () => {
+    setLockLoading(true);
+    try {
+      const newLocked = !isLocked;
+      const { error } = await supabase.from("occurrences").update({ locked: newLocked } as any).eq("id", occ.id);
+      if (error) throw error;
+      // Log
+      if (user) {
+        await supabase.from("activity_logs").insert({
+          campaign_id: campaignId,
+          store_id: occ.id,
+          user_id: user.id,
+          module: "occurrences",
+          action: newLocked ? "Card bloqueado" : "Card desbloqueado",
+          details: newLocked ? "Card bloqueado para edição" : "Card desbloqueado para edição",
+        });
+      }
+      qc.invalidateQueries({ queryKey: ["occurrences", campaignId] });
+      toast.success(newLocked ? "Card bloqueado!" : "Card desbloqueado!");
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao alterar bloqueio.");
+    } finally {
+      setLockLoading(false);
+    }
+  };
+
   return (
-    <div className={`group aqua-card bg-gradient-to-br ${motiveColor} border border-border border-l-4 p-4 hover:shadow-lg transition-all duration-200 flex flex-col`}>
-      {/* Header: date */}
+    <div className={`group aqua-card bg-gradient-to-br ${motiveColor} border border-border border-l-4 p-4 hover:shadow-lg transition-all duration-200 flex flex-col ${isLocked ? "opacity-80" : ""}`}>
+      {/* Header: date + lock */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-          <Calendar className="w-3 h-3" />
-          {occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          title="Log de atividades"
-          onClick={() => setLogOpen(true)}
-        >
-          <ClipboardList className="w-3.5 h-3.5 text-muted-foreground" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Calendar className="w-3 h-3" />
+            {occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}
+          </span>
+          {isLocked && (
+            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-destructive/50 text-destructive gap-0.5">
+              <Lock className="w-2.5 h-2.5" /> Bloqueado
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-0.5">
+          {canLockCards && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-6 w-6 ${isLocked ? "text-destructive" : "text-muted-foreground"}`}
+              title={isLocked ? "Desbloquear card" : "Bloquear card"}
+              onClick={handleToggleLock}
+              disabled={lockLoading}
+            >
+              {isLocked ? <Lock className="w-3.5 h-3.5" /> : <LockOpen className="w-3.5 h-3.5" />}
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            title="Log de atividades"
+            onClick={() => setLogOpen(true)}
+          >
+            <ClipboardList className="w-3.5 h-3.5 text-muted-foreground" />
+          </Button>
+        </div>
       </div>
 
       {/* Priority */}
