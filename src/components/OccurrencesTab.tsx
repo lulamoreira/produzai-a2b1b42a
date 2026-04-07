@@ -69,9 +69,10 @@ interface Props {
 
 
 const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEditProp, canDelete: canDeleteProp, canEditReporter: canEditReporterProp }: Props) => {
-  const { isAdmin } = useUserRole();
-  const canEdit = canEditProp ?? isAdmin;
+  const { isAdmin, isAdminOrMaster } = useUserRole();
+  const canEdit = canEditProp ?? isAdminOrMaster;
   const canDelete = canDeleteProp ?? isAdmin;
+  const canEditReporter = canEditReporterProp ?? isAdminOrMaster;
   const { data: occurrences = [], isLoading } = useOccurrences(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: motives = [] } = useOccurrenceMotives();
