@@ -255,12 +255,21 @@ export default function PhotoCheckin() {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {filteredPhotos.map((photo, i) => (
               <div key={photo.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted/30">
-                <img
-                  src={photo.photo_url}
-                  alt={photo.caption || `Foto ${i + 1}`}
-                  className="w-full aspect-square object-cover cursor-pointer transition-transform hover:scale-105"
-                  onClick={() => setLightboxIndex(i)}
-                />
+                {isVideo(photo) ? (
+                  <div className="w-full aspect-square relative cursor-pointer bg-black flex items-center justify-center" onClick={() => setLightboxIndex(i)}>
+                    <video src={photo.photo_url} className="w-full h-full object-cover" muted preload="metadata" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <Video className="w-8 h-8 text-white" />
+                    </div>
+                  </div>
+                ) : (
+                  <img
+                    src={photo.photo_url}
+                    alt={photo.caption || `Foto ${i + 1}`}
+                    className="w-full aspect-square object-cover cursor-pointer transition-transform hover:scale-105"
+                    onClick={() => setLightboxIndex(i)}
+                  />
+                )}
                 <span className={cn(
                   "absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full text-white",
                   photo.category === "before" && "bg-blue-500",
@@ -327,12 +336,22 @@ export default function PhotoCheckin() {
             </>
           )}
 
-          <img
-            src={currentLightbox.photo_url}
-            alt={currentLightbox.caption || "Foto"}
-            className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg"
-            onClick={(e) => e.stopPropagation()}
-          />
+          {isVideo(currentLightbox) ? (
+            <video
+              src={currentLightbox.photo_url}
+              controls
+              autoPlay
+              className="max-w-[90vw] max-h-[75vh] rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <img
+              src={currentLightbox.photo_url}
+              alt={currentLightbox.caption || "Foto"}
+              className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          )}
 
           <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-4 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
             <p className="text-center text-xs text-white/70 flex items-center justify-center gap-1.5">
