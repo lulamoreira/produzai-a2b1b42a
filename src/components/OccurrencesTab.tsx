@@ -57,6 +57,94 @@ function SortableConfigItem({ id, children }: { id: string; children: React.Reac
   );
 }
 
+function EditableLocationPiece({
+  occ, campaignId, pieceLocations, pieces, canEdit, getPieceName, updateFields,
+}: {
+  occ: any; campaignId: string; pieceLocations: { id: string; name: string }[];
+  pieces: CampaignPiece[]; canEdit: boolean; getPieceName: (id: string) => string;
+  updateFields: any;
+}) {
+  const [editingLocation, setEditingLocation] = useState(false);
+  const [editingPiece, setEditingPiece] = useState(false);
+  const isGeral = occ.location_in_store === "GERAL - NA LOJA TODA";
+
+  return (
+    <>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+        {editingLocation ? (
+          <Select
+            value={occ.location_in_store || ""}
+            onValueChange={(val) => {
+              updateFields.mutate({ id: occ.id, campaignId, location_in_store: val });
+              if (val === "GERAL - NA LOJA TODA") {
+                updateFields.mutate({ id: occ.id, campaignId, piece_id: null });
+              }
+              setEditingLocation(false);
+            }}
+          >
+            <SelectTrigger className="h-6 text-xs border-0 bg-muted/50 flex-1 min-w-0">
+              <SelectValue placeholder="Selecione local..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="GERAL - NA LOJA TODA">🏪 GERAL - NA LOJA TODA</SelectItem>
+              {pieceLocations.map((loc) => (
+                <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <>
+            <span className="text-xs text-muted-foreground truncate">{occ.location_in_store || "—"}</span>
+            {canEdit && (
+              <button type="button" onClick={() => setEditingLocation(true)} className="text-muted-foreground hover:text-primary transition-colors ml-auto flex-shrink-0">
+                <Pencil className="w-3 h-3" />
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {!isGeral ? (
+        <div className="flex items-center gap-1.5 mb-3">
+          <Puzzle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          {editingPiece ? (
+            <Select
+              value={occ.piece_id || ""}
+              onValueChange={(val) => {
+                updateFields.mutate({ id: occ.id, campaignId, piece_id: val });
+                setEditingPiece(false);
+              }}
+            >
+              <SelectTrigger className="h-6 text-xs border-0 bg-muted/50 flex-1 min-w-0">
+                <SelectValue placeholder="Selecione peça..." />
+              </SelectTrigger>
+              <SelectContent>
+                {pieces.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <>
+              <span className="text-xs text-muted-foreground truncate">{getPieceName(occ.piece_id)}</span>
+              {canEdit && (
+                <button type="button" onClick={() => setEditingPiece(true)} className="text-muted-foreground hover:text-primary transition-colors ml-auto flex-shrink-0">
+                  <Pencil className="w-3 h-3" />
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      ) : (
+        <p className="text-[10px] text-muted-foreground italic mb-3 ml-5">
+          Ocorrência geral — sem peça específica vinculada.
+        </p>
+      )}
+    </>
+  );
+}
+
 interface Props {
   campaignId: string;
   clientId?: string;
