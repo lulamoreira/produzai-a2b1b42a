@@ -541,24 +541,18 @@ const PublicOccurrence = () => {
                                 ))}
                               </SelectGroup>
                             )}
-                            {groupedPieceOptions.kitGroups.map((group) => (
-                              <SelectGroup key={group.kit.id}>
-                                <SelectLabel className="text-xs font-bold text-white bg-[#1e3a5f] flex items-center gap-1.5 mt-2 px-2 py-1.5 rounded-md mx-1">
-                                  <Boxes className="w-3.5 h-3.5" />
-                                  Kit {group.kit.code} - {group.kit.name}
-                                </SelectLabel>
-                                {group.memberPieces.map((p) => (
-                                  <SelectItem key={p.id} value={p.id} className="border-l-2 border-[#1e3a5f]/30 ml-3">
-                                    <div className="flex items-center gap-2 pl-1">
-                                      {p.image_url ? (
-                                        <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
-                                      ) : (
-                                        <Package className="w-4 h-4 text-muted-foreground" />
-                                      )}
-                                      <span className="text-sm">{p.code} - {p.name}</span>
-                                    </div>
-                                  </SelectItem>
-                                ))}
+                            {groupedPieceOptions.kitItems.map((item) => (
+                              <SelectGroup key={item.kit.id}>
+                                <SelectItem value={item.firstMemberPiece!.id} className="font-semibold">
+                                  <div className="flex items-center gap-2">
+                                    {item.kit.image_url ? (
+                                      <img src={item.kit.image_url} alt={item.kit.name} className="w-6 h-6 rounded object-cover" />
+                                    ) : (
+                                      <Boxes className="w-4 h-4 text-[#1e3a5f]" />
+                                    )}
+                                    <span className="text-sm">Kit {item.kit.code} - {item.kit.name}</span>
+                                  </div>
+                                </SelectItem>
                               </SelectGroup>
                             ))}
                           </>
