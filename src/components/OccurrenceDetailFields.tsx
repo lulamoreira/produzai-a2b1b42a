@@ -38,6 +38,7 @@ interface Props {
   pieceLocations: { id: string; name: string }[];
   canEdit: boolean;
   canEditReporter?: boolean;
+  onFieldChange?: (field: string, value: unknown) => void;
 }
 
 const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canEditReporter = false }: Props) => {

@@ -156,8 +156,8 @@ export default function OccurrenceCard({
       const oldVal = (occ as any)[field];
 
       if (field === "status") {
-        const oldLabel = statuses.find((s) => s.value === oldVal)?.label || oldVal || "—";
-        const newLabel = statuses.find((s) => s.value === newVal)?.label || (newVal as string) || "—";
+        const oldLabel = statuses.find((s) => s.value === oldVal)?.label || String(oldVal || "—");
+        const newLabel = statuses.find((s) => s.value === newVal)?.label || String(newVal || "—");
         lines.push(`${label}: ${oldLabel} → ${newLabel}`);
       } else if (field === "priority") {
         const oldLabel = PRIORITY_OPTIONS.find((p) => p.value === oldVal)?.label || oldVal || "—";
@@ -176,7 +176,7 @@ export default function OccurrenceCard({
       } else if (typeof newVal === "string" && (newVal.length > 50 || (oldVal || "").length > 50)) {
         lines.push(`${label}: alterado`);
       } else {
-        lines.push(`${label}: ${oldVal || "—"} → ${(newVal as string) || "—"}`);
+        lines.push(`${label}: ${String(oldVal || "—")} → ${String(newVal || "—")}`);
       }
     }
     return lines.join("\n");
