@@ -44,6 +44,13 @@ serve(async (req) => {
     ]);
 
     const emails = emailsRes.data?.map((e: any) => e.email) || [];
+
+    // Also include the reporter's email if present (store person who created the occurrence)
+    const reporterEmail = record.reporter_email;
+    if (reporterEmail && !emails.includes(reporterEmail)) {
+      emails.push(reporterEmail);
+    }
+
     if (emails.length === 0) {
       return new Response(JSON.stringify({ message: "No notification emails configured" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
