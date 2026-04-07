@@ -11,14 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import type { CampaignKit, CampaignKitPiece, CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 import { useCampaignKitPieces, useCampaignKits, useCampaignPieceLocations } from "@/hooks/useMultiClientData";
 import OccurrenceCard from "./OccurrenceCard";
-import OccurrencesDashboard from "./OccurrencesDashboard";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -31,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle, Phone, MapPin, GripVertical, User, Pencil, Flag } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, QrCode, Download, Calendar, CircleDot, GripVertical, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
