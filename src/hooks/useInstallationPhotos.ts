@@ -46,6 +46,7 @@ export function useAddInstallationPhoto() {
       caption?: string;
       uploaded_by?: string;
       upload_method?: string;
+      media_type?: string;
     }) => {
       const { data, error } = await supabase
         .from("installation_photos")
