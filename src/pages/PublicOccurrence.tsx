@@ -230,7 +230,7 @@ const PublicOccurrence = () => {
   const allEntriesValid = entries.every((e) => {
     const isGeral = e.locationInStore === GERAL_LOCATION;
     const hasPiece = isGeral || !!e.pieceId;
-    const hasLocation = locations.length === 0 || !!e.locationInStore;
+    const hasLocation = !!e.locationInStore;
     return hasPiece && e.motiveId && hasLocation;
   });
   const reporterValid = isSpecialReporter
