@@ -30,6 +30,7 @@ const VARIABLES_HELP = [
     { name: "{time}", desc: "Horário agendado da instalação" },
   ]},
   { category: "E-mail", variables: [
+    { name: "{id}", desc: "ID resumido da ocorrência (8 caracteres)" },
     { name: "{status}", desc: "Nome/label do status atual da ocorrência" },
     { name: "{store}", desc: "Apelido ou nome da loja" },
     { name: "{campaign}", desc: "Nome da campanha" },
