@@ -504,7 +504,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   campaignId={campaignId}
                   pieceLocations={pieceLocations}
                   canEdit={canEdit}
-                  canEditReporter={canEditReporterProp}
+                  canEditReporter={canEditReporter}
                 />
 
 
