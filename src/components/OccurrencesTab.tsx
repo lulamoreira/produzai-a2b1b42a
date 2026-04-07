@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import {
-  useOccurrences, useUpdateOccurrenceStatus, useUpdateOccurrenceFields, useDeleteOccurrence,
+  useOccurrences,
   useCampaignEmails, useAddCampaignEmail, useDeleteCampaignEmail,
   useOccurrenceMotives, useAddOccurrenceMotive, useUpdateOccurrenceMotive, useDeleteOccurrenceMotive,
   useOccurrenceStatuses, useAddOccurrenceStatus, useUpdateOccurrenceStatus2, useDeleteOccurrenceStatusItem,
