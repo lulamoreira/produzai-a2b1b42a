@@ -41,7 +41,7 @@ interface Props {
   onFieldChange?: (field: string, value: unknown) => void;
 }
 
-const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canEditReporter = false }: Props) => {
+const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canEditReporter = false, onFieldChange }: Props) => {
   const { user } = useAuth();
   const qc = useQueryClient();
   const updateFields = useUpdateOccurrenceFields();
@@ -87,7 +87,11 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
 
   const handleFieldUpdate = (field: string, value: unknown) => {
     if (!canEdit) return;
-    updateFields.mutate({ id: occ.id, campaignId, [field]: value });
+    if (onFieldChange) {
+      onFieldChange(field, value);
+    } else {
+      updateFields.mutate({ id: occ.id, campaignId, [field]: value });
+    }
   };
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
