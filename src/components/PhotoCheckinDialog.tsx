@@ -3,9 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Trash2, Edit3, X, ChevronLeft, ChevronRight, Camera } from "lucide-react";
+import { Trash2, Edit3, X, ChevronLeft, ChevronRight, Camera, Video } from "lucide-react";
 import { type ClientStore } from "@/hooks/useMultiClientData";
-import { type InstallationPhoto, useUpdateInstallationPhoto, useDeleteInstallationPhoto } from "@/hooks/useInstallationPhotos";
+import { type InstallationPhoto, useUpdateInstallationPhoto, useDeleteInstallationPhoto, isVideo } from "@/hooks/useInstallationPhotos";
 import { useUserRole } from "@/hooks/useUserRole";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -116,12 +116,21 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {filteredPhotos.map((photo, i) => (
                 <div key={photo.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted/30">
-                  <img
-                    src={photo.photo_url}
-                    alt={photo.caption || `Foto ${i + 1}`}
-                    className="w-full aspect-square object-cover cursor-pointer transition-transform hover:scale-105"
-                    onClick={() => setLightboxIndex(i)}
-                  />
+                  {isVideo(photo) ? (
+                    <div className="w-full aspect-square relative cursor-pointer bg-black flex items-center justify-center" onClick={() => setLightboxIndex(i)}>
+                      <video src={photo.photo_url} className="w-full h-full object-cover" muted preload="metadata" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <Video className="w-8 h-8 text-white" />
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={photo.photo_url}
+                      alt={photo.caption || `Foto ${i + 1}`}
+                      className="w-full aspect-square object-cover cursor-pointer transition-transform hover:scale-105"
+                      onClick={() => setLightboxIndex(i)}
+                    />
+                  )}
                   {/* Category badge - clickable dropdown for Admin/Master */}
                   {isAdminOrMaster ? (
                     <DropdownMenu>
@@ -213,12 +222,22 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
               </>
             )}
 
-            <img
-              src={currentLightbox.photo_url}
-              alt={currentLightbox.caption || "Foto"}
-              className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg"
-              onClick={(e) => e.stopPropagation()}
-            />
+            {isVideo(currentLightbox) ? (
+              <video
+                src={currentLightbox.photo_url}
+                controls
+                autoPlay
+                className="max-w-[90vw] max-h-[75vh] rounded-lg"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <img
+                src={currentLightbox.photo_url}
+                alt={currentLightbox.caption || "Foto"}
+                className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg"
+                onClick={(e) => e.stopPropagation()}
+              />
+            )}
 
             {/* Bottom controls */}
             <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-4 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
