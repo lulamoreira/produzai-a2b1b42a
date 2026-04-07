@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import {
   useOccurrences, useUpdateOccurrenceStatus, useDeleteOccurrence,
   useCampaignEmails, useAddCampaignEmail, useDeleteCampaignEmail,
