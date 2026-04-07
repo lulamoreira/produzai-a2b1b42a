@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Store, Puzzle, Calendar, MapPin, User, Pencil, Flag, Trash2,
-  ExternalLink, Link2, MessageCircle, Phone, Save, ClipboardList, Loader2,
+  ExternalLink, Link2, MessageCircle, Phone, Save, ClipboardList, Loader2, Lock, LockOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -84,14 +84,15 @@ interface OccurrenceCardProps {
   onOpenLightbox: (photos: string[], index: number) => void;
   motiveColor: string;
   PRIORITY_OPTIONS: { value: string; label: string; color: string }[];
+  canLockCards?: boolean;
 }
 
 export default function OccurrenceCard({
   occ, campaignId, stores, pieces, kits, kitPieces, pieceLocations,
-  canEdit, canDelete, canEditReporter, motives, statuses, defaultStatus,
+  canEdit: canEditProp, canDelete, canEditReporter: canEditReporterProp, motives, statuses, defaultStatus,
   photosMap, campaignName, agencyName, clientName, getReporterLabel,
   firstPieceKitLabels, whatsappLinkTemplate, whatsappContactTemplate,
-  onOpenLightbox, motiveColor, PRIORITY_OPTIONS,
+  onOpenLightbox, motiveColor, PRIORITY_OPTIONS, canLockCards,
 }: OccurrenceCardProps) {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -99,10 +100,15 @@ export default function OccurrenceCard({
   const updateStatus = useUpdateOccurrenceStatus();
   const deleteOcc = useDeleteOccurrence();
 
+  const isLocked = !!(occ as any).locked;
+  const canEdit = canEditProp && !isLocked;
+  const canEditReporter = canEditReporterProp && !isLocked;
+
   // Draft state: accumulate local changes
   const [draft, setDraft] = useState<Record<string, unknown>>({});
   const [saving, setSaving] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
+  const [lockLoading, setLockLoading] = useState(false);
   const hasPendingChanges = Object.keys(draft).length > 0;
 
   // Merged occurrence (server + draft)
