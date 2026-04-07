@@ -10,7 +10,9 @@ export interface TemplateEntry {
 }
 
 import { template as occurrenceNotification } from './occurrence-notification.tsx'
+import { template as occurrenceTracking } from './occurrence-tracking.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'occurrence-notification': occurrenceNotification,
+  'occurrence-tracking': occurrenceTracking,
 }
