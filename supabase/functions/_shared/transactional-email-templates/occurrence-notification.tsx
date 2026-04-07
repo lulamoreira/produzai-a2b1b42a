@@ -16,6 +16,8 @@ interface OccurrenceNotificationProps {
   statusColor?: string
   description?: string
   publicUrl?: string
+  actionsTaken?: string
+  expectedResolutionDate?: string
   // Overridable text from system_messages
   emailTitle?: string
   bannerText?: string
@@ -36,6 +38,8 @@ const OccurrenceNotificationEmail = ({
   statusColor = '#6366f1',
   description,
   publicUrl,
+  actionsTaken,
+  expectedResolutionDate,
   emailTitle = 'Sua ocorrência teve uma atualização',
   bannerText,
   footerText = 'Este é um email automático do ProduzAI.',
@@ -78,6 +82,12 @@ const OccurrenceNotificationEmail = ({
             {description && (
               <Text style={rowAlt}>📝 <strong>Descrição:</strong> {description}</Text>
             )}
+            {actionsTaken && (
+              <Text style={row}>🔧 <strong>Ações Tomadas:</strong> {actionsTaken}</Text>
+            )}
+            {expectedResolutionDate && (
+              <Text style={rowAlt}>📆 <strong>Previsão de Resolução:</strong> {expectedResolutionDate}</Text>
+            )}
           </Section>
 
           {publicUrl && (
@@ -111,6 +121,8 @@ export const template = {
     statusLabel: 'Aberta',
     statusColor: '#6366f1',
     description: 'Adesivo com bolhas na vitrine principal',
+    actionsTaken: 'Equipe acionada para troca',
+    expectedResolutionDate: '15/04/2026',
     publicUrl: 'https://produzai.lovable.app/ocorrencia/123',
   },
 } satisfies TemplateEntry
