@@ -53,172 +53,7 @@ function SortableConfigItem({ id, children }: { id: string; children: React.Reac
   );
 }
 
-const GERAL_LOCATION = "GERAL - NA LOJA TODA";
-const NAO_SEI_LOCATION = "NÃO SEI O LOCAL";
 
-type OccurrencePieceOption = {
-  value: string;
-  label: string;
-  sortOrder: number;
-};
-
-function getOccurrencePieceOptions({
-  location,
-  pieces,
-  kits,
-  kitPieces,
-}: {
-  location: string | null | undefined;
-  pieces: CampaignPiece[];
-  kits: CampaignKit[];
-  kitPieces: CampaignKitPiece[];
-}) {
-  if (!location || location === GERAL_LOCATION) return [] as OccurrencePieceOption[];
-
-  const showAll = location === NAO_SEI_LOCATION;
-  const filteredPieces = showAll ? pieces : pieces.filter((piece) => piece.category === location);
-  const kitPieceIds = new Set(kitPieces.map((kitPiece) => kitPiece.piece_id));
-
-  const standalonePieces: OccurrencePieceOption[] = filteredPieces
-    .filter((piece) => !piece.kit_only && !kitPieceIds.has(piece.id))
-    .map((piece) => ({
-      value: piece.id,
-      label: `${piece.code} - ${piece.name}`,
-      sortOrder: piece.display_order,
-    }));
-
-  const kitItems: OccurrencePieceOption[] = kits
-    .map((kit) => {
-      const memberPieceIds = kitPieces
-        .filter((kitPiece) => kitPiece.kit_id === kit.id)
-        .map((kitPiece) => kitPiece.piece_id);
-      const firstMemberPiece = filteredPieces.find((piece) => memberPieceIds.includes(piece.id));
-
-      if (!firstMemberPiece) return null;
-
-      return {
-        value: firstMemberPiece.id,
-        label: `Kit ${kit.code} - ${kit.name}`,
-        sortOrder: kit.display_order,
-      } satisfies OccurrencePieceOption;
-    })
-    .filter((item): item is OccurrencePieceOption => item !== null);
-
-  return [...standalonePieces, ...kitItems].sort(
-    (a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label, "pt-BR")
-  );
-}
-
-function EditableLocationPiece({
-  occ, campaignId, pieceLocations, pieces, kits, kitPieces, canEdit, getPieceName, updateFields,
-}: {
-  occ: any; campaignId: string; pieceLocations: { id: string; name: string }[];
-  pieces: CampaignPiece[]; kits: CampaignKit[]; kitPieces: CampaignKitPiece[]; canEdit: boolean; getPieceName: (id: string | null) => string;
-  updateFields: any;
-}) {
-  const [editingLocation, setEditingLocation] = useState(false);
-  const [editingPiece, setEditingPiece] = useState(false);
-  const isGeral = occ.location_in_store === GERAL_LOCATION;
-  const isNaoSei = occ.location_in_store === NAO_SEI_LOCATION;
-  const pieceOptions = useMemo(
-    () => getOccurrencePieceOptions({ location: occ.location_in_store, pieces, kits, kitPieces }),
-    [occ.location_in_store, pieces, kits, kitPieces]
-  );
-  const selectedPieceOption = pieceOptions.find((option) => option.value === occ.piece_id);
-  const pieceDisplayName = selectedPieceOption?.label ?? (occ.location_in_store ? "—" : getPieceName(occ.piece_id));
-
-  const handleLocationChange = (value: string) => {
-    const nextOptions = getOccurrencePieceOptions({ location: value, pieces, kits, kitPieces });
-    const shouldClearPiece = value === GERAL_LOCATION || !occ.piece_id || !nextOptions.some((option) => option.value === occ.piece_id);
-
-    updateFields.mutate({
-      id: occ.id,
-      campaignId,
-      location_in_store: value,
-      ...(shouldClearPiece ? { piece_id: null } : {}),
-    });
-
-    setEditingLocation(false);
-    if (shouldClearPiece) setEditingPiece(false);
-  };
-
-  return (
-    <>
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-        {editingLocation ? (
-          <Select
-            value={occ.location_in_store || ""}
-            onValueChange={handleLocationChange}
-          >
-            <SelectTrigger className="h-6 text-xs border-0 bg-muted/50 flex-1 min-w-0">
-              <SelectValue placeholder="Selecione local..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={GERAL_LOCATION}>🏪 GERAL - NA LOJA TODA</SelectItem>
-              <SelectItem value={NAO_SEI_LOCATION}>❓ NÃO SEI O LOCAL</SelectItem>
-              {pieceLocations.map((loc) => (
-                <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <>
-            <span className="text-xs text-muted-foreground truncate">{occ.location_in_store || "—"}</span>
-            {canEdit && (
-              <button type="button" onClick={() => setEditingLocation(true)} className="text-muted-foreground hover:text-primary transition-colors ml-auto flex-shrink-0">
-                <Pencil className="w-3 h-3" />
-              </button>
-            )}
-          </>
-        )}
-      </div>
-
-      {!isGeral ? (
-        <div className="flex items-center gap-1.5 mb-3">
-          <Puzzle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-          {editingPiece ? (
-            <Select
-              value={selectedPieceOption?.value || ""}
-              onValueChange={(val) => {
-                updateFields.mutate({ id: occ.id, campaignId, piece_id: val });
-                setEditingPiece(false);
-              }}
-            >
-              <SelectTrigger className="h-6 text-xs border-0 bg-muted/50 flex-1 min-w-0">
-                <SelectValue placeholder="Selecione a peça ou kit..." />
-              </SelectTrigger>
-              <SelectContent>
-                {pieceOptions.length > 0 ? (
-                  pieceOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                  ))
-                ) : (
-                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                    Nenhuma peça ou kit disponível para este local.
-                  </div>
-                )}
-              </SelectContent>
-            </Select>
-          ) : (
-            <>
-              <span className="text-xs text-muted-foreground truncate">{pieceDisplayName}</span>
-              {canEdit && (
-                <button type="button" onClick={() => setEditingPiece(true)} className="text-muted-foreground hover:text-primary transition-colors ml-auto flex-shrink-0">
-                  <Pencil className="w-3 h-3" />
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      ) : (
-        <p className="text-[10px] text-muted-foreground italic mb-3 ml-5">
-          Ocorrência geral — sem peça específica vinculada.
-        </p>
-      )}
-    </>
-  );
-}
 
 interface Props {
   campaignId: string;
@@ -641,195 +476,33 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
             const motiveColor = motiveIdx >= 0 ? MOTIVE_COLORS[motiveIdx % MOTIVE_COLORS.length] : MOTIVE_COLORS[0];
 
             return (
-              <div
+              <OccurrenceCard
                 key={occ.id}
-                className={`group aqua-card bg-gradient-to-br ${motiveColor} border border-border border-l-4 p-4 hover:shadow-lg transition-all duration-200`}
-              >
-                {/* Header: date */}
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}
-                  </span>
-                </div>
-
-                {/* Priority */}
-                <div className="flex items-center gap-2 mb-2">
-                  <Flag className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-                  {canEdit ? (
-                    <Select
-                      value={(occ as any).priority || "media"}
-                      onValueChange={(val) => updateFields.mutate({ id: occ.id, campaignId, priority: val })}
-                    >
-                      <SelectTrigger className="h-6 text-[10px] border-0 bg-muted/50 w-[100px]"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {PRIORITY_OPTIONS.map((p) => (
-                          <SelectItem key={p.value} value={p.value}>
-                            <span className="flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
-                              {p.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Badge variant="outline" className="text-[10px] px-2 py-0" style={{ borderColor: PRIORITY_OPTIONS.find(p => p.value === ((occ as any).priority || "media"))?.color, color: PRIORITY_OPTIONS.find(p => p.value === ((occ as any).priority || "media"))?.color }}>
-                      {PRIORITY_OPTIONS.find(p => p.value === ((occ as any).priority || "media"))?.label || "Média"}
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Status da Ocorrência */}
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Status da Ocorrência:</span>
-                  {canEdit ? (
-                    <Select
-                      value={occ.status || defaultStatus}
-                      onValueChange={(val) => updateStatus.mutate({ id: occ.id, status: val, campaignId })}
-                    >
-                      <SelectTrigger className="w-[110px] h-6 text-[10px] border-0 bg-muted/50"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {activeStatuses.map((s) => (
-                          <SelectItem key={s.id} value={s.value}>
-                            <span className="flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
-                              {s.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Badge variant="outline" className="text-[10px] px-2 py-0" style={{ borderColor: getStatusColor(occ.status || defaultStatus), color: getStatusColor(occ.status || defaultStatus) }}>
-                      {getStatusLabel(occ.status || defaultStatus)}
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Reporter + Store */}
-                {getReporterLabel((occ as any).reporter_type) && (
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                    <span className="text-xs text-muted-foreground truncate">{getReporterLabel((occ as any).reporter_type)}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <Store className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                  <span className="text-sm font-semibold text-foreground truncate">{getStoreName(occ.store_id)}</span>
-                </div>
-
-                <EditableLocationPiece
-                  occ={occ}
-                  campaignId={campaignId}
-                  pieceLocations={pieceLocations}
-                  pieces={pieces}
-                  kits={kits}
-                  kitPieces={kitPieces}
-                  canEdit={canEdit}
-                  getPieceName={getPieceName}
-                  updateFields={updateFields}
-                />
-
-                {/* Motive badge */}
-                <Badge variant="secondary" className="text-[10px] font-medium mb-2">
-                  {getMotiveName(occ.motive_id)}
-                </Badge>
-
-                {/* Description */}
-                {occ.description && (
-                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{occ.description}</p>
-                )}
-
-                {/* Photo thumbnails */}
-                {(photosMap[occ.id]?.length ?? 0) > 0 && (
-                  <div className="flex gap-1.5 mt-3">
-                    {photosMap[occ.id].slice(0, 3).map((url, pi) => (
-                      <button
-                        key={pi}
-                        type="button"
-                        className="w-16 h-16 rounded-lg border border-border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all flex-shrink-0"
-                        onClick={() => { setLightboxPhotos(photosMap[occ.id]); setLightboxIndex(pi); setLightboxOpen(true); }}
-                      >
-                        <img src={url} alt={`Foto ${pi + 1}`} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {/* Detail fields (all 9 new fields) */}
-                <OccurrenceDetailFields
-                  occ={occ}
-                  campaignId={campaignId}
-                  pieceLocations={pieceLocations}
-                  canEdit={canEdit}
-                  canEditReporter={canEditReporter}
-                />
-
-
-                <div className="flex items-center justify-between gap-1 mt-3 pt-2 border-t border-border/50">
-                  <div className="flex items-center gap-1">
-                    <a href={`https://produzai.lovable.app/ocorrencia/${occ.id}`} target="_blank" rel="noopener noreferrer">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Ver página pública">
-                        <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
-                      </Button>
-                    </a>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      title="Copiar link"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`https://produzai.lovable.app/ocorrencia/${occ.id}`);
-                        toast.success("Link copiado!");
-                      }}
-                    >
-                      <Link2 className="w-3.5 h-3.5 text-primary" />
-                    </Button>
-                    <a
-                      href={`https://wa.me/${occ.reporter_phone_ddd && occ.reporter_phone_number ? `55${occ.reporter_phone_ddd}${occ.reporter_phone_number}` : ''}?text=${encodeURIComponent((whatsappLinkTemplate || 'Ocorrência: {url}').replace(/\{url\}/g, `https://produzai.lovable.app/ocorrencia/${occ.id}`).replace(/\{id\}/g, occ.id.slice(0, 8)).replace(/\{store\}/g, (() => { const s = stores.find(st => st.id === occ.store_id); return s?.nickname || s?.name || ''; })()))}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button variant="ghost" size="icon" className="h-7 w-7" title="Enviar link de acompanhamento via WhatsApp">
-                        <MessageCircle className="w-3.5 h-3.5 text-success" />
-                      </Button>
-                    </a>
-                    {occ.reporter_phone_ddd && occ.reporter_phone_number && (
-                      <a
-                        href={`https://wa.me/55${occ.reporter_phone_ddd}${occ.reporter_phone_number}?text=${encodeURIComponent((whatsappContactTemplate || 'Olá, tudo bem? Gostaríamos de falar sobre a sua ocorrência #{id} da Campanha "{campaign}", registrada em: {date}.').replace(/\{id\}/g, occ.id.slice(0, 8)).replace(/\{campaign\}/g, campaignInfo?.name || '').replace(/\{date\}/g, occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy 'às' HH:mm") : '—').replace(/\{store\}/g, (() => { const s = stores.find(st => st.id === occ.store_id); return s?.nickname || s?.name || ''; })()))}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button variant="ghost" size="icon" className="h-7 w-7" title="Falar com o lojista via WhatsApp">
-                          <Phone className="w-3.5 h-3.5 text-primary" />
-                        </Button>
-                      </a>
-                    )}
-                  </div>
-                  {canDelete && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Excluir ocorrência?</AlertDialogTitle>
-                          <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => deleteOcc.mutate({ id: occ.id, campaignId })}>
-                            SIM
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
-              </div>
+                occ={occ}
+                campaignId={campaignId}
+                stores={stores}
+                pieces={pieces}
+                kits={kits}
+                kitPieces={kitPieces}
+                pieceLocations={pieceLocations}
+                canEdit={canEdit}
+                canDelete={canDelete}
+                canEditReporter={canEditReporter}
+                motives={motives}
+                statuses={statuses}
+                defaultStatus={defaultStatus}
+                photosMap={photosMap}
+                campaignName={campaignInfo?.name || ""}
+                agencyName={agencyName}
+                clientName={clientName}
+                getReporterLabel={getReporterLabel}
+                firstPieceKitLabels={firstPieceKitLabels}
+                whatsappLinkTemplate={whatsappLinkTemplate}
+                whatsappContactTemplate={whatsappContactTemplate}
+                onOpenLightbox={(photos, index) => { setLightboxPhotos(photos); setLightboxIndex(index); setLightboxOpen(true); }}
+                motiveColor={motiveColor}
+                PRIORITY_OPTIONS={PRIORITY_OPTIONS}
+              />
             );
           })}
         </div>
