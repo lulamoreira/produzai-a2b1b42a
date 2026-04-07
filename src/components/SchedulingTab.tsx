@@ -951,7 +951,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 schedule={schedule}
                 storeId={store.id}
                 campaignId={campaignId}
-                canEdit={cardCanEdit}={canEdit}
+                canEdit={cardCanEdit}
                 hasDateAndTime={!!(schedule?.scheduled_date && schedule?.scheduled_time)}
                 onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
               />
@@ -961,7 +961,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 schedule={schedule}
                 storeId={store.id}
                 campaignId={campaignId}
-                canEdit={cardCanEdit}={canEdit}
+                canEdit={cardCanEdit}
                 teams={teams}
                 teamMap={teamMap}
                 onFieldChange={(field, value) => handleFieldChange(store.id, field, value)}
