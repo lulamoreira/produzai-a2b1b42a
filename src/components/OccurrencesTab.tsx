@@ -556,6 +556,33 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   </span>
                 </div>
 
+                {/* Priority */}
+                <div className="flex items-center gap-2 mb-2">
+                  <Flag className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                  {canEdit ? (
+                    <Select
+                      value={(occ as any).priority || "media"}
+                      onValueChange={(val) => updateFields.mutate({ id: occ.id, campaignId, priority: val })}
+                    >
+                      <SelectTrigger className="h-6 text-[10px] border-0 bg-muted/50 w-[100px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {PRIORITY_OPTIONS.map((p) => (
+                          <SelectItem key={p.value} value={p.value}>
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: p.color }} />
+                              {p.label}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] px-2 py-0" style={{ borderColor: PRIORITY_OPTIONS.find(p => p.value === ((occ as any).priority || "media"))?.color, color: PRIORITY_OPTIONS.find(p => p.value === ((occ as any).priority || "media"))?.color }}>
+                      {PRIORITY_OPTIONS.find(p => p.value === ((occ as any).priority || "media"))?.label || "Média"}
+                    </Badge>
+                  )}
+                </div>
+
                 {/* Status da Ocorrência */}
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Status da Ocorrência:</span>
