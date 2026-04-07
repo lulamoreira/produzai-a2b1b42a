@@ -79,8 +79,8 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses =
   const pieceData = useMemo(() => {
     const counts: Record<string, number> = {};
     occurrences.forEach((o) => {
-      const piece = pieces.find((p) => p.id === o.piece_id);
-      const name = piece?.name || "—";
+      const isGeral = o.location_in_store === "GERAL - NA LOJA TODA";
+      const name = isGeral ? "GERAL" : (pieces.find((p) => p.id === o.piece_id)?.name || "—");
       counts[name] = (counts[name] || 0) + 1;
     });
     return Object.entries(counts)
