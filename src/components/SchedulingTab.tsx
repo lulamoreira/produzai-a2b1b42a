@@ -136,7 +136,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [logStoreId, setLogStoreId] = useState("");
   const [logStoreName, setLogStoreName] = useState("");
   const { isAdminOrMaster } = useUserRole();
+  const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const logActivity = useLogActivity();
+  const [lockLoading, setLockLoading] = useState<Record<string, boolean>>({});
 
   // Unread message counts
   const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
