@@ -87,6 +87,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
   const { hasPermission: canManageTeamCodes } = useClientPermission(clientId, "can_manage_team_codes");
+  const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const showTeamCodesPanel = isAdminOrMaster || canManageTeamCodes;
   const logActivity = useLogActivity();
   const [searchTerm, setSearchTerm] = useState("");
@@ -97,6 +98,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [filterStatus, setFilterStatus] = useState<"" | "completed" | "pending" | "no_photo">("");
+  const [lockLoading, setLockLoading] = useState<Record<string, boolean>>({});
   
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
 
