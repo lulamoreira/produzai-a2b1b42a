@@ -698,7 +698,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               >
                 <span className="font-bold text-lg">{store.store_code || "—"}</span>
                 <div className="flex flex-col min-w-0 flex-1">
-                  <span className="font-semibold truncate text-sm">{store.name}</span>
+                  <span className="font-semibold text-sm break-words">{store.name}</span>
                   <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
                 </div>
                 <Button
