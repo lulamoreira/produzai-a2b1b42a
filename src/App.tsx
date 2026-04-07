@@ -114,6 +114,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <SidebarStateProvider>
           <Routes>
             <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
             <Route path="/reset-password" element={<ResetPassword />} />
@@ -133,6 +134,7 @@ const App = () => (
             <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </SidebarStateProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
