@@ -495,7 +495,7 @@ const PublicOccurrence = () => {
                       <span className="font-bold text-primary">🏪 GERAL - NA LOJA TODA</span>
                     </SelectItem>
                     <SelectItem value={NAO_SEI_LOCATION}>
-                      <span className="font-medium text-orange-600">❓ NÃO SEI O LOCAL</span>
+                      <span className="font-medium text-destructive">❓ NÃO SEI O LOCAL</span>
                     </SelectItem>
                     {locations.length > 0 && <SelectSeparator />}
                     {locations.map((loc) => (
