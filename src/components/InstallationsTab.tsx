@@ -67,6 +67,7 @@ type Schedule = {
   reschedule_preference: string | null;
   reschedule_store_approval_status: string | null;
   reschedule_team_approval_status: string | null;
+  locked: boolean;
 };
 
 const CATEGORY_OPTIONS = [
