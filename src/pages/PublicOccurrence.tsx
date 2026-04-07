@@ -126,13 +126,13 @@ const PublicOccurrence = () => {
     const kitPieceIds = new Set(kitPieces.map((kp) => kp.piece_id));
     const standalonePieces = filteredPieces.filter((p) => !p.kit_only && !kitPieceIds.has(p.id));
 
-    const kitGroups = kits.map((kit) => {
+    const kitItems = kits.map((kit) => {
       const memberPieceIds = kitPieces.filter((kp) => kp.kit_id === kit.id).map((kp) => kp.piece_id);
-      const memberPieces = filteredPieces.filter((p) => memberPieceIds.includes(p.id));
-      return { kit, memberPieces };
-    }).filter((g) => g.memberPieces.length > 0);
+      const firstMemberPiece = filteredPieces.find((p) => memberPieceIds.includes(p.id));
+      return { kit, firstMemberPiece };
+    }).filter((g) => g.firstMemberPiece);
 
-    return { standalonePieces, kitGroups };
+    return { standalonePieces, kitItems };
   };
 
   const { data: locations = [] } = useQuery({
