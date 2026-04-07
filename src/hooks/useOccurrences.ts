@@ -215,6 +215,7 @@ export function useAddOccurrence() {
       motive_id: string;
       description?: string;
       photo_url?: string;
+      location_in_store?: string;
       reporter_name?: string;
       reporter_phone_ddd?: string;
       reporter_phone_number?: string;
