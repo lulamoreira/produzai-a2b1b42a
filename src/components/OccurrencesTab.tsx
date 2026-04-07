@@ -487,6 +487,34 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
         </div>
       )}
 
+      {/* Priority filter buttons */}
+      {!isLoading && occurrences.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 items-center">
+          <span className="text-xs text-muted-foreground font-medium mr-1"><Flag className="w-3.5 h-3.5 inline mr-1" />Prioridade:</span>
+          <Button
+            variant={selectedPriorities.length === 0 ? "default" : "outline"}
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => setSelectedPriorities([])}
+          >
+            Todas
+          </Button>
+          {PRIORITY_OPTIONS.map((p) => (
+            <Button
+              key={p.value}
+              variant={selectedPriorities.includes(p.value) ? "default" : "outline"}
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              style={selectedPriorities.includes(p.value) ? { backgroundColor: p.color, borderColor: p.color, color: '#fff' } : { borderColor: p.color, color: p.color }}
+              onClick={() => togglePriority(p.value)}
+            >
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedPriorities.includes(p.value) ? '#fff' : p.color }} />
+              {p.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
       {!isLoading && occurrences.length > 0 && (
         <OccurrencesDashboard occurrences={filteredOccurrences} stores={stores} pieces={pieces} motives={motives} statuses={statuses} />
       )}
