@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle, Phone, MapPin, GripVertical, User } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, Eye, QrCode, Download, Store, Puzzle, Calendar, Palette, CircleDot, Link2, MessageCircle, Phone, MapPin, GripVertical, User, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
@@ -54,6 +54,94 @@ function SortableConfigItem({ id, children }: { id: string; children: React.Reac
       </button>
       {children}
     </div>
+  );
+}
+
+function EditableLocationPiece({
+  occ, campaignId, pieceLocations, pieces, canEdit, getPieceName, updateFields,
+}: {
+  occ: any; campaignId: string; pieceLocations: { id: string; name: string }[];
+  pieces: CampaignPiece[]; canEdit: boolean; getPieceName: (id: string) => string;
+  updateFields: any;
+}) {
+  const [editingLocation, setEditingLocation] = useState(false);
+  const [editingPiece, setEditingPiece] = useState(false);
+  const isGeral = occ.location_in_store === "GERAL - NA LOJA TODA";
+
+  return (
+    <>
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+        {editingLocation ? (
+          <Select
+            value={occ.location_in_store || ""}
+            onValueChange={(val) => {
+              updateFields.mutate({ id: occ.id, campaignId, location_in_store: val });
+              if (val === "GERAL - NA LOJA TODA") {
+                updateFields.mutate({ id: occ.id, campaignId, piece_id: null });
+              }
+              setEditingLocation(false);
+            }}
+          >
+            <SelectTrigger className="h-6 text-xs border-0 bg-muted/50 flex-1 min-w-0">
+              <SelectValue placeholder="Selecione local..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="GERAL - NA LOJA TODA">🏪 GERAL - NA LOJA TODA</SelectItem>
+              {pieceLocations.map((loc) => (
+                <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <>
+            <span className="text-xs text-muted-foreground truncate">{occ.location_in_store || "—"}</span>
+            {canEdit && (
+              <button type="button" onClick={() => setEditingLocation(true)} className="text-muted-foreground hover:text-primary transition-colors ml-auto flex-shrink-0">
+                <Pencil className="w-3 h-3" />
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {!isGeral ? (
+        <div className="flex items-center gap-1.5 mb-3">
+          <Puzzle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+          {editingPiece ? (
+            <Select
+              value={occ.piece_id || ""}
+              onValueChange={(val) => {
+                updateFields.mutate({ id: occ.id, campaignId, piece_id: val });
+                setEditingPiece(false);
+              }}
+            >
+              <SelectTrigger className="h-6 text-xs border-0 bg-muted/50 flex-1 min-w-0">
+                <SelectValue placeholder="Selecione peça..." />
+              </SelectTrigger>
+              <SelectContent>
+                {pieces.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <>
+              <span className="text-xs text-muted-foreground truncate">{getPieceName(occ.piece_id)}</span>
+              {canEdit && (
+                <button type="button" onClick={() => setEditingPiece(true)} className="text-muted-foreground hover:text-primary transition-colors ml-auto flex-shrink-0">
+                  <Pencil className="w-3 h-3" />
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      ) : (
+        <p className="text-[10px] text-muted-foreground italic mb-3 ml-5">
+          Ocorrência geral — sem peça específica vinculada.
+        </p>
+      )}
+    </>
   );
 }
 
@@ -459,61 +547,15 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   <span className="text-sm font-semibold text-foreground truncate">{getStoreName(occ.store_id)}</span>
                 </div>
 
-                {/* Localização na Loja */}
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                  {canEdit ? (
-                    <Select
-                      value={occ.location_in_store || ""}
-                      onValueChange={(val) => {
-                        updateFields.mutate({ id: occ.id, campaignId, location_in_store: val });
-                        if (val === "GERAL - NA LOJA TODA") {
-                          updateFields.mutate({ id: occ.id, campaignId, piece_id: null });
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="h-6 text-xs border-0 bg-muted/50 flex-1 min-w-0">
-                        <SelectValue placeholder="Selecione local..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="GERAL - NA LOJA TODA">🏪 GERAL - NA LOJA TODA</SelectItem>
-                        {pieceLocations.map((loc) => (
-                          <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <span className="text-xs text-muted-foreground truncate">{occ.location_in_store || "—"}</span>
-                  )}
-                </div>
-
-                {/* Piece - hidden when GERAL */}
-                {occ.location_in_store !== "GERAL - NA LOJA TODA" ? (
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <Puzzle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                    {canEdit ? (
-                      <Select
-                        value={occ.piece_id || ""}
-                        onValueChange={(val) => updateFields.mutate({ id: occ.id, campaignId, piece_id: val })}
-                      >
-                        <SelectTrigger className="h-6 text-xs border-0 bg-muted/50 flex-1 min-w-0">
-                          <SelectValue placeholder="Selecione peça..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {pieces.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <span className="text-xs text-muted-foreground truncate">{getPieceName(occ.piece_id)}</span>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-[10px] text-muted-foreground italic mb-3 ml-5">
-                    Ocorrência geral — sem peça específica vinculada.
-                  </p>
-                )}
+                <EditableLocationPiece
+                  occ={occ}
+                  campaignId={campaignId}
+                  pieceLocations={pieceLocations}
+                  pieces={pieces}
+                  canEdit={canEdit}
+                  getPieceName={getPieceName}
+                  updateFields={updateFields}
+                />
 
                 {/* Motive badge */}
                 <Badge variant="secondary" className="text-[10px] font-medium mb-2">
