@@ -303,6 +303,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const [occStartDate, setOccStartDate] = useState("");
   const [occEndDate, setOccEndDate] = useState("");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const qrRef = useRef<HTMLDivElement>(null);
 
   const toggleStatus = (value: string) => {
