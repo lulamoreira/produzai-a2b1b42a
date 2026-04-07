@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import {
-  useOccurrences, useUpdateOccurrenceStatus, useDeleteOccurrence,
+  useOccurrences, useUpdateOccurrenceStatus, useUpdateOccurrenceFields, useDeleteOccurrence,
   useCampaignEmails, useAddCampaignEmail, useDeleteCampaignEmail,
   useOccurrenceMotives, useAddOccurrenceMotive, useUpdateOccurrenceMotive, useDeleteOccurrenceMotive,
   useOccurrenceStatuses, useAddOccurrenceStatus, useUpdateOccurrenceStatus2, useDeleteOccurrenceStatusItem,
@@ -106,6 +106,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   });
   const activeStatuses = useMemo(() => statuses.filter((s) => s.active), [statuses]);
   const updateStatus = useUpdateOccurrenceStatus();
+  const updateFields = useUpdateOccurrenceFields();
   const deleteOcc = useDeleteOccurrence();
   const addEmail = useAddCampaignEmail();
   const deleteEmail = useDeleteCampaignEmail();
@@ -459,18 +460,60 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                 </div>
 
                 {/* Localização na Loja */}
-                {occ.location_in_store && (
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                    <span className="text-xs text-muted-foreground truncate">{occ.location_in_store}</span>
-                  </div>
-                )}
-
-                {/* Piece */}
-                <div className="flex items-center gap-1.5 mb-3">
-                  <Puzzle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                  <span className="text-xs text-muted-foreground truncate">{getPieceName(occ.piece_id)}</span>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                  {canEdit ? (
+                    <Select
+                      value={occ.location_in_store || ""}
+                      onValueChange={(val) => {
+                        updateFields.mutate({ id: occ.id, campaignId, location_in_store: val });
+                        if (val === "GERAL - NA LOJA TODA") {
+                          updateFields.mutate({ id: occ.id, campaignId, piece_id: null });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-6 text-xs border-0 bg-muted/50 flex-1 min-w-0">
+                        <SelectValue placeholder="Selecione local..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="GERAL - NA LOJA TODA">🏪 GERAL - NA LOJA TODA</SelectItem>
+                        {pieceLocations.map((loc) => (
+                          <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span className="text-xs text-muted-foreground truncate">{occ.location_in_store || "—"}</span>
+                  )}
                 </div>
+
+                {/* Piece - hidden when GERAL */}
+                {occ.location_in_store !== "GERAL - NA LOJA TODA" ? (
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <Puzzle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                    {canEdit ? (
+                      <Select
+                        value={occ.piece_id || ""}
+                        onValueChange={(val) => updateFields.mutate({ id: occ.id, campaignId, piece_id: val })}
+                      >
+                        <SelectTrigger className="h-6 text-xs border-0 bg-muted/50 flex-1 min-w-0">
+                          <SelectValue placeholder="Selecione peça..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {pieces.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className="text-xs text-muted-foreground truncate">{getPieceName(occ.piece_id)}</span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground italic mb-3 ml-5">
+                    Ocorrência geral — sem peça específica vinculada.
+                  </p>
+                )}
 
                 {/* Motive badge */}
                 <Badge variant="secondary" className="text-[10px] font-medium mb-2">
