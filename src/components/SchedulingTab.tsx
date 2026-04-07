@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { type ClientStore } from "@/hooks/useMultiClientData";
 import { getStateColor } from "@/lib/stateColors";
 import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type StoreContactRole } from "@/hooks/useStoreContacts";
+import { useClientPermission } from "@/hooks/useClientPermission";
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
 import ScheduleCardChat from "@/components/ScheduleCardChat";
@@ -82,6 +83,7 @@ type Schedule = {
   reschedule_suggested_time: string | null;
   reschedule_suggested_date_2: string | null;
   reschedule_suggested_time_2: string | null;
+  locked: boolean;
 };
 
 const PREFERENCE_OPTIONS = [
