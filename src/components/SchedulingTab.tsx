@@ -732,7 +732,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const sch = scheduleMap[s.id];
           return sch?.store_approval_status === "approved" && sch?.team_approval_status === "approved";
         }).length;
-        const completed = filteredStores.filter(s => scheduleMap[s.id]?.completed_at).length;
+        const completed = 0; // completed_at not tracked in schedule type
         const locked = filteredStores.filter(s => scheduleMap[s.id]?.locked).length;
         const withTeam = filteredStores.filter(s => scheduleMap[s.id]?.team_id).length;
         return (
