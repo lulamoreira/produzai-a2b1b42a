@@ -581,6 +581,7 @@ export default function OccurrenceCard({
           </AlertDialog>
         )}
       </div>
+      </div>
 
       {/* Activity Log Panel */}
       <ActivityLogPanel
