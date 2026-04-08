@@ -144,90 +144,131 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
   return (
     <div className="space-y-3 mt-3 pt-3 border-t border-border/50">
       {/* 1 - Dados do Reclamante */}
-      <div className="rounded-lg border border-border overflow-hidden">
+      <div className="rounded-lg border border-destructive/40 overflow-hidden">
         <button
           type="button"
-          className="w-full flex items-center justify-between px-3 py-2 bg-muted/40 hover:bg-muted/60 transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 bg-destructive/10 hover:bg-destructive/15 transition-colors"
           onClick={() => setReporterOpen(!reporterOpen)}
         >
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+          <span className="text-[10px] font-semibold text-destructive uppercase tracking-wider flex items-center gap-1">
             <User className="w-3 h-3" /> Dados do Reclamante
           </span>
-          {reporterOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+          {reporterOpen ? <ChevronUp className="w-3.5 h-3.5 text-destructive/60" /> : <ChevronDown className="w-3.5 h-3.5 text-destructive/60" />}
         </button>
         {reporterOpen && (
           <div className="p-3 space-y-2 bg-card">
-            {canEditReporter && (
-              <div className="flex justify-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-[10px] gap-1 px-2"
-                  onClick={() => setReporterEditing(!reporterEditing)}
-                >
-                  <Pencil className="w-3 h-3" />
-                  {reporterEditing ? "Concluir" : "Editar"}
-                </Button>
+            {/* Simplified view for agency/client/supplier */}
+            {(occ.reporter_type === "agency" || occ.reporter_type === "cliente" || occ.reporter_type === "fornecedor") ? (
+              <div className="space-y-1.5">
+                <p className="text-xs">
+                  <span className="text-muted-foreground">Reclamação partiu de: </span>
+                  <strong className="text-foreground">
+                    {occ.reporter_type === "agency" ? "Agência" : occ.reporter_type === "cliente" ? "Cliente" : "Fornecedor"}
+                  </strong>
+                </p>
+                {occ.reporter_name && (
+                  <p className="text-xs">
+                    <span className="text-muted-foreground">Responsável: </span>
+                    <strong className="text-foreground">{occ.reporter_name}</strong>
+                  </p>
+                )}
+                {canEditReporter && (
+                  <div className="pt-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[10px] gap-1 px-2"
+                      onClick={() => setReporterEditing(!reporterEditing)}
+                    >
+                      <Pencil className="w-3 h-3" />
+                      {reporterEditing ? "Concluir" : "Editar nome"}
+                    </Button>
+                    {reporterEditing && (
+                      <DebouncedInput
+                        className="h-7 text-xs mt-1"
+                        value={occ.reporter_name || ""}
+                        onValueCommit={(v) => handleFieldUpdate("reporter_name", v)}
+                        placeholder="Nome do responsável..."
+                      />
+                    )}
+                  </div>
+                )}
               </div>
-            )}
-            <div>
-              <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
-                <User className="w-3 h-3" /> Nome
-              </label>
-              {reporterEditing ? (
-                <DebouncedInput
-                  className="h-7 text-xs"
-                  value={occ.reporter_name || ""}
-                  onValueCommit={(v) => handleFieldUpdate("reporter_name", v)}
-                  placeholder="Nome do reclamante..."
-                />
-              ) : (
-                <span className="text-xs font-medium">{occ.reporter_name || "—"}</span>
-              )}
-            </div>
-            <div>
-              <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
-                <Phone className="w-3 h-3" /> WhatsApp
-              </label>
-              {reporterEditing ? (
-                <div className="flex gap-1.5">
-                  <DebouncedInput
-                    className="h-7 text-xs w-16"
-                    value={occ.reporter_phone_ddd || ""}
-                    onValueCommit={(v) => handleFieldUpdate("reporter_phone_ddd", v)}
-                    placeholder="DDD"
-                    maxLength={2}
-                  />
-                  <DebouncedInput
-                    className="h-7 text-xs flex-1"
-                    value={occ.reporter_phone_number || ""}
-                    onValueCommit={(v) => handleFieldUpdate("reporter_phone_number", v)}
-                    placeholder="Número"
-                  />
+            ) : (
+              <>
+                {canEditReporter && (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-[10px] gap-1 px-2"
+                      onClick={() => setReporterEditing(!reporterEditing)}
+                    >
+                      <Pencil className="w-3 h-3" />
+                      {reporterEditing ? "Concluir" : "Editar"}
+                    </Button>
+                  </div>
+                )}
+                <div>
+                  <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                    <User className="w-3 h-3" /> Nome
+                  </label>
+                  {reporterEditing ? (
+                    <DebouncedInput
+                      className="h-7 text-xs"
+                      value={occ.reporter_name || ""}
+                      onValueCommit={(v) => handleFieldUpdate("reporter_name", v)}
+                      placeholder="Nome do reclamante..."
+                    />
+                  ) : (
+                    <span className="text-xs font-medium">{occ.reporter_name || "—"}</span>
+                  )}
                 </div>
-              ) : (
-                <span className="text-xs font-medium">
-                  {occ.reporter_phone_ddd && occ.reporter_phone_number
-                    ? `(${occ.reporter_phone_ddd}) ${occ.reporter_phone_number}`
-                    : "—"}
-                </span>
-              )}
-            </div>
-            <div>
-              <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
-                <Mail className="w-3 h-3" /> E-mail
-              </label>
-              {reporterEditing ? (
-                <DebouncedInput
-                  className="h-7 text-xs"
-                  value={occ.reporter_email || ""}
-                  onValueCommit={(v) => handleFieldUpdate("reporter_email", v)}
-                  placeholder="email@loja.com"
-                />
-              ) : (
-                <span className="text-xs font-medium">{occ.reporter_email || "—"}</span>
-              )}
-            </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                    <Phone className="w-3 h-3" /> WhatsApp
+                  </label>
+                  {reporterEditing ? (
+                    <div className="flex gap-1.5">
+                      <DebouncedInput
+                        className="h-7 text-xs w-16"
+                        value={occ.reporter_phone_ddd || ""}
+                        onValueCommit={(v) => handleFieldUpdate("reporter_phone_ddd", v)}
+                        placeholder="DDD"
+                        maxLength={2}
+                      />
+                      <DebouncedInput
+                        className="h-7 text-xs flex-1"
+                        value={occ.reporter_phone_number || ""}
+                        onValueCommit={(v) => handleFieldUpdate("reporter_phone_number", v)}
+                        placeholder="Número"
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-xs font-medium">
+                      {occ.reporter_phone_ddd && occ.reporter_phone_number
+                        ? `(${occ.reporter_phone_ddd}) ${occ.reporter_phone_number}`
+                        : "—"}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                    <Mail className="w-3 h-3" /> E-mail
+                  </label>
+                  {reporterEditing ? (
+                    <DebouncedInput
+                      className="h-7 text-xs"
+                      value={occ.reporter_email || ""}
+                      onValueCommit={(v) => handleFieldUpdate("reporter_email", v)}
+                      placeholder="email@loja.com"
+                    />
+                  ) : (
+                    <span className="text-xs font-medium">{occ.reporter_email || "—"}</span>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
