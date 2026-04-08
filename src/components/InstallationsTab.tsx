@@ -832,8 +832,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
               {/* Footer */}
               <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-2">
-                {/* Mark complete - admin/master only */}
-                {isAdminOrMaster && schedule && (
+                {/* Mark complete - any editor, not blocked by card lock */}
+                {canEdit && schedule && (
                   <Button
                     variant={schedule.completed_at ? "default" : "outline"}
                     size="sm"
