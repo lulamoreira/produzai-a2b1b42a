@@ -43,20 +43,26 @@ function getOccurrencePieceOptions({
 }) {
   if (!location || location === GERAL_LOCATION) return [] as OccurrencePieceOption[];
   const showAll = location === NAO_SEI_LOCATION;
-  const filteredPieces = showAll ? pieces : pieces.filter((p) => p.category === location);
+  const normalizeWs = (s: string) => s.replace(/\s+/g, " ").trim();
+  const filteredPieces = showAll ? pieces : pieces.filter((p) => normalizeWs(p.category) === normalizeWs(location));
   const kitPieceIds = new Set(kitPieces.map((kp) => kp.piece_id));
   const standalonePieces: OccurrencePieceOption[] = filteredPieces
     .filter((p) => !p.kit_only && !kitPieceIds.has(p.id))
     .map((p) => ({ value: p.id, label: `${p.code} - ${p.name}`, sortOrder: p.display_order }));
-  const kitItems: OccurrencePieceOption[] = kits
-    .map((kit) => {
-      const memberIds = kitPieces.filter((kp) => kp.kit_id === kit.id).map((kp) => kp.piece_id);
-      const first = filteredPieces.find((p) => memberIds.includes(p.id));
-      if (!first) return null;
-      return { value: first.id, label: `Kit ${kit.code} - ${kit.name}`, sortOrder: kit.display_order } satisfies OccurrencePieceOption;
-    })
-    .filter((i): i is OccurrencePieceOption => i !== null);
-  return [...standalonePieces, ...kitItems].sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label, "pt-BR"));
+  // Kits as selectable items + their individual member pieces
+  const kitAndMemberItems: OccurrencePieceOption[] = [];
+  kits.forEach((kit) => {
+    const memberIds = kitPieces.filter((kp) => kp.kit_id === kit.id).map((kp) => kp.piece_id);
+    const members = filteredPieces.filter((p) => memberIds.includes(p.id));
+    if (members.length === 0) return;
+    // Add the kit itself (use first member piece id as value for backwards compat)
+    kitAndMemberItems.push({ value: members[0].id, label: `Kit ${kit.code} - ${kit.name}`, sortOrder: kit.display_order });
+    // Add each individual kit member piece
+    members.forEach((p) => {
+      kitAndMemberItems.push({ value: p.id, label: `  ↳ ${p.code} - ${p.name}`, sortOrder: kit.display_order + 0.001 });
+    });
+  });
+  return [...standalonePieces, ...kitAndMemberItems].sort((a, b) => a.sortOrder - b.sortOrder || a.label.localeCompare(b.label, "pt-BR"));
 }
 
 interface OccurrenceCardProps {

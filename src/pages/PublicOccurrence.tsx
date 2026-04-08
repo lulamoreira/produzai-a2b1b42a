@@ -132,9 +132,10 @@ const PublicOccurrence = () => {
 
     const kitItems = kits.map((kit) => {
       const memberPieceIds = kitPieces.filter((kp) => kp.kit_id === kit.id).map((kp) => kp.piece_id);
-      const firstMemberPiece = filteredPieces.find((p) => memberPieceIds.includes(p.id));
-      return { kit, firstMemberPiece };
-    }).filter((g) => g.firstMemberPiece);
+      const memberPieces = filteredPieces.filter((p) => memberPieceIds.includes(p.id));
+      if (memberPieces.length === 0) return null;
+      return { kit, memberPieces };
+    }).filter((g): g is { kit: typeof kits[0]; memberPieces: typeof pieces } => g !== null);
 
     return { standalonePieces, kitItems };
   };
