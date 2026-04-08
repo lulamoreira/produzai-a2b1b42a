@@ -1,4 +1,5 @@
-import type { OccurrenceStatus } from "@/hooks/useOccurrences";
+/** Minimal status shape needed by helper functions */
+type StatusLike = { value: string; label: string; color: string; is_default?: boolean };
 
 /**
  * Determines the set of "resolved" status values dynamically from the DB.
@@ -37,17 +38,17 @@ export function computeStoreOccurrenceStatus(
 }
 
 /** Get status label from status list */
-export function getStatusLabel(statuses: OccurrenceStatus[], value: string): string {
+export function getStatusLabel(statuses: StatusLike[], value: string): string {
   return statuses.find((s) => s.value === value)?.label || value;
 }
 
 /** Get status color from status list */
-export function getStatusColor(statuses: OccurrenceStatus[], value: string): string {
+export function getStatusColor(statuses: StatusLike[], value: string): string {
   return statuses.find((s) => s.value === value)?.color || "#6366f1";
 }
 
 /** Get default status value from status list */
-export function getDefaultStatusValue(statuses: OccurrenceStatus[]): string {
+export function getDefaultStatusValue(statuses: StatusLike[]): string {
   return statuses.find((s) => s.is_default)?.value || "pending";
 }
 
