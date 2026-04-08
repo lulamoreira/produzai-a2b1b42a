@@ -238,6 +238,12 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     );
   };
 
+  const cityOptions = useMemo(() => {
+    const cities = new Set<string>();
+    stores.forEach((s) => { if (s.city) cities.add(s.city); });
+    return Array.from(cities).sort();
+  }, [stores]);
+
   const filteredOccurrences = useMemo(() => {
     let result = occurrences;
     if (selectedStatuses.length > 0) {
@@ -246,8 +252,25 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     if (selectedPriorities.length > 0) {
       result = result.filter((occ) => selectedPriorities.includes((occ as any).priority || "media"));
     }
+    if (filterCity) {
+      const storeIdsInCity = new Set(stores.filter((s) => s.city === filterCity).map((s) => s.id));
+      result = result.filter((occ) => occ.store_id && storeIdsInCity.has(occ.store_id));
+    }
+    if (searchStore.trim()) {
+      const term = searchStore.trim().toLowerCase();
+      result = result.filter((occ) => {
+        if (!occ.store_id) return false;
+        const s = stores.find((st) => st.id === occ.store_id);
+        if (!s) return false;
+        return (
+          (s.name || "").toLowerCase().includes(term) ||
+          (s.nickname || "").toLowerCase().includes(term) ||
+          (s.store_code || "").toLowerCase().includes(term)
+        );
+      });
+    }
     return result;
-  }, [occurrences, selectedStatuses, selectedPriorities, defaultStatus]);
+  }, [occurrences, selectedStatuses, selectedPriorities, defaultStatus, filterCity, searchStore, stores]);
 
   const handleDownloadQR = () => {
     const svg = qrRef.current?.querySelector("svg");
