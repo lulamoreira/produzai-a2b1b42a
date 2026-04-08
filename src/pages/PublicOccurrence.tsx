@@ -118,10 +118,14 @@ const PublicOccurrence = () => {
     enabled: kits.length > 0,
   });
 
+  // Normalize whitespace for comparison (collapse multiple spaces)
+  const normalizeWs = (s: string) => s.replace(/\s+/g, " ").trim();
+
   // Build grouped piece list filtered by location
   const buildGroupedPieceOptions = (locationFilter: string) => {
+    const normFilter = normalizeWs(locationFilter);
     const filteredPieces = locationFilter
-      ? pieces.filter((p) => p.category === locationFilter)
+      ? pieces.filter((p) => normalizeWs(p.category) === normFilter)
       : pieces;
     const kitPieceIds = new Set(kitPieces.map((kp) => kp.piece_id));
     const standalonePieces = filteredPieces.filter((p) => !p.kit_only && !kitPieceIds.has(p.id));
