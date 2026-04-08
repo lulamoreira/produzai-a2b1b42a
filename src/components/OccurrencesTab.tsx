@@ -407,38 +407,6 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
             </Button>
           )}
         </div>
-        {/* Summary */}
-        {(() => {
-          const total = filteredOccurrences.length;
-          const totalAll = occurrences.length;
-          const byStatus: Record<string, number> = {};
-          filteredOccurrences.forEach(o => {
-            const st = o.status || "sem_status";
-            byStatus[st] = (byStatus[st] || 0) + 1;
-          });
-          const byPriority: Record<string, number> = {};
-          filteredOccurrences.forEach(o => {
-            const p = o.priority || "media";
-            byPriority[p] = (byPriority[p] || 0) + 1;
-          });
-          const priorityLabels: Record<string, string> = { critica: "🔴 Crítica", alta: "🟠 Alta", media: "🟡 Média", baixa: "🟢 Baixa" };
-          return (
-            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground bg-card border border-border rounded-lg px-3 py-2">
-              <span><strong className="text-foreground">{total}</strong> de {totalAll} ocorrência(s)</span>
-              {Object.entries(byStatus).sort(([a],[b]) => a.localeCompare(b)).map(([status, count]) => {
-                const statusObj = (statuses || []).find((s: any) => s.value === status);
-                const label = statusObj?.label || status;
-                return <span key={status}><strong className="text-foreground">{count}</strong> {label}</span>;
-              })}
-              {Object.entries(priorityLabels).map(([key, label]) => {
-                const count = byPriority[key] || 0;
-                if (count === 0) return null;
-                return <span key={key}>{label}: <strong className="text-foreground">{count}</strong></span>;
-              })}
-            </div>
-          );
-        })()}
-
         {/* Período de inclusão de ocorrências */}
         {campaignInfo && (
           <div className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${
@@ -465,87 +433,169 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
         )}
       </div>
 
-      {/* Dashboard */}
-      {/* Status filter buttons */}
-      {!isLoading && occurrences.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          <Button
-            variant={selectedStatuses.length === 0 ? "default" : "outline"}
-            size="sm"
-            className="h-7 text-xs"
-            onClick={() => setSelectedStatuses([])}
-          >
-            Todos
-          </Button>
-          {activeStatuses.map((s) => (
-            <Button
-              key={s.id}
-              variant={selectedStatuses.includes(s.value) ? "default" : "outline"}
-              size="sm"
-              className="h-7 text-xs gap-1.5"
-              style={selectedStatuses.includes(s.value) ? { backgroundColor: s.color, borderColor: s.color, color: '#fff' } : { borderColor: s.color, color: s.color }}
-              onClick={() => toggleStatus(s.value)}
-            >
-              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedStatuses.includes(s.value) ? '#fff' : s.color }} />
-              {s.label}
-            </Button>
-          ))}
-        </div>
-      )}
+      {/* Summary Dashboard */}
+      {!isLoading && occurrences.length > 0 && (() => {
+        const total = filteredOccurrences.length;
+        const totalAll = occurrences.length;
+        const byStatus: Record<string, number> = {};
+        filteredOccurrences.forEach(o => {
+          const st = o.status || "sem_status";
+          byStatus[st] = (byStatus[st] || 0) + 1;
+        });
+        const byPriority: Record<string, number> = {};
+        filteredOccurrences.forEach(o => {
+          const p = o.priority || "media";
+          byPriority[p] = (byPriority[p] || 0) + 1;
+        });
+        return (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+            {/* Total */}
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-center">
+              <p className="text-2xl font-bold text-primary">{total}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{total !== totalAll ? `de ${totalAll}` : ''} ocorrência(s)</p>
+            </div>
+            {/* By status */}
+            {activeStatuses.map((s) => {
+              const count = byStatus[s.value] || 0;
+              return (
+                <div key={s.id} className="rounded-lg border p-3 text-center" style={{ borderColor: `${s.color}40`, backgroundColor: `${s.color}08` }}>
+                  <p className="text-2xl font-bold" style={{ color: s.color }}>{count}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
+                </div>
+              );
+            })}
+            {/* By priority */}
+            {PRIORITY_OPTIONS.map((p) => {
+              const count = byPriority[p.value] || 0;
+              return (
+                <div key={p.value} className="rounded-lg border p-3 text-center" style={{ borderColor: `${p.color}40`, backgroundColor: `${p.color}08` }}>
+                  <p className="text-2xl font-bold" style={{ color: p.color }}>{count}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{p.label}</p>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
 
-      {/* Priority filter buttons */}
+      {/* Filters */}
       {!isLoading && occurrences.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 items-center">
-          <span className="text-xs text-muted-foreground font-medium mr-1"><Flag className="w-3.5 h-3.5 inline mr-1" />Prioridade:</span>
-          <Button
-            variant={selectedPriorities.length === 0 ? "default" : "outline"}
-            size="sm"
-            className="h-7 text-xs"
-            onClick={() => setSelectedPriorities([])}
-          >
-            Todas
-          </Button>
-          {PRIORITY_OPTIONS.map((p) => (
+        <div className="rounded-lg border border-border bg-card p-3 space-y-3">
+          {/* Status filter */}
+          <div className="flex flex-wrap gap-1.5 items-center">
+            <span className="text-xs text-muted-foreground font-medium mr-1"><CircleDot className="w-3.5 h-3.5 inline mr-1" />Status:</span>
             <Button
-              key={p.value}
-              variant={selectedPriorities.includes(p.value) ? "default" : "outline"}
+              variant={selectedStatuses.length === 0 ? "default" : "outline"}
               size="sm"
-              className="h-7 text-xs gap-1.5"
-              style={selectedPriorities.includes(p.value) ? { backgroundColor: p.color, borderColor: p.color, color: '#fff' } : { borderColor: p.color, color: p.color }}
-              onClick={() => togglePriority(p.value)}
+              className="h-7 text-xs"
+              onClick={() => setSelectedStatuses([])}
             >
-              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedPriorities.includes(p.value) ? '#fff' : p.color }} />
-              {p.label}
+              Todos
             </Button>
-          ))}
-        </div>
-      )}
+            {activeStatuses.map((s) => (
+              <Button
+                key={s.id}
+                variant={selectedStatuses.includes(s.value) ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs gap-1.5"
+                style={selectedStatuses.includes(s.value) ? { backgroundColor: s.color, borderColor: s.color, color: '#fff' } : { borderColor: s.color, color: s.color }}
+                onClick={() => toggleStatus(s.value)}
+              >
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedStatuses.includes(s.value) ? '#fff' : s.color }} />
+                {s.label}
+              </Button>
+            ))}
+          </div>
 
-      {/* Store search & city filter */}
-      {!isLoading && occurrences.length > 0 && (
-        <div className="flex flex-wrap gap-2 items-center">
-          <Input
-            placeholder="Buscar loja (nome, apelido ou código)..."
-            value={searchStore}
-            onChange={(e) => setSearchStore(e.target.value)}
-            className="h-8 text-xs w-48 min-w-[140px]"
-          />
-          <Select value={filterCity || "__all__"} onValueChange={(v) => setFilterCity(v === "__all__" ? "" : v)}>
-            <SelectTrigger className="h-8 text-xs w-44 min-w-[120px]">
-              <SelectValue placeholder="Todas as cidades" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">Todas as cidades</SelectItem>
-              {cityOptions.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {(searchStore || filterCity) && (
-            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setSearchStore(""); setFilterCity(""); }}>
-              Limpar filtros
+          {/* Priority filter */}
+          <div className="flex flex-wrap gap-1.5 items-center">
+            <span className="text-xs text-muted-foreground font-medium mr-1"><Flag className="w-3.5 h-3.5 inline mr-1" />Prioridade:</span>
+            <Button
+              variant={selectedPriorities.length === 0 ? "default" : "outline"}
+              size="sm"
+              className="h-7 text-xs"
+              onClick={() => setSelectedPriorities([])}
+            >
+              Todas
             </Button>
-          )}
+            {PRIORITY_OPTIONS.map((p) => (
+              <Button
+                key={p.value}
+                variant={selectedPriorities.includes(p.value) ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-xs gap-1.5"
+                style={selectedPriorities.includes(p.value) ? { backgroundColor: p.color, borderColor: p.color, color: '#fff' } : { borderColor: p.color, color: p.color }}
+                onClick={() => togglePriority(p.value)}
+              >
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedPriorities.includes(p.value) ? '#fff' : p.color }} />
+                {p.label}
+              </Button>
+            ))}
+          </div>
+
+          {/* Location + date filters */}
+          <div className="flex flex-wrap gap-2 items-end">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Buscar loja</label>
+              <Input
+                placeholder="Nome, apelido ou código..."
+                value={searchStore}
+                onChange={(e) => setSearchStore(e.target.value)}
+                className="h-8 text-xs w-44"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Estado</label>
+              <Select value={filterState || "__all__"} onValueChange={(v) => setFilterState(v === "__all__" ? "" : v)}>
+                <SelectTrigger className="h-8 text-xs w-28">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todos</SelectItem>
+                  {stateOptions.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Cidade</label>
+              <Select value={filterCity || "__all__"} onValueChange={(v) => setFilterCity(v === "__all__" ? "" : v)}>
+                <SelectTrigger className="h-8 text-xs w-36">
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas</SelectItem>
+                  {cityOptions.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Data de</label>
+              <Input
+                type="date"
+                value={filterDateFrom}
+                onChange={(e) => setFilterDateFrom(e.target.value)}
+                className="h-8 text-xs w-36"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Data até</label>
+              <Input
+                type="date"
+                value={filterDateTo}
+                onChange={(e) => setFilterDateTo(e.target.value)}
+                className="h-8 text-xs w-36"
+              />
+            </div>
+            {(searchStore || filterCity || filterState || filterDateFrom || filterDateTo) && (
+              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setSearchStore(""); setFilterCity(""); setFilterState(""); setFilterDateFrom(""); setFilterDateTo(""); }}>
+                Limpar filtros
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
