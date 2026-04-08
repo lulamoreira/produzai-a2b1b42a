@@ -1,8 +1,9 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Schedule } from "@/types/schedule";
 import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
+import { useOccurrenceStatusSync } from "@/hooks/useOccurrenceStatusSync";
 import { buildAddress, buildContactsByStoreMap } from "@/lib/storeHelpers";
 import { type ClientStore } from "@/hooks/useMultiClientData";
 import { getStateColor } from "@/lib/stateColors";
@@ -24,12 +25,16 @@ import {
   Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle,
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
   Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList, Lock, LockOpen,
+  CheckCircle2, AlertCircle,
 } from "lucide-react";
 import { downloadPhotosAsZip } from "@/lib/downloadPhotosZip";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
+import { downloadWorkbook } from "@/lib/downloadWorkbook";
+import { buildExportFileName } from "@/lib/exportFileName";
 import {
   useInstallationTeams,
   useAllTeamMembers,
@@ -47,9 +52,9 @@ interface InstallationsTabProps {
   stores: ClientStore[];
   canEdit: boolean;
   clientId: string;
+  agencyName?: string;
+  clientName?: string;
 }
-
-// Schedule type and buildAddress are now imported from shared modules
 
 const CATEGORY_OPTIONS = [
   { value: "before", label: "Antes" },
@@ -57,7 +62,7 @@ const CATEGORY_OPTIONS = [
   { value: "after", label: "Depois" },
 ];
 
-const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId }: InstallationsTabProps) => {
+const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId, agencyName = "", clientName = "" }: InstallationsTabProps) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
@@ -65,20 +70,30 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
   const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const showTeamCodesPanel = isAdminOrMaster || canManageTeamCodes;
   const logActivity = useLogActivity();
+
+  // Filters
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterState, setFilterState] = useState("");
+  const [filterCity, setFilterCity] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"" | "completed" | "pending" | "no_photo">("");
+  const [filterDate, setFilterDate] = useState("");
+  const [filterPeriod, setFilterPeriod] = useState("");
+  const [filterTeam, setFilterTeam] = useState("");
+  const [filterLocked, setFilterLocked] = useState("");
+  const [filterReschedule, setFilterReschedule] = useState("");
+  const [filterModel, setFilterModel] = useState("");
+
+  // UI state
   const [showCodes, setShowCodes] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [logStoreId, setLogStoreId] = useState("");
   const [logStoreName, setLogStoreName] = useState("");
-  const [filterState, setFilterState] = useState("");
-  const [filterCity, setFilterCity] = useState("");
-  const [filterStatus, setFilterStatus] = useState<"" | "completed" | "pending" | "no_photo">("");
   const [lockLoading, setLockLoading] = useState<Record<string, boolean>>({});
-  
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
 
-  // Shared hook for schedules
+  // Shared hooks
   const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
+  const { storeOccurrenceStatus } = useOccurrenceStatusSync(campaignId);
 
   // Only show stores that have a schedule with date AND time (original or reschedule)
   const scheduledStores = useMemo(() => stores.filter((s) => {
@@ -105,7 +120,6 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
     return map;
   }, [teams]);
 
-
   const contactsByStore = useMemo(() => buildContactsByStoreMap(allContacts), [allContacts]);
 
   const photosByStore = useMemo(() => {
@@ -114,27 +128,34 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
     return map;
   }, [photos]);
 
-  // Filters
+  // Filter options
   const states = useMemo(() => [...new Set(scheduledStores.map((s) => s.state?.trim()).filter(Boolean))].sort() as string[], [scheduledStores]);
   const cities = useMemo(() => {
     const filtered = filterState ? scheduledStores.filter((s) => s.state?.trim() === filterState) : scheduledStores;
     return [...new Set(filtered.map((s) => s.city).filter(Boolean))].sort() as string[];
   }, [scheduledStores, filterState]);
+  const storeModels = useMemo(() => {
+    const set = new Set(scheduledStores.map((s) => s.store_model).filter(Boolean) as string[]);
+    return Array.from(set).sort();
+  }, [scheduledStores]);
 
   const filteredStores = useMemo(() => {
     return scheduledStores.filter((s) => {
       const matchesSearch = !searchTerm ||
         s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.nickname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.store_code?.toLowerCase().includes(searchTerm.toLowerCase());
+        s.store_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.city || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (s.state || "").toLowerCase().includes(searchTerm.toLowerCase());
       const matchesState = !filterState || s.state?.trim() === filterState;
       const matchesCity = !filterCity || s.city === filterCity;
       const schedule = scheduleMap[s.id];
+
+      // Status filter
       let matchesStatus = true;
       if (filterStatus === "completed") {
         matchesStatus = !!schedule?.completed_at;
       } else if (filterStatus === "pending") {
-        // Pendentes: data de hoje, horário agendado já passou há 3+ horas, e não concluída
         if (!schedule || schedule.completed_at) {
           matchesStatus = false;
         } else {
@@ -155,13 +176,59 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
       } else if (filterStatus === "no_photo") {
         matchesStatus = (photosByStore[s.id] || []).length === 0;
       }
-      return matchesSearch && matchesState && matchesCity && matchesStatus;
+
+      // Date filter
+      let matchesDate = true;
+      if (filterDate) {
+        const effDate = schedule?.reschedule_enabled ? schedule?.reschedule_date : schedule?.scheduled_date;
+        matchesDate = effDate === filterDate;
+      }
+
+      // Period filter
+      let matchesPeriod = true;
+      if (filterPeriod) {
+        const effTime = schedule?.reschedule_enabled ? schedule?.reschedule_time : schedule?.scheduled_time;
+        if (!effTime) {
+          matchesPeriod = false;
+        } else {
+          const hour = parseInt(effTime.split(":")[0], 10);
+          if (filterPeriod === "morning") matchesPeriod = hour >= 1 && hour <= 11;
+          else if (filterPeriod === "afternoon") matchesPeriod = hour >= 12 && hour <= 17;
+          else if (filterPeriod === "night") matchesPeriod = hour >= 18 && hour <= 23;
+        }
+      }
+
+      // Team filter
+      let matchesTeam = true;
+      if (filterTeam) {
+        if (filterTeam === "no_team") {
+          matchesTeam = !schedule?.team_id;
+        } else {
+          matchesTeam = schedule?.team_id === filterTeam;
+        }
+      }
+
+      // Locked filter
+      let matchesLocked = true;
+      if (filterLocked === "locked") matchesLocked = !!schedule?.locked;
+      else if (filterLocked === "unlocked") matchesLocked = !schedule?.locked;
+
+      // Reschedule filter
+      let matchesReschedule = true;
+      if (filterReschedule === "yes") matchesReschedule = !!schedule?.reschedule_enabled;
+      else if (filterReschedule === "no") matchesReschedule = !schedule?.reschedule_enabled;
+
+      // Model filter
+      let matchesModel = true;
+      if (filterModel) matchesModel = s.store_model === filterModel;
+
+      return matchesSearch && matchesState && matchesCity && matchesStatus && matchesDate && matchesPeriod && matchesTeam && matchesLocked && matchesReschedule && matchesModel;
     }).sort((a, b) => {
       const stateComp = (a.state || "").localeCompare(b.state || "");
       if (stateComp !== 0) return stateComp;
       return a.name.localeCompare(b.name);
     });
-  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, scheduleMap, photosByStore]);
+  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, filterDate, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel, scheduleMap, photosByStore]);
 
   const handleUploadPhoto = async (storeId: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -200,6 +267,55 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
     });
     toast.success(`${files.length} foto(s) enviada(s)!`);
   };
+
+  const handleExport = () => {
+    const rows = filteredStores.map((store) => {
+      const schedule = scheduleMap[store.id];
+      const team = schedule?.team_id ? teamMap[schedule.team_id] : null;
+      const storePhotos = photosByStore[store.id] || [];
+      const isReschedule = !!schedule?.reschedule_enabled;
+      const effDate = isReschedule ? schedule?.reschedule_date : schedule?.scheduled_date;
+      const effTime = isReschedule ? schedule?.reschedule_time : schedule?.scheduled_time;
+      const effOs = isReschedule ? schedule?.reschedule_os : schedule?.installation_os;
+      return {
+        "Código": store.store_code || "",
+        "Loja": store.name,
+        "Estado": store.state || "",
+        "Cidade": store.city || "",
+        "Endereço": buildAddress(store),
+        "Contato": store.manager_name || "",
+        "Telefone": store.phone || "",
+        "Data": effDate ? format(new Date(effDate + "T12:00:00"), "dd/MM/yyyy") : "",
+        "Horário": effTime || "",
+        "OS": effOs || "",
+        "Equipe": team?.name || "",
+        "Remarcação": isReschedule ? "Sim" : "Não",
+        "Concluída": schedule?.completed_at ? format(new Date(schedule.completed_at), "dd/MM/yyyy HH:mm") : "Não",
+        "Fotos": storePhotos.length,
+        "Bloqueado": schedule?.locked ? "Sim" : "Não",
+      };
+    });
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Instalações");
+    downloadWorkbook(wb, buildExportFileName(`Instalacoes_${campaignName}`, { agencyName, clientName }));
+    toast.success("Planilha exportada!");
+  };
+
+  // Summary metrics
+  const summaryMetrics = useMemo(() => {
+    const total = filteredStores.length;
+    const completed = filteredStores.filter(s => scheduleMap[s.id]?.completed_at).length;
+    const pending = total - completed;
+    const withTeam = filteredStores.filter(s => scheduleMap[s.id]?.team_id).length;
+    const withPhotos = filteredStores.filter(s => (photosByStore[s.id] || []).length > 0).length;
+    const locked = filteredStores.filter(s => scheduleMap[s.id]?.locked).length;
+    const withOccurrence = filteredStores.filter(s => {
+      const occ = storeOccurrenceStatus[s.id];
+      return occ?.hasOccurrence && !occ.allResolved;
+    }).length;
+    return { total, completed, pending, withTeam, withPhotos, locked, withOccurrence };
+  }, [filteredStores, scheduleMap, photosByStore, storeOccurrenceStatus]);
 
   return (
     <div className="space-y-4">
@@ -261,10 +377,108 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
             <option value="pending">⏳ Pendentes</option>
             <option value="no_photo">📷 Sem fotos</option>
           </select>
+          <input
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[120px] max-w-[160px]"
+            title="Filtrar por data"
+          />
+          {filterDate && (
+            <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-muted-foreground" onClick={() => setFilterDate("")}>
+              ✕
+            </Button>
+          )}
+          <select
+            value={filterPeriod}
+            onChange={(e) => setFilterPeriod(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[140px]"
+          >
+            <option value="">Período</option>
+            <option value="morning">🌅 Manhã</option>
+            <option value="afternoon">☀️ Tarde</option>
+            <option value="night">🌙 Noite</option>
+          </select>
+          <select
+            value={filterTeam}
+            onChange={(e) => setFilterTeam(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
+          >
+            <option value="">Equipe</option>
+            <option value="no_team">Sem equipe</option>
+            {teams.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+          <select
+            value={filterLocked}
+            onChange={(e) => setFilterLocked(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+          >
+            <option value="">Bloqueio</option>
+            <option value="locked">🔒 Bloqueado</option>
+            <option value="unlocked">🔓 Liberado</option>
+          </select>
+          <select
+            value={filterReschedule}
+            onChange={(e) => setFilterReschedule(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+          >
+            <option value="">Remarcação</option>
+            <option value="yes">Com remarcação</option>
+            <option value="no">Sem remarcação</option>
+          </select>
+          {storeModels.length > 0 && (
+            <select
+              value={filterModel}
+              onChange={(e) => setFilterModel(e.target.value)}
+              className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+            >
+              <option value="">Modelo</option>
+              {storeModels.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleExport}>
+            <Download className="w-3.5 h-3.5" /> Exportar
+          </Button>
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground">{filteredStores.length} loja(s) com agendamento</p>
+      {/* Summary Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
+          <p className="text-lg font-bold text-foreground">{summaryMetrics.total}</p>
+          <p className="text-[10px] text-muted-foreground">Total</p>
+        </div>
+        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
+          <p className="text-lg font-bold text-emerald-600">{summaryMetrics.completed}</p>
+          <p className="text-[10px] text-muted-foreground">✅ Concluídas</p>
+        </div>
+        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
+          <p className="text-lg font-bold text-amber-600">{summaryMetrics.pending}</p>
+          <p className="text-[10px] text-muted-foreground">⏳ Pendentes</p>
+        </div>
+        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
+          <p className="text-lg font-bold text-foreground">{summaryMetrics.withTeam}</p>
+          <p className="text-[10px] text-muted-foreground">🔧 Com equipe</p>
+        </div>
+        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
+          <p className="text-lg font-bold text-foreground">{summaryMetrics.withPhotos}</p>
+          <p className="text-[10px] text-muted-foreground">📷 Com fotos</p>
+        </div>
+        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
+          <p className="text-lg font-bold text-foreground">{summaryMetrics.locked}</p>
+          <p className="text-[10px] text-muted-foreground">🔒 Bloqueadas</p>
+        </div>
+        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
+          <p className="text-lg font-bold text-destructive">{summaryMetrics.withOccurrence}</p>
+          <p className="text-[10px] text-muted-foreground">⚠️ Ocorrências</p>
+        </div>
+      </div>
 
       {/* Store Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4">
@@ -311,6 +525,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
               setLockLoading(prev => ({ ...prev, [store.id]: false }));
             }
           };
+
+          // Occurrence status
+          const occStatus = storeOccurrenceStatus[store.id];
+          const hasOpenOccurrence = occStatus?.hasOccurrence && !occStatus.allResolved;
 
           return (
             <div
@@ -369,12 +587,56 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
                     )}
                   </div>
                 </div>
-                {isCardLocked && (
+                {isReschedule && (
+                  <span className="absolute top-1 right-1 text-[8px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full leading-none">REM</span>
+                )}
+                {isCardLocked && !isReschedule && (
                   <span className="absolute top-1 right-1 text-[8px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5">
                     <Lock className="w-2.5 h-2.5" /> BLOQ
                   </span>
                 )}
+                {isCardLocked && isReschedule && (
+                  <span className="absolute top-1 left-1 text-[8px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5">
+                    <Lock className="w-2.5 h-2.5" /> BLOQ
+                  </span>
+                )}
               </div>
+
+              {/* Occurrence Status Indicator */}
+              {(() => {
+                const currentPath = window.location.pathname;
+                const occUrl = `${currentPath}?section=occurrences&filterStore=${encodeURIComponent(store.name)}`;
+                const isOk = !hasOpenOccurrence;
+
+                return (
+                  <div className={cn(
+                    "mx-4 mb-1 mt-3 flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold",
+                    isOk
+                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
+                      : "bg-destructive/10 text-destructive border border-destructive/30"
+                  )}>
+                    {isOk ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>Instalação OK</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <a
+                          href={occUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:opacity-80 cursor-pointer"
+                        >
+                          Ocorrência registrada ({occStatus!.count})
+                        </a>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+
               <div className="p-4 space-y-3 bg-card flex-1">
                 {/* Address */}
                 <div className="text-xs text-muted-foreground">
