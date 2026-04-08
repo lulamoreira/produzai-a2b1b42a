@@ -227,13 +227,14 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     if (filterDate) {
       result = result.filter((s) => {
         const sch = scheduleMap[s.id];
-        return sch?.scheduled_date === filterDate;
+        const effDate = sch?.reschedule_enabled ? sch?.reschedule_date : sch?.scheduled_date;
+        return effDate === filterDate;
       });
     }
     if (filterPeriod) {
       result = result.filter((s) => {
         const sch = scheduleMap[s.id];
-        const time = sch?.scheduled_time;
+        const time = sch?.reschedule_enabled ? sch?.reschedule_time : sch?.scheduled_time;
         if (!time) return false;
         const hour = parseInt(time.split(":")[0], 10);
         if (filterPeriod === "morning") return hour >= 1 && hour <= 11;
