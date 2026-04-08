@@ -1,6 +1,11 @@
-import { useState, useMemo, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Schedule } from "@/types/schedule";
+import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
+import { useOccurrenceStatusSync } from "@/hooks/useOccurrenceStatusSync";
+import { buildContactsByStoreMap } from "@/lib/storeHelpers";
+import { isResolvedStatus } from "@/lib/occurrenceHelpers";
 import { type ClientStore } from "@/hooks/useMultiClientData";
 import { getStateColor } from "@/lib/stateColors";
 import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type StoreContactRole } from "@/hooks/useStoreContacts";
@@ -46,45 +51,7 @@ interface SchedulingTabProps {
   clientId: string;
 }
 
-type ApprovalStatusValue = "approved" | "under_review" | "rejected";
-
-type Schedule = {
-  id: string;
-  campaign_id: string;
-  store_id: string;
-  scheduled_date: string | null;
-  scheduled_time: string | null;
-  installation_os: string | null;
-  installation_preference: string | null;
-  team_id: string | null;
-  store_approved: boolean;
-  store_approved_at: string | null;
-  team_approved: boolean;
-  team_approved_at: string | null;
-  store_approval_status: ApprovalStatusValue;
-  team_approval_status: ApprovalStatusValue;
-  responsibility: string | null;
-  responsibility_at: string | null;
-  suggested_date: string | null;
-  suggested_time: string | null;
-  // Reschedule fields
-  reschedule_enabled: boolean;
-  reschedule_date: string | null;
-  reschedule_time: string | null;
-  reschedule_os: string | null;
-  reschedule_preference: string | null;
-  reschedule_store_approval_status: ApprovalStatusValue;
-  reschedule_store_approved_at: string | null;
-  reschedule_team_approval_status: ApprovalStatusValue;
-  reschedule_team_approved_at: string | null;
-  reschedule_responsibility: string | null;
-  reschedule_responsibility_at: string | null;
-  reschedule_suggested_date: string | null;
-  reschedule_suggested_time: string | null;
-  reschedule_suggested_date_2: string | null;
-  reschedule_suggested_time_2: string | null;
-  locked: boolean;
-};
+// Schedule type is now imported from @/types/schedule
 
 const PREFERENCE_OPTIONS = [
   { value: "not_informed", label: "Não informado", icon: HelpCircle },
