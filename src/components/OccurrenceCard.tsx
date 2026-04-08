@@ -178,6 +178,11 @@ export default function OccurrenceCard({
       } else if (field === "piece_id") {
         const getLabel = (id: string | null) => {
           if (!id) return "—";
+          if (typeof id === "string" && id.startsWith("kit:")) {
+            const kitId = id.replace("kit:", "");
+            const kit = kits.find((k) => k.id === kitId);
+            return kit ? `Kit ${kit.code} - ${kit.name}` : "Kit";
+          }
           const kitLabel = firstPieceKitLabels.get(id);
           if (kitLabel) return kitLabel;
           return pieces.find((p) => p.id === id)?.name || "—";
