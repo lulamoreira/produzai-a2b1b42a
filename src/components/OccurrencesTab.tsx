@@ -290,7 +290,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
       result = result.filter((occ) => occ.created_at && occ.created_at <= toEnd);
     }
     return result;
-  }, [occurrences, selectedStatuses, selectedPriorities, defaultStatus, filterCity, searchStore, stores]);
+  }, [occurrences, selectedStatuses, selectedPriorities, defaultStatus, filterCity, filterState, filterDateFrom, filterDateTo, searchStore, stores]);
 
   const handleDownloadQR = () => {
     const svg = qrRef.current?.querySelector("svg");
