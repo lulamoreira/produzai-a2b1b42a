@@ -89,6 +89,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [logStoreId, setLogStoreId] = useState("");
   const [logStoreName, setLogStoreName] = useState("");
   const [lockLoading, setLockLoading] = useState<Record<string, boolean>>({});
+  const [bulkLockLoading, setBulkLockLoading] = useState(false);
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
 
   // Shared hooks
@@ -450,6 +451,40 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleExport}>
             <Download className="w-3.5 h-3.5" /> Exportar
           </Button>
+          {canLockCards && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              disabled={bulkLockLoading}
+              onClick={async () => {
+                setBulkLockLoading(true);
+                try {
+                  const unlocked = filteredStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                  const allLocked = unlocked.length === 0;
+                  const newLocked = !allLocked;
+                  const ids = filteredStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
+                  if (ids.length === 0) { setBulkLockLoading(false); return; }
+                  const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
+                  if (error) throw error;
+                  queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                  toast.success(newLocked ? `${ids.length} cards bloqueados!` : `${ids.length} cards desbloqueados!`);
+                } catch (err: any) {
+                  toast.error(err.message || "Erro ao alterar bloqueio em massa.");
+                } finally {
+                  setBulkLockLoading(false);
+                }
+              }}
+            >
+              {(() => {
+                const unlocked = filteredStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                const allLocked = unlocked.length === 0 && filteredStores.some(s => scheduleMap[s.id]);
+                return allLocked
+                  ? <><LockOpen className="w-3.5 h-3.5" /> Desbloquear Todos</>
+                  : <><Lock className="w-3.5 h-3.5" /> Bloquear Todos</>;
+              })()}
+            </Button>
+          )}
         </div>
       </div>
 
