@@ -1,6 +1,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Schedule, ApprovalStatusValue } from "@/types/schedule";
+import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
+import { useOccurrenceStatusSync } from "@/hooks/useOccurrenceStatusSync";
+import { buildContactsByStoreMap } from "@/lib/storeHelpers";
+import { isResolvedStatus } from "@/lib/occurrenceHelpers";
 import { type ClientStore } from "@/hooks/useMultiClientData";
 import { getStateColor } from "@/lib/stateColors";
 import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type StoreContactRole } from "@/hooks/useStoreContacts";
@@ -46,45 +51,7 @@ interface SchedulingTabProps {
   clientId: string;
 }
 
-type ApprovalStatusValue = "approved" | "under_review" | "rejected";
-
-type Schedule = {
-  id: string;
-  campaign_id: string;
-  store_id: string;
-  scheduled_date: string | null;
-  scheduled_time: string | null;
-  installation_os: string | null;
-  installation_preference: string | null;
-  team_id: string | null;
-  store_approved: boolean;
-  store_approved_at: string | null;
-  team_approved: boolean;
-  team_approved_at: string | null;
-  store_approval_status: ApprovalStatusValue;
-  team_approval_status: ApprovalStatusValue;
-  responsibility: string | null;
-  responsibility_at: string | null;
-  suggested_date: string | null;
-  suggested_time: string | null;
-  // Reschedule fields
-  reschedule_enabled: boolean;
-  reschedule_date: string | null;
-  reschedule_time: string | null;
-  reschedule_os: string | null;
-  reschedule_preference: string | null;
-  reschedule_store_approval_status: ApprovalStatusValue;
-  reschedule_store_approved_at: string | null;
-  reschedule_team_approval_status: ApprovalStatusValue;
-  reschedule_team_approved_at: string | null;
-  reschedule_responsibility: string | null;
-  reschedule_responsibility_at: string | null;
-  reschedule_suggested_date: string | null;
-  reschedule_suggested_time: string | null;
-  reschedule_suggested_date_2: string | null;
-  reschedule_suggested_time_2: string | null;
-  locked: boolean;
-};
+// Schedule type is now imported from @/types/schedule
 
 const PREFERENCE_OPTIONS = [
   { value: "not_informed", label: "Não informado", icon: HelpCircle },
@@ -171,14 +138,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     return map;
   }, [contactRoles]);
 
-  const contactsByStore = useMemo(() => {
-    const map: Record<string, StoreContact[]> = {};
-    allContacts.forEach((c) => {
-      if (!map[c.store_id]) map[c.store_id] = [];
-      map[c.store_id].push(c);
-    });
-    return map;
-  }, [allContacts]);
+  const contactsByStore = useMemo(() => buildContactsByStoreMap(allContacts), [allContacts]);
 
   // Fetch WhatsApp scheduling message template
   const { data: schedulingMsgTemplate } = useQuery({
@@ -194,63 +154,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     },
   });
 
-  // Fetch schedules
-  const { data: schedules = [] } = useQuery({
-    queryKey: ["campaign_schedules", campaignId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaign_schedules")
-        .select("*")
-        .eq("campaign_id", campaignId);
-      if (error) throw error;
-      return data as Schedule[];
-    },
-    enabled: !!campaignId,
-  });
-
-  // Fetch occurrences for this campaign (for status indicator)
-  const { data: campaignOccurrences = [] } = useQuery({
-    queryKey: ["occurrences", campaignId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("occurrences")
-        .select("id, store_id, status")
-        .eq("campaign_id", campaignId);
-      if (error) throw error;
-      return data as { id: string; store_id: string | null; status: string | null }[];
-    },
-    enabled: !!campaignId,
-  });
-
-  // Realtime subscription for occurrences
-  useEffect(() => {
-    if (!campaignId) return;
-    const channel = supabase
-      .channel(`occ-status-${campaignId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "occurrences", filter: `campaign_id=eq.${campaignId}` }, () => {
-        queryClient.invalidateQueries({ queryKey: ["occurrences", campaignId] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [campaignId, queryClient]);
-
-  // Compute per-store occurrence status
-  const RESOLVED_STATUSES = useMemo(() => new Set(["resolved", "nao_procede"]), []);
-  const storeOccurrenceStatus = useMemo(() => {
-    const map: Record<string, { hasOccurrence: boolean; allResolved: boolean; count: number }> = {};
-    campaignOccurrences.forEach((occ) => {
-      if (!occ.store_id) return;
-      if (!map[occ.store_id]) map[occ.store_id] = { hasOccurrence: false, allResolved: true, count: 0 };
-      map[occ.store_id].hasOccurrence = true;
-      map[occ.store_id].count++;
-      const normalized = occ.status?.trim().toLowerCase();
-      const mapped = normalized === "rejected" || normalized === "rejeitada" ? "nao_procede" : (occ.status ?? "");
-      if (!RESOLVED_STATUSES.has(mapped)) {
-        map[occ.store_id].allResolved = false;
-      }
-    });
-    return map;
-  }, [campaignOccurrences, RESOLVED_STATUSES]);
+  // Shared hooks for schedules and occurrence status sync
+  const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
+  const { storeOccurrenceStatus } = useOccurrenceStatusSync(campaignId);
 
   // Upsert schedule
   const upsertSchedule = useMutation({
@@ -272,12 +178,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     },
     onError: () => toast.error("Erro ao salvar agendamento"),
   });
-
-  const scheduleMap = useMemo(() => {
-    const map: Record<string, Schedule> = {};
-    schedules.forEach((s) => { map[s.store_id] = s; });
-    return map;
-  }, [schedules]);
 
   const states = useMemo(() => {
     const set = new Set(stores.map((s) => s.state).filter(Boolean) as string[]);

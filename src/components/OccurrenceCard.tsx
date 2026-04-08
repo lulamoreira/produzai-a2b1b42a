@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { getStatusLabel as _getStatusLabel, getStatusColor as _getStatusColor } from "@/lib/occurrenceHelpers";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -320,8 +321,8 @@ export default function OccurrenceCard({
   };
 
   const activeStatuses = statuses.filter((s) => s.active);
-  const getStatusColor = (v: string) => statuses.find((s) => s.value === v)?.color || "#6366f1";
-  const getStatusLabel = (v: string) => statuses.find((s) => s.value === v)?.label || v;
+  const getStatusColor = (v: string) => _getStatusColor(statuses, v);
+  const getStatusLabel = (v: string) => _getStatusLabel(statuses, v);
 
   const handleToggleLock = async () => {
     setLockLoading(true);
