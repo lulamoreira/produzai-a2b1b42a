@@ -649,6 +649,66 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             <option value="unread">💬 Novas</option>
             <option value="has_messages">📩 Com msg</option>
           </select>
+          <select
+            value={filterTeam}
+            onChange={(e) => setFilterTeam(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
+          >
+            <option value="">Equipe</option>
+            <option value="no_team">Sem equipe</option>
+            {teams.map((t) => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
+          <select
+            value={filterPreference}
+            onChange={(e) => setFilterPreference(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
+          >
+            <option value="">Preferência</option>
+            {PREFERENCE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+          <select
+            value={filterResponsibility}
+            onChange={(e) => setFilterResponsibility(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+          >
+            <option value="">Responsável</option>
+            <option value="team">Equipe</option>
+            <option value="client">Cliente</option>
+          </select>
+          <select
+            value={filterLocked}
+            onChange={(e) => setFilterLocked(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+          >
+            <option value="">Bloqueio</option>
+            <option value="locked">🔒 Bloqueado</option>
+            <option value="unlocked">🔓 Liberado</option>
+          </select>
+          <select
+            value={filterReschedule}
+            onChange={(e) => setFilterReschedule(e.target.value)}
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+          >
+            <option value="">Remarcação</option>
+            <option value="yes">Com remarcação</option>
+            <option value="no">Sem remarcação</option>
+          </select>
+          {storeModels.length > 0 && (
+            <select
+              value={filterModel}
+              onChange={(e) => setFilterModel(e.target.value)}
+              className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+            >
+              <option value="">Modelo</option>
+              {storeModels.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          )}
         </div>
         <div className="flex flex-wrap gap-1.5">
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setTeamDialogOpen(true)}>
