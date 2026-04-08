@@ -25,7 +25,8 @@ export type Occurrence = {
   id: string;
   campaign_id: string;
   store_id: string | null;
-  piece_id: string;
+  piece_id: string | null;
+  kit_id: string | null;
   motive_id: string | null;
   description: string | null;
   photo_url: string | null;
