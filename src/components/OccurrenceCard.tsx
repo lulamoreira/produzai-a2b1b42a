@@ -403,17 +403,22 @@ export default function OccurrenceCard({
         )}
       </div>
 
-      {/* Reporter + Store */}
+      {/* Store name - prominent */}
+      <div className="font-semibold text-sm break-words leading-snug mb-1">{getStoreName(occ.store_id)}</div>
+      <div className="flex items-center gap-2 mb-2">
+        <Store className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+        <span className="text-xs text-muted-foreground">
+          {(() => { const s = stores.find((s) => s.id === occ.store_id); return s ? `${s.store_code || "—"} · ${s.state || ""} · ${s.city || "—"}` : "—"; })()}
+        </span>
+      </div>
+
+      {/* Reporter */}
       {getReporterLabel((occ as any).reporter_type) && (
         <div className="flex items-start gap-1.5 mb-1">
           <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
           <span className="text-xs text-muted-foreground break-words">{getReporterLabel((occ as any).reporter_type)}</span>
         </div>
       )}
-      <div className="flex items-start gap-1.5 mb-1.5">
-        <Store className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-        <span className="text-sm font-semibold text-foreground break-words">{getStoreName(occ.store_id)}</span>
-      </div>
 
       {/* Editable Location */}
       <div className="flex items-start gap-1.5 mb-1.5">
