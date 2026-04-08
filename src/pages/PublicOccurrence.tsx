@@ -142,9 +142,7 @@ const PublicOccurrence = () => {
   const activeMotives = useMemo(() => motives.filter((m) => m.active), [motives]);
   const addOccurrence = useAddOccurrence();
 
-  const SPECIAL_AGENCY = "__agency__";
-  const SPECIAL_FORNECEDOR = "__fornecedor__";
-  const SPECIAL_CLIENTE = "__cliente__";
+  // SPECIAL_AGENCY, SPECIAL_FORNECEDOR, SPECIAL_CLIENTE are now imported from @/types/occurrence
   const agencyName = (campaign as any)?.clients?.agencies?.name || "Agência";
   const clientName2 = (campaign as any)?.clients?.name || "Cliente";
 
@@ -215,8 +213,7 @@ const PublicOccurrence = () => {
     updateEntry(entryIdx, { photos: entry.photos.filter((_, i) => i !== photoIdx) });
   };
 
-  const GERAL_LOCATION = "__GERAL__";
-  const NAO_SEI_LOCATION = "__NAO_SEI__";
+  // GERAL_LOCATION, NAO_SEI_LOCATION are now imported from @/types/occurrence
   const allEntriesValid = entries.every((e) => {
     const isGeral = e.locationInStore === GERAL_LOCATION;
     const hasPiece = isGeral || !!e.pieceId;
