@@ -49,41 +49,7 @@ interface InstallationsTabProps {
   clientId: string;
 }
 
-type Schedule = {
-  id: string;
-  campaign_id: string;
-  store_id: string;
-  scheduled_date: string | null;
-  scheduled_time: string | null;
-  installation_os: string | null;
-  installation_preference: string | null;
-  team_id: string | null;
-  store_approved: boolean;
-  team_approved: boolean;
-  completed_at: string | null;
-  completed_by: string | null;
-  // Reschedule fields
-  reschedule_enabled: boolean;
-  reschedule_date: string | null;
-  reschedule_time: string | null;
-  reschedule_os: string | null;
-  reschedule_preference: string | null;
-  reschedule_store_approval_status: string | null;
-  reschedule_team_approval_status: string | null;
-  locked: boolean;
-};
-
-const CATEGORY_OPTIONS = [
-  { value: "before", label: "Antes" },
-  { value: "during", label: "Durante" },
-  { value: "after", label: "Depois" },
-];
-
-function buildAddress(store: ClientStore) {
-  return [store.street, store.number, store.complement, store.neighborhood, store.city, store.state, store.zip_code]
-    .filter(Boolean)
-    .join(", ") || "Endereço não cadastrado";
-}
+// Schedule type and buildAddress are now imported from shared modules
 
 const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId }: InstallationsTabProps) => {
   const queryClient = useQueryClient();
@@ -105,25 +71,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
   
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
 
-  // Fetch schedules (only stores with schedules)
-  const { data: schedules = [] } = useQuery({
-    queryKey: ["campaign_schedules", campaignId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaign_schedules")
-        .select("*")
-        .eq("campaign_id", campaignId);
-      if (error) throw error;
-      return data as Schedule[];
-    },
-    enabled: !!campaignId,
-  });
-
-  const scheduleMap = useMemo(() => {
-    const map: Record<string, Schedule> = {};
-    schedules.forEach((s) => { map[s.store_id] = s; });
-    return map;
-  }, [schedules]);
+  // Shared hook for schedules
+  const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
 
   // Only show stores that have a schedule with date AND time (original or reschedule)
   const scheduledStores = useMemo(() => stores.filter((s) => {
