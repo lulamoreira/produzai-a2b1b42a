@@ -215,6 +215,8 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const [occEndDate, setOccEndDate] = useState("");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
+  const [searchStore, setSearchStore] = useState("");
+  const [filterCity, setFilterCity] = useState("");
   const qrRef = useRef<HTMLDivElement>(null);
 
   const toggleStatus = (value: string) => {
@@ -236,6 +238,12 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     );
   };
 
+  const cityOptions = useMemo(() => {
+    const cities = new Set<string>();
+    stores.forEach((s) => { if (s.city) cities.add(s.city); });
+    return Array.from(cities).sort();
+  }, [stores]);
+
   const filteredOccurrences = useMemo(() => {
     let result = occurrences;
     if (selectedStatuses.length > 0) {
@@ -244,8 +252,25 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     if (selectedPriorities.length > 0) {
       result = result.filter((occ) => selectedPriorities.includes((occ as any).priority || "media"));
     }
+    if (filterCity) {
+      const storeIdsInCity = new Set(stores.filter((s) => s.city === filterCity).map((s) => s.id));
+      result = result.filter((occ) => occ.store_id && storeIdsInCity.has(occ.store_id));
+    }
+    if (searchStore.trim()) {
+      const term = searchStore.trim().toLowerCase();
+      result = result.filter((occ) => {
+        if (!occ.store_id) return false;
+        const s = stores.find((st) => st.id === occ.store_id);
+        if (!s) return false;
+        return (
+          (s.name || "").toLowerCase().includes(term) ||
+          (s.nickname || "").toLowerCase().includes(term) ||
+          (s.store_code || "").toLowerCase().includes(term)
+        );
+      });
+    }
     return result;
-  }, [occurrences, selectedStatuses, selectedPriorities, defaultStatus]);
+  }, [occurrences, selectedStatuses, selectedPriorities, defaultStatus, filterCity, searchStore, stores]);
 
   const handleDownloadQR = () => {
     const svg = qrRef.current?.querySelector("svg");
@@ -445,6 +470,35 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           ))}
         </div>
       )}
+
+      {/* Store search & city filter */}
+      {!isLoading && occurrences.length > 0 && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <Input
+            placeholder="Buscar loja (nome, apelido ou código)..."
+            value={searchStore}
+            onChange={(e) => setSearchStore(e.target.value)}
+            className="h-8 text-xs w-48 min-w-[140px]"
+          />
+          <Select value={filterCity || "__all__"} onValueChange={(v) => setFilterCity(v === "__all__" ? "" : v)}>
+            <SelectTrigger className="h-8 text-xs w-44 min-w-[120px]">
+              <SelectValue placeholder="Todas as cidades" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas as cidades</SelectItem>
+              {cityOptions.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(searchStore || filterCity) && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setSearchStore(""); setFilterCity(""); }}>
+              Limpar filtros
+            </Button>
+          )}
+        </div>
+      )}
+
 
       {!isLoading && occurrences.length > 0 && (
         <OccurrencesDashboard occurrences={filteredOccurrences} stores={stores} pieces={pieces} motives={motives} statuses={statuses} />
