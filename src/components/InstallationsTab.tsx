@@ -106,11 +106,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
   }, [teams]);
 
 
-  const contactsByStore = useMemo(() => {
-    const map: Record<string, StoreContact[]> = {};
-    allContacts.forEach((c) => { (map[c.store_id] = map[c.store_id] || []).push(c); });
-    return map;
-  }, [allContacts]);
+  const contactsByStore = useMemo(() => buildContactsByStoreMap(allContacts), [allContacts]);
 
   const photosByStore = useMemo(() => {
     const map: Record<string, InstallationPhoto[]> = {};
