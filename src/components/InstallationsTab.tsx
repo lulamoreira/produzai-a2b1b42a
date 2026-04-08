@@ -51,6 +51,12 @@ interface InstallationsTabProps {
 
 // Schedule type and buildAddress are now imported from shared modules
 
+const CATEGORY_OPTIONS = [
+  { value: "before", label: "Antes" },
+  { value: "during", label: "Durante" },
+  { value: "after", label: "Depois" },
+];
+
 const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId }: InstallationsTabProps) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
