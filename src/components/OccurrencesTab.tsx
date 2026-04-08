@@ -31,7 +31,7 @@ import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, QrCode
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
-import OccurrencesDashboard from "./OccurrencesDashboard";
+
 import PhotoLightbox from "./PhotoLightbox";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
