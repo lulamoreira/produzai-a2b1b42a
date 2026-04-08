@@ -204,7 +204,7 @@ export default function OccurrenceCard({
         const kitId = resolvedDraft.piece_id.replace("kit:", "");
         resolvedDraft.kit_id = kitId;
         resolvedDraft.piece_id = null;
-      } else if (resolvedDraft.piece_id && !resolvedDraft.piece_id.startsWith?.("kit:")) {
+      } else if (resolvedDraft.piece_id && typeof resolvedDraft.piece_id === "string") {
         // Selecting a specific piece clears kit_id
         resolvedDraft.kit_id = null;
       }
