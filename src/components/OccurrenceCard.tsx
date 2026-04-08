@@ -310,43 +310,58 @@ export default function OccurrenceCard({
   };
 
   return (
-    <div className={`group aqua-card bg-gradient-to-br ${motiveColor} border border-border border-l-4 p-4 hover:shadow-lg transition-all duration-200 flex flex-col ${isLocked ? "opacity-80" : ""}`}>
-      {/* Header: date + lock */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            {occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}
-          </span>
-          {isLocked && (
-            <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-destructive/50 text-destructive gap-0.5">
-              <Lock className="w-2.5 h-2.5" /> Bloqueado
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-0.5">
-          {canLockCards && (
+    <div className={`group aqua-card bg-gradient-to-br ${motiveColor} border border-border border-l-4 hover:shadow-lg transition-all duration-200 flex flex-col ${isLocked ? "opacity-80" : ""}`}>
+      {/* Header - colored, matching Scheduling/Installations */}
+      <div className="px-4 py-3 relative rounded-t-[1rem] bg-primary/10">
+        <div className="font-semibold text-sm break-words leading-snug text-foreground">{getStoreName(occ.store_id)}</div>
+        <div className="flex items-center justify-between mt-1">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-lg leading-none text-foreground">
+              {(() => { const s = stores.find((s) => s.id === occ.store_id); return s?.store_code || "—"; })()}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {(() => { const s = stores.find((s) => s.id === occ.store_id); return s ? `${s.state || ""} · ${s.city || "—"}` : "—"; })()}
+            </span>
+          </div>
+          <div className="flex items-center gap-0.5">
+            {canLockCards && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-7 w-7 shrink-0 ${isLocked ? "text-destructive" : "text-muted-foreground"}`}
+                title={isLocked ? "Desbloquear card" : "Bloquear card"}
+                onClick={handleToggleLock}
+                disabled={lockLoading}
+              >
+                {isLocked ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
-              className={`h-6 w-6 ${isLocked ? "text-destructive" : "text-muted-foreground"}`}
-              title={isLocked ? "Desbloquear card" : "Bloquear card"}
-              onClick={handleToggleLock}
-              disabled={lockLoading}
+              className="h-7 w-7 shrink-0"
+              title="Log de atividades"
+              onClick={() => setLogOpen(true)}
             >
-              {isLocked ? <Lock className="w-3.5 h-3.5" /> : <LockOpen className="w-3.5 h-3.5" />}
+              <ClipboardList className="w-4 h-4 text-muted-foreground" />
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            title="Log de atividades"
-            onClick={() => setLogOpen(true)}
-          >
-            <ClipboardList className="w-3.5 h-3.5 text-muted-foreground" />
-          </Button>
+          </div>
         </div>
+        {isLocked && (
+          <Badge variant="outline" className="absolute top-2 right-2 text-[9px] px-1.5 py-0 border-destructive/50 text-destructive gap-0.5">
+            <Lock className="w-2.5 h-2.5" /> Bloqueado
+          </Badge>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="p-4 flex flex-col flex-1">
+      {/* Date */}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+          <Calendar className="w-3 h-3" />
+          {occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}
+        </span>
       </div>
 
       {/* Priority */}
