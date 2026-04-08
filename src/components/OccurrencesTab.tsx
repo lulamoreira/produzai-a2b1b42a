@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, QrCode, Download, Calendar, CircleDot, GripVertical, Flag } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, QrCode, Download, Calendar, CircleDot, GripVertical, Flag, Lock, LockOpen } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
@@ -80,6 +80,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const canDelete = canDeleteProp ?? isAdmin;
   const canEditReporter = canEditReporterProp ?? isAdminOrMaster;
   const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
+  const [bulkLockLoading, setBulkLockLoading] = useState(false);
   const { data: occurrences = [], isLoading } = useOccurrences(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: kits = [] } = useCampaignKits(campaignId);
@@ -397,9 +398,43 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
               <ExternalLink className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">Incluir Ocorrência</span><span className="sm:hidden">Incluir</span>
             </Button>
           </a>
-          {canEdit && (
+           {canEdit && (
             <Button variant="outline" size="sm" className="text-xs" onClick={() => setSettingsOpen(true)}>
               <Settings className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">Configurar</span><span className="sm:hidden">Config.</span>
+            </Button>
+          )}
+          {canLockCards && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs gap-1.5"
+              disabled={bulkLockLoading}
+              onClick={async () => {
+                setBulkLockLoading(true);
+                try {
+                  const unlocked = filteredOccurrences.filter(o => !(o as any).locked);
+                  const allLocked = unlocked.length === 0 && filteredOccurrences.length > 0;
+                  const newLocked = !allLocked;
+                  const ids = filteredOccurrences.map(o => o.id);
+                  if (ids.length === 0) { setBulkLockLoading(false); return; }
+                  const { error } = await supabase.from("occurrences").update({ locked: newLocked } as any).in("id", ids);
+                  if (error) throw error;
+                  queryClient.invalidateQueries({ queryKey: ["occurrences", campaignId] });
+                  toast.success(newLocked ? `${ids.length} cards bloqueados!` : `${ids.length} cards desbloqueados!`);
+                } catch (err: any) {
+                  toast.error(err.message || "Erro ao alterar bloqueio em massa.");
+                } finally {
+                  setBulkLockLoading(false);
+                }
+              }}
+            >
+              {(() => {
+                const unlocked = filteredOccurrences.filter(o => !(o as any).locked);
+                const allLocked = unlocked.length === 0 && filteredOccurrences.length > 0;
+                return allLocked
+                  ? <><LockOpen className="w-3.5 h-3.5" /> Desbloquear Todos</>
+                  : <><Lock className="w-3.5 h-3.5" /> Bloquear Todos</>;
+              })()}
             </Button>
           )}
         </div>
