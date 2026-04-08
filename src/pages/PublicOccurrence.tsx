@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import { buildGroupedPieceOptions } from "@/lib/occurrenceHelpers";
+import { SPECIAL_AGENCY, SPECIAL_FORNECEDOR, SPECIAL_CLIENTE, GERAL_LOCATION, NAO_SEI_LOCATION, MAX_OCCURRENCE_PHOTOS } from "@/types/occurrence";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +15,7 @@ import { AlertTriangle, CheckCircle2, Send, Package, X, ImagePlus, Plus, Trash2,
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 
-const MAX_PHOTOS = 3;
+const MAX_PHOTOS = MAX_OCCURRENCE_PHOTOS;
 
 type OccurrenceEntry = {
   pieceId: string;
@@ -118,27 +120,9 @@ const PublicOccurrence = () => {
     enabled: kits.length > 0,
   });
 
-  // Normalize whitespace for comparison (collapse multiple spaces)
-  const normalizeWs = (s: string) => s.replace(/\s+/g, " ").trim();
-
-  // Build grouped piece list filtered by location
-  const buildGroupedPieceOptions = (locationFilter: string) => {
-    const normFilter = normalizeWs(locationFilter);
-    const filteredPieces = locationFilter
-      ? pieces.filter((p) => normalizeWs(p.category) === normFilter)
-      : pieces;
-    const kitPieceIds = new Set(kitPieces.map((kp) => kp.piece_id));
-    const standalonePieces = filteredPieces.filter((p) => !p.kit_only && !kitPieceIds.has(p.id));
-
-    const kitItems = kits.map((kit) => {
-      const memberPieceIds = kitPieces.filter((kp) => kp.kit_id === kit.id).map((kp) => kp.piece_id);
-      const memberPieces = filteredPieces.filter((p) => memberPieceIds.includes(p.id));
-      if (memberPieces.length === 0) return null;
-      return { kit, memberPieces };
-    }).filter((g): g is { kit: typeof kits[0]; memberPieces: typeof pieces } => g !== null);
-
-    return { standalonePieces, kitItems };
-  };
+  // Use shared grouped piece options builder
+  const buildLocalGroupedPieceOptions = (locationFilter: string) =>
+    buildGroupedPieceOptions(locationFilter, pieces, kits, kitPieces);
 
   const { data: locations = [] } = useQuery({
     queryKey: ["public_locations", campaignId],
