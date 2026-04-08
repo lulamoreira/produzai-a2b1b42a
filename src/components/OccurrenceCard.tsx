@@ -265,9 +265,14 @@ export default function OccurrenceCard({
     [merged.location_in_store, pieces, kits, kitPieces]
   );
   const selectedPieceOption = useMemo(() => {
+    // If kit_id is set, match the kit option
+    if (merged.kit_id) {
+      return pieceOptions.find((o) => o.value === `kit:${merged.kit_id}`);
+    }
+    // Otherwise match by piece_id
     const direct = pieceOptions.find((o) => o.value === merged.piece_id);
     if (direct) return direct;
-    // Check if stored piece_id is the first member of a kit (legacy data)
+    // Legacy: check if stored piece_id is the first member of a kit
     if (merged.piece_id) {
       for (const kit of kits) {
         const members = kitPieces.filter((kp) => kp.kit_id === kit.id);
@@ -277,7 +282,7 @@ export default function OccurrenceCard({
       }
     }
     return undefined;
-  }, [pieceOptions, merged.piece_id, kits, kitPieces]);
+  }, [pieceOptions, merged.piece_id, merged.kit_id, kits, kitPieces]);
   const getPieceName = (id: string | null) => {
     if (!id) return "—";
     const kitLabel = firstPieceKitLabels.get(id);
