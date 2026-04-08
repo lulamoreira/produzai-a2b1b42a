@@ -471,6 +471,35 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
         </div>
       )}
 
+      {/* Store search & city filter */}
+      {!isLoading && occurrences.length > 0 && (
+        <div className="flex flex-wrap gap-2 items-center">
+          <Input
+            placeholder="Buscar loja (nome, apelido ou código)..."
+            value={searchStore}
+            onChange={(e) => setSearchStore(e.target.value)}
+            className="h-8 text-xs w-48 min-w-[140px]"
+          />
+          <Select value={filterCity} onValueChange={setFilterCity}>
+            <SelectTrigger className="h-8 text-xs w-44 min-w-[120px]">
+              <SelectValue placeholder="Todas as cidades" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Todas as cidades</SelectItem>
+              {cityOptions.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(searchStore || filterCity) && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setSearchStore(""); setFilterCity(""); }}>
+              Limpar filtros
+            </Button>
+          )}
+        </div>
+      )}
+
+
       {!isLoading && occurrences.length > 0 && (
         <OccurrencesDashboard occurrences={filteredOccurrences} stores={stores} pieces={pieces} motives={motives} statuses={statuses} />
       )}
