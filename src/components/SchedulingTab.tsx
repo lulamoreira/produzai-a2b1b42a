@@ -21,7 +21,7 @@ import { useLogActivity } from "@/hooks/useActivityLogs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -113,6 +113,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const logActivity = useLogActivity();
   const [lockLoading, setLockLoading] = useState<Record<string, boolean>>({});
   const [bulkLockLoading, setBulkLockLoading] = useState(false);
+  const [expandedOriginal, setExpandedOriginal] = useState<Record<string, boolean>>({});
 
   // Unread message counts
   const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
@@ -215,25 +216,28 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     if (filterApproval) {
       result = result.filter((s) => {
         const sch = scheduleMap[s.id];
-        const storeStatus = sch?.store_approval_status ?? "under_review";
-        const teamStatus = sch?.team_approval_status ?? "under_review";
+        const isResch = !!sch?.reschedule_enabled;
+        const storeStatus = isResch ? (sch?.reschedule_store_approval_status ?? "under_review") : (sch?.store_approval_status ?? "under_review");
+        const teamStatus = isResch ? (sch?.reschedule_team_approval_status ?? "under_review") : (sch?.team_approval_status ?? "under_review");
+        const effOs = isResch ? sch?.reschedule_os : sch?.installation_os;
         if (filterApproval === "approved") return storeStatus === "approved" && teamStatus === "approved";
         if (filterApproval === "pending") return storeStatus !== "approved" || teamStatus !== "approved";
         if (filterApproval === "rejected") return storeStatus === "rejected" || teamStatus === "rejected";
-        if (filterApproval === "missing_os") return storeStatus === "approved" && teamStatus === "approved" && !sch?.installation_os;
+        if (filterApproval === "missing_os") return storeStatus === "approved" && teamStatus === "approved" && !effOs;
         return true;
       });
     }
     if (filterDate) {
       result = result.filter((s) => {
         const sch = scheduleMap[s.id];
-        return sch?.scheduled_date === filterDate;
+        const effDate = sch?.reschedule_enabled ? sch?.reschedule_date : sch?.scheduled_date;
+        return effDate === filterDate;
       });
     }
     if (filterPeriod) {
       result = result.filter((s) => {
         const sch = scheduleMap[s.id];
-        const time = sch?.scheduled_time;
+        const time = sch?.reschedule_enabled ? sch?.reschedule_time : sch?.scheduled_time;
         if (!time) return false;
         const hour = parseInt(time.split(":")[0], 10);
         if (filterPeriod === "morning") return hour >= 1 && hour <= 11;
@@ -710,7 +714,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       {/* Summary */}
       {(() => {
         const total = filteredStores.length;
-        const scheduled = filteredStores.filter(s => scheduleMap[s.id]?.scheduled_date).length;
+        const scheduled = filteredStores.filter(s => {
+          const sch = scheduleMap[s.id];
+          const effDate = sch?.reschedule_enabled ? sch?.reschedule_date : sch?.scheduled_date;
+          return !!effDate;
+        }).length;
         const noDate = total - scheduled;
         const approved = filteredStores.filter(s => {
           const sch = scheduleMap[s.id];
@@ -961,109 +969,237 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   )}
                 </div>
 
-                {/* Scheduling fields */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Date */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                      <CalendarIcon className="w-3 h-3" /> Data
-                    </label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={!cardCanEdit}
-                          className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !selectedDate && "text-muted-foreground")}
-                        >
-                          <span className="truncate">{selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar"}</span>
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={selectedDate}
-                          onSelect={(date) => handleFieldChange(store.id, "scheduled_date", date ? format(date, "yyyy-MM-dd") : null)}
-                          locale={ptBR}
-                          className="p-3 pointer-events-auto"
-                        />
-                        {selectedDate && (
-                          <div className="px-3 pb-3">
-                            <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => handleFieldChange(store.id, "scheduled_date", null)}>
-                              Limpar data
-                            </Button>
-                          </div>
-                        )}
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  {/* Time */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                      <Clock className="w-3 h-3" /> Horário
-                    </label>
-                    <div className="flex items-center gap-1">
-                      <DebouncedInput
-                        type="time"
-                        disabled={!cardCanEdit}
-                        value={schedule?.scheduled_time || ""}
-                        onValueCommit={(val) => handleFieldChange(store.id, "scheduled_time", val || null)}
-                        className="h-8 text-xs flex-1"
-                      />
-                      {schedule?.scheduled_time && cardCanEdit && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "scheduled_time", null)} title="Limpar horário">
-                          ✕
-                        </Button>
+                {/* Scheduling fields - show reschedule as primary when enabled */}
+                {isReschedule ? (
+                  <>
+                    {/* Collapsible original data */}
+                    <div className="rounded-md border border-muted bg-muted/20">
+                      <button
+                        type="button"
+                        className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide hover:bg-muted/40 transition-colors"
+                        onClick={() => setExpandedOriginal(prev => ({ ...prev, [store.id]: !prev[store.id] }))}
+                      >
+                        <span>📋 Dados do agendamento original</span>
+                        {expandedOriginal[store.id] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      </button>
+                      {expandedOriginal[store.id] && (
+                        <div className="px-3 pb-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
+                          <div><span className="font-medium text-foreground">Data:</span> {schedule?.scheduled_date ? format(new Date(schedule.scheduled_date + "T12:00:00"), "dd/MM/yyyy") : "—"}</div>
+                          <div><span className="font-medium text-foreground">Horário:</span> {schedule?.scheduled_time || "—"}</div>
+                          <div><span className="font-medium text-foreground">OS:</span> {schedule?.installation_os || "—"}</div>
+                          <div><span className="font-medium text-foreground">Preferência:</span> {prefLabel(schedule?.installation_preference || "not_informed")}</div>
+                        </div>
                       )}
                     </div>
-                  </div>
 
-                  {/* OS */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                      <FileText className="w-3 h-3" /> OS Instalação
-                      {!hasOs && schedule?.scheduled_date && schedule?.scheduled_time && (
-                        <AlertTriangle className="w-3 h-3 text-amber-500" />
-                      )}
-                    </label>
-                    <DebouncedInput
-                      disabled={!cardCanEdit}
-                      placeholder="Nº OS"
-                      value={schedule?.installation_os || ""}
-                      onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)}
-                      className="h-8 text-xs"
-                    />
-                  </div>
+                    {/* Reschedule fields as primary */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Date */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                          <CalendarIcon className="w-3 h-3" /> Data
+                        </label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={!cardCanEdit}
+                              className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !schedule?.reschedule_date && "text-muted-foreground")}
+                            >
+                              <span className="truncate">{schedule?.reschedule_date ? format(new Date(schedule.reschedule_date + "T12:00:00"), "dd/MM/yyyy") : "Selecionar"}</span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={schedule?.reschedule_date ? new Date(schedule.reschedule_date + "T12:00:00") : undefined}
+                              onSelect={(date) => handleFieldChange(store.id, "reschedule_date", date ? format(date, "yyyy-MM-dd") : null)}
+                              locale={ptBR}
+                              className="p-3 pointer-events-auto"
+                            />
+                            {schedule?.reschedule_date && (
+                              <div className="px-3 pb-3">
+                                <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => handleFieldChange(store.id, "reschedule_date", null)}>
+                                  Limpar data
+                                </Button>
+                              </div>
+                            )}
+                          </PopoverContent>
+                        </Popover>
+                      </div>
 
-                  {/* Preference */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                      <Sun className="w-3 h-3" /> Preferência
-                    </label>
-                    <select
-                      disabled={!cardCanEdit}
-                      value={schedule?.installation_preference || "not_informed"}
-                      onChange={(e) => handleFieldChange(store.id, "installation_preference", e.target.value)}
-                      className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
-                    >
-                      {PREFERENCE_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
+                      {/* Time */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                          <Clock className="w-3 h-3" /> Horário
+                        </label>
+                        <div className="flex items-center gap-1">
+                          <DebouncedInput
+                            type="time"
+                            disabled={!cardCanEdit}
+                            value={schedule?.reschedule_time || ""}
+                            onValueCommit={(val) => handleFieldChange(store.id, "reschedule_time", val || null)}
+                            className="h-8 text-xs flex-1"
+                          />
+                          {schedule?.reschedule_time && cardCanEdit && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "reschedule_time", null)} title="Limpar horário">
+                              ✕
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* OS */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                          <FileText className="w-3 h-3" /> OS Instalação
+                          {!hasOs && schedule?.reschedule_date && schedule?.reschedule_time && (
+                            <AlertTriangle className="w-3 h-3 text-amber-500" />
+                          )}
+                        </label>
+                        <DebouncedInput
+                          disabled={!cardCanEdit}
+                          placeholder="Nº OS"
+                          value={schedule?.reschedule_os || ""}
+                          onValueCommit={(val) => handleFieldChange(store.id, "reschedule_os", val || null)}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+
+                      {/* Preference - always visible */}
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                          <Sun className="w-3 h-3" /> Preferência
+                        </label>
+                        <select
+                          disabled={!cardCanEdit}
+                          value={schedule?.installation_preference || "not_informed"}
+                          onChange={(e) => handleFieldChange(store.id, "installation_preference", e.target.value)}
+                          className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                        >
+                          {PREFERENCE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Date */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                        <CalendarIcon className="w-3 h-3" /> Data
+                      </label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={!cardCanEdit}
+                            className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !selectedDate && "text-muted-foreground")}
+                          >
+                            <span className="truncate">{selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar"}</span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={(date) => handleFieldChange(store.id, "scheduled_date", date ? format(date, "yyyy-MM-dd") : null)}
+                            locale={ptBR}
+                            className="p-3 pointer-events-auto"
+                          />
+                          {selectedDate && (
+                            <div className="px-3 pb-3">
+                              <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => handleFieldChange(store.id, "scheduled_date", null)}>
+                                Limpar data
+                              </Button>
+                            </div>
+                          )}
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    {/* Time */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> Horário
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <DebouncedInput
+                          type="time"
+                          disabled={!cardCanEdit}
+                          value={schedule?.scheduled_time || ""}
+                          onValueCommit={(val) => handleFieldChange(store.id, "scheduled_time", val || null)}
+                          className="h-8 text-xs flex-1"
+                        />
+                        {schedule?.scheduled_time && cardCanEdit && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "scheduled_time", null)} title="Limpar horário">
+                            ✕
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* OS */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                        <FileText className="w-3 h-3" /> OS Instalação
+                        {!hasOs && schedule?.scheduled_date && schedule?.scheduled_time && (
+                          <AlertTriangle className="w-3 h-3 text-amber-500" />
+                        )}
+                      </label>
+                      <DebouncedInput
+                        disabled={!cardCanEdit}
+                        placeholder="Nº OS"
+                        value={schedule?.installation_os || ""}
+                        onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)}
+                        className="h-8 text-xs"
+                      />
+                    </div>
+
+                    {/* Preference */}
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                        <Sun className="w-3 h-3" /> Preferência
+                      </label>
+                      <select
+                        disabled={!cardCanEdit}
+                        value={schedule?.installation_preference || "not_informed"}
+                        onChange={(e) => handleFieldChange(store.id, "installation_preference", e.target.value)}
+                        className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                      >
+                        {PREFERENCE_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* Footer - Approval Toggles */}
-              <ApprovalToggles
-                schedule={schedule}
-                storeId={store.id}
-                campaignId={campaignId}
-                canEdit={cardCanEdit}
-                hasDateAndTime={!!(schedule?.scheduled_date && schedule?.scheduled_time)}
-                onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
-              />
+              {/* Footer - Approval Toggles: use reschedule approval when reschedule is active */}
+              {isReschedule ? (
+                <RescheduleApprovalToggles
+                  schedule={schedule}
+                  storeId={store.id}
+                  campaignId={campaignId}
+                  canEdit={cardCanEdit}
+                  hasDateAndTime={!!(schedule?.reschedule_date && schedule?.reschedule_time)}
+                  onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
+                />
+              ) : (
+                <ApprovalToggles
+                  schedule={schedule}
+                  storeId={store.id}
+                  campaignId={campaignId}
+                  canEdit={cardCanEdit}
+                  hasDateAndTime={!!(schedule?.scheduled_date && schedule?.scheduled_time)}
+                  onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
+                />
+              )}
 
               {/* Occurrence Status Indicator */}
               {(() => {
@@ -1071,7 +1207,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 const hasOpenOccurrence = occStatus?.hasOccurrence && !occStatus.allResolved;
                 const isOk = !hasOpenOccurrence;
                 
-                // Build link URL: replace /campaigns/:id section with occurrences and store filter
                 const currentPath = window.location.pathname;
                 const occUrl = `${currentPath}?section=occurrences&filterStore=${encodeURIComponent(store.name)}`;
 
@@ -1104,7 +1239,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 );
               })()}
 
-              {/* Reschedule Section */}
+              {/* Reschedule Section - toggle only, no duplicate fields */}
               <RescheduleSection
                 schedule={schedule}
                 storeId={store.id}
@@ -1543,106 +1678,10 @@ function RescheduleSection({ schedule, storeId, campaignId, canEdit, teams, team
       </div>
 
       {isEnabled && (
-        <div className="px-4 py-3 space-y-3 bg-orange-500/5">
-          {/* Reschedule fields */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Date */}
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                <CalendarIcon className="w-3 h-3" /> Data
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={!canEdit}
-                    className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !rescheduleDate && "text-muted-foreground")}
-                  >
-                    <span className="truncate">{rescheduleDate ? format(rescheduleDate, "dd/MM/yyyy") : "Selecionar"}</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={rescheduleDate}
-                    onSelect={(date) => onFieldChange("reschedule_date", date ? format(date, "yyyy-MM-dd") : null)}
-                    locale={ptBR}
-                    className="p-3 pointer-events-auto"
-                  />
-                  {rescheduleDate && (
-                    <div className="px-3 pb-3">
-                      <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => onFieldChange("reschedule_date", null)}>
-                        Limpar data
-                      </Button>
-                    </div>
-                  )}
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Time */}
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Horário
-              </label>
-              <div className="flex items-center gap-1">
-                <DebouncedInput
-                  type="time"
-                  disabled={!canEdit}
-                  value={schedule?.reschedule_time || ""}
-                  onValueCommit={(val) => onFieldChange("reschedule_time", val || null)}
-                  className="h-8 text-xs flex-1"
-                />
-                {schedule?.reschedule_time && canEdit && (
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => onFieldChange("reschedule_time", null)} title="Limpar horário">
-                    ✕
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* OS */}
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                <FileText className="w-3 h-3" /> OS Instalação
-              </label>
-              <DebouncedInput
-                disabled={!canEdit}
-                placeholder="Nº OS"
-                value={schedule?.reschedule_os || ""}
-                onValueCommit={(val) => onFieldChange("reschedule_os", val || null)}
-                className="h-8 text-xs"
-              />
-            </div>
-
-            {/* Preference */}
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                <Sun className="w-3 h-3" /> Preferência
-              </label>
-              <select
-                disabled={!canEdit}
-                value={schedule?.reschedule_preference || "not_informed"}
-                onChange={(e) => onFieldChange("reschedule_preference", e.target.value)}
-                className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
-              >
-                {PREFERENCE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Reschedule Approval Toggles */}
-          <RescheduleApprovalToggles
-            schedule={schedule}
-            storeId={storeId}
-            campaignId={campaignId}
-            canEdit={canEdit}
-            hasDateAndTime={hasRescheduleDateTime}
-            onMultiUpdate={onMultiUpdate}
-          />
+        <div className="px-4 py-2 bg-orange-500/5">
+          <p className="text-[10px] text-muted-foreground">
+            Os campos de Data, Horário, OS e Aprovação acima já refletem os dados da remarcação.
+          </p>
         </div>
       )}
     </div>
