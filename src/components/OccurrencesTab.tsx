@@ -80,6 +80,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const canDelete = canDeleteProp ?? isAdmin;
   const canEditReporter = canEditReporterProp ?? isAdminOrMaster;
   const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
+  const [bulkLockLoading, setBulkLockLoading] = useState(false);
   const { data: occurrences = [], isLoading } = useOccurrences(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: kits = [] } = useCampaignKits(campaignId);
