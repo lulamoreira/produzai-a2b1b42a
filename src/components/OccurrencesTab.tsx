@@ -247,6 +247,12 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     return Array.from(cities).sort();
   }, [stores]);
 
+  const stateOptions = useMemo(() => {
+    const states = new Set<string>();
+    stores.forEach((s) => { if (s.state) states.add(s.state); });
+    return Array.from(states).sort();
+  }, [stores]);
+
   const filteredOccurrences = useMemo(() => {
     let result = occurrences;
     if (selectedStatuses.length > 0) {
@@ -254,6 +260,10 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     }
     if (selectedPriorities.length > 0) {
       result = result.filter((occ) => selectedPriorities.includes((occ as any).priority || "media"));
+    }
+    if (filterState) {
+      const storeIdsInState = new Set(stores.filter((s) => s.state === filterState).map((s) => s.id));
+      result = result.filter((occ) => occ.store_id && storeIdsInState.has(occ.store_id));
     }
     if (filterCity) {
       const storeIdsInCity = new Set(stores.filter((s) => s.city === filterCity).map((s) => s.id));
@@ -271,6 +281,13 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           (s.store_code || "").toLowerCase().includes(term)
         );
       });
+    }
+    if (filterDateFrom) {
+      result = result.filter((occ) => occ.created_at && occ.created_at >= filterDateFrom);
+    }
+    if (filterDateTo) {
+      const toEnd = filterDateTo + "T23:59:59";
+      result = result.filter((occ) => occ.created_at && occ.created_at <= toEnd);
     }
     return result;
   }, [occurrences, selectedStatuses, selectedPriorities, defaultStatus, filterCity, searchStore, stores]);
