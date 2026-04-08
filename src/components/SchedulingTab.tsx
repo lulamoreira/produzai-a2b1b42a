@@ -216,12 +216,14 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     if (filterApproval) {
       result = result.filter((s) => {
         const sch = scheduleMap[s.id];
-        const storeStatus = sch?.store_approval_status ?? "under_review";
-        const teamStatus = sch?.team_approval_status ?? "under_review";
+        const isResch = !!sch?.reschedule_enabled;
+        const storeStatus = isResch ? (sch?.reschedule_store_approval_status ?? "under_review") : (sch?.store_approval_status ?? "under_review");
+        const teamStatus = isResch ? (sch?.reschedule_team_approval_status ?? "under_review") : (sch?.team_approval_status ?? "under_review");
+        const effOs = isResch ? sch?.reschedule_os : sch?.installation_os;
         if (filterApproval === "approved") return storeStatus === "approved" && teamStatus === "approved";
         if (filterApproval === "pending") return storeStatus !== "approved" || teamStatus !== "approved";
         if (filterApproval === "rejected") return storeStatus === "rejected" || teamStatus === "rejected";
-        if (filterApproval === "missing_os") return storeStatus === "approved" && teamStatus === "approved" && !sch?.installation_os;
+        if (filterApproval === "missing_os") return storeStatus === "approved" && teamStatus === "approved" && !effOs;
         return true;
       });
     }
