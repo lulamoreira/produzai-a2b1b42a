@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { PRIORITY_OPTIONS } from "@/types/occurrence";
-import { getStatusLabel, getStatusColor, getDefaultStatusValue } from "@/lib/occurrenceHelpers";
+import { getDefaultStatusValue } from "@/lib/occurrenceHelpers";
 import { useClientPermission } from "@/hooks/useClientPermission";
 import {
   useOccurrences,
@@ -168,8 +168,6 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   };
 
 
-  const statusLabel = (value: string) => getStatusLabel(statuses, value);
-  const statusColor = (value: string) => getStatusColor(statuses, value);
   const defaultStatus = useMemo(() => getDefaultStatusValue(statuses), [statuses]);
 
   // Fetch all photos for occurrences in this campaign
