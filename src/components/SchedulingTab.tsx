@@ -723,7 +723,30 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground">{filteredStores.length} loja(s)</p>
+      {/* Summary */}
+      {(() => {
+        const total = filteredStores.length;
+        const scheduled = filteredStores.filter(s => scheduleMap[s.id]?.scheduled_date).length;
+        const noDate = total - scheduled;
+        const approved = filteredStores.filter(s => {
+          const sch = scheduleMap[s.id];
+          return sch?.store_approval_status === "approved" && sch?.team_approval_status === "approved";
+        }).length;
+        const completed = filteredStores.filter(s => scheduleMap[s.id]?.completed_at).length;
+        const locked = filteredStores.filter(s => scheduleMap[s.id]?.locked).length;
+        const withTeam = filteredStores.filter(s => scheduleMap[s.id]?.team_id).length;
+        return (
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground bg-card border border-border rounded-lg px-3 py-2">
+            <span><strong className="text-foreground">{total}</strong> loja(s)</span>
+            <span>📅 <strong className="text-foreground">{scheduled}</strong> agendadas</span>
+            <span>⏳ <strong className="text-foreground">{noDate}</strong> sem data</span>
+            <span>✅ <strong className="text-foreground">{approved}</strong> aprovadas</span>
+            <span>🏁 <strong className="text-foreground">{completed}</strong> concluídas</span>
+            <span>🔧 <strong className="text-foreground">{withTeam}</strong> com equipe</span>
+            <span>🔒 <strong className="text-foreground">{locked}</strong> bloqueadas</span>
+          </div>
+        );
+      })()}
 
       {/* Store Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4">
