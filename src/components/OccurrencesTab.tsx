@@ -530,9 +530,6 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
       )}
 
 
-      {!isLoading && occurrences.length > 0 && (
-        <OccurrencesDashboard occurrences={filteredOccurrences} stores={stores} pieces={pieces} motives={motives} statuses={statuses} />
-      )}
 
       {/* Occurrences list */}
       {isLoading ? (
