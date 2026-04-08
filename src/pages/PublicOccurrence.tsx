@@ -554,16 +554,26 @@ const PublicOccurrence = () => {
                             )}
                             {groupedPieceOptions.kitItems.map((item) => (
                               <SelectGroup key={item.kit.id}>
-                                <SelectItem value={item.firstMemberPiece!.id} className="font-semibold">
-                                  <div className="flex items-center gap-2">
-                                    {item.kit.image_url ? (
-                                      <img src={item.kit.image_url} alt={item.kit.name} className="w-6 h-6 rounded object-cover" />
-                                    ) : (
-                                      <Boxes className="w-4 h-4 text-[#1e3a5f]" />
-                                    )}
-                                    <span className="text-sm">Kit {item.kit.code} - {item.kit.name}</span>
-                                  </div>
-                                </SelectItem>
+                                <SelectLabel className="text-xs text-muted-foreground flex items-center gap-1">
+                                  {item.kit.image_url ? (
+                                    <img src={item.kit.image_url} alt={item.kit.name} className="w-5 h-5 rounded object-cover" />
+                                  ) : (
+                                    <Boxes className="w-4 h-4 text-[#1e3a5f]" />
+                                  )}
+                                  Kit {item.kit.code} - {item.kit.name}
+                                </SelectLabel>
+                                {item.memberPieces.map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    <div className="flex items-center gap-2 pl-2">
+                                      {p.image_url ? (
+                                        <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
+                                      ) : (
+                                        <Package className="w-4 h-4 text-muted-foreground" />
+                                      )}
+                                      <span>{p.code} - {p.name}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
                               </SelectGroup>
                             ))}
                           </>
