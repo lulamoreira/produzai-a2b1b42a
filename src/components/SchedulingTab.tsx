@@ -208,6 +208,50 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     enabled: !!campaignId,
   });
 
+  // Fetch occurrences for this campaign (for status indicator)
+  const { data: campaignOccurrences = [] } = useQuery({
+    queryKey: ["occurrences", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("occurrences")
+        .select("id, store_id, status")
+        .eq("campaign_id", campaignId);
+      if (error) throw error;
+      return data as { id: string; store_id: string | null; status: string | null }[];
+    },
+    enabled: !!campaignId,
+  });
+
+  // Realtime subscription for occurrences
+  useEffect(() => {
+    if (!campaignId) return;
+    const channel = supabase
+      .channel(`occ-status-${campaignId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "occurrences", filter: `campaign_id=eq.${campaignId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["occurrences", campaignId] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [campaignId, queryClient]);
+
+  // Compute per-store occurrence status
+  const RESOLVED_STATUSES = useMemo(() => new Set(["resolved", "nao_procede"]), []);
+  const storeOccurrenceStatus = useMemo(() => {
+    const map: Record<string, { hasOccurrence: boolean; allResolved: boolean; count: number }> = {};
+    campaignOccurrences.forEach((occ) => {
+      if (!occ.store_id) return;
+      if (!map[occ.store_id]) map[occ.store_id] = { hasOccurrence: false, allResolved: true, count: 0 };
+      map[occ.store_id].hasOccurrence = true;
+      map[occ.store_id].count++;
+      const normalized = occ.status?.trim().toLowerCase();
+      const mapped = normalized === "rejected" || normalized === "rejeitada" ? "nao_procede" : (occ.status ?? "");
+      if (!RESOLVED_STATUSES.has(mapped)) {
+        map[occ.store_id].allResolved = false;
+      }
+    });
+    return map;
+  }, [campaignOccurrences, RESOLVED_STATUSES]);
+
   // Upsert schedule
   const upsertSchedule = useMutation({
     mutationFn: async (payload: {
@@ -1080,6 +1124,45 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 hasDateAndTime={!!(schedule?.scheduled_date && schedule?.scheduled_time)}
                 onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
               />
+
+              {/* Occurrence Status Indicator */}
+              {(() => {
+                const occStatus = storeOccurrenceStatus[store.id];
+                const hasOpenOccurrence = occStatus?.hasOccurrence && !occStatus.allResolved;
+                const isOk = !hasOpenOccurrence;
+                
+                // Build link URL: replace /campaigns/:id section with occurrences and store filter
+                const currentPath = window.location.pathname;
+                const occUrl = `${currentPath}?section=occurrences&filterStore=${encodeURIComponent(store.name)}`;
+
+                return (
+                  <div className={cn(
+                    "mx-4 mb-3 mt-1 flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold",
+                    isOk
+                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
+                      : "bg-destructive/10 text-destructive border border-destructive/30"
+                  )}>
+                    {isOk ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        <span>Instalação OK</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <a
+                          href={occUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline hover:opacity-80 cursor-pointer"
+                        >
+                          Ocorrência registrada ({occStatus!.count})
+                        </a>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Reschedule Section */}
               <RescheduleSection

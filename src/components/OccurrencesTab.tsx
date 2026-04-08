@@ -68,6 +68,11 @@ interface Props {
 
 
 const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEditProp, canDelete: canDeleteProp, canEditReporter: canEditReporterProp }: Props) => {
+  // Read initial store filter from URL params
+  const initialStoreFilter = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("filterStore") || "";
+  }, []);
   const { isAdmin, isAdminOrMaster } = useUserRole();
   const canEdit = canEditProp ?? isAdminOrMaster;
   const canDelete = canDeleteProp ?? isAdmin;
@@ -215,7 +220,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const [occEndDate, setOccEndDate] = useState("");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
-  const [searchStore, setSearchStore] = useState("");
+  const [searchStore, setSearchStore] = useState(initialStoreFilter);
   const [filterCity, setFilterCity] = useState("");
   const [filterState, setFilterState] = useState("");
   const [filterDateFrom, setFilterDateFrom] = useState("");
