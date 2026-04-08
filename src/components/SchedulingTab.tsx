@@ -208,6 +208,50 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     enabled: !!campaignId,
   });
 
+  // Fetch occurrences for this campaign (for status indicator)
+  const { data: campaignOccurrences = [] } = useQuery({
+    queryKey: ["occurrences", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("occurrences")
+        .select("id, store_id, status")
+        .eq("campaign_id", campaignId);
+      if (error) throw error;
+      return data as { id: string; store_id: string | null; status: string | null }[];
+    },
+    enabled: !!campaignId,
+  });
+
+  // Realtime subscription for occurrences
+  useEffect(() => {
+    if (!campaignId) return;
+    const channel = supabase
+      .channel(`occ-status-${campaignId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "occurrences", filter: `campaign_id=eq.${campaignId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["occurrences", campaignId] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [campaignId, queryClient]);
+
+  // Compute per-store occurrence status
+  const RESOLVED_STATUSES = useMemo(() => new Set(["resolved", "nao_procede"]), []);
+  const storeOccurrenceStatus = useMemo(() => {
+    const map: Record<string, { hasOccurrence: boolean; allResolved: boolean; count: number }> = {};
+    campaignOccurrences.forEach((occ) => {
+      if (!occ.store_id) return;
+      if (!map[occ.store_id]) map[occ.store_id] = { hasOccurrence: false, allResolved: true, count: 0 };
+      map[occ.store_id].hasOccurrence = true;
+      map[occ.store_id].count++;
+      const normalized = occ.status?.trim().toLowerCase();
+      const mapped = normalized === "rejected" || normalized === "rejeitada" ? "nao_procede" : (occ.status ?? "");
+      if (!RESOLVED_STATUSES.has(mapped)) {
+        map[occ.store_id].allResolved = false;
+      }
+    });
+    return map;
+  }, [campaignOccurrences, RESOLVED_STATUSES]);
+
   // Upsert schedule
   const upsertSchedule = useMutation({
     mutationFn: async (payload: {
