@@ -524,7 +524,7 @@ const PublicOccurrence = () => {
                     <SelectContent>
                       {(() => {
                         const isNaoSei = entry.locationInStore === NAO_SEI_LOCATION;
-                        const groupedPieceOptions = buildGroupedPieceOptions(isNaoSei ? "" : entry.locationInStore);
+                        const groupedPieceOptions = buildLocalGroupedPieceOptions(isNaoSei ? "" : entry.locationInStore);
                         return (
                           <>
                             {groupedPieceOptions.standalonePieces.length > 0 && (
