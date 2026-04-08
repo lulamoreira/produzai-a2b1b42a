@@ -255,16 +255,17 @@ const PublicOccurrence = () => {
       for (const entry of entries) {
         const isGeral = entry.locationInStore === GERAL_LOCATION;
         const isNaoSei = entry.locationInStore === NAO_SEI_LOCATION;
-        // Resolve kit: prefix to first member piece id
-        let resolvedPieceId = entry.pieceId;
+        // Resolve kit: prefix — store kit_id separately
+        let resolvedPieceId: string | null = entry.pieceId;
+        let resolvedKitId: string | null = null;
         if (resolvedPieceId?.startsWith("kit:")) {
-          const kitId = resolvedPieceId.replace("kit:", "");
-          const memberPieceId = kitPieces.find((kp) => kp.kit_id === kitId)?.piece_id;
-          resolvedPieceId = memberPieceId || resolvedPieceId;
+          resolvedKitId = resolvedPieceId.replace("kit:", "");
+          resolvedPieceId = null; // kit selected, no specific piece
         }
         const occurrenceData: Record<string, unknown> = {
           campaign_id: campaignId,
           piece_id: isGeral ? pieces[0]?.id || resolvedPieceId : resolvedPieceId,
+          kit_id: resolvedKitId,
           motive_id: entry.motiveId,
           description: entry.description || undefined,
           location_in_store: isGeral ? "GERAL - NA LOJA TODA" : isNaoSei ? "NÃO SEI O LOCAL" : (entry.locationInStore || undefined),

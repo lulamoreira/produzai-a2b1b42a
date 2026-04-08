@@ -178,6 +178,11 @@ export default function OccurrenceCard({
       } else if (field === "piece_id") {
         const getLabel = (id: string | null) => {
           if (!id) return "—";
+          if (typeof id === "string" && id.startsWith("kit:")) {
+            const kitId = id.replace("kit:", "");
+            const kit = kits.find((k) => k.id === kitId);
+            return kit ? `Kit ${kit.code} - ${kit.name}` : "Kit";
+          }
           const kitLabel = firstPieceKitLabels.get(id);
           if (kitLabel) return kitLabel;
           return pieces.find((p) => p.id === id)?.name || "—";
@@ -198,12 +203,15 @@ export default function OccurrenceCard({
     if (!hasPendingChanges || !user) return;
     setSaving(true);
     try {
-      // Resolve kit: prefix to first member piece id before persisting
+      // Resolve kit: prefix — store kit_id and clear piece_id
       const resolvedDraft = { ...draft };
       if (typeof resolvedDraft.piece_id === "string" && resolvedDraft.piece_id.startsWith("kit:")) {
         const kitId = resolvedDraft.piece_id.replace("kit:", "");
-        const memberPieceId = kitPieces.find((kp) => kp.kit_id === kitId)?.piece_id;
-        if (memberPieceId) resolvedDraft.piece_id = memberPieceId;
+        resolvedDraft.kit_id = kitId;
+        resolvedDraft.piece_id = null;
+      } else if (resolvedDraft.piece_id && typeof resolvedDraft.piece_id === "string") {
+        // Selecting a specific piece clears kit_id
+        resolvedDraft.kit_id = null;
       }
 
       // Persist changes
@@ -262,9 +270,14 @@ export default function OccurrenceCard({
     [merged.location_in_store, pieces, kits, kitPieces]
   );
   const selectedPieceOption = useMemo(() => {
+    // If kit_id is set, match the kit option
+    if (merged.kit_id) {
+      return pieceOptions.find((o) => o.value === `kit:${merged.kit_id}`);
+    }
+    // Otherwise match by piece_id
     const direct = pieceOptions.find((o) => o.value === merged.piece_id);
     if (direct) return direct;
-    // Check if stored piece_id is the first member of a kit (legacy data)
+    // Legacy: check if stored piece_id is the first member of a kit
     if (merged.piece_id) {
       for (const kit of kits) {
         const members = kitPieces.filter((kp) => kp.kit_id === kit.id);
@@ -274,7 +287,7 @@ export default function OccurrenceCard({
       }
     }
     return undefined;
-  }, [pieceOptions, merged.piece_id, kits, kitPieces]);
+  }, [pieceOptions, merged.piece_id, merged.kit_id, kits, kitPieces]);
   const getPieceName = (id: string | null) => {
     if (!id) return "—";
     const kitLabel = firstPieceKitLabels.get(id);

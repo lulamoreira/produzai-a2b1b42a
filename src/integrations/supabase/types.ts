@@ -1519,12 +1519,13 @@ export type Database = {
           description: string | null
           expected_resolution_date: string | null
           id: string
+          kit_id: string | null
           location_in_store: string | null
           locked: boolean
           motive_id: string | null
           needs_reinstallation: boolean | null
           photo_url: string | null
-          piece_id: string
+          piece_id: string | null
           priority: string
           reinstallation_datetime: string | null
           reinstallation_os: string | null
@@ -1545,12 +1546,13 @@ export type Database = {
           description?: string | null
           expected_resolution_date?: string | null
           id?: string
+          kit_id?: string | null
           location_in_store?: string | null
           locked?: boolean
           motive_id?: string | null
           needs_reinstallation?: boolean | null
           photo_url?: string | null
-          piece_id: string
+          piece_id?: string | null
           priority?: string
           reinstallation_datetime?: string | null
           reinstallation_os?: string | null
@@ -1571,12 +1573,13 @@ export type Database = {
           description?: string | null
           expected_resolution_date?: string | null
           id?: string
+          kit_id?: string | null
           location_in_store?: string | null
           locked?: boolean
           motive_id?: string | null
           needs_reinstallation?: boolean | null
           photo_url?: string | null
-          piece_id?: string
+          piece_id?: string | null
           priority?: string
           reinstallation_datetime?: string | null
           reinstallation_os?: string | null
@@ -1595,6 +1598,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "occurrences_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_kits"
             referencedColumns: ["id"]
           },
           {
