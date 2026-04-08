@@ -59,8 +59,8 @@ export function normalizeWhitespace(s: string): string {
 
 /** Build grouped piece options filtered by location */
 export function buildGroupedPieceOptions<
-  P extends { id: string; category: string; kit_only: boolean },
-  K extends { id: string; code: number; name: string },
+  P extends { id: string; category: string; kit_only: boolean; [key: string]: any },
+  K extends { id: string; code: number; name: string; [key: string]: any },
   KP extends { kit_id: string; piece_id: string },
 >(
   locationFilter: string,
