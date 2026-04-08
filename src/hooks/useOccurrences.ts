@@ -63,6 +63,37 @@ export type CampaignEmail = {
   created_at: string | null;
 };
 
+const LEGACY_OCCURRENCE_STATUS_VALUE_MAP: Record<string, string> = {
+  rejected: "nao_procede",
+  rejeitada: "nao_procede",
+};
+
+function normalizeOccurrenceStatusValue(value: string | null | undefined) {
+  if (!value) return value ?? null;
+  return LEGACY_OCCURRENCE_STATUS_VALUE_MAP[value.trim().toLowerCase()] ?? value;
+}
+
+function normalizeOccurrenceStatusItem(status: OccurrenceStatus): OccurrenceStatus {
+  const normalizedValue = normalizeOccurrenceStatusValue(status.value) ?? status.value;
+  const normalizedLabel =
+    normalizedValue === "nao_procede" || status.label.trim().toLowerCase() === "rejeitada"
+      ? "Não procede"
+      : status.label;
+
+  return {
+    ...status,
+    value: normalizedValue,
+    label: normalizedLabel,
+  };
+}
+
+function normalizeOccurrenceItem(occurrence: Occurrence): Occurrence {
+  return {
+    ...occurrence,
+    status: normalizeOccurrenceStatusValue(occurrence.status),
+  };
+}
+
 // ─── Motives ─────────────────────────────────────────────
 export function useOccurrenceMotives() {
   return useQuery({
@@ -137,8 +168,9 @@ export function useOccurrenceStatuses() {
         .select("*")
         .order("order");
       if (error) throw error;
-      return data as OccurrenceStatus[];
+      return (data ?? []) as OccurrenceStatus[];
     },
+    select: (data) => data.map(normalizeOccurrenceStatusItem),
   });
 }
 
@@ -199,8 +231,9 @@ export function useOccurrences(campaignId?: string) {
         .eq("campaign_id", campaignId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as Occurrence[];
+      return (data ?? []) as Occurrence[];
     },
+    select: (data) => data.map(normalizeOccurrenceItem),
     enabled: !!campaignId,
   });
 }
