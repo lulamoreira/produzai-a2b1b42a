@@ -261,7 +261,20 @@ export default function OccurrenceCard({
     () => getOccurrencePieceOptions({ location: merged.location_in_store, pieces, kits, kitPieces }),
     [merged.location_in_store, pieces, kits, kitPieces]
   );
-  const selectedPieceOption = pieceOptions.find((o) => o.value === merged.piece_id);
+  const selectedPieceOption = useMemo(() => {
+    const direct = pieceOptions.find((o) => o.value === merged.piece_id);
+    if (direct) return direct;
+    // Check if stored piece_id is the first member of a kit (legacy data)
+    if (merged.piece_id) {
+      for (const kit of kits) {
+        const members = kitPieces.filter((kp) => kp.kit_id === kit.id);
+        if (members.length > 0 && members[0].piece_id === merged.piece_id) {
+          return pieceOptions.find((o) => o.value === `kit:${kit.id}`);
+        }
+      }
+    }
+    return undefined;
+  }, [pieceOptions, merged.piece_id, kits, kitPieces]);
   const getPieceName = (id: string | null) => {
     if (!id) return "—";
     const kitLabel = firstPieceKitLabels.get(id);
