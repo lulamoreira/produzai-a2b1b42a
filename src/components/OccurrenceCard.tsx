@@ -198,8 +198,16 @@ export default function OccurrenceCard({
     if (!hasPendingChanges || !user) return;
     setSaving(true);
     try {
+      // Resolve kit: prefix to first member piece id before persisting
+      const resolvedDraft = { ...draft };
+      if (typeof resolvedDraft.piece_id === "string" && resolvedDraft.piece_id.startsWith("kit:")) {
+        const kitId = resolvedDraft.piece_id.replace("kit:", "");
+        const memberPieceId = kitPieces.find((kp) => kp.kit_id === kitId)?.piece_id;
+        if (memberPieceId) resolvedDraft.piece_id = memberPieceId;
+      }
+
       // Persist changes
-      const { status, ...otherFields } = draft;
+      const { status, ...otherFields } = resolvedDraft;
       
       if (Object.keys(otherFields).length > 0) {
         const { error } = await supabase.from("occurrences").update(otherFields).eq("id", occ.id);
