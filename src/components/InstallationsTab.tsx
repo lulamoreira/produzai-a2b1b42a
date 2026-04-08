@@ -399,6 +399,11 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             <option value="afternoon">☀️ Tarde</option>
             <option value="night">🌙 Noite</option>
           </select>
+          {filterPeriod && (
+            <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-muted-foreground" onClick={() => setFilterPeriod("")}>
+              ✕
+            </Button>
+          )}
           <select
             value={filterTeam}
             onChange={(e) => setFilterTeam(e.target.value)}
