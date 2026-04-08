@@ -387,7 +387,37 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
             </Button>
           )}
         </div>
-        <span className="text-xs text-muted-foreground">{filteredOccurrences.length} de {occurrences.length} ocorrência(s)</span>
+        {/* Summary */}
+        {(() => {
+          const total = filteredOccurrences.length;
+          const totalAll = occurrences.length;
+          const byStatus: Record<string, number> = {};
+          filteredOccurrences.forEach(o => {
+            const st = o.status || "sem_status";
+            byStatus[st] = (byStatus[st] || 0) + 1;
+          });
+          const byPriority: Record<string, number> = {};
+          filteredOccurrences.forEach(o => {
+            const p = o.priority || "media";
+            byPriority[p] = (byPriority[p] || 0) + 1;
+          });
+          const priorityLabels: Record<string, string> = { critica: "🔴 Crítica", alta: "🟠 Alta", media: "🟡 Média", baixa: "🟢 Baixa" };
+          return (
+            <div className="flex flex-wrap gap-3 text-xs text-muted-foreground bg-card border border-border rounded-lg px-3 py-2">
+              <span><strong className="text-foreground">{total}</strong> de {totalAll} ocorrência(s)</span>
+              {Object.entries(byStatus).sort(([a],[b]) => a.localeCompare(b)).map(([status, count]) => {
+                const statusObj = (statuses || []).find((s: any) => s.value === status);
+                const label = statusObj?.label || status;
+                return <span key={status}><strong className="text-foreground">{count}</strong> {label}</span>;
+              })}
+              {Object.entries(priorityLabels).map(([key, label]) => {
+                const count = byPriority[key] || 0;
+                if (count === 0) return null;
+                return <span key={key}>{label}: <strong className="text-foreground">{count}</strong></span>;
+              })}
+            </div>
+          );
+        })()}
 
         {/* Período de inclusão de ocorrências */}
         {campaignInfo && (
