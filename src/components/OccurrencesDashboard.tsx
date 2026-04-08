@@ -1,10 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { Occurrence } from "@/hooks/useOccurrences";
 import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 import type { OccurrenceMotive, OccurrenceStatus } from "@/hooks/useOccurrences";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle2, XCircle, Clock, TrendingUp, Store, Puzzle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, XCircle, Clock, TrendingUp, Store, Puzzle, ChevronDown, ChevronRight } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { cn } from "@/lib/utils";
 
 interface Props {
   occurrences: Occurrence[];
@@ -24,6 +25,24 @@ const CHART_COLORS = [
   "hsl(152, 60%, 42%)",
   "hsl(25, 90%, 55%)",
 ];
+
+function CollapsibleSection({ title, icon, children, defaultOpen = false }: { title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Card className="overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-muted/50 transition-colors"
+      >
+        {open ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
+        {icon}
+        <span className="text-sm font-semibold text-foreground">{title}</span>
+      </button>
+      {open && <CardContent className="px-4 pb-4 pt-0">{children}</CardContent>}
+    </Card>
+  );
+}
 
 const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses = [] }: Props) => {
   const statusMap = useMemo(() => {
@@ -91,159 +110,146 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses =
 
   if (occurrences.length === 0) return null;
 
-  // Non-default statuses count as "treated"
   const treatedCount = Object.entries(stats.counts)
     .filter(([key]) => key !== defaultStatusValue)
     .reduce((sum, [, v]) => sum + v, 0);
   const resolutionRate = stats.total > 0 ? Math.round((treatedCount / stats.total) * 100) : 0;
 
-  // Show up to 3 top statuses as stat cards + total
   const topStatuses = statuses.slice(0, 3);
 
   return (
-    <div className="space-y-5">
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {/* Total */}
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 overflow-hidden relative">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary flex-shrink-0">
-                <AlertTriangle className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-                <p className="text-[11px] text-muted-foreground">Total</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {topStatuses.map((s) => (
-          <Card key={s.id} className="overflow-hidden" style={{ borderColor: `${s.color}33` }}>
+    <div className="space-y-3">
+      {/* Resumo - stat cards */}
+      <CollapsibleSection
+        title={`Resumo (${stats.total} ocorrências)`}
+        icon={<AlertTriangle className="w-4 h-4 text-primary" />}
+      >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 overflow-hidden relative">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: s.color }}>
-                  <Clock className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center shadow-glow-primary flex-shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{stats.counts[s.value] || 0}</p>
-                  <p className="text-[11px] text-muted-foreground">{s.label}</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+                  <p className="text-[11px] text-muted-foreground">Total</p>
                 </div>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Status pie chart */}
-        {statusData.length > 0 && (
-          <Card>
-            <CardContent className="p-4">
-              <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full gradient-primary" />
-                Por Status
-              </h4>
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart>
-                  <Pie data={statusData} dataKey="value" cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={4} strokeWidth={0}>
-                    {statusData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
-                    formatter={(value: number) => [`${value} ocorrência(s)`, ""]}
-                  />
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px" }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
+          {topStatuses.map((s) => (
+            <Card key={s.id} className="overflow-hidden" style={{ borderColor: `${s.color}33` }}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: s.color }}>
+                    <Clock className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{stats.counts[s.value] || 0}</p>
+                    <p className="text-[11px] text-muted-foreground">{s.label}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </CollapsibleSection>
 
-        {/* Motives bar chart */}
-        {motiveData.length > 0 && (
-          <Card>
-            <CardContent className="p-4">
-              <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full gradient-accent" />
-                Por Motivo
-              </h4>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={motiveData} layout="vertical" margin={{ left: 0, right: 12 }}>
-                  <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
-                    formatter={(value: number) => [`${value}`, "Ocorrências"]}
-                  />
-                  <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14}>
-                    {motiveData.map((_, i) => (
-                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
+      {/* Por Status */}
+      {statusData.length > 0 && (
+        <CollapsibleSection
+          title="Por Status"
+          icon={<div className="w-2 h-2 rounded-full gradient-primary" />}
+        >
+          <ResponsiveContainer width="100%" height={180}>
+            <PieChart>
+              <Pie data={statusData} dataKey="value" cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={4} strokeWidth={0}>
+                {statusData.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
+                formatter={(value: number) => [`${value} ocorrência(s)`, ""]}
+              />
+              <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px" }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </CollapsibleSection>
+      )}
 
-        {/* Stores bar chart */}
-        {storeData.length > 0 && (
-          <Card>
-            <CardContent className="p-4">
-              <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full gradient-secondary" />
-                Por Loja
-              </h4>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={storeData} layout="vertical" margin={{ left: 0, right: 12 }}>
-                  <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
-                    formatter={(value: number) => [`${value}`, "Ocorrências"]}
-                  />
-                  <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14}>
-                    {storeData.map((_, i) => (
-                      <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {/* Por Motivo */}
+      {motiveData.length > 0 && (
+        <CollapsibleSection
+          title="Por Motivo"
+          icon={<div className="w-2 h-2 rounded-full gradient-accent" />}
+        >
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={motiveData} layout="vertical" margin={{ left: 0, right: 12 }}>
+              <XAxis type="number" hide />
+              <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
+                formatter={(value: number) => [`${value}`, "Ocorrências"]}
+              />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14}>
+                {motiveData.map((_, i) => (
+                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </CollapsibleSection>
+      )}
 
-      {/* Pieces breakdown - if there are occurrences by piece */}
+      {/* Por Loja */}
+      {storeData.length > 0 && (
+        <CollapsibleSection
+          title="Por Loja"
+          icon={<Store className="w-4 h-4 text-primary" />}
+        >
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={storeData} layout="vertical" margin={{ left: 0, right: 12 }}>
+              <XAxis type="number" hide />
+              <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
+                formatter={(value: number) => [`${value}`, "Ocorrências"]}
+              />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14}>
+                {storeData.map((_, i) => (
+                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </CollapsibleSection>
+      )}
+
+      {/* Por Peça */}
       {pieceData.length > 1 && (
-        <Card>
-          <CardContent className="p-4">
-            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-              <Puzzle className="w-4 h-4 text-primary" />
-              Ocorrências por Peça
-            </h4>
-            <ResponsiveContainer width="100%" height={Math.max(120, pieceData.length * 32)}>
-              <BarChart data={pieceData} layout="vertical" margin={{ left: 0, right: 12 }}>
-                <XAxis type="number" hide />
-                <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                <Tooltip
-                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
-                  formatter={(value: number) => [`${value}`, "Ocorrências"]}
-                />
-                <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16}>
-                  {pieceData.map((_, i) => (
-                    <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <CollapsibleSection
+          title="Ocorrências por Peça"
+          icon={<Puzzle className="w-4 h-4 text-primary" />}
+        >
+          <ResponsiveContainer width="100%" height={Math.max(120, pieceData.length * 32)}>
+            <BarChart data={pieceData} layout="vertical" margin={{ left: 0, right: 12 }}>
+              <XAxis type="number" hide />
+              <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
+                formatter={(value: number) => [`${value}`, "Ocorrências"]}
+              />
+              <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16}>
+                {pieceData.map((_, i) => (
+                  <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </CollapsibleSection>
       )}
     </div>
   );
