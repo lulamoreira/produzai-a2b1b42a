@@ -217,6 +217,9 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
   const [searchStore, setSearchStore] = useState("");
   const [filterCity, setFilterCity] = useState("");
+  const [filterState, setFilterState] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
   const qrRef = useRef<HTMLDivElement>(null);
 
   const toggleStatus = (value: string) => {
