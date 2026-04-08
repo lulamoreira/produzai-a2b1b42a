@@ -480,7 +480,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
             onChange={(e) => setSearchStore(e.target.value)}
             className="h-8 text-xs w-48 min-w-[140px]"
           />
-          <Select value={filterCity} onValueChange={setFilterCity}>
+          <Select value={filterCity || "__all__"} onValueChange={(v) => setFilterCity(v === "__all__" ? "" : v)}>
             <SelectTrigger className="h-8 text-xs w-44 min-w-[120px]">
               <SelectValue placeholder="Todas as cidades" />
             </SelectTrigger>
