@@ -108,8 +108,9 @@ export default function OccurrenceCard({
   const deleteOcc = useDeleteOccurrence();
 
   const isLocked = !!(occ as any).locked;
-  const canEdit = canEditProp && !isLocked;
-  const canEditReporter = canEditReporterProp && !isLocked;
+  const { isAdminOrMaster } = useUserRole();
+  const canEdit = canEditProp && (!isLocked || isAdminOrMaster);
+  const canEditReporter = canEditReporterProp && (!isLocked || isAdminOrMaster);
 
   // Draft state: accumulate local changes
   const [draft, setDraft] = useState<Record<string, unknown>>({});
