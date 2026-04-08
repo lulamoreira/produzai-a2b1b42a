@@ -1,4 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from "react";
+import { PRIORITY_OPTIONS } from "@/types/occurrence";
+import { getStatusLabel, getStatusColor, getDefaultStatusValue } from "@/lib/occurrenceHelpers";
 import { useClientPermission } from "@/hooks/useClientPermission";
 import {
   useOccurrences,
@@ -166,13 +168,9 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   };
 
 
-  const getStatusLabel = (value: string) => {
-    return statuses.find((s) => s.value === value)?.label || value;
-  };
-  const getStatusColor = (value: string) => {
-    return statuses.find((s) => s.value === value)?.color || "#6366f1";
-  };
-  const defaultStatus = useMemo(() => statuses.find((s) => s.is_default)?.value || "pending", [statuses]);
+  const statusLabel = (value: string) => getStatusLabel(statuses, value);
+  const statusColor = (value: string) => getStatusColor(statuses, value);
+  const defaultStatus = useMemo(() => getDefaultStatusValue(statuses), [statuses]);
 
   // Fetch all photos for occurrences in this campaign
   const occurrenceIds = useMemo(() => occurrences.map((o) => o.id), [occurrences]);
@@ -233,12 +231,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     );
   };
 
-  const PRIORITY_OPTIONS = [
-    { value: "critica", label: "Crítica", color: "#dc2626" },
-    { value: "alta", label: "Alta", color: "#f97316" },
-    { value: "media", label: "Média", color: "#eab308" },
-    { value: "baixa", label: "Baixa", color: "#22c55e" },
-  ];
+  // PRIORITY_OPTIONS is now imported from @/types/occurrence
 
   const togglePriority = (value: string) => {
     setSelectedPriorities((prev) =>
