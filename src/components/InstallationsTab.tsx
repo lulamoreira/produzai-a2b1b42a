@@ -366,14 +366,16 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId 
             >
               {/* Header */}
               <div
-                className="px-4 py-3 flex items-center gap-3 relative"
+                className="px-4 py-3 relative"
                 style={{ backgroundColor: colors.bg, color: colors.text }}
               >
-                <span className="font-bold text-lg">{store.store_code || "—"}</span>
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className="font-semibold truncate text-sm">{store.name}</span>
-                  <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
-                </div>
+                <div className="font-semibold text-sm break-words leading-snug">{store.name}</div>
+                <div className="flex items-center justify-between mt-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-lg leading-none">{store.store_code || "—"}</span>
+                    <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
                 {schedule?.completed_at && (
                   <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#22c55e' }} />
                 )}
