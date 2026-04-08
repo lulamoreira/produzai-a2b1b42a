@@ -562,6 +562,14 @@ const PublicOccurrence = () => {
                                   )}
                                   Kit {item.kit.code} - {item.kit.name}
                                 </SelectLabel>
+                                {item.memberPieces.length > 0 && (
+                                  <SelectItem value={item.memberPieces[0].id}>
+                                    <div className="flex items-center gap-2">
+                                      <Boxes className="w-4 h-4 text-primary" />
+                                      <span className="font-medium">Kit {item.kit.code} - {item.kit.name} (completo)</span>
+                                    </div>
+                                  </SelectItem>
+                                )}
                                 {item.memberPieces.map((p) => (
                                   <SelectItem key={p.id} value={p.id}>
                                     <div className="flex items-center gap-2 pl-2">
@@ -570,7 +578,7 @@ const PublicOccurrence = () => {
                                       ) : (
                                         <Package className="w-4 h-4 text-muted-foreground" />
                                       )}
-                                      <span>{p.code} - {p.name}</span>
+                                      <span>↳ {p.code} - {p.name}</span>
                                     </div>
                                   </SelectItem>
                                 ))}
