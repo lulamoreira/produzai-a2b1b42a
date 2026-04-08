@@ -138,14 +138,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     return map;
   }, [contactRoles]);
 
-  const contactsByStore = useMemo(() => {
-    const map: Record<string, StoreContact[]> = {};
-    allContacts.forEach((c) => {
-      if (!map[c.store_id]) map[c.store_id] = [];
-      map[c.store_id].push(c);
-    });
-    return map;
-  }, [allContacts]);
+  const contactsByStore = useMemo(() => buildContactsByStoreMap(allContacts), [allContacts]);
 
   // Fetch WhatsApp scheduling message template
   const { data: schedulingMsgTemplate } = useQuery({

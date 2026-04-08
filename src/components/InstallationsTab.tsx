@@ -1,6 +1,9 @@
 import { useState, useMemo, useRef } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Schedule } from "@/types/schedule";
+import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
+import { buildAddress, buildContactsByStoreMap } from "@/lib/storeHelpers";
 import { type ClientStore } from "@/hooks/useMultiClientData";
 import { getStateColor } from "@/lib/stateColors";
 import { useStoreContactsByClient, useStoreContactRoles, type StoreContact } from "@/hooks/useStoreContacts";
