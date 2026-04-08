@@ -68,6 +68,11 @@ interface Props {
 
 
 const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEditProp, canDelete: canDeleteProp, canEditReporter: canEditReporterProp }: Props) => {
+  // Read initial store filter from URL params
+  const initialStoreFilter = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("filterStore") || "";
+  }, []);
   const { isAdmin, isAdminOrMaster } = useUserRole();
   const canEdit = canEditProp ?? isAdminOrMaster;
   const canDelete = canDeleteProp ?? isAdmin;
