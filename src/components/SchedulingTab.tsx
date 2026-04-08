@@ -733,9 +733,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           return sch?.store_approval_status === "approved" && sch?.team_approval_status === "approved";
         }).length;
         const locked = filteredStores.filter(s => scheduleMap[s.id]?.locked).length;
+        const withTeam = filteredStores.filter(s => scheduleMap[s.id]?.team_id).length;
+        return (
+          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground bg-card border border-border rounded-lg px-3 py-2">
+            <span><strong className="text-foreground">{total}</strong> loja(s)</span>
+            <span>📅 <strong className="text-foreground">{scheduled}</strong> agendadas</span>
             <span>⏳ <strong className="text-foreground">{noDate}</strong> sem data</span>
             <span>✅ <strong className="text-foreground">{approved}</strong> aprovadas</span>
-            <span>🏁 <strong className="text-foreground">{completed}</strong> concluídas</span>
             <span>🔧 <strong className="text-foreground">{withTeam}</strong> com equipe</span>
             <span>🔒 <strong className="text-foreground">{locked}</strong> bloqueadas</span>
           </div>
