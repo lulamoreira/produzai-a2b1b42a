@@ -55,8 +55,8 @@ function getOccurrencePieceOptions({
     const memberIds = kitPieces.filter((kp) => kp.kit_id === kit.id).map((kp) => kp.piece_id);
     const members = filteredPieces.filter((p) => memberIds.includes(p.id));
     if (members.length === 0) return;
-    // Add the kit itself (use first member piece id as value for backwards compat)
-    kitAndMemberItems.push({ value: members[0].id, label: `Kit ${kit.code} - ${kit.name}`, sortOrder: kit.display_order });
+    // Add the kit itself as selectable with kit: prefix
+    kitAndMemberItems.push({ value: `kit:${kit.id}`, label: `Kit ${kit.code} - ${kit.name}`, sortOrder: kit.display_order });
     // Add each individual kit member piece
     members.forEach((p) => {
       kitAndMemberItems.push({ value: p.id, label: `  ↳ ${p.code} - ${p.name}`, sortOrder: kit.display_order + 0.001 });
@@ -198,8 +198,16 @@ export default function OccurrenceCard({
     if (!hasPendingChanges || !user) return;
     setSaving(true);
     try {
+      // Resolve kit: prefix to first member piece id before persisting
+      const resolvedDraft = { ...draft };
+      if (typeof resolvedDraft.piece_id === "string" && resolvedDraft.piece_id.startsWith("kit:")) {
+        const kitId = resolvedDraft.piece_id.replace("kit:", "");
+        const memberPieceId = kitPieces.find((kp) => kp.kit_id === kitId)?.piece_id;
+        if (memberPieceId) resolvedDraft.piece_id = memberPieceId;
+      }
+
       // Persist changes
-      const { status, ...otherFields } = draft;
+      const { status, ...otherFields } = resolvedDraft;
       
       if (Object.keys(otherFields).length > 0) {
         const { error } = await supabase.from("occurrences").update(otherFields).eq("id", occ.id);
@@ -253,7 +261,20 @@ export default function OccurrenceCard({
     () => getOccurrencePieceOptions({ location: merged.location_in_store, pieces, kits, kitPieces }),
     [merged.location_in_store, pieces, kits, kitPieces]
   );
-  const selectedPieceOption = pieceOptions.find((o) => o.value === merged.piece_id);
+  const selectedPieceOption = useMemo(() => {
+    const direct = pieceOptions.find((o) => o.value === merged.piece_id);
+    if (direct) return direct;
+    // Check if stored piece_id is the first member of a kit (legacy data)
+    if (merged.piece_id) {
+      for (const kit of kits) {
+        const members = kitPieces.filter((kp) => kp.kit_id === kit.id);
+        if (members.length > 0 && members[0].piece_id === merged.piece_id) {
+          return pieceOptions.find((o) => o.value === `kit:${kit.id}`);
+        }
+      }
+    }
+    return undefined;
+  }, [pieceOptions, merged.piece_id, kits, kitPieces]);
   const getPieceName = (id: string | null) => {
     if (!id) return "—";
     const kitLabel = firstPieceKitLabels.get(id);
