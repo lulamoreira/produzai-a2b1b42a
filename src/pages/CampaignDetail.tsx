@@ -2156,6 +2156,8 @@ const CampaignDetail = () => {
               stores={stores.filter((s) => isStoreEnabled(s.id) && s.show_in_scheduling)}
               canEdit={canEditInstallations}
               clientId={clientId!}
+              agencyName={agency?.name || ""}
+              clientName={client?.name || ""}
             />
           )}
 
