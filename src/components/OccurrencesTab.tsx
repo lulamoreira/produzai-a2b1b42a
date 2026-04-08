@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, QrCode, Download, Calendar, CircleDot, GripVertical, Flag } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, QrCode, Download, Calendar, CircleDot, GripVertical, Flag, Lock, LockOpen } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
