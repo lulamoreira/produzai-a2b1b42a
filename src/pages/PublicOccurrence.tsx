@@ -255,9 +255,16 @@ const PublicOccurrence = () => {
       for (const entry of entries) {
         const isGeral = entry.locationInStore === GERAL_LOCATION;
         const isNaoSei = entry.locationInStore === NAO_SEI_LOCATION;
+        // Resolve kit: prefix to first member piece id
+        let resolvedPieceId = entry.pieceId;
+        if (resolvedPieceId?.startsWith("kit:")) {
+          const kitId = resolvedPieceId.replace("kit:", "");
+          const memberPieceId = kitPieces.find((kp) => kp.kit_id === kitId)?.piece_id;
+          resolvedPieceId = memberPieceId || resolvedPieceId;
+        }
         const occurrenceData: Record<string, unknown> = {
           campaign_id: campaignId,
-          piece_id: isGeral ? pieces[0]?.id || entry.pieceId : entry.pieceId,
+          piece_id: isGeral ? pieces[0]?.id || resolvedPieceId : resolvedPieceId,
           motive_id: entry.motiveId,
           description: entry.description || undefined,
           location_in_store: isGeral ? "GERAL - NA LOJA TODA" : isNaoSei ? "NÃO SEI O LOCAL" : (entry.locationInStore || undefined),
@@ -563,7 +570,7 @@ const PublicOccurrence = () => {
                                   Kit {item.kit.code} - {item.kit.name}
                                 </SelectLabel>
                                 {item.memberPieces.length > 0 && (
-                                  <SelectItem value={item.memberPieces[0].id}>
+                                  <SelectItem value={`kit:${item.kit.id}`}>
                                     <div className="flex items-center gap-2">
                                       <Boxes className="w-4 h-4 text-primary" />
                                       <span className="font-medium">Kit {item.kit.code} - {item.kit.name} (completo)</span>
