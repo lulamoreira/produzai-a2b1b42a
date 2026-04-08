@@ -198,12 +198,15 @@ export default function OccurrenceCard({
     if (!hasPendingChanges || !user) return;
     setSaving(true);
     try {
-      // Resolve kit: prefix to first member piece id before persisting
+      // Resolve kit: prefix — store kit_id and clear piece_id
       const resolvedDraft = { ...draft };
       if (typeof resolvedDraft.piece_id === "string" && resolvedDraft.piece_id.startsWith("kit:")) {
         const kitId = resolvedDraft.piece_id.replace("kit:", "");
-        const memberPieceId = kitPieces.find((kp) => kp.kit_id === kitId)?.piece_id;
-        if (memberPieceId) resolvedDraft.piece_id = memberPieceId;
+        resolvedDraft.kit_id = kitId;
+        resolvedDraft.piece_id = null;
+      } else if (resolvedDraft.piece_id && !resolvedDraft.piece_id.startsWith?.("kit:")) {
+        // Selecting a specific piece clears kit_id
+        resolvedDraft.kit_id = null;
       }
 
       // Persist changes
