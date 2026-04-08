@@ -247,10 +247,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     return Array.from(set).sort();
   }, [stores, filterState]);
 
+  const storeModels = useMemo(() => {
+    const set = new Set(stores.map((s) => s.store_model).filter(Boolean) as string[]);
+    return Array.from(set).sort();
+  }, [stores]);
+
   const filteredStores = useMemo(() => {
     let result = [...stores];
     if (filterState) result = result.filter((s) => s.state === filterState);
     if (filterCity) result = result.filter((s) => s.city === filterCity);
+    if (filterModel) result = result.filter((s) => s.store_model === filterModel);
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       result = result.filter(
@@ -296,8 +302,37 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     } else if (filterMessages === "has_messages") {
       result = result.filter((s) => (chatCounts?.totalPerStore[s.id] || 0) > 0);
     }
+    if (filterTeam) {
+      if (filterTeam === "no_team") {
+        result = result.filter((s) => !scheduleMap[s.id]?.team_id);
+      } else {
+        result = result.filter((s) => scheduleMap[s.id]?.team_id === filterTeam);
+      }
+    }
+    if (filterPreference) {
+      result = result.filter((s) => {
+        const pref = scheduleMap[s.id]?.installation_preference ?? "not_informed";
+        return pref === filterPreference;
+      });
+    }
+    if (filterResponsibility) {
+      result = result.filter((s) => {
+        const resp = scheduleMap[s.id]?.responsibility ?? "team";
+        return resp === filterResponsibility;
+      });
+    }
+    if (filterLocked === "locked") {
+      result = result.filter((s) => !!scheduleMap[s.id]?.locked);
+    } else if (filterLocked === "unlocked") {
+      result = result.filter((s) => !scheduleMap[s.id]?.locked);
+    }
+    if (filterReschedule === "yes") {
+      result = result.filter((s) => !!scheduleMap[s.id]?.reschedule_enabled);
+    } else if (filterReschedule === "no") {
+      result = result.filter((s) => !scheduleMap[s.id]?.reschedule_enabled);
+    }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, searchTerm, filterApproval, filterDate, filterPeriod, filterMessages, scheduleMap, chatCounts]);
+  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterMessages, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap, chatCounts]);
 
   const fieldLabels: Record<string, string> = {
     scheduled_date: "Data",
