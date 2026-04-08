@@ -790,8 +790,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   </div>
                 )}
 
-                {/* Upload section */}
-                {cardCanEdit && (
+                {/* Upload section - never locked, any editor can upload */}
+                {canEdit && (
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <select
                       value={catForStore}
