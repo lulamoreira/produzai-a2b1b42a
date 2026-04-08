@@ -712,7 +712,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       {/* Summary */}
       {(() => {
         const total = filteredStores.length;
-        const scheduled = filteredStores.filter(s => scheduleMap[s.id]?.scheduled_date).length;
+        const scheduled = filteredStores.filter(s => {
+          const sch = scheduleMap[s.id];
+          const effDate = sch?.reschedule_enabled ? sch?.reschedule_date : sch?.scheduled_date;
+          return !!effDate;
+        }).length;
         const noDate = total - scheduled;
         const approved = filteredStores.filter(s => {
           const sch = scheduleMap[s.id];
