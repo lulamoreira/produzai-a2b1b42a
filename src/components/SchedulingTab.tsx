@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { Schedule } from "@/types/schedule";
+import type { Schedule, ApprovalStatusValue } from "@/types/schedule";
 import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
 import { useOccurrenceStatusSync } from "@/hooks/useOccurrenceStatusSync";
 import { buildContactsByStoreMap } from "@/lib/storeHelpers";
