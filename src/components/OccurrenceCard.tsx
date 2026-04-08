@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Occurrence } from "@/hooks/useOccurrences";
 import { useUpdateOccurrenceFields, useUpdateOccurrenceStatus, useDeleteOccurrence } from "@/hooks/useOccurrences";
@@ -108,8 +109,9 @@ export default function OccurrenceCard({
   const deleteOcc = useDeleteOccurrence();
 
   const isLocked = !!(occ as any).locked;
-  const canEdit = canEditProp && !isLocked;
-  const canEditReporter = canEditReporterProp && !isLocked;
+  const { isAdminOrMaster } = useUserRole();
+  const canEdit = canEditProp && (!isLocked || isAdminOrMaster);
+  const canEditReporter = canEditReporterProp && (!isLocked || isAdminOrMaster);
 
   // Draft state: accumulate local changes
   const [draft, setDraft] = useState<Record<string, unknown>>({});

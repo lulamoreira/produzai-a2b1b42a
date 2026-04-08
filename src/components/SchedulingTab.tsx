@@ -762,7 +762,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const fullyApproved = storeApproved && teamApproved && hasOs;
           const hasPendency = !fullyApproved;
           const isCardLocked = !!schedule?.locked;
-          const cardCanEdit = canEdit && !isCardLocked;
+          const cardCanEdit = canEdit && (!isCardLocked || isAdminOrMaster);
 
           const handleToggleLock = async () => {
             if (!schedule) return;

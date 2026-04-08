@@ -538,7 +538,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           const selectedDate = effectiveDate ? new Date(effectiveDate + "T12:00:00") : undefined;
           const catForStore = uploadCategory[store.id] || "before";
           const isCardLocked = !!schedule?.locked;
-          const cardCanEdit = canEdit && !isCardLocked;
+          const cardCanEdit = canEdit && (!isCardLocked || isAdminOrMaster);
 
           const handleToggleLock = async () => {
             if (!schedule) return;
