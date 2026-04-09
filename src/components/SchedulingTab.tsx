@@ -459,7 +459,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   };
 
   const handleExport = () => {
-    const rows = filteredStores.map((store) => {
+    const rows = displayedStores.map((store) => {
       const schedule = scheduleMap[store.id];
       const team = schedule?.team_id ? teamMap[schedule.team_id] : null;
       return {
@@ -793,7 +793,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 
       {/* Store Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4">
-        {filteredStores.map((store) => {
+        {displayedStores.map((store) => {
           const colors = getStateColor(store.state);
           const schedule = scheduleMap[store.id];
           const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
