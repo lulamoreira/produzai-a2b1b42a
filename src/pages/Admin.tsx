@@ -88,14 +88,17 @@ const Admin = () => {
               <h2 className="text-base font-semibold text-foreground">
                 Usuários ({users.length})
               </h2>
-              <div className="relative flex-1 max-w-xs ml-auto">
-                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar usuário..."
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  className="pl-9 h-9"
-                />
+              <div className="flex items-center gap-2 ml-auto">
+                <CreateUserDialog />
+                <div className="relative max-w-xs">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar usuário..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="pl-9 h-9"
+                  />
+                </div>
               </div>
             </div>
 
