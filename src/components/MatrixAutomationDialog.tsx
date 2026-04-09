@@ -378,7 +378,7 @@ export default function MatrixAutomationDialog({
                   <SelectValue placeholder={t("automation.selectField")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {customFieldLabels.map(f => (
+                  {allFilterFields.map(f => (
                     <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
                   ))}
                 </SelectContent>
