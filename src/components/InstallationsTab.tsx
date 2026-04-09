@@ -479,10 +479,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
               onClick={async () => {
                 setBulkLockLoading(true);
                 try {
-                  const unlocked = filteredStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                  const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
                   const allLocked = unlocked.length === 0;
                   const newLocked = !allLocked;
-                  const ids = filteredStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
+                  const ids = displayedStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
                   if (ids.length === 0) { setBulkLockLoading(false); return; }
                   const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
                   if (error) throw error;
@@ -496,8 +496,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
               }}
             >
               {(() => {
-                const unlocked = filteredStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
-                const allLocked = unlocked.length === 0 && filteredStores.some(s => scheduleMap[s.id]);
+                const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                const allLocked = unlocked.length === 0 && displayedStores.some(s => scheduleMap[s.id]);
                 return allLocked
                   ? <><LockOpen className="w-3.5 h-3.5" /> Desbloquear Todos</>
                   : <><Lock className="w-3.5 h-3.5" /> Bloquear Todos</>;
@@ -889,7 +889,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         })}
       </div>
 
-      {filteredStores.length === 0 && (
+      {displayedStores.length === 0 && (
         <p className="text-center text-muted-foreground py-8 text-sm">
           Nenhuma loja com agendamento encontrada
         </p>
