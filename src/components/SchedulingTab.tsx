@@ -1210,31 +1210,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 const currentPath = window.location.pathname;
                 const occUrl = `${currentPath}?section=occurrences&filterStore=${encodeURIComponent(store.name)}`;
 
+                if (isOk) return null;
                 return (
-                  <div className={cn(
-                    "mx-4 mb-3 mt-1 flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold",
-                    isOk
-                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
-                      : "bg-destructive/10 text-destructive border border-destructive/30"
-                  )}>
-                    {isOk ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 shrink-0" />
-                        <span>Instalação OK</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle className="w-4 h-4 shrink-0" />
-                        <a
-                          href={occUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline hover:opacity-80 cursor-pointer"
-                        >
-                          Ocorrência registrada ({occStatus!.count})
-                        </a>
-                      </>
-                    )}
+                  <div className="mx-4 mb-3 mt-1 flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold bg-destructive/10 text-destructive border border-destructive/30">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <a href={occUrl} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80 cursor-pointer">
+                      Ocorrência registrada ({occStatus!.count})
+                    </a>
                   </div>
                 );
               })()}
