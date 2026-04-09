@@ -64,6 +64,7 @@ const CampaignDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const locationState = location.state as { initialSection?: string; limitedMode?: boolean } | null;
   const isLimitedMode = locationState?.limitedMode || false;
@@ -940,14 +941,14 @@ const CampaignDetail = () => {
             {/* Navigation Buttons */}
             <ModuleGrid
               items={[
-                { key: "stores", label: "Lojas", icon: Store, visible: canViewStores || canViewCampaignStores },
-                { key: "matrix", label: "Matriz", icon: Grid3X3, visible: canViewCampaignStores },
-                { key: "pieces", label: "Peças", icon: LayoutList, visible: canViewPieces },
-                { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, visible: canViewOccurrences },
-                { key: "scheduling", label: "Agendamento", icon: CalendarDays, visible: canViewSchedules },
-                { key: "installations", label: "Instalações", icon: Camera, visible: canViewInstallations },
-                { key: "budgets", label: "Orçamentos", icon: DollarSign, visible: canViewCampaigns },
-                { key: "chat", label: "Chat", icon: MessageSquare, visible: canViewCampaigns, color: "#06b6d4" },
+                { key: "stores", label: t("modules.stores"), icon: Store, visible: canViewStores || canViewCampaignStores },
+                { key: "matrix", label: t("modules.matrix"), icon: Grid3X3, visible: canViewCampaignStores },
+                { key: "pieces", label: t("modules.pieces"), icon: LayoutList, visible: canViewPieces },
+                { key: "occurrences", label: t("modules.occurrences"), icon: AlertTriangle, visible: canViewOccurrences },
+                { key: "scheduling", label: t("modules.scheduling"), icon: CalendarDays, visible: canViewSchedules },
+                { key: "installations", label: t("modules.installations"), icon: Camera, visible: canViewInstallations },
+                { key: "budgets", label: t("modules.budgets"), icon: DollarSign, visible: canViewCampaigns },
+                { key: "chat", label: t("modules.chat"), icon: MessageSquare, visible: canViewCampaigns, color: "#06b6d4" },
               ]}
               onSelect={(key) => setActiveSection(key)}
             />
