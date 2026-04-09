@@ -1,21 +1,29 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useLanguage } from "@/hooks/useLanguage";
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { capitalizeName } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Shield, MessageSquare, ArrowLeft, UserCog, ChevronRight } from "lucide-react";
+import { LogOut, Shield, MessageSquare, ArrowLeft, UserCog, ChevronRight, Globe } from "lucide-react";
 import { WhatsNewButton } from "@/components/WhatsNewSheet";
 import { InviteButton } from "@/components/InviteButton";
 import EditProfileDialog from "@/components/EditProfileDialog";
 
-export const getGreeting = () => {
+export const getGreeting = (t?: (key: string) => string) => {
   const h = new Date().getHours();
+  if (t) {
+    if (h < 12) return t("greeting.morning");
+    if (h < 18) return t("greeting.afternoon");
+    return t("greeting.evening");
+  }
   if (h < 12) return "Bom dia";
   if (h < 18) return "Boa tarde";
   return "Boa noite";
@@ -77,10 +85,12 @@ export default function AppHeader({
   const navigate = useNavigate();
   const displayName = useDisplayName();
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const { t } = useTranslation();
+  const { currentLanguage, changeLanguage } = useLanguage();
 
-  const greeting = `${getGreeting()}, ${displayName}!`;
+  const greeting = `${getGreeting(t)}, ${displayName}!`;
 
-  const roleBadge = isAdmin ? "Admin" : isMaster ? "Master" : "Usuário";
+  const roleBadge = isAdmin ? "Admin" : isMaster ? "Master" : t("header.user");
   const roleBadgeClass = isAdmin
     ? "bg-primary/15 text-primary"
     : isMaster
@@ -125,14 +135,37 @@ export default function AppHeader({
             <>
               <InviteButton />
               <WhatsNewButton />
+              {/* Language selector */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]">
+                    <Globe className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline text-xs font-semibold">
+                      {SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)?.flag || "🇧🇷"}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <DropdownMenuItem
+                      key={lang.code}
+                      onClick={() => changeLanguage(lang.code as SupportedLanguage)}
+                      className={currentLanguage === lang.code ? "bg-accent" : ""}
+                    >
+                      <span className="mr-2">{lang.flag}</span>
+                      {lang.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]" onClick={() => navigate("/chat")}>
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline text-xs font-semibold">Chat</span>
+                <span className="hidden sm:inline text-xs font-semibold">{t("header.chat")}</span>
               </Button>
               {isAdminOrMaster && (
                 <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]" onClick={() => navigate("/admin")}>
                   <Shield className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline text-xs font-semibold">Admin</span>
+                  <span className="hidden sm:inline text-xs font-semibold">{t("header.admin")}</span>
                 </Button>
               )}
             </>
@@ -154,10 +187,10 @@ export default function AppHeader({
                 </span>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setProfileDialogOpen(true)}>
-                <UserCog className="w-4 h-4 mr-2" /> Editar Perfil
+                <UserCog className="w-4 h-4 mr-2" /> {t("header.editProfile")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={signOut} className="text-destructive">
-                <LogOut className="w-4 h-4 mr-2" /> Sair
+                <LogOut className="w-4 h-4 mr-2" /> {t("auth.logout")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
