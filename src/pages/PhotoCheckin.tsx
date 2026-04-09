@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useInstallationPhotos, useAddInstallationPhoto, useUpdateInstallationPhoto, useDeleteInstallationPhoto, type InstallationPhoto, isVideo } from "@/hooks/useInstallationPhotos";
+import { useOrphanPhotoCleanup } from "@/hooks/useOrphanPhotoCleanup";
 import { useAuth } from "@/hooks/useAuth";
 import { compressImage } from "@/lib/compressImage";
 import { compressVideo } from "@/lib/compressVideo";
@@ -62,6 +63,7 @@ export default function PhotoCheckin() {
   const addPhoto = useAddInstallationPhoto();
   const updatePhoto = useUpdateInstallationPhoto();
   const deletePhoto = useDeleteInstallationPhoto();
+  const { handleMediaError } = useOrphanPhotoCleanup();
 
   const storePhotos = photos.filter((p) => p.store_id === storeId);
 
@@ -257,7 +259,7 @@ export default function PhotoCheckin() {
               <div key={photo.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted/30">
                 {isVideo(photo) ? (
                   <div className="w-full aspect-square relative cursor-pointer bg-black flex items-center justify-center" onClick={() => setLightboxIndex(i)}>
-                    <video src={photo.photo_url} className="w-full h-full object-cover" muted preload="metadata" />
+                    <video src={photo.photo_url} className="w-full h-full object-cover" muted preload="metadata" onError={() => handleMediaError(photo.id, campaignId!)} />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                       <Video className="w-8 h-8 text-white" />
                     </div>
@@ -268,6 +270,7 @@ export default function PhotoCheckin() {
                     alt={photo.caption || `Foto ${i + 1}`}
                     className="w-full aspect-square object-cover cursor-pointer transition-transform hover:scale-105"
                     onClick={() => setLightboxIndex(i)}
+                    onError={() => handleMediaError(photo.id, campaignId!)}
                   />
                 )}
                 <span className={cn(
