@@ -102,6 +102,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterLocked, setFilterLocked] = useState("");
   const [filterReschedule, setFilterReschedule] = useState("");
   const [filterModel, setFilterModel] = useState("");
+  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "scheduled" | "noDate" | "approved" | "withTeam" | "locked" | "withOccurrence">("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyStoreId, setHistoryStoreId] = useState("");
   const [historyStoreName, setHistoryStoreName] = useState("");
@@ -283,6 +284,25 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
   }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterMessages, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap, chatCounts]);
 
+  // Apply summary filter on top of filteredStores
+  const displayedStores = useMemo(() => {
+    if (!summaryFilter || summaryFilter === "total") return filteredStores;
+    return filteredStores.filter((s) => {
+      const sch = scheduleMap[s.id];
+      const occ = storeOccurrenceStatus[s.id];
+      const effDate = sch?.reschedule_enabled ? sch?.reschedule_date : sch?.scheduled_date;
+      switch (summaryFilter) {
+        case "scheduled": return !!effDate;
+        case "noDate": return !effDate;
+        case "approved": return sch?.store_approval_status === "approved" && sch?.team_approval_status === "approved";
+        case "withTeam": return !!sch?.team_id;
+        case "locked": return !!sch?.locked;
+        case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
+        default: return true;
+      }
+    });
+  }, [filteredStores, summaryFilter, scheduleMap, storeOccurrenceStatus]);
+
   const fieldLabels: Record<string, string> = {
     scheduled_date: "Data",
     scheduled_time: "Horário",
@@ -439,7 +459,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   };
 
   const handleExport = () => {
-    const rows = filteredStores.map((store) => {
+    const rows = displayedStores.map((store) => {
       const schedule = scheduleMap[store.id];
       const team = schedule?.team_id ? teamMap[schedule.team_id] : null;
       return {
@@ -683,10 +703,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               onClick={async () => {
                 setBulkLockLoading(true);
                 try {
-                  const unlocked = filteredStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                  const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
                   const allLocked = unlocked.length === 0;
                   const newLocked = !allLocked;
-                  const ids = filteredStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
+                  const ids = displayedStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
                   if (ids.length === 0) { setBulkLockLoading(false); return; }
                   const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
                   if (error) throw error;
@@ -700,8 +720,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               }}
             >
               {(() => {
-                const unlocked = filteredStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
-                const allLocked = unlocked.length === 0 && filteredStores.some(s => scheduleMap[s.id]);
+                const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                const allLocked = unlocked.length === 0 && displayedStores.some(s => scheduleMap[s.id]);
                 return allLocked
                   ? <><LockOpen className="w-3.5 h-3.5" /> Desbloquear Todos</>
                   : <><Lock className="w-3.5 h-3.5" /> Bloquear Todos</>;
@@ -711,7 +731,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         </div>
       </div>
 
-      {/* Summary */}
+      {/* Summary Bar - Clickable Filters */}
       {(() => {
         const total = filteredStores.length;
         const scheduled = filteredStores.filter(s => {
@@ -726,21 +746,54 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         }).length;
         const locked = filteredStores.filter(s => scheduleMap[s.id]?.locked).length;
         const withTeam = filteredStores.filter(s => scheduleMap[s.id]?.team_id).length;
+        const withOccurrence = filteredStores.filter(s => {
+          const occ = storeOccurrenceStatus[s.id];
+          return occ?.hasOccurrence && !occ.allResolved;
+        }).length;
+        const items = [
+          { key: "total" as const, value: total, label: "Total", color: "text-foreground" },
+          { key: "scheduled" as const, value: scheduled, label: "📅 Agendadas", color: "text-foreground" },
+          { key: "noDate" as const, value: noDate, label: "⏳ Sem data", color: "text-amber-600" },
+          { key: "approved" as const, value: approved, label: "✅ Aprovadas", color: "text-foreground" },
+          { key: "withTeam" as const, value: withTeam, label: "🔧 Com equipe", color: "text-foreground" },
+          { key: "locked" as const, value: locked, label: "🔒 Bloqueadas", color: "text-foreground" },
+          { key: "withOccurrence" as const, value: withOccurrence, label: "⚠️ Ocorrências", color: "text-destructive" },
+        ];
         return (
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground bg-card border border-border rounded-lg px-3 py-2">
-            <span><strong className="text-foreground">{total}</strong> loja(s)</span>
-            <span>📅 <strong className="text-foreground">{scheduled}</strong> agendadas</span>
-            <span>⏳ <strong className="text-foreground">{noDate}</strong> sem data</span>
-            <span>✅ <strong className="text-foreground">{approved}</strong> aprovadas</span>
-            <span>🔧 <strong className="text-foreground">{withTeam}</strong> com equipe</span>
-            <span>🔒 <strong className="text-foreground">{locked}</strong> bloqueadas</span>
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              {items.map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => setSummaryFilter(prev => prev === m.key ? "" : m.key)}
+                  className={cn(
+                    "bg-card border rounded-lg px-3 py-2 text-center transition-all cursor-pointer hover:shadow-md",
+                    summaryFilter === m.key
+                      ? "border-primary ring-2 ring-primary/30 shadow-sm"
+                      : "border-border"
+                  )}
+                >
+                  <p className={cn("text-lg font-bold", m.color)}>{m.value}</p>
+                  <p className="text-[10px] text-muted-foreground">{m.label}</p>
+                </button>
+              ))}
+            </div>
+            {summaryFilter && summaryFilter !== "total" && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Filtrando por: <strong className="text-foreground">{
+                  { scheduled: "Agendadas", noDate: "Sem data", approved: "Aprovadas", withTeam: "Com equipe", locked: "Bloqueadas", withOccurrence: "Ocorrências" }[summaryFilter]
+                }</strong> ({displayedStores.length})</span>
+                <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
+              </div>
+            )}
+          </>
         );
       })()}
 
       {/* Store Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4">
-        {filteredStores.map((store) => {
+        {displayedStores.map((store) => {
           const colors = getStateColor(store.state);
           const schedule = scheduleMap[store.id];
           const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
@@ -1237,7 +1290,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         })}
       </div>
 
-      {filteredStores.length === 0 && (
+      {displayedStores.length === 0 && (
         <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma loja encontrada</p>
       )}
 

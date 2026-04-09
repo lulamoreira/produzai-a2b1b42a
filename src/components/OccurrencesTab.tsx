@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, QrCode, Download, Calendar, CircleDot, GripVertical, Flag, Lock, LockOpen } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 import PhotoLightbox from "./PhotoLightbox";
@@ -481,28 +482,55 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
         return (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
             {/* Total */}
-            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-center">
+            <button
+              type="button"
+              onClick={() => { setSelectedStatuses([]); setSelectedPriorities([]); }}
+              className={cn(
+                "rounded-lg border border-primary/30 bg-primary/5 p-3 text-center transition-all cursor-pointer hover:shadow-md",
+                selectedStatuses.length === 0 && selectedPriorities.length === 0 ? "ring-2 ring-primary/30 shadow-sm" : ""
+              )}
+            >
               <p className="text-2xl font-bold text-primary">{total}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">{total !== totalAll ? `de ${totalAll}` : ''} ocorrência(s)</p>
-            </div>
+            </button>
             {/* By status */}
             {activeStatuses.map((s) => {
               const count = byStatus[s.value] || 0;
+              const isActive = selectedStatuses.length === 1 && selectedStatuses[0] === s.value;
               return (
-                <div key={s.id} className="rounded-lg border p-3 text-center" style={{ borderColor: `${s.color}40`, backgroundColor: `${s.color}08` }}>
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setSelectedStatuses(isActive ? [] : [s.value])}
+                  className={cn(
+                    "rounded-lg border p-3 text-center transition-all cursor-pointer hover:shadow-md",
+                    isActive ? "ring-2 shadow-sm" : ""
+                  )}
+                  style={{ borderColor: `${s.color}40`, backgroundColor: `${s.color}08`, ...(isActive ? { ringColor: s.color } : {}) }}
+                >
                   <p className="text-2xl font-bold" style={{ color: s.color }}>{count}</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
-                </div>
+                </button>
               );
             })}
             {/* By priority */}
             {PRIORITY_OPTIONS.map((p) => {
               const count = byPriority[p.value] || 0;
+              const isActive = selectedPriorities.length === 1 && selectedPriorities[0] === p.value;
               return (
-                <div key={p.value} className="rounded-lg border p-3 text-center" style={{ borderColor: `${p.color}40`, backgroundColor: `${p.color}08` }}>
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setSelectedPriorities(isActive ? [] : [p.value])}
+                  className={cn(
+                    "rounded-lg border p-3 text-center transition-all cursor-pointer hover:shadow-md",
+                    isActive ? "ring-2 shadow-sm" : ""
+                  )}
+                  style={{ borderColor: `${p.color}40`, backgroundColor: `${p.color}08`, ...(isActive ? { ringColor: p.color } : {}) }}
+                >
                   <p className="text-2xl font-bold" style={{ color: p.color }}>{count}</p>
                   <p className="text-[10px] text-muted-foreground mt-0.5">{p.label}</p>
-                </div>
+                </button>
               );
             })}
           </div>
