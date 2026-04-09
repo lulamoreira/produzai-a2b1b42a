@@ -541,16 +541,17 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       </div>
 
       {/* Summary Bar - Clickable Filters */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
         {([
-          { key: "total" as const, value: summaryMetrics.total, label: "Total", color: "text-foreground" },
-          { key: "completed" as const, value: summaryMetrics.completed, label: "✅ Concluídas", color: "text-emerald-600" },
-          { key: "pending" as const, value: summaryMetrics.pending, label: "⏳ Pendentes", color: "text-amber-600" },
-          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "🔧 Com equipe", color: "text-foreground" },
-          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: "📷 Com fotos", color: "text-foreground" },
-          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: "🔄 Com remarcação", color: "text-amber-600" },
-          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: "⚠️ Ocorrências", color: "text-destructive" },
-        ]).map((m) => (
+          { key: "total" as const, value: summaryMetrics.total, label: "Total", color: "text-foreground", visible: true },
+          { key: "completed" as const, value: summaryMetrics.completed, label: "✅ Concluídas", color: "text-emerald-600", visible: true },
+          { key: "pending" as const, value: summaryMetrics.pending, label: "⏳ Pendentes", color: "text-amber-600", visible: true },
+          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "🔧 Com equipe", color: "text-foreground", visible: true },
+          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: "📷 Com fotos", color: "text-foreground", visible: true },
+          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: "🔄 Com remarcação", color: "text-amber-600", visible: true },
+          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: "⚠️ Ocorrências", color: "text-destructive", visible: true },
+          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: "🔍 Sem Check-in", color: "text-orange-600", visible: showPhotoCheckin },
+        ]).filter(m => m.visible).map((m) => (
           <button
             key={m.key}
             type="button"
@@ -570,7 +571,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       {summaryFilter && summaryFilter !== "total" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Filtrando por: <strong className="text-foreground">{
-            { completed: "Concluídas", pending: "Pendentes", withTeam: "Com equipe", withPhotos: "Com fotos", withReschedule: "Com remarcação", withOccurrence: "Ocorrências" }[summaryFilter]
+            { completed: "Concluídas", pending: "Pendentes", withTeam: "Com equipe", withPhotos: "Com fotos", withReschedule: "Com remarcação", withOccurrence: "Ocorrências", noCheckin: "Sem Check-in" }[summaryFilter]
           }</strong> ({displayedStores.length})</span>
           <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
         </div>
