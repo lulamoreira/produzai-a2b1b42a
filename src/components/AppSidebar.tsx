@@ -16,8 +16,10 @@ import {
   Building2, MessageSquare, Shield, LogOut, Users,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
-  CalendarDays, Camera, DollarSign, Home, Database,
+  CalendarDays, Camera, DollarSign, Home, Database, Globe,
 } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
 
 interface NavItem {
   label: string;
