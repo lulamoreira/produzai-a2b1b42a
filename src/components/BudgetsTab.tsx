@@ -16,13 +16,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, Trash2, FileSpreadsheet, Trophy, TrendingDown, DollarSign, Package, Plus, FolderOpen, Pencil, ChevronRight, ArrowLeft, Eye } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { formatCurrencyByCode } from "@/lib/countryConfig";
 
 interface BudgetsTabProps {
   campaignId: string;
   canEdit: boolean;
+  currencyCode?: string | null;
 }
 
-const BudgetsTab = ({ campaignId, canEdit }: BudgetsTabProps) => {
+const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
   const { data: quotations = [], isLoading: loadingQuotations } = useCampaignQuotations(campaignId);
   const { data: budgets = [], isLoading: loadingBudgets } = useCampaignBudgets(campaignId);
   const { data: allItems = [], isLoading: loadingItems } = useBudgetItems(campaignId);
