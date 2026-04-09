@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 
 import { useParams, useNavigate, useLocation } from "react-router-dom";
@@ -99,7 +100,7 @@ const CampaignDetail = () => {
   const { hasPermission: canViewCampaigns } = useClientPermission(clientId, "can_view_campaigns");
   const { data: client } = useClient(clientId);
   // Auto-sync language based on client config
-  const _lang = (await import("@/hooks/useLanguage")).useLanguage((client as any)?.language);
+  useLanguage((client as any)?.language);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: stores = [] } = useClientStores(clientId);
   const { data: clientStoreModels = [] } = useClientStoreModels(clientId);
