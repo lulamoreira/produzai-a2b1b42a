@@ -625,19 +625,21 @@ const ClientDetail = () => {
           <Input value={form.nickname} onChange={(e) => options?.nicknameChangeHandler ? options.nicknameChangeHandler(e.target.value) : setForm((f) => ({ ...f, nickname: e.target.value }))} />
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">CNPJ</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">{countryConfig.taxIdLabel}</label>
           <Input value={form.cnpj} onChange={(e) => setForm((f) => ({ ...f, cnpj: e.target.value }))} />
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Inscrição Estadual</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">{countryConfig.stateRegistrationLabel}</label>
           <Input value={form.state_registration} onChange={(e) => setForm((f) => ({ ...f, state_registration: e.target.value }))} />
         </div>
         <div className="flex gap-2 items-end">
           <div className="flex-1">
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP</label>
-            <Input value={formatCep(form.zip_code)} onChange={(e) => setForm((f) => ({ ...f, zip_code: formatCep(e.target.value) }))} placeholder="00000-000" maxLength={9} />
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">{countryConfig.zipLabel}</label>
+            <Input value={countryConfig.hasAutoCepLookup ? formatCep(form.zip_code) : form.zip_code} onChange={(e) => setForm((f) => ({ ...f, zip_code: countryConfig.hasAutoCepLookup ? formatCep(e.target.value) : e.target.value }))} placeholder={countryConfig.zipPlaceholder} maxLength={countryConfig.zipMaxLength} />
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => handleCepLookup(form, setForm)}>Buscar</Button>
+          {countryConfig.hasAutoCepLookup && (
+            <Button type="button" variant="outline" size="sm" onClick={() => handleCepLookup(form, setForm)}>Buscar</Button>
+          )}
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Rua</label>
