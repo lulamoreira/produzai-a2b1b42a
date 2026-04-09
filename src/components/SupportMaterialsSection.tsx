@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { compressImage } from "@/lib/compressImage";
@@ -45,6 +46,7 @@ function getFileIcon(fileType: string | null) {
 }
 
 const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -63,7 +65,6 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
     },
   });
 
-  // Auto-create 3 empty cards if none exist (runs only once)
   const [initialized, setInitialized] = useState(false);
   useEffect(() => {
     if (materials.length === 0 && canEdit && !initialized) {
@@ -98,7 +99,7 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["campaign_support_materials", campaignId] }),
-    onError: (e: any) => toast.error("Erro ao adicionar card: " + e.message),
+    onError: (e: any) => toast.error(t("supportMaterials.errorAddCard") + ": " + e.message),
   });
 
   const updateTitle = useMutation({
@@ -110,7 +111,7 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
       queryClient.invalidateQueries({ queryKey: ["campaign_support_materials", campaignId] });
       setEditingId(null);
     },
-    onError: (e: any) => toast.error("Erro ao salvar título: " + e.message),
+    onError: (e: any) => toast.error(t("supportMaterials.errorSaveTitle") + ": " + e.message),
   });
 
   const deleteCard = useMutation({
@@ -119,7 +120,7 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["campaign_support_materials", campaignId] }),
-    onError: (e: any) => toast.error("Erro ao remover: " + e.message),
+    onError: (e: any) => toast.error(t("supportMaterials.errorRemove") + ": " + e.message),
   });
 
   const handleFileUpload = async (materialId: string, file: globalThis.File) => {
@@ -127,39 +128,26 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
     try {
       let uploadBlob: Blob = file;
       const isImage = file.type.startsWith("image/");
-
-      // Compress images
       if (isImage) {
         uploadBlob = await compressImage(file, 1600, 0.8);
       }
-
       const ext = file.name.split(".").pop() || "bin";
       const path = `${campaignId}/${materialId}-${Date.now()}.${ext}`;
       const contentType = isImage ? "image/jpeg" : file.type;
-
       const { error: uploadError } = await supabase.storage
         .from("support-materials")
         .upload(path, uploadBlob, { upsert: true, contentType });
-
       if (uploadError) throw uploadError;
-
       const { data: urlData } = supabase.storage.from("support-materials").getPublicUrl(path);
-
       const { error: updateError } = await supabase
         .from("campaign_support_materials")
-        .update({
-          file_url: urlData.publicUrl,
-          file_name: file.name,
-          file_type: file.type,
-        })
+        .update({ file_url: urlData.publicUrl, file_name: file.name, file_type: file.type })
         .eq("id", materialId);
-
       if (updateError) throw updateError;
-
       queryClient.invalidateQueries({ queryKey: ["campaign_support_materials", campaignId] });
-      toast.success("Arquivo enviado com sucesso!");
+      toast.success(t("supportMaterials.fileSent"));
     } catch (err: any) {
-      toast.error("Erro no upload: " + err.message);
+      toast.error(t("supportMaterials.errorUpload") + ": " + err.message);
     } finally {
       setUploadingId(null);
     }
@@ -182,7 +170,7 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
           <CollapsibleTrigger asChild>
             <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <FileText className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-bold text-foreground font-display">Material de apoio</h2>
+              <h2 className="text-lg font-bold text-foreground font-display">{t("supportMaterials.title")}</h2>
               {isOpen ? (
                 <ChevronUp className="w-4 h-4 text-muted-foreground" />
               ) : (
@@ -191,15 +179,9 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
             </button>
           </CollapsibleTrigger>
           {canEdit && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => addCard.mutate()}
-              disabled={addCard.isPending}
-              className="gap-1.5"
-            >
+            <Button size="sm" variant="outline" onClick={() => addCard.mutate()} disabled={addCard.isPending} className="gap-1.5">
               <Plus className="w-3.5 h-3.5" />
-              Adicionar
+              {t("common.add")}
             </Button>
           )}
         </div>
@@ -214,27 +196,17 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
               const isImageFile = mat.file_type?.startsWith("image/");
 
               return (
-                <Card
-                  key={mat.id}
-                  className={`bg-gradient-to-br ${gradientClass} border overflow-hidden transition-all hover:shadow-md`}
-                >
-                  {/* File preview area */}
+                <Card key={mat.id} className={`bg-gradient-to-br ${gradientClass} border overflow-hidden transition-all hover:shadow-md`}>
                   <div className="relative h-36 flex items-center justify-center bg-background/30">
                     {mat.file_url ? (
                       isImageFile ? (
-                        <img
-                          src={mat.file_url}
-                          alt={mat.title || "Material"}
-                          className="w-full h-full object-cover"
-                        />
+                        <img src={mat.file_url} alt={mat.title || "Material"} className="w-full h-full object-cover" />
                       ) : (
                         <div className="flex flex-col items-center gap-2">
                           <div className={`w-12 h-12 rounded-xl ${iconGradient} flex items-center justify-center text-white`}>
                             {getFileIcon(mat.file_type)}
                           </div>
-                          <span className="text-xs text-muted-foreground max-w-[80%] truncate">
-                            {mat.file_name}
-                          </span>
+                          <span className="text-xs text-muted-foreground max-w-[80%] truncate">{mat.file_name}</span>
                         </div>
                       )
                     ) : (
@@ -242,121 +214,76 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
                         <div className={`w-12 h-12 rounded-xl ${iconGradient} flex items-center justify-center text-white/70`}>
                           <Upload className="w-5 h-5" />
                         </div>
-                        <span className="text-xs">Nenhum arquivo</span>
+                        <span className="text-xs">{t("supportMaterials.noFile")}</span>
                       </div>
                     )}
 
-                    {/* Action buttons overlay */}
                     {canEdit && (
                       <div className="absolute top-2 right-2 flex gap-1">
                         {mat.file_url && (
                           <>
-                            <a
-                              href={mat.file_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <a href={mat.file_url} target="_blank" rel="noopener noreferrer"
                               className="w-7 h-7 rounded-md bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
-                              title="Abrir arquivo"
-                            >
+                              title={t("supportMaterials.openFile")}>
                               <ExternalLink className="w-3.5 h-3.5 text-foreground" />
                             </a>
-                            <a
-                              href={mat.file_url}
-                              download={mat.file_name || "arquivo"}
+                            <a href={mat.file_url} download={mat.file_name || "arquivo"}
                               className="w-7 h-7 rounded-md bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
-                              title="Download"
-                            >
+                              title={t("common.download")}>
                               <Download className="w-3.5 h-3.5 text-foreground" />
                             </a>
-                            <button
-                              onClick={() => removeFile(mat.id)}
+                            <button onClick={() => removeFile(mat.id)}
                               className="w-7 h-7 rounded-md bg-destructive/80 backdrop-blur flex items-center justify-center hover:bg-destructive transition-colors"
-                              title="Remover arquivo"
-                            >
+                              title={t("supportMaterials.removeFile")}>
                               <X className="w-3.5 h-3.5 text-white" />
                             </button>
                           </>
                         )}
-                        <button
-                          onClick={() => deleteCard.mutate(mat.id)}
+                        <button onClick={() => deleteCard.mutate(mat.id)}
                           className="w-7 h-7 rounded-md bg-destructive/80 backdrop-blur flex items-center justify-center hover:bg-destructive transition-colors"
-                          title="Excluir card"
-                        >
+                          title={t("supportMaterials.deleteCard")}>
                           <Trash2 className="w-3.5 h-3.5 text-white" />
                         </button>
                       </div>
                     )}
                   </div>
 
-                  {/* Title + upload area */}
                   <div className="p-4 space-y-3">
                     {isEditing ? (
                       <div className="flex gap-1.5">
-                        <Input
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          placeholder="Título do material"
-                          className="h-8 text-sm"
-                          autoFocus
+                        <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
+                          placeholder={t("supportMaterials.materialTitle")} className="h-8 text-sm" autoFocus
                           onKeyDown={(e) => {
                             if (e.key === "Enter") updateTitle.mutate({ id: mat.id, title: editTitle });
                             if (e.key === "Escape") setEditingId(null);
-                          }}
-                        />
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0"
-                          onClick={() => updateTitle.mutate({ id: mat.id, title: editTitle })}
-                        >
+                          }} />
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => updateTitle.mutate({ id: mat.id, title: editTitle })}>
                           <Check className="w-3.5 h-3.5 text-success" />
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-8 w-8 p-0"
-                          onClick={() => setEditingId(null)}
-                        >
+                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setEditingId(null)}>
                           <X className="w-3.5 h-3.5 text-muted-foreground" />
                         </Button>
                       </div>
                     ) : (
-                      <div
-                        className={`flex items-center gap-2 ${canEdit ? "cursor-pointer group" : ""}`}
-                        onClick={() => {
-                          if (canEdit) {
-                            setEditingId(mat.id);
-                            setEditTitle(mat.title);
-                          }
-                        }}
-                      >
+                      <div className={`flex items-center gap-2 ${canEdit ? "cursor-pointer group" : ""}`}
+                        onClick={() => { if (canEdit) { setEditingId(mat.id); setEditTitle(mat.title); } }}>
                         <h3 className="font-semibold text-sm text-foreground truncate flex-1">
                           {mat.title || (
-                            <span className="text-muted-foreground italic">Clique para definir título</span>
+                            <span className="text-muted-foreground italic">{t("supportMaterials.clickToSetTitle")}</span>
                           )}
                         </h3>
-                        {canEdit && (
-                          <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
-                        )}
+                        {canEdit && <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />}
                       </div>
                     )}
 
                     {canEdit && (
                       <div className="relative">
-                        <input
-                          type="file"
-                          onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) handleFileUpload(mat.id, f);
-                            e.target.value = "";
-                          }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          disabled={isUploading}
-                        />
+                        <input type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(mat.id, f); e.target.value = ""; }}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={isUploading} />
                         <div className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-border hover:border-primary/40 transition-colors bg-background/40">
                           <Upload className="w-3.5 h-3.5 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">
-                            {isUploading ? "Enviando..." : "Enviar arquivo"}
+                            {isUploading ? t("common.sending") : t("supportMaterials.sendFile")}
                           </span>
                         </div>
                       </div>
