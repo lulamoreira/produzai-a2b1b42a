@@ -889,7 +889,7 @@ const CampaignDetail = () => {
   if (!campaign) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Campanha não encontrada.</p>
+        <p className="text-muted-foreground">{t("campaigns.notFound")}</p>
       </div>
     );
   }
@@ -898,9 +898,9 @@ const CampaignDetail = () => {
     <AppLayout
       breadcrumbs={(() => {
         const SECTION_LABELS: Record<string, string> = {
-          stores: "Lojas", matrix: "Matriz", pieces: "Peças",
-          occurrences: "Ocorrências", scheduling: "Agendamento",
-          installations: "Instalações", budgets: "Orçamentos",
+          stores: t("modules.stores"), matrix: t("modules.matrix"), pieces: t("modules.pieces"),
+          occurrences: t("modules.occurrences"), scheduling: t("modules.scheduling"),
+          installations: t("modules.installations"), budgets: t("modules.budgets"),
         };
         const crumbs = [
           { label: agency?.name || "Agência", href: isLimitedMode ? undefined : "/" },
@@ -927,7 +927,7 @@ const CampaignDetail = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{stores.length}</p>
-                  <p className="text-[11px] text-muted-foreground">Lojas cadastradas</p>
+                  <p className="text-[11px] text-muted-foreground">{t("stores.registered")}</p>
                 </div>
               </div>
               <div className="card-kpi flex items-center gap-3">
@@ -936,7 +936,7 @@ const CampaignDetail = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{visiblePieces.length + kits.length}</p>
-                  <p className="text-[11px] text-muted-foreground">Peças cadastradas</p>
+                  <p className="text-[11px] text-muted-foreground">{t("pieces.registered")}</p>
                 </div>
               </div>
             </div>
