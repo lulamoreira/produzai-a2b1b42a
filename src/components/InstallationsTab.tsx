@@ -18,6 +18,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { useLogActivity } from "@/hooks/useActivityLogs";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
+import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -93,6 +94,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [lockLoading, setLockLoading] = useState<Record<string, boolean>>({});
   const [bulkLockLoading, setBulkLockLoading] = useState(false);
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
+  const [checkinStore, setCheckinStore] = useState<ClientStore | null>(null);
 
   // Shared hooks
   const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
@@ -876,7 +878,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   variant="outline"
                   size="sm"
                   className="w-full text-xs gap-2"
-                  onClick={() => window.open(`/checkin/${campaignId}/${store.id}`, '_blank')}
+                  onClick={() => setCheckinStore(store)}
                 >
                   <Camera className="w-4 h-4" />
                   Checkin Fotográfico
