@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Occurrence } from "@/hooks/useOccurrences";
 import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 import type { OccurrenceMotive, OccurrenceStatus } from "@/hooks/useOccurrences";
@@ -45,6 +46,7 @@ function CollapsibleSection({ title, icon, children, defaultOpen = false }: { ti
 }
 
 const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses = [] }: Props) => {
+  const { t } = useTranslation();
   const statusMap = useMemo(() => {
     const map: Record<string, OccurrenceStatus> = {};
     statuses.forEach((s) => { map[s.value] = s; });
@@ -73,7 +75,7 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses =
     const counts: Record<string, number> = {};
     occurrences.forEach((o) => {
       const motive = motives.find((m) => m.id === o.motive_id);
-      const name = motive?.description || "Sem motivo";
+      const name = motive?.description || t("occurrences.noMotive");
       counts[name] = (counts[name] || 0) + 1;
     });
     return Object.entries(counts)
@@ -121,7 +123,7 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses =
     <div className="space-y-3">
       {/* Resumo - stat cards */}
       <CollapsibleSection
-        title={`Resumo (${stats.total} ocorrências)`}
+        title={`${t("occurrences.summary")} (${stats.total} ${t("occurrences.occurrenceCount")})`}
         icon={<AlertTriangle className="w-4 h-4 text-primary" />}
       >
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-2">
@@ -160,7 +162,7 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses =
       {/* Por Status */}
       {statusData.length > 0 && (
         <CollapsibleSection
-          title="Por Status"
+          title={t("occurrences.byStatus")}
           icon={<div className="w-2 h-2 rounded-full gradient-primary" />}
         >
           <ResponsiveContainer width="100%" height={180}>
@@ -172,7 +174,7 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses =
               </Pie>
               <Tooltip
                 contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
-                formatter={(value: number) => [`${value} ocorrência(s)`, ""]}
+                formatter={(value: number) => [`${value} ${t("occurrences.occurrenceCount")}`, ""]}
               />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "11px" }} />
             </PieChart>
@@ -183,7 +185,7 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses =
       {/* Por Motivo */}
       {motiveData.length > 0 && (
         <CollapsibleSection
-          title="Por Motivo"
+          title={t("occurrences.byMotive")}
           icon={<div className="w-2 h-2 rounded-full gradient-accent" />}
         >
           <ResponsiveContainer width="100%" height={180}>
@@ -192,7 +194,7 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses =
               <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
-                formatter={(value: number) => [`${value}`, "Ocorrências"]}
+                formatter={(value: number) => [`${value}`, t("modules.occurrences")]}
               />
               <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14}>
                 {motiveData.map((_, i) => (
@@ -207,7 +209,7 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses =
       {/* Por Loja */}
       {storeData.length > 0 && (
         <CollapsibleSection
-          title="Por Loja"
+          title={t("occurrences.byStore")}
           icon={<Store className="w-4 h-4 text-primary" />}
         >
           <ResponsiveContainer width="100%" height={180}>
@@ -216,7 +218,7 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses =
               <YAxis type="category" dataKey="name" width={90} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
-                formatter={(value: number) => [`${value}`, "Ocorrências"]}
+                formatter={(value: number) => [`${value}`, t("modules.occurrences")]}
               />
               <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={14}>
                 {storeData.map((_, i) => (
@@ -231,7 +233,7 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses =
       {/* Por Peça */}
       {pieceData.length > 1 && (
         <CollapsibleSection
-          title="Ocorrências por Peça"
+          title={t("occurrences.byPiece")}
           icon={<Puzzle className="w-4 h-4 text-primary" />}
         >
           <ResponsiveContainer width="100%" height={Math.max(120, pieceData.length * 32)}>
@@ -240,7 +242,7 @@ const OccurrencesDashboard = ({ occurrences, stores, pieces, motives, statuses =
               <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
-                formatter={(value: number) => [`${value}`, "Ocorrências"]}
+                formatter={(value: number) => [`${value}`, t("modules.occurrences")]}
               />
               <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16}>
                 {pieceData.map((_, i) => (
