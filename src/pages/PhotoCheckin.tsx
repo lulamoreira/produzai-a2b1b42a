@@ -63,6 +63,7 @@ export default function PhotoCheckin() {
   const addPhoto = useAddInstallationPhoto();
   const updatePhoto = useUpdateInstallationPhoto();
   const deletePhoto = useDeleteInstallationPhoto();
+  const { handleMediaError } = useOrphanPhotoCleanup();
 
   const storePhotos = photos.filter((p) => p.store_id === storeId);
 
