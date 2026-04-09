@@ -972,7 +972,7 @@ const CampaignDetail = () => {
                 className="h-8 text-xs"
                 onClick={() => setStoresViewMode("table")}
               >
-                <Store className="w-3.5 h-3.5 mr-1" /> Lojas
+                <Store className="w-3.5 h-3.5 mr-1" /> {t("modules.stores")}
               </Button>
               <Button
                 size="sm"
@@ -980,7 +980,7 @@ const CampaignDetail = () => {
                 className="h-8 text-xs"
                 onClick={() => setStoresViewMode("contacts")}
               >
-                <Users className="w-3.5 h-3.5 mr-1" /> Contatos
+                <Users className="w-3.5 h-3.5 mr-1" /> {t("stores.contacts")}
               </Button>
             </div>
 
@@ -1000,19 +1000,19 @@ const CampaignDetail = () => {
             {filteredStores.length === 0 ? (
               <div className="text-center py-16">
                 <Store className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground text-sm">Nenhuma loja encontrada.</p>
+                <p className="text-muted-foreground text-sm">{t("stores.noStoreFound")}</p>
               </div>
             ) : (
               <div className="border border-border rounded-lg overflow-x-auto -mx-1 sm:mx-0">
                 <Table className="min-w-[600px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Loja</TableHead>
-                      <TableHead>Cidade/Estado</TableHead>
-                      <TableHead>Modelo</TableHead>
+                      <TableHead>{t("matrix.store")}</TableHead>
+                      <TableHead>{t("stores.cityState")}</TableHead>
+                      <TableHead>{t("common.model")}</TableHead>
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1.5">
-                          <span>Ativa</span>
+                          <span>{t("common.active")}</span>
                           {canEditCampaignStores && (
                             <Switch
                               checked={allEnabled}
@@ -1029,10 +1029,10 @@ const CampaignDetail = () => {
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-center">Auto</TableHead>
-                      <TableHead className="text-center">Agend.</TableHead>
-                      <TableHead className="text-center">Peças</TableHead>
-                      <TableHead className="text-center">Qtd Total</TableHead>
+                      <TableHead className="text-center">{t("common.auto")}</TableHead>
+                      <TableHead className="text-center">{t("stores.scheduling")}</TableHead>
+                      <TableHead className="text-center">{t("modules.pieces")}</TableHead>
+                      <TableHead className="text-center">{t("stores.totalQty")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
