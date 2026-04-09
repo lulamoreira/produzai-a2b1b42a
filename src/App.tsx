@@ -42,17 +42,18 @@ const queryClient = new QueryClient({
 
 const PendingApprovalScreen = () => {
   const { signOut } = useAuth();
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="max-w-md text-center px-6 py-8 w-full">
         <div className="w-16 h-16 rounded-full bg-yellow-500/15 flex items-center justify-center mx-auto mb-4">
           <Clock className="w-8 h-8 text-yellow-600" />
         </div>
-        <h1 className="text-xl font-bold text-foreground mb-2">Aguardando Aprovação</h1>
+        <h1 className="text-xl font-bold text-foreground mb-2">{t("auth.pendingApproval")}</h1>
         <p className="text-muted-foreground text-sm mb-6">
-          Sua conta foi criada com sucesso, mas precisa ser aprovada por um administrador antes que você possa acessar o sistema.
+          {t("auth.pendingApprovalMessage")}
         </p>
-        <Button variant="outline" onClick={signOut}>Sair</Button>
+        <Button variant="outline" onClick={signOut}>{t("auth.logout")}</Button>
       </div>
     </div>
   );
