@@ -414,24 +414,28 @@ export default function MatrixAutomationDialog({
                   placeholder={t("automation.searchByCode")}
                   value={itemSearch}
                   onChange={e => setItemSearch(e.target.value)}
+                  className="mb-1"
                 />
-                {itemSearch && availableItems.length > 0 && (
-                  <div className="absolute z-50 top-full left-0 right-0 bg-popover border rounded-md shadow-lg max-h-48 overflow-y-auto mt-1">
-                    {availableItems.slice(0, 20).map(item => (
+                <div className="border rounded-md max-h-40 overflow-y-auto">
+                  {availableItems.length === 0 ? (
+                    <p className="text-xs text-muted-foreground p-2">{t("automation.noItemsAvailable")}</p>
+                  ) : (
+                    availableItems.map(item => (
                       <button
                         key={`${item.type}-${item.id}`}
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center gap-2"
+                        className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent flex items-center gap-2 border-b last:border-b-0"
                         onClick={() => addItem(item)}
                       >
+                        <Plus className="w-3 h-3 text-muted-foreground" />
                         <Badge variant="outline" className="text-[10px]">
                           {item.type === "kit" ? "Kit" : t("automation.piece")}
                         </Badge>
                         <span className="font-mono text-xs">{item.code}</span>
                         <span className="truncate">{item.name}</span>
                       </button>
-                    ))}
-                  </div>
-                )}
+                    ))
+                  )}
+                </div>
               </div>
 
               {/* Selected items list */}
