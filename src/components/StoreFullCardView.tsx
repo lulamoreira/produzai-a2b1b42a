@@ -4,6 +4,7 @@ import { Search, UserPlus, MapPin, Phone, Mail, Building2, Hash, FileText, Edit3
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { ClientStore } from "@/hooks/useMultiClientData";
+import { getCountryConfig } from "@/lib/countryConfig";
 
 function formatPhoneDisplay(phone: string): string {
   const digits = phone.replace(/\D/g, "").slice(0, 11);
@@ -20,12 +21,14 @@ interface Props {
   customFields?: { label: string; index: number }[];
   canEdit?: boolean;
   onEditStore?: (store: ClientStore) => void;
+  countryCode?: string | null;
 }
 
-const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFields = [], canEdit = false, onEditStore }: Props) => {
+const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFields = [], canEdit = false, onEditStore, countryCode }: Props) => {
   const { data: allContacts = [] } = useStoreContactsByClient(clientId);
   const { data: roles = [] } = useStoreContactRoles(clientId);
   const [search, setSearch] = useState("");
+  const cc = getCountryConfig(countryCode);
 
   const getRoleName = (roleId: string | null) => {
     if (!roleId) return null;
@@ -65,7 +68,7 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
     const digits = phone.replace(/\D/g, "");
     const firstName = contactName.split(" ")[0];
     const text = `Olá ${firstName}, somos da Agência ${agencyName}, estamos fazendo contato em nome do cliente ${clientName}, tudo bem?`;
-    return `https://wa.me/55${digits}?text=${encodeURIComponent(text)}`;
+    return `https://wa.me/${cc.phonePrefix}${digits}?text=${encodeURIComponent(text)}`;
   };
 
   const InfoRow = ({ label, value }: { label: string; value: string | null | undefined }) => {
@@ -138,10 +141,10 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
                 {/* Store data */}
                 <div className="space-y-1">
                   <InfoRow label="Código" value={store.store_code} />
-                  <InfoRow label="CNPJ" value={store.cnpj} />
-                  <InfoRow label="Insc. Est." value={store.state_registration} />
+                  <InfoRow label={cc.taxIdLabel} value={store.cnpj} />
+                  <InfoRow label={cc.stateRegistrationLabel} value={store.state_registration} />
                   {address && <InfoRow label="Endereço" value={address} />}
-                  {store.zip_code && <InfoRow label="CEP" value={store.zip_code} />}
+                  {store.zip_code && <InfoRow label={cc.zipLabel} value={store.zip_code} />}
                   {cityState && (
                     <div className="flex gap-2 text-xs">
                       <span className="text-muted-foreground shrink-0 min-w-[80px]">Localização:</span>

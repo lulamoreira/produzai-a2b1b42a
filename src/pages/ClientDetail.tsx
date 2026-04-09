@@ -45,6 +45,7 @@ import { Switch } from "@/components/ui/switch";
 import ComboboxInput from "@/components/ComboboxInput";
 import { getStateColor } from "@/lib/stateColors";
 import StoreContactsSection from "@/components/StoreContactsSection";
+import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
 
 // Helper to parse "Label|type" format from custom field labels
 const FIELD_TYPES = [
@@ -306,6 +307,11 @@ const ClientDetail = () => {
     custom_field_5_label: client?.custom_field_5_label || "",
   });
 
+  // Country / currency
+  const [countryCode, setCountryCode] = useState(client?.country_code || "BR");
+  const [currencyCode, setCurrencyCode] = useState(client?.currency_code || "BRL");
+  const countryConfig = getCountryConfig(client?.country_code);
+
   const handleNameChange = (value: string) => {
     setStoreForm((f) => ({
       ...f,
@@ -562,7 +568,7 @@ const ClientDetail = () => {
 
   const handleSaveSettings = async () => {
     if (!clientId) return;
-    await updateClient.mutateAsync({ id: clientId, ...customLabels });
+    await updateClient.mutateAsync({ id: clientId, ...customLabels, country_code: countryCode, currency_code: currencyCode });
     setSettingsOpen(false);
   };
 
@@ -619,19 +625,21 @@ const ClientDetail = () => {
           <Input value={form.nickname} onChange={(e) => options?.nicknameChangeHandler ? options.nicknameChangeHandler(e.target.value) : setForm((f) => ({ ...f, nickname: e.target.value }))} />
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">CNPJ</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">{countryConfig.taxIdLabel}</label>
           <Input value={form.cnpj} onChange={(e) => setForm((f) => ({ ...f, cnpj: e.target.value }))} />
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Inscrição Estadual</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">{countryConfig.stateRegistrationLabel}</label>
           <Input value={form.state_registration} onChange={(e) => setForm((f) => ({ ...f, state_registration: e.target.value }))} />
         </div>
         <div className="flex gap-2 items-end">
           <div className="flex-1">
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP</label>
-            <Input value={formatCep(form.zip_code)} onChange={(e) => setForm((f) => ({ ...f, zip_code: formatCep(e.target.value) }))} placeholder="00000-000" maxLength={9} />
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">{countryConfig.zipLabel}</label>
+            <Input value={countryConfig.hasAutoCepLookup ? formatCep(form.zip_code) : form.zip_code} onChange={(e) => setForm((f) => ({ ...f, zip_code: countryConfig.hasAutoCepLookup ? formatCep(e.target.value) : e.target.value }))} placeholder={countryConfig.zipPlaceholder} maxLength={countryConfig.zipMaxLength} />
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => handleCepLookup(form, setForm)}>Buscar</Button>
+          {countryConfig.hasAutoCepLookup && (
+            <Button type="button" variant="outline" size="sm" onClick={() => handleCepLookup(form, setForm)}>Buscar</Button>
+          )}
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Rua</label>
@@ -654,7 +662,7 @@ const ClientDetail = () => {
           <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Estado</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">{countryConfig.stateLabel}</label>
           <Input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} />
         </div>
         <div>
@@ -907,19 +915,51 @@ const ClientDetail = () => {
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setCustomLabels({
-                      custom_field_1_label: client.custom_field_1_label || "",
-                      custom_field_2_label: client.custom_field_2_label || "",
-                      custom_field_3_label: client.custom_field_3_label || "",
-                      custom_field_4_label: client.custom_field_4_label || "",
-                      custom_field_5_label: client.custom_field_5_label || "",
-                    })}>
-                      <Settings className="w-3.5 h-3.5" /> Campos
+                    <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => {
+                      setCustomLabels({
+                        custom_field_1_label: client.custom_field_1_label || "",
+                        custom_field_2_label: client.custom_field_2_label || "",
+                        custom_field_3_label: client.custom_field_3_label || "",
+                        custom_field_4_label: client.custom_field_4_label || "",
+                        custom_field_5_label: client.custom_field_5_label || "",
+                      });
+                      setCountryCode(client.country_code || "BR");
+                      setCurrencyCode(client.currency_code || "BRL");
+                    }}>
+                      <Settings className="w-3.5 h-3.5" /> Configurações
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
-                    <DialogHeader><DialogTitle>Campos Personalizáveis</DialogTitle></DialogHeader>
-                    <p className="text-sm text-muted-foreground mb-4">Defina os nomes dos campos extras para as lojas deste cliente. Campos sem nome não serão exibidos.</p>
+                    <DialogHeader><DialogTitle>Configurações do Cliente</DialogTitle></DialogHeader>
+
+                    {/* Country / Currency */}
+                    <div className="space-y-3 pb-3 border-b border-border">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase">País e Moeda</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
+                          <Select value={countryCode} onValueChange={(val) => {
+                            setCountryCode(val);
+                            const cfg = getCountryConfig(val);
+                            setCurrencyCode(cfg.currency);
+                          }}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {SUPPORTED_COUNTRIES.map(c => (
+                                <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Moeda</label>
+                          <Input value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())} placeholder="BRL" maxLength={3} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs font-semibold text-muted-foreground uppercase pt-1">Campos Personalizáveis</p>
+                    <p className="text-xs text-muted-foreground mb-2">Defina os nomes dos campos extras para as lojas deste cliente.</p>
                     <div className="space-y-3">
                       {[1, 2, 3, 4, 5].map((i) => {
                         const parsed = parseFieldLabel((customLabels as any)[`custom_field_${i}_label`]);
@@ -1023,6 +1063,7 @@ const ClientDetail = () => {
                   .filter((cf) => cf.label)}
                 canEdit={canEditStores}
                 onEditStore={handleOpenEditStore}
+                countryCode={client.country_code}
               />
             ) : (
             <>

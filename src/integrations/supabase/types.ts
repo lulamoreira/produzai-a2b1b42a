@@ -998,7 +998,9 @@ export type Database = {
         Row: {
           agency_id: string
           color: string | null
+          country_code: string | null
           created_at: string
+          currency_code: string | null
           custom_field_1_label: string | null
           custom_field_2_label: string | null
           custom_field_3_label: string | null
@@ -1011,7 +1013,9 @@ export type Database = {
         Insert: {
           agency_id: string
           color?: string | null
+          country_code?: string | null
           created_at?: string
+          currency_code?: string | null
           custom_field_1_label?: string | null
           custom_field_2_label?: string | null
           custom_field_3_label?: string | null
@@ -1024,7 +1028,9 @@ export type Database = {
         Update: {
           agency_id?: string
           color?: string | null
+          country_code?: string | null
           created_at?: string
+          currency_code?: string | null
           custom_field_1_label?: string | null
           custom_field_2_label?: string | null
           custom_field_3_label?: string | null

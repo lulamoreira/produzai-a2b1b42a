@@ -15,6 +15,8 @@ export type Client = {
   custom_field_3_label: string | null;
   custom_field_4_label: string | null;
   custom_field_5_label: string | null;
+  country_code: string | null;
+  currency_code: string | null;
   created_at: string;
 };
 
@@ -166,6 +168,8 @@ export function useAddClient() {
         custom_field_3_label: newClient.custom_field_3_label || null,
         custom_field_4_label: newClient.custom_field_4_label || null,
         custom_field_5_label: newClient.custom_field_5_label || null,
+        country_code: null,
+        currency_code: null,
         created_at: new Date().toISOString(),
       };
       qc.setQueryData<Client[]>(["clients", newClient.agency_id], (old) => [...(old || []), optimistic]);
