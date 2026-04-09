@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { PRIORITY_OPTIONS } from "@/types/occurrence";
 import { getDefaultStatusValue } from "@/lib/occurrenceHelpers";
 import { useClientPermission } from "@/hooks/useClientPermission";
@@ -72,6 +73,7 @@ interface Props {
 
 
 const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEditProp, canDelete: canDeleteProp, canEditReporter: canEditReporterProp }: Props) => {
+  const { t } = useTranslation();
   // Read initial store filter from URL params
   const initialStoreFilter = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
