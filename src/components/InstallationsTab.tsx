@@ -66,6 +66,7 @@ const CATEGORY_OPTIONS = [
 ];
 
 const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId, agencyName = "", clientName = "" }: InstallationsTabProps) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();

@@ -26,6 +26,7 @@ interface BudgetsTabProps {
 }
 
 const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
+  const { t } = useTranslation();
   const { data: quotations = [], isLoading: loadingQuotations } = useCampaignQuotations(campaignId);
   const { data: budgets = [], isLoading: loadingBudgets } = useCampaignBudgets(campaignId);
   const { data: allItems = [], isLoading: loadingItems } = useBudgetItems(campaignId);

@@ -85,6 +85,7 @@ function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string
 }
 
 const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, campaignName, clientId }: SchedulingTabProps) => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterState, setFilterState] = useState("");
