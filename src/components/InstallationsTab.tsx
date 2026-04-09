@@ -232,6 +232,24 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
     });
   }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, filterDate, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel, scheduleMap, photosByStore]);
 
+  // Apply summary filter on top of filteredStores
+  const displayedStores = useMemo(() => {
+    if (!summaryFilter || summaryFilter === "total") return filteredStores;
+    return filteredStores.filter((s) => {
+      const sch = scheduleMap[s.id];
+      const occ = storeOccurrenceStatus[s.id];
+      switch (summaryFilter) {
+        case "completed": return !!sch?.completed_at;
+        case "pending": return !sch?.completed_at;
+        case "withTeam": return !!sch?.team_id;
+        case "withPhotos": return (photosByStore[s.id] || []).length > 0;
+        case "locked": return !!sch?.locked;
+        case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
+        default: return true;
+      }
+    });
+  }, [filteredStores, summaryFilter, scheduleMap, photosByStore, storeOccurrenceStatus]);
+
   const handleUploadPhoto = async (storeId: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
     const category = uploadCategory[storeId] || "before";
@@ -489,37 +507,41 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         </div>
       </div>
 
-      {/* Summary Bar */}
+      {/* Summary Bar - Clickable Filters */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
-          <p className="text-lg font-bold text-foreground">{summaryMetrics.total}</p>
-          <p className="text-[10px] text-muted-foreground">Total</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
-          <p className="text-lg font-bold text-emerald-600">{summaryMetrics.completed}</p>
-          <p className="text-[10px] text-muted-foreground">✅ Concluídas</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
-          <p className="text-lg font-bold text-amber-600">{summaryMetrics.pending}</p>
-          <p className="text-[10px] text-muted-foreground">⏳ Pendentes</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
-          <p className="text-lg font-bold text-foreground">{summaryMetrics.withTeam}</p>
-          <p className="text-[10px] text-muted-foreground">🔧 Com equipe</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
-          <p className="text-lg font-bold text-foreground">{summaryMetrics.withPhotos}</p>
-          <p className="text-[10px] text-muted-foreground">📷 Com fotos</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
-          <p className="text-lg font-bold text-foreground">{summaryMetrics.locked}</p>
-          <p className="text-[10px] text-muted-foreground">🔒 Bloqueadas</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg px-3 py-2 text-center">
-          <p className="text-lg font-bold text-destructive">{summaryMetrics.withOccurrence}</p>
-          <p className="text-[10px] text-muted-foreground">⚠️ Ocorrências</p>
-        </div>
+        {([
+          { key: "total" as const, value: summaryMetrics.total, label: "Total", color: "text-foreground" },
+          { key: "completed" as const, value: summaryMetrics.completed, label: "✅ Concluídas", color: "text-emerald-600" },
+          { key: "pending" as const, value: summaryMetrics.pending, label: "⏳ Pendentes", color: "text-amber-600" },
+          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "🔧 Com equipe", color: "text-foreground" },
+          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: "📷 Com fotos", color: "text-foreground" },
+          { key: "locked" as const, value: summaryMetrics.locked, label: "🔒 Bloqueadas", color: "text-foreground" },
+          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: "⚠️ Ocorrências", color: "text-destructive" },
+        ]).map((m) => (
+          <button
+            key={m.key}
+            type="button"
+            onClick={() => setSummaryFilter(prev => prev === m.key ? "" : m.key)}
+            className={cn(
+              "bg-card border rounded-lg px-3 py-2 text-center transition-all cursor-pointer hover:shadow-md",
+              summaryFilter === m.key
+                ? "border-primary ring-2 ring-primary/30 shadow-sm"
+                : "border-border"
+            )}
+          >
+            <p className={cn("text-lg font-bold", m.color)}>{m.value}</p>
+            <p className="text-[10px] text-muted-foreground">{m.label}</p>
+          </button>
+        ))}
       </div>
+      {summaryFilter && summaryFilter !== "total" && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>Filtrando por: <strong className="text-foreground">{
+            { completed: "Concluídas", pending: "Pendentes", withTeam: "Com equipe", withPhotos: "Com fotos", locked: "Bloqueadas", withOccurrence: "Ocorrências" }[summaryFilter]
+          }</strong> ({displayedStores.length})</span>
+          <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
+        </div>
+      )}
 
       {/* Store Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4">
