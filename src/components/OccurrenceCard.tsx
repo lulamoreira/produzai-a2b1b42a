@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { getStatusLabel as _getStatusLabel, getStatusColor as _getStatusColor } from "@/lib/occurrenceHelpers";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -11,6 +11,8 @@ import type { Occurrence } from "@/hooks/useOccurrences";
 import { useUpdateOccurrenceFields, useUpdateOccurrenceStatus, useDeleteOccurrence } from "@/hooks/useOccurrences";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
 import OccurrenceDetailFields from "./OccurrenceDetailFields";
+import { useInstallationPhotos } from "@/hooks/useInstallationPhotos";
+const PhotoCheckinDialog = lazy(() => import("@/components/PhotoCheckinDialog"));
 import ActivityLogPanel from "./ActivityLogPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
