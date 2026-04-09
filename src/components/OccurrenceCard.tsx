@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { getStatusLabel as _getStatusLabel, getStatusColor as _getStatusColor } from "@/lib/occurrenceHelpers";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -11,6 +11,8 @@ import type { Occurrence } from "@/hooks/useOccurrences";
 import { useUpdateOccurrenceFields, useUpdateOccurrenceStatus, useDeleteOccurrence } from "@/hooks/useOccurrences";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
 import OccurrenceDetailFields from "./OccurrenceDetailFields";
+import { useInstallationPhotos } from "@/hooks/useInstallationPhotos";
+const PhotoCheckinDialog = lazy(() => import("@/components/PhotoCheckinDialog"));
 import ActivityLogPanel from "./ActivityLogPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +26,7 @@ import {
 import {
   Puzzle, Calendar, MapPin, User, Pencil, Flag, Trash2,
   ExternalLink, Link2, MessageCircle, Phone, Save, ClipboardList, Loader2, Lock, LockOpen,
-  CheckCircle2, AlertCircle,
+  CheckCircle2, AlertCircle, Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -121,6 +123,7 @@ export default function OccurrenceCard({
   const [saving, setSaving] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [lockLoading, setLockLoading] = useState(false);
+  const [showPhotos, setShowPhotos] = useState(false);
   const hasPendingChanges = Object.keys(draft).length > 0;
 
   // Merged occurrence (server + draft)
@@ -135,6 +138,14 @@ export default function OccurrenceCard({
     },
     enabled: !!user,
   });
+
+  // Photos for this store
+  const store = stores.find((s) => s.id === occ.store_id);
+  const { data: storePhotos = [] } = useInstallationPhotos(campaignId);
+  const filteredStorePhotos = useMemo(
+    () => storePhotos.filter((p) => p.store_id === occ.store_id),
+    [storePhotos, occ.store_id]
+  );
 
   const setDraftField = useCallback((field: string, value: unknown) => {
     setDraft((prev) => {
@@ -400,18 +411,23 @@ export default function OccurrenceCard({
         )}
       </div>
 
-      {/* Photo check-in status */}
+      {/* Photo check-in status + gallery button */}
       {schedule && (
-        <div className={`mx-4 mt-2 flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium border ${
-          schedule.photo_checkin
-            ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
-            : "bg-orange-500/10 text-orange-700 border-orange-500/30"
-        }`}>
-          {schedule.photo_checkin && schedule.photo_checkin_at ? (
-            <><CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> Fotos para ocorrências verificadas em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
-          ) : (
-            <><AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> Check-in de fotos para ocorrências pendente</>
-          )}
+        <div className="mx-4 mt-2 flex items-center gap-2">
+          <div className={`flex-1 flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium border ${
+            schedule.photo_checkin
+              ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
+              : "bg-orange-500/10 text-orange-700 border-orange-500/30"
+          }`}>
+            {schedule.photo_checkin && schedule.photo_checkin_at ? (
+              <><CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> Fotos para ocorrências verificadas em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
+            ) : (
+              <><AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> Check-in de fotos para ocorrências pendente</>
+            )}
+          </div>
+          <Button variant="outline" size="sm" className="gap-1 text-xs shrink-0" onClick={() => setShowPhotos(true)}>
+            <Camera className="w-3.5 h-3.5" /> Ver fotos
+          </Button>
         </div>
       )}
 
@@ -652,6 +668,18 @@ export default function OccurrenceCard({
         storeName={`Ocorrência #${occ.id.slice(0, 8)}`}
         module="occurrences"
       />
+
+      {/* Photo Checkin Dialog */}
+      {showPhotos && store && (
+        <Suspense fallback={null}>
+          <PhotoCheckinDialog
+            open={showPhotos}
+            onOpenChange={setShowPhotos}
+            store={store as any}
+            photos={filteredStorePhotos}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
