@@ -46,7 +46,22 @@
     "contact": "Contact",
     "model": "Model",
     "saveChanges": "Save Changes",
-    "notFound": "not found"
+    "notFound": "not found",
+    "or": "or",
+    "photo": "Photo",
+    "photos": "Photos",
+    "wait": "Please wait...",
+    "sendLink": "Send Link",
+    "createAccount": "Create Account",
+    "pieces": "Pieces",
+    "address": "Address",
+    "addressNotInformed": "Address not provided",
+    "noScheduled": "No installations scheduled for this period",
+    "markRemoved": "Mark removed",
+    "installationCompleted": "Installation marked as completed!",
+    "connectionError": "Connection error. Try again.",
+    "invalidCode": "Invalid code.",
+    "backup": "Backup"
   },
   "greeting": {
     "morning": "Good morning",
@@ -61,7 +76,30 @@
     "forgotPassword": "Forgot password?",
     "resetPassword": "Reset password",
     "pendingApproval": "Pending Approval",
-    "pendingApprovalMessage": "Your account was created successfully, but needs to be approved by an administrator before you can access the system."
+    "pendingApprovalMessage": "Your account was created successfully, but needs to be approved by an administrator before you can access the system.",
+    "recoverPassword": "Recover Password",
+    "recoverPasswordDesc": "Enter your email to receive the recovery link",
+    "accessPlatform": "Access the management platform",
+    "createYourAccount": "Create your account to get started",
+    "whatIsYourName": "What should we call you?",
+    "namePlaceholder": "E.g.: John, Mary...",
+    "incorrectCredentials": "Incorrect email or password.",
+    "accountCreated": "Account created! Check your email to confirm.",
+    "recoveryEmailSent": "Recovery email sent! Check your inbox.",
+    "continueWithGoogle": "Continue with Google",
+    "googleError": "Error connecting with Google.",
+    "enterWithTeamCode": "Enter with Team Code",
+    "forgotMyPassword": "I forgot my password",
+    "noAccount": "Don't have an account? Sign up",
+    "hasAccount": "Already have an account? Sign in",
+    "backToLogin": "Back to login",
+    "creativeProductionControl": "Creative production control",
+    "graphicProduction": "Graphic Production",
+    "graphicProductionDesc": "Control suppliers, deadlines and materials with confidence.",
+    "creativePlanning": "Creative Planning",
+    "creativePlanningDesc": "Turn ideas into production with organization and clarity.",
+    "showcaseAssembly": "Showcase Assembly",
+    "showcaseAssemblyDesc": "Manage installations and materials across all stores."
   },
   "header": {
     "admin": "Admin",
@@ -242,7 +280,9 @@
     "exportSpreadsheet": "Export Spreadsheet",
     "before": "Before",
     "during": "During",
-    "after": "After"
+    "after": "After",
+    "installationCompleted": "Installation Completed ✓",
+    "todayInstallations": "Today's installations"
   },
   "budgets": {
     "title": "Budgets",
@@ -250,7 +290,27 @@
     "unitPrice": "Unit Price",
     "totalPrice": "Total Price",
     "addItem": "Add Item",
-    "quotation": "Quotation"
+    "quotation": "Quotation",
+    "addQuotation": "New Quotation",
+    "editQuotation": "Edit Quotation",
+    "quotationName": "Quotation name",
+    "deleteQuotation": "Delete quotation?",
+    "deleteQuotationDesc": "All budgets in this quotation will be deleted.",
+    "addBudget": "Add Budget",
+    "supplierName": "Supplier name",
+    "uploadFile": "Upload spreadsheet",
+    "noQuotations": "No quotations created",
+    "createFirstQuotation": "Create your first quotation to get started.",
+    "noBudgets": "No budgets in this quotation",
+    "comparison": "Comparison",
+    "cheapest": "Cheapest",
+    "item": "Item",
+    "qty": "Qty",
+    "columnMapping": "Column Mapping",
+    "selectColumn": "Select column",
+    "preview": "Preview",
+    "importItems": "Import Items",
+    "backToQuotations": "Back to Quotations"
   },
   "client": {
     "settings": "Client Settings",
@@ -266,7 +326,13 @@
     "permissions": "Permissions",
     "categories": "Categories",
     "systemMessages": "System Messages",
-    "roles": "Roles"
+    "roles": "Roles",
+    "searchUser": "Search user...",
+    "usersCount": "Users ({{count}})",
+    "usersPermissionHint": "Click on a user to view and edit all permissions. Admin/Master have automatic access to everything.",
+    "noUserFound": "No users found.",
+    "noUserRegistered": "No users registered.",
+    "messages": "Messages"
   },
   "languages": {
     "pt-BR": "Português (Brasil)",
@@ -336,5 +402,24 @@
     "manageLocationsDesc": "Register piece locations for this campaign.",
     "locationName": "Location name",
     "noLocationRegistered": "No locations registered."
+  },
+  "installer": {
+    "teamAccess": "Team Access",
+    "enterCode": "Enter the 10-digit code provided by the administrator",
+    "codeLength": "{{count}}/10 characters",
+    "codeMustBe10": "The code must be 10 characters.",
+    "validating": "Validating...",
+    "backToMainLogin": "Back to main login",
+    "todayInstallations": "Today's installations",
+    "storeCount": "{{count}} store(s)",
+    "photosSent": "{{count}} photo(s) sent!",
+    "uploadError": "Error uploading photo",
+    "installationCompletedCheck": "Installation Completed ✓",
+    "noInstallations": "No installations scheduled for this period"
+  },
+  "myCampaigns": {
+    "title": "My Campaigns",
+    "selectModule": "Select a module to access.",
+    "noAccess": "You don't have access to any campaigns."
   }
 }
