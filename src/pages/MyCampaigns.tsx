@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,20 +7,21 @@ import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, DollarSign, Lo
 import AppLayout from "@/components/AppLayout";
 import ModuleGrid from "@/components/ModuleGrid";
 
-const MODULE_META: Record<string, { label: string; icon: React.ElementType }> = {
-  stores: { label: "Lojas", icon: Store },
-  matrix: { label: "Matriz", icon: Grid3X3 },
-  pieces: { label: "Peças", icon: LayoutList },
-  occurrences: { label: "Ocorrências", icon: AlertTriangle },
-  scheduling: { label: "Agendamento", icon: CalendarDays },
-  installations: { label: "Instalações", icon: Camera },
-  budgets: { label: "Orçamentos", icon: DollarSign },
-};
-
 const MyCampaigns = () => {
+  const { t } = useTranslation();
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const { campaigns, isLimited, isLoading } = useUserDirectAccess();
+
+  const MODULE_META: Record<string, { label: string; icon: React.ElementType }> = {
+    stores: { label: t("modules.stores"), icon: Store },
+    matrix: { label: t("modules.matrix"), icon: Grid3X3 },
+    pieces: { label: t("modules.pieces"), icon: LayoutList },
+    occurrences: { label: t("modules.occurrences"), icon: AlertTriangle },
+    scheduling: { label: t("modules.scheduling"), icon: CalendarDays },
+    installations: { label: t("modules.installations"), icon: Camera },
+    budgets: { label: t("modules.budgets"), icon: DollarSign },
+  };
 
   if (isLoading) {
     return (
@@ -29,12 +31,10 @@ const MyCampaigns = () => {
     );
   }
 
-  // If not limited, redirect to normal flow
   if (!isLimited) {
     return <Navigate to="/" replace />;
   }
 
-  // If only one campaign with one module, go directly
   if (campaigns.length === 1 && campaigns[0].modules.length === 1) {
     const c = campaigns[0];
     return (
@@ -54,11 +54,11 @@ const MyCampaigns = () => {
   };
 
   return (
-    <AppLayout title="Minhas Campanhas">
+    <AppLayout title={t("myCampaigns.title")}>
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-10">
-          <h2 className="text-2xl font-bold text-foreground mb-2">Minhas Campanhas</h2>
-          <p className="text-muted-foreground text-sm">Selecione um módulo para acessar.</p>
+          <h2 className="text-2xl font-bold text-foreground mb-2">{t("myCampaigns.title")}</h2>
+          <p className="text-muted-foreground text-sm">{t("myCampaigns.selectModule")}</p>
         </div>
 
         {campaigns.length === 0 ? (
@@ -66,9 +66,9 @@ const MyCampaigns = () => {
             <div className="w-20 h-20 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
               <Package className="w-10 h-10 text-muted-foreground" />
             </div>
-            <p className="text-muted-foreground mb-4">Você não tem acesso a nenhuma campanha.</p>
+            <p className="text-muted-foreground mb-4">{t("myCampaigns.noAccess")}</p>
             <Button variant="outline" onClick={signOut}>
-              <LogOut className="w-4 h-4 mr-2" /> Sair
+              <LogOut className="w-4 h-4 mr-2" /> {t("auth.logout")}
             </Button>
           </div>
         ) : (
@@ -94,7 +94,7 @@ const MyCampaigns = () => {
 
             <div className="text-center pt-6">
               <Button variant="outline" size="sm" onClick={signOut}>
-                <LogOut className="w-4 h-4 mr-2" /> Sair
+                <LogOut className="w-4 h-4 mr-2" /> {t("auth.logout")}
               </Button>
             </div>
           </div>

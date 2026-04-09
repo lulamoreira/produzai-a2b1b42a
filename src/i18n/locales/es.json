@@ -46,7 +46,22 @@
     "contact": "Contacto",
     "model": "Modelo",
     "saveChanges": "Guardar Cambios",
-    "notFound": "no encontrada"
+    "notFound": "no encontrada",
+    "or": "o",
+    "photo": "Foto",
+    "photos": "Fotos",
+    "wait": "Espere...",
+    "sendLink": "Enviar Enlace",
+    "createAccount": "Crear Cuenta",
+    "pieces": "Piezas",
+    "address": "Dirección",
+    "addressNotInformed": "Dirección no informada",
+    "noScheduled": "No hay instalaciones programadas para este período",
+    "markRemoved": "Marcación eliminada",
+    "installationCompleted": "¡Instalación marcada como completada!",
+    "connectionError": "Error de conexión. Intente nuevamente.",
+    "invalidCode": "Código inválido.",
+    "backup": "Respaldo"
   },
   "greeting": {
     "morning": "Buenos días",
@@ -61,7 +76,30 @@
     "forgotPassword": "¿Olvidó su contraseña?",
     "resetPassword": "Restablecer contraseña",
     "pendingApproval": "Aprobación Pendiente",
-    "pendingApprovalMessage": "Su cuenta fue creada exitosamente, pero necesita ser aprobada por un administrador antes de poder acceder al sistema."
+    "pendingApprovalMessage": "Su cuenta fue creada exitosamente, pero necesita ser aprobada por un administrador antes de poder acceder al sistema.",
+    "recoverPassword": "Recuperar Contraseña",
+    "recoverPasswordDesc": "Ingrese su correo para recibir el enlace de recuperación",
+    "accessPlatform": "Acceda a la plataforma de gestión",
+    "createYourAccount": "Cree su cuenta para acceder",
+    "whatIsYourName": "¿Cómo quiere que lo llamemos?",
+    "namePlaceholder": "Ej: Juan, María...",
+    "incorrectCredentials": "Correo o contraseña incorrectos.",
+    "accountCreated": "¡Cuenta creada! Verifique su correo para confirmar.",
+    "recoveryEmailSent": "¡Correo de recuperación enviado! Verifique su bandeja de entrada.",
+    "continueWithGoogle": "Continuar con Google",
+    "googleError": "Error al conectar con Google.",
+    "enterWithTeamCode": "Ingresar con Código de Equipo",
+    "forgotMyPassword": "Olvidé mi contraseña",
+    "noAccount": "¿No tiene cuenta? Regístrese",
+    "hasAccount": "¿Ya tiene cuenta? Iniciar sesión",
+    "backToLogin": "Volver al inicio de sesión",
+    "creativeProductionControl": "Control de producción creativa",
+    "graphicProduction": "Producción Gráfica",
+    "graphicProductionDesc": "Controle proveedores, plazos y materiales con seguridad.",
+    "creativePlanning": "Planificación Creativa",
+    "creativePlanningDesc": "Transforme ideas en producción con organización y claridad.",
+    "showcaseAssembly": "Montaje de Vitrinas",
+    "showcaseAssemblyDesc": "Gestione instalaciones y materiales en todas las tiendas."
   },
   "header": {
     "admin": "Admin",
@@ -242,7 +280,9 @@
     "exportSpreadsheet": "Exportar Planilla",
     "before": "Antes",
     "during": "Durante",
-    "after": "Después"
+    "after": "Después",
+    "installationCompleted": "Instalación Completada ✓",
+    "todayInstallations": "Instalaciones de hoy"
   },
   "budgets": {
     "title": "Presupuestos",
@@ -250,7 +290,27 @@
     "unitPrice": "Precio Unitario",
     "totalPrice": "Precio Total",
     "addItem": "Agregar Ítem",
-    "quotation": "Cotización"
+    "quotation": "Cotización",
+    "addQuotation": "Nueva Cotización",
+    "editQuotation": "Editar Cotización",
+    "quotationName": "Nombre de la cotización",
+    "deleteQuotation": "¿Eliminar cotización?",
+    "deleteQuotationDesc": "Todos los presupuestos de esta cotización serán eliminados.",
+    "addBudget": "Agregar Presupuesto",
+    "supplierName": "Nombre del proveedor",
+    "uploadFile": "Subir planilla",
+    "noQuotations": "No hay cotizaciones creadas",
+    "createFirstQuotation": "Cree su primera cotización para comenzar.",
+    "noBudgets": "No hay presupuestos en esta cotización",
+    "comparison": "Comparativo",
+    "cheapest": "Menor precio",
+    "item": "Ítem",
+    "qty": "Cant.",
+    "columnMapping": "Mapeo de Columnas",
+    "selectColumn": "Seleccionar columna",
+    "preview": "Vista previa",
+    "importItems": "Importar Ítems",
+    "backToQuotations": "Volver a Cotizaciones"
   },
   "client": {
     "settings": "Configuración del Cliente",
@@ -266,7 +326,13 @@
     "permissions": "Permisos",
     "categories": "Categorías",
     "systemMessages": "Mensajes del Sistema",
-    "roles": "Roles"
+    "roles": "Roles",
+    "searchUser": "Buscar usuario...",
+    "usersCount": "Usuarios ({{count}})",
+    "usersPermissionHint": "Haga clic en un usuario para ver y editar todos los permisos. Admin/Master tienen acceso automático a todo.",
+    "noUserFound": "No se encontraron usuarios.",
+    "noUserRegistered": "No hay usuarios registrados.",
+    "messages": "Mensajes"
   },
   "languages": {
     "pt-BR": "Português (Brasil)",
@@ -336,5 +402,24 @@
     "manageLocationsDesc": "Registre ubicaciones de piezas para esta campaña.",
     "locationName": "Nombre de la ubicación",
     "noLocationRegistered": "Ninguna ubicación registrada."
+  },
+  "installer": {
+    "teamAccess": "Acceso del Equipo",
+    "enterCode": "Ingrese el código de 10 dígitos proporcionado por el administrador",
+    "codeLength": "{{count}}/10 caracteres",
+    "codeMustBe10": "El código debe tener 10 caracteres.",
+    "validating": "Validando...",
+    "backToMainLogin": "Volver al inicio de sesión principal",
+    "todayInstallations": "Instalaciones de hoy",
+    "storeCount": "{{count}} tienda(s)",
+    "photosSent": "¡{{count}} foto(s) enviada(s)!",
+    "uploadError": "Error al enviar foto",
+    "installationCompletedCheck": "Instalación Completada ✓",
+    "noInstallations": "No hay instalaciones programadas para este período"
+  },
+  "myCampaigns": {
+    "title": "Mis Campañas",
+    "selectModule": "Seleccione un módulo para acceder.",
+    "noAccess": "No tiene acceso a ninguna campaña."
   }
 }
