@@ -432,7 +432,7 @@ export default function AppSidebar() {
               )}
             </div>
             <InviteButton />
-            <WhatsNewButton />
+            {/* <WhatsNewButton /> */}
           </div>
         </div>
       </div>
