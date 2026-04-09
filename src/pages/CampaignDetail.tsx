@@ -774,16 +774,16 @@ const CampaignDetail = () => {
     <div className="space-y-2 mb-4">
       <div className="relative w-full">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="pl-10" />
+        <Input placeholder={t("stores.searchStore")} value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="pl-10" />
       </div>
       <div className="flex flex-wrap gap-2 items-center">
         {uniqueStates.length > 0 && (
           <Select value={stateFilter} onValueChange={setStateFilter}>
             <SelectTrigger className="w-[100px] sm:w-[140px] text-xs">
-              <SelectValue placeholder="Estado" />
+              <SelectValue placeholder={t("stores.state")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Todos</SelectItem>
+              <SelectItem value="__all__">{t("common.all")}</SelectItem>
               {uniqueStates.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -791,10 +791,10 @@ const CampaignDetail = () => {
         {uniqueCities.length > 0 && (
           <Select value={cityFilter} onValueChange={setCityFilter}>
             <SelectTrigger className="w-[110px] sm:w-[180px] text-xs">
-              <SelectValue placeholder="Cidade" />
+              <SelectValue placeholder={t("stores.city")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Todas</SelectItem>
+              <SelectItem value="__all__">{t("common.allFeminine")}</SelectItem>
               {uniqueCities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -805,12 +805,12 @@ const CampaignDetail = () => {
               <SelectValue placeholder="Cat." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Todas</SelectItem>
+              <SelectItem value="__all__">{t("common.allFeminine")}</SelectItem>
               {uniqueStoreCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
         )}
-        <span className="text-xs text-muted-foreground">{filteredStores.length} loja(s)</span>
+        <span className="text-xs text-muted-foreground">{filteredStores.length} {t("stores.storeCount")}</span>
       </div>
     </div>
   );
