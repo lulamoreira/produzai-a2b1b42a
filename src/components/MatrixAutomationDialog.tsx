@@ -280,21 +280,24 @@ export default function MatrixAutomationDialog({
   const handleExecute = async () => {
     setExecuting(true);
     try {
-      // Re-verify field existence
-      const { data: clientData } = await supabase.from("clients").select("*").eq("id", clientId).single();
-      const fieldDef = customFieldLabels.find(f => f.key === selectedField);
-      if (!clientData || !fieldDef) {
-        toast.error(t("automation.fieldRemoved", { field: selectedField }));
-        setExecuting(false);
-        return;
-      }
-      const labelKey = `custom_field_${fieldDef.index}_label` as keyof typeof clientData;
-      if (!clientData[labelKey]) {
-        toast.error(t("automation.fieldRemoved", { field: fieldDef.label }));
-        setExecuting(false);
-        setStep(1);
-        setSelectedField("");
-        return;
+      // Re-verify field existence (only custom fields)
+      const isCustomField = selectedField.startsWith("custom_field_");
+      if (isCustomField) {
+        const { data: clientData } = await supabase.from("clients").select("*").eq("id", clientId).single();
+        const fieldDef = customFieldLabels.find(f => f.key === selectedField);
+        if (!clientData || !fieldDef) {
+          toast.error(t("automation.fieldRemoved", { field: selectedField }));
+          setExecuting(false);
+          return;
+        }
+        const labelKey = `custom_field_${fieldDef.index}_label` as keyof typeof clientData;
+        if (!clientData[labelKey]) {
+          toast.error(t("automation.fieldRemoved", { field: fieldDef.label }));
+          setExecuting(false);
+          setStep(1);
+          setSelectedField("");
+          return;
+        }
       }
 
       // Build upsert and delete arrays
