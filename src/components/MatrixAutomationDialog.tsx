@@ -97,6 +97,22 @@ export default function MatrixAutomationDialog({
     }
   }, [open]);
 
+  // All filterable fields (standard + custom)
+  const allFilterFields = useMemo(() => {
+    const standard: { key: string; label: string }[] = [
+      { key: "name", label: t("automation.fieldName") },
+      { key: "nickname", label: t("automation.fieldNickname") },
+      { key: "store_code", label: t("automation.fieldStoreCode") },
+      { key: "city", label: t("automation.fieldCity") },
+      { key: "state", label: t("automation.fieldState") },
+      { key: "store_model", label: t("automation.fieldModel") },
+      { key: "neighborhood", label: t("automation.fieldNeighborhood") },
+      { key: "country", label: t("automation.fieldCountry") },
+    ];
+    const custom = customFieldLabels.map(f => ({ key: f.key, label: f.label }));
+    return [...standard, ...custom];
+  }, [customFieldLabels, t]);
+
   // Load unique values when field changes
   useEffect(() => {
     if (!selectedField || !open) { setFieldValues([]); return; }
