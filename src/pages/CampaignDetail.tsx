@@ -1121,75 +1121,75 @@ const CampaignDetail = () => {
             {/* Edit Store Dialog */}
             <Dialog open={editStoreDialogOpen} onOpenChange={setEditStoreDialogOpen}>
               <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                <DialogHeader><DialogTitle>Editar Loja</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t("stores.editStore")}</DialogTitle></DialogHeader>
                 <form onSubmit={handleEditStoreSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome *</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.name")} *</label>
                       <Input value={editStoreForm.name} onChange={(e) => setEditStoreForm(f => ({ ...f, name: e.target.value }))} required />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Apelido</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.nickname")}</label>
                       <Input value={editStoreForm.nickname} onChange={(e) => setEditStoreForm(f => ({ ...f, nickname: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">CNPJ</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.cnpj")}</label>
                       <Input value={editStoreForm.cnpj} onChange={(e) => setEditStoreForm(f => ({ ...f, cnpj: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Inscrição Estadual</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.stateRegistration")}</label>
                       <Input value={editStoreForm.state_registration} onChange={(e) => setEditStoreForm(f => ({ ...f, state_registration: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.zipCode")}</label>
                       <Input value={editStoreForm.zip_code} onChange={(e) => setEditStoreForm(f => ({ ...f, zip_code: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Rua</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.street")}</label>
                       <Input value={editStoreForm.street} onChange={(e) => setEditStoreForm(f => ({ ...f, street: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Número</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.number")}</label>
                       <Input value={editStoreForm.number} onChange={(e) => setEditStoreForm(f => ({ ...f, number: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Complemento</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.complement")}</label>
                       <Input value={editStoreForm.complement} onChange={(e) => setEditStoreForm(f => ({ ...f, complement: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Bairro</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.neighborhood")}</label>
                       <Input value={editStoreForm.neighborhood} onChange={(e) => setEditStoreForm(f => ({ ...f, neighborhood: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Cidade</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.city")}</label>
                       <Input value={editStoreForm.city} onChange={(e) => setEditStoreForm(f => ({ ...f, city: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Estado</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.state")}</label>
                       <Input value={editStoreForm.state} onChange={(e) => setEditStoreForm(f => ({ ...f, state: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.country")}</label>
                       <Input value={editStoreForm.country} onChange={(e) => setEditStoreForm(f => ({ ...f, country: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefone</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.phone")}</label>
                       <Input value={editStoreForm.phone} onChange={(e) => setEditStoreForm(f => ({ ...f, phone: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">E-mail</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.email")}</label>
                       <Input value={editStoreForm.email} onChange={(e) => setEditStoreForm(f => ({ ...f, email: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Contato</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.contact")}</label>
                       <Input value={editStoreForm.manager_name} onChange={(e) => setEditStoreForm(f => ({ ...f, manager_name: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.storeModelLabel")}</label>
                       <Select value={editStoreForm.store_model || ""} onValueChange={(val) => setEditStoreForm(f => ({ ...f, store_model: val === "__none__" ? "" : val }))}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t("common.select")} /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__none__">Nenhum</SelectItem>
+                          <SelectItem value="__none__">{t("common.none")}</SelectItem>
                           {clientStoreModels.map((m) => (
                             <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
                           ))}
@@ -1197,11 +1197,11 @@ const CampaignDetail = () => {
                       </Select>
                     </div>
                     <div className="col-span-2">
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Código da Loja</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.storeCode")}</label>
                       <Input value={editStoreForm.store_code} onChange={(e) => setEditStoreForm(f => ({ ...f, store_code: e.target.value }))} />
                     </div>
                     <div className="col-span-2">
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.observations")}</label>
                       <textarea
                         className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         value={editStoreForm.observations}
@@ -1210,7 +1210,7 @@ const CampaignDetail = () => {
                     </div>
                   </div>
                   <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} storeName={editStoreForm.nickname || editStoreForm.name} />
-                  <Button type="submit" className="w-full" disabled={updateClientStore.isPending}>Salvar Alterações</Button>
+                  <Button type="submit" className="w-full" disabled={updateClientStore.isPending}>{t("common.saveChanges")}</Button>
                 </form>
               </DialogContent>
             </Dialog>
