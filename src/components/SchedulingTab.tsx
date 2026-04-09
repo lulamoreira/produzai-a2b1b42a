@@ -284,6 +284,25 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
   }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterMessages, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap, chatCounts]);
 
+  // Apply summary filter on top of filteredStores
+  const displayedStores = useMemo(() => {
+    if (!summaryFilter || summaryFilter === "total") return filteredStores;
+    return filteredStores.filter((s) => {
+      const sch = scheduleMap[s.id];
+      const occ = storeOccurrenceStatus[s.id];
+      const effDate = sch?.reschedule_enabled ? sch?.reschedule_date : sch?.scheduled_date;
+      switch (summaryFilter) {
+        case "scheduled": return !!effDate;
+        case "noDate": return !effDate;
+        case "approved": return sch?.store_approval_status === "approved" && sch?.team_approval_status === "approved";
+        case "withTeam": return !!sch?.team_id;
+        case "locked": return !!sch?.locked;
+        case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
+        default: return true;
+      }
+    });
+  }, [filteredStores, summaryFilter, scheduleMap, storeOccurrenceStatus]);
+
   const fieldLabels: Record<string, string> = {
     scheduled_date: "Data",
     scheduled_time: "Horário",
