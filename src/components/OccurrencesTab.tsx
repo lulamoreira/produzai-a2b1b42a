@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { PRIORITY_OPTIONS } from "@/types/occurrence";
 import { getDefaultStatusValue } from "@/lib/occurrenceHelpers";
 import { useClientPermission } from "@/hooks/useClientPermission";
