@@ -272,17 +272,18 @@ const Auth = () => {
                   Esqueci minha senha
                 </button>
               }
-              <div>
-                <button
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setForgotPassword(false);
-                  }}
-                  className="text-sm text-muted-foreground hover:text-foreground">
-
-                  {isLogin ? "Não tem conta? Cadastre-se" : "Já tem conta? Entrar"}
-                </button>
-              </div>
+              {hasInvite && (
+                <div>
+                  <button
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      setForgotPassword(false);
+                    }}
+                    className="text-sm text-muted-foreground hover:text-foreground">
+                    {isLogin ? "Não tem conta? Cadastre-se" : "Já tem conta? Entrar"}
+                  </button>
+                </div>
+              )}
               {forgotPassword &&
               <button
                 onClick={() => setForgotPassword(false)}
