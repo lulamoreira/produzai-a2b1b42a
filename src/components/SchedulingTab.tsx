@@ -1740,6 +1740,7 @@ interface RescheduleApprovalTogglesProps {
 }
 
 function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTime, onMultiUpdate }: RescheduleApprovalTogglesProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const dbStoreStatus = (schedule?.reschedule_store_approval_status ?? "under_review") as ApprovalStatusValue;
   const dbTeamStatus = (schedule?.reschedule_team_approval_status ?? "under_review") as ApprovalStatusValue;
