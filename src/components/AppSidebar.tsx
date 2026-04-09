@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -28,15 +29,15 @@ interface NavItem {
   badge?: number;
 }
 
-const CAMPAIGN_MODULES = [
-  { key: "stores", label: "Lojas", icon: Store, color: "#6366f1" },
-  { key: "matrix", label: "Matriz", icon: Grid3X3, color: "#8b5cf6" },
-  { key: "pieces", label: "Peças", icon: LayoutList, color: "#3b82f6" },
-  { key: "occurrences", label: "Ocorrências", icon: AlertTriangle, color: "#ef4444" },
-  { key: "scheduling", label: "Agendamento", icon: CalendarDays, color: "#22c55e" },
-  { key: "installations", label: "Instalações", icon: Camera, color: "#f97316" },
-  { key: "budgets", label: "Orçamentos", icon: DollarSign, color: "#14b8a6" },
-  { key: "chat", label: "Chat", icon: MessageSquare, color: "#06b6d4" },
+const CAMPAIGN_MODULE_KEYS = [
+  { key: "stores", tKey: "modules.stores", icon: Store, color: "#6366f1" },
+  { key: "matrix", tKey: "modules.matrix", icon: Grid3X3, color: "#8b5cf6" },
+  { key: "pieces", tKey: "modules.pieces", icon: LayoutList, color: "#3b82f6" },
+  { key: "occurrences", tKey: "modules.occurrences", icon: AlertTriangle, color: "#ef4444" },
+  { key: "scheduling", tKey: "modules.scheduling", icon: CalendarDays, color: "#22c55e" },
+  { key: "installations", tKey: "modules.installations", icon: Camera, color: "#f97316" },
+  { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#14b8a6" },
+  { key: "chat", tKey: "modules.chat", icon: MessageSquare, color: "#06b6d4" },
 ];
 
 export default function AppSidebar() {
