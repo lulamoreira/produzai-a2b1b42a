@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useInstallationPhotos, useAddInstallationPhoto, useUpdateInstallationPhoto, useDeleteInstallationPhoto, type InstallationPhoto, isVideo } from "@/hooks/useInstallationPhotos";
+import { useOrphanPhotoCleanup } from "@/hooks/useOrphanPhotoCleanup";
 import { useAuth } from "@/hooks/useAuth";
 import { compressImage } from "@/lib/compressImage";
 import { compressVideo } from "@/lib/compressVideo";
