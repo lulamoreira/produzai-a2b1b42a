@@ -193,10 +193,10 @@ export function useUpdateClient() {
     },
     onMutate: async ({ id, ...data }) => {
       qc.setQueriesData<Client[]>({ queryKey: ["clients"] }, (old) =>
-        old ? old.map((c) => c.id === id ? { ...c, ...data } : c) : old
+        old && Array.isArray(old) ? old.map((c) => c.id === id ? { ...c, ...data } : c) : old
       );
       // Also update single client query
-      qc.setQueriesData<Client | null>({ queryKey: ["clients", id] }, (old) =>
+      qc.setQueryData<Client | null>(["clients", id], (old) =>
         old ? { ...old, ...data } : old
       );
     },
