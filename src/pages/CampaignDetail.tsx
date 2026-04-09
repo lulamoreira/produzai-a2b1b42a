@@ -1563,6 +1563,11 @@ const CampaignDetail = () => {
                         <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("matrix.fromOtherCampaign")}
                       </Button>
                     )}
+                    {canEditCampaign && (
+                      <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setAutomationOpen(true)}>
+                        <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("automation.title")}
+                      </Button>
+                    )}
                   </div>
                 </div>
 
