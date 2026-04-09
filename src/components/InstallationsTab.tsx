@@ -231,13 +231,18 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       let matchesModel = true;
       if (filterModel) matchesModel = s.store_model === filterModel;
 
-      return matchesSearch && matchesState && matchesCity && matchesStatus && matchesDate && matchesPeriod && matchesTeam && matchesLocked && matchesReschedule && matchesModel;
+      // Check-in filter
+      let matchesCheckin = true;
+      if (filterCheckin === "checked") matchesCheckin = !!schedule?.photo_checkin;
+      else if (filterCheckin === "unchecked") matchesCheckin = !schedule?.photo_checkin;
+
+      return matchesSearch && matchesState && matchesCity && matchesStatus && matchesDate && matchesPeriod && matchesTeam && matchesLocked && matchesReschedule && matchesModel && matchesCheckin;
     }).sort((a, b) => {
       const stateComp = (a.state || "").localeCompare(b.state || "");
       if (stateComp !== 0) return stateComp;
       return a.name.localeCompare(b.name);
     });
-  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, filterDate, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel, scheduleMap, photosByStore]);
+  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, filterDate, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel, filterCheckin, scheduleMap, photosByStore]);
 
   // Apply summary filter on top of filteredStores
   const displayedStores = useMemo(() => {
