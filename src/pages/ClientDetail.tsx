@@ -46,6 +46,7 @@ import ComboboxInput from "@/components/ComboboxInput";
 import { getStateColor } from "@/lib/stateColors";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
+import { useLanguage } from "@/hooks/useLanguage";
 
 // Helper to parse "Label|type" format from custom field labels
 const FIELD_TYPES = [
@@ -249,6 +250,7 @@ const ClientDetail = () => {
   const { hasPermission: canDeleteStores } = useClientPermission(clientId, "can_delete_stores");
   const { hasPermission: canEditClients } = useClientPermission(clientId, "can_edit_clients");
   const { data: client, isLoading: loadingClient } = useClient(clientId);
+  useLanguage((client as any)?.language);
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
 
   const { data: agencyInfo } = useQuery({
@@ -307,9 +309,10 @@ const ClientDetail = () => {
     custom_field_5_label: client?.custom_field_5_label || "",
   });
 
-  // Country / currency
+  // Country / currency / language
   const [countryCode, setCountryCode] = useState(client?.country_code || "BR");
   const [currencyCode, setCurrencyCode] = useState(client?.currency_code || "BRL");
+  const [clientLanguage, setClientLanguage] = useState((client as any)?.language || "pt-BR");
   const countryConfig = getCountryConfig(client?.country_code);
 
   const handleNameChange = (value: string) => {
@@ -568,7 +571,7 @@ const ClientDetail = () => {
 
   const handleSaveSettings = async () => {
     if (!clientId) return;
-    await updateClient.mutateAsync({ id: clientId, ...customLabels, country_code: countryCode, currency_code: currencyCode });
+    await updateClient.mutateAsync({ id: clientId, ...customLabels, country_code: countryCode, currency_code: currencyCode, language: clientLanguage } as any);
     setSettingsOpen(false);
   };
 
@@ -956,6 +959,19 @@ const ClientDetail = () => {
                           <Input value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())} placeholder="BRL" maxLength={3} />
                         </div>
                       </div>
+                    </div>
+
+                    {/* Language */}
+                    <div className="space-y-3 pb-3 border-b border-border">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase">Idioma do Sistema</p>
+                      <Select value={clientLanguage} onValueChange={setClientLanguage}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pt-BR">🇧🇷 Português (Brasil)</SelectItem>
+                          <SelectItem value="en">🇺🇸 English</SelectItem>
+                          <SelectItem value="es">🇪🇸 Español</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <p className="text-xs font-semibold text-muted-foreground uppercase pt-1">Campos Personalizáveis</p>
