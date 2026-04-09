@@ -2163,7 +2163,7 @@ const CampaignDetail = () => {
 
           {/* ─── SECTION: ORÇAMENTOS ─── */}
           {activeSection === "budgets" && (
-            <BudgetsTab campaignId={campaignId!} canEdit={canEditCampaign} />
+            <BudgetsTab campaignId={campaignId!} canEdit={canEditCampaign} currencyCode={client?.currency_code} />
           )}
 
           {/* ─── SECTION: CHAT ─── */}
