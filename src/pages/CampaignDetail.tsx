@@ -1588,7 +1588,28 @@ const CampaignDetail = () => {
                   }}
                 />
 
-                <CustomExportDialog
+                <MatrixAutomationDialog
+                  open={automationOpen}
+                  onOpenChange={setAutomationOpen}
+                  campaignId={campaignId!}
+                  clientId={clientId!}
+                  stores={activeFilteredStores}
+                  pieces={matrixPieces}
+                  kits={kits}
+                  kitPieces={kitPieces}
+                  qtyMap={qtyMap}
+                  customFieldLabels={[
+                    ...(client?.custom_field_1_label ? [{ key: "custom_field_1", label: client.custom_field_1_label, index: 1 }] : []),
+                    ...(client?.custom_field_2_label ? [{ key: "custom_field_2", label: client.custom_field_2_label, index: 2 }] : []),
+                    ...(client?.custom_field_3_label ? [{ key: "custom_field_3", label: client.custom_field_3_label, index: 3 }] : []),
+                    ...(client?.custom_field_4_label ? [{ key: "custom_field_4", label: client.custom_field_4_label, index: 4 }] : []),
+                    ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label, index: 5 }] : []),
+                  ]}
+                  onComplete={() => {
+                    queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
+                  }}
+                />
+
                   open={matrixCustomExportOpen}
                   onOpenChange={setMatrixCustomExportOpen}
                   title="Exportação Personalizada — Matriz"
