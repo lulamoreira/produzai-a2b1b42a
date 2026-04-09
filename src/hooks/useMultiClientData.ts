@@ -15,6 +15,8 @@ export type Client = {
   custom_field_3_label: string | null;
   custom_field_4_label: string | null;
   custom_field_5_label: string | null;
+  country_code: string | null;
+  currency_code: string | null;
   created_at: string;
 };
 
