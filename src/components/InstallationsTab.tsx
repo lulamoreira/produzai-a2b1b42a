@@ -9,6 +9,7 @@ import { type ClientStore } from "@/hooks/useMultiClientData";
 import { getStateColor } from "@/lib/stateColors";
 import { useStoreContactsByClient, useStoreContactRoles, type StoreContact } from "@/hooks/useStoreContacts";
 import { useInstallationPhotos, useAddInstallationPhoto, type InstallationPhoto } from "@/hooks/useInstallationPhotos";
+import { useOrphanPhotoCleanup } from "@/hooks/useOrphanPhotoCleanup";
 import { useAuth } from "@/hooks/useAuth";
 import { compressImage } from "@/lib/compressImage";
 import DebouncedInput from "@/components/DebouncedInput";
@@ -112,6 +113,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const { data: allVehiclesMap = {} } = useAllTeamVehicles(campaignId);
   const { data: photos = [] } = useInstallationPhotos(campaignId);
   const addPhoto = useAddInstallationPhoto();
+  const { handleMediaError } = useOrphanPhotoCleanup();
 
   const { data: allContacts = [] } = useStoreContactsByClient(clientId);
   const { data: contactRoles = [] } = useStoreContactRoles(clientId);
@@ -762,6 +764,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                           alt=""
                           className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
                           onClick={() => window.open(`/checkin/${campaignId}/${store.id}`, '_blank')}
+                          onError={() => handleMediaError(photo.id, photo.campaign_id)}
                         />
                       ))}
                       {storePhotos.length > 6 && (
