@@ -167,6 +167,7 @@ function SortableClientCard({
 
 // ─── Dashboard ────────────────────────────────────────────
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
