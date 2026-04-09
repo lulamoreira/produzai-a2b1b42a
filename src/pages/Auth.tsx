@@ -17,7 +17,11 @@ const slides = [
 
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const hasInvite = (() => {
+    const params = new URLSearchParams(window.location.search);
+    return !!params.get("invite");
+  })();
+  const [isLogin, setIsLogin] = useState(!hasInvite);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -33,7 +37,6 @@ const Auth = () => {
     const inviteToken = params.get("invite");
     if (inviteToken) {
       localStorage.setItem("invite_token", inviteToken);
-      setIsLogin(false); // Switch to signup mode
     }
   }, []);
 
