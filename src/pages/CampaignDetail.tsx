@@ -1254,9 +1254,9 @@ const CampaignDetail = () => {
                         <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 truncate">
                           <MapPin className="w-3 h-3 flex-shrink-0" />
                           <span className="truncate">
-                            {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ") || "Sem localização"}
+                            {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ") || t("stores.noLocation")}
                             {selectedStore.store_model && ` · ${selectedStore.store_model}`}
-                            {" · "}{assignedPieces.length} peça(s) · {totalQty} un.
+                            {" · "}{assignedPieces.length} {t("pieces.pieceCount")} · {totalQty} un.
                           </span>
                         </p>
                       </div>
@@ -1268,7 +1268,7 @@ const CampaignDetail = () => {
                           className="text-xs gap-1 gradient-accent text-white border-0"
                           onClick={() => setAddPieceToStoreOpen(true)}
                         >
-                          <Plus className="w-3.5 h-3.5" /> Incluir Peça
+                          <Plus className="w-3.5 h-3.5" /> {t("pieces.includePiece")}
                         </Button>
                       )}
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedStoreId(null)}>
@@ -1282,10 +1282,10 @@ const CampaignDetail = () => {
                     {assignedPieces.length === 0 ? (
                       <div className="text-center py-10">
                         <Package className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">Nenhuma peça atribuída a esta loja.</p>
+                        <p className="text-sm text-muted-foreground">{t("pieces.noPieceAssigned")}</p>
                         {canEditCampaignStores && (
                           <Button size="sm" variant="outline" className="mt-3 text-xs gap-1" onClick={() => setAddPieceToStoreOpen(true)}>
-                            <Plus className="w-3.5 h-3.5" /> Incluir primeira peça
+                            <Plus className="w-3.5 h-3.5" /> {t("pieces.includeFirst")}
                           </Button>
                         )}
                       </div>
@@ -1374,11 +1374,11 @@ const CampaignDetail = () => {
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                       <AlertDialogHeader>
-                                        <AlertDialogTitle>Remover peça da loja?</AlertDialogTitle>
-                                        <AlertDialogDescription>A quantidade será zerada para "{p.name}" nesta loja.</AlertDialogDescription>
+                                        <AlertDialogTitle>{t("pieces.removePieceStore")}</AlertDialogTitle>
+                                        <AlertDialogDescription>{t("pieces.removePieceStoreDesc", { name: p.name })}</AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                                         <AlertDialogAction
                                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                           onClick={() => {
@@ -1389,7 +1389,7 @@ const CampaignDetail = () => {
                                             }
                                           }}
                                         >
-                                          Remover
+                                          {t("common.remove")}
                                         </AlertDialogAction>
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
@@ -1407,11 +1407,11 @@ const CampaignDetail = () => {
                   <Dialog open={addPieceToStoreOpen} onOpenChange={setAddPieceToStoreOpen}>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Incluir Peça em {selectedStore.name}</DialogTitle>
-                        <DialogDescription>Selecione uma peça e defina a quantidade.</DialogDescription>
+                        <DialogTitle>{t("pieces.addPieceToStore", { store: selectedStore.name })}</DialogTitle>
+                        <DialogDescription>{t("pieces.addPieceToStoreDesc")}</DialogDescription>
                       </DialogHeader>
                       {unassignedPieces.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">Todas as peças já foram incluídas nesta loja.</p>
+                        <p className="text-sm text-muted-foreground text-center py-4">{t("pieces.allPiecesIncluded")}</p>
                       ) : (
                         <div className="space-y-2 max-h-[400px] overflow-y-auto">
                           {unassignedPieces.map((p) => (
@@ -1432,11 +1432,11 @@ const CampaignDetail = () => {
                                     updateStorePiece.mutate({
                                       campaignId, storeId: selectedStoreId, pieceId: p.id, quantity: 1,
                                     });
-                                    toast.success(`"${p.name}" adicionada com 1 un.`);
+                                    toast.success(t("pieces.addedWithQty", { name: p.name }));
                                   }
                                 }}
                               >
-                                <Plus className="w-3.5 h-3.5" /> Incluir
+                                <Plus className="w-3.5 h-3.5" /> {t("pieces.include")}
                               </Button>
                             </div>
                           ))}
@@ -1452,13 +1452,13 @@ const CampaignDetail = () => {
             <AlertDialog open={!!deactivateStoreId} onOpenChange={(open) => { if (!open) setDeactivateStoreId(null); }}>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Desativar loja?</AlertDialogTitle>
+                  <AlertDialogTitle>{t("stores.deactivateStore")}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Esta loja possui peças e quantidades atribuídas nesta campanha. Ao desativá-la, todas as peças e quantidades serão removidas permanentemente. Deseja continuar?
+                    {t("stores.deactivateStoreDesc")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                   <AlertDialogAction
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     onClick={async () => {
@@ -1471,7 +1471,7 @@ const CampaignDetail = () => {
                       }
                       upsertStoreStatus.mutate({ campaignId, storeId: deactivateStoreId, enabled: false });
                       setDeactivateStoreId(null);
-                      toast.success("Loja desativada e peças removidas!");
+                      toast.success(t("stores.storeDeactivated"));
                     }}
                   >
                     SIM
