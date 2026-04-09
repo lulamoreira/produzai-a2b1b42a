@@ -47,6 +47,7 @@ function SortableClientCard({
   onNavigate,
   onDelete,
   onColorChange,
+  t,
 }: {
   client: Client;
   campaignCount: number;
@@ -54,6 +55,7 @@ function SortableClientCard({
   onNavigate: () => void;
   onDelete: () => void;
   onColorChange: (color: string) => void;
+  t: (key: string) => string;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: client.id });
   const style = {
@@ -90,7 +92,7 @@ function SortableClientCard({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-52 p-3" onClick={(e) => e.stopPropagation()}>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Cor do cliente</p>
+              <p className="text-xs font-medium text-muted-foreground mb-2">{t("clientDashboard.clientColor")}</p>
               <div className="grid grid-cols-6 gap-1.5">
                 {CLIENT_COLORS.map((c) => (
                   <button
@@ -124,15 +126,15 @@ function SortableClientCard({
             </AlertDialogTrigger>
             <AlertDialogContent onClick={(e) => e.stopPropagation()}>
               <AlertDialogHeader>
-                <AlertDialogTitle>Tem certeza que deseja excluir este cliente?</AlertDialogTitle>
+                <AlertDialogTitle>{t("clientDashboard.deleteClientTitle")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Todos os dados associados a este cliente serão apagados permanentemente, incluindo campanhas, lojas, peças e quantidades. Esta ação não pode ser desfeita.
+                  {t("clientDashboard.deleteClientDesc")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                 <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  SIM
+                  {t("common.yes").toUpperCase()}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -148,14 +150,14 @@ function SortableClientCard({
       </div>
       <h3 className="font-bold text-foreground text-base mb-0.5 group-hover:text-primary transition-colors">{client.name}</h3>
       <p className="text-[11px] text-muted-foreground">
-        Criado em {new Date(client.created_at).toLocaleDateString("pt-BR")}
+        {t("clientDashboard.createdAt")} {new Date(client.created_at).toLocaleDateString()}
       </p>
       <div className="flex items-center justify-between w-full mt-3">
         <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-          <Package className="w-3.5 h-3.5" /> {campaignCount} campanha(s)
+          <Package className="w-3.5 h-3.5" /> {campaignCount} {t("clientDashboard.campaigns")}
         </span>
         <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-          <span>Acessar</span>
+          <span>{t("clientDashboard.access")}</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
         </div>
       </div>
