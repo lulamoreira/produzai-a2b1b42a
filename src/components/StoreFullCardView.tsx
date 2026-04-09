@@ -29,7 +29,6 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
   const { data: roles = [] } = useStoreContactRoles(clientId);
   const [search, setSearch] = useState("");
   const cc = getCountryConfig(countryCode);
-  const [search, setSearch] = useState("");
 
   const getRoleName = (roleId: string | null) => {
     if (!roleId) return null;
