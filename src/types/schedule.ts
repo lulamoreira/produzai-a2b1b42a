@@ -42,4 +42,5 @@ export type Schedule = {
   completed_at: string | null;
   completed_by: string | null;
   photo_checkin: boolean;
+  photo_checkin_at: string | null;
 };
