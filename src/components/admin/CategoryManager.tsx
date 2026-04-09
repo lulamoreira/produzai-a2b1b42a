@@ -52,6 +52,7 @@ const defaultForm = (): Omit<PermissionCategory, "id" | "created_at"> => ({
   can_edit_reporter_data: false,
   can_manage_team_codes: false,
   can_lock_cards: false,
+  can_view_photo_checkin: false,
 });
 
 export default function CategoryManager() {
@@ -89,6 +90,7 @@ export default function CategoryManager() {
     if (cat.can_edit_reporter_data) count++;
     if (cat.can_manage_team_codes) count++;
     if (cat.can_lock_cards) count++;
+    if (cat.can_view_photo_checkin) count++;
     return count;
   };
 
@@ -172,6 +174,12 @@ export default function CategoryManager() {
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-700 border border-purple-500/20">Bloquear</span>
                   </div>
                 )}
+                {cat.can_view_photo_checkin && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs w-28 truncate text-muted-foreground">✅ Check-in</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-700 border border-teal-500/20">Ver</span>
+                  </div>
+                )}
               </div>
 
               <p className="text-[10px] text-muted-foreground mt-3">{countPerms(cat)} permissão(ões) ativas</p>
@@ -248,6 +256,14 @@ export default function CategoryManager() {
                 onCheckedChange={checked => setForm(f => ({ ...f, can_lock_cards: !!checked }))}
               />
               <label className="text-sm font-medium">🔒 Bloquear/Desbloquear Cards (Ocorrências, Agendamento, Instalações)</label>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={!!form.can_view_photo_checkin}
+                onCheckedChange={checked => setForm(f => ({ ...f, can_view_photo_checkin: !!checked }))}
+              />
+              <label className="text-sm font-medium">✅ Ver Check-in de Fotos para Ocorrências</label>
             </div>
 
             <Button onClick={handleSave} className="w-full" disabled={addCategory.isPending || updateCategory.isPending}>
