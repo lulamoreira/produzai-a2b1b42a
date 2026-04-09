@@ -257,6 +257,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         case "withPhotos": return (photosByStore[s.id] || []).length > 0;
         case "withReschedule": return !!sch?.reschedule_enabled;
         case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
+        case "noCheckin": return !sch?.photo_checkin;
         default: return true;
       }
     });
@@ -346,7 +347,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       const occ = storeOccurrenceStatus[s.id];
       return occ?.hasOccurrence && !occ.allResolved;
     }).length;
-    return { total, completed, pending, withTeam, withPhotos, withReschedule, withOccurrence };
+    const noCheckin = filteredStores.filter(s => !scheduleMap[s.id]?.photo_checkin).length;
+    return { total, completed, pending, withTeam, withPhotos, withReschedule, withOccurrence, noCheckin };
   }, [filteredStores, scheduleMap, photosByStore, storeOccurrenceStatus]);
 
   return (
