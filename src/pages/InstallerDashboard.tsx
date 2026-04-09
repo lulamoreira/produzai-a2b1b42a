@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,12 +12,6 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 
-const CATEGORY_OPTIONS = [
-  { value: "before", label: "Antes", icon: "🔵" },
-  { value: "during", label: "Durante", icon: "🟡" },
-  { value: "after", label: "Depois", icon: "🟢" },
-];
-
 interface InstallerData {
   team: { id: string; name: string };
   campaign: any;
@@ -28,6 +23,7 @@ interface InstallerData {
 }
 
 export default function InstallerDashboard() {
+  const { t } = useTranslation();
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<InstallerData | null>(null);
@@ -36,9 +32,15 @@ export default function InstallerDashboard() {
   const [localPhotos, setLocalPhotos] = useState<any[]>([]);
   const [completedStores, setCompletedStores] = useState<Map<string, string>>(new Map());
 
+  const CATEGORY_OPTIONS = [
+    { value: "before", label: t("installations.before"), icon: "🔵" },
+    { value: "during", label: t("installations.during"), icon: "🟡" },
+    { value: "after", label: t("installations.after"), icon: "🟢" },
+  ];
+
   const handleLogin = async () => {
     if (code.length !== 10) {
-      setError("O código deve ter 10 caracteres.");
+      setError(t("installer.codeMustBe10"));
       return;
     }
     setLoading(true);
@@ -57,11 +59,10 @@ export default function InstallerDashboard() {
 
       const result = await res.json();
       if (!res.ok) {
-        setError(result.error || "Código inválido.");
+        setError(result.error || t("common.invalidCode"));
       } else {
         setData(result);
         setLocalPhotos(result.photos || []);
-        // Initialize completed stores from existing completed_at
         const initialCompleted = new Map<string, string>();
         (result.schedules || []).forEach((s: any) => {
           if (s.completed_at && s.client_stores?.id) {
@@ -71,7 +72,7 @@ export default function InstallerDashboard() {
         setCompletedStores(initialCompleted);
       }
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError(t("common.connectionError"));
     } finally {
       setLoading(false);
     }
@@ -98,14 +99,14 @@ export default function InstallerDashboard() {
         );
 
         const result = await res.json();
-        if (!res.ok) throw new Error(result.error || "Erro ao enviar foto");
+        if (!res.ok) throw new Error(result.error || t("installer.uploadError"));
         if (result.photo) setLocalPhotos((prev) => [...prev, result.photo]);
       } catch (err: any) {
         console.error(err);
-        toast.error(err.message || "Erro ao enviar foto");
+        toast.error(err.message || t("installer.uploadError"));
       }
     }
-    toast.success(`${files.length} foto(s) enviada(s)!`);
+    toast.success(t("installer.photosSent", { count: files.length }));
   };
 
   const toggleComplete = async (storeId: string, scheduleId: string) => {
@@ -132,9 +133,9 @@ export default function InstallerDashboard() {
         }
         return next;
       });
-      toast.success(isCurrentlyCompleted ? "Marcação removida" : "Instalação marcada como concluída!");
+      toast.success(isCurrentlyCompleted ? t("common.markRemoved") : t("common.installationCompleted"));
     } catch (err: any) {
-      toast.error(err.message || "Erro ao atualizar conclusão");
+      toast.error(err.message || t("installer.uploadError"));
     }
   };
 
@@ -153,9 +154,9 @@ export default function InstallerDashboard() {
             <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
               <Wrench className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-xl font-bold text-foreground">Acesso da Equipe</h1>
+            <h1 className="text-xl font-bold text-foreground">{t("installer.teamAccess")}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Digite o código de 10 dígitos fornecido pelo administrador
+              {t("installer.enterCode")}
             </p>
           </div>
 
@@ -174,7 +175,7 @@ export default function InstallerDashboard() {
               data-form-type="other"
               data-lpignore="true"
             />
-            <p className="text-xs text-muted-foreground text-center">{code.length}/10 caracteres</p>
+            <p className="text-xs text-muted-foreground text-center">{t("installer.codeLength", { count: code.length })}</p>
 
             {error && (
               <p className="text-xs text-destructive text-center bg-destructive/10 rounded-lg p-2">{error}</p>
@@ -185,12 +186,12 @@ export default function InstallerDashboard() {
               onClick={handleLogin}
               disabled={loading || code.length !== 10}
             >
-              {loading ? "Validando..." : "Entrar"}
+              {loading ? t("installer.validating") : t("auth.login")}
             </Button>
 
             <div className="text-center">
               <a href="/auth" className="text-xs text-muted-foreground hover:text-foreground">
-                ← Voltar ao login principal
+                ← {t("installer.backToMainLogin")}
               </a>
             </div>
           </div>
@@ -206,7 +207,6 @@ export default function InstallerDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-30 bg-sidebar text-sidebar-foreground border-b border-sidebar-border px-4 py-3">
         <div className="flex items-center justify-between max-w-3xl mx-auto">
           <div className="min-w-0 flex-1">
@@ -221,20 +221,19 @@ export default function InstallerDashboard() {
             className="text-sidebar-foreground/60 hover:text-sidebar-foreground text-xs gap-1"
             onClick={() => { setData(null); setCode(""); setLocalPhotos([]); setCompletedStores(new Map()); }}
           >
-            <LogOut className="w-3.5 h-3.5" /> Sair
+            <LogOut className="w-3.5 h-3.5" /> {t("auth.logout")}
           </Button>
         </div>
       </header>
 
-      {/* Content */}
       <main className="max-w-3xl mx-auto p-4 space-y-4">
         <div className="flex items-center gap-2">
           <CalendarIcon className="w-4 h-4 text-primary" />
           <span className="text-sm font-semibold text-foreground">
-            Instalações de hoje — {format(new Date(), "dd/MM/yyyy", { locale: ptBR })}
+            {t("installer.todayInstallations")} — {format(new Date(), "dd/MM/yyyy", { locale: ptBR })}
           </span>
           <span className="text-xs text-muted-foreground ml-auto">
-            {data.schedules.length} loja(s)
+            {t("installer.storeCount", { count: data.schedules.length })}
           </span>
         </div>
 
@@ -245,13 +244,12 @@ export default function InstallerDashboard() {
           const isCompleted = completedStores.has(store.id);
           const catForStore = uploadCategory[store.id] || "before";
           const address = [store.street, store.number, store.complement, store.neighborhood, store.city, store.state]
-            .filter(Boolean).join(", ") || "Endereço não informado";
+            .filter(Boolean).join(", ") || t("common.addressNotInformed");
 
           const selectedDate = schedule.scheduled_date
             ? new Date(schedule.scheduled_date + "T12:00:00")
             : undefined;
 
-          // Get pieces for this store
           const storePiecesList = (data.storePieces || []).filter((sp: any) => sp.store_id === store.id);
           const piecesForStore = storePiecesList.map((sp: any) => {
             const piece = data.pieces.find((p: any) => p.id === sp.piece_id);
@@ -263,7 +261,6 @@ export default function InstallerDashboard() {
               key={schedule.id}
               className={`aqua-card overflow-hidden transition-all ${isCompleted ? "ring-2 ring-green-500/50 opacity-80" : ""}`}
             >
-              {/* Store header */}
               <div className="bg-primary/10 px-4 py-3 flex items-center gap-3">
                 <Store className="w-5 h-5 text-primary flex-shrink-0" />
                 <div className="min-w-0 flex-1">
@@ -276,13 +273,11 @@ export default function InstallerDashboard() {
               </div>
 
               <div className="p-4 space-y-3">
-                {/* Address */}
                 <div className="flex items-start gap-2 text-xs text-muted-foreground">
                   <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                   <span>{address}</span>
                 </div>
 
-                {/* Contact */}
                 {(store.manager_name || store.phone) && (
                   <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                     {store.manager_name && (
@@ -298,7 +293,6 @@ export default function InstallerDashboard() {
                   </div>
                 )}
 
-                {/* Schedule */}
                 <div className="flex flex-wrap gap-3 text-xs">
                   {selectedDate && (
                     <span className="flex items-center gap-1 text-foreground">
@@ -320,10 +314,9 @@ export default function InstallerDashboard() {
                   )}
                 </div>
 
-                {/* Pieces */}
                 {piecesForStore.length > 0 && (
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold text-foreground">Peças:</p>
+                    <p className="text-xs font-semibold text-foreground">{t("common.pieces")}:</p>
                     <div className="grid grid-cols-1 gap-1">
                       {piecesForStore.map((p: any) => (
                         <div key={p.id} className="text-xs bg-muted/50 rounded-md px-2 py-1 flex justify-between">
@@ -337,7 +330,6 @@ export default function InstallerDashboard() {
 
                 <hr className="border-border" />
 
-                {/* Photos */}
                 {storePhotos.length > 0 && (
                   <div className="flex gap-1.5 flex-wrap">
                     {storePhotos.map((photo: any) => (
@@ -351,7 +343,6 @@ export default function InstallerDashboard() {
                   </div>
                 )}
 
-                {/* Upload */}
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <select
                     value={catForStore}
@@ -371,7 +362,7 @@ export default function InstallerDashboard() {
                       onChange={(e) => { handleUpload(store.id, e.target.files, "camera"); e.target.value = ""; }}
                     />
                     <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none" asChild>
-                      <span><Upload className="w-3 h-3" /> Upload</span>
+                      <span><Upload className="w-3 h-3" /> {t("common.upload")}</span>
                     </Button>
                   </label>
                   <label className="cursor-pointer">
@@ -383,13 +374,12 @@ export default function InstallerDashboard() {
                       onChange={(e) => { handleUpload(store.id, e.target.files, "upload"); e.target.value = ""; }}
                     />
                     <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none" asChild>
-                      <span><Camera className="w-3 h-3" /> Foto</span>
+                      <span><Camera className="w-3 h-3" /> {t("common.photo")}</span>
                     </Button>
                   </label>
                 </div>
               </div>
 
-              {/* Footer - Mark complete */}
               <div className="border-t border-border bg-muted/30 px-4 py-3">
                 <Button
                   variant={isCompleted ? "default" : "outline"}
@@ -398,10 +388,10 @@ export default function InstallerDashboard() {
                   onClick={() => toggleComplete(store.id, schedule.id)}
                 >
                   <CheckCircle className="w-4 h-4" />
-                  {isCompleted ? "Instalação Concluída ✓" : "Marcar como Concluída"}
+                  {isCompleted ? t("installer.installationCompletedCheck") : t("installations.markComplete")}
                   {storePhotos.length > 0 && (
                     <span className="ml-auto bg-primary/15 text-primary font-bold px-2 py-0.5 rounded-full text-[10px]">
-                      {storePhotos.length} foto(s)
+                      {storePhotos.length} {t("common.photo").toLowerCase()}(s)
                     </span>
                   )}
                 </Button>
@@ -413,7 +403,7 @@ export default function InstallerDashboard() {
         {data.schedules.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
             <CalendarIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="text-sm font-medium">Nenhuma instalação agendada para este período</p>
+            <p className="text-sm font-medium">{t("installer.noInstallations")}</p>
           </div>
         )}
       </main>
