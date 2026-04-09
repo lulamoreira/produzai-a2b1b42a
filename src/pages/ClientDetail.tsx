@@ -862,9 +862,9 @@ const ClientDetail = () => {
             {/* Stats + Actions */}
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-foreground">{stores.length} lojas</span>
+                <span className="text-sm font-semibold text-foreground">{stores.length} {t("clientDashboard.storeCount").toLowerCase()}</span>
                 <div className="flex-1 min-w-[80px] max-w-xs">
-                  <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
+                  <Input placeholder={t("clientDashboard.searchStore")} value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
                 </div>
                 <Select value={storeStateFilter} onValueChange={setStoreStateFilter}>
                   <SelectTrigger className="h-8 text-xs w-[80px] sm:w-[100px]">
