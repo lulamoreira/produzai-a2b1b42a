@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { CampaignKit, CampaignKitPiece, CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 import { useCampaignKitPieces, useCampaignKits, useCampaignPieceLocations } from "@/hooks/useMultiClientData";
+import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
 import OccurrenceCard from "./OccurrenceCard";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: kits = [] } = useCampaignKits(campaignId);
   const { data: kitPieces = [] } = useCampaignKitPieces(campaignId);
+  const { scheduleMap } = useCampaignSchedules(campaignId);
   const { data: motives = [] } = useOccurrenceMotives();
   const { data: emails = [] } = useCampaignEmails(campaignId);
   const { data: statuses = [] } = useOccurrenceStatuses();
@@ -712,6 +714,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                 motiveColor={motiveColor}
                 PRIORITY_OPTIONS={PRIORITY_OPTIONS}
                 canLockCards={canLockCards}
+                schedule={occ.store_id ? scheduleMap[occ.store_id] : undefined}
               />
             );
           })}
