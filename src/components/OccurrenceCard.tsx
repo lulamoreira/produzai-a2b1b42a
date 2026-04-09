@@ -139,7 +139,15 @@ export default function OccurrenceCard({
     enabled: !!user,
   });
 
-  const setDraftField = useCallback((field: string, value: unknown) => {
+  // Photos for this store
+  const store = stores.find((s) => s.id === occ.store_id);
+  const { data: storePhotos = [] } = useInstallationPhotos(campaignId);
+  const filteredStorePhotos = useMemo(
+    () => storePhotos.filter((p) => p.store_id === occ.store_id),
+    [storePhotos, occ.store_id]
+  );
+
+
     setDraft((prev) => {
       // If value is same as server, remove from draft
       if ((occ as any)[field] === value) {
