@@ -52,6 +52,8 @@ export default function AppSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useTranslation();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const { currentLanguage, changeLanguage } = useLanguage();
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
 
