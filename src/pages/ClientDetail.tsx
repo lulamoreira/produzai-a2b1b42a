@@ -149,6 +149,7 @@ function SortableCampaignCard({
   campaign: Campaign; canDelete: boolean; canEdit: boolean;
   onNavigate: () => void; onDelete: () => void; onColorChange: (c: string) => void;
 }) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: campaign.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -184,7 +185,7 @@ function SortableCampaignCard({
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-white text-sm truncate">{campaign.name}</h3>
             <p className="text-[11px] text-white/70 mt-0.5">
-              {new Date(campaign.created_at).toLocaleDateString("pt-BR")}
+              {new Date(campaign.created_at).toLocaleDateString()}
             </p>
           </div>
           <div className="flex items-center gap-0.5">
@@ -196,7 +197,7 @@ function SortableCampaignCard({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-52 p-3" onClick={(e) => e.stopPropagation()}>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Cor da campanha</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">{t("clientDashboard.campaignColorLabel")}</p>
                   <div className="grid grid-cols-6 gap-1.5">
                     {CAMPAIGN_COLORS.map((c) => (
                       <button
@@ -219,12 +220,12 @@ function SortableCampaignCard({
                 </AlertDialogTrigger>
                 <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Tem certeza que deseja excluir esta campanha?</AlertDialogTitle>
-                    <AlertDialogDescription>Todos os dados associados a esta campanha serão apagados permanentemente. Esta ação não pode ser desfeita.</AlertDialogDescription>
+                    <AlertDialogTitle>{t("clientDashboard.deleteCampaignTitle")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("clientDashboard.deleteCampaignDesc")}</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">SIM</AlertDialogAction>
+                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.yes").toUpperCase()}</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -232,7 +233,7 @@ function SortableCampaignCard({
           </div>
         </div>
         <div className="flex items-center gap-1 mt-3 text-xs text-white/70">
-          <span>Acessar</span>
+          <span>{t("clientDashboard.access")}</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
         </div>
       </div>
