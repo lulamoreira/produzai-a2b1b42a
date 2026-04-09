@@ -252,6 +252,7 @@ const ClientDetail = () => {
   const { hasPermission: canEditClients } = useClientPermission(clientId, "can_edit_clients");
   const { data: client, isLoading: loadingClient } = useClient(clientId);
   useLanguage((client as any)?.language);
+  const { t } = useTranslation();
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
 
   const { data: agencyInfo } = useQuery({
