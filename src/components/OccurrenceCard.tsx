@@ -668,6 +668,18 @@ export default function OccurrenceCard({
         storeName={`Ocorrência #${occ.id.slice(0, 8)}`}
         module="occurrences"
       />
+
+      {/* Photo Checkin Dialog */}
+      {showPhotos && store && (
+        <Suspense fallback={null}>
+          <PhotoCheckinDialog
+            open={showPhotos}
+            onOpenChange={setShowPhotos}
+            store={store as any}
+            photos={filteredStorePhotos}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
