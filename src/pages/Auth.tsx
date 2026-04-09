@@ -17,7 +17,11 @@ const slides = [
 
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const hasInvite = (() => {
+    const params = new URLSearchParams(window.location.search);
+    return !!params.get("invite");
+  })();
+  const [isLogin, setIsLogin] = useState(!hasInvite);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -33,7 +37,6 @@ const Auth = () => {
     const inviteToken = params.get("invite");
     if (inviteToken) {
       localStorage.setItem("invite_token", inviteToken);
-      setIsLogin(false); // Switch to signup mode
     }
   }, []);
 
@@ -269,17 +272,18 @@ const Auth = () => {
                   Esqueci minha senha
                 </button>
               }
-              <div>
-                <button
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setForgotPassword(false);
-                  }}
-                  className="text-sm text-muted-foreground hover:text-foreground">
-
-                  {isLogin ? "Não tem conta? Cadastre-se" : "Já tem conta? Entrar"}
-                </button>
-              </div>
+              {hasInvite && (
+                <div>
+                  <button
+                    onClick={() => {
+                      setIsLogin(!isLogin);
+                      setForgotPassword(false);
+                    }}
+                    className="text-sm text-muted-foreground hover:text-foreground">
+                    {isLogin ? "Não tem conta? Cadastre-se" : "Já tem conta? Entrar"}
+                  </button>
+                </div>
+              )}
               {forgotPassword &&
               <button
                 onClick={() => setForgotPassword(false)}
