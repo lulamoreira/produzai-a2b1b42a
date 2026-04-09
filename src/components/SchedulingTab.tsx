@@ -731,7 +731,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         </div>
       </div>
 
-      {/* Summary */}
+      {/* Summary Bar - Clickable Filters */}
       {(() => {
         const total = filteredStores.length;
         const scheduled = filteredStores.filter(s => {
@@ -746,15 +746,48 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         }).length;
         const locked = filteredStores.filter(s => scheduleMap[s.id]?.locked).length;
         const withTeam = filteredStores.filter(s => scheduleMap[s.id]?.team_id).length;
+        const withOccurrence = filteredStores.filter(s => {
+          const occ = storeOccurrenceStatus[s.id];
+          return occ?.hasOccurrence && !occ.allResolved;
+        }).length;
+        const items = [
+          { key: "total" as const, value: total, label: "Total", color: "text-foreground" },
+          { key: "scheduled" as const, value: scheduled, label: "📅 Agendadas", color: "text-foreground" },
+          { key: "noDate" as const, value: noDate, label: "⏳ Sem data", color: "text-amber-600" },
+          { key: "approved" as const, value: approved, label: "✅ Aprovadas", color: "text-foreground" },
+          { key: "withTeam" as const, value: withTeam, label: "🔧 Com equipe", color: "text-foreground" },
+          { key: "locked" as const, value: locked, label: "🔒 Bloqueadas", color: "text-foreground" },
+          { key: "withOccurrence" as const, value: withOccurrence, label: "⚠️ Ocorrências", color: "text-destructive" },
+        ];
         return (
-          <div className="flex flex-wrap gap-3 text-xs text-muted-foreground bg-card border border-border rounded-lg px-3 py-2">
-            <span><strong className="text-foreground">{total}</strong> loja(s)</span>
-            <span>📅 <strong className="text-foreground">{scheduled}</strong> agendadas</span>
-            <span>⏳ <strong className="text-foreground">{noDate}</strong> sem data</span>
-            <span>✅ <strong className="text-foreground">{approved}</strong> aprovadas</span>
-            <span>🔧 <strong className="text-foreground">{withTeam}</strong> com equipe</span>
-            <span>🔒 <strong className="text-foreground">{locked}</strong> bloqueadas</span>
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+              {items.map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => setSummaryFilter(prev => prev === m.key ? "" : m.key)}
+                  className={cn(
+                    "bg-card border rounded-lg px-3 py-2 text-center transition-all cursor-pointer hover:shadow-md",
+                    summaryFilter === m.key
+                      ? "border-primary ring-2 ring-primary/30 shadow-sm"
+                      : "border-border"
+                  )}
+                >
+                  <p className={cn("text-lg font-bold", m.color)}>{m.value}</p>
+                  <p className="text-[10px] text-muted-foreground">{m.label}</p>
+                </button>
+              ))}
+            </div>
+            {summaryFilter && summaryFilter !== "total" && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Filtrando por: <strong className="text-foreground">{
+                  { scheduled: "Agendadas", noDate: "Sem data", approved: "Aprovadas", withTeam: "Com equipe", locked: "Bloqueadas", withOccurrence: "Ocorrências" }[summaryFilter]
+                }</strong> ({displayedStores.length})</span>
+                <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
+              </div>
+            )}
+          </>
         );
       })()}
 
