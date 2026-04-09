@@ -179,7 +179,7 @@ export default function AppSidebar() {
 
     if (isInsideCampaign) {
       items.push({
-        label: t("sidebar.campaigns"),
+        label: campaignName || t("sidebar.campaigns"),
         icon: Grid3X3,
         color: "#8b5cf6",
         active: !!currentSection,
