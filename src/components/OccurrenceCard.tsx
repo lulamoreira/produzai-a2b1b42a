@@ -3,6 +3,7 @@ import { getStatusLabel as _getStatusLabel, getStatusColor as _getStatusColor } 
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
+import type { Schedule } from "@/types/schedule";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,6 +24,7 @@ import {
 import {
   Puzzle, Calendar, MapPin, User, Pencil, Flag, Trash2,
   ExternalLink, Link2, MessageCircle, Phone, Save, ClipboardList, Loader2, Lock, LockOpen,
+  CheckCircle2, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -93,6 +95,7 @@ interface OccurrenceCardProps {
   motiveColor: string;
   PRIORITY_OPTIONS: { value: string; label: string; color: string }[];
   canLockCards?: boolean;
+  schedule?: Schedule;
 }
 
 export default function OccurrenceCard({
@@ -100,7 +103,7 @@ export default function OccurrenceCard({
   canEdit: canEditProp, canDelete, canEditReporter: canEditReporterProp, motives, statuses, defaultStatus,
   photosMap, campaignName, agencyName, clientName, getReporterLabel,
   firstPieceKitLabels, whatsappLinkTemplate, whatsappContactTemplate,
-  onOpenLightbox, motiveColor, PRIORITY_OPTIONS, canLockCards,
+  onOpenLightbox, motiveColor, PRIORITY_OPTIONS, canLockCards, schedule,
 }: OccurrenceCardProps) {
   const { user } = useAuth();
   const qc = useQueryClient();
