@@ -231,7 +231,7 @@ export default function AppSidebar() {
     }
 
     return items;
-  }, [location.pathname, location.search, currentSection, isInsideAgency, isInsideClient, isInsideCampaign, agencyId, clientId, campaignBasePath, isAdminOrMaster, isAdmin, homePath, t]);
+  }, [location.pathname, location.search, currentSection, isInsideAgency, isInsideClient, isInsideCampaign, agencyId, clientId, campaignBasePath, isAdminOrMaster, isAdmin, homePath, campaignName, t]);
 
   const renderNavItem = (item: NavItem) => {
     if (item.children) {
