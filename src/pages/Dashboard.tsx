@@ -331,6 +331,7 @@ const Dashboard = () => {
                     onNavigate={() => navigate(`/agency/${agencyId}/clients/${client.id}`)}
                     onDelete={() => deleteClient.mutate(client.id)}
                     onColorChange={(color) => handleColorChange(client.id, color)}
+                    t={t}
                   />
                 ))}
               </div>
