@@ -568,7 +568,7 @@ const ClientDetail = () => {
 
   const handleSaveSettings = async () => {
     if (!clientId) return;
-    await updateClient.mutateAsync({ id: clientId, ...customLabels });
+    await updateClient.mutateAsync({ id: clientId, ...customLabels, country_code: countryCode, currency_code: currencyCode });
     setSettingsOpen(false);
   };
 
