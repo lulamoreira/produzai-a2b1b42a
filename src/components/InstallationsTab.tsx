@@ -881,7 +881,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       className="h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
                     >
                       {CATEGORY_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
                       ))}
                     </select>
                     <label className="cursor-pointer">
