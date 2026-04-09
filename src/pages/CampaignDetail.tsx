@@ -1980,24 +1980,24 @@ const CampaignDetail = () => {
           {activeSection === "pieces" && (<>
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
               <span className="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-accent/15 text-accent-foreground">
-                {visiblePieces.length + kits.length} peça(s)
+                {visiblePieces.length + kits.length} {t("pieces.pieceCount")}
               </span>
               <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
-                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Exportar
+                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("common.export")}
               </Button>
               {canEditPieces && (
                 <>
                 <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={handleReviewPieceCodes}>
-                  <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Revisar</span> Códigos
+                  <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("pieces.reviewCodes")}</span>
                 </Button>
                 <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={handleRecodificar}>
-                  <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Recodificar
+                  <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.recode")}
                 </Button>
                 </>
                )}
               {canEditPieces && (
                 <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setLocationDialogOpen(true)}>
-                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Localização na</span> loja
+                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("pieces.storeLocation")}</span>
                 </Button>
               )}
               {canEditPieces && (
@@ -2029,30 +2029,30 @@ const CampaignDetail = () => {
                   </Button>
                 </label>
                 <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setImportPiecesDialogOpen(true)}>
-                  <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Buscar de outra</span> campanha
+                  <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("pieces.fromCampaign")}</span>
                 </Button>
                 <Dialog open={pieceDialogOpen} onOpenChange={setPieceDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="text-[10px] sm:text-xs gap-1 gradient-accent text-white border-0">
-                      <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Nova Peça
+                      <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newPiece")}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Nova Peça</DialogTitle>
-                      <DialogDescription>Preencha os dados da peça para adicioná-la à campanha.</DialogDescription>
+                       <DialogTitle>{t("pieces.newPiece")}</DialogTitle>
+                       <DialogDescription>{t("pieces.addPieceDesc")}</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleAddPiece} className="space-y-3">
                       {renderPieceFormFields(pieceForm, setPieceForm)}
-                      <Button type="submit" className="w-full gradient-accent text-white border-0" disabled={addPiece.isPending}>Adicionar</Button>
+                      <Button type="submit" className="w-full gradient-accent text-white border-0" disabled={addPiece.isPending}>{t("common.add")}</Button>
                     </form>
                   </DialogContent>
                 </Dialog>
                 <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
-                  <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Novo Kit
+                  <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newKit")}
                 </Button>
                 <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setBulkDeleteOpen(true)}>
-                  <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Excluir em lote
+                  <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.bulkDelete")}
                 </Button>
                 </>
               )}
@@ -2062,7 +2062,7 @@ const CampaignDetail = () => {
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar peça por nome, código ou categoria..."
+                placeholder={t("pieces.searchPiece")}
                 value={pieceSearch}
                 onChange={(e) => setPieceSearch(e.target.value)}
                 className="pl-9 h-9 text-sm"
@@ -2097,7 +2097,7 @@ const CampaignDetail = () => {
                   <div className="text-center py-16">
                     <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                     <p className="text-muted-foreground text-sm">
-                      {search ? "Nenhuma peça encontrada para a busca." : "Nenhuma peça cadastrada nesta campanha."}
+                      {search ? t("pieces.noPieceFound") : t("pieces.noPieceRegistered")}
                     </p>
                   </div>
                 );
@@ -2183,12 +2183,12 @@ const CampaignDetail = () => {
       <Dialog open={editPieceDialogOpen} onOpenChange={setEditPieceDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Peça</DialogTitle>
-            <DialogDescription>Altere os dados da peça.</DialogDescription>
+             <DialogTitle>{t("pieces.editPiece")}</DialogTitle>
+             <DialogDescription>{t("pieces.editPieceDesc")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditPiece} className="space-y-3">
             {renderPieceFormFields(editPieceForm, setEditPieceForm as any)}
-            <Button type="submit" className="w-full" disabled={updatePiece.isPending}>Salvar</Button>
+            <Button type="submit" className="w-full" disabled={updatePiece.isPending}>{t("common.save")}</Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -2197,13 +2197,13 @@ const CampaignDetail = () => {
       <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Gerenciar Localizações</DialogTitle>
-            <DialogDescription>Cadastre localizações de peças para esta campanha.</DialogDescription>
+             <DialogTitle>{t("locations.manageLocations")}</DialogTitle>
+             <DialogDescription>{t("locations.manageLocationsDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex gap-2">
               <Input
-                placeholder="Nome da localização"
+                placeholder={t("locations.locationName")}
                 value={newLocationName}
                 onChange={(e) => setNewLocationName(e.target.value)}
                 onKeyDown={(e) => {
@@ -2227,7 +2227,7 @@ const CampaignDetail = () => {
               </Button>
             </div>
             {pieceLocations.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma localização cadastrada.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t("locations.noLocationRegistered")}</p>
             ) : (
               <div className="space-y-1 max-h-[300px] overflow-y-auto">
                 {[...pieceLocations].sort((a, b) => a.name.localeCompare(b.name)).map((loc) => (
