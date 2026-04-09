@@ -911,6 +911,15 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           module="installations"
         />
       )}
+
+      {checkinStore && (
+        <PhotoCheckinDialog
+          open={!!checkinStore}
+          onOpenChange={(open) => { if (!open) setCheckinStore(null); }}
+          store={checkinStore}
+          photos={photos.filter((p) => p.store_id === checkinStore.id)}
+        />
+      )}
     </div>
   );
 };
