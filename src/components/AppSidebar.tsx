@@ -48,6 +48,7 @@ export default function AppSidebar() {
   const displayName = useDisplayName();
   const { collapsed, setCollapsed } = useSidebarState();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useTranslation();
   const [profileOpen, setProfileOpen] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
@@ -137,7 +138,7 @@ export default function AppSidebar() {
   const navItems: NavItem[] = useMemo(() => {
     const items: NavItem[] = [
       {
-        label: "Início",
+        label: t("sidebar.home"),
         icon: Home,
         href: homePath,
         active: location.pathname === homePath || location.pathname === "/" || location.pathname === "/agency-select",
@@ -147,7 +148,7 @@ export default function AppSidebar() {
 
     if (isInsideAgency) {
       items.push({
-        label: "Clientes",
+        label: t("sidebar.clients"),
         icon: Briefcase,
         href: `/agency/${agencyId}`,
         active: location.pathname === `/agency/${agencyId}`,
@@ -157,14 +158,14 @@ export default function AppSidebar() {
 
     if (isInsideClient) {
       items.push({
-        label: "Lojas",
+        label: t("modules.stores"),
         icon: Store,
         href: `/agency/${agencyId}/clients/${clientId}?tab=stores`,
         active: location.search.includes("tab=stores"),
         color: "#6366f1",
       });
       items.push({
-        label: "Campanhas",
+        label: t("sidebar.campaigns"),
         icon: Megaphone,
         href: `/agency/${agencyId}/clients/${clientId}`,
         active: location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores"),
@@ -174,12 +175,12 @@ export default function AppSidebar() {
 
     if (isInsideCampaign) {
       items.push({
-        label: "Módulos",
+        label: t("sidebar.campaigns"),
         icon: Grid3X3,
         color: "#8b5cf6",
         active: !!currentSection,
-        children: CAMPAIGN_MODULES.map((mod) => ({
-          label: mod.label,
+        children: CAMPAIGN_MODULE_KEYS.map((mod) => ({
+          label: t(mod.tKey),
           icon: mod.icon,
           color: mod.color,
           href: `${campaignBasePath}?section=${mod.key}`,
@@ -192,20 +193,20 @@ export default function AppSidebar() {
 
     if (isAdminOrMaster) {
       items.push({
-        label: "Admin",
+        label: t("header.admin"),
         icon: Shield,
         color: "#f97316",
         active: location.pathname.startsWith("/admin") || location.pathname === "/approvals",
         children: [
           {
-            label: "Painel Admin",
+            label: t("header.admin"),
             icon: Shield,
             href: "/admin",
             active: location.pathname === "/admin" && !location.search.includes("tab=backup"),
             color: "#f97316",
           },
           {
-            label: "Aprovações",
+            label: t("sidebar.approvals"),
             icon: Users,
             href: "/approvals",
             active: location.pathname === "/approvals",
