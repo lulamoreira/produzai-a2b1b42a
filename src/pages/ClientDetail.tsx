@@ -70,6 +70,7 @@ function encodeFieldLabel(name: string, type: FieldType): string {
   return type === "text" ? name.trim() : `${name.trim()}|${type}`;
 }
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import ChatTabContent from "@/components/ChatTabContent";
 import * as XLSX from "xlsx";
 import { capitalizeName } from "@/lib/utils";
