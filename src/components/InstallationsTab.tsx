@@ -798,7 +798,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       try {
                         const { error } = await supabase
                           .from("campaign_schedules")
-                          .update({ photo_checkin: newVal } as any)
+                          .update({
+                            photo_checkin: newVal,
+                            photo_checkin_at: newVal ? new Date().toISOString() : null,
+                          } as any)
                           .eq("id", schedule.id);
                         if (error) throw error;
                         queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
@@ -815,10 +818,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       }
                     }}
                   >
-                    {schedule.photo_checkin ? (
-                      <><CheckCircle2 className="w-4 h-4" /> Check-in realizado</>
+                    {schedule.photo_checkin && schedule.photo_checkin_at ? (
+                      <><CheckCircle2 className="w-4 h-4" /> Check-in de fotos para ocorrências realizado em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
                     ) : (
-                      <><AlertCircle className="w-4 h-4" /> Realizar Check-in para Ocorrências</>
+                      <><AlertCircle className="w-4 h-4" /> Clique aqui para informar Check-in de fotos para ocorrências realizado</>
                     )}
                   </button>
                 )}
