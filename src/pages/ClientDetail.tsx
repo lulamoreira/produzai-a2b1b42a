@@ -1063,6 +1063,7 @@ const ClientDetail = () => {
                   .filter((cf) => cf.label)}
                 canEdit={canEditStores}
                 onEditStore={handleOpenEditStore}
+                countryCode={client.country_code}
               />
             ) : (
             <>
