@@ -257,7 +257,7 @@ const Dashboard = () => {
     <AppLayout
       breadcrumbs={[
         { label: agencyInfo?.name || "Agência", href: "/" },
-        { label: "Clientes" },
+        { label: t("sidebar.clients") },
       ]}
     >
       <div className="max-w-6xl mx-auto">
@@ -266,24 +266,24 @@ const Dashboard = () => {
         <div className="flex items-center gap-3 mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar cliente..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 bg-card" />
+            <Input placeholder={t("clientDashboard.searchClient")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 bg-card" />
           </div>
           {isAdmin && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1">
-                  <Plus className="w-4 h-4" /> Novo Cliente
+                  <Plus className="w-4 h-4" /> {t("clientDashboard.newClient")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Novo Cliente</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t("clientDashboard.newClient")}</DialogTitle></DialogHeader>
                 <form onSubmit={handleAdd} className="space-y-4">
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome do cliente</label>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.clientName")}</label>
                     <Input placeholder="Ex: Empresa XPTO" value={newName} onChange={(e) => setNewName(e.target.value)} required />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-2 block">Cor do cliente</label>
+                    <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.clientColor")}</label>
                     <div className="grid grid-cols-8 gap-1.5">
                       {CLIENT_COLORS.map((c) => (
                         <button
@@ -297,7 +297,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addClient.isPending}>
-                    {addClient.isPending ? "Criando..." : "Criar Cliente"}
+                    {addClient.isPending ? t("clientDashboard.creating") : t("clientDashboard.createClient")}
                   </Button>
                 </form>
               </DialogContent>
@@ -312,10 +312,10 @@ const Dashboard = () => {
               <Briefcase className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">
-              {clients.length === 0 ? "Nenhum cliente cadastrado" : "Nenhum resultado"}
+              {clients.length === 0 ? t("clientDashboard.noClients") : t("clientDashboard.noResults")}
             </h2>
             <p className="text-muted-foreground text-sm">
-              {clients.length === 0 && isAdmin ? "Crie seu primeiro cliente para começar." : "Tente uma busca diferente."}
+              {clients.length === 0 && isAdmin ? t("clientDashboard.createFirst") : t("clientDashboard.tryDifferent")}
             </p>
           </div>
         ) : (
