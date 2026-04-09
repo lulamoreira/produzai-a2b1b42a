@@ -4,6 +4,7 @@ import { Search, UserPlus, MapPin, Phone, Mail, Building2, Hash, FileText, Edit3
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { ClientStore } from "@/hooks/useMultiClientData";
+import { getCountryConfig } from "@/lib/countryConfig";
 
 function formatPhoneDisplay(phone: string): string {
   const digits = phone.replace(/\D/g, "").slice(0, 11);
@@ -20,11 +21,14 @@ interface Props {
   customFields?: { label: string; index: number }[];
   canEdit?: boolean;
   onEditStore?: (store: ClientStore) => void;
+  countryCode?: string | null;
 }
 
-const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFields = [], canEdit = false, onEditStore }: Props) => {
+const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFields = [], canEdit = false, onEditStore, countryCode }: Props) => {
   const { data: allContacts = [] } = useStoreContactsByClient(clientId);
   const { data: roles = [] } = useStoreContactRoles(clientId);
+  const [search, setSearch] = useState("");
+  const cc = getCountryConfig(countryCode);
   const [search, setSearch] = useState("");
 
   const getRoleName = (roleId: string | null) => {
@@ -65,7 +69,7 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
     const digits = phone.replace(/\D/g, "");
     const firstName = contactName.split(" ")[0];
     const text = `Olá ${firstName}, somos da Agência ${agencyName}, estamos fazendo contato em nome do cliente ${clientName}, tudo bem?`;
-    return `https://wa.me/55${digits}?text=${encodeURIComponent(text)}`;
+    return `https://wa.me/${cc.phonePrefix}${digits}?text=${encodeURIComponent(text)}`;
   };
 
   const InfoRow = ({ label, value }: { label: string; value: string | null | undefined }) => {
