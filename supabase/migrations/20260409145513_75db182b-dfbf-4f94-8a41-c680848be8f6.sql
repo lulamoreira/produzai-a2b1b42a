@@ -1,0 +1,1 @@
+ALTER TABLE public.campaign_schedules ADD COLUMN photo_checkin_at timestamptz DEFAULT null;

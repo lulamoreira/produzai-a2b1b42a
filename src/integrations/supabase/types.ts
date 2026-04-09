@@ -397,6 +397,7 @@ export type Database = {
           installation_preference: string | null
           locked: boolean
           photo_checkin: boolean
+          photo_checkin_at: string | null
           reschedule_date: string | null
           reschedule_enabled: boolean
           reschedule_os: string | null
@@ -440,6 +441,7 @@ export type Database = {
           installation_preference?: string | null
           locked?: boolean
           photo_checkin?: boolean
+          photo_checkin_at?: string | null
           reschedule_date?: string | null
           reschedule_enabled?: boolean
           reschedule_os?: string | null
@@ -483,6 +485,7 @@ export type Database = {
           installation_preference?: string | null
           locked?: boolean
           photo_checkin?: boolean
+          photo_checkin_at?: string | null
           reschedule_date?: string | null
           reschedule_enabled?: boolean
           reschedule_os?: string | null
