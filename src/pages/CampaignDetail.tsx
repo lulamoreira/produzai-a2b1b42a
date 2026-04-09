@@ -272,6 +272,7 @@ const CampaignDetail = () => {
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(false);
   const [quickEditActive, setQuickEditActive] = useState(false);
   const [matrixCustomExportOpen, setMatrixCustomExportOpen] = useState(false);
+  const [automationOpen, setAutomationOpen] = useState(false);
 
   // ─── Derived data ──────────────────────────────────────
   const qtyMap = useMemo(() => {
