@@ -643,36 +643,15 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
               </div>
 
               {/* Occurrence Status Indicator */}
-              {(() => {
+              {hasOpenOccurrence && (() => {
                 const currentPath = window.location.pathname;
                 const occUrl = `${currentPath}?section=occurrences&filterStore=${encodeURIComponent(store.name)}`;
-                const isOk = !hasOpenOccurrence;
-
                 return (
-                  <div className={cn(
-                    "mx-4 mb-1 mt-3 flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold",
-                    isOk
-                      ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
-                      : "bg-destructive/10 text-destructive border border-destructive/30"
-                  )}>
-                    {isOk ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 shrink-0" />
-                        <span>Instalação OK</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle className="w-4 h-4 shrink-0" />
-                        <a
-                          href={occUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline hover:opacity-80 cursor-pointer"
-                        >
-                          Ocorrência registrada ({occStatus!.count})
-                        </a>
-                      </>
-                    )}
+                  <div className="mx-4 mb-1 mt-3 flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold bg-destructive/10 text-destructive border border-destructive/30">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <a href={occUrl} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80 cursor-pointer">
+                      Ocorrência registrada ({occStatus!.count})
+                    </a>
                   </div>
                 );
               })()}
