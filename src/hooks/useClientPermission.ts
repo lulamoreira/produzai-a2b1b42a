@@ -14,7 +14,8 @@ type PermissionKey =
   | "can_view_installations" | "can_edit_installations" | "can_delete_installations"
   | "can_edit_reporter_data"
   | "can_manage_team_codes"
-  | "can_lock_cards";
+  | "can_lock_cards"
+  | "can_view_photo_checkin";
 
 export function useClientPermission(clientId?: string, permission?: PermissionKey) {
   const { user } = useAuth();
