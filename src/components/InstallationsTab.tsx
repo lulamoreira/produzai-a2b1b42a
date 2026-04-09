@@ -821,7 +821,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                     {schedule.photo_checkin && schedule.photo_checkin_at ? (
                       <><CheckCircle2 className="w-4 h-4" /> Check-in de fotos para ocorrências realizado em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
                     ) : (
-                      <><AlertCircle className="w-4 h-4" /> Clique aqui para informar Check-in de fotos para ocorrências realizado</>
+                      <><AlertCircle className="w-4 h-4" /> Clique aqui para informar Check-in de fotos para ocorrências</>
                     )}
                   </button>
                 )}
