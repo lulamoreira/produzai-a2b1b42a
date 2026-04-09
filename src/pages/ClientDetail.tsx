@@ -775,7 +775,7 @@ const ClientDetail = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{campaigns.length}</p>
-                  <p className="text-[11px] text-muted-foreground">Campanhas</p>
+                  <p className="text-[11px] text-muted-foreground">{t("clientDashboard.campaignCount")}</p>
                 </div>
               </div>
               <div className="card-kpi flex items-center gap-3">
@@ -784,7 +784,7 @@ const ClientDetail = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{stores.length}</p>
-                  <p className="text-[11px] text-muted-foreground">Lojas</p>
+                  <p className="text-[11px] text-muted-foreground">{t("clientDashboard.storeCount")}</p>
                 </div>
               </div>
               {canEditCampaigns && (
@@ -792,18 +792,18 @@ const ClientDetail = () => {
                   <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
                     <DialogTrigger asChild>
                       <Button size="lg" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md font-bold text-sm px-6">
-                        <Plus className="w-5 h-5" /> Incluir Nova Campanha
+                        <Plus className="w-5 h-5" /> {t("clientDashboard.addCampaign")}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
-                      <DialogHeader><DialogTitle>Nova Campanha</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
                       <form onSubmit={handleAddCampaign} className="space-y-4">
                         <div>
-                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da campanha *</label>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.campaignNameLabel")} *</label>
                           <Input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
                         </div>
                         <div>
-                          <label className="text-xs font-medium text-muted-foreground mb-2 block">Cor da campanha</label>
+                          <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.campaignColorLabel")}</label>
                           <div className="grid grid-cols-8 gap-1.5">
                             {CAMPAIGN_COLORS.map((c) => (
                               <button
@@ -816,7 +816,7 @@ const ClientDetail = () => {
                             ))}
                           </div>
                         </div>
-                        <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>Criar</Button>
+                        <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>{t("clientDashboard.create")}</Button>
                       </form>
                     </DialogContent>
                   </Dialog>
@@ -831,7 +831,7 @@ const ClientDetail = () => {
                 <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-3">
                   <Megaphone className="w-8 h-8 text-white" />
                 </div>
-                <p className="text-muted-foreground text-sm">Nenhuma campanha cadastrada.</p>
+                <p className="text-muted-foreground text-sm">{t("clientDashboard.noCampaigns")}</p>
               </div>
             ) : (
               <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
