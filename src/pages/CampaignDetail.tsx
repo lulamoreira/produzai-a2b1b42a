@@ -59,6 +59,7 @@ import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilt
 import ModuleGrid from "@/components/ModuleGrid";
 import CampaignChatSection from "@/components/CampaignChatSection";
 import StoreContactsSection from "@/components/StoreContactsSection";
+import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -272,6 +273,7 @@ const CampaignDetail = () => {
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(false);
   const [quickEditActive, setQuickEditActive] = useState(false);
   const [matrixCustomExportOpen, setMatrixCustomExportOpen] = useState(false);
+  const [automationOpen, setAutomationOpen] = useState(false);
 
   // ─── Derived data ──────────────────────────────────────
   const qtyMap = useMemo(() => {
@@ -1561,6 +1563,11 @@ const CampaignDetail = () => {
                         <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("matrix.fromOtherCampaign")}
                       </Button>
                     )}
+                    {canEditCampaign && (
+                      <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setAutomationOpen(true)}>
+                        <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("automation.title")}
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -1578,6 +1585,28 @@ const CampaignDetail = () => {
                         campaignId: campaignId!, storeId: c.storeId, pieceId: c.pieceId, quantity: c.quantity,
                       });
                     }
+                  }}
+                />
+
+                <MatrixAutomationDialog
+                  open={automationOpen}
+                  onOpenChange={setAutomationOpen}
+                  campaignId={campaignId!}
+                  clientId={clientId!}
+                  stores={activeFilteredStores}
+                  pieces={matrixPieces}
+                  kits={kits}
+                  kitPieces={kitPieces}
+                  qtyMap={qtyMap}
+                  customFieldLabels={[
+                    ...(client?.custom_field_1_label ? [{ key: "custom_field_1", label: client.custom_field_1_label, index: 1 }] : []),
+                    ...(client?.custom_field_2_label ? [{ key: "custom_field_2", label: client.custom_field_2_label, index: 2 }] : []),
+                    ...(client?.custom_field_3_label ? [{ key: "custom_field_3", label: client.custom_field_3_label, index: 3 }] : []),
+                    ...(client?.custom_field_4_label ? [{ key: "custom_field_4", label: client.custom_field_4_label, index: 4 }] : []),
+                    ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label, index: 5 }] : []),
+                  ]}
+                  onComplete={() => {
+                    queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
                   }}
                 />
 
