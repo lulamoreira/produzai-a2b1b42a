@@ -691,15 +691,15 @@ const CampaignDetail = () => {
         )}
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Código</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.code")}</label>
         <Input type="number" value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} placeholder={nextPieceCode.full} />
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Localização na Loja *</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.locationInStore")} *</label>
         {pieceLocations.length > 0 ? (
           <Select value={form.category} onValueChange={(val) => setForm((f) => ({ ...f, category: val }))}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecione a localização" />
+              <SelectValue placeholder={t("pieces.selectLocation")} />
             </SelectTrigger>
             <SelectContent>
               {pieceLocations.map((loc) => <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>)}
@@ -710,7 +710,7 @@ const CampaignDetail = () => {
         )}
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome *</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.name")} *</label>
         <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
       </div>
       {clientId && campaignId && (
@@ -730,40 +730,40 @@ const CampaignDetail = () => {
         />
       )}
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Medidas</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.measures")}</label>
         <div className="grid grid-cols-3 gap-2">
            <div>
-            <label className="text-[10px] text-muted-foreground mb-0.5 block">Largura</label>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">{t("pieces.width")}</label>
             <Input value={form.width} onChange={(e) => setForm((f) => ({ ...f, width: e.target.value }))} />
           </div>
           <div>
-            <label className="text-[10px] text-muted-foreground mb-0.5 block">Altura</label>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">{t("pieces.height")}</label>
             <Input value={form.height} onChange={(e) => setForm((f) => ({ ...f, height: e.target.value }))} />
           </div>
           <div>
-            <label className="text-[10px] text-muted-foreground mb-0.5 block">Comprimento</label>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">{t("pieces.length")}</label>
             <Input value={form.length} onChange={(e) => setForm((f) => ({ ...f, length: e.target.value }))} />
           </div>
         </div>
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.storeModelLabel")}</label>
         <Select value={form.store_category || "Todas"} onValueChange={(val) => setForm((f) => ({ ...f, store_category: val }))}>
           <SelectTrigger>
-            <SelectValue placeholder="Selecione o modelo" />
+            <SelectValue placeholder={t("stores.selectModel")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Todas">Todas</SelectItem>
+            <SelectItem value="Todas">{t("common.allFeminine")}</SelectItem>
             {clientStoreModels.map((m) => <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Especificação</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.specification")}</label>
         <Input value={form.specification} onChange={(e) => setForm((f) => ({ ...f, specification: e.target.value }))} />
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Instruções de Instalação</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.installationInstructions")}</label>
         <Input value={form.installation_instructions} onChange={(e) => setForm((f) => ({ ...f, installation_instructions: e.target.value }))} />
       </div>
     </>
