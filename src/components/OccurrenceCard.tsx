@@ -147,7 +147,7 @@ export default function OccurrenceCard({
     [storePhotos, occ.store_id]
   );
 
-
+  const setDraftField = useCallback((field: string, value: unknown) => {
     setDraft((prev) => {
       // If value is same as server, remove from draft
       if ((occ as any)[field] === value) {
