@@ -307,9 +307,10 @@ const ClientDetail = () => {
     custom_field_5_label: client?.custom_field_5_label || "",
   });
 
-  // Country / currency
+  // Country / currency / language
   const [countryCode, setCountryCode] = useState(client?.country_code || "BR");
   const [currencyCode, setCurrencyCode] = useState(client?.currency_code || "BRL");
+  const [clientLanguage, setClientLanguage] = useState((client as any)?.language || "pt-BR");
   const countryConfig = getCountryConfig(client?.country_code);
 
   const handleNameChange = (value: string) => {
@@ -568,7 +569,7 @@ const ClientDetail = () => {
 
   const handleSaveSettings = async () => {
     if (!clientId) return;
-    await updateClient.mutateAsync({ id: clientId, ...customLabels, country_code: countryCode, currency_code: currencyCode });
+    await updateClient.mutateAsync({ id: clientId, ...customLabels, country_code: countryCode, currency_code: currencyCode, language: clientLanguage } as any);
     setSettingsOpen(false);
   };
 
@@ -956,6 +957,19 @@ const ClientDetail = () => {
                           <Input value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())} placeholder="BRL" maxLength={3} />
                         </div>
                       </div>
+                    </div>
+
+                    {/* Language */}
+                    <div className="space-y-3 pb-3 border-b border-border">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase">Idioma do Sistema</p>
+                      <Select value={clientLanguage} onValueChange={setClientLanguage}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pt-BR">🇧🇷 Português (Brasil)</SelectItem>
+                          <SelectItem value="en">🇺🇸 English</SelectItem>
+                          <SelectItem value="es">🇪🇸 Español</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <p className="text-xs font-semibold text-muted-foreground uppercase pt-1">Campos Personalizáveis</p>
