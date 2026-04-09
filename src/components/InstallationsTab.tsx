@@ -289,7 +289,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   };
 
   const handleExport = () => {
-    const rows = filteredStores.map((store) => {
+    const rows = displayedStores.map((store) => {
       const schedule = scheduleMap[store.id];
       const team = schedule?.team_id ? teamMap[schedule.team_id] : null;
       const storePhotos = photosByStore[store.id] || [];
@@ -545,7 +545,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
       {/* Store Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4">
-        {filteredStores.map((store) => {
+        {displayedStores.map((store) => {
           const colors = getStateColor(store.state);
           const schedule = scheduleMap[store.id];
           const assignedTeam = schedule?.team_id ? teamMap[schedule.team_id] : null;
