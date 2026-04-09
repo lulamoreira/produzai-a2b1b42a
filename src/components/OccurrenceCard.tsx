@@ -26,7 +26,7 @@ import {
 import {
   Puzzle, Calendar, MapPin, User, Pencil, Flag, Trash2,
   ExternalLink, Link2, MessageCircle, Phone, Save, ClipboardList, Loader2, Lock, LockOpen,
-  CheckCircle2, AlertCircle,
+  CheckCircle2, AlertCircle, Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 
