@@ -1543,16 +1543,16 @@ const CampaignDetail = () => {
                           if (!file || !campaignId) return;
                           try {
                             const items = await parseMatrixImport(file, pieces, stores);
-                            if (items.length === 0) { toast.error("Nenhum dado encontrado."); return; }
+                            if (items.length === 0) { toast.error(t("matrix.noDataFound")); return; }
                             for (const item of items) {
                               await updateStorePiece.mutateAsync({ campaignId, storeId: item.storeId, pieceId: item.pieceId, quantity: item.quantity });
                             }
-                            toast.success(`${items.length} quantidade(s) importada(s)!`);
-                          } catch { toast.error("Erro ao importar."); }
+                            toast.success(t("matrix.quantitiesImported", { count: items.length }));
+                          } catch { toast.error(t("matrix.errorImport")); }
                           e.target.value = "";
                         }} />
                         <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" asChild>
-                          <span><Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Importar</span>
+                          <span><Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("common.import")}</span>
                         </Button>
                       </label>
                     )}
