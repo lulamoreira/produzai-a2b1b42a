@@ -765,14 +765,14 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                           src={photo.photo_url}
                           alt=""
                           className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
-                          onClick={() => window.open(`/checkin/${campaignId}/${store.id}`, '_blank')}
+                          onClick={() => setCheckinStore(store)}
                           onError={() => handleMediaError(photo.id, photo.campaign_id)}
                         />
                       ))}
                       {storePhotos.length > 6 && (
                         <button
                           className="w-12 h-12 rounded-md bg-muted border border-border flex items-center justify-center text-xs font-bold text-muted-foreground hover:bg-muted/80"
-                          onClick={() => window.open(`/checkin/${campaignId}/${store.id}`, '_blank')}
+                          onClick={() => setCheckinStore(store)}
                         >
                           +{storePhotos.length - 6}
                         </button>
