@@ -400,7 +400,21 @@ export default function OccurrenceCard({
         )}
       </div>
 
-      {/* Body */}
+      {/* Photo check-in status */}
+      {schedule && (
+        <div className={`mx-4 mt-2 flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium border ${
+          schedule.photo_checkin
+            ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
+            : "bg-orange-500/10 text-orange-700 border-orange-500/30"
+        }`}>
+          {schedule.photo_checkin && schedule.photo_checkin_at ? (
+            <><CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> Fotos para ocorrências verificadas em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
+          ) : (
+            <><AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> Check-in de fotos para ocorrências pendente</>
+          )}
+        </div>
+      )}
+
       <div className="p-4 flex flex-col flex-1">
       {/* Date */}
       <div className="flex items-center gap-2 mb-2">
