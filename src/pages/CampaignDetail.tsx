@@ -98,6 +98,8 @@ const CampaignDetail = () => {
   const { hasPermission: canEditInstallations } = useClientPermission(clientId, "can_edit_installations");
   const { hasPermission: canViewCampaigns } = useClientPermission(clientId, "can_view_campaigns");
   const { data: client } = useClient(clientId);
+  // Auto-sync language based on client config
+  const _lang = (await import("@/hooks/useLanguage")).useLanguage((client as any)?.language);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: stores = [] } = useClientStores(clientId);
   const { data: clientStoreModels = [] } = useClientStoreModels(clientId);
