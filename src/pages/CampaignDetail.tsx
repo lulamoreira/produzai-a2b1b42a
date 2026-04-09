@@ -1533,7 +1533,6 @@ const CampaignDetail = () => {
                       ]}
                     />
                     <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}><Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("common.export")}</span> {t("modules.matrix")}</Button>
-                    </Button>
                     <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setMatrixCustomExportOpen(true)}>
                       <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("matrix.customExport")}
                     </Button>
