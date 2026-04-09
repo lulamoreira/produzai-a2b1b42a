@@ -1350,6 +1350,7 @@ interface ApprovalTogglesProps {
 }
 
 function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTime, onMultiUpdate }: ApprovalTogglesProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const dbStoreStatus = (schedule?.store_approval_status ?? "under_review") as ApprovalStatusValue;
   const dbTeamStatus = (schedule?.team_approval_status ?? "under_review") as ApprovalStatusValue;
@@ -1657,6 +1658,7 @@ interface RescheduleSectionProps {
 }
 
 function RescheduleSection({ schedule, storeId, campaignId, canEdit, teams, teamMap, onFieldChange, onMultiUpdate }: RescheduleSectionProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isEnabled = !!schedule?.reschedule_enabled;
 
@@ -2088,6 +2090,7 @@ interface StoreContactsDisplayProps {
 }
 
 function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, clientName, campaignName, messageTemplate }: StoreContactsDisplayProps) {
+  const { t } = useTranslation();
   const storeName = store.nickname || store.name;
   const hasContacts = contacts.length > 0;
   const primaryContact = hasContacts ? contacts[0] : null;
