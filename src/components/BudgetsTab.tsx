@@ -273,7 +273,7 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
   };
 
   const formatCurrency = (value: number) =>
-    value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    formatCurrencyByCode(value, currencyCode);
 
   // ─── Column mapping field labels ───
   const fieldConfig = [
