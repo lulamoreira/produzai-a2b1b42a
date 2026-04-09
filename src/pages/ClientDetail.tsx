@@ -46,6 +46,7 @@ import ComboboxInput from "@/components/ComboboxInput";
 import { getStateColor } from "@/lib/stateColors";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
+import { useLanguage } from "@/hooks/useLanguage";
 
 // Helper to parse "Label|type" format from custom field labels
 const FIELD_TYPES = [
@@ -249,6 +250,7 @@ const ClientDetail = () => {
   const { hasPermission: canDeleteStores } = useClientPermission(clientId, "can_delete_stores");
   const { hasPermission: canEditClients } = useClientPermission(clientId, "can_edit_clients");
   const { data: client, isLoading: loadingClient } = useClient(clientId);
+  useLanguage((client as any)?.language);
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
 
   const { data: agencyInfo } = useQuery({
