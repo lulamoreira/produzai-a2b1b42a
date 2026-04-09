@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useClients, useAddClient, useUpdateClient, useDeleteClient, useReorderClients, type Client } from "@/hooks/useMultiClientData";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +47,7 @@ function SortableClientCard({
   onNavigate,
   onDelete,
   onColorChange,
+  t,
 }: {
   client: Client;
   campaignCount: number;
@@ -53,6 +55,7 @@ function SortableClientCard({
   onNavigate: () => void;
   onDelete: () => void;
   onColorChange: (color: string) => void;
+  t: (key: string) => string;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: client.id });
   const style = {
@@ -89,7 +92,7 @@ function SortableClientCard({
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-52 p-3" onClick={(e) => e.stopPropagation()}>
-              <p className="text-xs font-medium text-muted-foreground mb-2">Cor do cliente</p>
+              <p className="text-xs font-medium text-muted-foreground mb-2">{t("clientDashboard.clientColor")}</p>
               <div className="grid grid-cols-6 gap-1.5">
                 {CLIENT_COLORS.map((c) => (
                   <button
@@ -123,15 +126,15 @@ function SortableClientCard({
             </AlertDialogTrigger>
             <AlertDialogContent onClick={(e) => e.stopPropagation()}>
               <AlertDialogHeader>
-                <AlertDialogTitle>Tem certeza que deseja excluir este cliente?</AlertDialogTitle>
+                <AlertDialogTitle>{t("clientDashboard.deleteClientTitle")}</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Todos os dados associados a este cliente serão apagados permanentemente, incluindo campanhas, lojas, peças e quantidades. Esta ação não pode ser desfeita.
+                  {t("clientDashboard.deleteClientDesc")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                 <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  SIM
+                  {t("common.yes").toUpperCase()}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -147,14 +150,14 @@ function SortableClientCard({
       </div>
       <h3 className="font-bold text-foreground text-base mb-0.5 group-hover:text-primary transition-colors">{client.name}</h3>
       <p className="text-[11px] text-muted-foreground">
-        Criado em {new Date(client.created_at).toLocaleDateString("pt-BR")}
+        {t("clientDashboard.createdAt")} {new Date(client.created_at).toLocaleDateString()}
       </p>
       <div className="flex items-center justify-between w-full mt-3">
         <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-          <Package className="w-3.5 h-3.5" /> {campaignCount} campanha(s)
+          <Package className="w-3.5 h-3.5" /> {campaignCount} {t("clientDashboard.campaigns")}
         </span>
         <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-          <span>Acessar</span>
+          <span>{t("clientDashboard.access")}</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
         </div>
       </div>
@@ -164,6 +167,7 @@ function SortableClientCard({
 
 // ─── Dashboard ────────────────────────────────────────────
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
@@ -253,7 +257,7 @@ const Dashboard = () => {
     <AppLayout
       breadcrumbs={[
         { label: agencyInfo?.name || "Agência", href: "/" },
-        { label: "Clientes" },
+        { label: t("sidebar.clients") },
       ]}
     >
       <div className="max-w-6xl mx-auto">
@@ -262,24 +266,24 @@ const Dashboard = () => {
         <div className="flex items-center gap-3 mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar cliente..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 bg-card" />
+            <Input placeholder={t("clientDashboard.searchClient")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 bg-card" />
           </div>
           {isAdmin && (
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1">
-                  <Plus className="w-4 h-4" /> Novo Cliente
+                  <Plus className="w-4 h-4" /> {t("clientDashboard.newClient")}
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader><DialogTitle>Novo Cliente</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t("clientDashboard.newClient")}</DialogTitle></DialogHeader>
                 <form onSubmit={handleAdd} className="space-y-4">
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome do cliente</label>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.clientName")}</label>
                     <Input placeholder="Ex: Empresa XPTO" value={newName} onChange={(e) => setNewName(e.target.value)} required />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-2 block">Cor do cliente</label>
+                    <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.clientColor")}</label>
                     <div className="grid grid-cols-8 gap-1.5">
                       {CLIENT_COLORS.map((c) => (
                         <button
@@ -293,7 +297,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                   <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addClient.isPending}>
-                    {addClient.isPending ? "Criando..." : "Criar Cliente"}
+                    {addClient.isPending ? t("clientDashboard.creating") : t("clientDashboard.createClient")}
                   </Button>
                 </form>
               </DialogContent>
@@ -308,10 +312,10 @@ const Dashboard = () => {
               <Briefcase className="w-10 h-10 text-white" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-2">
-              {clients.length === 0 ? "Nenhum cliente cadastrado" : "Nenhum resultado"}
+              {clients.length === 0 ? t("clientDashboard.noClients") : t("clientDashboard.noResults")}
             </h2>
             <p className="text-muted-foreground text-sm">
-              {clients.length === 0 && isAdmin ? "Crie seu primeiro cliente para começar." : "Tente uma busca diferente."}
+              {clients.length === 0 && isAdmin ? t("clientDashboard.createFirst") : t("clientDashboard.tryDifferent")}
             </p>
           </div>
         ) : (
@@ -327,6 +331,7 @@ const Dashboard = () => {
                     onNavigate={() => navigate(`/agency/${agencyId}/clients/${client.id}`)}
                     onDelete={() => deleteClient.mutate(client.id)}
                     onColorChange={(color) => handleColorChange(client.id, color)}
+                    t={t}
                   />
                 ))}
               </div>

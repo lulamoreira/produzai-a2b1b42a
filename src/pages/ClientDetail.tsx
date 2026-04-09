@@ -70,6 +70,7 @@ function encodeFieldLabel(name: string, type: FieldType): string {
   return type === "text" ? name.trim() : `${name.trim()}|${type}`;
 }
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import ChatTabContent from "@/components/ChatTabContent";
 import * as XLSX from "xlsx";
 import { capitalizeName } from "@/lib/utils";
@@ -148,6 +149,7 @@ function SortableCampaignCard({
   campaign: Campaign; canDelete: boolean; canEdit: boolean;
   onNavigate: () => void; onDelete: () => void; onColorChange: (c: string) => void;
 }) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: campaign.id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -183,7 +185,7 @@ function SortableCampaignCard({
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-white text-sm truncate">{campaign.name}</h3>
             <p className="text-[11px] text-white/70 mt-0.5">
-              {new Date(campaign.created_at).toLocaleDateString("pt-BR")}
+              {new Date(campaign.created_at).toLocaleDateString()}
             </p>
           </div>
           <div className="flex items-center gap-0.5">
@@ -195,7 +197,7 @@ function SortableCampaignCard({
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-52 p-3" onClick={(e) => e.stopPropagation()}>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">Cor da campanha</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">{t("clientDashboard.campaignColorLabel")}</p>
                   <div className="grid grid-cols-6 gap-1.5">
                     {CAMPAIGN_COLORS.map((c) => (
                       <button
@@ -218,12 +220,12 @@ function SortableCampaignCard({
                 </AlertDialogTrigger>
                 <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Tem certeza que deseja excluir esta campanha?</AlertDialogTitle>
-                    <AlertDialogDescription>Todos os dados associados a esta campanha serão apagados permanentemente. Esta ação não pode ser desfeita.</AlertDialogDescription>
+                    <AlertDialogTitle>{t("clientDashboard.deleteCampaignTitle")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("clientDashboard.deleteCampaignDesc")}</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">SIM</AlertDialogAction>
+                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.yes").toUpperCase()}</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -231,7 +233,7 @@ function SortableCampaignCard({
           </div>
         </div>
         <div className="flex items-center gap-1 mt-3 text-xs text-white/70">
-          <span>Acessar</span>
+          <span>{t("clientDashboard.access")}</span>
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
         </div>
       </div>
@@ -251,6 +253,7 @@ const ClientDetail = () => {
   const { hasPermission: canEditClients } = useClientPermission(clientId, "can_edit_clients");
   const { data: client, isLoading: loadingClient } = useClient(clientId);
   useLanguage((client as any)?.language);
+  const { t } = useTranslation();
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
 
   const { data: agencyInfo } = useQuery({
@@ -773,7 +776,7 @@ const ClientDetail = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{campaigns.length}</p>
-                  <p className="text-[11px] text-muted-foreground">Campanhas</p>
+                  <p className="text-[11px] text-muted-foreground">{t("clientDashboard.campaignCount")}</p>
                 </div>
               </div>
               <div className="card-kpi flex items-center gap-3">
@@ -782,7 +785,7 @@ const ClientDetail = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{stores.length}</p>
-                  <p className="text-[11px] text-muted-foreground">Lojas</p>
+                  <p className="text-[11px] text-muted-foreground">{t("clientDashboard.storeCount")}</p>
                 </div>
               </div>
               {canEditCampaigns && (
@@ -790,18 +793,18 @@ const ClientDetail = () => {
                   <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
                     <DialogTrigger asChild>
                       <Button size="lg" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md font-bold text-sm px-6">
-                        <Plus className="w-5 h-5" /> Incluir Nova Campanha
+                        <Plus className="w-5 h-5" /> {t("clientDashboard.addCampaign")}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
-                      <DialogHeader><DialogTitle>Nova Campanha</DialogTitle></DialogHeader>
+                      <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
                       <form onSubmit={handleAddCampaign} className="space-y-4">
                         <div>
-                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da campanha *</label>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.campaignNameLabel")} *</label>
                           <Input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
                         </div>
                         <div>
-                          <label className="text-xs font-medium text-muted-foreground mb-2 block">Cor da campanha</label>
+                          <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.campaignColorLabel")}</label>
                           <div className="grid grid-cols-8 gap-1.5">
                             {CAMPAIGN_COLORS.map((c) => (
                               <button
@@ -814,7 +817,7 @@ const ClientDetail = () => {
                             ))}
                           </div>
                         </div>
-                        <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>Criar</Button>
+                        <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>{t("clientDashboard.create")}</Button>
                       </form>
                     </DialogContent>
                   </Dialog>
@@ -829,7 +832,7 @@ const ClientDetail = () => {
                 <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-3">
                   <Megaphone className="w-8 h-8 text-white" />
                 </div>
-                <p className="text-muted-foreground text-sm">Nenhuma campanha cadastrada.</p>
+                <p className="text-muted-foreground text-sm">{t("clientDashboard.noCampaigns")}</p>
               </div>
             ) : (
               <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
@@ -859,9 +862,9 @@ const ClientDetail = () => {
             {/* Stats + Actions */}
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-foreground">{stores.length} lojas</span>
+                <span className="text-sm font-semibold text-foreground">{stores.length} {t("clientDashboard.storeCount").toLowerCase()}</span>
                 <div className="flex-1 min-w-[80px] max-w-xs">
-                  <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
+                  <Input placeholder={t("clientDashboard.searchStore")} value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
                 </div>
                 <Select value={storeStateFilter} onValueChange={setStoreStateFilter}>
                   <SelectTrigger className="h-8 text-xs w-[80px] sm:w-[100px]">

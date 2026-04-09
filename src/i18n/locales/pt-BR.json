@@ -197,5 +197,33 @@
     "pt-BR": "Português (Brasil)",
     "en": "English",
     "es": "Español"
+  },
+  "clientDashboard": {
+    "searchClient": "Buscar cliente...",
+    "newClient": "Novo Cliente",
+    "clientName": "Nome do cliente",
+    "clientColor": "Cor do cliente",
+    "creating": "Criando...",
+    "createClient": "Criar Cliente",
+    "noClients": "Nenhum cliente cadastrado",
+    "noResults": "Nenhum resultado",
+    "createFirst": "Crie seu primeiro cliente para começar.",
+    "tryDifferent": "Tente uma busca diferente.",
+    "createdAt": "Criado em",
+    "campaigns": "campanha(s)",
+    "access": "Acessar",
+    "deleteClientTitle": "Tem certeza que deseja excluir este cliente?",
+    "deleteClientDesc": "Todos os dados associados a este cliente serão apagados permanentemente, incluindo campanhas, lojas, peças e quantidades. Esta ação não pode ser desfeita.",
+    "campaignCount": "Campanhas",
+    "storeCount": "Lojas",
+    "addCampaign": "Incluir Nova Campanha",
+    "newCampaign": "Nova Campanha",
+    "campaignNameLabel": "Nome da campanha",
+    "campaignColorLabel": "Cor da campanha",
+    "create": "Criar",
+    "noCampaigns": "Nenhuma campanha cadastrada.",
+    "searchStore": "Buscar loja...",
+    "deleteCampaignTitle": "Tem certeza que deseja excluir esta campanha?",
+    "deleteCampaignDesc": "Todos os dados associados a esta campanha serão apagados permanentemente. Esta ação não pode ser desfeita."
   }
 }
