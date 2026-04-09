@@ -45,6 +45,7 @@ import { Switch } from "@/components/ui/switch";
 import ComboboxInput from "@/components/ComboboxInput";
 import { getStateColor } from "@/lib/stateColors";
 import StoreContactsSection from "@/components/StoreContactsSection";
+import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
 
 // Helper to parse "Label|type" format from custom field labels
 const FIELD_TYPES = [
