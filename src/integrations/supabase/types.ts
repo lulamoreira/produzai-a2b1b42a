@@ -396,6 +396,7 @@ export type Database = {
           installation_os: string | null
           installation_preference: string | null
           locked: boolean
+          photo_checkin: boolean
           reschedule_date: string | null
           reschedule_enabled: boolean
           reschedule_os: string | null
@@ -438,6 +439,7 @@ export type Database = {
           installation_os?: string | null
           installation_preference?: string | null
           locked?: boolean
+          photo_checkin?: boolean
           reschedule_date?: string | null
           reschedule_enabled?: boolean
           reschedule_os?: string | null
@@ -480,6 +482,7 @@ export type Database = {
           installation_os?: string | null
           installation_preference?: string | null
           locked?: boolean
+          photo_checkin?: boolean
           reschedule_date?: string | null
           reschedule_enabled?: boolean
           reschedule_os?: string | null
@@ -1662,6 +1665,7 @@ export type Database = {
           can_view_clients: boolean
           can_view_installations: boolean
           can_view_occurrences: boolean
+          can_view_photo_checkin: boolean
           can_view_pieces: boolean
           can_view_schedules: boolean
           can_view_stores: boolean
@@ -1694,6 +1698,7 @@ export type Database = {
           can_view_clients?: boolean
           can_view_installations?: boolean
           can_view_occurrences?: boolean
+          can_view_photo_checkin?: boolean
           can_view_pieces?: boolean
           can_view_schedules?: boolean
           can_view_stores?: boolean
@@ -1726,6 +1731,7 @@ export type Database = {
           can_view_clients?: boolean
           can_view_installations?: boolean
           can_view_occurrences?: boolean
+          can_view_photo_checkin?: boolean
           can_view_pieces?: boolean
           can_view_schedules?: boolean
           can_view_stores?: boolean
