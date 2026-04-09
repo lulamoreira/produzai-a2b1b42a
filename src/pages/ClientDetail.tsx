@@ -307,6 +307,11 @@ const ClientDetail = () => {
     custom_field_5_label: client?.custom_field_5_label || "",
   });
 
+  // Country / currency
+  const [countryCode, setCountryCode] = useState(client?.country_code || "BR");
+  const [currencyCode, setCurrencyCode] = useState(client?.currency_code || "BRL");
+  const countryConfig = getCountryConfig(client?.country_code);
+
   const handleNameChange = (value: string) => {
     setStoreForm((f) => ({
       ...f,
