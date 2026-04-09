@@ -913,19 +913,51 @@ const ClientDetail = () => {
               <div className="flex flex-wrap items-center gap-2 mb-4">
                 <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => setCustomLabels({
-                      custom_field_1_label: client.custom_field_1_label || "",
-                      custom_field_2_label: client.custom_field_2_label || "",
-                      custom_field_3_label: client.custom_field_3_label || "",
-                      custom_field_4_label: client.custom_field_4_label || "",
-                      custom_field_5_label: client.custom_field_5_label || "",
-                    })}>
-                      <Settings className="w-3.5 h-3.5" /> Campos
+                    <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={() => {
+                      setCustomLabels({
+                        custom_field_1_label: client.custom_field_1_label || "",
+                        custom_field_2_label: client.custom_field_2_label || "",
+                        custom_field_3_label: client.custom_field_3_label || "",
+                        custom_field_4_label: client.custom_field_4_label || "",
+                        custom_field_5_label: client.custom_field_5_label || "",
+                      });
+                      setCountryCode(client.country_code || "BR");
+                      setCurrencyCode(client.currency_code || "BRL");
+                    }}>
+                      <Settings className="w-3.5 h-3.5" /> Configurações
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
-                    <DialogHeader><DialogTitle>Campos Personalizáveis</DialogTitle></DialogHeader>
-                    <p className="text-sm text-muted-foreground mb-4">Defina os nomes dos campos extras para as lojas deste cliente. Campos sem nome não serão exibidos.</p>
+                    <DialogHeader><DialogTitle>Configurações do Cliente</DialogTitle></DialogHeader>
+
+                    {/* Country / Currency */}
+                    <div className="space-y-3 pb-3 border-b border-border">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase">País e Moeda</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
+                          <Select value={countryCode} onValueChange={(val) => {
+                            setCountryCode(val);
+                            const cfg = getCountryConfig(val);
+                            setCurrencyCode(cfg.currency);
+                          }}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {SUPPORTED_COUNTRIES.map(c => (
+                                <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Moeda</label>
+                          <Input value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())} placeholder="BRL" maxLength={3} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs font-semibold text-muted-foreground uppercase pt-1">Campos Personalizáveis</p>
+                    <p className="text-xs text-muted-foreground mb-2">Defina os nomes dos campos extras para as lojas deste cliente.</p>
                     <div className="space-y-3">
                       {[1, 2, 3, 4, 5].map((i) => {
                         const parsed = parseFieldLabel((customLabels as any)[`custom_field_${i}_label`]);
