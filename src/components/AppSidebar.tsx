@@ -399,6 +399,38 @@ export default function AppSidebar() {
 
         <div className="px-2 pt-2 border-t border-sidebar-border">
           <div className={`flex ${collapsed ? "flex-col" : ""} items-center gap-1`}>
+            {/* Language selector */}
+            <div className="relative">
+              <button
+                onClick={() => setLangOpen(!langOpen)}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all"
+                title={t("common.language")}
+              >
+                <Globe className="w-3.5 h-3.5 flex-shrink-0" />
+                {!collapsed && (
+                  <span className="font-medium">
+                    {SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)?.flag || "🇧🇷"}
+                  </span>
+                )}
+              </button>
+              {langOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
+                  <div className="absolute bottom-full left-0 mb-1 z-50 bg-popover border border-border rounded-lg shadow-lg py-1 w-48">
+                    {SUPPORTED_LANGUAGES.map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => { changeLanguage(lang.code as SupportedLanguage); setLangOpen(false); }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-accent transition-colors ${currentLanguage === lang.code ? "bg-accent font-semibold" : ""}`}
+                      >
+                        <span>{lang.flag}</span>
+                        <span>{lang.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
             <InviteButton />
             <WhatsNewButton />
           </div>
