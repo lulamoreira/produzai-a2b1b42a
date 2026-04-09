@@ -60,9 +60,9 @@ interface InstallationsTabProps {
 }
 
 const CATEGORY_OPTIONS = [
-  { value: "before", label: "Antes" },
-  { value: "during", label: "Durante" },
-  { value: "after", label: "Depois" },
+  { value: "before", labelKey: "installations.before" },
+  { value: "during", labelKey: "installations.during" },
+  { value: "after", labelKey: "installations.after" },
 ];
 
 const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId, agencyName = "", clientName = "" }: InstallationsTabProps) => {
@@ -290,7 +290,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         });
       } catch (err) {
         console.error("Upload error:", err);
-        toast.error("Erro ao enviar foto");
+        toast.error(t("installations.errorUpload"));
       }
     }
     logActivity.mutate({
@@ -313,28 +313,28 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       const effTime = isReschedule ? schedule?.reschedule_time : schedule?.scheduled_time;
       const effOs = isReschedule ? schedule?.reschedule_os : schedule?.installation_os;
       return {
-        "Código": store.store_code || "",
-        "Loja": store.name,
-        "Estado": store.state || "",
-        "Cidade": store.city || "",
-        "Endereço": buildAddress(store),
-        "Contato": store.manager_name || "",
-        "Telefone": store.phone || "",
-        "Data": effDate ? format(new Date(effDate + "T12:00:00"), "dd/MM/yyyy") : "",
-        "Horário": effTime || "",
+        [t("common.code")]: store.store_code || "",
+        [t("modules.stores")]: store.name,
+        [t("stores.state")]: store.state || "",
+        [t("stores.city")]: store.city || "",
+        [t("common.address")]: buildAddress(store),
+        [t("common.contact")]: store.manager_name || "",
+        [t("common.phone")]: store.phone || "",
+        [t("common.date")]: effDate ? format(new Date(effDate + "T12:00:00"), "dd/MM/yyyy") : "",
+        [t("common.time")]: effTime || "",
         "OS": effOs || "",
-        "Equipe": team?.name || "",
-        "Remarcação": isReschedule ? "Sim" : "Não",
-        "Concluída": schedule?.completed_at ? format(new Date(schedule.completed_at), "dd/MM/yyyy HH:mm") : "Não",
-        "Fotos": storePhotos.length,
-        "Bloqueado": schedule?.locked ? "Sim" : "Não",
+        [t("scheduling.team")]: team?.name || "",
+        [t("scheduling.reschedule")]: isReschedule ? t("common.yes") : t("common.no"),
+        [t("installations.completed")]: schedule?.completed_at ? format(new Date(schedule.completed_at), "dd/MM/yyyy HH:mm") : "Não",
+        [t("installations.photos")]: storePhotos.length,
+        [t("common.blocked")]: schedule?.locked ? t("common.yes") : t("common.no"),
       };
     });
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Instalações");
+    XLSX.utils.book_append_sheet(wb, ws, t("installations.title"));
     downloadWorkbook(wb, buildExportFileName(`Instalacoes_${campaignName}`, { agencyName, clientName }));
-    toast.success("Planilha exportada!");
+    toast.success(t("common.spreadsheetExported"));
   };
 
   // Summary metrics
@@ -365,7 +365,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             onClick={() => setShowCodes(!showCodes)}
           >
             <Key className="w-3.5 h-3.5" />
-            {showCodes ? "Ocultar Config Acesso" : "Config Acesso Temporário"}
+            {showCodes ? t("installations.hideAccessConfig") : t("installations.tempAccessConfig")}
           </Button>
           {showCodes && (
             <div className="aqua-card p-4">
@@ -380,7 +380,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar loja..."
+            placeholder={t("filters.searchStore")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 bg-card border-border"
@@ -418,7 +418,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[120px] max-w-[160px]"
-            title="Filtrar por data"
+            title={t("common.filter")}
           />
           {filterDate && (
             <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-muted-foreground" onClick={() => setFilterDate("")}>
@@ -498,8 +498,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 });
                 toast.info(`Preparando download de ${photos.length} arquivo(s)...`);
                 downloadAllCampaignPhotosAsZip(photos, storeNameMap, campaignName, (done, total) => {
-                  if (done === total) toast.success("Download concluído!");
-                }).catch(() => toast.error("Erro ao baixar fotos"));
+                  if (done === total) toast.success(t("common.downloadComplete"));
+                }).catch(() => toast.error(t("common.errorDownloading")));
               }}
             >
               <Camera className="w-3.5 h-3.5" /> Baixar todas as fotos ({photos.length})
@@ -524,7 +524,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
                   toast.success(newLocked ? `${ids.length} cards bloqueados!` : `${ids.length} cards desbloqueados!`);
                 } catch (err: any) {
-                  toast.error(err.message || "Erro ao alterar bloqueio em massa.");
+                  toast.error(err.message || t("common.errorChangingLockBulk"));
                 } finally {
                   setBulkLockLoading(false);
                 }
@@ -545,7 +545,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       {/* Summary Bar - Clickable Filters */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
         {([
-          { key: "total" as const, value: summaryMetrics.total, label: "Total", color: "text-foreground", visible: true },
+          { key: "total" as const, value: summaryMetrics.total, label: t("common.total"), color: "text-foreground", visible: true },
           { key: "completed" as const, value: summaryMetrics.completed, label: "✅ Concluídas", color: "text-emerald-600", visible: true },
           { key: "pending" as const, value: summaryMetrics.pending, label: "⏳ Pendentes", color: "text-amber-600", visible: true },
           { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "🔧 Com equipe", color: "text-foreground", visible: true },
@@ -573,7 +573,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       {summaryFilter && summaryFilter !== "total" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Filtrando por: <strong className="text-foreground">{
-            { completed: "Concluídas", pending: "Pendentes", withTeam: "Com equipe", withPhotos: "Com fotos", withReschedule: "Com remarcação", withOccurrence: "Ocorrências", noCheckin: "Sem Check-in" }[summaryFilter]
+            { completed: t("dashboard.completed"), pending: t("dashboard.pending"), withTeam: t("installations.withTeam"), withPhotos: t("installations.withPhotos"), withReschedule: t("installations.withReschedule"), withOccurrence: t("installations.withOccurrence"), noCheckin: t("installations.noCheckin") }[summaryFilter]
           }</strong> ({displayedStores.length})</span>
           <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
         </div>
@@ -612,14 +612,14 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   store_id: store.id,
                   user_id: user.id,
                   module: "installations",
-                  action: newLocked ? "Card bloqueado" : "Card desbloqueado",
-                  details: newLocked ? "Card bloqueado para edição" : "Card desbloqueado para edição",
+                  action: newLocked ? t("common.cardBlocked") : t("common.cardUnblocked"),
+                  details: newLocked ? t("common.cardBlocked") : t("common.cardUnblocked"),
                 });
               }
               queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-              toast.success(newLocked ? "Card bloqueado!" : "Card desbloqueado!");
+              toast.success(newLocked ? t("common.cardBlocked") : t("common.cardUnblocked"));
             } catch (err: any) {
-              toast.error(err.message || "Erro ao alterar bloqueio.");
+              toast.error(err.message || t("common.errorChangingLock"));
             } finally {
               setLockLoading(prev => ({ ...prev, [store.id]: false }));
             }
@@ -661,7 +661,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                         size="icon"
                         className={`h-7 w-7 shrink-0 ${isCardLocked ? "text-destructive" : ""}`}
                         style={!isCardLocked ? { color: colors.text } : undefined}
-                        title={isCardLocked ? "Desbloquear card" : "Bloquear card"}
+                        title={isCardLocked ? t("common.released") : t("common.blocked")}
                         onClick={handleToggleLock}
                         disabled={!!lockLoading[store.id]}
                       >
@@ -674,7 +674,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                         size="icon"
                         className="h-7 w-7 shrink-0"
                         style={{ color: colors.text }}
-                        title="Log de Atividades"
+                        title={t("common.details")}
                         onClick={() => {
                           setLogStoreId(store.id);
                           setLogStoreName(store.name);
@@ -812,11 +812,11 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                           store_id: store.id,
                           module: "installations",
                           action: newVal ? "photo_checkin_done" : "photo_checkin_removed",
-                          details: newVal ? "Check-in de fotos para ocorrências realizado" : "Check-in de fotos para ocorrências removido",
+                          details: newVal ? t("installations.checkinDone") : t("installations.checkinRemoved"),
                         });
-                        toast.success(newVal ? "Check-in realizado!" : "Check-in removido!");
+                        toast.success(newVal ? t("installations.checkinDone") : t("installations.checkinRemoved"));
                       } catch {
-                        toast.error("Erro ao atualizar check-in");
+                        toast.error(t("installations.errorUpdatingCheckin"));
                       }
                     }}
                   >
@@ -858,12 +858,12 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       size="sm"
                       className="text-xs gap-1.5 w-full"
                       onClick={() => {
-                        toast.info("Preparando download...");
+                        toast.info(t("common.preparing"));
                         downloadPhotosAsZip(storePhotos, {
                           module: "Instalacao",
                           campaignName,
                           storeName: store.name,
-                        }).then(() => toast.success("Download concluído!")).catch(() => toast.error("Erro ao baixar fotos"));
+                        }).then(() => toast.success(t("common.downloadComplete"))).catch(() => toast.error(t("common.errorDownloading")));
                       }}
                     >
                       <Download className="w-3 h-3" />
@@ -937,16 +937,16 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                           store_id: store.id,
                           module: "installations",
                           action: isCompleted ? "remove_completion" : "mark_completed",
-                          details: isCompleted ? "Removeu marcação de concluída" : "Marcou instalação como concluída",
+                          details: isCompleted ? t("common.markRemoved") : t("common.installationCompleted"),
                         });
-                        toast.success(isCompleted ? "Marcação removida" : "Instalação marcada como concluída!");
+                        toast.success(isCompleted ? t("common.markRemoved") : t("common.installationCompleted"));
                       } catch {
-                        toast.error("Erro ao atualizar conclusão");
+                        toast.error(t("installations.errorUpdatingCompletion"));
                       }
                     }}
                   >
                     <CheckCircle className="w-4 h-4" />
-                    {schedule.completed_at ? "Instalação Concluída ✓" : "Marcar como Concluída"}
+                    {schedule.completed_at ? t("installations.installationCompleted") : t("installations.markComplete")}
                   </Button>
                 )}
                 <Button

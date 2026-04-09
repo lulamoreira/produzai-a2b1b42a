@@ -131,24 +131,24 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
     try {
       if (editingQuotation) {
         await updateQuotation.mutateAsync({ id: editingQuotation.id, name: quotationName.trim(), campaignId });
-        toast.success("Cotação atualizada.");
+        toast.success(t("budgets.quotationUpdated"));
       } else {
         const q = await addQuotation.mutateAsync({ campaign_id: campaignId, name: quotationName.trim() });
         setActiveQuotationId(q.id);
-        toast.success("Cotação criada.");
+        toast.success(t("budgets.quotationCreated"));
       }
       setQuotationDialogOpen(false);
       setQuotationName("");
       setEditingQuotation(null);
     } catch {
-      toast.error("Erro ao salvar cotação.");
+      toast.error(t("budgets.errorSavingQuotation"));
     }
   };
 
   const handleDeleteQuotation = async (id: string) => {
     await deleteQuotation.mutateAsync({ id, campaignId });
     if (activeQuotationId === id) setActiveQuotationId(null);
-    toast.success("Cotação removida.");
+    toast.success(t("budgets.quotationDeleted"));
   };
 
   // ─── File handling ───
@@ -168,7 +168,7 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
         const rows = XLSX.utils.sheet_to_json<any>(sheet);
 
         if (rows.length === 0) {
-          toast.error("Planilha vazia.");
+          toast.error(t("common.errorSaving"));
           return;
         }
 
@@ -185,7 +185,7 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
         });
         setMappingStep(true);
       } catch {
-        toast.error("Erro ao ler planilha.");
+        toast.error(t("common.errorSaving"));
       }
     };
     reader.readAsArrayBuffer(file);
@@ -193,7 +193,7 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
 
   const applyColumnMapping = () => {
     if (!colMap.item) {
-      toast.error("Selecione ao menos a coluna de Item.");
+      toast.error(t("common.errorSaving"));
       return;
     }
     const parsed = rawRows.map((row) => {
@@ -252,7 +252,7 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
       toast.success(`Orçamento de "${supplierName}" importado com ${items.length} itens.`);
       resetUploadDialog();
     } catch {
-      toast.error("Erro ao importar orçamento.");
+      toast.error(t("common.errorSaving"));
     } finally {
       setUploading(false);
     }
@@ -271,7 +271,7 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
 
   const handleDeleteBudget = async (id: string) => {
     await deleteBudget.mutateAsync({ id, campaignId });
-    toast.success("Orçamento removido.");
+    toast.success(t("budgets.budgetDeleted"));
   };
 
   const formatCurrency = (value: number) =>
@@ -279,10 +279,10 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
 
   // ─── Column mapping field labels ───
   const fieldConfig = [
-    { key: "item" as const, label: "📋 Item / Descrição", hint: "Nome ou descrição do item", required: true, color: "border-l-blue-500" },
-    { key: "quantity" as const, label: "🔢 Quantidade", hint: "Qtd de cada item", required: false, color: "border-l-amber-500" },
-    { key: "unit_price" as const, label: "💰 Valor Unitário", hint: "Preço por unidade", required: false, color: "border-l-emerald-500" },
-    { key: "total_price" as const, label: "💵 Valor Total", hint: "Valor total do item", required: false, color: "border-l-purple-500" },
+    { key: "item" as const, label: `📋 ${t("budgets.item")}`, hint: t("common.description"), required: true, color: "border-l-blue-500" },
+    { key: "quantity" as const, label: `🔢 ${t("common.quantity")}`, hint: t("common.quantity"), required: false, color: "border-l-amber-500" },
+    { key: "unit_price" as const, label: `💰 ${t("budgets.unitPrice")}`, hint: t("budgets.unitPrice"), required: false, color: "border-l-emerald-500" },
+    { key: "total_price" as const, label: `💵 ${t("budgets.totalPrice")}`, hint: t("budgets.totalPrice"), required: false, color: "border-l-purple-500" },
   ];
 
   // Get sample values for a column
@@ -518,7 +518,7 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">Nome do Fornecedor</label>
                 <Input
-                  placeholder="Ex: Gráfica XYZ"
+                  placeholder={t("budgets.supplierName")}
                   value={supplierName}
                   onChange={(e) => setSupplierName(e.target.value)}
                 />
@@ -539,7 +539,7 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
                   className="gap-2 w-full"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
-                  {selectedFile ? selectedFile.name : "Selecionar planilha"}
+                  {selectedFile ? selectedFile.name : t("budgets.uploadFile")}
                 </Button>
               </div>
 
@@ -570,7 +570,7 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
                           onValueChange={(val) => setColMap((prev) => ({ ...prev, [key]: val === "__none__" ? "" : val }))}
                         >
                           <SelectTrigger className="h-9 text-sm">
-                            <SelectValue placeholder="Selecionar coluna..." />
+                            <SelectValue placeholder={t("budgets.selectColumn")} />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="__none__">
@@ -699,7 +699,7 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
                 disabled={!supplierName.trim() || previewItems.length === 0 || uploading || mappingStep}
                 className="w-full"
               >
-                {uploading ? "Importando..." : "Importar Orçamento"}
+                {uploading ? t("common.loading") : t("budgets.importBudget")}
               </Button>
             </div>
           </DialogContent>
@@ -852,21 +852,21 @@ const BudgetsTab = ({ campaignId, canEdit, currencyCode }: BudgetsTabProps) => {
       }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{editingQuotation ? "Editar Cotação" : "Nova Cotação"}</DialogTitle>
+            <DialogTitle>{editingQuotation ? t("budgets.editQuotation") : t("budgets.addQuotation")}</DialogTitle>
             <DialogDescription>
-              {editingQuotation ? "Atualize o nome da cotação." : "Dê um nome para a cotação (ex: Cenário 1 - Impressão Digital)."}
+              {editingQuotation ? t("budgets.editQuotation") : t("budgets.quotationName")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Input
-              placeholder="Ex: Cotação Cenário 1"
+              placeholder={t("budgets.quotationName")}
               value={quotationName}
               onChange={(e) => setQuotationName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSaveQuotation()}
               autoFocus
             />
             <Button onClick={handleSaveQuotation} disabled={!quotationName.trim()} className="w-full">
-              {editingQuotation ? "Salvar" : "Criar Cotação"}
+              {editingQuotation ? t("common.save") : t("budgets.addQuotation")}
             </Button>
           </div>
         </DialogContent>

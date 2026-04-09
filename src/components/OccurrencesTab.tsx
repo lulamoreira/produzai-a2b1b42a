@@ -101,8 +101,8 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     },
     enabled: !!campaignId,
   });
-  const agencyName = (campaignInfo as any)?.clients?.agencies?.name || "Agência";
-  const clientName = (campaignInfo as any)?.clients?.name || "Cliente";
+  const agencyName = (campaignInfo as any)?.clients?.agencies?.name || "";
+  const clientName = (campaignInfo as any)?.clients?.name || "";
 
   // Fetch WhatsApp message templates
   const { data: whatsappLinkTemplate } = useQuery({
@@ -317,7 +317,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(publicLink);
-    toast.success("Link copiado!");
+    toast.success(t("occurrences.linkCopied"));
   };
 
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -326,11 +326,11 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const handleAddEmail = () => {
     const trimmed = newEmail.trim();
     if (!trimmed || !EMAIL_REGEX.test(trimmed)) {
-      toast.error("Por favor, insira um email válido");
+      toast.error(t("common.errorSaving"));
       return;
     }
     if (trimmed.length > MAX_EMAIL_LENGTH) {
-      toast.error("Email muito longo");
+      toast.error(t("common.errorSaving"));
       return;
     }
     addEmail.mutate({ campaignId, email: trimmed }, {
@@ -346,7 +346,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
 
   const getReporterLabel = (reporterType?: string) => {
     if (reporterType === "agency") return agencyName;
-    if (reporterType === "fornecedor") return "Fornecedor";
+    if (reporterType === "fornecedor") return t("occurrences.reporter");
     if (reporterType === "cliente") return clientName;
     return null;
   };
@@ -427,7 +427,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   queryClient.invalidateQueries({ queryKey: ["occurrences", campaignId] });
                   toast.success(newLocked ? `${ids.length} cards bloqueados!` : `${ids.length} cards desbloqueados!`);
                 } catch (err: any) {
-                  toast.error(err.message || "Erro ao alterar bloqueio em massa.");
+                  toast.error(err.message || t("common.errorChangingLockBulk"));
                 } finally {
                   setBulkLockLoading(false);
                 }
@@ -601,7 +601,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
             <div className="flex flex-col gap-1">
               <label className="text-[10px] text-muted-foreground font-medium">Buscar loja</label>
               <Input
-                placeholder="Nome, apelido ou código..."
+                placeholder={t("filters.searchStoreAlt")}
                 value={searchStore}
                 onChange={(e) => setSearchStore(e.target.value)}
                 className="h-8 text-xs w-44"
@@ -611,7 +611,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
               <label className="text-[10px] text-muted-foreground font-medium">Estado</label>
               <Select value={filterState || "__all__"} onValueChange={(v) => setFilterState(v === "__all__" ? "" : v)}>
                 <SelectTrigger className="h-8 text-xs w-28">
-                  <SelectValue placeholder="Todos" />
+                  <SelectValue placeholder={t("common.all")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todos</SelectItem>
@@ -625,7 +625,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
               <label className="text-[10px] text-muted-foreground font-medium">Cidade</label>
               <Select value={filterCity || "__all__"} onValueChange={(v) => setFilterCity(v === "__all__" ? "" : v)}>
                 <SelectTrigger className="h-8 text-xs w-36">
-                  <SelectValue placeholder="Todas" />
+                  <SelectValue placeholder={t("common.allFeminine")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__all__">Todas</SelectItem>
@@ -797,7 +797,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
             <TabsContent value="motives" className="space-y-3 mt-4">
               <div className="flex gap-2">
                 <Input
-                  placeholder="Novo motivo"
+                  placeholder={t("occurrences.newMotive")}
                   value={newMotive}
                   onChange={(e) => setNewMotive(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddMotive())}
@@ -846,13 +846,13 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
               <p className="text-xs text-muted-foreground">Gerencie os status disponíveis para as ocorrências.</p>
               <div className="flex gap-2">
                 <Input
-                  placeholder="Nome (ex: Em análise)"
+                  placeholder={t("occurrences.statusName")}
                   value={newStatusLabel}
                   onChange={(e) => setNewStatusLabel(e.target.value)}
                   className="flex-1"
                 />
                 <Input
-                  placeholder="Valor (ex: analyzing)"
+                  placeholder={t("occurrences.statusValue")}
                   value={newStatusValue}
                   onChange={(e) => setNewStatusValue(e.target.value.toLowerCase().replace(/\s+/g, '_'))}
                   className="w-[120px]"
@@ -864,7 +864,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   className="w-9 h-9 rounded-md border border-input cursor-pointer p-0.5"
                 />
                 <Button size="sm" onClick={() => {
-                  if (!newStatusLabel.trim() || !newStatusValue.trim()) { toast.error("Preencha nome e valor."); return; }
+                  if (!newStatusLabel.trim() || !newStatusValue.trim()) { toast.error(t("occurrences.fillNameAndValue")); return; }
                   addStatusItem.mutate({ label: newStatusLabel.trim(), value: newStatusValue.trim(), color: newStatusColor }, {
                     onSuccess: () => { setNewStatusLabel(""); setNewStatusValue(""); setNewStatusColor("#6366f1"); },
                     onError: (e) => toast.error(e.message),
@@ -937,8 +937,8 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                     occurrence_start_date: occStartDate || null,
                     occurrence_end_date: occEndDate || null,
                   } as any).eq("id", campaignId);
-                  if (error) { toast.error("Erro ao salvar período."); return; }
-                  toast.success("Período salvo!");
+                  if (error) { toast.error(t("occurrences.errorSavingPeriod")); return; }
+                  toast.success(t("occurrences.periodSaved"));
                   refetchCampaignInfo();
                 }}>Salvar</Button>
                 <Button variant="outline" size="sm" onClick={async () => {
@@ -948,7 +948,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                     occurrence_start_date: null,
                     occurrence_end_date: null,
                   } as any).eq("id", campaignId);
-                  toast.success("Período removido!");
+                  toast.success(t("occurrences.periodRemoved"));
                   refetchCampaignInfo();
                 }}>Limpar</Button>
               </div>

@@ -179,7 +179,7 @@ export default function AppSidebar() {
 
     if (isInsideCampaign) {
       items.push({
-        label: t("sidebar.campaigns"),
+        label: campaignName || t("sidebar.campaigns"),
         icon: Grid3X3,
         color: "#8b5cf6",
         active: !!currentSection,
@@ -231,7 +231,7 @@ export default function AppSidebar() {
     }
 
     return items;
-  }, [location.pathname, location.search, currentSection, isInsideAgency, isInsideClient, isInsideCampaign, agencyId, clientId, campaignBasePath, isAdminOrMaster, isAdmin, homePath, t]);
+  }, [location.pathname, location.search, currentSection, isInsideAgency, isInsideClient, isInsideCampaign, agencyId, clientId, campaignBasePath, isAdminOrMaster, isAdmin, homePath, campaignName, t]);
 
   const renderNavItem = (item: NavItem) => {
     if (item.children) {

@@ -54,12 +54,7 @@ interface SchedulingTabProps {
 
 // Schedule type is now imported from @/types/schedule
 
-const PREFERENCE_OPTIONS = [
-  { value: "not_informed", label: "Não informado", icon: HelpCircle },
-  { value: "morning", label: "Manhã", icon: Sun },
-  { value: "night", label: "Noite", icon: Moon },
-  { value: "both", label: "Ambos", icon: Sun },
-];
+// Preference options are built inside the component using t()
 
 function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string, storeName?: string) {
   const firstName = contactName.split(" ")[0];
@@ -86,6 +81,12 @@ function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string
 
 const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, campaignName, clientId }: SchedulingTabProps) => {
   const { t } = useTranslation();
+  const PREFERENCE_OPTIONS = useMemo(() => [
+    { value: "not_informed", label: t("scheduling.notInformed"), icon: HelpCircle },
+    { value: "morning", label: t("scheduling.morning"), icon: Sun },
+    { value: "night", label: t("scheduling.night"), icon: Moon },
+    { value: "both", label: t("scheduling.both"), icon: Sun },
+  ], [t]);
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterState, setFilterState] = useState("");
@@ -181,7 +182,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
     },
-    onError: () => toast.error("Erro ao salvar agendamento"),
+    onError: () => toast.error(t("scheduling.errorSaving")),
   });
 
   const states = useMemo(() => {
@@ -306,28 +307,28 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   }, [filteredStores, summaryFilter, scheduleMap, storeOccurrenceStatus]);
 
   const fieldLabels: Record<string, string> = {
-    scheduled_date: "Data",
-    scheduled_time: "Horário",
-    installation_os: "OS Instalação",
-    installation_preference: "Preferência",
-    team_id: "Equipe",
-    store_approval_status: "Aprovação Lojista",
-    team_approval_status: "Aprovação Equipe",
-    responsibility: "Responsável",
-    suggested_date: "Data Sugerida",
-    suggested_time: "Horário Sugerido",
-    reschedule_enabled: "Remarcação",
-    reschedule_date: "Data (Remarcação)",
-    reschedule_time: "Horário (Remarcação)",
-    reschedule_os: "OS (Remarcação)",
-    reschedule_preference: "Preferência (Remarcação)",
-    reschedule_store_approval_status: "Aprovação Lojista (Remarcação)",
-    reschedule_team_approval_status: "Aprovação Equipe (Remarcação)",
-    reschedule_responsibility: "Responsável (Remarcação)",
-    reschedule_suggested_date: "Data Sugerida (Remarcação)",
-    reschedule_suggested_time: "Horário Sugerido (Remarcação)",
-    reschedule_suggested_date_2: "Data Sugerida 2 (Remarcação)",
-    reschedule_suggested_time_2: "Horário Sugerido 2 (Remarcação)",
+    scheduled_date: t("common.date"),
+    scheduled_time: t("common.time"),
+    installation_os: t("scheduling.installationOs"),
+    installation_preference: t("scheduling.preferenceLabel"),
+    team_id: t("scheduling.team"),
+    store_approval_status: t("scheduling.storeApproval"),
+    team_approval_status: t("scheduling.teamApproval"),
+    responsibility: t("scheduling.responsibleLabel"),
+    suggested_date: t("scheduling.suggestedDate"),
+    suggested_time: t("scheduling.suggestedTime"),
+    reschedule_enabled: t("scheduling.reschedule"),
+    reschedule_date: `${t("common.date")} (${t("scheduling.reschedule")})`,
+    reschedule_time: `${t("common.time")} (${t("scheduling.reschedule")})`,
+    reschedule_os: `OS (${t("scheduling.reschedule")})`,
+    reschedule_preference: `${t("scheduling.preferenceLabel")} (${t("scheduling.reschedule")})`,
+    reschedule_store_approval_status: `${t("scheduling.storeApproval")} (${t("scheduling.reschedule")})`,
+    reschedule_team_approval_status: `${t("scheduling.teamApproval")} (${t("scheduling.reschedule")})`,
+    reschedule_responsibility: `${t("scheduling.responsibleLabel")} (${t("scheduling.reschedule")})`,
+    reschedule_suggested_date: `${t("scheduling.suggestedDate")} (${t("scheduling.reschedule")})`,
+    reschedule_suggested_time: `${t("scheduling.suggestedTime")} (${t("scheduling.reschedule")})`,
+    reschedule_suggested_date_2: `${t("scheduling.suggestedDate2")} (${t("scheduling.reschedule")})`,
+    reschedule_suggested_time_2: `${t("scheduling.suggestedTime2")} (${t("scheduling.reschedule")})`,
   };
 
   const handleFieldChange = (storeId: string, field: string, value: any) => {
@@ -365,29 +366,29 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   };
 
   const formatFieldValue = (field: string, value: any): string => {
-    if (value === null || value === undefined || value === "") return "(vazio)";
+    if (value === null || value === undefined || value === "") return `(${t("common.none")})`;
     if (field === "store_approval_status" || field === "team_approval_status" || field === "reschedule_store_approval_status" || field === "reschedule_team_approval_status") {
-      if (value === "approved") return "Aprovado";
-      if (value === "rejected") return "Desaprovado";
-      if (value === "under_review") return "Em análise";
-      if (value === "pending") return "Pendente";
+      if (value === "approved") return t("scheduling.approved");
+      if (value === "rejected") return t("scheduling.rejected");
+      if (value === "under_review") return t("scheduling.underReview");
+      if (value === "pending") return t("filters.unchecked");
       return String(value);
     }
     if (field === "responsibility" || field === "reschedule_responsibility") {
-      if (value === "team") return "Equipe";
-      if (value === "client") return "Cliente";
+      if (value === "team") return t("scheduling.teamLabel");
+      if (value === "client") return t("scheduling.client");
       return String(value);
     }
     if (field === "installation_preference" || field === "reschedule_preference") return prefLabel(value);
     if (field === "team_id") {
       const team = value ? teamMap[value] : null;
-      return team?.name || "(nenhuma)";
+      return team?.name || `(${t("common.none")})`;
     }
     if ((field === "scheduled_date" || field === "suggested_date" || field === "suggested_date_2" || field === "reschedule_date" || field === "reschedule_suggested_date" || field === "reschedule_suggested_date_2") && value) {
       try { return format(new Date(value + "T12:00:00"), "dd/MM/yyyy"); } catch { return String(value); }
     }
-    if (field === "store_approved" || field === "team_approved") return value ? "Sim" : "Não";
-    if (field === "reschedule_enabled") return value ? "Sim" : "Não";
+    if (field === "store_approved" || field === "team_approved") return value ? t("common.yes") : t("common.no");
+    if (field === "reschedule_enabled") return value ? t("common.yes") : t("common.no");
     return String(value);
   };
 
@@ -397,10 +398,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     // Log each meaningful field change
     const loggableFields: Record<string, string> = {
       ...fieldLabels,
-      suggested_date_2: "Data Sugerida 2",
-      suggested_time_2: "Horário Sugerido 2",
-      store_approved: "Aprovação Lojista (bool)",
-      team_approved: "Aprovação Equipe (bool)",
+      suggested_date_2: t("scheduling.suggestedDate2"),
+      suggested_time_2: t("scheduling.suggestedTime2"),
+      store_approved: t("scheduling.storeApproval"),
+      team_approved: t("scheduling.teamApproval"),
     };
     const skipFields = ["store_approved_at", "team_approved_at", "responsibility_at", "store_approved", "team_approved", "reschedule_store_approved_at", "reschedule_team_approved_at", "reschedule_responsibility_at"];
     const changedDetails: string[] = [];
@@ -417,7 +418,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         campaign_id: campaignId,
         store_id: storeId,
         module: "scheduling",
-        action: changedDetails.length === 1 ? `Alterou "${changedDetails[0].split(":")[0]}"` : "Alteração múltipla",
+        action: changedDetails.length === 1 ? `${t("common.edit")} "${changedDetails[0].split(":")[0]}"` : t("common.edit"),
         details: changedDetails.join("\n"),
       });
     }
@@ -446,18 +447,18 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 
   const buildAddress = (s: ClientStore) => {
     const parts = [s.street, s.number, s.complement, s.neighborhood, s.city, s.state, s.zip_code].filter(Boolean);
-    return parts.join(", ") || "Endereço não informado";
+    return parts.join(", ") || t("common.addressNotInformed");
   };
 
   const prefLabel = (val: string | null) => {
     const opt = PREFERENCE_OPTIONS.find((o) => o.value === val);
-    return opt?.label || "Não informado";
+    return opt?.label || t("scheduling.notInformed");
   };
 
   const approvalLabel = (val: ApprovalStatusValue | undefined) => {
-    if (val === "approved") return "Aprovado";
-    if (val === "rejected") return "Desaprovado";
-    return "Em análise";
+    if (val === "approved") return t("scheduling.approved");
+    if (val === "rejected") return t("scheduling.rejected");
+    return t("scheduling.underReview");
   };
 
   const handleExport = () => {
@@ -465,37 +466,37 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       const schedule = scheduleMap[store.id];
       const team = schedule?.team_id ? teamMap[schedule.team_id] : null;
       return {
-        "Código": store.store_code || "",
-        "Loja": store.name,
-        "Estado": store.state || "",
-        "Cidade": store.city || "",
-        "Bairro": store.neighborhood || "",
-        "Endereço": store.street || "",
-        "Número": store.number || "",
-        "Complemento": store.complement || "",
+        [t("common.code")]: store.store_code || "",
+        [t("modules.stores")]: store.name,
+        [t("stores.state")]: store.state || "",
+        [t("stores.city")]: store.city || "",
+        [t("stores.neighborhood")]: store.neighborhood || "",
+        [t("common.address")]: store.street || "",
+        [t("stores.number")]: store.number || "",
+        [t("stores.complement")]: store.complement || "",
         "CEP": store.zip_code || "",
-        "Contato": store.manager_name || "",
-        "Telefone": store.phone || "",
+        [t("common.contact")]: store.manager_name || "",
+        [t("common.phone")]: store.phone || "",
         "E-mail": store.email || "",
-        "Data Agendada": schedule?.scheduled_date ? format(new Date(schedule.scheduled_date + "T12:00:00"), "dd/MM/yyyy") : "",
-        "Horário": schedule?.scheduled_time || "",
+        [t("scheduling.scheduledDate")]: schedule?.scheduled_date ? format(new Date(schedule.scheduled_date + "T12:00:00"), "dd/MM/yyyy") : "",
+        [t("common.time")]: schedule?.scheduled_time || "",
         "OS Instalação": schedule?.installation_os || "",
-        "Preferência": prefLabel(schedule?.installation_preference ?? null),
-        "Equipe": team?.name || "",
-        "Aprovação Lojista": approvalLabel(schedule?.store_approval_status as ApprovalStatusValue | undefined),
-        "Aprovação Equipe": approvalLabel(schedule?.team_approval_status as ApprovalStatusValue | undefined),
+        [t("scheduling.preferenceLabel")]: prefLabel(schedule?.installation_preference ?? null),
+        [t("scheduling.team")]: team?.name || "",
+        [t("scheduling.storeApproval")]: approvalLabel(schedule?.store_approval_status as ApprovalStatusValue | undefined),
+        [t("scheduling.teamApproval")]: approvalLabel(schedule?.team_approval_status as ApprovalStatusValue | undefined),
       };
     });
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Agendamento");
+    XLSX.utils.book_append_sheet(wb, ws, t("scheduling.title"));
     XLSX.writeFile(wb, buildExportFileName(`Agendamento_${campaignName}`, { agencyName, clientName }));
-    toast.success("Planilha exportada!");
+    toast.success(t("common.spreadsheetExported"));
   };
 
   const handleExportTeams = () => {
     if (teams.length === 0) {
-      toast.error("Nenhuma equipe cadastrada para exportar.");
+      toast.error(t("scheduling.noTeamsToExport"));
       return;
     }
 
@@ -512,16 +513,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 
       // Team header row
       sheetData.push([
-        `Equipe: ${team.name}`,
+        `${t("scheduling.team")}: ${team.name}`,
         "",
         "",
-        `Instaladores: ${members.length}`,
-        `Veículos: ${vehicles.length}`,
-        incomplete ? "Dados Incompletos" : "Completo",
+        `${members.length}`,
+        `${vehicles.length}`,
+        incomplete ? t("scheduling.teamIncomplete") : "✓",
       ]);
 
       if (members.length > 0) {
-        sheetData.push(["Instalador", "Nome", "RG", "CPF", "RU", "Telefone"]);
+        sheetData.push([t("scheduling.team"), t("common.name"), "RG", "CPF", "RU", t("common.phone")]);
         members.forEach((m: TeamMember) => {
           const isRU = !!(m as any).is_unified_doc;
           sheetData.push(["", m.name, isRU ? "" : (m.rg || ""), isRU ? "" : (m.cpf || ""), isRU ? (m.cpf || "") : "", m.phone || ""]);
@@ -529,7 +530,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       }
 
       if (vehicles.length > 0) {
-        sheetData.push(["Veículo", "Nome", "Marca", "Cor", "Placa", ""]);
+        sheetData.push([t("common.details"), t("common.name"), "", "", "", ""]);
         vehicles.forEach((v: TeamVehicle) => {
           sheetData.push(["", v.name || "", v.brand || "", v.color || "", v.plate || "", ""]);
         });
@@ -538,10 +539,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 
     const ws = XLSX.utils.aoa_to_sheet(sheetData);
     ws["!cols"] = [{ wch: 14 }, { wch: 30 }, { wch: 18 }, { wch: 18 }, { wch: 18 }, { wch: 18 }];
-    XLSX.utils.book_append_sheet(wb, ws, "Equipes");
+    XLSX.utils.book_append_sheet(wb, ws, t("scheduling.teams"));
 
     downloadWorkbook(wb, buildExportFileName(`Equipes_${campaignName}`, { agencyName, clientName }));
-    toast.success("Planilha de equipes exportada!");
+    toast.success(t("scheduling.teamsExported"));
   };
 
   return (
@@ -551,7 +552,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar loja..."
+            placeholder={t("filters.searchStore")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10 bg-card border-border"
@@ -563,7 +564,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
           >
-            <option value="">Todos estados</option>
+            <option value="">{t("filters.allStates")}</option>
             {states.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
@@ -573,7 +574,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             onChange={(e) => setFilterCity(e.target.value)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
           >
-            <option value="">Todas cidades</option>
+            <option value="">{t("filters.allCities")}</option>
             {cities.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
@@ -583,18 +584,18 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             onChange={(e) => setFilterApproval(e.target.value)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
           >
-            <option value="">Aprovações</option>
-            <option value="approved">✅ Aprovado</option>
-            <option value="pending">⚠️ Pendência</option>
-            <option value="rejected">❌ Desaprovado</option>
-            <option value="missing_os">📋 Falta OS</option>
+            <option value="">{t("filters.approvals")}</option>
+            <option value="approved">{t("filters.approved")}</option>
+            <option value="pending">{t("filters.pendency")}</option>
+            <option value="rejected">{t("filters.rejected")}</option>
+            <option value="missing_os">{t("filters.missingOs")}</option>
           </select>
           <input
             type="date"
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[120px] max-w-[160px]"
-            title="Filtrar por data"
+            title={t("common.filter")}
           />
           {filterDate && (
             <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-muted-foreground" onClick={() => setFilterDate("")}>
@@ -606,10 +607,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             onChange={(e) => setFilterPeriod(e.target.value)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[140px]"
           >
-            <option value="">Período</option>
-            <option value="morning">🌅 Manhã</option>
-            <option value="afternoon">☀️ Tarde</option>
-            <option value="night">🌙 Noite</option>
+            <option value="">{t("filters.period")}</option>
+            <option value="morning">{t("filters.periodMorning")}</option>
+            <option value="afternoon">{t("filters.periodAfternoon")}</option>
+            <option value="night">{t("filters.periodNight")}</option>
           </select>
           {filterPeriod && (
             <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-muted-foreground" onClick={() => setFilterPeriod("")}>
@@ -621,17 +622,17 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             onChange={(e) => setFilterMessages(e.target.value)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
           >
-            <option value="">Mensagens</option>
-            <option value="unread">💬 Novas</option>
-            <option value="has_messages">📩 Com msg</option>
+            <option value="">{t("filters.messages")}</option>
+            <option value="unread">{t("filters.newMessages")}</option>
+            <option value="has_messages">{t("filters.withMessages")}</option>
           </select>
           <select
             value={filterTeam}
             onChange={(e) => setFilterTeam(e.target.value)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
           >
-            <option value="">Equipe</option>
-            <option value="no_team">Sem equipe</option>
+            <option value="">{t("filters.team")}</option>
+            <option value="no_team">{t("filters.noTeam")}</option>
             {teams.map((t) => (
               <option key={t.id} value={t.id}>{t.name}</option>
             ))}
@@ -641,7 +642,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             onChange={(e) => setFilterPreference(e.target.value)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
           >
-            <option value="">Preferência</option>
+            <option value="">{t("filters.preference")}</option>
             {PREFERENCE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
@@ -651,27 +652,27 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             onChange={(e) => setFilterResponsibility(e.target.value)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
           >
-            <option value="">Responsável</option>
-            <option value="team">Equipe</option>
-            <option value="client">Cliente</option>
+            <option value="">{t("filters.responsible")}</option>
+            <option value="team">{t("scheduling.teamLabel")}</option>
+            <option value="client">{t("scheduling.client")}</option>
           </select>
           <select
             value={filterLocked}
             onChange={(e) => setFilterLocked(e.target.value)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
           >
-            <option value="">Bloqueio</option>
-            <option value="locked">🔒 Bloqueado</option>
-            <option value="unlocked">🔓 Liberado</option>
+            <option value="">{t("filters.lock")}</option>
+            <option value="locked">{t("filters.locked")}</option>
+            <option value="unlocked">{t("filters.unlocked")}</option>
           </select>
           <select
             value={filterReschedule}
             onChange={(e) => setFilterReschedule(e.target.value)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
           >
-            <option value="">Remarcação</option>
-            <option value="yes">Com remarcação</option>
-            <option value="no">Sem remarcação</option>
+            <option value="">{t("filters.reschedule")}</option>
+            <option value="yes">{t("filters.withReschedule")}</option>
+            <option value="no">{t("filters.withoutReschedule")}</option>
           </select>
           {storeModels.length > 0 && (
             <select
@@ -679,7 +680,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               onChange={(e) => setFilterModel(e.target.value)}
               className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
             >
-              <option value="">Modelo</option>
+              <option value="">{t("common.model")}</option>
               {storeModels.map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
@@ -688,13 +689,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         </div>
         <div className="flex flex-wrap gap-1.5">
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setTeamDialogOpen(true)}>
-            <Wrench className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Equipes</span><span className="sm:hidden">Eq.</span>
+            <Wrench className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{t("scheduling.teams")}</span><span className="sm:hidden">{t("scheduling.teams").slice(0,3)}</span>
           </Button>
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleExportTeams}>
-            <Users className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Exportar Equipes</span><span className="sm:hidden">Exp. Eq.</span>
+            <Users className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{t("scheduling.exportTeams")}</span><span className="sm:hidden">{t("common.export")}</span>
           </Button>
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleExport}>
-            <Download className="w-3.5 h-3.5" /> Exportar
+            <Download className="w-3.5 h-3.5" /> {t("common.export")}
           </Button>
           {canLockCards && (
             <Button
@@ -713,9 +714,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
                   if (error) throw error;
                   queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-                  toast.success(newLocked ? `${ids.length} cards bloqueados!` : `${ids.length} cards desbloqueados!`);
+                  toast.success(newLocked ? t("common.cardsBlocked", { count: ids.length }) : t("common.cardsUnblocked", { count: ids.length }));
                 } catch (err: any) {
-                  toast.error(err.message || "Erro ao alterar bloqueio em massa.");
+                  toast.error(err.message || t("common.errorChangingLockBulk"));
                 } finally {
                   setBulkLockLoading(false);
                 }
@@ -726,7 +727,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 const allLocked = unlocked.length === 0 && displayedStores.some(s => scheduleMap[s.id]);
                 return allLocked
                   ? <><LockOpen className="w-3.5 h-3.5" /> Desbloquear Todos</>
-                  : <><Lock className="w-3.5 h-3.5" /> Bloquear Todos</>;
+                  : <><Lock className="w-3.5 h-3.5" /> {t("common.lockAll")}</>;
               })()}
             </Button>
           )}
@@ -753,13 +754,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           return occ?.hasOccurrence && !occ.allResolved;
         }).length;
         const items = [
-          { key: "total" as const, value: total, label: "Total", color: "text-foreground" },
-          { key: "scheduled" as const, value: scheduled, label: "📅 Agendadas", color: "text-foreground" },
-          { key: "noDate" as const, value: noDate, label: "⏳ Sem data", color: "text-amber-600" },
-          { key: "approved" as const, value: approved, label: "✅ Aprovadas", color: "text-foreground" },
-          { key: "withTeam" as const, value: withTeam, label: "🔧 Com equipe", color: "text-foreground" },
-          { key: "withReschedule" as const, value: withReschedule, label: "🔄 Com remarcação", color: "text-amber-600" },
-          { key: "withOccurrence" as const, value: withOccurrence, label: "⚠️ Ocorrências", color: "text-destructive" },
+          { key: "total" as const, value: total, label: t("common.total"), color: "text-foreground" },
+          { key: "scheduled" as const, value: scheduled, label: t("scheduling.scheduled"), color: "text-foreground" },
+          { key: "noDate" as const, value: noDate, label: t("scheduling.noDate"), color: "text-amber-600" },
+          { key: "approved" as const, value: approved, label: t("filters.approved"), color: "text-foreground" },
+          { key: "withTeam" as const, value: withTeam, label: t("scheduling.withTeam"), color: "text-foreground" },
+          { key: "withReschedule" as const, value: withReschedule, label: t("dashboard.withReschedule"), color: "text-amber-600" },
+          { key: "withOccurrence" as const, value: withOccurrence, label: t("scheduling.withOccurrence"), color: "text-destructive" },
         ];
         return (
           <>
@@ -783,8 +784,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             </div>
             {summaryFilter && summaryFilter !== "total" && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>Filtrando por: <strong className="text-foreground">{
-                  { scheduled: "Agendadas", noDate: "Sem data", approved: "Aprovadas", withTeam: "Com equipe", withReschedule: "Com remarcação", withOccurrence: "Ocorrências" }[summaryFilter]
+                <span>{t("filters.filteringBy")} <strong className="text-foreground">{
+                  { scheduled: t("scheduling.scheduled"), noDate: t("scheduling.noDate"), approved: t("filters.approved"), withTeam: t("scheduling.withTeam"), withReschedule: t("dashboard.withReschedule"), withOccurrence: t("scheduling.withOccurrence") }[summaryFilter]
                 }</strong> ({displayedStores.length})</span>
                 <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
               </div>
@@ -841,14 +842,14 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   store_id: store.id,
                   user_id: currentUser.id,
                   module: "schedules",
-                  action: newLocked ? "Card bloqueado" : "Card desbloqueado",
-                  details: newLocked ? "Card bloqueado para edição" : "Card desbloqueado para edição",
+                  action: newLocked ? t("common.cardBlocked") : t("common.cardUnblocked"),
+                  details: newLocked ? t("common.cardBlocked") : t("common.cardUnblocked"),
                 });
               }
               queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-              toast.success(newLocked ? "Card bloqueado!" : "Card desbloqueado!");
+              toast.success(newLocked ? t("common.cardBlocked") : t("common.cardUnblocked"));
             } catch (err: any) {
-              toast.error(err.message || "Erro ao alterar bloqueio.");
+              toast.error(err.message || t("common.errorChangingLock"));
             } finally {
               setLockLoading(prev => ({ ...prev, [store.id]: false }));
             }
@@ -877,7 +878,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       size="icon"
                       className="h-7 w-7 shrink-0 relative"
                       style={{ color: colors.text }}
-                      title="Abrir chat"
+                      title={t("modules.chat")}
                       onClick={() => {
                         setChatStoreId(store.id);
                         setChatStoreName(store.name);
@@ -902,7 +903,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       size="icon"
                       className="h-7 w-7 shrink-0"
                       style={{ color: colors.text }}
-                      title="Histórico"
+                      title={t("common.details")}
                       onClick={() => {
                         setHistoryStoreId(store.id);
                         setHistoryStoreName(store.name);
@@ -917,7 +918,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         size="icon"
                         className="h-7 w-7 shrink-0"
                         style={{ color: colors.text }}
-                        title="Log de Atividades"
+                        title={t("common.details")}
                         onClick={() => {
                           setLogStoreId(store.id);
                           setLogStoreName(store.name);
@@ -933,7 +934,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         size="icon"
                         className={`h-7 w-7 shrink-0 ${isCardLocked ? "text-destructive" : ""}`}
                         style={!isCardLocked ? { color: colors.text } : undefined}
-                        title={isCardLocked ? "Desbloquear card" : "Bloquear card"}
+                        title={isCardLocked ? t("common.released") : t("common.blocked")}
                         onClick={handleToggleLock}
                         disabled={!!lockLoading[store.id]}
                       >
@@ -943,7 +944,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     {fullyApproved ? (
                       <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
                     ) : (effectiveStoreStatus === "approved" && effectiveTeamStatus === "approved" && !hasOs && effectiveDate && effectiveTime) ? (
-                      <span className="text-[10px] font-bold text-destructive whitespace-nowrap leading-tight text-center shrink-0 bg-destructive/10 px-1.5 py-0.5 rounded">FALTA<br/>OS</span>
+                      <span className="text-[10px] font-bold text-destructive whitespace-nowrap leading-tight text-center shrink-0 bg-destructive/10 px-1.5 py-0.5 rounded">{t("scheduling.missingOs")}</span>
                     ) : (
                       <AlertCircle className="w-6 h-6 shrink-0 text-amber-500 drop-shadow" />
                     )}
@@ -968,7 +969,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               <div className="p-4 space-y-3 bg-card flex-1">
                 {/* Address */}
                 <div className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">Endereço:</span> {buildAddress(store)}
+                  <span className="font-medium text-foreground">{t("common.address")}:</span> {buildAddress(store)}
                 </div>
 
                 {/* Contacts section */}
@@ -988,7 +989,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 {/* Team assignment */}
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                    <Wrench className="w-3 h-3" /> Equipe de Instalação
+                    <Wrench className="w-3 h-3" /> {t("scheduling.installationTeam")}
                   </label>
                   <div className="flex items-center gap-2">
                     <select
@@ -997,7 +998,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       onChange={(e) => handleFieldChange(store.id, "team_id", e.target.value || null)}
                       className="flex-1 h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
                     >
-                      <option value="">Nenhuma equipe</option>
+                      <option value="">{t("scheduling.noTeam")}</option>
                       {teams.map((t) => (
                         <option key={t.id} value={t.id}>{t.name}</option>
                       ))}
@@ -1019,7 +1020,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   {assignedTeam && teamIncomplete && (
                     <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400">
                       <AlertTriangle className="w-4 h-4 shrink-0" />
-                      <span className="text-xs font-medium">Equipe com dados incompletos (RG, CPF ou Telefone)</span>
+                      <span className="text-xs font-medium">{t("scheduling.teamIncomplete")}</span>
                     </div>
                   )}
                 </div>
@@ -1034,7 +1035,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide hover:bg-muted/40 transition-colors"
                         onClick={() => setExpandedOriginal(prev => ({ ...prev, [store.id]: !prev[store.id] }))}
                       >
-                        <span>📋 Dados do agendamento original</span>
+                        <span>{t("scheduling.originalData")}</span>
                         {expandedOriginal[store.id] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                       </button>
                       {expandedOriginal[store.id] && (
@@ -1052,7 +1053,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       {/* Date */}
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                          <CalendarIcon className="w-3 h-3" /> Data
+                          <CalendarIcon className="w-3 h-3" /> {t("common.date")}
                         </label>
                         <Popover>
                           <PopoverTrigger asChild>
@@ -1087,7 +1088,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       {/* Time */}
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> Horário
+                          <Clock className="w-3 h-3" /> {t("common.time")}
                         </label>
                         <div className="flex items-center gap-1">
                           <DebouncedInput
@@ -1098,7 +1099,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                             className="h-8 text-xs flex-1"
                           />
                           {schedule?.reschedule_time && cardCanEdit && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "reschedule_time", null)} title="Limpar horário">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "reschedule_time", null)} title={t("common.remove")}>
                               ✕
                             </Button>
                           )}
@@ -1108,14 +1109,14 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       {/* OS */}
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                          <FileText className="w-3 h-3" /> OS Instalação
+                          <FileText className="w-3 h-3" /> {t("scheduling.installationOs")}
                           {!hasOs && schedule?.reschedule_date && schedule?.reschedule_time && (
                             <AlertTriangle className="w-3 h-3 text-amber-500" />
                           )}
                         </label>
                         <DebouncedInput
                           disabled={!cardCanEdit}
-                          placeholder="Nº OS"
+                          placeholder={t("scheduling.osNumber")}
                           value={schedule?.reschedule_os || ""}
                           onValueCommit={(val) => handleFieldChange(store.id, "reschedule_os", val || null)}
                           className="h-8 text-xs"
@@ -1125,7 +1126,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       {/* Preference - always visible */}
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                          <Sun className="w-3 h-3" /> Preferência
+                          <Sun className="w-3 h-3" /> {t("scheduling.preferenceLabel")}
                         </label>
                         <select
                           disabled={!cardCanEdit}
@@ -1145,7 +1146,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     {/* Date */}
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                        <CalendarIcon className="w-3 h-3" /> Data
+                        <CalendarIcon className="w-3 h-3" /> {t("common.date")}
                       </label>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -1180,7 +1181,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     {/* Time */}
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> Horário
+                        <Clock className="w-3 h-3" /> {t("common.time")}
                       </label>
                       <div className="flex items-center gap-1">
                         <DebouncedInput
@@ -1191,7 +1192,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                           className="h-8 text-xs flex-1"
                         />
                         {schedule?.scheduled_time && cardCanEdit && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "scheduled_time", null)} title="Limpar horário">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "scheduled_time", null)} title={t("common.remove")}>
                             ✕
                           </Button>
                         )}
@@ -1201,14 +1202,14 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     {/* OS */}
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                        <FileText className="w-3 h-3" /> OS Instalação
+                        <FileText className="w-3 h-3" /> {t("scheduling.installationOs")}
                         {!hasOs && schedule?.scheduled_date && schedule?.scheduled_time && (
                           <AlertTriangle className="w-3 h-3 text-amber-500" />
                         )}
                       </label>
                       <DebouncedInput
                         disabled={!cardCanEdit}
-                        placeholder="Nº OS"
+                        placeholder={t("scheduling.osNumber")}
                         value={schedule?.installation_os || ""}
                         onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)}
                         className="h-8 text-xs"
@@ -1218,7 +1219,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     {/* Preference */}
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                        <Sun className="w-3 h-3" /> Preferência
+                        <Sun className="w-3 h-3" /> {t("scheduling.preferenceLabel")}
                       </label>
                       <select
                         disabled={!cardCanEdit}
@@ -1270,7 +1271,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   <div className="mx-4 mb-3 mt-1 flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold bg-destructive/10 text-destructive border border-destructive/30">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
                     <a href={occUrl} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80 cursor-pointer">
-                      Ocorrência registrada ({occStatus!.count})
+                      {t("occurrences.occurrenceRegistered", { count: occStatus!.count })}
                     </a>
                   </div>
                 );
@@ -1293,7 +1294,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       </div>
 
       {displayedStores.length === 0 && (
-        <p className="text-center text-muted-foreground py-8 text-sm">Nenhuma loja encontrada</p>
+        <p className="text-center text-muted-foreground py-8 text-sm">{t("common.noStoreFound")}</p>
       )}
 
       {/* Team Management Dialog */}
@@ -1490,7 +1491,7 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
       team_approved_at: now,
     });
 
-    toast.success("Sugestão aceita! Lojista e Equipe aprovados.");
+    toast.success(t("scheduling.suggestionAccepted"));
   };
 
   const formatTimestamp = (ts: string | null) => {
@@ -1510,11 +1511,11 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
   return (
     <div className={cn("border-t border-border bg-muted/30 px-4 py-3 space-y-2", !hasDateAndTime && "opacity-50")}>
       <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide mb-1">
-        Status de aprovação da instalação
-        {!hasDateAndTime && <span className="ml-2 text-muted-foreground font-normal normal-case">(preencha data e horário)</span>}
+        {t("scheduling.approvalStatus")}
+        {!hasDateAndTime && <span className="ml-2 text-muted-foreground font-normal normal-case">({t("scheduling.fillDateTime")})</span>}
       </p>
       <ThreeStateToggle
-        label="Lojista"
+        label={t("scheduling.storeowner")}
         value={storeStatus}
         onChange={(val) => handleSetStatus("store_approval_status", val)}
         timestamp={storeStatus === "approved" ? formatTimestamp(schedule?.store_approved_at ?? null) : null}
@@ -1524,14 +1525,14 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
       {/* Suggested date/time when LOJISTA is rejected */}
       {showSuggestion && (
         <div className="ml-[78px] space-y-3 p-3 rounded-lg border border-red-500/30 bg-red-500/5">
-          <p className="text-[10px] font-semibold text-destructive uppercase tracking-wide">Sugestões do Lojista</p>
+          <p className="text-[10px] font-semibold text-destructive uppercase tracking-wide">{t("scheduling.storeownerSuggestions")}</p>
           
           {/* Sugestão 1 */}
           <div className="space-y-2">
-            <p className="text-[10px] font-medium text-muted-foreground">Opção 1</p>
+            <p className="text-[10px] font-medium text-muted-foreground">{t("scheduling.option1")}</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida</label>
+                <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedDate")}</label>
                 <input
                   type="date"
                   disabled={!canEdit}
@@ -1544,7 +1545,7 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido</label>
+                <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedTime")}</label>
                 <input
                   type="time"
                   disabled={!canEdit}
@@ -1565,7 +1566,7 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
                 onClick={() => handleAcceptSuggestion(1)}
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Aceitar opção 1
+                {t("scheduling.acceptOption", { n: 1 })}
               </Button>
             )}
           </div>
@@ -1574,10 +1575,10 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
 
           {/* Sugestão 2 */}
           <div className="space-y-2">
-            <p className="text-[10px] font-medium text-muted-foreground">Opção 2</p>
+            <p className="text-[10px] font-medium text-muted-foreground">{t("scheduling.option2")}</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida 2</label>
+                <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedDate2")}</label>
                 <input
                   type="date"
                   disabled={!canEdit}
@@ -1590,7 +1591,7 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido 2</label>
+                <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedTime2")}</label>
                 <input
                   type="time"
                   disabled={!canEdit}
@@ -1611,7 +1612,7 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
                 onClick={() => handleAcceptSuggestion(2)}
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Aceitar opção 2
+                {t("scheduling.acceptOption", { n: 2 })}
               </Button>
             )}
           </div>
@@ -1619,7 +1620,7 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
       )}
 
       <ThreeStateToggle
-        label="Equipe"
+        label={t("scheduling.teamLabel")}
         value={teamStatus}
         onChange={(val) => handleSetStatus("team_approval_status", val)}
         timestamp={teamStatus === "approved" ? formatTimestamp(schedule?.team_approved_at ?? null) : null}
@@ -1628,9 +1629,9 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
 
       {hasPendency && (
         <ToggleSwitch
-          label="Responsável"
-          leftLabel="Cliente"
-          rightLabel="Equipe"
+          label={t("scheduling.responsibleLabel")}
+          leftLabel={t("scheduling.client")}
+          rightLabel={t("scheduling.teamLabel")}
           isLeft={responsibility !== "team"}
           onClickLeft={() => handleSetResponsibility("client")}
           onClickRight={() => handleSetResponsibility("team")}
@@ -1690,7 +1691,7 @@ function RescheduleSection({ schedule, storeId, campaignId, canEdit, teams, team
       {/* Toggle */}
       <div className="px-4 py-2 flex items-center justify-between bg-orange-500/5">
         <span className="text-[11px] font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
-          🔄 Remarcação da Instalação
+          {t("scheduling.rescheduleInstallation")}
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -1710,7 +1711,7 @@ function RescheduleSection({ schedule, storeId, campaignId, canEdit, teams, team
               )}
             />
           </button>
-          <span className="text-[10px] font-bold text-muted-foreground">{isEnabled ? "SIM" : "NÃO"}</span>
+          <span className="text-[10px] font-bold text-muted-foreground">{isEnabled ? t("common.yes") : t("common.no")}</span>
         </div>
       </div>
 
@@ -1846,7 +1847,7 @@ function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, has
       reschedule_team_approved_at: now,
     });
 
-    toast.success("Sugestão aceita! Lojista e Equipe aprovados (Remarcação).");
+    toast.success(t("scheduling.suggestionAcceptedReschedule"));
   };
 
   const formatTimestamp = (ts: string | null) => {
@@ -1862,11 +1863,11 @@ function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, has
   return (
     <div className={cn("border-t border-orange-400/30 pt-2 space-y-2", !hasDateAndTime && "opacity-50")}>
       <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide mb-1">
-        Status de aprovação (Remarcação)
-        {!hasDateAndTime && <span className="ml-2 text-muted-foreground font-normal normal-case">(preencha data e horário)</span>}
+        {t("scheduling.approvalReschedule")}
+        {!hasDateAndTime && <span className="ml-2 text-muted-foreground font-normal normal-case">({t("scheduling.fillDateTime")})</span>}
       </p>
       <ThreeStateToggle
-        label="Lojista"
+        label={t("scheduling.storeowner")}
         value={storeStatus}
         onChange={(val) => handleSetStatus("reschedule_store_approval_status", val)}
         timestamp={storeStatus === "approved" ? formatTimestamp(schedule?.reschedule_store_approved_at ?? null) : null}
@@ -1875,18 +1876,18 @@ function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, has
 
       {showSuggestion && (
         <div className="ml-[78px] space-y-3 p-3 rounded-lg border border-red-500/30 bg-red-500/5">
-          <p className="text-[10px] font-semibold text-destructive uppercase tracking-wide">Sugestões do Lojista (Remarcação)</p>
+          <p className="text-[10px] font-semibold text-destructive uppercase tracking-wide">{t("scheduling.storeownerSuggestionsReschedule")}</p>
           <div className="space-y-2">
-            <p className="text-[10px] font-medium text-muted-foreground">Opção 1</p>
+            <p className="text-[10px] font-medium text-muted-foreground">{t("scheduling.option1")}</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida</label>
+                <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedDate")}</label>
                 <input type="date" disabled={!canEdit} value={localSuggestedDate}
                   onChange={(e) => { setLocalSuggestedDate(e.target.value); handleSaveSuggested("reschedule_suggested_date", e.target.value); }}
                   className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido</label>
+                <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedTime")}</label>
                 <input type="time" disabled={!canEdit} value={localSuggestedTime}
                   onChange={(e) => { setLocalSuggestedTime(e.target.value); handleSaveSuggested("reschedule_suggested_time", e.target.value); }}
                   className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
@@ -1894,22 +1895,22 @@ function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, has
             </div>
             {hasSuggestionValues && canEdit && (
               <Button variant="outline" size="sm" className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7" onClick={() => handleAcceptSuggestion(1)}>
-                <CheckCircle2 className="w-3.5 h-3.5" /> Aceitar opção 1
+                <CheckCircle2 className="w-3.5 h-3.5" /> {t("scheduling.acceptOption", { n: 1 })}
               </Button>
             )}
           </div>
           <div className="border-t border-border" />
           <div className="space-y-2">
-            <p className="text-[10px] font-medium text-muted-foreground">Opção 2</p>
+            <p className="text-[10px] font-medium text-muted-foreground">{t("scheduling.option2")}</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-[10px] font-medium text-muted-foreground">Data Sugerida 2</label>
+                <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedDate2")}</label>
                 <input type="date" disabled={!canEdit} value={localSuggestedDate2}
                   onChange={(e) => { setLocalSuggestedDate2(e.target.value); handleSaveSuggested("reschedule_suggested_date_2", e.target.value); }}
                   className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
               </div>
               <div className="space-y-1">
-                <label className="text-[10px] font-medium text-muted-foreground">Horário Sugerido 2</label>
+                <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedTime2")}</label>
                 <input type="time" disabled={!canEdit} value={localSuggestedTime2}
                   onChange={(e) => { setLocalSuggestedTime2(e.target.value); handleSaveSuggested("reschedule_suggested_time_2", e.target.value); }}
                   className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
@@ -1917,7 +1918,7 @@ function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, has
             </div>
             {hasSuggestionValues2 && canEdit && (
               <Button variant="outline" size="sm" className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7" onClick={() => handleAcceptSuggestion(2)}>
-                <CheckCircle2 className="w-3.5 h-3.5" /> Aceitar opção 2
+                <CheckCircle2 className="w-3.5 h-3.5" /> {t("scheduling.acceptOption", { n: 2 })}
               </Button>
             )}
           </div>
@@ -1925,7 +1926,7 @@ function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, has
       )}
 
       <ThreeStateToggle
-        label="Equipe"
+        label={t("scheduling.teamLabel")}
         value={teamStatus}
         onChange={(val) => handleSetStatus("reschedule_team_approval_status", val)}
         timestamp={teamStatus === "approved" ? formatTimestamp(schedule?.reschedule_team_approved_at ?? null) : null}
@@ -1934,9 +1935,9 @@ function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, has
 
       {hasPendency && (
         <ToggleSwitch
-          label="Responsável"
-          leftLabel="Cliente"
-          rightLabel="Equipe"
+          label={t("scheduling.responsibleLabel")}
+          leftLabel={t("scheduling.client")}
+          rightLabel={t("scheduling.teamLabel")}
           isLeft={responsibility !== "team"}
           onClickLeft={() => handleSetResponsibility("client")}
           onClickRight={() => handleSetResponsibility("team")}
@@ -1958,9 +1959,9 @@ interface ThreeStateToggleProps {
 }
 
 const STATUS_CONFIG: Record<ApprovalStatusValue, { label: string; bg: string; border: string; activeBg: string }> = {
-  approved: { label: "Aprovado", bg: "bg-emerald-500/15", border: "border-emerald-500/40", activeBg: "bg-emerald-500" },
-  under_review: { label: "Em análise", bg: "bg-amber-500/15", border: "border-amber-500/40", activeBg: "bg-amber-500" },
-  rejected: { label: "Desaprovado", bg: "bg-red-500/15", border: "border-red-500/40", activeBg: "bg-red-500" },
+  approved: { label: "✅", bg: "bg-emerald-500/15", border: "border-emerald-500/40", activeBg: "bg-emerald-500" },
+  under_review: { label: "⏳", bg: "bg-amber-500/15", border: "border-amber-500/40", activeBg: "bg-amber-500" },
+  rejected: { label: "❌", bg: "bg-red-500/15", border: "border-red-500/40", activeBg: "bg-red-500" },
 };
 
 function ThreeStateToggle({ label, value, onChange, timestamp, disabled }: ThreeStateToggleProps) {
@@ -2094,8 +2095,8 @@ function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, 
   if (!hasContacts) {
     return (
       <div className="text-xs text-muted-foreground flex flex-wrap gap-x-4">
-        <span><span className="font-medium text-foreground">Contato:</span> {store.manager_name || "—"}</span>
-        <span><span className="font-medium text-foreground">Tel:</span> {store.phone || "—"}</span>
+        <span><span className="font-medium text-foreground">{t("common.contact")}:</span> {store.manager_name || "—"}</span>
+        <span><span className="font-medium text-foreground">{t("common.phone")}:</span> {store.phone || "—"}</span>
       </div>
     );
   }
@@ -2117,11 +2118,11 @@ function StoreContactsDisplay({ store, contacts, roleMap, schedule, agencyName, 
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 px-2 text-muted-foreground hover:text-foreground">
               <Users className="w-3 h-3" />
-              Ver todos os {contacts.length} contatos
+              {t("scheduling.seeAllContacts", { count: contacts.length })}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80 max-h-64 overflow-y-auto p-3" align="start">
-            <p className="text-xs font-semibold text-foreground mb-2">Contatos da loja</p>
+            <p className="text-xs font-semibold text-foreground mb-2">{t("scheduling.storeContacts")}</p>
             <div className="space-y-2.5">
               {contacts.map((contact) => (
                 <ContactRow
@@ -2180,7 +2181,7 @@ function ContactRow({ contact, roleMap, schedule, agencyName, clientName, campai
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-primary-foreground transition-colors"
-              title="Enviar mensagem no WhatsApp"
+              title="WhatsApp"
             >
               <MessageCircle className="w-3 h-3" />
             </a>
