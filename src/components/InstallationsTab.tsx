@@ -783,6 +783,46 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   </div>
                 )}
 
+                {/* Photo Check-in for occurrences */}
+                {showPhotoCheckin && schedule && (
+                  <button
+                    type="button"
+                    className={cn(
+                      "w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors border",
+                      schedule.photo_checkin
+                        ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 hover:bg-emerald-500/20"
+                        : "bg-orange-500/10 text-orange-700 border-orange-500/30 hover:bg-orange-500/20"
+                    )}
+                    onClick={async () => {
+                      const newVal = !schedule.photo_checkin;
+                      try {
+                        const { error } = await supabase
+                          .from("campaign_schedules")
+                          .update({ photo_checkin: newVal } as any)
+                          .eq("id", schedule.id);
+                        if (error) throw error;
+                        queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                        logActivity.mutate({
+                          campaign_id: campaignId,
+                          store_id: store.id,
+                          module: "installations",
+                          action: newVal ? "photo_checkin_done" : "photo_checkin_removed",
+                          details: newVal ? "Check-in de fotos para ocorrências realizado" : "Check-in de fotos para ocorrências removido",
+                        });
+                        toast.success(newVal ? "Check-in realizado!" : "Check-in removido!");
+                      } catch {
+                        toast.error("Erro ao atualizar check-in");
+                      }
+                    }}
+                  >
+                    {schedule.photo_checkin ? (
+                      <><CheckCircle2 className="w-4 h-4" /> Check-in realizado</>
+                    ) : (
+                      <><AlertCircle className="w-4 h-4" /> Realizar Check-in para Ocorrências</>
+                    )}
+                  </button>
+                )}
+
                 <hr className="border-border" />
 
                 {/* Photo thumbnails */}
