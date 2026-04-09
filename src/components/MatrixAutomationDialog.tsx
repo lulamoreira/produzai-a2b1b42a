@@ -186,18 +186,19 @@ export default function MatrixAutomationDialog({
       return;
     }
 
-    // Verify field still exists
-    const { data: clientData } = await supabase.from("clients").select("*").eq("id", clientId).single();
-    if (!clientData) { toast.error(t("automation.clientNotFound")); return; }
-
-    const fieldDef = customFieldLabels.find(f => f.key === selectedField);
-    if (!fieldDef) { toast.error(t("automation.fieldRemoved", { field: selectedField })); return; }
-
-    const labelKey = `custom_field_${fieldDef.index}_label` as keyof typeof clientData;
-    if (!clientData[labelKey]) {
-      toast.error(t("automation.fieldRemoved", { field: fieldDef.label }));
-      setSelectedField("");
-      return;
+    // Verify field still exists (only for custom fields)
+    const isCustomField = selectedField.startsWith("custom_field_");
+    if (isCustomField) {
+      const { data: clientData } = await supabase.from("clients").select("*").eq("id", clientId).single();
+      if (!clientData) { toast.error(t("automation.clientNotFound")); return; }
+      const fieldDef = customFieldLabels.find(f => f.key === selectedField);
+      if (!fieldDef) { toast.error(t("automation.fieldRemoved", { field: selectedField })); return; }
+      const labelKey = `custom_field_${fieldDef.index}_label` as keyof typeof clientData;
+      if (!clientData[labelKey]) {
+        toast.error(t("automation.fieldRemoved", { field: fieldDef.label }));
+        setSelectedField("");
+        return;
+      }
     }
 
     const resolvedPieces = resolveItemsToPieces();
