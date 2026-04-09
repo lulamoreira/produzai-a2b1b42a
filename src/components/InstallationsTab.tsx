@@ -29,7 +29,7 @@ import {
   Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList, Lock, LockOpen,
   CheckCircle2, AlertCircle,
 } from "lucide-react";
-import { downloadPhotosAsZip } from "@/lib/downloadPhotosZip";
+import { downloadPhotosAsZip, downloadAllCampaignPhotosAsZip } from "@/lib/downloadPhotosZip";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -474,6 +474,25 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleExport}>
             <Download className="w-3.5 h-3.5" /> Exportar
           </Button>
+          {photos.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={() => {
+                const storeNameMap: Record<string, string> = {};
+                stores.forEach((s) => {
+                  storeNameMap[s.id] = s.store_code ? `${s.store_code}_${s.name}` : s.name;
+                });
+                toast.info(`Preparando download de ${photos.length} arquivo(s)...`);
+                downloadAllCampaignPhotosAsZip(photos, storeNameMap, campaignName, (done, total) => {
+                  if (done === total) toast.success("Download concluído!");
+                }).catch(() => toast.error("Erro ao baixar fotos"));
+              }}
+            >
+              <Camera className="w-3.5 h-3.5" /> Baixar todas as fotos ({photos.length})
+            </Button>
+          )}
           {canLockCards && (
             <Button
               variant="outline"
