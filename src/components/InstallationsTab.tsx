@@ -82,6 +82,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [filterLocked, setFilterLocked] = useState("");
   const [filterReschedule, setFilterReschedule] = useState("");
   const [filterModel, setFilterModel] = useState("");
+  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "locked" | "withOccurrence">("");
 
   // UI state
   const [showCodes, setShowCodes] = useState(false);
