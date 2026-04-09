@@ -691,15 +691,15 @@ const CampaignDetail = () => {
         )}
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Código</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.code")}</label>
         <Input type="number" value={form.code} onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))} placeholder={nextPieceCode.full} />
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Localização na Loja *</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.locationInStore")} *</label>
         {pieceLocations.length > 0 ? (
           <Select value={form.category} onValueChange={(val) => setForm((f) => ({ ...f, category: val }))}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecione a localização" />
+              <SelectValue placeholder={t("pieces.selectLocation")} />
             </SelectTrigger>
             <SelectContent>
               {pieceLocations.map((loc) => <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>)}
@@ -710,7 +710,7 @@ const CampaignDetail = () => {
         )}
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome *</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.name")} *</label>
         <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
       </div>
       {clientId && campaignId && (
@@ -730,40 +730,40 @@ const CampaignDetail = () => {
         />
       )}
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Medidas</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.measures")}</label>
         <div className="grid grid-cols-3 gap-2">
            <div>
-            <label className="text-[10px] text-muted-foreground mb-0.5 block">Largura</label>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">{t("pieces.width")}</label>
             <Input value={form.width} onChange={(e) => setForm((f) => ({ ...f, width: e.target.value }))} />
           </div>
           <div>
-            <label className="text-[10px] text-muted-foreground mb-0.5 block">Altura</label>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">{t("pieces.height")}</label>
             <Input value={form.height} onChange={(e) => setForm((f) => ({ ...f, height: e.target.value }))} />
           </div>
           <div>
-            <label className="text-[10px] text-muted-foreground mb-0.5 block">Comprimento</label>
+            <label className="text-[10px] text-muted-foreground mb-0.5 block">{t("pieces.length")}</label>
             <Input value={form.length} onChange={(e) => setForm((f) => ({ ...f, length: e.target.value }))} />
           </div>
         </div>
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.storeModelLabel")}</label>
         <Select value={form.store_category || "Todas"} onValueChange={(val) => setForm((f) => ({ ...f, store_category: val }))}>
           <SelectTrigger>
-            <SelectValue placeholder="Selecione o modelo" />
+            <SelectValue placeholder={t("stores.selectModel")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Todas">Todas</SelectItem>
+            <SelectItem value="Todas">{t("common.allFeminine")}</SelectItem>
             {clientStoreModels.map((m) => <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Especificação</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.specification")}</label>
         <Input value={form.specification} onChange={(e) => setForm((f) => ({ ...f, specification: e.target.value }))} />
       </div>
       <div>
-        <label className="text-xs font-medium text-muted-foreground mb-1 block">Instruções de Instalação</label>
+        <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.installationInstructions")}</label>
         <Input value={form.installation_instructions} onChange={(e) => setForm((f) => ({ ...f, installation_instructions: e.target.value }))} />
       </div>
     </>
@@ -774,16 +774,16 @@ const CampaignDetail = () => {
     <div className="space-y-2 mb-4">
       <div className="relative w-full">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Buscar loja..." value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="pl-10" />
+        <Input placeholder={t("stores.searchStore")} value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="pl-10" />
       </div>
       <div className="flex flex-wrap gap-2 items-center">
         {uniqueStates.length > 0 && (
           <Select value={stateFilter} onValueChange={setStateFilter}>
             <SelectTrigger className="w-[100px] sm:w-[140px] text-xs">
-              <SelectValue placeholder="Estado" />
+              <SelectValue placeholder={t("stores.state")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Todos</SelectItem>
+              <SelectItem value="__all__">{t("common.all")}</SelectItem>
               {uniqueStates.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -791,10 +791,10 @@ const CampaignDetail = () => {
         {uniqueCities.length > 0 && (
           <Select value={cityFilter} onValueChange={setCityFilter}>
             <SelectTrigger className="w-[110px] sm:w-[180px] text-xs">
-              <SelectValue placeholder="Cidade" />
+              <SelectValue placeholder={t("stores.city")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Todas</SelectItem>
+              <SelectItem value="__all__">{t("common.allFeminine")}</SelectItem>
               {uniqueCities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -805,12 +805,12 @@ const CampaignDetail = () => {
               <SelectValue placeholder="Cat." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Todas</SelectItem>
+              <SelectItem value="__all__">{t("common.allFeminine")}</SelectItem>
               {uniqueStoreCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
         )}
-        <span className="text-xs text-muted-foreground">{filteredStores.length} loja(s)</span>
+        <span className="text-xs text-muted-foreground">{filteredStores.length} {t("stores.storeCount")}</span>
       </div>
     </div>
   );
@@ -889,7 +889,7 @@ const CampaignDetail = () => {
   if (!campaign) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Campanha não encontrada.</p>
+        <p className="text-muted-foreground">{t("campaigns.notFound")}</p>
       </div>
     );
   }
@@ -898,9 +898,9 @@ const CampaignDetail = () => {
     <AppLayout
       breadcrumbs={(() => {
         const SECTION_LABELS: Record<string, string> = {
-          stores: "Lojas", matrix: "Matriz", pieces: "Peças",
-          occurrences: "Ocorrências", scheduling: "Agendamento",
-          installations: "Instalações", budgets: "Orçamentos",
+          stores: t("modules.stores"), matrix: t("modules.matrix"), pieces: t("modules.pieces"),
+          occurrences: t("modules.occurrences"), scheduling: t("modules.scheduling"),
+          installations: t("modules.installations"), budgets: t("modules.budgets"),
         };
         const crumbs = [
           { label: agency?.name || "Agência", href: isLimitedMode ? undefined : "/" },
@@ -927,7 +927,7 @@ const CampaignDetail = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{stores.length}</p>
-                  <p className="text-[11px] text-muted-foreground">Lojas cadastradas</p>
+                  <p className="text-[11px] text-muted-foreground">{t("stores.registered")}</p>
                 </div>
               </div>
               <div className="card-kpi flex items-center gap-3">
@@ -936,7 +936,7 @@ const CampaignDetail = () => {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-foreground">{visiblePieces.length + kits.length}</p>
-                  <p className="text-[11px] text-muted-foreground">Peças cadastradas</p>
+                  <p className="text-[11px] text-muted-foreground">{t("pieces.registered")}</p>
                 </div>
               </div>
             </div>
@@ -972,7 +972,7 @@ const CampaignDetail = () => {
                 className="h-8 text-xs"
                 onClick={() => setStoresViewMode("table")}
               >
-                <Store className="w-3.5 h-3.5 mr-1" /> Lojas
+                <Store className="w-3.5 h-3.5 mr-1" /> {t("modules.stores")}
               </Button>
               <Button
                 size="sm"
@@ -980,7 +980,7 @@ const CampaignDetail = () => {
                 className="h-8 text-xs"
                 onClick={() => setStoresViewMode("contacts")}
               >
-                <Users className="w-3.5 h-3.5 mr-1" /> Contatos
+                <Users className="w-3.5 h-3.5 mr-1" /> {t("stores.contacts")}
               </Button>
             </div>
 
@@ -1000,19 +1000,19 @@ const CampaignDetail = () => {
             {filteredStores.length === 0 ? (
               <div className="text-center py-16">
                 <Store className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground text-sm">Nenhuma loja encontrada.</p>
+                <p className="text-muted-foreground text-sm">{t("stores.noStoreFound")}</p>
               </div>
             ) : (
               <div className="border border-border rounded-lg overflow-x-auto -mx-1 sm:mx-0">
                 <Table className="min-w-[600px]">
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Loja</TableHead>
-                      <TableHead>Cidade/Estado</TableHead>
-                      <TableHead>Modelo</TableHead>
+                      <TableHead>{t("matrix.store")}</TableHead>
+                      <TableHead>{t("stores.cityState")}</TableHead>
+                      <TableHead>{t("common.model")}</TableHead>
                       <TableHead className="text-center">
                         <div className="flex items-center justify-center gap-1.5">
-                          <span>Ativa</span>
+                          <span>{t("common.active")}</span>
                           {canEditCampaignStores && (
                             <Switch
                               checked={allEnabled}
@@ -1029,10 +1029,10 @@ const CampaignDetail = () => {
                           )}
                         </div>
                       </TableHead>
-                      <TableHead className="text-center">Auto</TableHead>
-                      <TableHead className="text-center">Agend.</TableHead>
-                      <TableHead className="text-center">Peças</TableHead>
-                      <TableHead className="text-center">Qtd Total</TableHead>
+                      <TableHead className="text-center">{t("common.auto")}</TableHead>
+                      <TableHead className="text-center">{t("stores.scheduling")}</TableHead>
+                      <TableHead className="text-center">{t("modules.pieces")}</TableHead>
+                      <TableHead className="text-center">{t("stores.totalQty")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1121,75 +1121,75 @@ const CampaignDetail = () => {
             {/* Edit Store Dialog */}
             <Dialog open={editStoreDialogOpen} onOpenChange={setEditStoreDialogOpen}>
               <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                <DialogHeader><DialogTitle>Editar Loja</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t("stores.editStore")}</DialogTitle></DialogHeader>
                 <form onSubmit={handleEditStoreSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome *</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.name")} *</label>
                       <Input value={editStoreForm.name} onChange={(e) => setEditStoreForm(f => ({ ...f, name: e.target.value }))} required />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Apelido</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.nickname")}</label>
                       <Input value={editStoreForm.nickname} onChange={(e) => setEditStoreForm(f => ({ ...f, nickname: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">CNPJ</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.cnpj")}</label>
                       <Input value={editStoreForm.cnpj} onChange={(e) => setEditStoreForm(f => ({ ...f, cnpj: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Inscrição Estadual</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.stateRegistration")}</label>
                       <Input value={editStoreForm.state_registration} onChange={(e) => setEditStoreForm(f => ({ ...f, state_registration: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">CEP</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.zipCode")}</label>
                       <Input value={editStoreForm.zip_code} onChange={(e) => setEditStoreForm(f => ({ ...f, zip_code: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Rua</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.street")}</label>
                       <Input value={editStoreForm.street} onChange={(e) => setEditStoreForm(f => ({ ...f, street: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Número</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.number")}</label>
                       <Input value={editStoreForm.number} onChange={(e) => setEditStoreForm(f => ({ ...f, number: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Complemento</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.complement")}</label>
                       <Input value={editStoreForm.complement} onChange={(e) => setEditStoreForm(f => ({ ...f, complement: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Bairro</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.neighborhood")}</label>
                       <Input value={editStoreForm.neighborhood} onChange={(e) => setEditStoreForm(f => ({ ...f, neighborhood: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Cidade</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.city")}</label>
                       <Input value={editStoreForm.city} onChange={(e) => setEditStoreForm(f => ({ ...f, city: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Estado</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.state")}</label>
                       <Input value={editStoreForm.state} onChange={(e) => setEditStoreForm(f => ({ ...f, state: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.country")}</label>
                       <Input value={editStoreForm.country} onChange={(e) => setEditStoreForm(f => ({ ...f, country: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefone</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.phone")}</label>
                       <Input value={editStoreForm.phone} onChange={(e) => setEditStoreForm(f => ({ ...f, phone: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">E-mail</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.email")}</label>
                       <Input value={editStoreForm.email} onChange={(e) => setEditStoreForm(f => ({ ...f, email: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Contato</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.contact")}</label>
                       <Input value={editStoreForm.manager_name} onChange={(e) => setEditStoreForm(f => ({ ...f, manager_name: e.target.value }))} />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.storeModelLabel")}</label>
                       <Select value={editStoreForm.store_model || ""} onValueChange={(val) => setEditStoreForm(f => ({ ...f, store_model: val === "__none__" ? "" : val }))}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t("common.select")} /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__none__">Nenhum</SelectItem>
+                          <SelectItem value="__none__">{t("common.none")}</SelectItem>
                           {clientStoreModels.map((m) => (
                             <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
                           ))}
@@ -1197,11 +1197,11 @@ const CampaignDetail = () => {
                       </Select>
                     </div>
                     <div className="col-span-2">
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Código da Loja</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("stores.storeCode")}</label>
                       <Input value={editStoreForm.store_code} onChange={(e) => setEditStoreForm(f => ({ ...f, store_code: e.target.value }))} />
                     </div>
                     <div className="col-span-2">
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.observations")}</label>
                       <textarea
                         className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         value={editStoreForm.observations}
@@ -1210,7 +1210,7 @@ const CampaignDetail = () => {
                     </div>
                   </div>
                   <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} storeName={editStoreForm.nickname || editStoreForm.name} />
-                  <Button type="submit" className="w-full" disabled={updateClientStore.isPending}>Salvar Alterações</Button>
+                  <Button type="submit" className="w-full" disabled={updateClientStore.isPending}>{t("common.saveChanges")}</Button>
                 </form>
               </DialogContent>
             </Dialog>
@@ -1254,9 +1254,9 @@ const CampaignDetail = () => {
                         <p className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 truncate">
                           <MapPin className="w-3 h-3 flex-shrink-0" />
                           <span className="truncate">
-                            {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ") || "Sem localização"}
+                            {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ") || t("stores.noLocation")}
                             {selectedStore.store_model && ` · ${selectedStore.store_model}`}
-                            {" · "}{assignedPieces.length} peça(s) · {totalQty} un.
+                            {" · "}{assignedPieces.length} {t("pieces.pieceCount")} · {totalQty} un.
                           </span>
                         </p>
                       </div>
@@ -1268,7 +1268,7 @@ const CampaignDetail = () => {
                           className="text-xs gap-1 gradient-accent text-white border-0"
                           onClick={() => setAddPieceToStoreOpen(true)}
                         >
-                          <Plus className="w-3.5 h-3.5" /> Incluir Peça
+                          <Plus className="w-3.5 h-3.5" /> {t("pieces.includePiece")}
                         </Button>
                       )}
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedStoreId(null)}>
@@ -1282,10 +1282,10 @@ const CampaignDetail = () => {
                     {assignedPieces.length === 0 ? (
                       <div className="text-center py-10">
                         <Package className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">Nenhuma peça atribuída a esta loja.</p>
+                        <p className="text-sm text-muted-foreground">{t("pieces.noPieceAssigned")}</p>
                         {canEditCampaignStores && (
                           <Button size="sm" variant="outline" className="mt-3 text-xs gap-1" onClick={() => setAddPieceToStoreOpen(true)}>
-                            <Plus className="w-3.5 h-3.5" /> Incluir primeira peça
+                            <Plus className="w-3.5 h-3.5" /> {t("pieces.includeFirst")}
                           </Button>
                         )}
                       </div>
@@ -1374,11 +1374,11 @@ const CampaignDetail = () => {
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                       <AlertDialogHeader>
-                                        <AlertDialogTitle>Remover peça da loja?</AlertDialogTitle>
-                                        <AlertDialogDescription>A quantidade será zerada para "{p.name}" nesta loja.</AlertDialogDescription>
+                                        <AlertDialogTitle>{t("pieces.removePieceStore")}</AlertDialogTitle>
+                                        <AlertDialogDescription>{t("pieces.removePieceStoreDesc", { name: p.name })}</AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                                         <AlertDialogAction
                                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                           onClick={() => {
@@ -1389,7 +1389,7 @@ const CampaignDetail = () => {
                                             }
                                           }}
                                         >
-                                          Remover
+                                          {t("common.remove")}
                                         </AlertDialogAction>
                                       </AlertDialogFooter>
                                     </AlertDialogContent>
@@ -1407,11 +1407,11 @@ const CampaignDetail = () => {
                   <Dialog open={addPieceToStoreOpen} onOpenChange={setAddPieceToStoreOpen}>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Incluir Peça em {selectedStore.name}</DialogTitle>
-                        <DialogDescription>Selecione uma peça e defina a quantidade.</DialogDescription>
+                        <DialogTitle>{t("pieces.addPieceToStore", { store: selectedStore.name })}</DialogTitle>
+                        <DialogDescription>{t("pieces.addPieceToStoreDesc")}</DialogDescription>
                       </DialogHeader>
                       {unassignedPieces.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">Todas as peças já foram incluídas nesta loja.</p>
+                        <p className="text-sm text-muted-foreground text-center py-4">{t("pieces.allPiecesIncluded")}</p>
                       ) : (
                         <div className="space-y-2 max-h-[400px] overflow-y-auto">
                           {unassignedPieces.map((p) => (
@@ -1432,11 +1432,11 @@ const CampaignDetail = () => {
                                     updateStorePiece.mutate({
                                       campaignId, storeId: selectedStoreId, pieceId: p.id, quantity: 1,
                                     });
-                                    toast.success(`"${p.name}" adicionada com 1 un.`);
+                                    toast.success(t("pieces.addedWithQty", { name: p.name }));
                                   }
                                 }}
                               >
-                                <Plus className="w-3.5 h-3.5" /> Incluir
+                                <Plus className="w-3.5 h-3.5" /> {t("pieces.include")}
                               </Button>
                             </div>
                           ))}
@@ -1452,13 +1452,13 @@ const CampaignDetail = () => {
             <AlertDialog open={!!deactivateStoreId} onOpenChange={(open) => { if (!open) setDeactivateStoreId(null); }}>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Desativar loja?</AlertDialogTitle>
+                  <AlertDialogTitle>{t("stores.deactivateStore")}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Esta loja possui peças e quantidades atribuídas nesta campanha. Ao desativá-la, todas as peças e quantidades serão removidas permanentemente. Deseja continuar?
+                    {t("stores.deactivateStoreDesc")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                   <AlertDialogAction
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     onClick={async () => {
@@ -1471,7 +1471,7 @@ const CampaignDetail = () => {
                       }
                       upsertStoreStatus.mutate({ campaignId, storeId: deactivateStoreId, enabled: false });
                       setDeactivateStoreId(null);
-                      toast.success("Loja desativada e peças removidas!");
+                      toast.success(t("stores.storeDeactivated"));
                     }}
                   >
                     SIM
@@ -1532,11 +1532,10 @@ const CampaignDetail = () => {
                         ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label }] : []),
                       ]}
                     />
-                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
-                      <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Exportar</span> Matriz
+                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}><Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("common.export")}</span> {t("modules.matrix")}</Button>
                     </Button>
                     <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setMatrixCustomExportOpen(true)}>
-                      <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Export.</span> Pers.
+                      <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("matrix.customExport")}
                     </Button>
                     {canEditCampaign && (
                       <label className="cursor-pointer">
@@ -1560,7 +1559,7 @@ const CampaignDetail = () => {
                     )}
                     {canEditCampaign && (
                       <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setImportMatrixDialogOpen(true)}>
-                        <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">De outra</span> camp.
+                        <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("matrix.fromOtherCampaign")}
                       </Button>
                     )}
                   </div>
@@ -1659,22 +1658,22 @@ const CampaignDetail = () => {
                   {pieces.length === 0 ? (
                     <div className="text-center py-20">
                       <Package className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                      <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma peça cadastrada</h2>
-                      <p className="text-muted-foreground text-sm">Adicione peças na aba "Peças" para começar a distribuir.</p>
+                      <h2 className="text-lg font-display font-bold text-foreground mb-2">{t("pieces.noPieceRegisteredMatrix")}</h2>
+                      <p className="text-muted-foreground text-sm">{t("pieces.addPiecesFirst")}</p>
                     </div>
                   ) : activeFilteredStores.length === 0 ? (
                     <div className="text-center py-20">
                       <Store className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                      <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma loja encontrada</h2>
-                      <p className="text-muted-foreground text-sm">Ajuste os filtros ou cadastre lojas no cliente.</p>
+                      <h2 className="text-lg font-display font-bold text-foreground mb-2">{t("pieces.noStoreFoundMatrix")}</h2>
+                      <p className="text-muted-foreground text-sm">{t("pieces.adjustFilters")}</p>
                     </div>
                   ) : matrixPieces.length === 0 ? (
                     <div className="text-center py-20">
                       <Filter className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                      <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma peça corresponde aos filtros</h2>
-                      <p className="text-muted-foreground text-sm">Ajuste os filtros no painel lateral para exibir peças.</p>
+                      <h2 className="text-lg font-display font-bold text-foreground mb-2">{t("pieces.noMatchFilters")}</h2>
+                      <p className="text-muted-foreground text-sm">{t("pieces.adjustSideFilters")}</p>
                       <Button size="sm" variant="outline" className="mt-3" onClick={() => { setPieceFilters({ ...EMPTY_FILTERS }); setStoreFilters({ ...EMPTY_STORE_FILTERS }); }}>
-                        Limpar filtros
+                        {t("pieces.clearFilters")}
                       </Button>
                     </div>
                   ) : (
@@ -1682,7 +1681,7 @@ const CampaignDetail = () => {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="sticky left-0 bg-card z-[5] min-w-[180px]">Loja</TableHead>
+                            <TableHead className="sticky left-0 bg-card z-[5] min-w-[180px]">{t("matrix.store")}</TableHead>
                             {matrixColumns.map((col) => {
                               if (col.type === "piece") {
                                 const p = col.data;
@@ -1980,24 +1979,24 @@ const CampaignDetail = () => {
           {activeSection === "pieces" && (<>
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
               <span className="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-accent/15 text-accent-foreground">
-                {visiblePieces.length + kits.length} peça(s)
+                {visiblePieces.length + kits.length} {t("pieces.pieceCount")}
               </span>
               <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
-                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Exportar
+                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("common.export")}
               </Button>
               {canEditPieces && (
                 <>
                 <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={handleReviewPieceCodes}>
-                  <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Revisar</span> Códigos
+                  <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("pieces.reviewCodes")}</span>
                 </Button>
                 <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={handleRecodificar}>
-                  <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Recodificar
+                  <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.recode")}
                 </Button>
                 </>
                )}
               {canEditPieces && (
                 <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setLocationDialogOpen(true)}>
-                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Localização na</span> loja
+                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("pieces.storeLocation")}</span>
                 </Button>
               )}
               {canEditPieces && (
@@ -2029,30 +2028,30 @@ const CampaignDetail = () => {
                   </Button>
                 </label>
                 <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setImportPiecesDialogOpen(true)}>
-                  <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Buscar de outra</span> campanha
+                  <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("pieces.fromCampaign")}</span>
                 </Button>
                 <Dialog open={pieceDialogOpen} onOpenChange={setPieceDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="text-[10px] sm:text-xs gap-1 gradient-accent text-white border-0">
-                      <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Nova Peça
+                      <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newPiece")}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                      <DialogTitle>Nova Peça</DialogTitle>
-                      <DialogDescription>Preencha os dados da peça para adicioná-la à campanha.</DialogDescription>
+                       <DialogTitle>{t("pieces.newPiece")}</DialogTitle>
+                       <DialogDescription>{t("pieces.addPieceDesc")}</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleAddPiece} className="space-y-3">
                       {renderPieceFormFields(pieceForm, setPieceForm)}
-                      <Button type="submit" className="w-full gradient-accent text-white border-0" disabled={addPiece.isPending}>Adicionar</Button>
+                      <Button type="submit" className="w-full gradient-accent text-white border-0" disabled={addPiece.isPending}>{t("common.add")}</Button>
                     </form>
                   </DialogContent>
                 </Dialog>
                 <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
-                  <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Novo Kit
+                  <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newKit")}
                 </Button>
                 <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setBulkDeleteOpen(true)}>
-                  <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Excluir em lote
+                  <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.bulkDelete")}
                 </Button>
                 </>
               )}
@@ -2062,7 +2061,7 @@ const CampaignDetail = () => {
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar peça por nome, código ou categoria..."
+                placeholder={t("pieces.searchPiece")}
                 value={pieceSearch}
                 onChange={(e) => setPieceSearch(e.target.value)}
                 className="pl-9 h-9 text-sm"
@@ -2097,7 +2096,7 @@ const CampaignDetail = () => {
                   <div className="text-center py-16">
                     <Package className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
                     <p className="text-muted-foreground text-sm">
-                      {search ? "Nenhuma peça encontrada para a busca." : "Nenhuma peça cadastrada nesta campanha."}
+                      {search ? t("pieces.noPieceFound") : t("pieces.noPieceRegistered")}
                     </p>
                   </div>
                 );
@@ -2183,12 +2182,12 @@ const CampaignDetail = () => {
       <Dialog open={editPieceDialogOpen} onOpenChange={setEditPieceDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Peça</DialogTitle>
-            <DialogDescription>Altere os dados da peça.</DialogDescription>
+             <DialogTitle>{t("pieces.editPiece")}</DialogTitle>
+             <DialogDescription>{t("pieces.editPieceDesc")}</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleEditPiece} className="space-y-3">
             {renderPieceFormFields(editPieceForm, setEditPieceForm as any)}
-            <Button type="submit" className="w-full" disabled={updatePiece.isPending}>Salvar</Button>
+            <Button type="submit" className="w-full" disabled={updatePiece.isPending}>{t("common.save")}</Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -2197,13 +2196,13 @@ const CampaignDetail = () => {
       <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Gerenciar Localizações</DialogTitle>
-            <DialogDescription>Cadastre localizações de peças para esta campanha.</DialogDescription>
+             <DialogTitle>{t("locations.manageLocations")}</DialogTitle>
+             <DialogDescription>{t("locations.manageLocationsDesc")}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex gap-2">
               <Input
-                placeholder="Nome da localização"
+                placeholder={t("locations.locationName")}
                 value={newLocationName}
                 onChange={(e) => setNewLocationName(e.target.value)}
                 onKeyDown={(e) => {
@@ -2227,7 +2226,7 @@ const CampaignDetail = () => {
               </Button>
             </div>
             {pieceLocations.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma localização cadastrada.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t("locations.noLocationRegistered")}</p>
             ) : (
               <div className="space-y-1 max-h-[300px] overflow-y-auto">
                 {[...pieceLocations].sort((a, b) => a.name.localeCompare(b.name)).map((loc) => (
