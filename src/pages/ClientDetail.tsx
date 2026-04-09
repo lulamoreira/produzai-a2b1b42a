@@ -662,7 +662,7 @@ const ClientDetail = () => {
           <Input value={form.city} onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))} />
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Estado</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">{countryConfig.stateLabel}</label>
           <Input value={form.state} onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))} />
         </div>
         <div>
