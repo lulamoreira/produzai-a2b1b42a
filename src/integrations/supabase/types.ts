@@ -1014,6 +1014,7 @@ export type Database = {
           custom_field_5_label: string | null
           display_order: number | null
           id: string
+          language: string | null
           name: string
         }
         Insert: {
@@ -1029,6 +1030,7 @@ export type Database = {
           custom_field_5_label?: string | null
           display_order?: number | null
           id?: string
+          language?: string | null
           name: string
         }
         Update: {
@@ -1044,6 +1046,7 @@ export type Database = {
           custom_field_5_label?: string | null
           display_order?: number | null
           id?: string
+          language?: string | null
           name?: string
         }
         Relationships: [
@@ -1793,6 +1796,7 @@ export type Database = {
           nickname: string | null
           phone: string | null
           phone_is_whatsapp: boolean | null
+          preferred_language: string | null
           updated_at: string
           user_id: string
         }
@@ -1808,6 +1812,7 @@ export type Database = {
           nickname?: string | null
           phone?: string | null
           phone_is_whatsapp?: boolean | null
+          preferred_language?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1823,6 +1828,7 @@ export type Database = {
           nickname?: string | null
           phone?: string | null
           phone_is_whatsapp?: boolean | null
+          preferred_language?: string | null
           updated_at?: string
           user_id?: string
         }
