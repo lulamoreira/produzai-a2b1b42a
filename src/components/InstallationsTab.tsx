@@ -70,7 +70,9 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const { isAdminOrMaster } = useUserRole();
   const { hasPermission: canManageTeamCodes } = useClientPermission(clientId, "can_manage_team_codes");
   const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
+  const { hasPermission: canViewPhotoCheckin } = useClientPermission(clientId, "can_view_photo_checkin");
   const showTeamCodesPanel = isAdminOrMaster || canManageTeamCodes;
+  const showPhotoCheckin = isAdminOrMaster || canViewPhotoCheckin;
   const logActivity = useLogActivity();
 
   // Filters
@@ -84,7 +86,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [filterLocked, setFilterLocked] = useState("");
   const [filterReschedule, setFilterReschedule] = useState("");
   const [filterModel, setFilterModel] = useState("");
-  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "withReschedule" | "withOccurrence">("");
+  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "withReschedule" | "withOccurrence" | "noCheckin">("");
+  const [filterCheckin, setFilterCheckin] = useState("");
 
   // UI state
   const [showCodes, setShowCodes] = useState(false);
