@@ -230,7 +230,7 @@ export function useDeleteClient() {
     onMutate: async (id) => {
       // Optimistically remove from all client queries
       qc.setQueriesData<Client[]>({ queryKey: ["clients"] }, (old) =>
-        old ? old.filter((c) => c.id !== id) : old
+        old && Array.isArray(old) ? old.filter((c) => c.id !== id) : old
       );
     },
     onSuccess: () => { toast.success("Cliente removido!"); },
