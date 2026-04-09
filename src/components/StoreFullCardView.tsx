@@ -141,10 +141,10 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
                 {/* Store data */}
                 <div className="space-y-1">
                   <InfoRow label="Código" value={store.store_code} />
-                  <InfoRow label="CNPJ" value={store.cnpj} />
-                  <InfoRow label="Insc. Est." value={store.state_registration} />
+                  <InfoRow label={cc.taxIdLabel} value={store.cnpj} />
+                  <InfoRow label={cc.stateRegistrationLabel} value={store.state_registration} />
                   {address && <InfoRow label="Endereço" value={address} />}
-                  {store.zip_code && <InfoRow label="CEP" value={store.zip_code} />}
+                  {store.zip_code && <InfoRow label={cc.zipLabel} value={store.zip_code} />}
                   {cityState && (
                     <div className="flex gap-2 text-xs">
                       <span className="text-muted-foreground shrink-0 min-w-[80px]">Localização:</span>
