@@ -84,7 +84,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [filterLocked, setFilterLocked] = useState("");
   const [filterReschedule, setFilterReschedule] = useState("");
   const [filterModel, setFilterModel] = useState("");
-  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "locked" | "withOccurrence">("");
+  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "withReschedule" | "withOccurrence">("");
 
   // UI state
   const [showCodes, setShowCodes] = useState(false);
@@ -247,7 +247,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         case "pending": return !sch?.completed_at;
         case "withTeam": return !!sch?.team_id;
         case "withPhotos": return (photosByStore[s.id] || []).length > 0;
-        case "locked": return !!sch?.locked;
+        case "withReschedule": return !!sch?.reschedule_enabled;
         case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
         default: return true;
       }
@@ -333,12 +333,12 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
     const pending = total - completed;
     const withTeam = filteredStores.filter(s => scheduleMap[s.id]?.team_id).length;
     const withPhotos = filteredStores.filter(s => (photosByStore[s.id] || []).length > 0).length;
-    const locked = filteredStores.filter(s => scheduleMap[s.id]?.locked).length;
+    const withReschedule = filteredStores.filter(s => scheduleMap[s.id]?.reschedule_enabled).length;
     const withOccurrence = filteredStores.filter(s => {
       const occ = storeOccurrenceStatus[s.id];
       return occ?.hasOccurrence && !occ.allResolved;
     }).length;
-    return { total, completed, pending, withTeam, withPhotos, locked, withOccurrence };
+    return { total, completed, pending, withTeam, withPhotos, withReschedule, withOccurrence };
   }, [filteredStores, scheduleMap, photosByStore, storeOccurrenceStatus]);
 
   return (
@@ -538,7 +538,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           { key: "pending" as const, value: summaryMetrics.pending, label: "⏳ Pendentes", color: "text-amber-600" },
           { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "🔧 Com equipe", color: "text-foreground" },
           { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: "📷 Com fotos", color: "text-foreground" },
-          { key: "locked" as const, value: summaryMetrics.locked, label: "🔒 Bloqueadas", color: "text-foreground" },
+          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: "🔄 Com remarcação", color: "text-amber-600" },
           { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: "⚠️ Ocorrências", color: "text-destructive" },
         ]).map((m) => (
           <button
@@ -560,7 +560,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       {summaryFilter && summaryFilter !== "total" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Filtrando por: <strong className="text-foreground">{
-            { completed: "Concluídas", pending: "Pendentes", withTeam: "Com equipe", withPhotos: "Com fotos", locked: "Bloqueadas", withOccurrence: "Ocorrências" }[summaryFilter]
+            { completed: "Concluídas", pending: "Pendentes", withTeam: "Com equipe", withPhotos: "Com fotos", withReschedule: "Com remarcação", withOccurrence: "Ocorrências" }[summaryFilter]
           }</strong> ({displayedStores.length})</span>
           <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
         </div>

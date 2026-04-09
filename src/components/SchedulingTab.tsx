@@ -102,7 +102,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterLocked, setFilterLocked] = useState("");
   const [filterReschedule, setFilterReschedule] = useState("");
   const [filterModel, setFilterModel] = useState("");
-  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "scheduled" | "noDate" | "approved" | "withTeam" | "locked" | "withOccurrence">("");
+  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "scheduled" | "noDate" | "approved" | "withTeam" | "withReschedule" | "withOccurrence">("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyStoreId, setHistoryStoreId] = useState("");
   const [historyStoreName, setHistoryStoreName] = useState("");
@@ -296,7 +296,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         case "noDate": return !effDate;
         case "approved": return sch?.store_approval_status === "approved" && sch?.team_approval_status === "approved";
         case "withTeam": return !!sch?.team_id;
-        case "locked": return !!sch?.locked;
+        case "withReschedule": return !!sch?.reschedule_enabled;
         case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
         default: return true;
       }
@@ -744,7 +744,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const sch = scheduleMap[s.id];
           return sch?.store_approval_status === "approved" && sch?.team_approval_status === "approved";
         }).length;
-        const locked = filteredStores.filter(s => scheduleMap[s.id]?.locked).length;
+        const withReschedule = filteredStores.filter(s => scheduleMap[s.id]?.reschedule_enabled).length;
         const withTeam = filteredStores.filter(s => scheduleMap[s.id]?.team_id).length;
         const withOccurrence = filteredStores.filter(s => {
           const occ = storeOccurrenceStatus[s.id];
@@ -756,7 +756,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           { key: "noDate" as const, value: noDate, label: "⏳ Sem data", color: "text-amber-600" },
           { key: "approved" as const, value: approved, label: "✅ Aprovadas", color: "text-foreground" },
           { key: "withTeam" as const, value: withTeam, label: "🔧 Com equipe", color: "text-foreground" },
-          { key: "locked" as const, value: locked, label: "🔒 Bloqueadas", color: "text-foreground" },
+          { key: "withReschedule" as const, value: withReschedule, label: "🔄 Com remarcação", color: "text-amber-600" },
           { key: "withOccurrence" as const, value: withOccurrence, label: "⚠️ Ocorrências", color: "text-destructive" },
         ];
         return (
@@ -782,7 +782,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             {summaryFilter && summaryFilter !== "total" && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>Filtrando por: <strong className="text-foreground">{
-                  { scheduled: "Agendadas", noDate: "Sem data", approved: "Aprovadas", withTeam: "Com equipe", locked: "Bloqueadas", withOccurrence: "Ocorrências" }[summaryFilter]
+                  { scheduled: "Agendadas", noDate: "Sem data", approved: "Aprovadas", withTeam: "Com equipe", withReschedule: "Com remarcação", withOccurrence: "Ocorrências" }[summaryFilter]
                 }</strong> ({displayedStores.length})</span>
                 <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
               </div>
