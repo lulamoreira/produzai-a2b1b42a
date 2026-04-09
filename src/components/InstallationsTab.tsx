@@ -70,7 +70,9 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const { isAdminOrMaster } = useUserRole();
   const { hasPermission: canManageTeamCodes } = useClientPermission(clientId, "can_manage_team_codes");
   const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
+  const { hasPermission: canViewPhotoCheckin } = useClientPermission(clientId, "can_view_photo_checkin");
   const showTeamCodesPanel = isAdminOrMaster || canManageTeamCodes;
+  const showPhotoCheckin = isAdminOrMaster || canViewPhotoCheckin;
   const logActivity = useLogActivity();
 
   // Filters
@@ -84,7 +86,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [filterLocked, setFilterLocked] = useState("");
   const [filterReschedule, setFilterReschedule] = useState("");
   const [filterModel, setFilterModel] = useState("");
-  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "withReschedule" | "withOccurrence">("");
+  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "withReschedule" | "withOccurrence" | "noCheckin">("");
+  const [filterCheckin, setFilterCheckin] = useState("");
 
   // UI state
   const [showCodes, setShowCodes] = useState(false);
@@ -228,13 +231,18 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       let matchesModel = true;
       if (filterModel) matchesModel = s.store_model === filterModel;
 
-      return matchesSearch && matchesState && matchesCity && matchesStatus && matchesDate && matchesPeriod && matchesTeam && matchesLocked && matchesReschedule && matchesModel;
+      // Check-in filter
+      let matchesCheckin = true;
+      if (filterCheckin === "checked") matchesCheckin = !!schedule?.photo_checkin;
+      else if (filterCheckin === "unchecked") matchesCheckin = !schedule?.photo_checkin;
+
+      return matchesSearch && matchesState && matchesCity && matchesStatus && matchesDate && matchesPeriod && matchesTeam && matchesLocked && matchesReschedule && matchesModel && matchesCheckin;
     }).sort((a, b) => {
       const stateComp = (a.state || "").localeCompare(b.state || "");
       if (stateComp !== 0) return stateComp;
       return a.name.localeCompare(b.name);
     });
-  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, filterDate, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel, scheduleMap, photosByStore]);
+  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, filterDate, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel, filterCheckin, scheduleMap, photosByStore]);
 
   // Apply summary filter on top of filteredStores
   const displayedStores = useMemo(() => {
@@ -249,6 +257,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         case "withPhotos": return (photosByStore[s.id] || []).length > 0;
         case "withReschedule": return !!sch?.reschedule_enabled;
         case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
+        case "noCheckin": return !sch?.photo_checkin;
         default: return true;
       }
     });
@@ -338,7 +347,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       const occ = storeOccurrenceStatus[s.id];
       return occ?.hasOccurrence && !occ.allResolved;
     }).length;
-    return { total, completed, pending, withTeam, withPhotos, withReschedule, withOccurrence };
+    const noCheckin = filteredStores.filter(s => !scheduleMap[s.id]?.photo_checkin).length;
+    return { total, completed, pending, withTeam, withPhotos, withReschedule, withOccurrence, noCheckin };
   }, [filteredStores, scheduleMap, photosByStore, storeOccurrenceStatus]);
 
   return (
@@ -531,16 +541,17 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       </div>
 
       {/* Summary Bar - Clickable Filters */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
         {([
-          { key: "total" as const, value: summaryMetrics.total, label: "Total", color: "text-foreground" },
-          { key: "completed" as const, value: summaryMetrics.completed, label: "✅ Concluídas", color: "text-emerald-600" },
-          { key: "pending" as const, value: summaryMetrics.pending, label: "⏳ Pendentes", color: "text-amber-600" },
-          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "🔧 Com equipe", color: "text-foreground" },
-          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: "📷 Com fotos", color: "text-foreground" },
-          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: "🔄 Com remarcação", color: "text-amber-600" },
-          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: "⚠️ Ocorrências", color: "text-destructive" },
-        ]).map((m) => (
+          { key: "total" as const, value: summaryMetrics.total, label: "Total", color: "text-foreground", visible: true },
+          { key: "completed" as const, value: summaryMetrics.completed, label: "✅ Concluídas", color: "text-emerald-600", visible: true },
+          { key: "pending" as const, value: summaryMetrics.pending, label: "⏳ Pendentes", color: "text-amber-600", visible: true },
+          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "🔧 Com equipe", color: "text-foreground", visible: true },
+          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: "📷 Com fotos", color: "text-foreground", visible: true },
+          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: "🔄 Com remarcação", color: "text-amber-600", visible: true },
+          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: "⚠️ Ocorrências", color: "text-destructive", visible: true },
+          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: "🔍 Sem Check-in", color: "text-orange-600", visible: showPhotoCheckin },
+        ]).filter(m => m.visible).map((m) => (
           <button
             key={m.key}
             type="button"
@@ -560,7 +571,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       {summaryFilter && summaryFilter !== "total" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Filtrando por: <strong className="text-foreground">{
-            { completed: "Concluídas", pending: "Pendentes", withTeam: "Com equipe", withPhotos: "Com fotos", withReschedule: "Com remarcação", withOccurrence: "Ocorrências" }[summaryFilter]
+            { completed: "Concluídas", pending: "Pendentes", withTeam: "Com equipe", withPhotos: "Com fotos", withReschedule: "Com remarcação", withOccurrence: "Ocorrências", noCheckin: "Sem Check-in" }[summaryFilter]
           }</strong> ({displayedStores.length})</span>
           <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
         </div>
@@ -770,6 +781,46 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       }
                     </span>
                   </div>
+                )}
+
+                {/* Photo Check-in for occurrences */}
+                {showPhotoCheckin && schedule && (
+                  <button
+                    type="button"
+                    className={cn(
+                      "w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors border",
+                      schedule.photo_checkin
+                        ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 hover:bg-emerald-500/20"
+                        : "bg-orange-500/10 text-orange-700 border-orange-500/30 hover:bg-orange-500/20"
+                    )}
+                    onClick={async () => {
+                      const newVal = !schedule.photo_checkin;
+                      try {
+                        const { error } = await supabase
+                          .from("campaign_schedules")
+                          .update({ photo_checkin: newVal } as any)
+                          .eq("id", schedule.id);
+                        if (error) throw error;
+                        queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                        logActivity.mutate({
+                          campaign_id: campaignId,
+                          store_id: store.id,
+                          module: "installations",
+                          action: newVal ? "photo_checkin_done" : "photo_checkin_removed",
+                          details: newVal ? "Check-in de fotos para ocorrências realizado" : "Check-in de fotos para ocorrências removido",
+                        });
+                        toast.success(newVal ? "Check-in realizado!" : "Check-in removido!");
+                      } catch {
+                        toast.error("Erro ao atualizar check-in");
+                      }
+                    }}
+                  >
+                    {schedule.photo_checkin ? (
+                      <><CheckCircle2 className="w-4 h-4" /> Check-in realizado</>
+                    ) : (
+                      <><AlertCircle className="w-4 h-4" /> Realizar Check-in para Ocorrências</>
+                    )}
+                  </button>
                 )}
 
                 <hr className="border-border" />

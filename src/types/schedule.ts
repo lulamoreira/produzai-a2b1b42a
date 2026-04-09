@@ -41,4 +41,5 @@ export type Schedule = {
   locked: boolean;
   completed_at: string | null;
   completed_by: string | null;
+  photo_checkin: boolean;
 };

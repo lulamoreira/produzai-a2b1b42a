@@ -32,6 +32,7 @@ export type PermissionCategory = {
   can_edit_reporter_data: boolean;
   can_manage_team_codes: boolean;
   can_lock_cards: boolean;
+  can_view_photo_checkin: boolean;
   created_at: string;
 };
 
