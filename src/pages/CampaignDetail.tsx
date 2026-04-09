@@ -1532,11 +1532,10 @@ const CampaignDetail = () => {
                         ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label }] : []),
                       ]}
                     />
-                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
-                      <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Exportar</span> Matriz
+                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}><Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("common.export")}</span> {t("modules.matrix")}</Button>
                     </Button>
                     <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setMatrixCustomExportOpen(true)}>
-                      <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">Export.</span> Pers.
+                      <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("matrix.customExport")}
                     </Button>
                     {canEditCampaign && (
                       <label className="cursor-pointer">
@@ -1560,7 +1559,7 @@ const CampaignDetail = () => {
                     )}
                     {canEditCampaign && (
                       <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setImportMatrixDialogOpen(true)}>
-                        <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">De outra</span> camp.
+                        <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("matrix.fromOtherCampaign")}
                       </Button>
                     )}
                   </div>
@@ -1659,22 +1658,22 @@ const CampaignDetail = () => {
                   {pieces.length === 0 ? (
                     <div className="text-center py-20">
                       <Package className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                      <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma peça cadastrada</h2>
-                      <p className="text-muted-foreground text-sm">Adicione peças na aba "Peças" para começar a distribuir.</p>
+                      <h2 className="text-lg font-display font-bold text-foreground mb-2">{t("pieces.noPieceRegisteredMatrix")}</h2>
+                      <p className="text-muted-foreground text-sm">{t("pieces.addPiecesFirst")}</p>
                     </div>
                   ) : activeFilteredStores.length === 0 ? (
                     <div className="text-center py-20">
                       <Store className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                      <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma loja encontrada</h2>
-                      <p className="text-muted-foreground text-sm">Ajuste os filtros ou cadastre lojas no cliente.</p>
+                      <h2 className="text-lg font-display font-bold text-foreground mb-2">{t("pieces.noStoreFoundMatrix")}</h2>
+                      <p className="text-muted-foreground text-sm">{t("pieces.adjustFilters")}</p>
                     </div>
                   ) : matrixPieces.length === 0 ? (
                     <div className="text-center py-20">
                       <Filter className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-                      <h2 className="text-lg font-display font-bold text-foreground mb-2">Nenhuma peça corresponde aos filtros</h2>
-                      <p className="text-muted-foreground text-sm">Ajuste os filtros no painel lateral para exibir peças.</p>
+                      <h2 className="text-lg font-display font-bold text-foreground mb-2">{t("pieces.noMatchFilters")}</h2>
+                      <p className="text-muted-foreground text-sm">{t("pieces.adjustSideFilters")}</p>
                       <Button size="sm" variant="outline" className="mt-3" onClick={() => { setPieceFilters({ ...EMPTY_FILTERS }); setStoreFilters({ ...EMPTY_STORE_FILTERS }); }}>
-                        Limpar filtros
+                        {t("pieces.clearFilters")}
                       </Button>
                     </div>
                   ) : (
@@ -1682,7 +1681,7 @@ const CampaignDetail = () => {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="sticky left-0 bg-card z-[5] min-w-[180px]">Loja</TableHead>
+                            <TableHead className="sticky left-0 bg-card z-[5] min-w-[180px]">{t("matrix.store")}</TableHead>
                             {matrixColumns.map((col) => {
                               if (col.type === "piece") {
                                 const p = col.data;
