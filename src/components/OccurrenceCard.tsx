@@ -123,6 +123,7 @@ export default function OccurrenceCard({
   const [saving, setSaving] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [lockLoading, setLockLoading] = useState(false);
+  const [showPhotos, setShowPhotos] = useState(false);
   const hasPendingChanges = Object.keys(draft).length > 0;
 
   // Merged occurrence (server + draft)
@@ -402,18 +403,23 @@ export default function OccurrenceCard({
         )}
       </div>
 
-      {/* Photo check-in status */}
+      {/* Photo check-in status + gallery button */}
       {schedule && (
-        <div className={`mx-4 mt-2 flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium border ${
-          schedule.photo_checkin
-            ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
-            : "bg-orange-500/10 text-orange-700 border-orange-500/30"
-        }`}>
-          {schedule.photo_checkin && schedule.photo_checkin_at ? (
-            <><CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> Fotos para ocorrências verificadas em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
-          ) : (
-            <><AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> Check-in de fotos para ocorrências pendente</>
-          )}
+        <div className="mx-4 mt-2 flex items-center gap-2">
+          <div className={`flex-1 flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium border ${
+            schedule.photo_checkin
+              ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30"
+              : "bg-orange-500/10 text-orange-700 border-orange-500/30"
+          }`}>
+            {schedule.photo_checkin && schedule.photo_checkin_at ? (
+              <><CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" /> Fotos para ocorrências verificadas em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
+            ) : (
+              <><AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> Check-in de fotos para ocorrências pendente</>
+            )}
+          </div>
+          <Button variant="outline" size="sm" className="gap-1 text-xs shrink-0" onClick={() => setShowPhotos(true)}>
+            <Camera className="w-3.5 h-3.5" /> Ver fotos
+          </Button>
         </div>
       )}
 
