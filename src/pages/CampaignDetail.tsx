@@ -35,7 +35,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet } from "lucide-react";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 import BudgetsTab from "@/components/BudgetsTab";
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -44,6 +44,7 @@ import AppLayout from "@/components/AppLayout";
 import QuickMatrixEditor from "@/components/QuickMatrixEditor";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
+import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
 import OccurrencesTab from "@/components/OccurrencesTab";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
@@ -1538,6 +1539,18 @@ const CampaignDetail = () => {
                     <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}><Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("common.export")}</span> {t("modules.matrix")}</Button>
                     <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setMatrixCustomExportOpen(true)}>
                       <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("matrix.customExport")}
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={async () => {
+                      toast.loading("Gerando planilha com imagens...", { id: "matrix-excel" });
+                      try {
+                        await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha");
+                        toast.success("Planilha exportada com sucesso!", { id: "matrix-excel" });
+                      } catch (err) {
+                        console.error(err);
+                        toast.error("Erro ao exportar planilha", { id: "matrix-excel" });
+                      }
+                    }}>
+                      <FileSpreadsheet className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Exportar Orçamento
                     </Button>
                     {canEditCampaign && (
                       <label className="cursor-pointer">
