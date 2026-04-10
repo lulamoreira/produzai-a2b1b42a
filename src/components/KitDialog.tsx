@@ -380,7 +380,7 @@ export function KitDetailDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditingPieceId(null); setShowAddPieces(false); setEditingKitName(false); } onOpenChange(v); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditingPieceId(null); setShowAddPieces(false); setEditingKitName(false); setLocalImageUrl(undefined); } onOpenChange(v); }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -426,11 +426,12 @@ export function KitDetailDialog({
         {/* Kit image */}
         {canEdit && onUpdateKit && (
           <KitImageSection
-            imageUrl={kit.image_url}
+            imageUrl={effectiveImageUrl}
             kitId={kit.id}
             kitName={kit.name}
             canEdit={canEdit}
             onImageUpdated={async (url) => {
+              setLocalImageUrl(url);
               await onUpdateKit({ id: kit.id, image_url: url });
             }}
           />
