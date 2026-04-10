@@ -39,7 +39,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import AppLayout from "@/components/AppLayout";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
-import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import ComboboxInput from "@/components/ComboboxInput";
@@ -291,7 +291,7 @@ const ClientDetail = () => {
   const [newModelName, setNewModelName] = useState("");
   const [enriching, setEnriching] = useState(false);
   const [enrichProgress, setEnrichProgress] = useState({ current: 0, total: 0 });
-  const [customExportOpen, setCustomExportOpen] = useState(false);
+  
   const [displayOrderStores, setDisplayOrderStores] = useState<ClientStore[]>([]);
 
   // Store form
@@ -890,9 +890,6 @@ const ClientDetail = () => {
                 <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportClientStores(stores, client.name, agencyInfo?.name)}>
                   <Download className="w-3 h-3" /> Exportar
                 </Button>
-                <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setCustomExportOpen(true)}>
-                  <Download className="w-3 h-3" /> <span className="hidden sm:inline">Export.</span> Pers.
-                </Button>
                 {canEditStores && (
                   <>
                     <label className="cursor-pointer">
@@ -1119,50 +1116,6 @@ const ClientDetail = () => {
             </>
             )}
 
-            <CustomExportDialog
-              open={customExportOpen}
-              onOpenChange={setCustomExportOpen}
-              title="Exportação Personalizada — Lojas"
-              fileName={`Lojas_${client.name}`}
-              agencyName={agencyInfo?.name}
-              clientName={client.name}
-              sheetName="Lojas"
-              data={displayOrderStores.length > 0 ? displayOrderStores : stores}
-              fields={(() => {
-                const base: ExportFieldDef[] = [
-                  { key: "name", label: "Nome", getValue: (s: ClientStore) => s.name || "" },
-                  { key: "nickname", label: "Apelido", getValue: (s: ClientStore) => s.nickname || "" },
-                  { key: "store_code", label: "Código", getValue: (s: ClientStore) => s.store_code || "" },
-                  { key: "cnpj", label: "CNPJ", getValue: (s: ClientStore) => s.cnpj || "" },
-                  { key: "state_registration", label: "Inscrição Estadual", getValue: (s: ClientStore) => s.state_registration || "" },
-                  { key: "zip_code", label: "CEP", getValue: (s: ClientStore) => s.zip_code || "" },
-                  { key: "street", label: "Rua", getValue: (s: ClientStore) => s.street || "" },
-                  { key: "number", label: "Nº", getValue: (s: ClientStore) => s.number || "" },
-                  { key: "complement", label: "Complemento", getValue: (s: ClientStore) => s.complement || "" },
-                  { key: "neighborhood", label: "Bairro", getValue: (s: ClientStore) => s.neighborhood || "" },
-                  { key: "city", label: "Cidade", getValue: (s: ClientStore) => s.city || "" },
-                  { key: "state", label: "UF", getValue: (s: ClientStore) => s.state || "" },
-                  { key: "country", label: "País", getValue: (s: ClientStore) => s.country || "" },
-                  { key: "store_model", label: "Modelo", getValue: (s: ClientStore) => s.store_model || "" },
-                  { key: "phone", label: "Telefone", getValue: (s: ClientStore) => s.phone || "" },
-                  { key: "email", label: "E-mail", getValue: (s: ClientStore) => s.email || "" },
-                  { key: "manager_name", label: "Contato", getValue: (s: ClientStore) => s.manager_name || "" },
-                  { key: "showcase_count", label: "Qtd. Vitrines", getValue: (s: ClientStore) => String((s as any).showcase_count ?? 0) },
-                  { key: "observations", label: "Observações", getValue: (s: ClientStore) => (s as any).observations || "" },
-                ];
-                customFieldsParsed.forEach((cf, i) => {
-                  if (cf.name) {
-                    const fieldKey = `custom_field_${i + 1}`;
-                    base.push({
-                      key: fieldKey,
-                      label: cf.name,
-                      getValue: (s: ClientStore) => (s as any)[fieldKey] || "",
-                    });
-                  }
-                });
-                return base;
-              })()}
-            />
           </>
         )}
       </div>

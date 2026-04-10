@@ -599,9 +599,7 @@
   "matrix": {
     "title": "Matriz/Prorrateo",
     "exportMatrix": "Exportar Matriz",
-    "customExport": "Export. Pers.",
     "fromOtherCampaign": "De otra camp.",
-    "customExportTitle": "Exportación Personalizada — Matriz/Prorrateo",
     "store": "Tienda",
     "storeNickname": "Apodo",
     "storeCodeLabel": "Código Tienda",
