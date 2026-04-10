@@ -994,6 +994,7 @@ const CampaignDetail = () => {
                 clientName={client?.name || ""}
                 canEdit={canEditStores}
                 onEditStore={handleOpenEditStore}
+                countryCode={(client as any)?.country_code}
               />
             ) : (
             <>
