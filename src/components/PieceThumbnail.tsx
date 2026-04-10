@@ -5,18 +5,30 @@ import { Image } from "lucide-react";
 interface Props {
   imageUrl: string | null | undefined;
   name: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
 }
+
+const sizeMap = {
+  sm: "w-8 h-8",
+  md: "w-10 h-10",
+  lg: "w-14 h-14",
+};
+
+const iconSizeMap = {
+  sm: "w-3 h-3",
+  md: "w-4 h-4",
+  lg: "w-5 h-5",
+};
 
 const PieceThumbnail = ({ imageUrl, name, size = "sm" }: Props) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  const sizeClasses = size === "sm" ? "w-8 h-8" : "w-10 h-10";
+  const sizeClasses = sizeMap[size];
 
   if (!imageUrl) {
     return (
       <div className={`${sizeClasses} rounded border border-border bg-muted/30 flex items-center justify-center shrink-0`}>
-        <Image className="w-3 h-3 text-muted-foreground/40" />
+        <Image className={`${iconSizeMap[size]} text-muted-foreground/40`} />
       </div>
     );
   }
