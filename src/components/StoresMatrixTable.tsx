@@ -45,6 +45,7 @@ const BASE_COLUMNS: ColumnDef[] = [
   { key: "phone", label: "Telefone", storeField: "phone" },
   { key: "email", label: "E-mail", storeField: "email" },
   { key: "manager_name", label: "Contato", storeField: "manager_name" },
+  { key: "showcase_count", label: "Qtd. Vitrines", storeField: "showcase_count" },
   { key: "observations", label: "Observações", storeField: "observations" },
 ];
 

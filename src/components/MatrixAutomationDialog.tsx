@@ -108,6 +108,7 @@ export default function MatrixAutomationDialog({
       { key: "store_model", label: t("automation.fieldModel") },
       { key: "neighborhood", label: t("automation.fieldNeighborhood") },
       { key: "country", label: t("automation.fieldCountry") },
+      { key: "showcase_count", label: "Qtd. Vitrines" },
     ];
     const custom = customFieldLabels.map(f => ({ key: f.key, label: f.label }));
     return [...standard, ...custom];

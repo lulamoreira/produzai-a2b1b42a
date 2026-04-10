@@ -114,7 +114,7 @@ const emptyStoreForm = {
   city: "", state: "", phone: "", manager_name: "",
   store_model: "", country: "", store_code: "", email: "",
   custom_field_1: "", custom_field_2: "", custom_field_3: "", custom_field_4: "", custom_field_5: "",
-  observations: "",
+  observations: "", showcase_count: "0",
 };
 
 function generateStoreCode(clientName: string, country: string, existingStores: { store_code: string | null }[]): string {
@@ -415,6 +415,7 @@ const ClientDetail = () => {
       custom_field_4: store.custom_field_4 || "",
       custom_field_5: store.custom_field_5 || "",
       observations: (store as any).observations || "",
+      showcase_count: String((store as any).showcase_count ?? 0),
     });
     setEditStoreDialogOpen(true);
   };
@@ -541,6 +542,7 @@ const ClientDetail = () => {
           store_model: r["modelo de loja"] || r["Modelo de Loja"] || r["store_model"] || null,
           store_code: r["código da loja"] || r["Código da Loja"] || r["store_code"] || null,
           email: r["email"] || r["Email"] || r["E-mail"] || r["e-mail"] || null,
+          showcase_count: parseInt(r["quantidade de vitrines"] || r["Quantidade de Vitrines"] || r["vitrines"] || r["Vitrines"] || r["showcase_count"] || "0", 10) || 0,
         })).filter((s) => s.name);
         if (mapped.length === 0) {
           toast.error("Nenhuma loja encontrada na planilha.");
@@ -1139,6 +1141,7 @@ const ClientDetail = () => {
                   { key: "phone", label: "Telefone", getValue: (s: ClientStore) => s.phone || "" },
                   { key: "email", label: "E-mail", getValue: (s: ClientStore) => s.email || "" },
                   { key: "manager_name", label: "Contato", getValue: (s: ClientStore) => s.manager_name || "" },
+                  { key: "showcase_count", label: "Qtd. Vitrines", getValue: (s: ClientStore) => String((s as any).showcase_count ?? 0) },
                   { key: "observations", label: "Observações", getValue: (s: ClientStore) => (s as any).observations || "" },
                 ];
                 customFieldsParsed.forEach((cf, i) => {
