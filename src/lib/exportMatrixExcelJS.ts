@@ -4,6 +4,16 @@ import type { ClientStore, CampaignPiece, CampaignKit, CampaignKitPiece } from "
 
 // ─── Helpers ─────────────────────────────────────────────
 
+function getExcelColumnLetter(colNum: number): string {
+  let letter = "";
+  while (colNum > 0) {
+    const mod = (colNum - 1) % 26;
+    letter = String.fromCharCode(65 + mod) + letter;
+    colNum = Math.floor((colNum - 1) / 26);
+  }
+  return letter;
+}
+
 async function fetchImageAsBase64(url: string): Promise<{ base64: string; ext: "png" | "jpeg"; width: number; height: number } | null> {
   try {
     const res = await fetch(url);
