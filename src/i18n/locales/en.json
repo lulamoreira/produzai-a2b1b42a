@@ -144,7 +144,7 @@
   },
   "modules": {
     "stores": "Stores",
-    "matrix": "Matrix",
+    "matrix": "Matrix/Allocation",
     "pieces": "Pieces",
     "occurrences": "Occurrences",
     "scheduling": "Scheduling",

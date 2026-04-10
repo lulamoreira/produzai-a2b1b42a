@@ -144,7 +144,7 @@
   },
   "modules": {
     "stores": "Lojas",
-    "matrix": "Matriz",
+    "matrix": "Matriz/Rateio",
     "pieces": "Peças",
     "occurrences": "Ocorrências",
     "scheduling": "Agendamento",
