@@ -2156,6 +2156,43 @@ const CampaignDetail = () => {
                        await updatePiece.mutateAsync({ id: kp.piece_id, is_mockup: newVal });
                      }
                    }}
+                  onDuplicate={async (piece) => {
+                    const maxOrder = pieces.length > 0 ? Math.max(...pieces.map(p => p.display_order)) : 0;
+                    const maxCode = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;
+                    await addPiece.mutateAsync({
+                      campaign_id: campaignId,
+                      code: maxCode + 1,
+                      category: piece.category,
+                      name: `${piece.name} - Cópia`,
+                      size: piece.size,
+                      store_category: piece.store_category || undefined,
+                      specification: piece.specification,
+                      installation_instructions: piece.installation_instructions,
+                      kit_only: piece.kit_only,
+                      is_mockup: piece.is_mockup,
+                      display_order: maxOrder + 1,
+                      image_url: piece.image_url || undefined,
+                    });
+                    toast.success("Peça duplicada com sucesso!");
+                  }}
+                  onDuplicateKit={async (kit) => {
+                    const maxOrder = [...pieces, ...kits].reduce((max, item) => Math.max(max, item.display_order), 0);
+                    const maxCode = kits.length > 0 ? Math.max(...kits.map(k => k.code)) : 0;
+                    const createdKit = await addKit.mutateAsync({
+                      campaign_id: campaignId,
+                      name: `${kit.name} - Cópia`,
+                      code: maxCode + 1,
+                      display_order: maxOrder + 1,
+                    });
+                    if (kit.image_url) await updateKit.mutateAsync({ id: createdKit.id, image_url: kit.image_url });
+                    if (kit.is_mockup) await updateKit.mutateAsync({ id: createdKit.id, is_mockup: true });
+                    // Duplicate kit pieces
+                    const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
+                    for (const kp of kpForKit) {
+                      await addKitPiece.mutateAsync({ kit_id: createdKit.id, piece_id: kp.piece_id, quantity: kp.quantity });
+                    }
+                    toast.success("Kit duplicado com sucesso!");
+                  }}
                   onReorder={handleReorderUnified}
                 />
               );

@@ -23,7 +23,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { GripVertical, Edit3, Trash2, CheckSquare, Package, Palette } from "lucide-react";
+import { GripVertical, Edit3, Trash2, CheckSquare, Package, Palette, Copy } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import type { CampaignPiece, ClientStore, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
@@ -46,6 +46,8 @@ interface SortableRowProps {
   onKitClick: (kit: CampaignKit) => void;
   onDeleteKit: (id: string) => void;
   onToggleKitMockup: (kit: CampaignKit) => void;
+  onDuplicate: (piece: CampaignPiece) => void;
+  onDuplicateKit: (kit: CampaignKit) => void;
   isDistributed: boolean;
   qtyMap: Record<string, number>;
   stores: ClientStore[];
@@ -54,7 +56,7 @@ interface SortableRowProps {
 
 function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
-  onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup,
+  onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
   isDistributed, kitCategory,
 }: SortableRowProps) {
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
@@ -122,6 +124,11 @@ function SortableRow({
                   onClick={() => onToggleKitMockup(kit)}
                 >
                   <Palette className={`w-3.5 h-3.5 ${kit.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
+                </Button>
+              )}
+              {canEditPieces && (
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Duplicar kit" onClick={() => onDuplicateKit(kit)}>
+                  <Copy className="w-3.5 h-3.5" />
                 </Button>
               )}
               {canEditPieces && (
@@ -223,6 +230,11 @@ function SortableRow({
               </Button>
             )}
             {canEditPieces && (
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Duplicar peça" onClick={() => onDuplicate(piece)}>
+                <Copy className="w-3.5 h-3.5" />
+              </Button>
+            )}
+            {canEditPieces && (
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(piece)}>
                 <Edit3 className="w-3.5 h-3.5" />
               </Button>
@@ -270,13 +282,15 @@ interface SortablePiecesTableProps {
   onKitClick: (kit: CampaignKit) => void;
   onDeleteKit: (id: string) => void;
   onToggleKitMockup: (kit: CampaignKit) => void;
+  onDuplicate: (piece: CampaignPiece) => void;
+  onDuplicateKit: (kit: CampaignKit) => void;
   onReorder: (rows: UnifiedRow[]) => void;
 }
 
 export default function SortablePiecesTable({
   pieces, kits, kitPieces: kitPiecesList, allPieces, stores, qtyMap,
   canEditPieces, canDeletePieces,
-  onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onReorder,
+  onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit, onReorder,
 }: SortablePiecesTableProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -382,6 +396,8 @@ export default function SortablePiecesTable({
                     onKitClick={onKitClick}
                     onDeleteKit={onDeleteKit}
                     onToggleKitMockup={onToggleKitMockup}
+                    onDuplicate={onDuplicate}
+                    onDuplicateKit={onDuplicateKit}
                     isDistributed={row.type === "piece" ? getIsDistributed(row.data) : false}
                     qtyMap={qtyMap}
                     stores={stores}
