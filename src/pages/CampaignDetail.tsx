@@ -1211,7 +1211,7 @@ const CampaignDetail = () => {
                       />
                     </div>
                   </div>
-                  <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} storeName={editStoreForm.nickname || editStoreForm.name} />
+                  <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} storeName={editStoreForm.nickname || editStoreForm.name} countryCode={(client as any)?.country_code} />
                   <Button type="submit" className="w-full" disabled={updateClientStore.isPending}>{t("common.saveChanges")}</Button>
                 </form>
               </DialogContent>

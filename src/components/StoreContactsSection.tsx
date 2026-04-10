@@ -201,16 +201,16 @@ const StoreContactsSection = ({ storeId, clientId, canEdit, storeName, countryCo
               <label className="text-[10px] text-muted-foreground">Telefone</label>
               <div className="flex gap-0.5 items-center">
               <DebouncedInput
-                  value={contact.phone ? formatPhone(contact.phone) : ""}
-                  onValueCommit={(val) => handleUpdateField(contact, "phone", formatPhone(val))}
+                  value={contact.phone ? formatPhoneByCountry(contact.phone, cc) : ""}
+                  onValueCommit={(val) => handleUpdateField(contact, "phone", formatPhoneByCountry(val, cc))}
                   className="h-7 text-xs"
-                  placeholder="(00)00000-0000"
-                  maxLength={14}
+                  placeholder={getPhonePlaceholder(cc)}
+                  maxLength={getPhoneMaxLength(cc)}
                   disabled={!canEdit}
                 />
                 {contact.phone && (
                   <a
-                    href={`https://wa.me/55${contact.phone.replace(/\D/g, "")}?text=${encodeURIComponent((whatsappStoreContactTemplate || 'Olá, {name}, como vai?').replace(/\{name\}/g, contact.name.split(" ")[0]).replace(/\{store\}/g, storeName || ''))}`}
+                    href={`https://wa.me/${phonePrefix}${contact.phone.replace(/\D/g, "")}?text=${encodeURIComponent((whatsappStoreContactTemplate || 'Olá, {name}, como vai?').replace(/\{name\}/g, contact.name.split(" ")[0]).replace(/\{store\}/g, storeName || ''))}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="shrink-0 inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-muted transition-colors"
@@ -271,11 +271,11 @@ const StoreContactsSection = ({ storeId, clientId, canEdit, storeName, countryCo
             <div className="w-[130px]">
               <label className="text-[10px] text-muted-foreground">Telefone</label>
               <Input
-                value={formatPhone(newContact.phone)}
-                onChange={(e) => setNewContact(c => ({ ...c, phone: formatPhone(e.target.value) }))}
+                value={formatPhoneByCountry(newContact.phone, cc)}
+                onChange={(e) => setNewContact(c => ({ ...c, phone: formatPhoneByCountry(e.target.value, cc) }))}
                 className="h-7 text-xs"
-                placeholder="(00)00000-0000"
-                maxLength={14}
+                placeholder={getPhonePlaceholder(cc)}
+                maxLength={getPhoneMaxLength(cc)}
               />
             </div>
             <div className="flex gap-1 mt-3">
