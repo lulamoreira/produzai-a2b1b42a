@@ -337,7 +337,14 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
               <Calendar
                 mode="single"
                 selected={occ.expected_resolution_date ? new Date(occ.expected_resolution_date) : undefined}
-                onSelect={(date) => handleFieldUpdate("expected_resolution_date", date ? format(date, "yyyy-MM-dd") : null)}
+                onSelect={(date) => {
+                  const val = date ? format(date, "yyyy-MM-dd") : null;
+                  handleFieldUpdate("expected_resolution_date", val);
+                  // Auto-set status to "Em andamento" when a date is set (mirrors DB trigger)
+                  if (val && occ.status !== "resolved" && occ.status !== "nao_procede") {
+                    handleFieldUpdate("status", "andamento");
+                  }
+                }}
                 className="p-3 pointer-events-auto"
               />
             </PopoverContent>
