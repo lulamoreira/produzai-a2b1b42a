@@ -197,7 +197,6 @@ async function buildTransposedSheet(
   }
 
   // Store rows
-  const STORE_META_COLS = 4; // name, city, state, showcase_count
   for (let si = 0; si < stores.length; si++) {
     const s = stores[si];
     const rowValues: (string | number)[] = [s.name, (s as any).city || "", (s as any).state || "", (s as any).showcase_count ?? 0];
