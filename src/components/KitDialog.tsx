@@ -300,6 +300,10 @@ export function KitDetailDialog({
   const [editingKitName, setEditingKitName] = useState(false);
   const [kitNameInput, setKitNameInput] = useState("");
   const [addPieceSearch, setAddPieceSearch] = useState("");
+  const [localImageUrl, setLocalImageUrl] = useState<string | null | undefined>(undefined);
+
+  // Sync local image state when kit prop changes
+  const effectiveImageUrl = localImageUrl !== undefined ? localImageUrl : kit?.image_url ?? null;
 
   const piecesInKit = kit ? kitPieces
     .filter(kp => kp.kit_id === kit.id)
