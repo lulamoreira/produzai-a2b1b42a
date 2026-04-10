@@ -127,6 +127,11 @@ function SortableRow({
                 </Button>
               )}
               {canEditPieces && (
+                <Button variant="ghost" size="icon" className="h-7 w-7" title="Duplicar kit" onClick={() => onDuplicateKit(kit)}>
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
+              )}
+              {canEditPieces && (
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onKitClick(kit)}>
                   <Edit3 className="w-3.5 h-3.5" />
                 </Button>
@@ -222,6 +227,11 @@ function SortableRow({
                 onClick={() => onToggleMockup(piece)}
               >
                 <Palette className={`w-3.5 h-3.5 ${piece.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
+              </Button>
+            )}
+            {canEditPieces && (
+              <Button variant="ghost" size="icon" className="h-7 w-7" title="Duplicar peça" onClick={() => onDuplicate(piece)}>
+                <Copy className="w-3.5 h-3.5" />
               </Button>
             )}
             {canEditPieces && (
