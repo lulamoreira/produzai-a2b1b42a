@@ -15,7 +15,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Package, Plus, Search, Trash2, Briefcase, ArrowRight, GripVertical, Palette } from "lucide-react";
+import { Package, Plus, Search, Trash2, Briefcase, ArrowRight, GripVertical, Palette, Users } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { toast } from "sonner";
 import { exportClients, parseClientsImport } from "@/lib/exportMultiClient";
@@ -156,10 +156,13 @@ function SortableClientCard({
         <span className="text-[11px] text-muted-foreground flex items-center gap-1">
           <Package className="w-3.5 h-3.5" /> {campaignCount} {t("clientDashboard.campaigns")}
         </span>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors">
-          <span>{t("clientDashboard.access")}</span>
-          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-        </div>
+        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+          <Users className="w-3.5 h-3.5" /> {userCount} {t("clientDashboard.users")}
+        </span>
+      </div>
+      <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors mt-2 self-end">
+        <span>{t("clientDashboard.access")}</span>
+        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
       </div>
     </div>
   );
@@ -197,6 +200,21 @@ const Dashboard = () => {
         counts[c.client_id] = (counts[c.client_id] || 0) + 1;
       });
       return counts;
+    },
+  });
+
+  const { data: userCounts = {} } = useQuery({
+    queryKey: ["user-counts-by-client"],
+    queryFn: async () => {
+      const { data } = await supabase.from("user_client_access").select("client_id, user_id").eq("suspended", false);
+      const counts: Record<string, Set<string>> = {};
+      (data || []).forEach((r) => {
+        if (!counts[r.client_id]) counts[r.client_id] = new Set();
+        counts[r.client_id].add(r.user_id);
+      });
+      const result: Record<string, number> = {};
+      Object.entries(counts).forEach(([k, v]) => { result[k] = v.size; });
+      return result;
     },
   });
 
