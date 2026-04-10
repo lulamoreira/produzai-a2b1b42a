@@ -560,6 +560,7 @@
     "tryDifferent": "Try a different search.",
     "createdAt": "Created on",
     "campaigns": "campaign(s)",
+    "users": "user(s)",
     "access": "Access",
     "deleteClientTitle": "Are you sure you want to delete this client?",
     "deleteClientDesc": "All data associated with this client will be permanently deleted, including campaigns, stores, pieces and quantities. This action cannot be undone.",
