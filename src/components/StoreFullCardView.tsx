@@ -4,14 +4,7 @@ import { Search, UserPlus, MapPin, Phone, Mail, Building2, Hash, FileText, Edit3
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { ClientStore } from "@/hooks/useMultiClientData";
-import { getCountryConfig } from "@/lib/countryConfig";
-
-function formatPhoneDisplay(phone: string): string {
-  const digits = phone.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-}
+import { formatPhoneByCountry, getCountryConfig } from "@/lib/countryConfig";
 
 interface Props {
   clientId: string;
@@ -160,7 +153,7 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
                       <span className="text-muted-foreground shrink-0 min-w-[80px]">Telefone:</span>
                       <span className="text-foreground flex items-center gap-1">
                         <Phone className="w-3 h-3" />
-                        {formatPhoneDisplay(store.phone)}
+                        {formatPhoneByCountry(store.phone, countryCode)}
                       </span>
                     </div>
                   )}
@@ -204,7 +197,7 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
                             </div>
                             {contact.phone && (
                               <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-xs text-muted-foreground">{formatPhoneDisplay(contact.phone)}</span>
+                                <span className="text-xs text-muted-foreground">{formatPhoneByCountry(contact.phone, countryCode)}</span>
                                 <a
                                   href={buildWhatsAppUrl(contact.phone, contact.name)}
                                   target="_blank"

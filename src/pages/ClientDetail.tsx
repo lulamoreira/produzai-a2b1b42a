@@ -1043,7 +1043,7 @@ const ClientDetail = () => {
                     <DialogHeader><DialogTitle>Editar Loja</DialogTitle></DialogHeader>
                     <form onSubmit={handleEditStore} className="space-y-4">
                       {renderStoreFormFields(editStoreForm, setEditStoreForm)}
-                      <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} storeName={editStoreForm.nickname || editStoreForm.name} />
+                      <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} storeName={editStoreForm.nickname || editStoreForm.name} countryCode={client?.country_code} />
                       <Button type="submit" className="w-full" disabled={updateStore.isPending}>Salvar Alterações</Button>
                     </form>
                   </DialogContent>

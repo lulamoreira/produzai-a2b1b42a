@@ -7,13 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { ClientStore } from "@/hooks/useMultiClientData";
-
-function formatPhoneDisplay(phone: string): string {
-  const digits = phone.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-}
+import { formatPhoneByCountry, getCountryConfig } from "@/lib/countryConfig";
 
 interface Props {
   clientId: string | undefined;
@@ -22,9 +16,10 @@ interface Props {
   clientName: string;
   canEdit?: boolean;
   onEditStore?: (store: ClientStore) => void;
+  countryCode?: string | null;
 }
 
-const StoreContactsCardView = ({ clientId, stores, agencyName, clientName, canEdit = false, onEditStore }: Props) => {
+const StoreContactsCardView = ({ clientId, stores, agencyName, clientName, canEdit = false, onEditStore, countryCode }: Props) => {
   const { data: contacts = [] } = useStoreContactsByClient(clientId);
   const { data: roles = [] } = useStoreContactRoles(clientId);
   const [search, setSearch] = useState("");
@@ -72,11 +67,12 @@ const StoreContactsCardView = ({ clientId, stores, agencyName, clientName, canEd
     });
   }, [filteredContacts, storeMap]);
 
+  const cc = getCountryConfig(countryCode);
   const buildWhatsAppUrl = (phone: string, contactName: string) => {
     const digits = phone.replace(/\D/g, "");
     const firstName = contactName.split(" ")[0];
     const text = `Olá ${firstName}, somos da Agência ${agencyName}, estamos fazendo contato em nome do cliente ${clientName}, tudo bem?`;
-    return `https://wa.me/55${digits}?text=${encodeURIComponent(text)}`;
+    return `https://wa.me/${cc.phonePrefix}${digits}?text=${encodeURIComponent(text)}`;
   };
 
   return (
@@ -152,7 +148,7 @@ const StoreContactsCardView = ({ clientId, stores, agencyName, clientName, canEd
                           <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-1 min-w-0">
                               <Phone className="w-3 h-3 shrink-0" />
-                              <span className="truncate">{formatPhoneDisplay(contact.phone)}</span>
+                              <span className="truncate">{formatPhoneByCountry(contact.phone, countryCode)}</span>
                             </div>
                             <a
                               href={buildWhatsAppUrl(contact.phone, contact.name)}
