@@ -74,6 +74,118 @@ export type Database = {
         }
         Relationships: []
       }
+      automation_group_items: {
+        Row: {
+          created_at: string
+          display_order: number
+          enabled: boolean
+          group_id: string
+          id: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          enabled?: boolean
+          group_id: string
+          id?: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          enabled?: boolean
+          group_id?: string
+          id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_group_items_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "automation_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_group_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "automation_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_groups: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_groups_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_templates: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          filter_field: string
+          filter_value: string
+          id: string
+          items: Json
+          name: string
+          outside_action: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          filter_field: string
+          filter_value: string
+          id?: string
+          items?: Json
+          name: string
+          outside_action?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          filter_field?: string
+          filter_value?: string
+          id?: string
+          items?: Json
+          name?: string
+          outside_action?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_templates_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_budget_items: {
         Row: {
           budget_id: string
