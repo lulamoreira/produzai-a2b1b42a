@@ -179,7 +179,7 @@ async function buildTransposedSheet(
 
   // Stores header
   const storesHeaderRowNum = META_ROW_COUNT + 2;
-  const storeHeaderValues: (string | number)[] = ["NOME DA LOJA"];
+  const storeHeaderValues: (string | number)[] = ["NOME DA LOJA", "CIDADE", "UF", "VITRINES"];
   for (const p of items) storeHeaderValues.push("");
   const storeHeaderRow = ws.addRow(storeHeaderValues);
   storeHeaderRow.height = 30;
@@ -190,13 +190,14 @@ async function buildTransposedSheet(
     cell.border = allWhiteBorders;
   });
   for (let pi = 0; pi < items.length; pi++) {
-    ws.getCell(storesHeaderRowNum, pi + 2).value = items[pi].code;
+    ws.getCell(storesHeaderRowNum, pi + 4 + 1).value = items[pi].code;
   }
 
   // Store rows
+  const STORE_META_COLS = 4; // name, city, state, showcase_count
   for (let si = 0; si < stores.length; si++) {
     const s = stores[si];
-    const rowValues: (string | number)[] = [s.name];
+    const rowValues: (string | number)[] = [s.name, (s as any).city || "", (s as any).state || "", (s as any).showcase_count ?? 0];
     for (const p of items) {
       rowValues.push(qtyMap[qtyKeyFn(s.id, p.id)] || 0);
     }

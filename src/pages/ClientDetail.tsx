@@ -703,7 +703,11 @@ const ClientDetail = () => {
         <div className="col-span-2">
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Código da Loja</label>
           <Input value={form.store_code} onChange={(e) => setForm((f) => ({ ...f, store_code: e.target.value }))} placeholder="Gerado automaticamente" />
-        </div>
+         </div>
+         <div>
+           <label className="text-xs font-medium text-muted-foreground mb-1 block">Qtd. Vitrines</label>
+           <Input type="number" min="0" value={form.showcase_count} onChange={(e) => setForm((f) => ({ ...f, showcase_count: e.target.value }))} placeholder="0" />
+         </div>
         <div className="col-span-2">
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
           <textarea
