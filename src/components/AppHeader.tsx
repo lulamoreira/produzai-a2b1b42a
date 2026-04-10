@@ -136,6 +136,7 @@ export default function AppHeader({
             <>
               <InviteButton />
               <WhatsNewButton />
+              <ThemeToggle />
               {/* Language selector */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
