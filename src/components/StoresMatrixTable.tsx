@@ -396,7 +396,8 @@ export default function StoresMatrixTable({
     const oldValue = ((store as any)[field] || "").toString();
     if (value === oldValue) return;
     try {
-      await onUpdateStore({ id: storeId, [field]: value || null });
+      const finalValue = field === "showcase_count" ? (parseInt(value, 10) || 0) : (value || null);
+      await onUpdateStore({ id: storeId, [field]: finalValue });
     } catch {
       // error handled by mutation
     }
