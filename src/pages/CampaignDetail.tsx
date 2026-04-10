@@ -1747,9 +1747,13 @@ const CampaignDetail = () => {
                               return (
                                 <TableHead key={`kit-${kit.id}`} className="text-center min-w-[100px]">
                                   <button onClick={() => setViewKitDetail(kit)} className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
-                                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                                      <Package className="w-4 h-4 text-primary" />
-                                    </div>
+                                    {kit.image_url ? (
+                                      <PieceThumbnail imageUrl={kit.image_url} name={kit.name} size="sm" />
+                                    ) : (
+                                      <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                                        <Package className="w-4 h-4 text-primary" />
+                                      </div>
+                                    )}
                                     <span className="text-xs font-bold text-primary">{kit.code}</span>
                                     <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{kit.name}</span>
                                   </button>
