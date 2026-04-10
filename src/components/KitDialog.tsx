@@ -539,18 +539,20 @@ export function KitDetailDialog({
               }
 
               return (
-                <div key={kp.id} className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border bg-muted/30">
-                  <PieceThumbnail imageUrl={p.image_url} name={p.name} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-primary">#{p.code}</span>
-                      <span className="font-medium text-sm truncate">{p.name}</span>
+                <div key={kp.id} className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 rounded-lg border border-border bg-muted/30">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <PieceThumbnail imageUrl={p.image_url} name={p.name} size="lg" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-primary">#{p.code}</span>
+                        <span className="font-medium text-sm break-words">{p.name}</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">{p.category} · {p.size || "—"}</p>
+                      <p className="text-[10px] text-muted-foreground break-words">{p.specification}</p>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">{p.category} · {p.size || "—"}</p>
-                    <p className="text-[10px] text-muted-foreground">{p.specification}</p>
                   </div>
                   {/* Quantity control */}
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
                     {canEdit && onUpdateKitPiece ? (
                       <>
                         <Button
