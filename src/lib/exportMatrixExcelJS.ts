@@ -192,11 +192,8 @@ async function buildTransposedSheet(
     cell.fill = gradientFill(MED_BLUE, LIGHT_BLUE);
     cell.border = allWhiteBorders;
   });
-  for (let pi = 0; pi < items.length; pi++) {
-    ws.getCell(storesHeaderRowNum, pi + 4 + 1).value = items[pi].code;
-  }
-
   // Store rows
+  const firstStoreRowNum = storesHeaderRowNum + 1;
   for (let si = 0; si < stores.length; si++) {
     const s = stores[si];
     const rowValues: (string | number)[] = [s.name, (s as any).city || "", (s as any).state || "", (s as any).showcase_count ?? 0];
@@ -218,15 +215,14 @@ async function buildTransposedSheet(
     });
   }
 
-  // Totals
-  const totalsValues: (string | number)[] = ["TOTAL", "", "", ""];
-  let grandTotal = 0;
-  for (const p of items) {
-    const t = stores.reduce((sum, s) => sum + (qtyMap[qtyKeyFn(s.id, p.id)] || 0), 0);
-    grandTotal += t;
-    totalsValues.push(t);
+  // Totals with SUM formulas
+  const lastStoreRowNum = firstStoreRowNum + stores.length - 1;
+  const totalsRow = ws.addRow(["TOTAL", "", "", ""]);
+  for (let pi = 0; pi < items.length; pi++) {
+    const colLetter = getExcelColumnLetter(STORE_META_COLS + pi + 1);
+    const cell = totalsRow.getCell(STORE_META_COLS + pi + 1);
+    cell.value = { formula: `SUM(${colLetter}${firstStoreRowNum}:${colLetter}${lastStoreRowNum})` } as any;
   }
-  const totalsRow = ws.addRow(totalsValues);
   totalsRow.height = 30;
   totalsRow.eachCell((cell) => {
     cell.font = { ...whiteFont, size: 12 };
@@ -234,6 +230,9 @@ async function buildTransposedSheet(
     cell.fill = gradientFill(MED_BLUE, DARK_BLUE);
     cell.border = allWhiteBorders;
   });
+
+  const grandTotal = stores.reduce((sum, s) =>
+    sum + items.reduce((acc, p) => acc + (qtyMap[qtyKeyFn(s.id, p.id)] || 0), 0), 0);
 
   // Column widths
   ws.getColumn(1).width = 30;
