@@ -23,7 +23,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { GripVertical, Edit3, Trash2, CheckSquare, Package, Palette } from "lucide-react";
+import { GripVertical, Edit3, Trash2, CheckSquare, Package, Palette, Copy } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import type { CampaignPiece, ClientStore, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
@@ -46,6 +46,8 @@ interface SortableRowProps {
   onKitClick: (kit: CampaignKit) => void;
   onDeleteKit: (id: string) => void;
   onToggleKitMockup: (kit: CampaignKit) => void;
+  onDuplicate: (piece: CampaignPiece) => void;
+  onDuplicateKit: (kit: CampaignKit) => void;
   isDistributed: boolean;
   qtyMap: Record<string, number>;
   stores: ClientStore[];
