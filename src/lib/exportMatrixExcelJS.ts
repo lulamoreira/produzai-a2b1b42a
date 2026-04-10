@@ -206,9 +206,9 @@ async function buildTransposedSheet(
     const row = ws.addRow(rowValues);
     const isEven = si % 2 === 0;
     row.eachCell((cell, colNumber) => {
-      if (colNumber === 1) {
-        cell.font = { bold: true, size: 10, color: { argb: "FF1E293B" } };
-        cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+      if (colNumber <= STORE_META_COLS) {
+        cell.font = { bold: colNumber === 1, size: 10, color: { argb: "FF1E293B" } };
+        cell.alignment = { horizontal: colNumber === 1 ? "left" : "center", vertical: "middle", wrapText: true };
       } else {
         cell.font = { ...darkFont, size: 11 };
         cell.alignment = { horizontal: "center", vertical: "middle" };
