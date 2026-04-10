@@ -124,3 +124,94 @@ export function formatCurrencyByCode(value: number, currencyCode?: string | null
   const config = Object.values(COUNTRY_CONFIGS).find(c => c.currency === (currencyCode || "BRL")) || COUNTRY_CONFIGS["BR"];
   return value.toLocaleString(locale || config.currencyLocale, { style: "currency", currency: config.currency });
 }
+
+/** Format a phone number according to the country's pattern */
+export function formatPhoneByCountry(value: string, countryCode?: string | null): string {
+  const digits = value.replace(/\D/g, "");
+  const config = getCountryConfig(countryCode);
+  const prefix = config.phonePrefix;
+
+  switch (config.code) {
+    case "BR": {
+      const d = digits.slice(0, 11);
+      if (d.length <= 2) return d;
+      if (d.length <= 7) return `(${d.slice(0, 2)})${d.slice(2)}`;
+      return `(${d.slice(0, 2)})${d.slice(2, 7)}-${d.slice(7)}`;
+    }
+    case "CL": {
+      // +56 9 XXXX XXXX → store as 9XXXXXXXX
+      const d = digits.slice(0, 9);
+      if (d.length <= 1) return d;
+      if (d.length <= 5) return `${d.slice(0, 1)} ${d.slice(1)}`;
+      return `${d.slice(0, 1)} ${d.slice(1, 5)} ${d.slice(5)}`;
+    }
+    case "MX": {
+      // 10 digits: XX XXXX XXXX
+      const d = digits.slice(0, 10);
+      if (d.length <= 2) return d;
+      if (d.length <= 6) return `${d.slice(0, 2)} ${d.slice(2)}`;
+      return `${d.slice(0, 2)} ${d.slice(2, 6)} ${d.slice(6)}`;
+    }
+    case "AR": {
+      // 10 digits: XX XXXX XXXX
+      const d = digits.slice(0, 10);
+      if (d.length <= 2) return d;
+      if (d.length <= 6) return `${d.slice(0, 2)} ${d.slice(2)}`;
+      return `${d.slice(0, 2)} ${d.slice(2, 6)} ${d.slice(6)}`;
+    }
+    case "CO": {
+      // 10 digits: XXX XXX XXXX
+      const d = digits.slice(0, 10);
+      if (d.length <= 3) return d;
+      if (d.length <= 6) return `${d.slice(0, 3)} ${d.slice(3)}`;
+      return `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}`;
+    }
+    case "PE": {
+      // 9 digits: XXX XXX XXX
+      const d = digits.slice(0, 9);
+      if (d.length <= 3) return d;
+      if (d.length <= 6) return `${d.slice(0, 3)} ${d.slice(3)}`;
+      return `${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6)}`;
+    }
+    case "US": {
+      // 10 digits: (XXX) XXX-XXXX
+      const d = digits.slice(0, 10);
+      if (d.length <= 3) return d;
+      if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+      return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+    }
+    default: {
+      return digits;
+    }
+  }
+}
+
+/** Get phone placeholder by country */
+export function getPhonePlaceholder(countryCode?: string | null): string {
+  const config = getCountryConfig(countryCode);
+  switch (config.code) {
+    case "BR": return "(00)00000-0000";
+    case "CL": return "9 1234 5678";
+    case "MX": return "55 1234 5678";
+    case "AR": return "11 1234 5678";
+    case "CO": return "301 234 5678";
+    case "PE": return "912 345 678";
+    case "US": return "(555) 123-4567";
+    default: return "";
+  }
+}
+
+/** Get max length for phone input by country */
+export function getPhoneMaxLength(countryCode?: string | null): number {
+  const config = getCountryConfig(countryCode);
+  switch (config.code) {
+    case "BR": return 14;
+    case "CL": return 11;
+    case "US": return 14;
+    case "MX": return 12;
+    case "AR": return 12;
+    case "CO": return 12;
+    case "PE": return 11;
+    default: return 15;
+  }
+}
