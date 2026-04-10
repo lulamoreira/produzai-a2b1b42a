@@ -34,7 +34,9 @@ interface Props {
   countryCode?: string | null;
 }
 
-const StoreContactsSection = ({ storeId, clientId, canEdit, storeName }: Props) => {
+const StoreContactsSection = ({ storeId, clientId, canEdit, storeName, countryCode }: Props) => {
+  const cc = countryCode || "BR";
+  const phonePrefix = getCountryConfig(cc).phonePrefix;
   const { data: contacts = [] } = useStoreContacts(storeId);
   const { data: roles = [] } = useStoreContactRoles(clientId);
   const addContact = useAddStoreContact();
