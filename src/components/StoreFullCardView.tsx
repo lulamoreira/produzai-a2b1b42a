@@ -153,7 +153,7 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
                       <span className="text-muted-foreground shrink-0 min-w-[80px]">Telefone:</span>
                       <span className="text-foreground flex items-center gap-1">
                         <Phone className="w-3 h-3" />
-                        {formatPhoneDisplay(store.phone)}
+                        {formatPhoneByCountry(store.phone, countryCode)}
                       </span>
                     </div>
                   )}
@@ -197,7 +197,7 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
                             </div>
                             {contact.phone && (
                               <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-xs text-muted-foreground">{formatPhoneDisplay(contact.phone)}</span>
+                                <span className="text-xs text-muted-foreground">{formatPhoneByCountry(contact.phone, countryCode)}</span>
                                 <a
                                   href={buildWhatsAppUrl(contact.phone, contact.name)}
                                   target="_blank"
