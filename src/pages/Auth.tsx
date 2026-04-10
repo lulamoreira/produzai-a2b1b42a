@@ -135,7 +135,10 @@ const Auth = () => {
       </div>
 
       {/* Right — Form */}
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-background via-primary/5 to-accent/10 p-6 sm:p-10">
+      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-background via-primary/5 to-accent/10 p-6 sm:p-10 relative">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle className="h-9 w-9 bg-card text-foreground border-border hover:bg-accent" />
+        </div>
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <img
