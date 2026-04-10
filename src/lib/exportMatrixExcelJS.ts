@@ -1,6 +1,6 @@
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import type { ClientStore, CampaignPiece } from "@/hooks/useMultiClientData";
+import type { ClientStore, CampaignPiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
 
 // ─── Helpers ─────────────────────────────────────────────
 
@@ -51,32 +51,37 @@ const allWhiteBorders = { top: whiteBorder, bottom: whiteBorder, left: whiteBord
 const whiteFont: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: true };
 const darkFont: Partial<ExcelJS.Font> = { color: { argb: "FF1E293B" } };
 
-// ─── Meta row labels (transposed: pieces in columns, metadata in rows) ───
-const META_LABELS = ["IMAGEM DA PEÇA", "CÓDIGO", "LOCAL", "NOME", "TAMANHO", "ESPECIFICAÇÃO", "INSTRUÇÕES DE INSTALAÇÃO"];
-const IMAGE_ROW_INDEX = 0;  // index in META_LABELS
+const META_LABELS = ["IMAGEM", "CÓDIGO", "LOCAL", "NOME", "TAMANHO", "ESPECIFICAÇÃO", "INSTRUÇÕES DE INSTALAÇÃO"];
+const IMAGE_ROW_INDEX = 0;
 const META_ROW_COUNT = META_LABELS.length;
 
-// ─── Main export ─────────────────────────────────────────
+// ─── Shared: build a transposed piece sheet ──────────────
 
-export async function exportMatrixExcelJS(
+type MatrixItem = {
+  id: string;
+  code: number;
+  name: string;
+  size: string;
+  store_category?: string | null;
+  specification?: string;
+  installation_instructions?: string;
+  image_url?: string | null;
+};
+
+async function buildTransposedSheet(
+  wb: ExcelJS.Workbook,
+  ws: ExcelJS.Worksheet,
+  title: string,
+  items: MatrixItem[],
   stores: ClientStore[],
-  pieces: CampaignPiece[],
   qtyMap: Record<string, number>,
-  campaignName: string
+  qtyKeyFn: (storeId: string, itemId: string) => string,
 ) {
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "ProduzAI";
-
-  // ═══════════════════════════════════════════════════════
-  //  ABA 1 – Matriz (Transposed: pieces as columns)
-  // ═══════════════════════════════════════════════════════
-  const ws = wb.addWorksheet("Matriz Lojas x Peças");
-
-  const colCount = pieces.length + 1; // col A (labels/store names) + one col per piece
+  const colCount = items.length + 1;
   const IMAGE_ROW_HEIGHT = 120;
 
   // Row 1 – Title
-  const titleRow = ws.addRow([campaignName.toUpperCase()]);
+  ws.addRow([title.toUpperCase()]);
   ws.mergeCells(1, 1, 1, colCount);
   const titleCell = ws.getCell(1, 1);
   titleCell.font = { ...whiteFont, size: 16 };
@@ -88,82 +93,54 @@ export async function exportMatrixExcelJS(
   // Pre-fetch images
   const imageCache: Record<string, { base64: string; ext: "png" | "jpeg" } | null> = {};
   await Promise.all(
-    pieces.map(async (p) => {
+    items.map(async (p) => {
       if (p.image_url) {
         imageCache[p.id] = await fetchImageAsBase64(p.image_url);
       }
     })
   );
 
-  // Rows 2..N – Meta rows (one per META_LABELS)
+  // Meta rows
   for (let mi = 0; mi < META_ROW_COUNT; mi++) {
-    const label = META_LABELS[mi];
-    const values: (string | number)[] = [label];
-
-    for (const p of pieces) {
+    const values: (string | number)[] = [META_LABELS[mi]];
+    for (const p of items) {
       switch (mi) {
-        case 0: // IMAGEM - leave empty, images added separately
-          values.push("");
-          break;
-        case 1: // CÓDIGO
-          values.push(p.code);
-          break;
-        case 2: // LOCAL
-          values.push(p.store_category || "");
-          break;
-        case 3: // NOME
-          values.push(p.name);
-          break;
-        case 4: // TAMANHO
-          values.push(p.size);
-          break;
-        case 5: // ESPECIFICAÇÃO
-          values.push(p.specification || "");
-          break;
-        case 6: // INSTRUÇÕES
-          values.push(p.installation_instructions || "");
-          break;
-        default:
-          values.push("");
+        case 0: values.push(""); break;
+        case 1: values.push(p.code); break;
+        case 2: values.push(p.store_category || ""); break;
+        case 3: values.push(p.name); break;
+        case 4: values.push(p.size); break;
+        case 5: values.push(p.specification || ""); break;
+        case 6: values.push(p.installation_instructions || ""); break;
+        default: values.push("");
       }
     }
-
     const row = ws.addRow(values);
-    const rowNum = mi + 2; // 1-based
+    const rowNum = mi + 2;
 
-    // Style label cell (col A)
     const labelCell = ws.getCell(rowNum, 1);
     labelCell.font = { ...whiteFont, size: 11 };
     labelCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
     labelCell.fill = gradientFill(DARK_BLUE, "0E4D72", 90);
     labelCell.border = allWhiteBorders;
 
-    // Style data cells
     for (let ci = 2; ci <= colCount; ci++) {
       const cell = ws.getCell(rowNum, ci);
       cell.font = { ...darkFont, size: 10 };
       cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-      cell.fill = mi === IMAGE_ROW_INDEX
-        ? solidFill("FFFFFF")
-        : gradientFill("FFFFFF", PALE_BLUE);
+      cell.fill = mi === IMAGE_ROW_INDEX ? solidFill("FFFFFF") : gradientFill("FFFFFF", PALE_BLUE);
       cell.border = allBorders;
     }
 
-    // Row heights
-    if (mi === IMAGE_ROW_INDEX) {
-      row.height = IMAGE_ROW_HEIGHT;
-    } else if (mi === 5 || mi === 6) {
-      // Spec and instructions can be tall
-      row.height = 80;
-    } else {
-      row.height = 25;
-    }
+    if (mi === IMAGE_ROW_INDEX) row.height = IMAGE_ROW_HEIGHT;
+    else if (mi === 5 || mi === 6) row.height = 80;
+    else row.height = 25;
   }
 
-  // Add images to the image row
-  const imageRowNum = 2; // row 2 = IMAGEM DA PEÇA
-  for (let pi = 0; pi < pieces.length; pi++) {
-    const imgData = imageCache[pieces[pi].id];
+  // Images
+  const imageRowNum = 2;
+  for (let pi = 0; pi < items.length; pi++) {
+    const imgData = imageCache[items[pi].id];
     if (imgData) {
       const imageId = wb.addImage({ base64: imgData.base64, extension: imgData.ext });
       ws.addImage(imageId, {
@@ -173,57 +150,51 @@ export async function exportMatrixExcelJS(
     }
   }
 
-  // ── Stores header row ──
-  const storesHeaderRowNum = META_ROW_COUNT + 2; // after title + meta rows
+  // Stores header
+  const storesHeaderRowNum = META_ROW_COUNT + 2;
   const storeHeaderValues: (string | number)[] = ["NOME DA LOJA"];
-  for (const p of pieces) {
-    storeHeaderValues.push(""); // piece column headers already shown above
-  }
+  for (const p of items) storeHeaderValues.push("");
   const storeHeaderRow = ws.addRow(storeHeaderValues);
   storeHeaderRow.height = 30;
-  storeHeaderRow.eachCell((cell, colNumber) => {
+  storeHeaderRow.eachCell((cell) => {
     cell.font = { ...whiteFont, size: 11 };
     cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
     cell.fill = gradientFill(MED_BLUE, LIGHT_BLUE);
     cell.border = allWhiteBorders;
   });
-  // Put piece codes in header for reference
-  for (let pi = 0; pi < pieces.length; pi++) {
-    const cell = ws.getCell(storesHeaderRowNum, pi + 2);
-    cell.value = pieces[pi].code;
+  for (let pi = 0; pi < items.length; pi++) {
+    ws.getCell(storesHeaderRowNum, pi + 2).value = items[pi].code;
   }
 
-  // ── Store data rows ──
+  // Store rows
   for (let si = 0; si < stores.length; si++) {
     const s = stores[si];
     const rowValues: (string | number)[] = [s.name];
-    for (const p of pieces) {
-      rowValues.push(qtyMap[`${s.id}-${p.id}`] || 0);
+    for (const p of items) {
+      rowValues.push(qtyMap[qtyKeyFn(s.id, p.id)] || 0);
     }
     const row = ws.addRow(rowValues);
     const isEven = si % 2 === 0;
-
     row.eachCell((cell, colNumber) => {
       if (colNumber === 1) {
         cell.font = { bold: true, size: 10, color: { argb: "FF1E293B" } };
         cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
-        cell.fill = isEven ? solidFill(PALE_BLUE) : solidFill("FFFFFF");
       } else {
         cell.font = { ...darkFont, size: 11 };
         cell.alignment = { horizontal: "center", vertical: "middle" };
-        cell.fill = isEven ? solidFill(PALE_BLUE) : solidFill("FFFFFF");
       }
+      cell.fill = isEven ? solidFill(PALE_BLUE) : solidFill("FFFFFF");
       cell.border = allBorders;
     });
   }
 
-  // ── Totals row ──
+  // Totals
   const totalsValues: (string | number)[] = ["TOTAL"];
   let grandTotal = 0;
-  for (const p of pieces) {
-    const pieceTotal = stores.reduce((sum, s) => sum + (qtyMap[`${s.id}-${p.id}`] || 0), 0);
-    grandTotal += pieceTotal;
-    totalsValues.push(pieceTotal);
+  for (const p of items) {
+    const t = stores.reduce((sum, s) => sum + (qtyMap[qtyKeyFn(s.id, p.id)] || 0), 0);
+    grandTotal += t;
+    totalsValues.push(t);
   }
   const totalsRow = ws.addRow(totalsValues);
   totalsRow.height = 30;
@@ -234,16 +205,92 @@ export async function exportMatrixExcelJS(
     cell.border = allWhiteBorders;
   });
 
-  // ── Column widths ──
-  ws.getColumn(1).width = 30; // labels / store names
+  // Column widths
+  ws.getColumn(1).width = 30;
   for (let i = 2; i <= colCount; i++) {
-    const piece = pieces[i - 2];
-    const nameLen = piece?.name?.length || 10;
+    const item = items[i - 2];
+    const nameLen = item?.name?.length || 10;
     ws.getColumn(i).width = Math.min(Math.max(nameLen + 4, 18), 30);
   }
 
+  return grandTotal;
+}
+
+// ─── Main export ─────────────────────────────────────────
+
+export async function exportMatrixExcelJS(
+  stores: ClientStore[],
+  pieces: CampaignPiece[],
+  qtyMap: Record<string, number>,
+  campaignName: string,
+  kits: CampaignKit[] = [],
+  kitPieces: CampaignKitPiece[] = [],
+) {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "ProduzAI";
+
   // ═══════════════════════════════════════════════════════
-  //  ABA 2 – Dashboard
+  //  ABA 1 – Matriz principal (peças + kits como colunas)
+  // ═══════════════════════════════════════════════════════
+
+  // Build unified column list sorted by display_order
+  type ColItem = MatrixItem & { _type: "piece" | "kit"; display_order: number };
+  const allColumns: ColItem[] = [
+    ...pieces.map(p => ({ ...p, _type: "piece" as const, specification: p.specification || "", installation_instructions: p.installation_instructions || "" })),
+    ...kits.map(k => ({
+      id: k.id,
+      code: k.code,
+      name: k.name,
+      size: "",
+      store_category: null,
+      specification: "",
+      installation_instructions: "",
+      image_url: k.image_url,
+      _type: "kit" as const,
+      display_order: k.display_order,
+    })),
+  ].sort((a, b) => a.display_order - b.display_order);
+
+  const ws = wb.addWorksheet("Matriz Lojas x Peças");
+  await buildTransposedSheet(wb, ws, campaignName, allColumns, stores, qtyMap, (sId, pId) => `${sId}-${pId}`);
+
+  // ═══════════════════════════════════════════════════════
+  //  ABAS por Kit – listagem de peças do kit (1 un cada)
+  // ═══════════════════════════════════════════════════════
+
+  for (const kit of kits) {
+    const kpList = kitPieces.filter(kp => kp.kit_id === kit.id);
+    if (kpList.length === 0) continue;
+
+    const kitItems: MatrixItem[] = kpList.map(kp => {
+      const piece = pieces.find(p => p.id === kp.piece_id);
+      return {
+        id: kp.id,
+        code: piece?.code ?? 0,
+        name: piece?.name ?? "",
+        size: piece?.size ?? "",
+        store_category: piece?.store_category,
+        specification: piece?.specification || "",
+        installation_instructions: piece?.installation_instructions || "",
+        image_url: piece?.image_url,
+      };
+    });
+
+    // Build a qty map where every store gets quantity = kit piece quantity (usually 1)
+    const kitQtyMap: Record<string, number> = {};
+    for (const s of stores) {
+      for (const kp of kpList) {
+        kitQtyMap[`${s.id}-${kp.id}`] = kp.quantity;
+      }
+    }
+
+    const sheetName = `Kit ${kit.code} - ${kit.name}`.slice(0, 31);
+    const kitWs = wb.addWorksheet(sheetName);
+    await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`);
+  }
+
+  // ═══════════════════════════════════════════════════════
+  //  ABA Dashboard
   // ═══════════════════════════════════════════════════════
   const dash = wb.addWorksheet("Dashboard");
   let currentRow = 1;
@@ -288,7 +335,6 @@ export async function exportMatrixExcelJS(
     currentRow++;
   }
 
-  // Top 5 peças
   const pieceTotals = pieces.map((p) => {
     const total = stores.reduce((sum, s) => sum + (qtyMap[`${s.id}-${p.id}`] || 0), 0);
     return { name: `${p.code} - ${p.name}`, total };
@@ -301,25 +347,25 @@ export async function exportMatrixExcelJS(
   });
   currentRow++;
 
-  // Ranking lojas
   const storeTotals = stores.map((s) => {
-    const total = pieces.reduce((sum, p) => sum + (qtyMap[`${s.id}-${p.id}`] || 0), 0);
+    const total = allColumns.reduce((sum, p) => sum + (qtyMap[`${s.id}-${p.id}`] || 0), 0);
     return { name: s.name, total };
   }).sort((a, b) => b.total - a.total);
 
   addSectionTitle("RANKING DE LOJAS POR VOLUME", 3);
-  addTableHeader(["#", "Loja", "Total de Peças"]);
+  addTableHeader(["#", "Loja", "Total de Itens"]);
   storeTotals.forEach((s, i) => {
     addTableRow([i + 1, s.name, s.total], i % 2 === 0);
   });
   currentRow++;
 
-  // Total consolidado
+  const grandTotal = storeTotals.reduce((s, x) => s + x.total, 0);
   addSectionTitle("TOTAL GERAL CONSOLIDADO", 2);
   addTableHeader(["Métrica", "Valor"]);
   addTableRow(["Total de Lojas", stores.length], false);
-  addTableRow(["Total de Peças Cadastradas", pieces.length], true);
-  addTableRow(["Volume Total de Peças", grandTotal], false);
+  addTableRow(["Total de Peças", pieces.length], true);
+  addTableRow(["Total de Kits", kits.length], false);
+  addTableRow(["Volume Total", grandTotal], true);
 
   dash.getColumn(1).width = 12;
   dash.getColumn(2).width = 40;
