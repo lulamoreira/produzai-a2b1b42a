@@ -4,7 +4,7 @@ import type { ClientStore, CampaignPiece, CampaignKit, CampaignKitPiece } from "
 
 // ─── Helpers ─────────────────────────────────────────────
 
-async function fetchImageAsBase64(url: string): Promise<{ base64: string; ext: "png" | "jpeg" } | null> {
+async function fetchImageAsBase64(url: string): Promise<{ base64: string; ext: "png" | "jpeg"; width: number; height: number } | null> {
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
@@ -15,7 +15,17 @@ async function fetchImageAsBase64(url: string): Promise<{ base64: string; ext: "
     uint8.forEach((b) => (binary += String.fromCharCode(b)));
     const base64 = btoa(binary);
     const ext = blob.type.includes("png") ? "png" : "jpeg";
-    return { base64, ext };
+
+    // Get natural dimensions
+    const blobUrl = URL.createObjectURL(blob);
+    const { width, height } = await new Promise<{ width: number; height: number }>((resolve) => {
+      const img = new Image();
+      img.onload = () => { resolve({ width: img.naturalWidth, height: img.naturalHeight }); URL.revokeObjectURL(blobUrl); };
+      img.onerror = () => { resolve({ width: 200, height: 200 }); URL.revokeObjectURL(blobUrl); };
+      img.src = blobUrl;
+    });
+
+    return { base64, ext, width, height };
   } catch {
     return null;
   }
@@ -91,7 +101,7 @@ async function buildTransposedSheet(
   ws.getRow(1).height = 40;
 
   // Pre-fetch images
-  const imageCache: Record<string, { base64: string; ext: "png" | "jpeg" } | null> = {};
+  const imageCache: Record<string, { base64: string; ext: "png" | "jpeg"; width: number; height: number } | null> = {};
   await Promise.all(
     items.map(async (p) => {
       if (p.image_url) {
@@ -137,15 +147,32 @@ async function buildTransposedSheet(
     else row.height = 25;
   }
 
-  // Images
+  // Images – fit to cell preserving aspect ratio
   const imageRowNum = 2;
+  // Cell available area: colWidth in px ≈ colWidth * 7.5, rowHeight in px = IMAGE_ROW_HEIGHT * 0.75
+  // We use pixel-based ext sizing with padding
+  const CELL_PADDING = 8;
   for (let pi = 0; pi < items.length; pi++) {
     const imgData = imageCache[items[pi].id];
     if (imgData) {
+      const item = items[pi];
+      const nameLen = item?.name?.length || 10;
+      const colWidthChars = Math.min(Math.max(nameLen + 4, 18), 30);
+      const maxW = colWidthChars * 7.5 - CELL_PADDING * 2;
+      const maxH = IMAGE_ROW_HEIGHT * 0.75 - CELL_PADDING;
+
+      const ratio = imgData.width / imgData.height;
+      let w = maxW;
+      let h = w / ratio;
+      if (h > maxH) {
+        h = maxH;
+        w = h * ratio;
+      }
+
       const imageId = wb.addImage({ base64: imgData.base64, extension: imgData.ext });
       ws.addImage(imageId, {
         tl: { col: pi + 1 + 0.05, row: imageRowNum - 1 + 0.1 },
-        ext: { width: 140, height: 100 },
+        ext: { width: Math.round(w), height: Math.round(h) },
       });
     }
   }
