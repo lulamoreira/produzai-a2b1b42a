@@ -5,6 +5,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, Lock, User, Eye, EyeOff, Wand2 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import authBg1 from "@/assets/auth-bg-1.jpg";
