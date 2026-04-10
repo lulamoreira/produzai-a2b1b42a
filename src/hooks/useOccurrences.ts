@@ -305,14 +305,26 @@ export function useUpdateOccurrenceFields() {
     mutationFn: async ({ id, campaignId, ...fields }: { id: string; campaignId: string; [key: string]: unknown }) => {
       const { error } = await supabase.from("occurrences").update(fields).eq("id", id);
       if (error) throw error;
-      // Fetch full record to send notification
-      const { data: record } = await supabase.from("occurrences").select("*").eq("id", id).maybeSingle();
-      if (record) {
-        supabase.functions.invoke("notify-occurrence", { body: { record, event_type: "updated" } }).catch(console.error);
-      }
+      // Fire-and-forget notification
+      supabase.from("occurrences").select("*").eq("id", id).maybeSingle().then(({ data: record }) => {
+        if (record) {
+          supabase.functions.invoke("notify-occurrence", { body: { record, event_type: "updated" } }).catch(console.error);
+        }
+      });
       return campaignId;
     },
-    onSuccess: (campaignId) => qc.invalidateQueries({ queryKey: ["occurrences", campaignId as string] }),
+    onMutate: async ({ id, campaignId, ...fields }) => {
+      await qc.cancelQueries({ queryKey: ["occurrences", campaignId] });
+      const prev = qc.getQueryData<Occurrence[]>(["occurrences", campaignId]);
+      qc.setQueryData<Occurrence[]>(["occurrences", campaignId], (old) =>
+        old ? old.map((o) => o.id === id ? { ...o, ...fields } : o) : old
+      );
+      return { prev, campaignId };
+    },
+    onError: (_e, _vars, ctx) => {
+      if (ctx) qc.setQueryData(["occurrences", ctx.campaignId], ctx.prev);
+    },
+    onSettled: (campaignId) => qc.invalidateQueries({ queryKey: ["occurrences", campaignId] }),
   });
 }
 

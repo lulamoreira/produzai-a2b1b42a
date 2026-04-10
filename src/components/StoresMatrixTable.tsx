@@ -123,20 +123,9 @@ function DraggableHeaderCell({
   );
 }
 
-// ─── Editable Cell ──────────────────────────────────────
+// ─── Editable Cell (memoized) ───────────────────────────
 
-function EditableCell({
-  value,
-  storeId,
-  fieldKey,
-  isEditing,
-  onStartEdit,
-  onSave,
-  onCancel,
-  onNavigate,
-  cellRef,
-  suggestions,
-}: {
+interface EditableCellProps {
   value: string;
   storeId: string;
   fieldKey: string;
@@ -147,25 +136,48 @@ function EditableCell({
   onNavigate: (dir: "up" | "down" | "left" | "right") => void;
   cellRef: (el: HTMLElement | null) => void;
   suggestions: string[];
-}) {
+}
+
+const EditableCell = React.memo(function EditableCell({
+  value,
+  storeId,
+  fieldKey,
+  isEditing,
+  onStartEdit,
+  onSave,
+  onCancel,
+  onNavigate,
+  cellRef,
+  suggestions,
+}: EditableCellProps) {
   const [editValue, setEditValue] = useState(value);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const savingRef = useRef(false);
 
+  // Only sync external value when NOT editing (prevents reset during typing)
+  useEffect(() => {
+    if (!isEditing) {
+      setEditValue(value);
+    }
+  }, [value, isEditing]);
+
+  // Focus input when entering edit mode
   useEffect(() => {
     if (isEditing) {
       setEditValue(value);
       savingRef.current = false;
-      setTimeout(() => {
+      // Use rAF for smoother focus
+      requestAnimationFrame(() => {
         inputRef.current?.focus();
         setShowSuggestions(true);
-      }, 0);
+      });
     } else {
       setShowSuggestions(false);
     }
-  }, [isEditing, value]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing]);
 
   const filteredSuggestions = useMemo(() => {
     const q = editValue.toLowerCase().trim();
@@ -180,11 +192,11 @@ function EditableCell({
     if (navigate) {
       onNavigate(navigate);
     } else {
-      onCancel(); // close cell when not navigating
+      onCancel();
     }
   }, [storeId, fieldKey, onSave, onNavigate, onCancel]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === "Tab") {
       e.preventDefault();
       doSave(editValue, e.key === "Tab" ? (e.shiftKey ? "left" : "right") : (e.shiftKey ? "up" : "down"));
@@ -197,17 +209,25 @@ function EditableCell({
       e.preventDefault();
       doSave(editValue, "down");
     }
-  };
+  }, [doSave, editValue, onCancel, showSuggestions]);
 
-  const handleSelectSuggestion = (val: string) => {
+  const handleSelectSuggestion = useCallback((val: string) => {
     setEditValue(val);
     setShowSuggestions(false);
-    // Save but keep cell open so user can continue editing or navigate
     savingRef.current = false;
     onSave(storeId, fieldKey, val);
-    // Re-focus input
-    setTimeout(() => inputRef.current?.focus(), 0);
-  };
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, [onSave, storeId, fieldKey]);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEditValue(e.target.value);
+    setShowSuggestions(true);
+  }, []);
+
+  const handleBlur = useCallback((e: React.FocusEvent) => {
+    if (wrapperRef.current?.contains(e.relatedTarget as Node)) return;
+    doSave(editValue);
+  }, [doSave, editValue]);
 
   if (isEditing) {
     return (
@@ -215,16 +235,9 @@ function EditableCell({
         <Input
           ref={inputRef}
           value={editValue}
-          onChange={(e) => {
-            setEditValue(e.target.value);
-            setShowSuggestions(true);
-          }}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
-          onBlur={(e) => {
-            // Don't blur if clicking a suggestion
-            if (wrapperRef.current?.contains(e.relatedTarget as Node)) return;
-            doSave(editValue);
-          }}
+          onBlur={handleBlur}
           className="h-7 text-xs min-w-[60px] px-1.5"
           autoComplete="off"
         />
@@ -269,7 +282,7 @@ function EditableCell({
       {value || <span className="text-muted-foreground/40">—</span>}
     </div>
   );
-}
+});
 
 // ─── Main component ─────────────────────────────────────
 
@@ -302,7 +315,6 @@ export default function StoresMatrixTable({
   const [columnOrder, setColumnOrder] = useState<string[]>(() => {
     const saved = loadColumnOrder(clientId);
     if (saved) {
-      // Merge: add new columns not in saved, remove old ones
       const allKeys = new Set(allColumns.map((c) => c.key));
       const ordered = saved.filter((k) => allKeys.has(k));
       allColumns.forEach((c) => { if (!ordered.includes(c.key)) ordered.push(c.key); });
@@ -311,7 +323,6 @@ export default function StoresMatrixTable({
     return allColumns.map((c) => c.key);
   });
 
-  // Update column order when custom fields change
   useEffect(() => {
     setColumnOrder((prev) => {
       const allKeys = new Set(allColumns.map((c) => c.key));
@@ -330,14 +341,16 @@ export default function StoresMatrixTable({
   const [sortKey, setSortKey] = useState("state");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  const handleSort = (key: string) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
+  const handleSort = useCallback((key: string) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        return prev;
+      }
       setSortDir("asc");
-    }
-  };
+      return key;
+    });
+  }, []);
 
   // Filter + sort stores
   const filteredStores = useMemo(() => {
@@ -358,11 +371,9 @@ export default function StoresMatrixTable({
       });
   }, [stores, storeSearch, storeStateFilter, sortKey, sortDir]);
 
-  // Notify parent of current display order
   useEffect(() => {
     onDisplayOrderChange?.(filteredStores);
   }, [filteredStores, onDisplayOrderChange]);
-
 
   const [editingCell, setEditingCell] = useState<{ storeId: string; field: string } | null>(null);
   const cellRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -370,45 +381,61 @@ export default function StoresMatrixTable({
   const getCellKey = (storeId: string, field: string) => `${storeId}__${field}`;
 
   const navigateToCell = useCallback((dir: "up" | "down" | "left" | "right") => {
-    if (!editingCell) return;
-    const storeIdx = filteredStores.findIndex((s) => s.id === editingCell.storeId);
-    const colIdx = orderedColumns.findIndex((c) => c.storeField === editingCell.field);
-    if (storeIdx === -1 || colIdx === -1) return;
+    setEditingCell((prev) => {
+      if (!prev) return prev;
+      const storeIdx = filteredStores.findIndex((s) => s.id === prev.storeId);
+      const colIdx = orderedColumns.findIndex((c) => c.storeField === prev.field);
+      if (storeIdx === -1 || colIdx === -1) return prev;
 
-    let newStoreIdx = storeIdx;
-    let newColIdx = colIdx;
+      let newStoreIdx = storeIdx;
+      let newColIdx = colIdx;
 
-    if (dir === "up") newStoreIdx = Math.max(0, storeIdx - 1);
-    else if (dir === "down") newStoreIdx = Math.min(filteredStores.length - 1, storeIdx + 1);
-    else if (dir === "left") newColIdx = Math.max(0, colIdx - 1);
-    else if (dir === "right") newColIdx = Math.min(orderedColumns.length - 1, colIdx + 1);
+      if (dir === "up") newStoreIdx = Math.max(0, storeIdx - 1);
+      else if (dir === "down") newStoreIdx = Math.min(filteredStores.length - 1, storeIdx + 1);
+      else if (dir === "left") newColIdx = Math.max(0, colIdx - 1);
+      else if (dir === "right") newColIdx = Math.min(orderedColumns.length - 1, colIdx + 1);
 
-    const newStore = filteredStores[newStoreIdx];
-    const newCol = orderedColumns[newColIdx];
-    if (newStore && newCol) {
-      setEditingCell({ storeId: newStore.id, field: newCol.storeField });
-    }
-  }, [editingCell, filteredStores, orderedColumns]);
+      const newStore = filteredStores[newStoreIdx];
+      const newCol = orderedColumns[newColIdx];
+      if (newStore && newCol) {
+        return { storeId: newStore.id, field: newCol.storeField };
+      }
+      return prev;
+    });
+  }, [filteredStores, orderedColumns]);
 
-  const handleSave = useCallback(async (storeId: string, field: string, value: string) => {
+  // Fire-and-forget save (optimistic update already applied by hook)
+  const handleSave = useCallback((storeId: string, field: string, value: string) => {
     const store = stores.find((s) => s.id === storeId);
     if (!store) return;
     const oldValue = ((store as any)[field] || "").toString();
     if (value === oldValue) return;
-    try {
-      const finalValue = field === "showcase_count" ? (parseInt(value, 10) || 0) : (value || null);
-      await onUpdateStore({ id: storeId, [field]: finalValue });
-    } catch {
-      // error handled by mutation
-    }
+    const finalValue = field === "showcase_count" ? (parseInt(value, 10) || 0) : (value || null);
+    // Don't await — optimistic update handles UI immediately
+    onUpdateStore({ id: storeId, [field]: finalValue }).catch(() => {});
   }, [stores, onUpdateStore]);
 
-  const handleCancel = () => setEditingCell(null);
+  const handleCancel = useCallback(() => setEditingCell(null), []);
+
+  // Pre-compute suggestions per field (avoids recomputing per cell on each render)
+  const suggestionsMap = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    orderedColumns.forEach((col) => {
+      if (col.storeField === "name" || col.fieldType === "boolean") return;
+      const vals = new Set<string>();
+      stores.forEach((s) => {
+        const v = ((s as any)[col.storeField] || "").toString().trim();
+        if (v) vals.add(v);
+      });
+      map[col.storeField] = Array.from(vals).sort((a, b) => a.localeCompare(b));
+    });
+    return map;
+  }, [stores, orderedColumns]);
 
   // DnD for columns
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     setColumnOrder((prev) => {
@@ -418,7 +445,7 @@ export default function StoresMatrixTable({
       saveColumnOrder(clientId, next);
       return next;
     });
-  };
+  }, [clientId]);
 
   const formatPhone = (v: string) => {
     const d = v.replace(/\D/g, "").slice(0, 11);
@@ -427,13 +454,18 @@ export default function StoresMatrixTable({
     return `(${d.slice(0, 2)})${d.slice(2, 7)}-${d.slice(7)}`;
   };
 
-  const getCellDisplay = (store: ClientStore, col: ColumnDef) => {
+  const getCellDisplay = useCallback((store: ClientStore, col: ColumnDef) => {
     const val = (store as any)[col.storeField];
     if (col.fieldType === "boolean") return val === "true" || val === true ? "Sim" : "Não";
     if (!val) return "";
     if (col.storeField === "phone") return formatPhone(val);
     return val;
-  };
+  }, []);
+
+  // Stable callback refs for cell editing
+  const startEdit = useCallback((storeId: string, field: string) => {
+    setEditingCell({ storeId, field });
+  }, []);
 
   return (
     <div className="border border-border rounded-lg overflow-x-auto">
@@ -509,27 +541,18 @@ export default function StoresMatrixTable({
                     );
                   }
 
-                  const fieldSuggestions = (() => {
-                    const vals = new Set<string>();
-                    stores.forEach((s) => {
-                      const v = ((s as any)[col.storeField] || "").toString().trim();
-                      if (v && s.id !== store.id) vals.add(v);
-                    });
-                    return Array.from(vals).sort((a, b) => a.localeCompare(b));
-                  })();
-
                   return (
                     <TableCell key={col.key} className="p-1">
                       <EditableCell
-                        value={(store as any)[col.storeField] || ""}
+                        value={((store as any)[col.storeField] || "").toString()}
                         storeId={store.id}
                         fieldKey={col.storeField}
                         isEditing={isEditingThis}
-                        onStartEdit={() => setEditingCell({ storeId: store.id, field: col.storeField })}
+                        onStartEdit={() => startEdit(store.id, col.storeField)}
                         onSave={handleSave}
                         onCancel={handleCancel}
                         onNavigate={navigateToCell}
-                        suggestions={fieldSuggestions}
+                        suggestions={suggestionsMap[col.storeField] || []}
                         cellRef={(el) => {
                           const key = getCellKey(store.id, col.storeField);
                           if (el) cellRefs.current.set(key, el);
