@@ -343,6 +343,44 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       action: `Alterou "${label}"`,
       details: `${oldVal ?? "(vazio)"} → ${value ?? "(vazio)"}`,
     });
+
+    // Build extra resets when date/time is cleared
+    let extraFields: Record<string, any> = {};
+
+    // Original scheduling fields
+    if (field === "scheduled_date" || field === "scheduled_time") {
+      const nextDate = field === "scheduled_date" ? value : (existing?.scheduled_date ?? null);
+      const nextTime = field === "scheduled_time" ? value : (existing?.scheduled_time ?? null);
+      if (!nextDate || !nextTime) {
+        extraFields = {
+          store_approval_status: "under_review",
+          team_approval_status: "under_review",
+          store_approved: false,
+          team_approved: false,
+          store_approved_at: null,
+          team_approved_at: null,
+          responsibility: "team",
+          responsibility_at: null,
+        };
+      }
+    }
+
+    // Reschedule fields
+    if (field === "reschedule_date" || field === "reschedule_time") {
+      const nextDate = field === "reschedule_date" ? value : (existing?.reschedule_date ?? null);
+      const nextTime = field === "reschedule_time" ? value : (existing?.reschedule_time ?? null);
+      if (!nextDate || !nextTime) {
+        extraFields = {
+          reschedule_store_approval_status: "under_review",
+          reschedule_team_approval_status: "under_review",
+          reschedule_store_approved_at: null,
+          reschedule_team_approved_at: null,
+          reschedule_responsibility: "team",
+          reschedule_responsibility_at: null,
+        };
+      }
+    }
+
     upsertSchedule.mutate({
       campaign_id: campaignId,
       store_id: storeId,
@@ -361,6 +399,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       responsibility_at: existing?.responsibility_at ?? null,
       suggested_date: existing?.suggested_date ?? null,
       suggested_time: existing?.suggested_time ?? null,
+      ...extraFields,
       ...(typeof field === "string" ? { [field]: value } : {}),
     });
   };
