@@ -227,9 +227,9 @@ export function CreateKitDialog({
                   if (!piece) return null;
                   return (
                     <div key={pid} className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/20 min-w-0">
-                      <PieceThumbnail imageUrl={piece.image_url} name={piece.name} size="sm" />
+                      <PieceThumbnail imageUrl={piece.image_url} name={piece.name} size="md" />
                       <span className="text-xs font-bold text-primary shrink-0">#{piece.code}</span>
-                      <span className="text-sm flex-1 truncate min-w-0">{piece.name}</span>
+                      <span className="text-sm flex-1 break-words min-w-0">{piece.name}</span>
                     </div>
                   );
                 })}
@@ -242,9 +242,9 @@ export function CreateKitDialog({
                 <div className="max-h-[250px] overflow-y-auto space-y-1.5 pr-1">
                   {filteredAvailablePieces.map(p => (
                     <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-md border border-border hover:bg-muted/50 transition-colors">
-                      <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
+                      <PieceThumbnail imageUrl={p.image_url} name={p.name} size="md" />
                       <span className="text-xs font-bold text-primary shrink-0">#{p.code}</span>
-                      <span className="text-sm flex-1 truncate min-w-0">{p.name}</span>
+                      <span className="text-sm flex-1 break-words min-w-0">{p.name}</span>
                       <Button size="sm" variant="outline" className="text-xs gap-1 shrink-0 ml-2" onClick={() => handleAddPiece(p.id)}>
                         <Plus className="w-3 h-3" /> Incluir
                       </Button>
