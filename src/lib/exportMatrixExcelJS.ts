@@ -174,7 +174,7 @@ async function buildTransposedSheet(
 
       const imageId = wb.addImage({ base64: imgData.base64, extension: imgData.ext });
       ws.addImage(imageId, {
-        tl: { col: pi + 1 + 0.05, row: imageRowNum - 1 + 0.1 },
+        tl: { col: pi + STORE_META_COLS + 0.05, row: imageRowNum - 1 + 0.1 },
         ext: { width: Math.round(w), height: Math.round(h) },
       });
     }
@@ -219,7 +219,7 @@ async function buildTransposedSheet(
   }
 
   // Totals
-  const totalsValues: (string | number)[] = ["TOTAL"];
+  const totalsValues: (string | number)[] = ["TOTAL", "", "", ""];
   let grandTotal = 0;
   for (const p of items) {
     const t = stores.reduce((sum, s) => sum + (qtyMap[qtyKeyFn(s.id, p.id)] || 0), 0);
@@ -237,8 +237,11 @@ async function buildTransposedSheet(
 
   // Column widths
   ws.getColumn(1).width = 30;
-  for (let i = 2; i <= colCount; i++) {
-    const item = items[i - 2];
+  ws.getColumn(2).width = 18; // city
+  ws.getColumn(3).width = 8;  // state
+  ws.getColumn(4).width = 10; // showcase_count
+  for (let i = STORE_META_COLS + 1; i <= colCount; i++) {
+    const item = items[i - STORE_META_COLS - 1];
     const nameLen = item?.name?.length || 10;
     ws.getColumn(i).width = Math.min(Math.max(nameLen + 4, 18), 30);
   }
