@@ -151,10 +151,12 @@ const Auth = () => {
 
           <div className="bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 shadow-xl">
             <h2 className="text-lg font-display font-bold text-foreground mb-1">
-              {forgotPassword ? t("auth.recoverPassword") : isLogin ? t("auth.login") : t("common.createAccount")}
+              {magicLink ? t("auth.magicLink") : forgotPassword ? t("auth.recoverPassword") : isLogin ? t("auth.login") : t("common.createAccount")}
             </h2>
             <p className="text-sm text-muted-foreground mb-6">
-              {forgotPassword
+              {magicLink
+                ? t("auth.magicLinkDesc")
+                : forgotPassword
                 ? t("auth.recoverPasswordDesc")
                 : isLogin
                 ? t("auth.accessPlatform")
@@ -162,7 +164,7 @@ const Auth = () => {
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && !forgotPassword &&
+              {!isLogin && !forgotPassword && !magicLink &&
               <div className="space-y-1">
                   <label className="text-sm font-medium text-foreground">
                     {t("auth.whatIsYourName")}
@@ -188,7 +190,7 @@ const Auth = () => {
                   className="pl-10"
                   required />
               </div>
-              {!forgotPassword &&
+              {!forgotPassword && !magicLink &&
               <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -210,6 +212,8 @@ const Auth = () => {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading
                 ? t("common.wait")
+                : magicLink
+                ? t("auth.sendMagicLink")
                 : forgotPassword
                 ? t("common.sendLink")
                 : isLogin
