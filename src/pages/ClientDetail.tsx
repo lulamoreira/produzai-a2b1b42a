@@ -114,7 +114,7 @@ const emptyStoreForm = {
   city: "", state: "", phone: "", manager_name: "",
   store_model: "", country: "", store_code: "", email: "",
   custom_field_1: "", custom_field_2: "", custom_field_3: "", custom_field_4: "", custom_field_5: "",
-  observations: "",
+  observations: "", showcase_count: "0",
 };
 
 function generateStoreCode(clientName: string, country: string, existingStores: { store_code: string | null }[]): string {
@@ -383,7 +383,8 @@ const ClientDetail = () => {
         (formData as any)[key] = "false";
       }
     });
-    await addStore.mutateAsync({ client_id: clientId, ...formData });
+    const { showcase_count: sc, ...rest } = formData as any;
+    await addStore.mutateAsync({ client_id: clientId, ...rest, showcase_count: parseInt(sc, 10) || 0 });
     setStoreForm({ ...emptyStoreForm });
     nicknameTouchedRef.current = false;
     setStoreDialogOpen(false);
@@ -415,6 +416,7 @@ const ClientDetail = () => {
       custom_field_4: store.custom_field_4 || "",
       custom_field_5: store.custom_field_5 || "",
       observations: (store as any).observations || "",
+      showcase_count: String((store as any).showcase_count ?? 0),
     });
     setEditStoreDialogOpen(true);
   };
@@ -426,7 +428,8 @@ const ClientDetail = () => {
     if (!formData.store_code && client) {
       formData.store_code = generateStoreCode(client.name, formData.country, stores);
     }
-    await updateStore.mutateAsync({ id: editStoreId, ...formData });
+    const { showcase_count: sc2, ...rest2 } = formData as any;
+    await updateStore.mutateAsync({ id: editStoreId, ...rest2, showcase_count: parseInt(sc2, 10) || 0 });
     setEditStoreDialogOpen(false);
     setEditStoreId(null);
   };
@@ -541,6 +544,7 @@ const ClientDetail = () => {
           store_model: r["modelo de loja"] || r["Modelo de Loja"] || r["store_model"] || null,
           store_code: r["código da loja"] || r["Código da Loja"] || r["store_code"] || null,
           email: r["email"] || r["Email"] || r["E-mail"] || r["e-mail"] || null,
+          showcase_count: parseInt(r["quantidade de vitrines"] || r["Quantidade de Vitrines"] || r["vitrines"] || r["Vitrines"] || r["showcase_count"] || "0", 10) || 0,
         })).filter((s) => s.name);
         if (mapped.length === 0) {
           toast.error("Nenhuma loja encontrada na planilha.");
@@ -701,7 +705,11 @@ const ClientDetail = () => {
         <div className="col-span-2">
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Código da Loja</label>
           <Input value={form.store_code} onChange={(e) => setForm((f) => ({ ...f, store_code: e.target.value }))} placeholder="Gerado automaticamente" />
-        </div>
+         </div>
+         <div>
+           <label className="text-xs font-medium text-muted-foreground mb-1 block">Qtd. Vitrines</label>
+           <Input type="number" min="0" value={form.showcase_count} onChange={(e) => setForm((f) => ({ ...f, showcase_count: e.target.value }))} placeholder="0" />
+         </div>
         <div className="col-span-2">
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
           <textarea
@@ -1139,6 +1147,7 @@ const ClientDetail = () => {
                   { key: "phone", label: "Telefone", getValue: (s: ClientStore) => s.phone || "" },
                   { key: "email", label: "E-mail", getValue: (s: ClientStore) => s.email || "" },
                   { key: "manager_name", label: "Contato", getValue: (s: ClientStore) => s.manager_name || "" },
+                  { key: "showcase_count", label: "Qtd. Vitrines", getValue: (s: ClientStore) => String((s as any).showcase_count ?? 0) },
                   { key: "observations", label: "Observações", getValue: (s: ClientStore) => (s as any).observations || "" },
                 ];
                 customFieldsParsed.forEach((cf, i) => {

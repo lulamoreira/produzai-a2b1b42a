@@ -87,7 +87,8 @@ async function buildTransposedSheet(
   qtyMap: Record<string, number>,
   qtyKeyFn: (storeId: string, itemId: string) => string,
 ) {
-  const colCount = items.length + 1;
+  const STORE_META_COLS = 4; // name, city, state, showcase_count
+  const colCount = items.length + STORE_META_COLS;
   const IMAGE_ROW_HEIGHT = 120;
 
   // Row 1 – Title
@@ -112,7 +113,7 @@ async function buildTransposedSheet(
 
   // Meta rows
   for (let mi = 0; mi < META_ROW_COUNT; mi++) {
-    const values: (string | number)[] = [META_LABELS[mi]];
+    const values: (string | number)[] = [META_LABELS[mi], "", "", ""];
     for (const p of items) {
       switch (mi) {
         case 0: values.push(""); break;
@@ -128,13 +129,15 @@ async function buildTransposedSheet(
     const row = ws.addRow(values);
     const rowNum = mi + 2;
 
+    // Merge the label across the first STORE_META_COLS columns
+    ws.mergeCells(rowNum, 1, rowNum, STORE_META_COLS);
     const labelCell = ws.getCell(rowNum, 1);
     labelCell.font = { ...whiteFont, size: 11 };
     labelCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
     labelCell.fill = gradientFill(DARK_BLUE, "0E4D72", 90);
     labelCell.border = allWhiteBorders;
 
-    for (let ci = 2; ci <= colCount; ci++) {
+    for (let ci = STORE_META_COLS + 1; ci <= colCount; ci++) {
       const cell = ws.getCell(rowNum, ci);
       cell.font = { ...darkFont, size: 10 };
       cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
@@ -171,7 +174,7 @@ async function buildTransposedSheet(
 
       const imageId = wb.addImage({ base64: imgData.base64, extension: imgData.ext });
       ws.addImage(imageId, {
-        tl: { col: pi + 1 + 0.05, row: imageRowNum - 1 + 0.1 },
+        tl: { col: pi + STORE_META_COLS + 0.05, row: imageRowNum - 1 + 0.1 },
         ext: { width: Math.round(w), height: Math.round(h) },
       });
     }
@@ -179,7 +182,7 @@ async function buildTransposedSheet(
 
   // Stores header
   const storesHeaderRowNum = META_ROW_COUNT + 2;
-  const storeHeaderValues: (string | number)[] = ["NOME DA LOJA"];
+  const storeHeaderValues: (string | number)[] = ["NOME DA LOJA", "CIDADE", "UF", "VITRINES"];
   for (const p of items) storeHeaderValues.push("");
   const storeHeaderRow = ws.addRow(storeHeaderValues);
   storeHeaderRow.height = 30;
@@ -190,22 +193,22 @@ async function buildTransposedSheet(
     cell.border = allWhiteBorders;
   });
   for (let pi = 0; pi < items.length; pi++) {
-    ws.getCell(storesHeaderRowNum, pi + 2).value = items[pi].code;
+    ws.getCell(storesHeaderRowNum, pi + 4 + 1).value = items[pi].code;
   }
 
   // Store rows
   for (let si = 0; si < stores.length; si++) {
     const s = stores[si];
-    const rowValues: (string | number)[] = [s.name];
+    const rowValues: (string | number)[] = [s.name, (s as any).city || "", (s as any).state || "", (s as any).showcase_count ?? 0];
     for (const p of items) {
       rowValues.push(qtyMap[qtyKeyFn(s.id, p.id)] || 0);
     }
     const row = ws.addRow(rowValues);
     const isEven = si % 2 === 0;
     row.eachCell((cell, colNumber) => {
-      if (colNumber === 1) {
-        cell.font = { bold: true, size: 10, color: { argb: "FF1E293B" } };
-        cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+      if (colNumber <= STORE_META_COLS) {
+        cell.font = { bold: colNumber === 1, size: 10, color: { argb: "FF1E293B" } };
+        cell.alignment = { horizontal: colNumber === 1 ? "left" : "center", vertical: "middle", wrapText: true };
       } else {
         cell.font = { ...darkFont, size: 11 };
         cell.alignment = { horizontal: "center", vertical: "middle" };
@@ -216,7 +219,7 @@ async function buildTransposedSheet(
   }
 
   // Totals
-  const totalsValues: (string | number)[] = ["TOTAL"];
+  const totalsValues: (string | number)[] = ["TOTAL", "", "", ""];
   let grandTotal = 0;
   for (const p of items) {
     const t = stores.reduce((sum, s) => sum + (qtyMap[qtyKeyFn(s.id, p.id)] || 0), 0);
@@ -234,8 +237,11 @@ async function buildTransposedSheet(
 
   // Column widths
   ws.getColumn(1).width = 30;
-  for (let i = 2; i <= colCount; i++) {
-    const item = items[i - 2];
+  ws.getColumn(2).width = 18; // city
+  ws.getColumn(3).width = 8;  // state
+  ws.getColumn(4).width = 10; // showcase_count
+  for (let i = STORE_META_COLS + 1; i <= colCount; i++) {
+    const item = items[i - STORE_META_COLS - 1];
     const nameLen = item?.name?.length || 10;
     ws.getColumn(i).width = Math.min(Math.max(nameLen + 4, 18), 30);
   }

@@ -45,6 +45,7 @@ const BASE_COLUMNS: ColumnDef[] = [
   { key: "phone", label: "Telefone", storeField: "phone" },
   { key: "email", label: "E-mail", storeField: "email" },
   { key: "manager_name", label: "Contato", storeField: "manager_name" },
+  { key: "showcase_count", label: "Qtd. Vitrines", storeField: "showcase_count" },
   { key: "observations", label: "Observações", storeField: "observations" },
 ];
 
@@ -395,7 +396,8 @@ export default function StoresMatrixTable({
     const oldValue = ((store as any)[field] || "").toString();
     if (value === oldValue) return;
     try {
-      await onUpdateStore({ id: storeId, [field]: value || null });
+      const finalValue = field === "showcase_count" ? (parseInt(value, 10) || 0) : (value || null);
+      await onUpdateStore({ id: storeId, [field]: finalValue });
     } catch {
       // error handled by mutation
     }
