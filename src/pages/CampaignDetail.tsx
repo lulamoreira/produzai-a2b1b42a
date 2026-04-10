@@ -1543,7 +1543,7 @@ const CampaignDetail = () => {
                     <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={async () => {
                       toast.loading("Gerando planilha com imagens...", { id: "matrix-excel" });
                       try {
-                        await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha");
+                        await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces);
                         toast.success("Planilha exportada com sucesso!", { id: "matrix-excel" });
                       } catch (err) {
                         console.error(err);
