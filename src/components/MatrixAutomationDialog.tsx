@@ -13,23 +13,20 @@ import { Badge } from "@/components/ui/badge";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Trash2, Plus, ArrowRight, Check, AlertTriangle, Eye } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { Trash2, Plus, ArrowRight, Check, AlertTriangle, Eye, Save, FolderOpen, Play, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import type { ClientStore, CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
+import { useAutomationTemplates, type AutomationTemplateItem } from "@/hooks/useAutomationTemplates";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
 type CustomFieldDef = { key: string; label: string; index: number };
 
-type SelectedItem = {
-  id: string;           // piece or kit id
-  type: "piece" | "kit";
-  code: number;
-  name: string;
-  quantity: number;
-};
+type SelectedItem = AutomationTemplateItem;
 
 type OutsideFilterAction = "keep" | "zero";
 
@@ -69,7 +66,8 @@ export default function MatrixAutomationDialog({
 }: Props) {
   const { t } = useTranslation();
 
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [mainTab, setMainTab] = useState<string>("new");
+  const [step, setStep] = useState<1 | 2>(1);
 
   // Step 1 state
   const [selectedField, setSelectedField] = useState<string>("");
@@ -83,9 +81,25 @@ export default function MatrixAutomationDialog({
   const [outsideActions, setOutsideActions] = useState<Record<string, OutsideFilterAction>>({});
   const [executing, setExecuting] = useState(false);
 
+  // Save template state
+  const [saveName, setSaveName] = useState("");
+  const [showSaveInput, setShowSaveInput] = useState(false);
+
+  // Group state
+  const [newGroupName, setNewGroupName] = useState("");
+  const [addingTemplateToGroup, setAddingTemplateToGroup] = useState<string | null>(null);
+
+  // Hook
+  const {
+    templates, saveTemplate, deleteTemplate,
+    groups, saveGroup, deleteGroup,
+    groupItems, addToGroup, removeFromGroup, toggleGroupItem,
+  } = useAutomationTemplates(campaignId);
+
   // Reset on open
   useEffect(() => {
     if (open) {
+      setMainTab("new");
       setStep(1);
       setSelectedField("");
       setFieldValues([]);
@@ -94,10 +108,14 @@ export default function MatrixAutomationDialog({
       setItemSearch("");
       setPreview([]);
       setOutsideActions({});
+      setShowSaveInput(false);
+      setSaveName("");
+      setNewGroupName("");
+      setAddingTemplateToGroup(null);
     }
   }, [open]);
 
-  // All filterable fields (standard + custom)
+  // All filterable fields
   const allFilterFields = useMemo(() => {
     const standard: { key: string; label: string }[] = [
       { key: "name", label: t("automation.fieldName") },
@@ -118,7 +136,7 @@ export default function MatrixAutomationDialog({
   useEffect(() => {
     if (!selectedField || !open) { setFieldValues([]); return; }
     const values = [...new Set(
-      stores.map(s => (s as any)[selectedField] as string).filter(Boolean)
+      stores.map(s => String((s as any)[selectedField] ?? "")).filter(Boolean)
     )].sort();
     setFieldValues(values);
     setSelectedValue("");
@@ -153,13 +171,12 @@ export default function MatrixAutomationDialog({
   };
 
   // Resolve items to piece-level changes
-  const resolveItemsToPieces = useCallback((): { pieceId: string; pieceName: string; quantity: number }[] => {
+  const resolveItemsToPieces = useCallback((items: SelectedItem[]): { pieceId: string; pieceName: string; quantity: number }[] => {
     const result: { pieceId: string; pieceName: string; quantity: number }[] = [];
-    for (const item of selectedItems) {
+    for (const item of items) {
       if (item.type === "piece") {
         result.push({ pieceId: item.id, pieceName: item.name, quantity: item.quantity });
       } else {
-        // Kit: distribute to component pieces
         const components = kitPieces.filter(kp => kp.kit_id === item.id);
         for (const comp of components) {
           const piece = pieces.find(p => p.id === comp.piece_id);
@@ -178,7 +195,7 @@ export default function MatrixAutomationDialog({
       }
     }
     return result;
-  }, [selectedItems, kitPieces, pieces]);
+  }, [kitPieces, pieces]);
 
   // Validate and go to step 2
   const handlePreview = async () => {
@@ -187,7 +204,6 @@ export default function MatrixAutomationDialog({
       return;
     }
 
-    // Verify field still exists (only for custom fields)
     const isCustomField = selectedField.startsWith("custom_field_");
     if (isCustomField) {
       const { data: clientData } = await supabase.from("clients").select("*").eq("id", clientId).single();
@@ -202,31 +218,24 @@ export default function MatrixAutomationDialog({
       }
     }
 
-    const resolvedPieces = resolveItemsToPieces();
-    const matchingStores = stores.filter(s => (s as any)[selectedField] === selectedValue);
+    const resolvedPieces = resolveItemsToPieces(selectedItems);
+    const matchingStores = stores.filter(s => String((s as any)[selectedField] ?? "") === selectedValue);
     const matchingIds = new Set(matchingStores.map(s => s.id));
     const nonMatchingStores = stores.filter(s => !matchingIds.has(s.id));
 
     const rows: PreviewRow[] = [];
     const actions: Record<string, OutsideFilterAction> = {};
 
-    // Group 1: matching stores → update
     for (const store of matchingStores) {
       for (const rp of resolvedPieces) {
         rows.push({
-          storeId: store.id,
-          storeName: store.name,
-          group: "update",
-          pieceId: rp.pieceId,
-          pieceName: rp.pieceName,
-          currentQty: qtyMap[`${store.id}-${rp.pieceId}`] || 0,
-          newQty: rp.quantity,
-          action: "keep",
+          storeId: store.id, storeName: store.name, group: "update",
+          pieceId: rp.pieceId, pieceName: rp.pieceName,
+          currentQty: qtyMap[`${store.id}-${rp.pieceId}`] || 0, newQty: rp.quantity, action: "keep",
         });
       }
     }
 
-    // Group 2 & 3: non-matching stores
     for (const store of nonMatchingStores) {
       for (const rp of resolvedPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
@@ -234,25 +243,15 @@ export default function MatrixAutomationDialog({
           const key = `${store.id}-${rp.pieceId}`;
           actions[key] = "keep";
           rows.push({
-            storeId: store.id,
-            storeName: store.name,
-            group: "outside_with_value",
-            pieceId: rp.pieceId,
-            pieceName: rp.pieceName,
-            currentQty,
-            newQty: 0,
-            action: "keep",
+            storeId: store.id, storeName: store.name, group: "outside_with_value",
+            pieceId: rp.pieceId, pieceName: rp.pieceName,
+            currentQty, newQty: 0, action: "keep",
           });
         } else {
           rows.push({
-            storeId: store.id,
-            storeName: store.name,
-            group: "ignored",
-            pieceId: rp.pieceId,
-            pieceName: rp.pieceName,
-            currentQty: 0,
-            newQty: 0,
-            action: "keep",
+            storeId: store.id, storeName: store.name, group: "ignored",
+            pieceId: rp.pieceId, pieceName: rp.pieceName,
+            currentQty: 0, newQty: 0, action: "keep",
           });
         }
       }
@@ -267,7 +266,6 @@ export default function MatrixAutomationDialog({
   const updateRows = preview.filter(r => r.group === "update");
   const outsideRows = preview.filter(r => r.group === "outside_with_value");
   const ignoredCount = preview.filter(r => r.group === "ignored").length;
-
   const uniqueUpdateStores = new Set(updateRows.map(r => r.storeId)).size;
   const uniqueOutsideStores = new Set(outsideRows.map(r => r.storeId)).size;
 
@@ -277,11 +275,58 @@ export default function MatrixAutomationDialog({
     setOutsideActions(updated);
   };
 
-  // Step 3: Execute
+  // Execute automation (reusable for single + group)
+  const executeAutomation = async (
+    filterField: string, filterValue: string, items: SelectedItem[],
+  ): Promise<{ updated: number; kept: number; zeroed: number }> => {
+    const resolvedPieces = resolveItemsToPieces(items);
+    const matchingStores = stores.filter(s => String((s as any)[filterField] ?? "") === filterValue);
+    const matchingIds = new Set(matchingStores.map(s => s.id));
+    const nonMatchingStores = stores.filter(s => !matchingIds.has(s.id));
+
+    const upserts: { campaign_id: string; store_id: string; piece_id: string; quantity: number }[] = [];
+    const deletes: { storeId: string; pieceId: string }[] = [];
+
+    for (const store of matchingStores) {
+      for (const rp of resolvedPieces) {
+        if (rp.quantity > 0) {
+          upserts.push({ campaign_id: campaignId, store_id: store.id, piece_id: rp.pieceId, quantity: rp.quantity });
+        } else {
+          deletes.push({ storeId: store.id, pieceId: rp.pieceId });
+        }
+      }
+    }
+
+    let zeroCount = 0;
+    let keepCount = 0;
+    for (const store of nonMatchingStores) {
+      for (const rp of resolvedPieces) {
+        const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
+        if (currentQty > 0) {
+          keepCount++;
+        }
+      }
+    }
+
+    if (upserts.length > 0) {
+      const { error } = await supabase
+        .from("campaign_store_pieces")
+        .upsert(upserts, { onConflict: "campaign_id,store_id,piece_id" });
+      if (error) throw error;
+    }
+
+    for (const del of deletes) {
+      await supabase.from("campaign_store_pieces").delete()
+        .eq("campaign_id", campaignId).eq("store_id", del.storeId).eq("piece_id", del.pieceId);
+    }
+
+    return { updated: matchingStores.length, kept: keepCount, zeroed: zeroCount };
+  };
+
+  // Step 2: Execute with preview-based actions
   const handleExecute = async () => {
     setExecuting(true);
     try {
-      // Re-verify field existence (only custom fields)
       const isCustomField = selectedField.startsWith("custom_field_");
       if (isCustomField) {
         const { data: clientData } = await supabase.from("clients").select("*").eq("id", clientId).single();
@@ -294,18 +339,14 @@ export default function MatrixAutomationDialog({
         const labelKey = `custom_field_${fieldDef.index}_label` as keyof typeof clientData;
         if (!clientData[labelKey]) {
           toast.error(t("automation.fieldRemoved", { field: fieldDef.label }));
-          setExecuting(false);
-          setStep(1);
-          setSelectedField("");
+          setExecuting(false); setStep(1); setSelectedField("");
           return;
         }
       }
 
-      // Build upsert and delete arrays
       const upserts: { campaign_id: string; store_id: string; piece_id: string; quantity: number }[] = [];
       const deletes: { storeId: string; pieceId: string }[] = [];
 
-      // Group ✅: update to new quantity
       for (const row of updateRows) {
         if (row.newQty > 0) {
           upserts.push({ campaign_id: campaignId, store_id: row.storeId, piece_id: row.pieceId, quantity: row.newQty });
@@ -314,7 +355,6 @@ export default function MatrixAutomationDialog({
         }
       }
 
-      // Group ⚠️: apply per-row decision
       let zeroCount = 0;
       let keepCount = 0;
       for (const row of outsideRows) {
@@ -327,7 +367,6 @@ export default function MatrixAutomationDialog({
         }
       }
 
-      // Execute upserts in batch
       if (upserts.length > 0) {
         const { error } = await supabase
           .from("campaign_store_pieces")
@@ -335,22 +374,12 @@ export default function MatrixAutomationDialog({
         if (error) throw error;
       }
 
-      // Execute deletes in batch
       for (const del of deletes) {
-        await supabase
-          .from("campaign_store_pieces")
-          .delete()
-          .eq("campaign_id", campaignId)
-          .eq("store_id", del.storeId)
-          .eq("piece_id", del.pieceId);
+        await supabase.from("campaign_store_pieces").delete()
+          .eq("campaign_id", campaignId).eq("store_id", del.storeId).eq("piece_id", del.pieceId);
       }
 
-      toast.success(t("automation.successMessage", {
-        updated: uniqueUpdateStores,
-        kept: keepCount,
-        zeroed: zeroCount,
-      }));
-
+      toast.success(t("automation.successMessage", { updated: uniqueUpdateStores, kept: keepCount, zeroed: zeroCount }));
       onComplete();
       onOpenChange(false);
     } catch (err: any) {
@@ -360,125 +389,404 @@ export default function MatrixAutomationDialog({
     }
   };
 
+  // Save current config as template
+  const handleSaveTemplate = async () => {
+    if (!saveName.trim()) return;
+    try {
+      await saveTemplate.mutateAsync({
+        name: saveName.trim(),
+        filter_field: selectedField,
+        filter_value: selectedValue,
+        items: selectedItems,
+        outside_action: "keep",
+      });
+      toast.success(t("automation.saved"));
+      setSaveName("");
+      setShowSaveInput(false);
+    } catch {
+      toast.error(t("automation.errorSaving"));
+    }
+  };
+
+  // Load template into form
+  const loadTemplate = (tpl: typeof templates[0]) => {
+    setSelectedField(tpl.filter_field);
+    setSelectedValue(tpl.filter_value);
+    setSelectedItems(tpl.items);
+    setMainTab("new");
+    setStep(1);
+    // Trigger field values reload
+    setTimeout(() => {
+      const values = [...new Set(
+        stores.map(s => String((s as any)[tpl.filter_field] ?? "")).filter(Boolean)
+      )].sort();
+      setFieldValues(values);
+      setSelectedValue(tpl.filter_value);
+    }, 50);
+  };
+
+  // Run group
+  const handleRunGroup = async (groupId: string) => {
+    setExecuting(true);
+    try {
+      const items = groupItems
+        .filter(gi => gi.group_id === groupId && gi.enabled)
+        .sort((a, b) => a.display_order - b.display_order);
+      
+      let totalUpdated = 0;
+      for (const gi of items) {
+        const tpl = templates.find(t => t.id === gi.template_id);
+        if (!tpl) continue;
+        const result = await executeAutomation(tpl.filter_field, tpl.filter_value, tpl.items);
+        totalUpdated += result.updated;
+      }
+
+      toast.success(t("automation.groupExecuted") + ` (${totalUpdated} ${t("automation.stores")})`);
+      onComplete();
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error(t("automation.executionError") + ": " + (err.message || ""));
+    } finally {
+      setExecuting(false);
+    }
+  };
+
+  const getFieldLabel = (key: string) => allFilterFields.find(f => f.key === key)?.label || key;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("automation.title")}</DialogTitle>
           <DialogDescription>
-            {step === 1 && t("automation.step1Desc")}
+            {step === 1 && mainTab === "new" && t("automation.step1Desc")}
             {step === 2 && t("automation.step2Desc")}
           </DialogDescription>
         </DialogHeader>
 
-        {/* ──── STEP 1 ──── */}
         {step === 1 && (
-          <div className="space-y-4">
-            {/* Custom field selector */}
-            <div>
-              <Label className="text-sm font-medium">{t("automation.filterField")}</Label>
-              <Select value={selectedField} onValueChange={setSelectedField}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder={t("automation.selectField")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {allFilterFields.map(f => (
-                    <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <Tabs value={mainTab} onValueChange={setMainTab}>
+            <TabsList className="w-full">
+              <TabsTrigger value="new" className="flex-1 gap-1 text-xs">
+                <Plus className="w-3 h-3" /> {t("automation.newAutomation")}
+              </TabsTrigger>
+              <TabsTrigger value="saved" className="flex-1 gap-1 text-xs">
+                <FolderOpen className="w-3 h-3" /> {t("automation.savedTemplates")}
+              </TabsTrigger>
+              <TabsTrigger value="groups" className="flex-1 gap-1 text-xs">
+                <Layers className="w-3 h-3" /> {t("automation.groups")}
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Field value selector */}
-            {selectedField && (
+            {/* ──── TAB: Nova automação ──── */}
+            <TabsContent value="new" className="space-y-4 mt-3">
+              {/* Filter field */}
               <div>
-                <Label className="text-sm font-medium">{t("automation.filterValue")}</Label>
-                {fieldValues.length > 0 ? (
-                  <Select value={selectedValue} onValueChange={setSelectedValue}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue placeholder={t("automation.selectValue")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {fieldValues.map(v => (
-                        <SelectItem key={v} value={v}>{v}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <p className="text-sm text-muted-foreground mt-1">{t("automation.noValues")}</p>
-                )}
+                <Label className="text-sm font-medium">{t("automation.filterField")}</Label>
+                <Select value={selectedField} onValueChange={setSelectedField}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder={t("automation.selectField")} /></SelectTrigger>
+                  <SelectContent>
+                    {allFilterFields.map(f => (
+                      <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
 
-            {/* Items selection */}
-            <div>
-              <Label className="text-sm font-medium">{t("automation.selectItems")}</Label>
-              <div className="relative mt-1">
-                <Input
-                  placeholder={t("automation.searchByCode")}
-                  value={itemSearch}
-                  onChange={e => setItemSearch(e.target.value)}
-                  className="mb-1"
-                />
-                <div className="border rounded-md max-h-40 overflow-y-auto">
-                  {availableItems.length === 0 ? (
-                    <p className="text-xs text-muted-foreground p-2">{t("automation.noItemsAvailable")}</p>
+              {selectedField && (
+                <div>
+                  <Label className="text-sm font-medium">{t("automation.filterValue")}</Label>
+                  {fieldValues.length > 0 ? (
+                    <Select value={selectedValue} onValueChange={setSelectedValue}>
+                      <SelectTrigger className="mt-1"><SelectValue placeholder={t("automation.selectValue")} /></SelectTrigger>
+                      <SelectContent>
+                        {fieldValues.map(v => (
+                          <SelectItem key={v} value={v}>{v}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   ) : (
-                    availableItems.map(item => (
-                      <button
-                        key={`${item.type}-${item.id}`}
-                        className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent flex items-center gap-2 border-b last:border-b-0"
-                        onClick={() => addItem(item)}
-                      >
-                        <Plus className="w-3 h-3 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mt-1">{t("automation.noValues")}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Items selection */}
+              <div>
+                <Label className="text-sm font-medium">{t("automation.selectItems")}</Label>
+                <div className="relative mt-1">
+                  <Input
+                    placeholder={t("automation.searchByCode")}
+                    value={itemSearch}
+                    onChange={e => setItemSearch(e.target.value)}
+                    className="mb-1"
+                  />
+                  <div className="border rounded-md max-h-40 overflow-y-auto">
+                    {availableItems.length === 0 ? (
+                      <p className="text-xs text-muted-foreground p-2">{t("automation.noItemsAvailable")}</p>
+                    ) : (
+                      availableItems.map(item => (
+                        <button
+                          key={`${item.type}-${item.id}`}
+                          className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent flex items-center gap-2 border-b last:border-b-0"
+                          onClick={() => addItem(item)}
+                        >
+                          <Plus className="w-3 h-3 text-muted-foreground" />
+                          <Badge variant="outline" className="text-[10px]">
+                            {item.type === "kit" ? "Kit" : t("automation.piece")}
+                          </Badge>
+                          <span className="font-mono text-xs">{item.code}</span>
+                          <span className="truncate">{item.name}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {selectedItems.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {selectedItems.map((item, idx) => (
+                      <div key={`${item.type}-${item.id}`} className="flex items-center gap-2 bg-muted/50 rounded px-2 py-1">
                         <Badge variant="outline" className="text-[10px]">
                           {item.type === "kit" ? "Kit" : t("automation.piece")}
                         </Badge>
                         <span className="font-mono text-xs">{item.code}</span>
-                        <span className="truncate">{item.name}</span>
-                      </button>
-                    ))
-                  )}
-                </div>
+                        <span className="text-sm truncate flex-1">{item.name}</span>
+                        <Input
+                          type="number" min={1} value={item.quantity}
+                          onChange={e => updateItemQty(idx, parseInt(e.target.value) || 1)}
+                          className="w-20 h-7 text-xs"
+                        />
+                        <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeItem(idx)}>
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Selected items list */}
-              {selectedItems.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  {selectedItems.map((item, idx) => (
-                    <div key={`${item.type}-${item.id}`} className="flex items-center gap-2 bg-muted/50 rounded px-2 py-1">
-                      <Badge variant="outline" className="text-[10px]">
-                        {item.type === "kit" ? "Kit" : t("automation.piece")}
-                      </Badge>
-                      <span className="font-mono text-xs">{item.code}</span>
-                      <span className="text-sm truncate flex-1">{item.name}</span>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={item.quantity}
-                        onChange={e => updateItemQty(idx, parseInt(e.target.value) || 1)}
-                        className="w-20 h-7 text-xs"
-                      />
-                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeItem(idx)}>
+              {/* Action buttons */}
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  disabled={!selectedField || !selectedValue || selectedItems.length === 0}
+                  onClick={handlePreview}
+                >
+                  <Eye className="w-4 h-4 mr-1" /> {t("automation.preview")}
+                </Button>
+                {selectedField && selectedValue && selectedItems.length > 0 && (
+                  <>
+                    {!showSaveInput ? (
+                      <Button variant="outline" size="icon" onClick={() => setShowSaveInput(true)} title={t("automation.saveTemplate")}>
+                        <Save className="w-4 h-4" />
+                      </Button>
+                    ) : (
+                      <div className="flex gap-1 items-center">
+                        <Input
+                          placeholder={t("automation.templateNamePlaceholder")}
+                          value={saveName}
+                          onChange={e => setSaveName(e.target.value)}
+                          className="w-40 h-9 text-xs"
+                          onKeyDown={e => e.key === "Enter" && handleSaveTemplate()}
+                        />
+                        <Button size="sm" onClick={handleSaveTemplate} disabled={!saveName.trim()}>
+                          <Check className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* ──── TAB: Automações salvas ──── */}
+            <TabsContent value="saved" className="space-y-2 mt-3">
+              {templates.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">{t("automation.noSavedTemplates")}</p>
+              ) : (
+                templates.map(tpl => (
+                  <div key={tpl.id} className="border rounded-lg p-3 flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{tpl.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {getFieldLabel(tpl.filter_field)} = <span className="font-mono">{tpl.filter_value}</span>
+                      </p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {tpl.items.map(it => (
+                          <Badge key={`${it.type}-${it.id}`} variant="secondary" className="text-[10px]">
+                            {it.type === "kit" ? "Kit" : ""} {it.code} × {it.quantity}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => loadTemplate(tpl)}>
+                        {t("automation.load")}
+                      </Button>
+                      <Button
+                        size="icon" variant="ghost" className="h-7 w-7 text-destructive"
+                        onClick={async () => {
+                          await deleteTemplate.mutateAsync(tpl.id);
+                          toast.success(t("automation.deleted"));
+                        }}
+                      >
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))
               )}
-            </div>
+            </TabsContent>
 
-            <Button
-              className="w-full"
-              disabled={!selectedField || !selectedValue || selectedItems.length === 0}
-              onClick={handlePreview}
-            >
-              <Eye className="w-4 h-4 mr-1" /> {t("automation.preview")}
-            </Button>
-          </div>
+            {/* ──── TAB: Grupos ──── */}
+            <TabsContent value="groups" className="space-y-3 mt-3">
+              {/* Create new group */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder={t("automation.groupNamePlaceholder")}
+                  value={newGroupName}
+                  onChange={e => setNewGroupName(e.target.value)}
+                  className="text-sm"
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && newGroupName.trim()) {
+                      saveGroup.mutateAsync(newGroupName.trim()).then(() => {
+                        toast.success(t("automation.groupSaved"));
+                        setNewGroupName("");
+                      });
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  disabled={!newGroupName.trim()}
+                  onClick={() => {
+                    saveGroup.mutateAsync(newGroupName.trim()).then(() => {
+                      toast.success(t("automation.groupSaved"));
+                      setNewGroupName("");
+                    });
+                  }}
+                >
+                  <Plus className="w-3 h-3 mr-1" /> {t("automation.newGroup")}
+                </Button>
+              </div>
+
+              {groups.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">{t("automation.noGroups")}</p>
+              ) : (
+                groups.map(group => {
+                  const gItems = groupItems.filter(gi => gi.group_id === group.id);
+                  const enabledCount = gItems.filter(gi => gi.enabled).length;
+
+                  return (
+                    <div key={group.id} className="border rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-sm">{group.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("automation.templateCount", { count: gItems.length })} ({enabledCount} {t("automation.enabled").toLowerCase()})
+                          </p>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            size="sm" variant="default" className="text-xs h-7 gap-1"
+                            disabled={enabledCount === 0 || executing}
+                            onClick={() => handleRunGroup(group.id)}
+                          >
+                            <Play className="w-3 h-3" /> {t("automation.runGroup")}
+                          </Button>
+                          <Button
+                            size="icon" variant="ghost" className="h-7 w-7 text-destructive"
+                            onClick={async () => {
+                              await deleteGroup.mutateAsync(group.id);
+                              toast.success(t("automation.groupDeleted"));
+                            }}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Items in group */}
+                      {gItems.length > 0 && (
+                        <div className="space-y-1">
+                          {gItems.map(gi => {
+                            const tpl = templates.find(t => t.id === gi.template_id);
+                            if (!tpl) return null;
+                            return (
+                              <div key={gi.id} className="flex items-center gap-2 bg-muted/30 rounded px-2 py-1.5 text-sm">
+                                <Switch
+                                  checked={gi.enabled}
+                                  onCheckedChange={async (checked) => {
+                                    await toggleGroupItem.mutateAsync({ id: gi.id, enabled: checked });
+                                  }}
+                                />
+                                <span className={`flex-1 truncate ${!gi.enabled ? "opacity-50 line-through" : ""}`}>
+                                  {tpl.name}
+                                </span>
+                                <Badge variant="outline" className="text-[10px]">
+                                  {getFieldLabel(tpl.filter_field)} = {tpl.filter_value}
+                                </Badge>
+                                <Button
+                                  size="icon" variant="ghost" className="h-6 w-6"
+                                  onClick={async () => {
+                                    await removeFromGroup.mutateAsync(gi.id);
+                                  }}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Add template to group */}
+                      {addingTemplateToGroup === group.id ? (
+                        <div className="space-y-1">
+                          {templates
+                            .filter(tpl => !gItems.some(gi => gi.template_id === tpl.id))
+                            .map(tpl => (
+                              <button
+                                key={tpl.id}
+                                className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent rounded flex items-center gap-2 border"
+                                onClick={async () => {
+                                  await addToGroup.mutateAsync({ groupId: group.id, templateId: tpl.id });
+                                  setAddingTemplateToGroup(null);
+                                }}
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span className="truncate">{tpl.name}</span>
+                                <Badge variant="outline" className="text-[10px] ml-auto">
+                                  {getFieldLabel(tpl.filter_field)} = {tpl.filter_value}
+                                </Badge>
+                              </button>
+                            ))}
+                          {templates.filter(tpl => !gItems.some(gi => gi.template_id === tpl.id)).length === 0 && (
+                            <p className="text-xs text-muted-foreground p-2">{t("automation.noSavedTemplates")}</p>
+                          )}
+                          <Button size="sm" variant="ghost" className="text-xs" onClick={() => setAddingTemplateToGroup(null)}>
+                            {t("common.cancel")}
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm" variant="outline" className="text-xs w-full"
+                          onClick={() => setAddingTemplateToGroup(group.id)}
+                          disabled={templates.length === 0}
+                        >
+                          <Plus className="w-3 h-3 mr-1" /> {t("automation.addToGroup")}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </TabsContent>
+          </Tabs>
         )}
 
-        {/* ──── STEP 2 ──── */}
+        {/* ──── STEP 2: Preview ──── */}
         {step === 2 && (
           <div className="space-y-4">
             {/* Group ✅ */}
