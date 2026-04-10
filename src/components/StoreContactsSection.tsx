@@ -31,6 +31,7 @@ interface Props {
   clientId: string | undefined;
   canEdit: boolean;
   storeName?: string;
+  countryCode?: string | null;
 }
 
 const StoreContactsSection = ({ storeId, clientId, canEdit, storeName }: Props) => {
