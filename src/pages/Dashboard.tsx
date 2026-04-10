@@ -43,6 +43,7 @@ const CLIENT_COLORS = [
 function SortableClientCard({
   client,
   campaignCount,
+  userCount,
   isAdmin,
   onNavigate,
   onDelete,
@@ -51,6 +52,7 @@ function SortableClientCard({
 }: {
   client: Client;
   campaignCount: number;
+  userCount: number;
   isAdmin: boolean;
   onNavigate: () => void;
   onDelete: () => void;
@@ -345,6 +347,7 @@ const Dashboard = () => {
                     key={client.id}
                     client={client}
                     campaignCount={campaignCounts[client.id] || 0}
+                    userCount={userCounts[client.id] || 0}
                     isAdmin={isAdmin}
                     onNavigate={() => navigate(`/agency/${agencyId}/clients/${client.id}`)}
                     onDelete={() => deleteClient.mutate(client.id)}
