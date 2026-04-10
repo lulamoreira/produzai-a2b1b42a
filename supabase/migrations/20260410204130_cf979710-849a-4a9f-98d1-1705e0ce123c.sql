@@ -1,0 +1,1 @@
+ALTER TABLE public.client_stores ADD COLUMN showcase_count integer NOT NULL DEFAULT 0;
