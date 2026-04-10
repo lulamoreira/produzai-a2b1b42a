@@ -148,7 +148,10 @@ const Auth = () => {
             <h1 className="text-3xl font-display font-bold text-foreground">
               ProduzAI
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-primary/15 text-primary border border-primary/20">
+              v2.0
+            </span>
+            <p className="text-sm text-muted-foreground mt-2">
               {t("auth.creativeProductionControl")}
             </p>
           </div>
