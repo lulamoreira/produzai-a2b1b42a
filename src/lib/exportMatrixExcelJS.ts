@@ -87,7 +87,8 @@ async function buildTransposedSheet(
   qtyMap: Record<string, number>,
   qtyKeyFn: (storeId: string, itemId: string) => string,
 ) {
-  const colCount = items.length + 1;
+  const STORE_META_COLS = 4; // name, city, state, showcase_count
+  const colCount = items.length + STORE_META_COLS;
   const IMAGE_ROW_HEIGHT = 120;
 
   // Row 1 – Title
@@ -112,7 +113,7 @@ async function buildTransposedSheet(
 
   // Meta rows
   for (let mi = 0; mi < META_ROW_COUNT; mi++) {
-    const values: (string | number)[] = [META_LABELS[mi]];
+    const values: (string | number)[] = [META_LABELS[mi], "", "", ""];
     for (const p of items) {
       switch (mi) {
         case 0: values.push(""); break;
@@ -128,13 +129,15 @@ async function buildTransposedSheet(
     const row = ws.addRow(values);
     const rowNum = mi + 2;
 
+    // Merge the label across the first STORE_META_COLS columns
+    ws.mergeCells(rowNum, 1, rowNum, STORE_META_COLS);
     const labelCell = ws.getCell(rowNum, 1);
     labelCell.font = { ...whiteFont, size: 11 };
     labelCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
     labelCell.fill = gradientFill(DARK_BLUE, "0E4D72", 90);
     labelCell.border = allWhiteBorders;
 
-    for (let ci = 2; ci <= colCount; ci++) {
+    for (let ci = STORE_META_COLS + 1; ci <= colCount; ci++) {
       const cell = ws.getCell(rowNum, ci);
       cell.font = { ...darkFont, size: 10 };
       cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
