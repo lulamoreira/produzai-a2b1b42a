@@ -560,6 +560,7 @@
     "tryDifferent": "Intenta una búsqueda diferente.",
     "createdAt": "Creado el",
     "campaigns": "campaña(s)",
+    "users": "usuario(s)",
     "access": "Acceder",
     "deleteClientTitle": "¿Está seguro de que desea eliminar este cliente?",
     "deleteClientDesc": "Todos los datos asociados a este cliente se eliminarán permanentemente, incluyendo campañas, tiendas, piezas y cantidades. Esta acción no se puede deshacer.",
