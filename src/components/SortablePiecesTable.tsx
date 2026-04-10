@@ -282,13 +282,15 @@ interface SortablePiecesTableProps {
   onKitClick: (kit: CampaignKit) => void;
   onDeleteKit: (id: string) => void;
   onToggleKitMockup: (kit: CampaignKit) => void;
+  onDuplicate: (piece: CampaignPiece) => void;
+  onDuplicateKit: (kit: CampaignKit) => void;
   onReorder: (rows: UnifiedRow[]) => void;
 }
 
 export default function SortablePiecesTable({
   pieces, kits, kitPieces: kitPiecesList, allPieces, stores, qtyMap,
   canEditPieces, canDeletePieces,
-  onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onReorder,
+  onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit, onReorder,
 }: SortablePiecesTableProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
