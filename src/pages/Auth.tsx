@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import authBg1 from "@/assets/auth-bg-1.jpg";
@@ -31,6 +31,7 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [forgotPassword, setForgotPassword] = useState(false);
+  const [magicLink, setMagicLink] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const navigate = useNavigate();
 
@@ -52,6 +53,17 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    if (magicLink) {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.origin }
+      });
+      setLoading(false);
+      if (error) toast.error(error.message);
+      else toast.success(t("auth.magicLinkSent"));
+      return;
+    }
 
     if (forgotPassword) {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
