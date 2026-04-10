@@ -383,7 +383,8 @@ const ClientDetail = () => {
         (formData as any)[key] = "false";
       }
     });
-    await addStore.mutateAsync({ client_id: clientId, ...formData });
+    const { showcase_count: sc, ...rest } = formData as any;
+    await addStore.mutateAsync({ client_id: clientId, ...rest, showcase_count: parseInt(sc, 10) || 0 });
     setStoreForm({ ...emptyStoreForm });
     nicknameTouchedRef.current = false;
     setStoreDialogOpen(false);
@@ -427,7 +428,8 @@ const ClientDetail = () => {
     if (!formData.store_code && client) {
       formData.store_code = generateStoreCode(client.name, formData.country, stores);
     }
-    await updateStore.mutateAsync({ id: editStoreId, ...formData });
+    const { showcase_count: sc2, ...rest2 } = formData as any;
+    await updateStore.mutateAsync({ id: editStoreId, ...rest2, showcase_count: parseInt(sc2, 10) || 0 });
     setEditStoreDialogOpen(false);
     setEditStoreId(null);
   };
