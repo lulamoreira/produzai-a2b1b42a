@@ -4,14 +4,7 @@ import { Search, UserPlus, MapPin, Phone, Mail, Building2, Hash, FileText, Edit3
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { ClientStore } from "@/hooks/useMultiClientData";
-import { getCountryConfig } from "@/lib/countryConfig";
-
-function formatPhoneDisplay(phone: string): string {
-  const digits = phone.replace(/\D/g, "").slice(0, 11);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
-}
+import { formatPhoneByCountry, getCountryConfig } from "@/lib/countryConfig";
 
 interface Props {
   clientId: string;
