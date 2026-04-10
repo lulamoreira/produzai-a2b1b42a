@@ -1,3 +1,4 @@
+import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { useTranslation } from "react-i18next";
@@ -110,37 +111,39 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <SidebarStateProvider>
-          <Routes>
-            <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
-            <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
-            <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><CampaignDetail /></ProtectedRoute>} />
-            <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-            <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
-            <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-            <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
-            <Route path="/installer" element={<InstallerDashboard />} />
-            <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
-            <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
-            <Route path="/unsubscribe" element={<Unsubscribe />} />
-            <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          </SidebarStateProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="produzai-theme">
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <SidebarStateProvider>
+            <Routes>
+              <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
+              <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+              <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><CampaignDetail /></ProtectedRoute>} />
+              <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
+              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+              <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
+              <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+              <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
+              <Route path="/installer" element={<InstallerDashboard />} />
+              <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
+              <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
+              <Route path="/unsubscribe" element={<Unsubscribe />} />
+              <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            </SidebarStateProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;

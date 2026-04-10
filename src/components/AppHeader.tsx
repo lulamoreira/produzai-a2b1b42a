@@ -15,6 +15,7 @@ import {
 import { LogOut, Shield, MessageSquare, ArrowLeft, UserCog, ChevronRight, Globe } from "lucide-react";
 import { WhatsNewButton } from "@/components/WhatsNewSheet";
 import { InviteButton } from "@/components/InviteButton";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import EditProfileDialog from "@/components/EditProfileDialog";
 
 export const getGreeting = (t?: (key: string) => string) => {
@@ -135,6 +136,7 @@ export default function AppHeader({
             <>
               <InviteButton />
               <WhatsNewButton />
+              <ThemeToggle />
               {/* Language selector */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
