@@ -68,6 +68,7 @@ import CampaignStatusDashboard from "@/components/CampaignStatusDashboard";
 import CampaignChatSection from "@/components/CampaignChatSection";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
+import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -958,6 +959,7 @@ const CampaignDetail = () => {
           stores: t("modules.stores"), matrix: t("modules.matrix"), pieces: t("modules.pieces"),
           occurrences: t("modules.occurrences"), scheduling: t("modules.scheduling"),
           installations: t("modules.installations"), budgets: t("modules.budgets"),
+          history: "Histórico",
         };
         const crumbs = [
           { label: agency?.name || "Agência", href: isLimitedMode ? undefined : "/" },
@@ -2381,6 +2383,11 @@ const CampaignDetail = () => {
           {/* ─── SECTION: CHAT ─── */}
           {activeSection === "chat" && campaignId && (
             <CampaignChatSection campaignId={campaignId} />
+          )}
+
+          {/* ─── SECTION: HISTORY ─── */}
+          {activeSection === "history" && campaignId && (
+            <CampaignActivityHistory campaignId={campaignId} />
           )}
           </>
         )}
