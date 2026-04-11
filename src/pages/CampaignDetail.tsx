@@ -31,11 +31,14 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, MoreHorizontal } from "lucide-react";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 import BudgetsTab from "@/components/BudgetsTab";
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -1511,7 +1514,7 @@ const CampaignDetail = () => {
                 {/* Toolbar */}
                 <div className="px-3 py-2.5 border-b border-border bg-muted/30">
                   {renderStoreFilters()}
-                  <div className="flex flex-wrap items-center gap-1.5">
+                  <div className="flex items-center gap-2">
                     <QuickMatrixEditor
                       stores={activeFilteredStores}
                       pieces={matrixPieces}
@@ -1536,51 +1539,78 @@ const CampaignDetail = () => {
                         ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label }] : []),
                       ]}
                     />
-                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}><Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("common.export")}</span> {t("modules.matrix")}</Button>
-                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setMatrixCustomExportOpen(true)}>
-                      <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("matrix.customExport")}
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={async () => {
-                      toast.loading("Gerando planilha com imagens...", { id: "matrix-excel" });
-                      try {
-                        await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces);
-                        toast.success("Planilha exportada com sucesso!", { id: "matrix-excel" });
-                      } catch (err) {
-                        console.error(err);
-                        toast.error("Erro ao exportar planilha", { id: "matrix-excel" });
-                      }
-                    }}>
-                      <FileSpreadsheet className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Exportar Orçamento
-                    </Button>
-                    {canEditCampaign && (
-                      <label className="cursor-pointer">
-                        <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file || !campaignId) return;
-                          try {
-                            const items = await parseMatrixImport(file, pieces, stores);
-                            if (items.length === 0) { toast.error(t("matrix.noDataFound")); return; }
-                            for (const item of items) {
-                              await updateStorePiece.mutateAsync({ campaignId, storeId: item.storeId, pieceId: item.pieceId, quantity: item.quantity });
-                            }
-                            toast.success(t("matrix.quantitiesImported", { count: items.length }));
-                          } catch { toast.error(t("matrix.errorImport")); }
-                          e.target.value = "";
-                        }} />
-                        <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" asChild>
-                          <span><Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("common.import")}</span>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline" className="text-xs gap-1.5">
+                          <MoreHorizontal className="w-4 h-4" />
+                          <span className="hidden sm:inline">{t("common.moreActions") || "Mais ações"}</span>
                         </Button>
-                      </label>
-                    )}
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="w-56">
+                        {/* Export group */}
+                        <DropdownMenuItem onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
+                          <Download className="w-4 h-4 mr-2" />
+                          {t("common.export")} {t("modules.matrix")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setMatrixCustomExportOpen(true)}>
+                          <Download className="w-4 h-4 mr-2" />
+                          {t("matrix.customExport")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={async () => {
+                          toast.loading("Gerando planilha com imagens...", { id: "matrix-excel" });
+                          try {
+                            await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces);
+                            toast.success("Planilha exportada com sucesso!", { id: "matrix-excel" });
+                          } catch (err) {
+                            console.error(err);
+                            toast.error("Erro ao exportar planilha", { id: "matrix-excel" });
+                          }
+                        }}>
+                          <FileSpreadsheet className="w-4 h-4 mr-2" />
+                          Exportar Orçamento
+                        </DropdownMenuItem>
+
+                        {canEditCampaign && (
+                          <>
+                            <DropdownMenuSeparator />
+                            {/* Import group */}
+                            <DropdownMenuItem onSelect={() => {
+                              const input = document.getElementById("matrix-import-input") as HTMLInputElement;
+                              input?.click();
+                            }}>
+                              <Upload className="w-4 h-4 mr-2" />
+                              {t("common.import")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setImportMatrixDialogOpen(true)}>
+                              <Copy className="w-4 h-4 mr-2" />
+                              {t("matrix.fromOtherCampaign")}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setAutomationOpen(true)}>
+                              <Sparkles className="w-4 h-4 mr-2" />
+                              {t("automation.title")}
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {/* Hidden file input for matrix import */}
                     {canEditCampaign && (
-                      <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setImportMatrixDialogOpen(true)}>
-                        <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("matrix.fromOtherCampaign")}
-                      </Button>
-                    )}
-                    {canEditCampaign && (
-                      <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setAutomationOpen(true)}>
-                        <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("automation.title")}
-                      </Button>
+                      <input id="matrix-import-input" type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file || !campaignId) return;
+                        try {
+                          const items = await parseMatrixImport(file, pieces, stores);
+                          if (items.length === 0) { toast.error(t("matrix.noDataFound")); return; }
+                          for (const item of items) {
+                            await updateStorePiece.mutateAsync({ campaignId, storeId: item.storeId, pieceId: item.pieceId, quantity: item.quantity });
+                          }
+                          toast.success(t("matrix.quantitiesImported", { count: items.length }));
+                        } catch { toast.error(t("matrix.errorImport")); }
+                        e.target.value = "";
+                      }} />
                     )}
                   </div>
                 </div>
