@@ -364,26 +364,32 @@ export default function AppSidebar() {
         {navItems.map(renderNavItem)}
       </nav>
 
-      {/* Footer – always visible, safe-area aware */}
-      <div className="shrink-0 border-t border-sidebar-border bg-sidebar" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
+      {/* Footer */}
+      <div className="shrink-0" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))", paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
         <div className="px-2 pt-2">
           <button
             onClick={() => setProfileOpen(true)}
-            className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all"
+            className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all"
+            style={{ color: "var(--sidebar-text, #A89880)" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }}
           >
-            <div className="w-8 h-8 rounded-full bg-sidebar-primary/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-bold text-sidebar-primary">{displayName.charAt(0).toUpperCase()}</span>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-600, #735A3D)" }}>
+              <span className="text-[13px] font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
             </div>
             {!collapsed && (
               <div className="flex-1 text-left min-w-0">
-                <p className="text-xs font-semibold truncate text-sidebar-foreground">{displayName}</p>
-                <p className="text-[10px] text-sidebar-foreground/50 truncate">{roleBadge}</p>
+                <p className="text-[13px] font-semibold truncate" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>{displayName}</p>
+                <p className="text-[11px] truncate" style={{ color: "var(--sidebar-text, #A89880)" }}>{roleBadge}</p>
               </div>
             )}
           </button>
           <button
             onClick={signOut}
-            className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-xs text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-all ${collapsed ? "justify-center" : ""}`}
+            className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[12px] transition-all ${collapsed ? "justify-center" : ""}`}
+            style={{ color: "var(--sidebar-text, #A89880)" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--s-danger, #DC2626)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--sidebar-text, #A89880)"; }}
             title="Sair"
           >
             <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
@@ -391,7 +397,7 @@ export default function AppSidebar() {
           </button>
         </div>
 
-        <div className="px-2 pt-2 border-t border-sidebar-border">
+        <div className="px-2 pt-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
           <div className={`flex ${collapsed ? "flex-col" : ""} items-center gap-1`}>
             {/* Language selector */}
             <div className="relative">
