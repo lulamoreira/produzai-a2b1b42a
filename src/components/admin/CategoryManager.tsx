@@ -149,9 +149,9 @@ export default function CategoryManager() {
                     <div key={m.key} className="flex items-center gap-2">
                       <span className="text-xs w-28 truncate text-muted-foreground">{m.icon} {m.label}</span>
                       <div className="flex gap-1">
-                        {hasView && <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-700 border border-blue-500/20">Ver</span>}
-                        {hasEdit && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 border border-amber-500/20">Editar</span>}
-                        {hasDelete && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-700 border border-red-500/20">Apagar</span>}
+                        {hasView && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--bg-muted)", color: "var(--text-secondary)" }}>Ver</span>}
+                        {hasEdit && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--bg-muted)", color: "var(--text-secondary)" }}>Editar</span>}
+                        {hasDelete && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--s-danger-bg)", color: "var(--s-danger)" }}>Apagar</span>}
                       </div>
                     </div>
                   );

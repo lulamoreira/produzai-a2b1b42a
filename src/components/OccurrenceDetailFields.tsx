@@ -144,16 +144,16 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
   return (
     <div className="space-y-3 mt-3 pt-3 border-t border-border/50">
       {/* 1 - Dados do Reclamante */}
-      <div className="rounded-lg border border-destructive/40 overflow-hidden">
+      <div className="rounded-lg overflow-hidden" style={{ borderTop: "1px solid var(--border-subtle)" }}>
         <button
           type="button"
-          className="w-full flex items-center justify-between px-3 py-2 bg-destructive/10 hover:bg-destructive/15 transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/40 transition-colors"
           onClick={() => setReporterOpen(!reporterOpen)}
         >
-          <span className="text-[10px] font-semibold text-destructive uppercase tracking-wider flex items-center gap-1">
+          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)" }} className="flex items-center gap-1">
             <User className="w-3 h-3" /> Dados do Reclamante
           </span>
-          {reporterOpen ? <ChevronUp className="w-3.5 h-3.5 text-destructive/60" /> : <ChevronDown className="w-3.5 h-3.5 text-destructive/60" />}
+          {reporterOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
         </button>
         {reporterOpen && (
           <div className="p-3 space-y-2 bg-card">
@@ -319,8 +319,8 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
       </div>
 
       {/* 4 - Resolução Prevista */}
-      <div className="bg-warning/10 rounded-lg p-2 border border-warning/20">
-        <label className="text-[10px] font-bold text-warning uppercase tracking-wider flex items-center gap-1 mb-1">
+      <div className="rounded-lg p-2" style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 12 }}>
+        <label style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)" }} className="flex items-center gap-1 mb-1">
           <CalendarClock className="w-3 h-3" /> Resolução prevista para:
         </label>
         {canEdit ? (
