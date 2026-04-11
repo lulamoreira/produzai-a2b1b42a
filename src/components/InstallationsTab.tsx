@@ -32,8 +32,9 @@ import {
   Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList, Lock, LockOpen,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, SlidersHorizontal, Filter, MoreHorizontal,
 } from "lucide-react";
-  CheckCircle2, AlertCircle, ChevronDown, ChevronUp, SlidersHorizontal, Filter,
-} from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { downloadPhotosAsZip, downloadAllCampaignPhotosAsZip } from "@/lib/downloadPhotosZip";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
