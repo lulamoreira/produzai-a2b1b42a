@@ -8,7 +8,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, Filter, PanelLeftClose, PanelLeft, X, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronLeft, Filter, SlidersHorizontal, X, Search } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 
 export type PieceFilters = {
