@@ -933,41 +933,32 @@ const CampaignDetail = () => {
         {/* ─── HOME VIEW: Material de Apoio + Nav Buttons ─── */}
         {!activeSection && !isLimitedMode && (
           <>
-            <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-              <div className="card-kpi flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => setActiveSection("stores")}>
-                <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                  <Store className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{stores.length}</p>
-                  <p className="text-[11px] text-muted-foreground">{t("stores.registered")}</p>
-                </div>
-              </div>
-              <div className="card-kpi flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => setActiveSection("pieces")}>
-                <div className="w-10 h-10 rounded-lg bg-primary/80 flex items-center justify-center">
-                  <LayoutList className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{visiblePieces.length + kits.length}</p>
-                  <p className="text-[11px] text-muted-foreground">{t("pieces.registered")}</p>
-                </div>
-              </div>
+            {/* Inline KPI stats */}
+            <div className="flex items-baseline gap-3 mb-4 flex-wrap">
+              <button onClick={() => setActiveSection("stores")} className="inline-flex items-baseline gap-1.5 group cursor-pointer">
+                <span className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{stores.length}</span>
+                <span className="text-[13px] group-hover:underline" style={{ color: "var(--text-muted)" }}>{t("stores.registered")}</span>
+              </button>
+              <span style={{ color: "var(--border-default)", fontSize: "16px" }}>·</span>
+              <button onClick={() => setActiveSection("pieces")} className="inline-flex items-baseline gap-1.5 group cursor-pointer">
+                <span className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{visiblePieces.length + kits.length}</span>
+                <span className="text-[13px] group-hover:underline" style={{ color: "var(--text-muted)" }}>{t("pieces.registered")}</span>
+              </button>
             </div>
+
+            <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
 
             {/* Navigation Buttons */}
             <ModuleGrid
               items={[
-                { key: "stores", label: t("modules.stores"), icon: Store, visible: canViewStores || canViewCampaignStores },
-                { key: "matrix", label: t("modules.matrix"), icon: Grid3X3, visible: canViewCampaignStores },
-                { key: "pieces", label: t("modules.pieces"), icon: LayoutList, visible: canViewPieces },
-                { key: "occurrences", label: t("modules.occurrences"), icon: AlertTriangle, visible: canViewOccurrences },
-                { key: "scheduling", label: t("modules.scheduling"), icon: CalendarDays, visible: canViewSchedules },
-                { key: "installations", label: t("modules.installations"), icon: Camera, visible: canViewInstallations },
-                { key: "budgets", label: t("modules.budgets"), icon: DollarSign, visible: canViewCampaigns },
-                { key: "chat", label: t("modules.chat"), icon: MessageSquare, visible: canViewCampaigns, color: "#06b6d4" },
+                { key: "stores", label: t("modules.stores"), icon: Store, visible: canViewStores || canViewCampaignStores, color: "#6B4F2E" },
+                { key: "matrix", label: t("modules.matrix"), icon: Grid3X3, visible: canViewCampaignStores, color: "#8C6F4E" },
+                { key: "pieces", label: t("modules.pieces"), icon: LayoutList, visible: canViewPieces, color: "#A07850" },
+                { key: "occurrences", label: t("modules.occurrences"), icon: AlertTriangle, visible: canViewOccurrences, color: "#7A3B2E" },
+                { key: "scheduling", label: t("modules.scheduling"), icon: CalendarDays, visible: canViewSchedules, color: "#5C6B3F" },
+                { key: "installations", label: t("modules.installations"), icon: Camera, visible: canViewInstallations, color: "#7B5E3A" },
+                { key: "budgets", label: t("modules.budgets"), icon: DollarSign, visible: canViewCampaigns, color: "#4A5568" },
+                { key: "chat", label: t("modules.chat"), icon: MessageSquare, visible: canViewCampaigns, color: "#5A4A3A" },
               ]}
               onSelect={(key) => setActiveSection(key)}
             />
