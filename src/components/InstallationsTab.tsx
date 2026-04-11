@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import EmptyState from "@/components/EmptyState";
+import { CardSkeleton } from "@/components/CardSkeleton";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -587,7 +589,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       </div>
 
       {/* KPI Summary Bar */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+      <div className="kpi-strip">
         {([
           { key: "total" as const, value: summaryMetrics.total, label: t("common.total"), isTotal: true, dangerWhenPositive: false },
           { key: "completed" as const, value: summaryMetrics.completed, label: "✅ Concluídas", isTotal: false, dangerWhenPositive: false },
