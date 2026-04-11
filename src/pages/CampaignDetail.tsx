@@ -2360,8 +2360,8 @@ const CampaignDetail = () => {
       </Dialog>
 
       {/* Manage Locations Dialog */}
-      <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
-        <DialogContent>
+      <Dialog open={locationDialogOpen} onOpenChange={(open) => { setLocationDialogOpen(open); if (!open) { setExpandedLocationId(null); setEditingLocationId(null); setEditingSubLocId(null); } }}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
              <DialogTitle>{t("locations.manageLocations")}</DialogTitle>
              <DialogDescription>{t("locations.manageLocationsDesc")}</DialogDescription>
@@ -2395,20 +2395,130 @@ const CampaignDetail = () => {
             {pieceLocations.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">{t("locations.noLocationRegistered")}</p>
             ) : (
-              <div className="space-y-1 max-h-[300px] overflow-y-auto">
-                {[...pieceLocations].sort((a, b) => a.name.localeCompare(b.name)).map((loc) => (
-                  <div key={loc.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
-                    <span className="text-sm">{loc.name}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => deletePieceLocation.mutate(loc.id)}
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
+              <div className="space-y-1 max-h-[400px] overflow-y-auto">
+                {[...pieceLocations].sort((a, b) => a.name.localeCompare(b.name)).map((loc) => {
+                  const isExpanded = expandedLocationId === loc.id;
+                  const subs = pieceSubLocations.filter(s => s.location_id === loc.id).sort((a, b) => a.name.localeCompare(b.name));
+                  return (
+                    <div key={loc.id} className="rounded-md border border-border overflow-hidden">
+                      <div className="flex items-center gap-2 px-3 py-2 bg-muted/50">
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                          onClick={() => setExpandedLocationId(isExpanded ? null : loc.id)}
+                        >
+                          <ChevronDown className={cn("w-4 h-4 transition-transform", isExpanded && "rotate-180")} />
+                        </button>
+                        {editingLocationId === loc.id ? (
+                          <Input
+                            className="h-7 text-sm flex-1"
+                            value={editingLocationName}
+                            onChange={(e) => setEditingLocationName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && editingLocationName.trim()) {
+                                updatePieceLocation.mutate({ id: loc.id, name: editingLocationName.trim() });
+                                setEditingLocationId(null);
+                              }
+                              if (e.key === "Escape") setEditingLocationId(null);
+                            }}
+                            onBlur={() => {
+                              if (editingLocationName.trim() && editingLocationName.trim() !== loc.name) {
+                                updatePieceLocation.mutate({ id: loc.id, name: editingLocationName.trim() });
+                              }
+                              setEditingLocationId(null);
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="text-sm flex-1 cursor-pointer" onClick={() => { setEditingLocationId(loc.id); setEditingLocationName(loc.name); }}>{loc.name}</span>
+                        )}
+                        <span className="text-[10px] text-muted-foreground">{subs.length > 0 ? `${subs.length} sub` : ""}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => { setEditingLocationId(loc.id); setEditingLocationName(loc.name); }}
+                        >
+                          <Pencil className="w-3 h-3 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => deletePieceLocation.mutate(loc.id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </Button>
+                      </div>
+                      {isExpanded && (
+                        <div className="px-3 py-2 space-y-1.5 bg-background border-t border-border">
+                          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Sub-localizações</p>
+                          {subs.map((sub) => (
+                            <div key={sub.id} className="flex items-center gap-2 pl-4">
+                              {editingSubLocId === sub.id ? (
+                                <Input
+                                  className="h-6 text-xs flex-1"
+                                  value={editingSubLocName}
+                                  onChange={(e) => setEditingSubLocName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && editingSubLocName.trim()) {
+                                      updatePieceSubLocation.mutate({ id: sub.id, name: editingSubLocName.trim() });
+                                      setEditingSubLocId(null);
+                                    }
+                                    if (e.key === "Escape") setEditingSubLocId(null);
+                                  }}
+                                  onBlur={() => {
+                                    if (editingSubLocName.trim() && editingSubLocName.trim() !== sub.name) {
+                                      updatePieceSubLocation.mutate({ id: sub.id, name: editingSubLocName.trim() });
+                                    }
+                                    setEditingSubLocId(null);
+                                  }}
+                                  autoFocus
+                                />
+                              ) : (
+                                <span className="text-xs flex-1 cursor-pointer" onClick={() => { setEditingSubLocId(sub.id); setEditingSubLocName(sub.name); }}>{sub.name}</span>
+                              )}
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingSubLocId(sub.id); setEditingSubLocName(sub.name); }}>
+                                <Pencil className="w-2.5 h-2.5 text-muted-foreground" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deletePieceSubLocation.mutate(sub.id)}>
+                                <Trash2 className="w-2.5 h-2.5 text-destructive" />
+                              </Button>
+                            </div>
+                          ))}
+                          <div className="flex gap-2 pl-4">
+                            <Input
+                              className="h-7 text-xs"
+                              placeholder="Nova sub-localização"
+                              value={expandedLocationId === loc.id ? newSubLocationName : ""}
+                              onChange={(e) => setNewSubLocationName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && newSubLocationName.trim() && campaignId) {
+                                  e.preventDefault();
+                                  addPieceSubLocation.mutate({ location_id: loc.id, campaign_id: campaignId, name: newSubLocationName.trim() });
+                                  setNewSubLocationName("");
+                                }
+                              }}
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2"
+                              disabled={!newSubLocationName.trim() || addPieceSubLocation.isPending}
+                              onClick={() => {
+                                if (!campaignId || !newSubLocationName.trim()) return;
+                                addPieceSubLocation.mutate({ location_id: loc.id, campaign_id: campaignId, name: newSubLocationName.trim() });
+                                setNewSubLocationName("");
+                              }}
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
