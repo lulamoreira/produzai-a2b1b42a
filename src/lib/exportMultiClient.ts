@@ -255,12 +255,13 @@ export function exportMatrix(
         "Nome": piece?.name || "",
         "Medidas": piece?.size || "",
         "Localização": piece?.category || "",
+        "Sub-localização": (piece as any)?.sub_location || "",
         "Qtd no Kit": kp.quantity || 1,
       };
     });
     if (kitRows.length > 0) {
       const kitWs = XLSX.utils.json_to_sheet(kitRows);
-      kitWs["!cols"] = [{ wch: 8 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 12 }];
+      kitWs["!cols"] = [{ wch: 8 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 12 }];
       XLSX.utils.book_append_sheet(wb, kitWs, `Kit ${kitSeqCode} - ${kit.name}`.slice(0, 31));
     }
   });
