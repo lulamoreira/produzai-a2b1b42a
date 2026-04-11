@@ -21,6 +21,7 @@ import ActivityLogPanel from "@/components/ActivityLogPanel";
 import { useScheduleChatUnreadCounts, useMarkAsRead } from "@/hooks/useChatReadStatus";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useLogActivity } from "@/hooks/useActivityLogs";
+import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
