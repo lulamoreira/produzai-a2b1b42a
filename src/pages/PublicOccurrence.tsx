@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useOccurrenceMotives, useAddOccurrence } from "@/hooks/useOccurrences";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -344,7 +343,7 @@ const PublicOccurrence = () => {
       <header className="border-b border-border bg-card">
         <div className="max-w-lg mx-auto px-4 py-4 text-center">
           <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mx-auto mb-2 shadow-glow-primary">
-            <AlertTriangle className="w-5 h-5 text-white" />
+            <AlertTriangle className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-lg font-bold text-foreground">Registrar Ocorrência</h1>
           <p className="text-xs text-muted-foreground mt-1">{clientName} · {campaign.name}</p>
@@ -352,21 +351,6 @@ const PublicOccurrence = () => {
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-6">
-        {/* Progress bar */}
-        <div className="mb-6">
-          <div className="flex justify-between text-[11px] text-muted-foreground mb-1.5">
-            <span>1. Identificação</span>
-            <span>2. Ocorrências</span>
-            <span>3. Envio</span>
-          </div>
-          <Progress
-            value={
-              !reporterValid ? 15 :
-              !allEntriesValid ? 55 : 100
-            }
-            className="h-1.5"
-          />
-        </div>
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* ── Dados do Lojista (compartilhados) ── */}
           <div className="rounded-xl border border-border bg-card p-4 space-y-4">

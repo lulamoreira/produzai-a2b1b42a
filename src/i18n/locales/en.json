@@ -599,7 +599,9 @@
   "matrix": {
     "title": "Matrix/Allocation",
     "exportMatrix": "Export Matrix",
+    "customExport": "Custom Exp.",
     "fromOtherCampaign": "From other camp.",
+    "customExportTitle": "Custom Export — Matrix/Allocation",
     "store": "Store",
     "storeNickname": "Nickname",
     "storeCodeLabel": "Store Code",

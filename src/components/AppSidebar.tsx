@@ -268,7 +268,7 @@ export default function AppSidebar() {
                   onClick={() => handleNavigate(child.href)}
                   className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all ${
                     child.active
-                      ? "bg-sidebar-primary/20 text-sidebar-primary-foreground font-semibold ring-1 ring-sidebar-primary/40"
+                      ? "bg-sidebar-accent text-sidebar-primary font-semibold"
                       : "text-sidebar-foreground/60 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
                   }`}
                 >
@@ -288,7 +288,7 @@ export default function AppSidebar() {
         onClick={() => handleNavigate(item.href)}
         className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all relative ${
           item.active
-            ? "bg-sidebar-primary/20 text-sidebar-primary-foreground font-semibold ring-1 ring-sidebar-primary/40"
+            ? "bg-sidebar-accent text-sidebar-primary"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
         }`}
         title={collapsed ? item.label : undefined}

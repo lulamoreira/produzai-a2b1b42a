@@ -1,109 +1,63 @@
 
 
-# Plano de Implementação — ProduzAI v2.0 (Super Prompt v3)
+## Plano: Internacionalização por Cliente (País e Moeda)
 
-## Escopo e Estratégia
+### Problema
+O sistema assume Brasil em várias partes: CEP com 8 dígitos, busca via ViaCEP, máscara de telefone brasileiro, moeda BRL hardcoded, prefixo +55 no WhatsApp, e labels como "UF", "CNPJ", "Insc. Estadual".
 
-Este é um projeto grande com ~15 arquivos novos e ~10 arquivos modificados. Vou dividir em **5 fases sequenciais**, executadas sem parar, respeitando as 3 regras absolutas: zero alteração de lógica, zero perda de dados, zero remoção de funcionalidade.
-
-**Estratégia-chave:** Os componentes originais (SchedulingTab 2.244 linhas, InstallationsTab 1.002 linhas, OccurrencesTab 966 linhas) **não serão tocados**. Novos componentes "v2" serão criados ao lado, e um wrapper fino faz o roteamento baseado no `interface_mode`.
-
----
-
-## Fase 1 — Infraestrutura (DB + Contextos)
-
-**Migrações SQL:**
-1. Adicionar `interface_mode text default 'legacy'` na tabela `agencies`
-2. Adicionar `theme_hue integer default 231` na tabela `profiles`
-3. RLS: permitir leitura do `interface_mode` para membros da agência, escrita apenas para admins; `theme_hue` leitura/escrita pelo próprio usuário
-
-**Código:**
-- Criar `src/hooks/useInterfaceMode.tsx` — Context que lê `interface_mode` da agência atual e expõe `interfaceMode` + `setInterfaceMode`
-- Criar `src/lib/applyUserTheme.ts` — Função `applyUserTheme(hue: number)` que injeta as variáveis CSS no `:root`
-- Integrar ambos no `App.tsx` (providers ao redor das rotas protegidas)
+### Solução
+Adicionar dois campos na tabela `clients`: **`country_code`** (ex: "BR", "CL", "US") e **`currency_code`** (ex: "BRL", "CLP", "USD"). Esses campos definem o comportamento de todo o sistema para aquele cliente.
 
 ---
 
-## Fase 2 — Tema de Cor por Usuário
+### 1. Migração de Banco de Dados
 
-**Criar `src/components/AppearanceTab.tsx`:**
-- Grid de 12 presets de cor (círculos 44px clicáveis)
-- Preview ao vivo: mini-sidebar + botão primário que reagem ao hover
-- Salvar `theme_hue` no perfil via Supabase
-- Chamar `applyUserTheme()` no bootstrap da sessão
+Adicionar à tabela `clients`:
+```sql
+ALTER TABLE clients ADD COLUMN country_code text DEFAULT 'BR';
+ALTER TABLE clients ADD COLUMN currency_code text DEFAULT 'BRL';
+```
 
-**Modificar `src/components/EditProfileDialog.tsx`:**
-- Adicionar aba "Aparência" usando Tabs, sem alterar a aba existente de dados pessoais
+### 2. Configuração por País (novo arquivo `src/lib/countryConfig.ts`)
 
----
+Um mapa centralizado com as regras por país:
 
-## Fase 3 — Admin: Toggle de Versão
+```text
+BR → CEP 8 dígitos, máscara 99999-999, busca ViaCEP, telefone (99) 99999-9999, +55, UF 2 letras, CNPJ, "R$"
+CL → Código Postal, sem máscara fixa, sem busca automática, telefone +56, RUT, "CLP"
+US → ZIP Code 5 dígitos, máscara 99999, sem busca, telefone (999) 999-9999, +1, State, EIN, "USD"
+(extensível para outros países)
+```
 
-**Modificar `src/pages/Admin.tsx`:**
-- Adicionar nova tab "Interface" (visível apenas para role `admin`)
-- Toggle Clássica/Nova com aviso amber
-- Dialog de confirmação ao trocar
-- Registrar log da alteração via `useLogActivity`
+Cada entrada define: `zipLabel`, `zipMask`, `zipLength`, `taxIdLabel`, `taxIdMask`, `phoneMask`, `phonePrefix`, `stateLabel`, `addressLabels`, `currencyLocale`.
 
----
+### 3. Componentes Afetados
 
-## Fase 4 — Design System v2 + Cards Novos
+| Componente | Mudança |
+|---|---|
+| **ClientDetail.tsx** | Novo seletor de País/Moeda nas configs do cliente. Labels dinâmicos no form de loja (CEP→Código Postal, CNPJ→RUT, UF→Região). Condicional na busca de CEP (só para BR). |
+| **BudgetsTab.tsx** | `formatCurrency` usa `currency_code` do cliente em vez de "BRL" hardcoded. |
+| **StoreFullCardView.tsx** | WhatsApp usa `phonePrefix` do país. Labels dinâmicos. |
+| **useMultiClientData.ts** | `fetchAddressByCep` só executa para country_code="BR". |
+| **Exportações (exportExcel, exportMultiClient, downloadWorkbook)** | Moeda formatada conforme config do cliente. |
+| **cep-lookup edge function** | Sem mudança (apenas não será chamada para clientes não-BR). |
 
-**Criar `src/index-v2.css`:**
-- Todas as variáveis CSS do design system v2 (superfícies, bordas, texto, sombras, status, tipografia)
-- Classes utilitárias: `.card-new`, `.badge-new`, `.card-details.collapsed/.expanded`
-- Importado condicionalmente ou sempre presente (variáveis não conflitam)
+### 4. Formulário do Cliente
 
-**Criar componentes novos (sem tocar nos originais):**
-- `src/components/v2/InstallationsTabV2.tsx` — Cards colapsado/expandido conforme spec 3A
-- `src/components/v2/SchedulingTabV2.tsx` — Cards colapsado/expandido conforme spec 3B
-- `src/components/v2/OccurrenceCardV2.tsx` — Cards colapsado/expandido conforme spec 3C
-- `src/components/v2/CampaignCardV2.tsx` — Cards limpos sem gradiente conforme spec 3D
-- `src/components/v2/KpiStrip.tsx` — Barra de KPIs reutilizável
-- `src/components/v2/CollapsibleFilters.tsx` — Filtros com "Mais filtros (N)"
+Na página de edição do cliente, adicionar dois selects:
+- **País**: dropdown com países suportados (Brasil, Chile, etc.)
+- **Moeda**: preenchida automaticamente ao selecionar o país, mas editável
 
-**Cada componente v2 recebe as mesmas props do original** e reutiliza os mesmos hooks de dados.
+### 5. Herança Automática
 
----
+O `country_code` do cliente propaga para todos os formulários de lojas, campanhas e módulos daquele cliente. Nenhuma configuração manual por loja.
 
-## Fase 5 — Wrappers + Responsividade
+### 6. Impacto Zero em Clientes Existentes
 
-**Criar wrappers de roteamento:**
-- Em `CampaignDetail.tsx`: onde renderiza `<InstallationsTab>`, substituir por wrapper:
-  ```tsx
-  interfaceMode === 'legacy' ? <InstallationsTab {...props} /> : <InstallationsTabV2 {...props} />
-  ```
-- Idem para SchedulingTab, OccurrencesTab, e cards de campanha no Dashboard
+O default `'BR'` e `'BRL'` garante que todos os clientes atuais continuam funcionando exatamente como antes, sem nenhuma mudança de comportamento.
 
-**Responsividade:**
-- Grid: 3 col desktop / 2 col tablet / 1 col mobile
-- KPI strip: scroll horizontal em mobile
-- Filtros: sheet em mobile
-- Cards expandidos: bottom sheet em mobile
-- Touch targets: 44px mínimo (48px em mobile)
-
-**Portal Público de Ocorrências:**
-- Reduzir ícone de alerta para 48px
-- Adicionar barra de progresso de etapas
-
----
-
-## Regras de Segurança
-
-- Componentes originais: **0 linhas alteradas**
-- Toda lógica de aprovação, bloqueio, reagendamento, upload, download: **intacta**
-- Cores de status (verde/vermelho/amarelo): **fixas**, nunca afetadas pelo tema
-- Ao alternar Legacy ↔ Novo: estado completo preservado, apenas renderização muda
-
----
-
-## Arquivos que serão criados (~15)
-`src/hooks/useInterfaceMode.tsx`, `src/lib/applyUserTheme.ts`, `src/components/AppearanceTab.tsx`, `src/components/v2/InstallationsTabV2.tsx`, `src/components/v2/SchedulingTabV2.tsx`, `src/components/v2/OccurrenceCardV2.tsx`, `src/components/v2/CampaignCardV2.tsx`, `src/components/v2/KpiStrip.tsx`, `src/components/v2/CollapsibleFilters.tsx`, `src/index-v2.css`
-
-## Arquivos que serão modificados (~5)
-`App.tsx` (add providers), `Admin.tsx` (add tab Interface), `EditProfileDialog.tsx` (add tab Aparência), `CampaignDetail.tsx` (add wrappers), `Dashboard.tsx` ou `ClientDetail.tsx` (campaign cards wrapper)
-
-## Migrações SQL (2)
-1. `ALTER TABLE agencies ADD COLUMN interface_mode text DEFAULT 'legacy'`
-2. `ALTER TABLE profiles ADD COLUMN theme_hue integer DEFAULT 231`
+### Arquivos a criar/editar:
+- **Criar**: `src/lib/countryConfig.ts`
+- **Editar**: `src/pages/ClientDetail.tsx`, `src/components/BudgetsTab.tsx`, `src/components/StoreFullCardView.tsx`, `src/hooks/useMultiClientData.ts`, `src/lib/exportMultiClient.ts`, `src/lib/exportExcel.ts`
+- **Migração**: adicionar `country_code` e `currency_code` à tabela `clients`
 

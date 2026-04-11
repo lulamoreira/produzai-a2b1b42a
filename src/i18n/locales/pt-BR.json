@@ -599,7 +599,9 @@
   "matrix": {
     "title": "Matriz/Rateio",
     "exportMatrix": "Exportar Matriz",
+    "customExport": "Export. Pers.",
     "fromOtherCampaign": "De outra camp.",
+    "customExportTitle": "Exportação Personalizada — Matriz/Rateio",
     "store": "Loja",
     "storeNickname": "Apelido",
     "storeCodeLabel": "Código Loja",
