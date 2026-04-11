@@ -47,7 +47,7 @@ export default function OccurrencesTabV2(props: Props) {
 
   return (
     <div className="space-y-4">
-      <KpiStrip items={kpiItems} activeKey="" onSelect={() => {}} />
+      <KpiStrip items={kpiItems} activeKey="" onItemClick={() => {}} />
       <OccurrencesTab {...props} />
     </div>
   );

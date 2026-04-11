@@ -56,7 +56,7 @@ export default function SchedulingTabV2(props: Props) {
 
   return (
     <div className="space-y-4">
-      <KpiStrip items={kpiItems} activeKey="" onSelect={() => {}} />
+      <KpiStrip items={kpiItems} activeKey="" onItemClick={() => {}} />
       <SchedulingTab {...props} />
     </div>
   );
