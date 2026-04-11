@@ -8,27 +8,67 @@ import {
 } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+export interface FilterConfig {
+  key: string;
+  label: string;
+  type: "select" | "date";
+  value: string;
+  onChange: (value: string) => void;
+  options?: { value: string; label: string }[];
+}
+
 interface CollapsibleFiltersProps {
-  search: string;
+  searchValue: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
-  primaryFilters?: ReactNode;
-  secondaryFilters?: ReactNode;
-  activeSecondaryCount?: number;
-  onClearSecondary?: () => void;
+  primaryFilters?: FilterConfig[];
+  secondaryFilters?: FilterConfig[];
+}
+
+function renderFilter(f: FilterConfig) {
+  if (f.type === "date") {
+    return (
+      <div key={f.key} className="flex items-center gap-1">
+        <input
+          type="date"
+          value={f.value}
+          onChange={(e) => f.onChange(e.target.value)}
+          className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[120px] max-w-[160px] h-9"
+          title={f.label}
+        />
+        {f.value && (
+          <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-muted-foreground" onClick={() => f.onChange("")}>
+            ✕
+          </Button>
+        )}
+      </div>
+    );
+  }
+  return (
+    <select
+      key={f.key}
+      value={f.value}
+      onChange={(e) => f.onChange(e.target.value)}
+      className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px] h-9"
+    >
+      {f.options?.map((opt) => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
+  );
 }
 
 export default function CollapsibleFilters({
-  search,
+  searchValue,
   onSearchChange,
   searchPlaceholder = "Buscar...",
-  primaryFilters,
-  secondaryFilters,
-  activeSecondaryCount = 0,
-  onClearSecondary,
+  primaryFilters = [],
+  secondaryFilters = [],
 }: CollapsibleFiltersProps) {
   const [showMore, setShowMore] = useState(false);
   const isMobile = useIsMobile();
+
+  const activeSecondaryCount = secondaryFilters.filter(f => f.value !== "").length;
 
   return (
     <div className="space-y-2">
@@ -37,18 +77,18 @@ export default function CollapsibleFilters({
         <div className="relative flex-1 min-w-[200px] max-w-xs">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input
-            value={search}
+            value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
             className="pl-9 h-9"
           />
         </div>
 
-        {/* Primary filters inline */}
-        {primaryFilters}
+        {/* Primary filters */}
+        {primaryFilters.map(renderFilter)}
 
         {/* More filters toggle */}
-        {secondaryFilters && (
+        {secondaryFilters.length > 0 && (
           isMobile ? (
             <Sheet>
               <SheetTrigger asChild>
@@ -66,15 +106,15 @@ export default function CollapsibleFilters({
                 <SheetHeader>
                   <SheetTitle className="flex items-center justify-between">
                     Filtros
-                    {activeSecondaryCount > 0 && onClearSecondary && (
-                      <Button variant="ghost" size="sm" onClick={onClearSecondary} className="text-xs gap-1">
+                    {activeSecondaryCount > 0 && (
+                      <Button variant="ghost" size="sm" onClick={() => secondaryFilters.forEach(f => f.onChange(""))} className="text-xs gap-1">
                         <X className="w-3 h-3" /> Limpar
                       </Button>
                     )}
                   </SheetTitle>
                 </SheetHeader>
                 <div className="space-y-3 pt-4">
-                  {secondaryFilters}
+                  {secondaryFilters.map(renderFilter)}
                 </div>
               </SheetContent>
             </Sheet>
@@ -98,11 +138,11 @@ export default function CollapsibleFilters({
       </div>
 
       {/* Secondary filters expanded (desktop only) */}
-      {!isMobile && showMore && secondaryFilters && (
+      {!isMobile && showMore && secondaryFilters.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap pt-1 pb-1 animate-in slide-in-from-top-2 duration-200">
-          {secondaryFilters}
-          {activeSecondaryCount > 0 && onClearSecondary && (
-            <Button variant="ghost" size="sm" onClick={onClearSecondary} className="text-xs gap-1 h-8">
+          {secondaryFilters.map(renderFilter)}
+          {activeSecondaryCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => secondaryFilters.forEach(f => f.onChange(""))} className="text-xs gap-1 h-8">
               <X className="w-3 h-3" /> Limpar filtros
             </Button>
           )}
