@@ -1,42 +1,34 @@
 import { cn } from "@/lib/utils";
 
 export interface KpiItem {
+  key: string;
   label: string;
   value: number;
-  color?: "success" | "warning" | "danger" | "info" | "neutral" | "purple";
+  color?: string;
   primary?: boolean;
 }
 
 interface KpiStripProps {
   items: KpiItem[];
-  activeFilter?: string;
-  onFilterClick?: (label: string) => void;
+  activeKey?: string;
+  onItemClick?: (key: string) => void;
 }
 
-const colorMap: Record<string, string> = {
-  success: "text-green-600",
-  warning: "text-amber-600",
-  danger: "text-red-600",
-  info: "text-blue-600",
-  neutral: "text-muted-foreground",
-  purple: "text-purple-600",
-};
-
-export default function KpiStrip({ items, activeFilter, onFilterClick }: KpiStripProps) {
+export default function KpiStrip({ items, activeKey, onItemClick }: KpiStripProps) {
   return (
     <div className="kpi-strip-v2">
       {items.map((item) => (
         <button
-          key={item.label}
+          key={item.key}
           type="button"
           className={cn(
             "kpi-item",
             item.primary && "primary",
-            activeFilter === item.label && "active"
+            activeKey === item.key && "active"
           )}
-          onClick={() => onFilterClick?.(item.label)}
+          onClick={() => onItemClick?.(item.key)}
         >
-          <span className={cn("kpi-value", item.color && colorMap[item.color])}>
+          <span className={cn("kpi-value", item.color)}>
             {item.value}
           </span>
           <span>{item.label}</span>
