@@ -40,7 +40,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, MoreHorizontal, History } from "lucide-react";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 import BudgetsTab from "@/components/BudgetsTab";
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -68,6 +68,7 @@ import CampaignStatusDashboard from "@/components/CampaignStatusDashboard";
 import CampaignChatSection from "@/components/CampaignChatSection";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
+import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -958,6 +959,7 @@ const CampaignDetail = () => {
           stores: t("modules.stores"), matrix: t("modules.matrix"), pieces: t("modules.pieces"),
           occurrences: t("modules.occurrences"), scheduling: t("modules.scheduling"),
           installations: t("modules.installations"), budgets: t("modules.budgets"),
+          history: "Histórico",
         };
         const crumbs = [
           { label: agency?.name || "Agência", href: isLimitedMode ? undefined : "/" },
@@ -1005,6 +1007,7 @@ const CampaignDetail = () => {
                 { key: "installations", label: t("modules.installations"), icon: Camera, visible: canViewInstallations, color: "#7B5E3A" },
                 { key: "budgets", label: t("modules.budgets"), icon: DollarSign, visible: isAdmin, color: "#4A5568" },
                 { key: "chat", label: t("modules.chat"), icon: MessageSquare, visible: canViewCampaigns, color: "#5A4A3A" },
+                { key: "history", label: t("modules.history"), icon: History, visible: canViewCampaigns, color: "#6B5B4E" },
               ]}
               onSelect={(key) => setActiveSection(key)}
             />
@@ -2381,6 +2384,11 @@ const CampaignDetail = () => {
           {/* ─── SECTION: CHAT ─── */}
           {activeSection === "chat" && campaignId && (
             <CampaignChatSection campaignId={campaignId} />
+          )}
+
+          {/* ─── SECTION: HISTORY ─── */}
+          {activeSection === "history" && campaignId && (
+            <CampaignActivityHistory campaignId={campaignId} />
           )}
           </>
         )}

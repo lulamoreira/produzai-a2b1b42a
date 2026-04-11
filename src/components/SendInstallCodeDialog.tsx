@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Copy, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 
 interface SendInstallCodeDialogProps {
   open: boolean;
@@ -22,6 +23,7 @@ export default function SendInstallCodeDialog({
   open, onOpenChange, schedule, store, team, teamMembers, agencyName, campaignName,
 }: SendInstallCodeDialogProps) {
   const [sending, setSending] = useState(false);
+  const logCampaignActivity = useLogCampaignActivity();
 
   if (!schedule?.install_code) return null;
 
@@ -104,6 +106,13 @@ Bom trabalho! 💪`;
         .from("campaign_schedules")
         .update({ code_sent_at: new Date().toISOString() } as any)
         .eq("id", schedule.id);
+      logCampaignActivity.mutate({
+        campaign_id: schedule.campaign_id,
+        store_id: schedule.store_id,
+        actor_type: "user",
+        action: "codigo_enviado",
+        description: `Código de acesso enviado para ${store?.name || "loja"} — equipe ${leaderName}`,
+      });
       onOpenChange(false);
     } catch {
       // silent

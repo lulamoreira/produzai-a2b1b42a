@@ -100,6 +100,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Log campaign activity for installer photo upload (fire and forget)
+    const { data: storeName } = await supabase
+      .from("client_stores")
+      .select("name")
+      .eq("id", storeId)
+      .single();
+
+    await supabase.from("campaign_activity_log").insert({
+      campaign_id: campaignId,
+      store_id: storeId,
+      actor_name: "Instalador",
+      actor_type: "installer",
+      action: "foto_enviada",
+      description: `Foto enviada para ${storeName?.name || "loja"} (${category})`,
+      metadata: { categoria: category, upload_method: uploadMethod },
+    }).catch(() => {});
+
     return new Response(
       JSON.stringify({ success: true, photo: newPhoto }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }

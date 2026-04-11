@@ -22,6 +22,7 @@ import { useInstallCodeGeneration } from "@/hooks/useInstallCodeGeneration";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { useLogActivity } from "@/hooks/useActivityLogs";
+import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
 import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
 import InstallerPreviewDialog from "@/components/InstallerPreviewDialog";
@@ -83,6 +84,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const { hasPermission: canViewPhotoCheckin } = useClientPermission(clientId, "can_view_photo_checkin");
   const showPhotoCheckin = isAdminOrMaster || canViewPhotoCheckin;
   const logActivity = useLogActivity();
+  const logCampaignActivity = useLogCampaignActivity();
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -322,12 +324,21 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         toast.error(t("installations.errorUpload"));
       }
     }
+    const storeName = stores.find(s => s.id === storeId)?.name || "Loja";
     logActivity.mutate({
       campaign_id: campaignId,
       store_id: storeId,
       module: "installations",
       action: `Enviou ${files.length} foto(s)`,
       details: `Categoria: ${category}`,
+    });
+    logCampaignActivity.mutate({
+      campaign_id: campaignId,
+      store_id: storeId,
+      actor_type: "user",
+      action: "foto_enviada",
+      description: `${files.length} foto(s) enviada(s) para ${storeName}`,
+      metadata: { categoria: category, quantidade: files.length },
     });
     toast.success(`${files.length} foto(s) enviada(s)!`);
   };
@@ -894,6 +905,14 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                                 module: "installations",
                                 action: "mark_completed",
                                 details: t("common.installationCompleted"),
+                              });
+                              logCampaignActivity.mutate({
+                                campaign_id: campaignId,
+                                store_id: store.id,
+                                actor_name: user?.user_metadata?.display_name || "Usuário",
+                                actor_type: "user",
+                                action: "instalacao_concluida_manual",
+                                description: `${user?.user_metadata?.display_name || "Usuário"} marcou ${store.name} como concluída manualmente`,
                               });
                               toast.success(t("common.installationCompleted"));
                             } catch {

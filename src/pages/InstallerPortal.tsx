@@ -138,6 +138,20 @@ export default function InstallerPortal() {
         }
       );
 
+      // Log campaign activity for checkin
+      if (data) {
+        try {
+          await supabase.from("campaign_activity_log" as any).insert({
+            campaign_id: data.campaign?.id || data.schedule?.campaign_id,
+            store_id: data.store?.id,
+            actor_name: "Instalador",
+            actor_type: "installer",
+            action: "checkin_realizado",
+            description: `Check-in realizado em ${data.store?.name || "loja"}`,
+            metadata: { tem_gps: !!(lat && lng) },
+          });
+        } catch { /* silent */ }
+      }
       toast.success("Check-in registrado! Bom trabalho. 👍");
       setCheckinDone(true);
     } catch {

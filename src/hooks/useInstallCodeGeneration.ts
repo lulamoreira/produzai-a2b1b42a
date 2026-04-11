@@ -55,6 +55,16 @@ export function useInstallCodeGeneration(schedules: Schedule[], campaignId: stri
 
           if (!error) {
             success = true;
+            try {
+              supabase.from("campaign_activity_log" as any).insert({
+                campaign_id: campaignId,
+                store_id: schedule.store_id,
+                actor_name: "Sistema",
+                actor_type: "system",
+                action: "codigo_gerado",
+                description: `Código de acesso gerado para loja`,
+              });
+            } catch { /* silent */ }
           }
           attempts++;
         }

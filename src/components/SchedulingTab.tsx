@@ -21,6 +21,7 @@ import ActivityLogPanel from "@/components/ActivityLogPanel";
 import { useScheduleChatUnreadCounts, useMarkAsRead } from "@/hooks/useChatReadStatus";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useLogActivity } from "@/hooks/useActivityLogs";
+import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -116,6 +117,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const { isAdminOrMaster } = useUserRole();
   const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const logActivity = useLogActivity();
+  const logCampaignActivity = useLogCampaignActivity();
   const [lockLoading, setLockLoading] = useState<Record<string, boolean>>({});
   const [bulkLockLoading, setBulkLockLoading] = useState(false);
   const [expandedOriginal, setExpandedOriginal] = useState<Record<string, boolean>>({});
@@ -355,6 +357,34 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       action: `Alterou "${label}"`,
       details: `${oldVal ?? "(vazio)"} → ${value ?? "(vazio)"}`,
     });
+
+    // Determine campaign activity action type
+    const isApprovalField = field.includes("approval_status");
+    if (isApprovalField) {
+      const isStore = field.includes("store");
+      const actionType = value === "approved"
+        ? (isStore ? "aprovacao_lojista" : "aprovacao_equipe")
+        : value === "rejected"
+          ? (isStore ? "recusa_lojista" : "recusa_equipe")
+          : null;
+      if (actionType) {
+        logCampaignActivity.mutate({
+          campaign_id: campaignId,
+          store_id: storeId,
+          actor_type: "user",
+          action: actionType,
+          description: `${isStore ? "Aprovação lojista" : "Aprovação equipe"}: ${value === "approved" ? "aprovado" : "recusado"} — ${storeName}`,
+        });
+      }
+    } else if (field === "scheduled_date" || field === "reschedule_date") {
+      logCampaignActivity.mutate({
+        campaign_id: campaignId,
+        store_id: storeId,
+        actor_type: "user",
+        action: field === "scheduled_date" ? "agendamento_criado" : "agendamento_alterado",
+        description: `Agendamento ${field === "reschedule_date" ? "reagendado" : "definido"} para ${storeName}: ${value}`,
+      });
+    }
 
     let extraFields: Record<string, any> = {};
 

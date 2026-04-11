@@ -189,6 +189,45 @@ export type Database = {
           },
         ]
       }
+      campaign_activity_log: {
+        Row: {
+          action: string
+          actor_name: string | null
+          actor_type: string | null
+          campaign_id: string
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          store_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_name?: string | null
+          actor_type?: string | null
+          campaign_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          store_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_name?: string | null
+          actor_type?: string | null
+          campaign_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          store_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       campaign_budget_items: {
         Row: {
           budget_id: string
