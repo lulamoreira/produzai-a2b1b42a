@@ -1,4 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
+import EmptyState from "@/components/EmptyState";
+import { CardSkeleton } from "@/components/CardSkeleton";
 import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -797,7 +799,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         ];
         return (
           <>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            <div className="kpi-strip">
               {items.map((m) => (
                 <button
                   key={m.key}
@@ -1279,7 +1281,15 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       </div>
 
       {displayedStores.length === 0 && (
-        <p className="text-center text-muted-foreground py-8 text-sm">{t("common.noStoreFound")}</p>
+        <EmptyState
+          icon={CalendarIcon}
+          hasActiveFilters={!!(searchTerm || filterState || filterCity || filterApproval || filterDate || filterPeriod || filterTeam || filterPreference || filterResponsibility || filterLocked || filterReschedule || filterModel || filterMessages || summaryFilter)}
+          onClearFilters={() => {
+            setSearchTerm(""); setFilterState(""); setFilterCity(""); setFilterApproval(""); setFilterDate("");
+            setFilterPeriod(""); setFilterTeam(""); setFilterPreference(""); setFilterResponsibility("");
+            setFilterLocked(""); setFilterReschedule(""); setFilterModel(""); setFilterMessages(""); setSummaryFilter("");
+          }}
+        />
       )}
 
       {/* Team Management Dialog */}

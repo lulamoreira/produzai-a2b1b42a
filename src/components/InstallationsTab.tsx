@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import EmptyState from "@/components/EmptyState";
+import { CardSkeleton } from "@/components/CardSkeleton";
 import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -587,7 +589,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       </div>
 
       {/* KPI Summary Bar */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+      <div className="kpi-strip">
         {([
           { key: "total" as const, value: summaryMetrics.total, label: t("common.total"), isTotal: true, dangerWhenPositive: false },
           { key: "completed" as const, value: summaryMetrics.completed, label: "✅ Concluídas", isTotal: false, dangerWhenPositive: false },
@@ -628,6 +630,17 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       )}
 
       {/* Store Cards */}
+      {displayedStores.length === 0 ? (
+        <EmptyState
+          icon={Camera}
+          hasActiveFilters={!!(searchTerm || filterState || filterStatus || filterDate || filterCity || filterPeriod || filterTeam || filterLocked || filterReschedule || filterModel || filterCheckin || summaryFilter)}
+          onClearFilters={() => {
+            setSearchTerm(""); setFilterState(""); setFilterCity(""); setFilterStatus(""); setFilterDate("");
+            setFilterPeriod(""); setFilterTeam(""); setFilterLocked(""); setFilterReschedule(""); setFilterModel("");
+            setFilterCheckin(""); setSummaryFilter("");
+          }}
+        />
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
         {displayedStores.map((store) => {
           const colors = getStateColor(store.state);
@@ -1128,11 +1141,6 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           );
         })}
       </div>
-
-      {displayedStores.length === 0 && (
-        <p className="text-center text-muted-foreground py-8 text-sm">
-          Nenhuma loja com agendamento encontrada
-        </p>
       )}
 
       {/* Activity Log (admin/master only) */}
