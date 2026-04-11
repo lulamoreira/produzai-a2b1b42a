@@ -16,6 +16,7 @@ import type { CampaignKit, CampaignKitPiece, CampaignPiece, ClientStore } from "
 import { useCampaignKitPieces, useCampaignKits, useCampaignPieceLocations } from "@/hooks/useMultiClientData";
 import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
 import OccurrenceCard from "./OccurrenceCard";
+import OccurrenceListView from "./OccurrenceListView";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
