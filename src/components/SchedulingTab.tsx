@@ -799,7 +799,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         ];
         return (
           <>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            <div className="kpi-strip">
               {items.map((m) => (
                 <button
                   key={m.key}
