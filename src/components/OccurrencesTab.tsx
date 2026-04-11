@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { PRIORITY_OPTIONS } from "@/types/occurrence";
 import { getDefaultStatusValue } from "@/lib/occurrenceHelpers";
