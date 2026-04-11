@@ -179,7 +179,7 @@ function SortableRow({
           <span className="font-bold text-primary">{piece.code}</span>
         </div>
       </TableCell>
-      <TableCell className="text-muted-foreground hidden sm:table-cell">{piece.category}</TableCell>
+      <TableCell className="text-muted-foreground hidden sm:table-cell">{piece.sub_location ? `${piece.category} / ${piece.sub_location}` : piece.category}</TableCell>
       <TableCell>
         <button
           className="font-medium text-left hover:text-primary hover:underline transition-colors"
