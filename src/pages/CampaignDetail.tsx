@@ -69,6 +69,7 @@ import CampaignChatSection from "@/components/CampaignChatSection";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
+import BudgetExportColorDialog, { type ColorPalette } from "@/components/BudgetExportColorDialog";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -290,6 +291,7 @@ const CampaignDetail = () => {
   const [quickEditActive, setQuickEditActive] = useState(false);
   const [matrixCustomExportOpen, setMatrixCustomExportOpen] = useState(false);
   const [automationOpen, setAutomationOpen] = useState(false);
+  const [budgetExportDialogOpen, setBudgetExportDialogOpen] = useState(false);
 
   const handleFilterSidebarCollapsedChange = useCallback((collapsed: boolean) => {
     setFilterSidebarCollapsed(collapsed);
@@ -1603,6 +1605,15 @@ const CampaignDetail = () => {
                         <span className="hidden sm:inline">{t("automation.title")}</span>
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs gap-1.5"
+                      onClick={() => setBudgetExportDialogOpen(true)}
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      <span className="hidden sm:inline">Exportar Orçamento</span>
+                    </Button>
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -1621,19 +1632,7 @@ const CampaignDetail = () => {
                           <Download className="w-4 h-4 mr-2" />
                           {t("matrix.customExport")}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={async () => {
-                          toast.loading("Gerando planilha com imagens...", { id: "matrix-excel" });
-                          try {
-                            await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces);
-                            toast.success("Planilha exportada com sucesso!", { id: "matrix-excel" });
-                          } catch (err) {
-                            console.error(err);
-                            toast.error("Erro ao exportar planilha", { id: "matrix-excel" });
-                          }
-                        }}>
-                          <FileSpreadsheet className="w-4 h-4 mr-2" />
-                          Exportar Orçamento
-                        </DropdownMenuItem>
+
 
                         {canEditCampaign && (
                           <>
@@ -1712,6 +1711,23 @@ const CampaignDetail = () => {
                     queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
                   }}
                 />
+
+                <BudgetExportColorDialog
+                  open={budgetExportDialogOpen}
+                  onOpenChange={setBudgetExportDialogOpen}
+                  onExport={async (palette: ColorPalette) => {
+                    setBudgetExportDialogOpen(false);
+                    toast.loading("Gerando planilha com imagens...", { id: "matrix-excel" });
+                    try {
+                      await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces, palette, pieceLocations, pieceSubLocations);
+                      toast.success("Planilha exportada com sucesso!", { id: "matrix-excel" });
+                    } catch (err) {
+                      console.error(err);
+                      toast.error("Erro ao exportar planilha", { id: "matrix-excel" });
+                    }
+                  }}
+                />
+
 
                 <CustomExportDialog
                   open={matrixCustomExportOpen}

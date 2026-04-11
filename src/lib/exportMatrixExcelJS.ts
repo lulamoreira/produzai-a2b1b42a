@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import type { ClientStore, CampaignPiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
+import type { ClientStore, CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
+import type { ColorPalette } from "@/components/BudgetExportColorDialog";
 
 // ─── Helpers ─────────────────────────────────────────────
 
@@ -25,8 +26,6 @@ async function fetchImageAsBase64(url: string): Promise<{ base64: string; ext: "
     uint8.forEach((b) => (binary += String.fromCharCode(b)));
     const base64 = btoa(binary);
     const ext = blob.type.includes("png") ? "png" : "jpeg";
-
-    // Get natural dimensions
     const blobUrl = URL.createObjectURL(blob);
     const { width, height } = await new Promise<{ width: number; height: number }>((resolve) => {
       const img = new Image();
@@ -34,18 +33,52 @@ async function fetchImageAsBase64(url: string): Promise<{ base64: string; ext: "
       img.onerror = () => { resolve({ width: 200, height: 200 }); URL.revokeObjectURL(blobUrl); };
       img.src = blobUrl;
     });
-
     return { base64, ext, width, height };
   } catch {
     return null;
   }
 }
 
-const DARK_BLUE = "0D2B5E";
-const MED_BLUE = "1A6BAF";
-const LIGHT_BLUE = "4DA8DA";
-const PALE_BLUE = "EAF4FB";
-const BORDER_BLUE = "C0D8E8";
+function hexToArgb(hex: string): string {
+  return "FF" + hex.replace("#", "");
+}
+
+function formatLocation(
+  catId: string | null | undefined,
+  subLocId: string | null | undefined,
+  locations: CampaignPieceLocation[],
+  subLocations: CampaignPieceSubLocation[],
+): string {
+  if (subLocId) {
+    const sub = subLocations.find((s) => s.id === subLocId);
+    if (sub) {
+      const parent = locations.find((l) => l.id === sub.location_id);
+      return parent ? `${parent.name} / ${sub.name}` : sub.name;
+    }
+  }
+  if (catId) {
+    const loc = locations.find((l) => l.id === catId);
+    return loc?.name || "";
+  }
+  return "";
+}
+
+// ─── Color helpers ───────────────────────────────────────
+
+function makeColors(palette?: ColorPalette) {
+  const p = palette || { primary: "#1A3A5C", secondary: "#2E6DA4", light: "#D6E8F7" };
+  const PRIMARY = p.primary.replace("#", "");
+  const SECONDARY = p.secondary.replace("#", "");
+  const LIGHT = p.light.replace("#", "");
+  // Derive a border color from the light color
+  const BORDER = LIGHT;
+
+  return { PRIMARY, SECONDARY, LIGHT, BORDER };
+}
+
+function solidFill(color: string): ExcelJS.Fill {
+  return { type: "pattern", pattern: "solid", fgColor: { argb: `FF${color}` } };
+}
 
 function gradientFill(from: string, to: string, degree = 0): ExcelJS.FillGradientAngle {
   return {
@@ -59,23 +92,11 @@ function gradientFill(from: string, to: string, degree = 0): ExcelJS.FillGradien
   };
 }
 
-function solidFill(color: string): ExcelJS.Fill {
-  return { type: "pattern", pattern: "solid", fgColor: { argb: `FF${color}` } };
-}
-
-const thinBorder: Partial<ExcelJS.Border> = { style: "thin", color: { argb: `FF${BORDER_BLUE}` } };
-const whiteBorder: Partial<ExcelJS.Border> = { style: "thin", color: { argb: "FFFFFFFF" } };
-const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
-const allWhiteBorders = { top: whiteBorder, bottom: whiteBorder, left: whiteBorder, right: whiteBorder };
-
-const whiteFont: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: true };
-const darkFont: Partial<ExcelJS.Font> = { color: { argb: "FF1E293B" } };
+// ─── Types ───────────────────────────────────────────────
 
 const META_LABELS = ["IMAGEM", "CÓDIGO", "LOCAL", "NOME", "TAMANHO", "ESPECIFICAÇÃO", "INSTRUÇÕES DE INSTALAÇÃO"];
 const IMAGE_ROW_INDEX = 0;
 const META_ROW_COUNT = META_LABELS.length;
-
-// ─── Shared: build a transposed piece sheet ──────────────
 
 type MatrixItem = {
   id: string;
@@ -83,10 +104,19 @@ type MatrixItem = {
   name: string;
   size: string;
   store_category?: string | null;
+  sub_location?: string | null;
   specification?: string;
   installation_instructions?: string;
   image_url?: string | null;
+  _type?: "piece" | "kit";
 };
+
+type LocationData = {
+  locations: CampaignPieceLocation[];
+  subLocations: CampaignPieceSubLocation[];
+};
+
+// ─── Shared: build a transposed piece sheet ──────────────
 
 async function buildTransposedSheet(
   wb: ExcelJS.Workbook,
@@ -96,8 +126,19 @@ async function buildTransposedSheet(
   stores: ClientStore[],
   qtyMap: Record<string, number>,
   qtyKeyFn: (storeId: string, itemId: string) => string,
+  colors: ReturnType<typeof makeColors>,
+  locData: LocationData,
+  kitSheetNames?: Map<string, string>, // id -> sheet name, for hyperlinks
 ) {
-  const STORE_META_COLS = 4; // name, city, state, showcase_count
+  const { PRIMARY, SECONDARY, LIGHT, BORDER } = colors;
+  const whiteFont: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: true };
+  const darkFont: Partial<ExcelJS.Font> = { color: { argb: "FF1E293B" } };
+  const thinBorder: Partial<ExcelJS.Border> = { style: "thin", color: { argb: `FF${BORDER}` } };
+  const whiteBorder: Partial<ExcelJS.Border> = { style: "thin", color: { argb: "FFFFFFFF" } };
+  const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+  const allWhiteBorders = { top: whiteBorder, bottom: whiteBorder, left: whiteBorder, right: whiteBorder };
+
+  const STORE_META_COLS = 4;
   const colCount = items.length + STORE_META_COLS;
   const IMAGE_ROW_HEIGHT = 120;
 
@@ -107,7 +148,7 @@ async function buildTransposedSheet(
   const titleCell = ws.getCell(1, 1);
   titleCell.font = { ...whiteFont, size: 16 };
   titleCell.alignment = { horizontal: "center", vertical: "middle" };
-  titleCell.fill = gradientFill(DARK_BLUE, MED_BLUE);
+  titleCell.fill = gradientFill(PRIMARY, SECONDARY);
   titleCell.border = allWhiteBorders;
   ws.getRow(1).height = 40;
 
@@ -128,7 +169,7 @@ async function buildTransposedSheet(
       switch (mi) {
         case 0: values.push(""); break;
         case 1: values.push(p.code); break;
-        case 2: values.push(p.store_category || ""); break;
+        case 2: values.push(formatLocation(p.store_category, p.sub_location, locData.locations, locData.subLocations)); break;
         case 3: values.push(p.name); break;
         case 4: values.push(p.size); break;
         case 5: values.push(p.specification || ""); break;
@@ -139,19 +180,18 @@ async function buildTransposedSheet(
     const row = ws.addRow(values);
     const rowNum = mi + 2;
 
-    // Merge the label across the first STORE_META_COLS columns
     ws.mergeCells(rowNum, 1, rowNum, STORE_META_COLS);
     const labelCell = ws.getCell(rowNum, 1);
     labelCell.font = { ...whiteFont, size: 11 };
     labelCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-    labelCell.fill = gradientFill(DARK_BLUE, "0E4D72", 90);
+    labelCell.fill = gradientFill(PRIMARY, SECONDARY, 90);
     labelCell.border = allWhiteBorders;
 
     for (let ci = STORE_META_COLS + 1; ci <= colCount; ci++) {
       const cell = ws.getCell(rowNum, ci);
       cell.font = { ...darkFont, size: 10 };
       cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-      cell.fill = mi === IMAGE_ROW_INDEX ? solidFill("FFFFFF") : gradientFill("FFFFFF", PALE_BLUE);
+      cell.fill = mi === IMAGE_ROW_INDEX ? solidFill("FFFFFF") : gradientFill("FFFFFF", LIGHT);
       cell.border = allBorders;
     }
 
@@ -160,10 +200,8 @@ async function buildTransposedSheet(
     else row.height = 25;
   }
 
-  // Images – fit to cell preserving aspect ratio
+  // Images
   const imageRowNum = 2;
-  // Cell available area: colWidth in px ≈ colWidth * 7.5, rowHeight in px = IMAGE_ROW_HEIGHT * 0.75
-  // We use pixel-based ext sizing with padding
   const CELL_PADDING = 8;
   for (let pi = 0; pi < items.length; pi++) {
     const imgData = imageCache[items[pi].id];
@@ -173,15 +211,10 @@ async function buildTransposedSheet(
       const colWidthChars = Math.min(Math.max(nameLen + 4, 18), 30);
       const maxW = colWidthChars * 7.5 - CELL_PADDING * 2;
       const maxH = IMAGE_ROW_HEIGHT * 0.75 - CELL_PADDING;
-
       const ratio = imgData.width / imgData.height;
       let w = maxW;
       let h = w / ratio;
-      if (h > maxH) {
-        h = maxH;
-        w = h * ratio;
-      }
-
+      if (h > maxH) { h = maxH; w = h * ratio; }
       const imageId = wb.addImage({ base64: imgData.base64, extension: imgData.ext });
       ws.addImage(imageId, {
         tl: { col: pi + STORE_META_COLS + 0.05, row: imageRowNum - 1 + 0.1 },
@@ -190,18 +223,33 @@ async function buildTransposedSheet(
     }
   }
 
+  // Kit hyperlinks on the name row (row 5 = index 3 = NOME)
+  if (kitSheetNames) {
+    const nameRowNum = 2 + 3; // row 5 = NOME
+    for (let pi = 0; pi < items.length; pi++) {
+      const item = items[pi];
+      if (item._type === "kit" && kitSheetNames.has(item.id)) {
+        const sheetName = kitSheetNames.get(item.id)!;
+        const cell = ws.getCell(nameRowNum, STORE_META_COLS + 1 + pi);
+        cell.value = { text: item.name, hyperlink: `#'${sheetName}'!A1` } as any;
+        cell.font = { ...whiteFont, underline: true, size: 10, bold: false, color: { argb: `FF${PRIMARY}` } };
+      }
+    }
+  }
+
   // Stores header
   const storesHeaderRowNum = META_ROW_COUNT + 2;
   const storeHeaderValues: (string | number)[] = ["NOME DA LOJA", "CIDADE", "UF", "VITRINES"];
-  for (const p of items) storeHeaderValues.push("");
+  for (const _p of items) storeHeaderValues.push("");
   const storeHeaderRow = ws.addRow(storeHeaderValues);
   storeHeaderRow.height = 30;
   storeHeaderRow.eachCell((cell) => {
     cell.font = { ...whiteFont, size: 11 };
     cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-    cell.fill = gradientFill(MED_BLUE, LIGHT_BLUE);
+    cell.fill = gradientFill(SECONDARY, PRIMARY);
     cell.border = allWhiteBorders;
   });
+
   // Store rows
   const firstStoreRowNum = storesHeaderRowNum + 1;
   for (let si = 0; si < stores.length; si++) {
@@ -220,7 +268,7 @@ async function buildTransposedSheet(
         cell.font = { ...darkFont, size: 11 };
         cell.alignment = { horizontal: "center", vertical: "middle" };
       }
-      cell.fill = isEven ? solidFill(PALE_BLUE) : solidFill("FFFFFF");
+      cell.fill = isEven ? solidFill(LIGHT) : solidFill("FFFFFF");
       cell.border = allBorders;
     });
   }
@@ -237,25 +285,20 @@ async function buildTransposedSheet(
   totalsRow.eachCell((cell) => {
     cell.font = { ...whiteFont, size: 12 };
     cell.alignment = { horizontal: "center", vertical: "middle" };
-    cell.fill = gradientFill(MED_BLUE, DARK_BLUE);
+    cell.fill = gradientFill(SECONDARY, PRIMARY);
     cell.border = allWhiteBorders;
   });
 
-  const grandTotal = stores.reduce((sum, s) =>
-    sum + items.reduce((acc, p) => acc + (qtyMap[qtyKeyFn(s.id, p.id)] || 0), 0), 0);
-
   // Column widths
   ws.getColumn(1).width = 30;
-  ws.getColumn(2).width = 18; // city
-  ws.getColumn(3).width = 8;  // state
-  ws.getColumn(4).width = 10; // showcase_count
+  ws.getColumn(2).width = 18;
+  ws.getColumn(3).width = 8;
+  ws.getColumn(4).width = 10;
   for (let i = STORE_META_COLS + 1; i <= colCount; i++) {
     const item = items[i - STORE_META_COLS - 1];
     const nameLen = item?.name?.length || 10;
     ws.getColumn(i).width = Math.min(Math.max(nameLen + 4, 18), 30);
   }
-
-  return grandTotal;
 }
 
 // ─── Main export ─────────────────────────────────────────
@@ -267,24 +310,31 @@ export async function exportMatrixExcelJS(
   campaignName: string,
   kits: CampaignKit[] = [],
   kitPieces: CampaignKitPiece[] = [],
+  palette?: ColorPalette,
+  locations: CampaignPieceLocation[] = [],
+  subLocations: CampaignPieceSubLocation[] = [],
 ) {
   const wb = new ExcelJS.Workbook();
   wb.creator = "ProduzAI";
+  const colors = makeColors(palette);
+  const locData: LocationData = { locations, subLocations };
 
-  // ═══════════════════════════════════════════════════════
-  //  ABA 1 – Matriz principal (peças + kits como colunas)
-  // ═══════════════════════════════════════════════════════
-
-  // Build unified column list sorted by display_order
+  // Build unified column list
   type ColItem = MatrixItem & { _type: "piece" | "kit"; display_order: number };
   const allColumns: ColItem[] = [
-    ...pieces.map(p => ({ ...p, _type: "piece" as const, specification: p.specification || "", installation_instructions: p.installation_instructions || "" })),
-    ...kits.map(k => ({
+    ...pieces.map((p) => ({
+      ...p,
+      _type: "piece" as const,
+      specification: p.specification || "",
+      installation_instructions: p.installation_instructions || "",
+    })),
+    ...kits.map((k) => ({
       id: k.id,
       code: k.code,
       name: k.name,
       size: "",
-      store_category: null,
+      store_category: k.category,
+      sub_location: k.sub_location,
       specification: "",
       installation_instructions: "",
       image_url: k.image_url,
@@ -293,32 +343,39 @@ export async function exportMatrixExcelJS(
     })),
   ].sort((a, b) => a.display_order - b.display_order);
 
-  const ws = wb.addWorksheet("Matriz Lojas x Peças");
-  await buildTransposedSheet(wb, ws, campaignName, allColumns, stores, qtyMap, (sId, pId) => `${sId}-${pId}`);
-
-  // ═══════════════════════════════════════════════════════
-  //  ABAS por Kit – listagem de peças do kit (1 un cada)
-  // ═══════════════════════════════════════════════════════
-
+  // Build kit sheet names map first
+  const kitSheetNames = new Map<string, string>();
   for (const kit of kits) {
-    const kpList = kitPieces.filter(kp => kp.kit_id === kit.id);
+    const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
+    if (kpList.length === 0) continue;
+    const sheetName = `Kit ${kit.code} - ${kit.name}`.slice(0, 31);
+    kitSheetNames.set(kit.id, sheetName);
+  }
+
+  // ABA 1 – Main matrix
+  const ws = wb.addWorksheet("Matriz Lojas x Peças");
+  await buildTransposedSheet(wb, ws, campaignName, allColumns, stores, qtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames);
+
+  // Kit tabs
+  for (const kit of kits) {
+    const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
     if (kpList.length === 0) continue;
 
-    const kitItems: MatrixItem[] = kpList.map(kp => {
-      const piece = pieces.find(p => p.id === kp.piece_id);
+    const kitItems: MatrixItem[] = kpList.map((kp) => {
+      const piece = pieces.find((p) => p.id === kp.piece_id);
       return {
         id: kp.id,
         code: piece?.code ?? 0,
         name: piece?.name ?? "",
         size: piece?.size ?? "",
         store_category: piece?.store_category,
+        sub_location: piece?.sub_location,
         specification: piece?.specification || "",
         installation_instructions: piece?.installation_instructions || "",
         image_url: piece?.image_url,
       };
     });
 
-    // Build a qty map where every store gets quantity = kit piece quantity (usually 1)
     const kitQtyMap: Record<string, number> = {};
     for (const s of stores) {
       for (const kp of kpList) {
@@ -326,14 +383,20 @@ export async function exportMatrixExcelJS(
       }
     }
 
-    const sheetName = `Kit ${kit.code} - ${kit.name}`.slice(0, 31);
+    const sheetName = kitSheetNames.get(kit.id)!;
     const kitWs = wb.addWorksheet(sheetName);
-    await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`);
+    await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`, colors, locData);
   }
 
-  // ═══════════════════════════════════════════════════════
-  //  ABA Dashboard
-  // ═══════════════════════════════════════════════════════
+  // Dashboard tab
+  const { PRIMARY, SECONDARY, LIGHT, BORDER } = colors;
+  const whiteFont: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: true };
+  const darkFont: Partial<ExcelJS.Font> = { color: { argb: "FF1E293B" } };
+  const thinBorder: Partial<ExcelJS.Border> = { style: "thin", color: { argb: `FF${BORDER}` } };
+  const whiteBorder: Partial<ExcelJS.Border> = { style: "thin", color: { argb: "FFFFFFFF" } };
+  const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+  const allWhiteBorders = { top: whiteBorder, bottom: whiteBorder, left: whiteBorder, right: whiteBorder };
+
   const dash = wb.addWorksheet("Dashboard");
   let currentRow = 1;
 
@@ -344,7 +407,7 @@ export async function exportMatrixExcelJS(
     const cell = dash.getCell(currentRow, 1);
     cell.font = { ...whiteFont, size: 14 };
     cell.alignment = { horizontal: "center", vertical: "middle" };
-    cell.fill = gradientFill(DARK_BLUE, MED_BLUE);
+    cell.fill = gradientFill(PRIMARY, SECONDARY);
     cell.border = allWhiteBorders;
     row.height = 35;
     currentRow++;
@@ -357,7 +420,7 @@ export async function exportMatrixExcelJS(
       cell.value = h;
       cell.font = { ...whiteFont, size: 11 };
       cell.alignment = { horizontal: "center", vertical: "middle" };
-      cell.fill = gradientFill(MED_BLUE, LIGHT_BLUE);
+      cell.fill = gradientFill(SECONDARY, PRIMARY);
       cell.border = allWhiteBorders;
     });
     row.height = 25;
@@ -371,7 +434,7 @@ export async function exportMatrixExcelJS(
       cell.value = v;
       cell.font = { ...darkFont, size: 11 };
       cell.alignment = { horizontal: i === 0 ? "left" : "center", vertical: "middle" };
-      cell.fill = isEven ? solidFill(PALE_BLUE) : solidFill("FFFFFF");
+      cell.fill = isEven ? solidFill(LIGHT) : solidFill("FFFFFF");
       cell.border = allBorders;
     });
     currentRow++;
@@ -413,7 +476,7 @@ export async function exportMatrixExcelJS(
   dash.getColumn(2).width = 40;
   dash.getColumn(3).width = 20;
 
-  // ── Generate and download ──
+  // Generate and download
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const fileName = `Orcamento_${campaignName.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
