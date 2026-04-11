@@ -2064,58 +2064,74 @@ const CampaignDetail = () => {
           {/* ─── SECTION: PEÇAS ─── */}
           {activeSection === "pieces" && (<>
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
+              {/* Group 1 — Counter (left) */}
               <span className="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-accent/15 text-accent-foreground">
                 {visiblePieces.length + kits.length} {t("pieces.pieceCount")}
               </span>
-              <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
-                <Download className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("common.export")}
-              </Button>
+
+              <div className="flex-1" />
+
+              {/* Group 3 — "Mais ações" dropdown (middle-right) */}
               {canEditPieces && (
-                <>
-                <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={handleReviewPieceCodes}>
-                  <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("pieces.reviewCodes")}</span>
-                </Button>
-                <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={handleRecodificar}>
-                  <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.recode")}
-                </Button>
-                </>
-               )}
-              {canEditPieces && (
-                <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setLocationDialogOpen(true)}>
-                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("pieces.storeLocation")}</span>
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
+                      <MoreHorizontal className="w-3.5 h-3.5" /> Mais ações
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
+                      <Download className="w-4 h-4 mr-2" /> {t("common.export")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <label className="cursor-pointer flex items-center w-full">
+                        <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file || !campaignId) return;
+                          try {
+                            const items = await parsePiecesImport(file);
+                            if (items.length === 0) { toast.error("Nenhuma peça encontrada."); return; }
+                            let added = 0, updated = 0;
+                            for (const item of items) {
+                              const existing = pieces.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+                              if (existing) {
+                                await updatePiece.mutateAsync({ id: existing.id, ...item });
+                                updated++;
+                              } else {
+                                await addPiece.mutateAsync({ campaign_id: campaignId, ...item });
+                                added++;
+                              }
+                            }
+                            toast.success(`${added} adicionada(s), ${updated} atualizada(s)!`);
+                          } catch { toast.error("Erro ao importar."); }
+                          e.target.value = "";
+                        }} />
+                        <Upload className="w-4 h-4 mr-2" /> Importar
+                      </label>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleReviewPieceCodes}>
+                      <Sparkles className="w-4 h-4 mr-2" /> {t("pieces.reviewCodes")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleRecodificar}>
+                      <RefreshCw className="w-4 h-4 mr-2" /> {t("pieces.recode")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLocationDialogOpen(true)}>
+                      <MapPin className="w-4 h-4 mr-2" /> {t("pieces.storeLocation")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setImportPiecesDialogOpen(true)}>
+                      <Copy className="w-4 h-4 mr-2" /> {t("pieces.fromCampaign")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setBulkDeleteOpen(true)} className="text-destructive focus:text-destructive">
+                      <Trash2 className="w-4 h-4 mr-2" /> {t("pieces.bulkDelete")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
+
+              {/* Group 2 — Primary actions (right) */}
               {canEditPieces && (
                 <>
-                <label className="cursor-pointer">
-                  <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file || !campaignId) return;
-                    try {
-                      const items = await parsePiecesImport(file);
-                      if (items.length === 0) { toast.error("Nenhuma peça encontrada."); return; }
-                      let added = 0, updated = 0;
-                      for (const item of items) {
-                        const existing = pieces.find(p => p.name.toLowerCase() === item.name.toLowerCase());
-                        if (existing) {
-                          await updatePiece.mutateAsync({ id: existing.id, ...item });
-                          updated++;
-                        } else {
-                          await addPiece.mutateAsync({ campaign_id: campaignId, ...item });
-                          added++;
-                        }
-                      }
-                      toast.success(`${added} adicionada(s), ${updated} atualizada(s)!`);
-                    } catch { toast.error("Erro ao importar."); }
-                    e.target.value = "";
-                  }} />
-                  <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" asChild>
-                    <span><Upload className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Importar</span>
-                  </Button>
-                </label>
-                <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setImportPiecesDialogOpen(true)}>
-                  <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> <span className="hidden sm:inline">{t("pieces.fromCampaign")}</span>
-                </Button>
                 <Dialog open={pieceDialogOpen} onOpenChange={setPieceDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="text-[10px] sm:text-xs gap-1 gradient-accent text-white border-0">
@@ -2135,9 +2151,6 @@ const CampaignDetail = () => {
                 </Dialog>
                 <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
                   <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newKit")}
-                </Button>
-                <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1 text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setBulkDeleteOpen(true)}>
-                  <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.bulkDelete")}
                 </Button>
                 </>
               )}
