@@ -608,9 +608,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   return (
     <div className="space-y-4">
       {/* Filters — Primary row */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap gap-2 items-center">
-          <div className="relative flex-1 min-w-[180px] max-w-[320px]">
+      <div className="flex gap-2 items-center flex-wrap lg:flex-nowrap">
+          <div className="relative w-[200px] shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("filters.searchStore")}
@@ -721,62 +720,63 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               )}
             </PopoverContent>
           </Popover>
-        </div>
 
-      {/* More actions dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9 text-xs gap-1 shrink-0">
-              <MoreHorizontal className="w-3.5 h-3.5" /> Mais ações
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[220px]">
-            <DropdownMenuItem onClick={() => setTeamDialogOpen(true)}>
-              <Wrench className="w-3.5 h-3.5 mr-2" /> {t("scheduling.teams")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExportTeams}>
-              <Users className="w-3.5 h-3.5 mr-2" /> {t("scheduling.exportTeams")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExport}>
-              <Download className="w-3.5 h-3.5 mr-2" /> {t("common.export")}
-            </DropdownMenuItem>
-            {canLockCards && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-[var(--s-danger)] focus:text-[var(--s-danger)]"
-                  disabled={bulkLockLoading}
-                  onClick={async () => {
-                    setBulkLockLoading(true);
-                    try {
-                      const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
-                      const allLocked = unlocked.length === 0;
-                      const newLocked = !allLocked;
-                      const ids = displayedStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
-                      if (ids.length === 0) { setBulkLockLoading(false); return; }
-                      const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
-                      if (error) throw error;
-                      queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-                      toast.success(newLocked ? `${ids.length} ${t("common.cardsBlocked")}` : `${ids.length} ${t("common.cardsUnblocked")}`);
-                    } catch (err: any) {
-                      toast.error(err.message || t("common.errorChangingLockBulk"));
-                    } finally {
-                      setBulkLockLoading(false);
-                    }
-                  }}
-                >
-                  {(() => {
-                    const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
-                    const allLocked = unlocked.length === 0 && displayedStores.some(s => scheduleMap[s.id]);
-                    return allLocked
-                      ? <><LockOpen className="w-3.5 h-3.5 mr-2" /> {t("common.unlockAll")}</>
-                      : <><Lock className="w-3.5 h-3.5 mr-2" /> {t("common.lockAll")}</>;
-                  })()}
+          {/* More actions dropdown */}
+          <div className="ml-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 text-xs gap-1 shrink-0">
+                  <MoreHorizontal className="w-3.5 h-3.5" /> Mais ações
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[220px]">
+                <DropdownMenuItem onClick={() => setTeamDialogOpen(true)}>
+                  <Wrench className="w-3.5 h-3.5 mr-2" /> {t("scheduling.teams")}
                 </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+                <DropdownMenuItem onClick={handleExportTeams}>
+                  <Users className="w-3.5 h-3.5 mr-2" /> {t("scheduling.exportTeams")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExport}>
+                  <Download className="w-3.5 h-3.5 mr-2" /> {t("common.export")}
+                </DropdownMenuItem>
+                {canLockCards && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-[var(--s-danger)] focus:text-[var(--s-danger)]"
+                      disabled={bulkLockLoading}
+                      onClick={async () => {
+                        setBulkLockLoading(true);
+                        try {
+                          const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                          const allLocked = unlocked.length === 0;
+                          const newLocked = !allLocked;
+                          const ids = displayedStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
+                          if (ids.length === 0) { setBulkLockLoading(false); return; }
+                          const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
+                          if (error) throw error;
+                          queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                          toast.success(newLocked ? `${ids.length} ${t("common.cardsBlocked")}` : `${ids.length} ${t("common.cardsUnblocked")}`);
+                        } catch (err: any) {
+                          toast.error(err.message || t("common.errorChangingLockBulk"));
+                        } finally {
+                          setBulkLockLoading(false);
+                        }
+                      }}
+                    >
+                      {(() => {
+                        const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                        const allLocked = unlocked.length === 0 && displayedStores.some(s => scheduleMap[s.id]);
+                        return allLocked
+                          ? <><LockOpen className="w-3.5 h-3.5 mr-2" /> {t("common.unlockAll")}</>
+                          : <><Lock className="w-3.5 h-3.5 mr-2" /> {t("common.lockAll")}</>;
+                      })()}
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
       </div>
 
       {/* KPI Summary Bar */}
