@@ -343,7 +343,7 @@ const PublicOccurrence = () => {
       <header className="border-b border-border bg-card">
         <div className="max-w-lg mx-auto px-4 py-4 text-center">
           <div className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center mx-auto mb-2 shadow-glow-primary">
-            <AlertTriangle className="w-6 h-6 text-white" />
+            <AlertTriangle className="w-5 h-5 text-white" />
           </div>
           <h1 className="text-lg font-bold text-foreground">Registrar Ocorrência</h1>
           <p className="text-xs text-muted-foreground mt-1">{clientName} · {campaign.name}</p>

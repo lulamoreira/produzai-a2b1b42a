@@ -1,4 +1,6 @@
 import { useState, useRef, useCallback } from "react";
+import { useInterfaceMode } from "@/hooks/useInterfaceMode";
+import CampaignCardV2 from "@/components/v2/CampaignCardV2";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
