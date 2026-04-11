@@ -39,6 +39,22 @@ const CLIENT_COLORS = [
   "#1e3a5f", "#334155", "#475569", "#78716c",
 ];
 
+function getClientAvatarColor(name: string): string {
+  const letter = (name?.[0] ?? "A").toUpperCase();
+  const colors: Record<string, string> = {
+    A: "#8C6F4E", B: "#7B5E3A", C: "#6B4F2E",
+    D: "#5C6B3F", E: "#4A5568", F: "#735A3D",
+    G: "#7A3B2E", H: "#5A4A3A", I: "#8C6F4E",
+    J: "#6B4F2E", K: "#7B5E3A", L: "#5C6B3F",
+    M: "#A07850", N: "#7B5E3A", O: "#6B4F2E",
+    P: "#8C6F4E", Q: "#5A4A3A", R: "#7A3B2E",
+    S: "#735A3D", T: "#5C6B3F", U: "#4A5568",
+    V: "#8C6F4E", W: "#7B5E3A", X: "#6B4F2E",
+    Y: "#A07850", Z: "#5A4A3A",
+  };
+  return colors[letter] ?? "#8C6F4E";
+}
+
 // ─── Sortable Client Card ─────────────────────────────────
 function SortableClientCard({
   client,
@@ -68,28 +84,55 @@ function SortableClientCard({
   };
 
   const color = client.color || "#6366f1";
+  const avatarColor = getClientAvatarColor(client.name);
 
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className="group card-item hover:-translate-y-0.5 transition-all duration-200 cursor-pointer p-5 flex flex-col items-center text-center"
+      style={{
+        ...style,
+        borderLeft: `4px solid ${avatarColor}`,
+      }}
+      className="group bg-card rounded-xl shadow-sm border border-border hover:shadow-md transition-all duration-200 cursor-pointer px-4 py-3.5 flex items-center gap-3.5"
       onClick={onNavigate}
     >
-      {/* Color accent strip */}
-      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-lg" style={{ backgroundColor: color }} />
+      {/* Avatar */}
+      <div
+        className="flex items-center justify-center shrink-0"
+        style={{
+          width: 44, height: 44, borderRadius: 10,
+          backgroundColor: avatarColor,
+          fontSize: 18, fontWeight: 700, color: "#FFFFFF",
+        }}
+      >
+        {client.name.charAt(0).toUpperCase()}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+          {client.name}
+        </p>
+        <p className="text-[11px] text-muted-foreground">
+          {t("clientDashboard.createdAt")} {new Date(client.created_at).toLocaleDateString()}
+        </p>
+        <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <Package className="w-3 h-3" /> {campaignCount} {t("clientDashboard.campaigns")}
+          </span>
+          <span>·</span>
+          <span className="flex items-center gap-1">
+            <Users className="w-3 h-3" /> {userCount} {t("clientDashboard.users")}
+          </span>
+        </div>
+      </div>
 
       {/* Admin actions */}
       {isAdmin && (
-        <div className="flex gap-1 self-end opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-1 mb-1">
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <Popover>
             <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
                 <Palette className="w-3.5 h-3.5" style={{ color }} />
               </Button>
             </PopoverTrigger>
@@ -101,25 +144,20 @@ function SortableClientCard({
                     key={c}
                     className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
                     style={{ backgroundColor: c }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onColorChange(c);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); onColorChange(c); }}
                   />
                 ))}
               </div>
             </PopoverContent>
           </Popover>
-          {isAdmin && (
-            <button
-              className="cursor-grab active:cursor-grabbing touch-none p-1 text-muted-foreground hover:text-foreground transition-colors"
-              {...attributes}
-              {...listeners}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <GripVertical className="w-3.5 h-3.5" />
-            </button>
-          )}
+          <button
+            className="cursor-grab active:cursor-grabbing touch-none p-1 text-muted-foreground hover:text-foreground transition-colors"
+            {...attributes}
+            {...listeners}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="w-3.5 h-3.5" />
+          </button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
@@ -129,9 +167,7 @@ function SortableClientCard({
             <AlertDialogContent onClick={(e) => e.stopPropagation()}>
               <AlertDialogHeader>
                 <AlertDialogTitle>{t("clientDashboard.deleteClientTitle")}</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {t("clientDashboard.deleteClientDesc")}
-                </AlertDialogDescription>
+                <AlertDialogDescription>{t("clientDashboard.deleteClientDesc")}</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
@@ -144,26 +180,9 @@ function SortableClientCard({
         </div>
       )}
 
-      <div
-        className="w-14 h-14 aqua-icon flex items-center justify-center flex-shrink-0 mb-3"
-        style={{ background: `linear-gradient(145deg, ${color}, ${color}cc)` }}
-      >
-        <span className="text-white font-bold text-xl relative z-10 drop-shadow-sm">{client.name.charAt(0).toUpperCase()}</span>
-      </div>
-      <h3 className="font-bold text-foreground text-base mb-0.5 group-hover:text-primary transition-colors">{client.name}</h3>
-      <p className="text-[11px] text-muted-foreground">
-        {t("clientDashboard.createdAt")} {new Date(client.created_at).toLocaleDateString()}
-      </p>
-      <div className="flex items-center justify-between w-full mt-3">
-        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-          <Package className="w-3.5 h-3.5" /> {campaignCount} {t("clientDashboard.campaigns")}
-        </span>
-        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-          <Users className="w-3.5 h-3.5" /> {userCount} {t("clientDashboard.users")}
-        </span>
-      </div>
-      <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors mt-2 self-end">
-        <span>{t("clientDashboard.access")}</span>
+      {/* Access arrow */}
+      <div className="flex items-center gap-1 text-xs font-medium shrink-0" style={{ color: "#8C6F4E" }}>
+        <span className="hidden sm:inline">{t("clientDashboard.access")}</span>
         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
       </div>
     </div>
@@ -341,7 +360,7 @@ const Dashboard = () => {
         ) : (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={filtered.map((c) => c.id)} strategy={rectSortingStrategy}>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
                 {filtered.map((client) => (
                   <SortableClientCard
                     key={client.id}
