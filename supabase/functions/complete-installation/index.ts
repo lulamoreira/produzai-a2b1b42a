@@ -25,6 +25,13 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Get schedule info first for logging
+    const { data: scheduleInfo } = await supabase
+      .from("campaign_schedules")
+      .select("campaign_id, store_id")
+      .eq("id", schedule_id)
+      .single();
+
     const { data, error } = await supabase
       .from("campaign_schedules")
       .update({
@@ -40,6 +47,25 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Erro ao atualizar." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Log campaign activity (fire and forget)
+    if (scheduleInfo && completed) {
+      // Get store name for description
+      const { data: store } = await supabase
+        .from("client_stores")
+        .select("name")
+        .eq("id", scheduleInfo.store_id)
+        .single();
+
+      await supabase.from("campaign_activity_log").insert({
+        campaign_id: scheduleInfo.campaign_id,
+        store_id: scheduleInfo.store_id,
+        actor_name: "Instalador",
+        actor_type: "installer",
+        action: "instalacao_concluida",
+        description: `Instalação de ${store?.name || "loja"} marcada como concluída pelo instalador`,
+      }).then(() => {}).catch(() => {});
     }
 
     return new Response(JSON.stringify(data), {
