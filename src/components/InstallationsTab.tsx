@@ -514,74 +514,75 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
               )}
             </PopoverContent>
           </Popover>
-        </div>
 
-      {/* More actions dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9 text-xs gap-1 shrink-0">
-              <MoreHorizontal className="w-3.5 h-3.5" /> Mais ações
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[220px]">
-            <DropdownMenuItem onClick={() => setShowCodes(!showCodes)}>
-              <Key className="w-3.5 h-3.5 mr-2" /> {showCodes ? t("installations.hideAccessConfig") : t("installations.tempAccessConfig")}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleExport}>
-              <Download className="w-3.5 h-3.5 mr-2" /> Exportar
-            </DropdownMenuItem>
-            {photos.length > 0 && (
-              <DropdownMenuItem onClick={() => {
-                const storeNameMap: Record<string, string> = {};
-                stores.forEach((s) => {
-                  storeNameMap[s.id] = s.store_code ? `${s.store_code}_${s.name}` : s.name;
-                });
-                toast.info(`Preparando download de ${photos.length} arquivo(s)...`);
-                downloadAllCampaignPhotosAsZip(photos, storeNameMap, campaignName, (done, total) => {
-                  if (done === total) toast.success(t("common.downloadComplete"));
-                }).catch(() => toast.error(t("common.errorDownloading")));
-              }}>
-                <Camera className="w-3.5 h-3.5 mr-2" /> Baixar todas as fotos ({photos.length})
-              </DropdownMenuItem>
-            )}
-            {canLockCards && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-[var(--s-danger)] focus:text-[var(--s-danger)]"
-                  disabled={bulkLockLoading}
-                  onClick={async () => {
-                    setBulkLockLoading(true);
-                    try {
-                      const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
-                      const allLocked = unlocked.length === 0;
-                      const newLocked = !allLocked;
-                      const ids = displayedStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
-                      if (ids.length === 0) { setBulkLockLoading(false); return; }
-                      const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
-                      if (error) throw error;
-                      queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-                      toast.success(newLocked ? `${ids.length} cards bloqueados!` : `${ids.length} cards desbloqueados!`);
-                    } catch (err: any) {
-                      toast.error(err.message || t("common.errorChangingLockBulk"));
-                    } finally {
-                      setBulkLockLoading(false);
-                    }
-                  }}
-                >
-                  {(() => {
-                    const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
-                    const allLocked = unlocked.length === 0 && displayedStores.some(s => scheduleMap[s.id]);
-                    return allLocked
-                      ? <><LockOpen className="w-3.5 h-3.5 mr-2" /> Desbloquear Todos</>
-                      : <><Lock className="w-3.5 h-3.5 mr-2" /> Bloquear Todos</>;
-                  })()}
+          {/* More actions dropdown */}
+          <div className="ml-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9 text-xs gap-1 shrink-0">
+                  <MoreHorizontal className="w-3.5 h-3.5" /> Mais ações
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[220px]">
+                <DropdownMenuItem onClick={() => setShowCodes(!showCodes)}>
+                  <Key className="w-3.5 h-3.5 mr-2" /> {showCodes ? t("installations.hideAccessConfig") : t("installations.tempAccessConfig")}
                 </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+                <DropdownMenuItem onClick={handleExport}>
+                  <Download className="w-3.5 h-3.5 mr-2" /> Exportar
+                </DropdownMenuItem>
+                {photos.length > 0 && (
+                  <DropdownMenuItem onClick={() => {
+                    const storeNameMap: Record<string, string> = {};
+                    stores.forEach((s) => {
+                      storeNameMap[s.id] = s.store_code ? `${s.store_code}_${s.name}` : s.name;
+                    });
+                    toast.info(`Preparando download de ${photos.length} arquivo(s)...`);
+                    downloadAllCampaignPhotosAsZip(photos, storeNameMap, campaignName, (done, total) => {
+                      if (done === total) toast.success(t("common.downloadComplete"));
+                    }).catch(() => toast.error(t("common.errorDownloading")));
+                  }}>
+                    <Camera className="w-3.5 h-3.5 mr-2" /> Baixar todas as fotos ({photos.length})
+                  </DropdownMenuItem>
+                )}
+                {canLockCards && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-[var(--s-danger)] focus:text-[var(--s-danger)]"
+                      disabled={bulkLockLoading}
+                      onClick={async () => {
+                        setBulkLockLoading(true);
+                        try {
+                          const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                          const allLocked = unlocked.length === 0;
+                          const newLocked = !allLocked;
+                          const ids = displayedStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
+                          if (ids.length === 0) { setBulkLockLoading(false); return; }
+                          const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
+                          if (error) throw error;
+                          queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                          toast.success(newLocked ? `${ids.length} cards bloqueados!` : `${ids.length} cards desbloqueados!`);
+                        } catch (err: any) {
+                          toast.error(err.message || t("common.errorChangingLockBulk"));
+                        } finally {
+                          setBulkLockLoading(false);
+                        }
+                      }}
+                    >
+                      {(() => {
+                        const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                        const allLocked = unlocked.length === 0 && displayedStores.some(s => scheduleMap[s.id]);
+                        return allLocked
+                          ? <><LockOpen className="w-3.5 h-3.5 mr-2" /> Desbloquear Todos</>
+                          : <><Lock className="w-3.5 h-3.5 mr-2" /> Bloquear Todos</>;
+                      })()}
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
 
       {/* KPI Summary Strip — inline */}
       <div
