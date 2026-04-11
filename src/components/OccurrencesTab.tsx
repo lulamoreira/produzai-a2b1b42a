@@ -867,8 +867,8 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           })}
         </div>
       )}
+      </div>
 
-      {/* Photo lightbox */}
       <PhotoLightbox
         photos={lightboxPhotos}
         initialIndex={lightboxIndex}
