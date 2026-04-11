@@ -49,16 +49,17 @@ function formatLocation(
   locations: CampaignPieceLocation[],
   subLocations: CampaignPieceSubLocation[],
 ): string {
-  if (subLocId) {
-    const sub = subLocations.find((s) => s.id === subLocId);
+  // Fields store the name (not the id), so match by both id and name
+  if (subLocId && subLocId !== "__none__") {
+    const sub = subLocations.find((s) => s.id === subLocId || s.name === subLocId);
     if (sub) {
       const parent = locations.find((l) => l.id === sub.location_id);
       return parent ? `${parent.name} / ${sub.name}` : sub.name;
     }
   }
   if (catId) {
-    const loc = locations.find((l) => l.id === catId);
-    return loc?.name || "";
+    const loc = locations.find((l) => l.id === catId || l.name === catId);
+    return loc?.name || catId;
   }
   return "";
 }
@@ -353,9 +354,25 @@ export async function exportMatrixExcelJS(
     kitSheetNames.set(kit.id, sheetName);
   }
 
+  // Pre-compute kit quantities into a merged qtyMap for the main tab
+  const mainQtyMap: Record<string, number> = { ...qtyMap };
+  for (const kit of kits) {
+    const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
+    if (kpList.length === 0) continue;
+    for (const s of stores) {
+      const kitQty = Math.min(
+        ...kpList.map((kp) => {
+          const baseQty = qtyMap[`${s.id}-${kp.piece_id}`] || 0;
+          return Math.floor(baseQty / (kp.quantity || 1));
+        })
+      );
+      mainQtyMap[`${s.id}-${kit.id}`] = kitQty;
+    }
+  }
+
   // ABA 1 – Main matrix
   const ws = wb.addWorksheet("Matriz Lojas x Peças");
-  await buildTransposedSheet(wb, ws, campaignName, allColumns, stores, qtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames);
+  await buildTransposedSheet(wb, ws, campaignName, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames);
 
   // Kit tabs
   for (const kit of kits) {
