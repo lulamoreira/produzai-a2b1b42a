@@ -280,7 +280,7 @@ const MatrixFilterSidebar = ({
     ));
 
   return (
-    <div className="hidden lg:flex w-64 shrink-0 border-r border-border bg-card/50 flex-col">
+    <div className="hidden lg:flex shrink-0 border-r border-border bg-card/50 flex-col relative" style={{ width: 260, transition: 'width 0.2s ease' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
         <div className="flex items-center gap-2">
