@@ -12,6 +12,8 @@ import { ChevronDown, ChevronRight, ChevronLeft, Filter, SlidersHorizontal, X, S
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 
+export type FilterLogicMode = "and" | "or" | "and_or";
+
 export type PieceFilters = {
   category: Set<string>;
   name: Set<string>;
@@ -147,6 +149,8 @@ interface MatrixFilterSidebarProps {
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
   customFieldLabels?: CustomFieldLabel[];
+  filterLogicMode: FilterLogicMode;
+  onFilterLogicModeChange: (mode: FilterLogicMode) => void;
 }
 
 const MatrixFilterSidebar = ({
@@ -159,6 +163,8 @@ const MatrixFilterSidebar = ({
   collapsed,
   onCollapsedChange,
   customFieldLabels = [],
+  filterLogicMode,
+  onFilterLogicModeChange,
 }: MatrixFilterSidebarProps) => {
   // Extract unique options from pieces for each field
   const filterOptions = useMemo(() => {
@@ -316,6 +322,35 @@ const MatrixFilterSidebar = ({
           </Button>
         </div>
       )}
+
+      {/* Logic mode selector */}
+      <div className="px-3 py-2 border-b border-border">
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Lógica entre filtros</span>
+        <div className="flex rounded-md border border-border overflow-hidden">
+          {([
+            { value: "and" as FilterLogicMode, label: "E" },
+            { value: "or" as FilterLogicMode, label: "OU" },
+            { value: "and_or" as FilterLogicMode, label: "E/OU" },
+          ]).map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => onFilterLogicModeChange(opt.value)}
+              className={`flex-1 text-[11px] font-semibold py-1.5 transition-colors ${
+                filterLogicMode === opt.value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-card text-muted-foreground hover:bg-muted/50"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[9px] text-muted-foreground mt-1">
+          {filterLogicMode === "and" && "Todos os filtros devem corresponder"}
+          {filterLogicMode === "or" && "Qualquer filtro pode corresponder"}
+          {filterLogicMode === "and_or" && "E entre grupos, OU dentro de cada grupo"}
+        </p>
+      </div>
 
       {/* Filter groups */}
       <ScrollArea className="flex-1">

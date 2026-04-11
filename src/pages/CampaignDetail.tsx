@@ -62,7 +62,7 @@ import ImportSpecFromCampaign from "@/components/ImportSpecFromCampaign";
 import BulkDeletePiecesDialog from "@/components/BulkDeletePiecesDialog";
 import ManageLocationsDialog from "@/components/ManageLocationsDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
-import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters } from "@/components/MatrixFilterSidebar";
+import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters, type FilterLogicMode } from "@/components/MatrixFilterSidebar";
 import ModuleGrid from "@/components/ModuleGrid";
 import CampaignChatSection from "@/components/CampaignChatSection";
 import StoreContactsSection from "@/components/StoreContactsSection";
@@ -278,6 +278,7 @@ const CampaignDetail = () => {
   const [importMatrixDialogOpen, setImportMatrixDialogOpen] = useState(false);
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
+  const [filterLogicMode, setFilterLogicMode] = useState<FilterLogicMode>("and_or");
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(() => {
     try {
       const saved = localStorage.getItem('produzai_matrix_filters_open');
@@ -316,16 +317,26 @@ const CampaignDetail = () => {
       const matchesState = stateFilter === "__all__" || s.state?.trim() === stateFilter;
       const matchesStoreCategory = storeCategoryFilter === "__all__" || true; // applied on matrix level
 
-      // Apply sidebar store filters
+      // Apply sidebar store filters with logic mode
       const sf = storeFilters;
-      if (sf.city.size > 0 && (!s.city || !sf.city.has(s.city))) return false;
-      if (sf.state.size > 0 && (!s.state || !sf.state.has(s.state.trim()))) return false;
-      if (sf.store_model.size > 0 && (!s.store_model || !sf.store_model.has(s.store_model))) return false;
-      if (sf.custom_field_1.size > 0 && (!s.custom_field_1 || !sf.custom_field_1.has(s.custom_field_1))) return false;
-      if (sf.custom_field_2.size > 0 && (!s.custom_field_2 || !sf.custom_field_2.has(s.custom_field_2))) return false;
-      if (sf.custom_field_3.size > 0 && (!s.custom_field_3 || !sf.custom_field_3.has(s.custom_field_3))) return false;
-      if (sf.custom_field_4.size > 0 && (!s.custom_field_4 || !sf.custom_field_4.has(s.custom_field_4))) return false;
-      if (sf.custom_field_5.size > 0 && (!s.custom_field_5 || !sf.custom_field_5.has(s.custom_field_5))) return false;
+      const storeChecks: boolean[] = [];
+      if (sf.city.size > 0) storeChecks.push(!!s.city && sf.city.has(s.city));
+      if (sf.state.size > 0) storeChecks.push(!!s.state && sf.state.has(s.state.trim()));
+      if (sf.store_model.size > 0) storeChecks.push(!!s.store_model && sf.store_model.has(s.store_model));
+      if (sf.custom_field_1.size > 0) storeChecks.push(!!s.custom_field_1 && sf.custom_field_1.has(s.custom_field_1));
+      if (sf.custom_field_2.size > 0) storeChecks.push(!!s.custom_field_2 && sf.custom_field_2.has(s.custom_field_2));
+      if (sf.custom_field_3.size > 0) storeChecks.push(!!s.custom_field_3 && sf.custom_field_3.has(s.custom_field_3));
+      if (sf.custom_field_4.size > 0) storeChecks.push(!!s.custom_field_4 && sf.custom_field_4.has(s.custom_field_4));
+      if (sf.custom_field_5.size > 0) storeChecks.push(!!s.custom_field_5 && sf.custom_field_5.has(s.custom_field_5));
+
+      if (storeChecks.length > 0) {
+        if (filterLogicMode === "and" || filterLogicMode === "and_or") {
+          if (!storeChecks.every(Boolean)) return false;
+        } else {
+          // "or" mode
+          if (!storeChecks.some(Boolean)) return false;
+        }
+      }
 
       return matchesSearch && matchesCity && matchesState && matchesStoreCategory;
     }).sort((a, b) => {
@@ -333,7 +344,7 @@ const CampaignDetail = () => {
       if (stateComp !== 0) return stateComp;
       return a.name.localeCompare(b.name);
     });
-  }, [stores, storeSearch, cityFilter, stateFilter, storeCategoryFilter, storeFilters]);
+  }, [stores, storeSearch, cityFilter, stateFilter, storeCategoryFilter, storeFilters, filterLogicMode]);
 
   const allEnabled = useMemo(() => filteredStores.every(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
   const activeFilteredStores = useMemo(() => filteredStores.filter(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
@@ -864,29 +875,31 @@ const CampaignDetail = () => {
       ? visiblePieces
       : visiblePieces.filter((p) => p.store_category === storeCategoryFilter);
 
-    // Apply piece sidebar filters
+    // Apply piece sidebar filters with logic mode
     const f = pieceFilters;
-    if (f.category.size > 0) filtered = filtered.filter((p) => f.category.has(p.category));
-    if (f.name.size > 0) filtered = filtered.filter((p) => f.name.has(p.name));
-    if (f.store_category.size > 0) filtered = filtered.filter((p) => p.store_category && f.store_category.has(p.store_category));
-    if (f.size.size > 0) filtered = filtered.filter((p) => f.size.has(p.size));
-    if (f.specification.size > 0) filtered = filtered.filter((p) => f.specification.has(p.specification));
-    if (f.installation_instructions.size > 0) filtered = filtered.filter((p) => f.installation_instructions.has(p.installation_instructions));
-    if (f.kit_only.size > 0) {
+    const activeChecks: ((p: typeof filtered[0]) => boolean)[] = [];
+    if (f.category.size > 0) activeChecks.push((p) => f.category.has(p.category));
+    if (f.name.size > 0) activeChecks.push((p) => f.name.has(p.name));
+    if (f.store_category.size > 0) activeChecks.push((p) => !!p.store_category && f.store_category.has(p.store_category));
+    if (f.size.size > 0) activeChecks.push((p) => f.size.has(p.size));
+    if (f.specification.size > 0) activeChecks.push((p) => f.specification.has(p.specification));
+    if (f.installation_instructions.size > 0) activeChecks.push((p) => f.installation_instructions.has(p.installation_instructions));
+    if (f.kit_only.size > 0) activeChecks.push((p) => f.kit_only.has(p.kit_only ? "Sim" : "Não"));
+    if (f.is_mockup.size > 0) activeChecks.push((p) => f.is_mockup.has(p.is_mockup ? "Sim" : "Não"));
+
+    if (activeChecks.length > 0) {
       filtered = filtered.filter((p) => {
-        const val = p.kit_only ? "Sim" : "Não";
-        return f.kit_only.has(val);
-      });
-    }
-    if (f.is_mockup.size > 0) {
-      filtered = filtered.filter((p) => {
-        const val = p.is_mockup ? "Sim" : "Não";
-        return f.is_mockup.has(val);
+        const results = activeChecks.map((check) => check(p));
+        if (filterLogicMode === "and" || filterLogicMode === "and_or") {
+          return results.every(Boolean);
+        } else {
+          return results.some(Boolean);
+        }
       });
     }
 
     return filtered;
-  }, [visiblePieces, storeCategoryFilter, pieceFilters]);
+  }, [visiblePieces, storeCategoryFilter, pieceFilters, filterLogicMode]);
 
   // Kits appear as virtual columns in the matrix
   const matrixKits = kits;
@@ -1535,6 +1548,8 @@ const CampaignDetail = () => {
                   ...(client?.custom_field_4_label ? [{ key: "custom_field_4" as const, label: client.custom_field_4_label }] : []),
                   ...(client?.custom_field_5_label ? [{ key: "custom_field_5" as const, label: client.custom_field_5_label }] : []),
                 ]}
+                filterLogicMode={filterLogicMode}
+                onFilterLogicModeChange={setFilterLogicMode}
               />
 
               {/* Matrix Content */}
