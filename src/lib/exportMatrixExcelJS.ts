@@ -313,6 +313,7 @@ export async function exportMatrixExcelJS(
   palette?: ColorPalette,
   locations: CampaignPieceLocation[] = [],
   subLocations: CampaignPieceSubLocation[] = [],
+  allPieces?: CampaignPiece[],
 ) {
   const wb = new ExcelJS.Workbook();
   wb.creator = "ProduzAI";
@@ -362,7 +363,7 @@ export async function exportMatrixExcelJS(
     if (kpList.length === 0) continue;
 
     const kitItems: MatrixItem[] = kpList.map((kp) => {
-      const piece = pieces.find((p) => p.id === kp.piece_id);
+      const piece = (allPieces || pieces).find((p) => p.id === kp.piece_id);
       return {
         id: kp.id,
         code: piece?.code ?? 0,
