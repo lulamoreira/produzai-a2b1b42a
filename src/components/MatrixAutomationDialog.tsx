@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus, ArrowRight, Check, AlertTriangle, Eye, Save, FolderOpen, Play, Layers } from "lucide-react";
+import { Trash2, Plus, ArrowRight, Check, AlertTriangle, Eye, Save, FolderOpen, Play, Layers, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,21 @@ type PreviewRow = {
   action: OutsideFilterAction;
 };
 
+type FilterOperator = "igual" | "diferente" | "contem" | "nao_contem";
+type FilterCondition = "E" | "OU";
+
+interface AutomationFilter {
+  id: string;
+  campo: string;
+  operador: FilterOperator;
+  valor: string;
+}
+
+interface FilterGroup {
+  filtros: AutomationFilter[];
+  condicoes: FilterCondition[];
+}
+
 /* ─── Props ──────────────────────────────────────────────── */
 
 interface Props {
@@ -57,6 +72,73 @@ interface Props {
   onComplete: () => void;
 }
 
+/* ─── Helpers ────────────────────────────────────────────── */
+
+function createEmptyFilter(): AutomationFilter {
+  return { id: crypto.randomUUID(), campo: "", operador: "igual", valor: "" };
+}
+
+function avaliarFiltro(store: ClientStore, filtro: AutomationFilter): boolean {
+  const valorLoja = String((store as any)[filtro.campo] ?? "").toLowerCase();
+  const valorFiltro = filtro.valor.toLowerCase();
+  switch (filtro.operador) {
+    case "igual": return valorLoja === valorFiltro;
+    case "diferente": return valorLoja !== valorFiltro;
+    case "contem": return valorLoja.includes(valorFiltro);
+    case "nao_contem": return !valorLoja.includes(valorFiltro);
+    default: return false;
+  }
+}
+
+function filtrarLojas(stores: ClientStore[], grupo: FilterGroup): ClientStore[] {
+  const validFilters = grupo.filtros.filter(f => f.campo && f.valor);
+  if (validFilters.length === 0) return stores;
+
+  return stores.filter(store => {
+    const resultados = validFilters.map(f => avaliarFiltro(store, f));
+    let resultado = resultados[0];
+    for (let i = 0; i < grupo.condicoes.length && i < resultados.length - 1; i++) {
+      const op = grupo.condicoes[i];
+      const prox = resultados[i + 1];
+      if (op === "E") {
+        resultado = resultado && prox;
+      } else {
+        resultado = resultado || prox;
+      }
+    }
+    return resultado;
+  });
+}
+
+/** Migrate legacy single-filter template to multi-filter format */
+function migrateTemplate(tpl: any): { filtros: AutomationFilter[]; condicoes: FilterCondition[] } {
+  if (tpl.filter_field === "__multi_v2__") {
+    try {
+      const parsed = JSON.parse(tpl.filter_value);
+      return { filtros: parsed.filtros || [], condicoes: parsed.condicoes || [] };
+    } catch {
+      return { filtros: [createEmptyFilter()], condicoes: [] };
+    }
+  }
+  // Legacy single filter
+  return {
+    filtros: [{
+      id: crypto.randomUUID(),
+      campo: tpl.filter_field,
+      operador: "igual" as FilterOperator,
+      valor: tpl.filter_value,
+    }],
+    condicoes: [],
+  };
+}
+
+const OPERATOR_LABELS: Record<FilterOperator, string> = {
+  igual: "é igual a",
+  diferente: "é diferente de",
+  contem: "contém",
+  nao_contem: "não contém",
+};
+
 /* ─── Component ──────────────────────────────────────────── */
 
 export default function MatrixAutomationDialog({
@@ -69,10 +151,12 @@ export default function MatrixAutomationDialog({
   const [mainTab, setMainTab] = useState<string>("new");
   const [step, setStep] = useState<1 | 2>(1);
 
-  // Step 1 state
-  const [selectedField, setSelectedField] = useState<string>("");
-  const [fieldValues, setFieldValues] = useState<string[]>([]);
-  const [selectedValue, setSelectedValue] = useState<string>("");
+  // Multi-filter state
+  const [filterGroup, setFilterGroup] = useState<FilterGroup>({
+    filtros: [createEmptyFilter()],
+    condicoes: [],
+  });
+
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [itemSearch, setItemSearch] = useState("");
 
@@ -80,6 +164,9 @@ export default function MatrixAutomationDialog({
   const [preview, setPreview] = useState<PreviewRow[]>([]);
   const [outsideActions, setOutsideActions] = useState<Record<string, OutsideFilterAction>>({});
   const [executing, setExecuting] = useState(false);
+
+  // Overwrite dialog state
+  const [overwriteDialog, setOverwriteDialog] = useState<{ open: boolean; count: number }>({ open: false, count: 0 });
 
   // Save template state
   const [saveName, setSaveName] = useState("");
@@ -101,9 +188,7 @@ export default function MatrixAutomationDialog({
     if (open) {
       setMainTab("new");
       setStep(1);
-      setSelectedField("");
-      setFieldValues([]);
-      setSelectedValue("");
+      setFilterGroup({ filtros: [createEmptyFilter()], condicoes: [] });
       setSelectedItems([]);
       setItemSearch("");
       setPreview([]);
@@ -112,6 +197,7 @@ export default function MatrixAutomationDialog({
       setSaveName("");
       setNewGroupName("");
       setAddingTemplateToGroup(null);
+      setOverwriteDialog({ open: false, count: 0 });
     }
   }, [open]);
 
@@ -132,15 +218,51 @@ export default function MatrixAutomationDialog({
     return [...standard, ...custom];
   }, [customFieldLabels, t]);
 
-  // Load unique values when field changes
-  useEffect(() => {
-    if (!selectedField || !open) { setFieldValues([]); return; }
-    const values = [...new Set(
-      stores.map(s => String((s as any)[selectedField] ?? "")).filter(Boolean)
+  // Get unique values for a given field
+  const getFieldValues = useCallback((campo: string): string[] => {
+    if (!campo) return [];
+    return [...new Set(
+      stores.map(s => String((s as any)[campo] ?? "")).filter(Boolean)
     )].sort();
-    setFieldValues(values);
-    setSelectedValue("");
-  }, [selectedField, stores, open]);
+  }, [stores]);
+
+  // Filtered stores (real-time count)
+  const matchingStores = useMemo(() => filtrarLojas(stores, filterGroup), [stores, filterGroup]);
+
+  // Filter update helpers
+  const updateFilter = (index: number, patch: Partial<AutomationFilter>) => {
+    setFilterGroup(prev => ({
+      ...prev,
+      filtros: prev.filtros.map((f, i) => i === index ? { ...f, ...patch } : f),
+    }));
+  };
+
+  const removeFilter = (index: number) => {
+    setFilterGroup(prev => {
+      const newFiltros = prev.filtros.filter((_, i) => i !== index);
+      const newCondicoes = [...prev.condicoes];
+      if (index === 0) {
+        newCondicoes.splice(0, 1);
+      } else {
+        newCondicoes.splice(index - 1, 1);
+      }
+      return { filtros: newFiltros, condicoes: newCondicoes };
+    });
+  };
+
+  const addFilter = () => {
+    setFilterGroup(prev => ({
+      filtros: [...prev.filtros, createEmptyFilter()],
+      condicoes: [...prev.condicoes, "E"],
+    }));
+  };
+
+  const updateCondition = (index: number, value: FilterCondition) => {
+    setFilterGroup(prev => ({
+      ...prev,
+      condicoes: prev.condicoes.map((c, i) => i === index ? value : c),
+    }));
+  };
 
   // Available items for search
   const availableItems = useMemo(() => {
@@ -197,42 +319,75 @@ export default function MatrixAutomationDialog({
     return result;
   }, [kitPieces, pieces]);
 
-  // Validate and go to step 2
-  const handlePreview = async () => {
-    if (!selectedField || !selectedValue || selectedItems.length === 0) {
+  // Check for overwrite before preview
+  const handlePreviewClick = async () => {
+    const validFilters = filterGroup.filtros.filter(f => f.campo && f.valor);
+    if (validFilters.length === 0 || selectedItems.length === 0) {
       toast.error(t("automation.fillAllFields"));
       return;
     }
 
-    const isCustomField = selectedField.startsWith("custom_field_");
-    if (isCustomField) {
-      const { data: clientData } = await supabase.from("clients").select("*").eq("id", clientId).single();
-      if (!clientData) { toast.error(t("automation.clientNotFound")); return; }
-      const fieldDef = customFieldLabels.find(f => f.key === selectedField);
-      if (!fieldDef) { toast.error(t("automation.fieldRemoved", { field: selectedField })); return; }
-      const labelKey = `custom_field_${fieldDef.index}_label` as keyof typeof clientData;
-      if (!clientData[labelKey]) {
-        toast.error(t("automation.fieldRemoved", { field: fieldDef.label }));
-        setSelectedField("");
-        return;
+    // Check for custom field validity
+    for (const filtro of validFilters) {
+      if (filtro.campo.startsWith("custom_field_")) {
+        const { data: clientData } = await supabase.from("clients").select("*").eq("id", clientId).single();
+        if (!clientData) { toast.error(t("automation.clientNotFound")); return; }
+        const fieldDef = customFieldLabels.find(f => f.key === filtro.campo);
+        if (!fieldDef) { toast.error(t("automation.fieldRemoved", { field: filtro.campo })); return; }
+        const labelKey = `custom_field_${fieldDef.index}_label` as keyof typeof clientData;
+        if (!clientData[labelKey]) {
+          toast.error(t("automation.fieldRemoved", { field: fieldDef.label }));
+          return;
+        }
       }
     }
 
+    // Check overwrite
+    const filtered = filtrarLojas(stores, filterGroup);
     const resolvedPieces = resolveItemsToPieces(selectedItems);
-    const matchingStores = stores.filter(s => String((s as any)[selectedField] ?? "") === selectedValue);
-    const matchingIds = new Set(matchingStores.map(s => s.id));
-    const nonMatchingStores = stores.filter(s => !matchingIds.has(s.id));
+    let overwriteCount = 0;
+    for (const store of filtered) {
+      for (const rp of resolvedPieces) {
+        const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
+        if (currentQty > 0) overwriteCount++;
+      }
+    }
+
+    if (overwriteCount > 0) {
+      setOverwriteDialog({ open: true, count: overwriteCount });
+      return;
+    }
+
+    executePreview(false);
+  };
+
+  const executePreview = (sobrescrever: boolean) => {
+    const filtered = filtrarLojas(stores, filterGroup);
+    const filteredIds = new Set(filtered.map(s => s.id));
+    const nonMatchingStores = stores.filter(s => !filteredIds.has(s.id));
+    const resolvedPieces = resolveItemsToPieces(selectedItems);
 
     const rows: PreviewRow[] = [];
     const actions: Record<string, OutsideFilterAction> = {};
 
-    for (const store of matchingStores) {
+    for (const store of filtered) {
       for (const rp of resolvedPieces) {
-        rows.push({
-          storeId: store.id, storeName: store.name, group: "update",
-          pieceId: rp.pieceId, pieceName: rp.pieceName,
-          currentQty: qtyMap[`${store.id}-${rp.pieceId}`] || 0, newQty: rp.quantity, action: "keep",
-        });
+        const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
+        // If not overwriting and already has value, skip (mark as "outside" to keep)
+        if (!sobrescrever && currentQty > 0) {
+          // Still show in update group but with current qty preserved
+          rows.push({
+            storeId: store.id, storeName: store.name, group: "update",
+            pieceId: rp.pieceId, pieceName: rp.pieceName,
+            currentQty, newQty: currentQty, action: "keep",
+          });
+        } else {
+          rows.push({
+            storeId: store.id, storeName: store.name, group: "update",
+            pieceId: rp.pieceId, pieceName: rp.pieceName,
+            currentQty, newQty: rp.quantity, action: "keep",
+          });
+        }
       }
     }
 
@@ -275,19 +430,19 @@ export default function MatrixAutomationDialog({
     setOutsideActions(updated);
   };
 
-  // Execute automation (reusable for single + group)
-  const executeAutomation = async (
-    filterField: string, filterValue: string, items: SelectedItem[],
+  // Execute automation (reusable for single + group) — now supports multi-filter
+  const executeAutomationMulti = async (
+    fg: FilterGroup, items: SelectedItem[],
   ): Promise<{ updated: number; kept: number; zeroed: number }> => {
     const resolvedPieces = resolveItemsToPieces(items);
-    const matchingStores = stores.filter(s => String((s as any)[filterField] ?? "") === filterValue);
-    const matchingIds = new Set(matchingStores.map(s => s.id));
+    const matching = filtrarLojas(stores, fg);
+    const matchingIds = new Set(matching.map(s => s.id));
     const nonMatchingStores = stores.filter(s => !matchingIds.has(s.id));
 
     const upserts: { campaign_id: string; store_id: string; piece_id: string; quantity: number }[] = [];
     const deletes: { storeId: string; pieceId: string }[] = [];
 
-    for (const store of matchingStores) {
+    for (const store of matching) {
       for (const rp of resolvedPieces) {
         if (rp.quantity > 0) {
           upserts.push({ campaign_id: campaignId, store_id: store.id, piece_id: rp.pieceId, quantity: rp.quantity });
@@ -297,14 +452,11 @@ export default function MatrixAutomationDialog({
       }
     }
 
-    let zeroCount = 0;
     let keepCount = 0;
     for (const store of nonMatchingStores) {
       for (const rp of resolvedPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
-        if (currentQty > 0) {
-          keepCount++;
-        }
+        if (currentQty > 0) keepCount++;
       }
     }
 
@@ -320,27 +472,27 @@ export default function MatrixAutomationDialog({
         .eq("campaign_id", campaignId).eq("store_id", del.storeId).eq("piece_id", del.pieceId);
     }
 
-    return { updated: matchingStores.length, kept: keepCount, zeroed: zeroCount };
+    return { updated: matching.length, kept: keepCount, zeroed: 0 };
   };
 
   // Step 2: Execute with preview-based actions
   const handleExecute = async () => {
     setExecuting(true);
     try {
-      const isCustomField = selectedField.startsWith("custom_field_");
-      if (isCustomField) {
-        const { data: clientData } = await supabase.from("clients").select("*").eq("id", clientId).single();
-        const fieldDef = customFieldLabels.find(f => f.key === selectedField);
-        if (!clientData || !fieldDef) {
-          toast.error(t("automation.fieldRemoved", { field: selectedField }));
-          setExecuting(false);
-          return;
-        }
-        const labelKey = `custom_field_${fieldDef.index}_label` as keyof typeof clientData;
-        if (!clientData[labelKey]) {
-          toast.error(t("automation.fieldRemoved", { field: fieldDef.label }));
-          setExecuting(false); setStep(1); setSelectedField("");
-          return;
+      // Validate custom fields
+      for (const filtro of filterGroup.filtros) {
+        if (filtro.campo.startsWith("custom_field_")) {
+          const { data: clientData } = await supabase.from("clients").select("*").eq("id", clientId).single();
+          const fieldDef = customFieldLabels.find(f => f.key === filtro.campo);
+          if (!clientData || !fieldDef) {
+            toast.error(t("automation.fieldRemoved", { field: filtro.campo }));
+            setExecuting(false); return;
+          }
+          const labelKey = `custom_field_${fieldDef.index}_label` as keyof typeof clientData;
+          if (!clientData[labelKey]) {
+            toast.error(t("automation.fieldRemoved", { field: fieldDef.label }));
+            setExecuting(false); setStep(1); return;
+          }
         }
       }
 
@@ -389,14 +541,14 @@ export default function MatrixAutomationDialog({
     }
   };
 
-  // Save current config as template
+  // Save current config as template (multi-filter format)
   const handleSaveTemplate = async () => {
     if (!saveName.trim()) return;
     try {
       await saveTemplate.mutateAsync({
         name: saveName.trim(),
-        filter_field: selectedField,
-        filter_value: selectedValue,
+        filter_field: "__multi_v2__",
+        filter_value: JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes }),
         items: selectedItems,
         outside_action: "keep",
       });
@@ -410,19 +562,11 @@ export default function MatrixAutomationDialog({
 
   // Load template into form
   const loadTemplate = (tpl: typeof templates[0]) => {
-    setSelectedField(tpl.filter_field);
-    setSelectedValue(tpl.filter_value);
+    const migrated = migrateTemplate(tpl);
+    setFilterGroup(migrated);
     setSelectedItems(tpl.items);
     setMainTab("new");
     setStep(1);
-    // Trigger field values reload
-    setTimeout(() => {
-      const values = [...new Set(
-        stores.map(s => String((s as any)[tpl.filter_field] ?? "")).filter(Boolean)
-      )].sort();
-      setFieldValues(values);
-      setSelectedValue(tpl.filter_value);
-    }, 50);
   };
 
   // Run group
@@ -432,12 +576,13 @@ export default function MatrixAutomationDialog({
       const items = groupItems
         .filter(gi => gi.group_id === groupId && gi.enabled)
         .sort((a, b) => a.display_order - b.display_order);
-      
+
       let totalUpdated = 0;
       for (const gi of items) {
         const tpl = templates.find(t => t.id === gi.template_id);
         if (!tpl) continue;
-        const result = await executeAutomation(tpl.filter_field, tpl.filter_value, tpl.items);
+        const migrated = migrateTemplate(tpl);
+        const result = await executeAutomationMulti(migrated, tpl.items);
         totalUpdated += result.updated;
       }
 
@@ -452,6 +597,28 @@ export default function MatrixAutomationDialog({
   };
 
   const getFieldLabel = (key: string) => allFilterFields.find(f => f.key === key)?.label || key;
+
+  const hasValidFilters = filterGroup.filtros.some(f => f.campo && f.valor);
+
+  // Template display helper
+  const getTemplateFilterSummary = (tpl: typeof templates[0]): string => {
+    if (tpl.filter_field === "__multi_v2__") {
+      try {
+        const parsed = JSON.parse(tpl.filter_value);
+        const filtros = parsed.filtros || [];
+        const condicoes = parsed.condicoes || [];
+        return filtros.map((f: AutomationFilter, i: number) => {
+          const label = getFieldLabel(f.campo);
+          const op = OPERATOR_LABELS[f.operador] || f.operador;
+          const prefix = i > 0 ? ` ${condicoes[i - 1] || "E"} ` : "";
+          return `${prefix}${label} ${op} "${f.valor}"`;
+        }).join("");
+      } catch {
+        return "Filtro inválido";
+      }
+    }
+    return `${getFieldLabel(tpl.filter_field)} = ${tpl.filter_value}`;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -480,36 +647,135 @@ export default function MatrixAutomationDialog({
 
             {/* ──── TAB: Nova automação ──── */}
             <TabsContent value="new" className="space-y-4 mt-3">
-              {/* Filter field */}
+              {/* Multi-filter section */}
               <div>
-                <Label className="text-sm font-medium">{t("automation.filterField")}</Label>
-                <Select value={selectedField} onValueChange={setSelectedField}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder={t("automation.selectField")} /></SelectTrigger>
-                  <SelectContent>
-                    {allFilterFields.map(f => (
-                      <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <Label className="text-sm font-semibold mb-2 block">Filtros de Lojas</Label>
 
-              {selectedField && (
-                <div>
-                  <Label className="text-sm font-medium">{t("automation.filterValue")}</Label>
-                  {fieldValues.length > 0 ? (
-                    <Select value={selectedValue} onValueChange={setSelectedValue}>
-                      <SelectTrigger className="mt-1"><SelectValue placeholder={t("automation.selectValue")} /></SelectTrigger>
-                      <SelectContent>
-                        {fieldValues.map(v => (
-                          <SelectItem key={v} value={v}>{v}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <p className="text-sm text-muted-foreground mt-1">{t("automation.noValues")}</p>
+                {filterGroup.filtros.map((filtro, index) => {
+                  const fieldValues = getFieldValues(filtro.campo);
+                  return (
+                    <div key={filtro.id} className="flex flex-col">
+                      {/* Condition operator between filters */}
+                      {index > 0 && (
+                        <div className="flex items-center gap-2 my-2">
+                          <div className="flex-1 h-px bg-border" />
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              className={`px-3 py-0.5 rounded-full text-[11px] font-bold tracking-wider border transition-all ${
+                                filterGroup.condicoes[index - 1] === "E"
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-primary"
+                              }`}
+                              onClick={() => updateCondition(index - 1, "E")}
+                            >
+                              E
+                            </button>
+                            <button
+                              type="button"
+                              className={`px-3 py-0.5 rounded-full text-[11px] font-bold tracking-wider border transition-all ${
+                                filterGroup.condicoes[index - 1] === "OU"
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-primary"
+                              }`}
+                              onClick={() => updateCondition(index - 1, "OU")}
+                            >
+                              OU
+                            </button>
+                          </div>
+                          <div className="flex-1 h-px bg-border" />
+                        </div>
+                      )}
+
+                      {/* Filter card */}
+                      <div className="flex items-start gap-2 p-3 bg-muted/30 border rounded-lg">
+                        <div className="flex-1 space-y-2">
+                          {/* Campo */}
+                          <Select value={filtro.campo} onValueChange={(v) => updateFilter(index, { campo: v, valor: "" })}>
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="Selecione o campo..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {allFilterFields.map(f => (
+                                <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          {/* Operador */}
+                          <Select
+                            value={filtro.operador}
+                            onValueChange={(v) => updateFilter(index, { operador: v as FilterOperator })}
+                            disabled={!filtro.campo}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(Object.entries(OPERATOR_LABELS) as [FilterOperator, string][]).map(([k, label]) => (
+                                <SelectItem key={k} value={k}>{label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          {/* Valor */}
+                          {filtro.campo && (
+                            fieldValues.length > 0 ? (
+                              <Select value={filtro.valor} onValueChange={(v) => updateFilter(index, { valor: v })}>
+                                <SelectTrigger className="h-8 text-xs">
+                                  <SelectValue placeholder="Selecione o valor..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {fieldValues.map(v => (
+                                    <SelectItem key={v} value={v}>{v}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">{t("automation.noValues")}</p>
+                            )
+                          )}
+                        </div>
+
+                        {/* Remove button */}
+                        {filterGroup.filtros.length > 1 && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => removeFilter(index)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Add filter button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-2 text-xs border-dashed"
+                  onClick={addFilter}
+                >
+                  <Plus className="w-3 h-3 mr-1" /> Adicionar filtro
+                </Button>
+
+                {/* Matching stores counter */}
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg mt-2">
+                  <span className="text-lg font-bold text-primary">{matchingStores.length}</span>
+                  <span className="text-xs text-muted-foreground">
+                    de {stores.length} lojas correspondem a estes filtros
+                  </span>
+                  {hasValidFilters && matchingStores.length === 0 && (
+                    <span className="text-xs text-amber-600 dark:text-amber-400 ml-2">
+                      ⚠ Nenhuma loja encontrada
+                    </span>
                   )}
                 </div>
-              )}
+              </div>
 
               {/* Items selection */}
               <div>
@@ -570,12 +836,12 @@ export default function MatrixAutomationDialog({
               <div className="flex gap-2">
                 <Button
                   className="flex-1"
-                  disabled={!selectedField || !selectedValue || selectedItems.length === 0}
-                  onClick={handlePreview}
+                  disabled={!hasValidFilters || selectedItems.length === 0}
+                  onClick={handlePreviewClick}
                 >
                   <Eye className="w-4 h-4 mr-1" /> {t("automation.preview")}
                 </Button>
-                {selectedField && selectedValue && selectedItems.length > 0 && (
+                {hasValidFilters && selectedItems.length > 0 && (
                   <>
                     {!showSaveInput ? (
                       <Button variant="outline" size="icon" onClick={() => setShowSaveInput(true)} title={t("automation.saveTemplate")}>
@@ -610,7 +876,7 @@ export default function MatrixAutomationDialog({
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{tpl.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {getFieldLabel(tpl.filter_field)} = <span className="font-mono">{tpl.filter_value}</span>
+                        {getTemplateFilterSummary(tpl)}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {tpl.items.map(it => (
@@ -725,7 +991,7 @@ export default function MatrixAutomationDialog({
                                   {tpl.name}
                                 </span>
                                 <Badge variant="outline" className="text-[10px]">
-                                  {getFieldLabel(tpl.filter_field)} = {tpl.filter_value}
+                                  {getTemplateFilterSummary(tpl)}
                                 </Badge>
                                 <Button
                                   size="icon" variant="ghost" className="h-6 w-6"
@@ -758,7 +1024,7 @@ export default function MatrixAutomationDialog({
                                 <Plus className="w-3 h-3" />
                                 <span className="truncate">{tpl.name}</span>
                                 <Badge variant="outline" className="text-[10px] ml-auto">
-                                  {getFieldLabel(tpl.filter_field)} = {tpl.filter_value}
+                                  {getTemplateFilterSummary(tpl)}
                                 </Badge>
                               </button>
                             ))}
@@ -897,6 +1163,70 @@ export default function MatrixAutomationDialog({
           </div>
         )}
       </DialogContent>
+
+      {/* ──── Overwrite confirmation dialog ──── */}
+      <Dialog open={overwriteDialog.open} onOpenChange={(o) => setOverwriteDialog({ ...overwriteDialog, open: o })}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Valores existentes encontrados</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg text-amber-700 dark:text-amber-400 text-sm">
+              <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+              <p>
+                <strong>{overwriteDialog.count} célula(s)</strong> nas lojas selecionadas já possuem valores preenchidos para as peças escolhidas.
+              </p>
+            </div>
+
+            <p className="text-sm font-medium">O que deseja fazer com os valores existentes?</p>
+
+            <div className="space-y-2">
+              <button
+                className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-muted/50 transition-all text-left"
+                onClick={() => {
+                  setOverwriteDialog({ open: false, count: 0 });
+                  executePreview(false);
+                }}
+              >
+                <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Shield className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Manter valores existentes</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Apenas preenche células que estão vazias. Não altera o que já foi preenchido.
+                  </p>
+                </div>
+              </button>
+
+              <button
+                className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-destructive/50 hover:bg-destructive/5 transition-all text-left"
+                onClick={() => {
+                  setOverwriteDialog({ open: false, count: 0 });
+                  executePreview(true);
+                }}
+              >
+                <div className="w-8 h-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
+                  <Trash2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Apagar e substituir tudo</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Substitui todos os valores existentes pelos novos definidos nesta automação.
+                  </p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOverwriteDialog({ open: false, count: 0 })}>
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
