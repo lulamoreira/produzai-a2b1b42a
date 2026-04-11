@@ -32,14 +32,14 @@ interface NavItem {
 }
 
 const CAMPAIGN_MODULE_KEYS = [
-  { key: "stores", tKey: "modules.stores", icon: Store, color: "#6366f1" },
-  { key: "matrix", tKey: "modules.matrix", icon: Grid3X3, color: "#8b5cf6" },
-  { key: "pieces", tKey: "modules.pieces", icon: LayoutList, color: "#3b82f6" },
-  { key: "occurrences", tKey: "modules.occurrences", icon: AlertTriangle, color: "#ef4444" },
-  { key: "scheduling", tKey: "modules.scheduling", icon: CalendarDays, color: "#22c55e" },
-  { key: "installations", tKey: "modules.installations", icon: Camera, color: "#f97316" },
-  { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#14b8a6" },
-  { key: "chat", tKey: "modules.chat", icon: MessageSquare, color: "#06b6d4" },
+  { key: "stores", tKey: "modules.stores", icon: Store, color: "#6B4F2E" },
+  { key: "matrix", tKey: "modules.matrix", icon: Grid3X3, color: "#8C6F4E" },
+  { key: "pieces", tKey: "modules.pieces", icon: LayoutList, color: "#A07850" },
+  { key: "occurrences", tKey: "modules.occurrences", icon: AlertTriangle, color: "#7A3B2E" },
+  { key: "scheduling", tKey: "modules.scheduling", icon: CalendarDays, color: "#5C6B3F" },
+  { key: "installations", tKey: "modules.installations", icon: Camera, color: "#7B5E3A" },
+  { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#4A5568" },
+  { key: "chat", tKey: "modules.chat", icon: MessageSquare, color: "#5A4A3A" },
 ];
 
 export default function AppSidebar() {
