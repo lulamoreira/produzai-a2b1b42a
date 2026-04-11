@@ -966,7 +966,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       );
                     })()}
                     {isReschedule && <span className="badge-base badge-warning">REM</span>}
-                    {isCardLocked && <span className="badge-base badge-danger"><Lock className="w-3 h-3" /> BLOQ</span>}
+                    {isCardLocked && <span className="badge-base badge-neutral"><Lock className="w-3 h-3" /> BLOQ</span>}
                     {/* Chat badge */}
                     {(chatCounts?.unreadPerStore[store.id] || 0) > 0 && (
                       <span className="badge-base badge-danger">
