@@ -196,16 +196,19 @@ const PublicOccurrenceDetail = () => {
   const statusLabel = statusObj?.label || occurrence.status || "Pendente";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+    <div className="min-h-screen" style={{ background: "var(--bg-page, #F5F2ED)" }}>
       {/* Header */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-sm">
+      <header className="border-b bg-card/80 backdrop-blur-sm" style={{ borderColor: "var(--border-subtle)" }}>
         <div className="max-w-2xl mx-auto px-4 py-5 text-center">
-          <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-3 shadow-glow-primary">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
+            style={{ background: "#7A3B2E", width: 64, height: 64, borderRadius: 16 }}
+          >
             <AlertTriangle className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-foreground">Detalhes da Ocorrência</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 600, color: "var(--text-primary)" }}>Detalhes da Ocorrência</h1>
           {clientName && campaign && (
-            <p className="text-xs text-muted-foreground mt-1">{clientName} · {campaign.name}</p>
+            <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>{clientName} · {campaign.name}</p>
           )}
         </div>
       </header>
@@ -213,31 +216,30 @@ const PublicOccurrenceDetail = () => {
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
         {/* Status Banner */}
         <div
-          className="rounded-2xl p-4 flex items-center gap-3 border"
-          style={{ backgroundColor: `${statusColor}12`, borderColor: `${statusColor}30` }}
+          className="flex items-center gap-2.5 rounded-[10px] p-3"
+          style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-card)", borderLeft: `4px solid ${statusColor}` }}
         >
           <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg"
-            style={{ backgroundColor: statusColor }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: `${statusColor}18` }}
           >
-            <CircleDot className="w-5 h-5 text-white" />
+            <CircleDot className="w-4 h-4" style={{ color: statusColor }} />
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Status atual</p>
-            <p className="text-lg font-bold" style={{ color: statusColor }}>{statusLabel}</p>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", color: "var(--text-muted)", textTransform: "uppercase" }}>Status atual</p>
+            <p style={{ fontSize: 15, fontWeight: 600, color: statusColor }}>{statusLabel}</p>
           </div>
         </div>
 
-        {/* Info cards grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* Store */}
-          <div className="bg-card border border-border rounded-xl p-4 flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Store className="w-5 h-5 text-primary" />
+          <div className="flex items-start gap-2.5 rounded-[10px] p-3" style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-card)" }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-100)" }}>
+              <Store className="w-[15px] h-[15px]" style={{ color: "var(--brand-700)" }} />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Reportado por</p>
-              <p className="text-sm font-semibold text-foreground truncate">
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 3 }}>Reportado por</p>
+              <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }} className="truncate">
                 {(occurrence as any).reporter_type === "agency"
                   ? ((campaign as any)?.clients?.agencies?.name || "Agência")
                   : (occurrence as any).reporter_type === "fornecedor"
@@ -246,54 +248,52 @@ const PublicOccurrenceDetail = () => {
                       ? ((campaign as any)?.clients?.name || "Cliente")
                       : (store?.nickname || store?.name || "—")}
               </p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Loja</p>
-              <p className="text-sm font-semibold text-foreground truncate">
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginTop: 8, marginBottom: 3 }}>Loja</p>
+              <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }} className="truncate">
                 {store?.nickname || store?.name || "—"}
               </p>
             </div>
           </div>
 
           {/* Piece */}
-          <div className="bg-card border border-border rounded-xl p-4 flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-accent/30 flex items-center justify-center flex-shrink-0">
+          <div className="flex items-start gap-2.5 rounded-[10px] p-3" style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-card)" }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: "var(--brand-100)" }}>
               {isGeral ? (
-                <Store className="w-5 h-5 text-accent-foreground" />
+                <Store className="w-[15px] h-[15px]" style={{ color: "var(--brand-700)" }} />
               ) : piece?.image_url ? (
-                <img src={piece.image_url} alt={piece.name} className="w-10 h-10 rounded-xl object-cover" />
+                <img src={piece.image_url} alt={piece.name} className="w-8 h-8 object-cover" />
               ) : (
-                <Puzzle className="w-5 h-5 text-accent-foreground" />
+                <Puzzle className="w-[15px] h-[15px]" style={{ color: "var(--brand-700)" }} />
               )}
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Peça</p>
-              <p className="text-sm font-semibold text-foreground truncate">
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 3 }}>Peça</p>
+              <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }} className="truncate">
                 {isGeral ? "GERAL - NA LOJA TODA" : (piece?.name || "—")}
               </p>
-              {!isGeral && piece?.code && <p className="text-[11px] text-muted-foreground">Código: {piece.code}</p>}
+              {!isGeral && piece?.code && <p style={{ fontSize: 11, color: "var(--text-muted)" }}>Código: {piece.code}</p>}
             </div>
           </div>
 
           {/* Motive */}
-          <div className="bg-card border border-border rounded-xl p-4 flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-warning/15 flex items-center justify-center flex-shrink-0">
-              <Tag className="w-5 h-5 text-warning" />
+          <div className="flex items-start gap-2.5 rounded-[10px] p-3" style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-card)" }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-100)" }}>
+              <Tag className="w-[15px] h-[15px]" style={{ color: "var(--brand-700)" }} />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Motivo</p>
-              <p className="text-sm font-semibold text-foreground">{motive?.description || "—"}</p>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 3 }}>Motivo</p>
+              <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>{motive?.description || "—"}</p>
             </div>
           </div>
 
           {/* Date */}
-          <div className="bg-card border border-border rounded-xl p-4 flex items-start gap-3">
-            <div className="w-10 h-10 rounded-xl bg-info/15 flex items-center justify-center flex-shrink-0">
-              <Calendar className="w-5 h-5 text-info" />
+          <div className="flex items-start gap-2.5 rounded-[10px] p-3" style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-card)" }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-100)" }}>
+              <Calendar className="w-[15px] h-[15px]" style={{ color: "var(--brand-700)" }} />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Data</p>
-              <p className="text-sm font-semibold text-foreground">
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 3 }}>Data</p>
+              <p style={{ fontSize: 13, fontWeight: 500, color: "var(--text-primary)" }}>
                 {occurrence.created_at ? format(new Date(occurrence.created_at), "dd/MM/yyyy 'às' HH:mm") : "—"}
               </p>
             </div>
@@ -302,12 +302,14 @@ const PublicOccurrenceDetail = () => {
 
         {/* Description */}
         {occurrence.description && (
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="rounded-[10px] p-3" style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-card)" }}>
             <div className="flex items-center gap-2 mb-2">
-              <MessageSquare className="w-4 h-4 text-primary" />
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">Descrição</p>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-100)" }}>
+                <MessageSquare className="w-[15px] h-[15px]" style={{ color: "var(--brand-700)" }} />
+              </div>
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)" }}>Descrição</p>
             </div>
-            <p className="text-sm text-foreground leading-relaxed">{occurrence.description}</p>
+            <p style={{ fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6 }}>{occurrence.description}</p>
           </div>
         )}
 
@@ -337,10 +339,9 @@ const PublicOccurrenceDetail = () => {
 
         {/* Photos */}
         {photos.length > 0 && (
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="rounded-[10px] p-3" style={{ background: "var(--bg-surface)", boxShadow: "var(--shadow-card)" }}>
             <div className="flex items-center gap-2 mb-3">
-              <Camera className="w-4 h-4 text-primary" />
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wide font-medium">
+              <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--text-muted)" }}>
                 Fotos ({photos.length})
               </p>
             </div>
@@ -364,13 +365,17 @@ const PublicOccurrenceDetail = () => {
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-center gap-3 pt-4 pb-2 flex-wrap">
+        <div
+          className="flex items-center justify-center gap-2 pt-4 pb-2 flex-wrap"
+          style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 16 }}
+        >
           {occurrence.reporter_email && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
+            <button
+              className="inline-flex items-center gap-1.5 rounded-lg text-[13px] font-medium transition-all"
+              style={{
+                padding: "8px 14px", border: "1px solid var(--border-default)",
+                background: "var(--bg-surface)", color: "var(--text-secondary)", cursor: "pointer",
+              }}
               disabled={sendTrackingEmail.isPending || emailSent}
               onClick={() => {
                 setSelectedCcEmails([]);
@@ -380,12 +385,14 @@ const PublicOccurrenceDetail = () => {
             >
               <Mail className="w-4 h-4" />
               {emailSent ? "Email Enviado ✓" : "Enviar por Email"}
-            </Button>
+            </button>
           )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
+          <button
+            className="inline-flex items-center gap-1.5 rounded-lg text-[13px] font-medium transition-all"
+            style={{
+              padding: "8px 14px", border: "1px solid var(--border-default)",
+              background: "var(--bg-surface)", color: "var(--text-secondary)", cursor: "pointer",
+            }}
             onClick={() => {
               navigator.clipboard.writeText(window.location.href);
               toast.success("Link copiado!");
@@ -393,31 +400,20 @@ const PublicOccurrenceDetail = () => {
           >
             <Link2 className="w-4 h-4" />
             Copiar Link
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            asChild
+          </button>
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(`Acompanhe a ocorrência: ${window.location.href}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg text-[13px] font-medium no-underline transition-all"
+            style={{
+              padding: "8px 14px", border: "1px solid rgba(22, 163, 74, 0.3)",
+              background: "var(--bg-surface)", color: "#16A34A", cursor: "pointer",
+            }}
           >
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(`Acompanhe a ocorrência: ${window.location.href}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.359 0-4.542-.816-6.26-2.18l-.438-.36-3.172 1.063 1.063-3.172-.36-.438A9.953 9.953 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
-              WhatsApp
-            </a>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2 text-muted-foreground"
-            onClick={() => window.close()}
-          >
-            <X className="w-4 h-4" />
-            Fechar
-          </Button>
+            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.943 11.943 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.359 0-4.542-.816-6.26-2.18l-.438-.36-3.172 1.063 1.063-3.172-.36-.438A9.953 9.953 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+            WhatsApp
+          </a>
         </div>
 
         {/* Email Dialog */}
