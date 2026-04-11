@@ -471,7 +471,7 @@ export function KitDetailDialog({
           <p className="text-sm text-muted-foreground text-center py-6">Nenhuma peça neste kit.</p>
         ) : (
           <div className="space-y-2 max-h-[350px] overflow-y-auto">
-            {piecesInKit.map(kp => {
+            {piecesInKit.map((kp, idx) => {
               const p = kp.piece!;
               const isEditing = editingPieceId === p.id;
 
