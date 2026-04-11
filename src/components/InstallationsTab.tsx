@@ -24,6 +24,7 @@ import { useClientPermission } from "@/hooks/useClientPermission";
 import { useLogActivity } from "@/hooks/useActivityLogs";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
 import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
+import InstallerPreviewDialog from "@/components/InstallerPreviewDialog";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [checkinStore, setCheckinStore] = useState<ClientStore | null>(null);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewStore, setPreviewStore] = useState<any>(null);
+  const [previewSchedule, setPreviewSchedule] = useState<any>(null);
+  const [previewTeam, setPreviewTeam] = useState<any>(null);
 
   const toggleCardExpanded = (storeId: string) => {
     setExpandedCards(prev => {
