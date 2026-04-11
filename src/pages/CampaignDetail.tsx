@@ -84,6 +84,8 @@ const CampaignDetail = () => {
     return () => window.removeEventListener("popstate", onPopState);
   }, [isLimitedMode, navigate]);
 
+  const { isAdmin } = useUserRole();
+
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaign } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canEditOccurrences } = useClientPermission(clientId, "can_edit_occurrences");
