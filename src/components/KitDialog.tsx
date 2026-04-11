@@ -471,7 +471,7 @@ export function KitDetailDialog({
           <p className="text-sm text-muted-foreground text-center py-6">Nenhuma peça neste kit.</p>
         ) : (
           <div className="space-y-2 max-h-[350px] overflow-y-auto">
-            {piecesInKit.map(kp => {
+            {piecesInKit.map((kp, idx) => {
               const p = kp.piece!;
               const isEditing = editingPieceId === p.id;
 
@@ -540,7 +540,7 @@ export function KitDetailDialog({
               }
 
               return (
-                <div key={kp.id} className="flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 rounded-lg border border-border bg-muted/30">
+                <div key={kp.id} className={`flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 rounded-lg border border-border ${idx % 2 === 0 ? 'bg-muted/30' : 'bg-accent/40'}`}>
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <PieceThumbnail imageUrl={p.image_url} name={p.name} size="lg" />
                     <div className="flex-1 min-w-0">
