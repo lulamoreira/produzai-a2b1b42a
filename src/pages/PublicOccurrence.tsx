@@ -352,6 +352,21 @@ const PublicOccurrence = () => {
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-6">
+        {/* Progress bar */}
+        <div className="mb-6">
+          <div className="flex justify-between text-[11px] text-muted-foreground mb-1.5">
+            <span>1. Identificação</span>
+            <span>2. Ocorrências</span>
+            <span>3. Envio</span>
+          </div>
+          <Progress
+            value={
+              !reporterValid ? 15 :
+              !allEntriesValid ? 55 : 100
+            }
+            className="h-1.5"
+          />
+        </div>
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* ── Dados do Lojista (compartilhados) ── */}
           <div className="rounded-xl border border-border bg-card p-4 space-y-4">
