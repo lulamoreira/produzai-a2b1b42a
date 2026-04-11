@@ -321,13 +321,13 @@ export default function InstallationsTabV2({ campaignId, campaignName, stores, c
   // KPI items
   const kpiItems = [
     { key: "total", label: t("common.total"), value: metrics.total, primary: true },
-    { key: "completed", label: "✅ Concluídas", value: metrics.completed, color: "text-emerald-600" as const },
-    { key: "pending", label: "⏳ Pendentes", value: metrics.pending, color: "text-amber-600" as const },
+    { key: "completed", label: "✅ Concluídas", value: metrics.completed, color: "text-emerald-600" },
+    { key: "pending", label: "⏳ Pendentes", value: metrics.pending, color: "text-amber-600" },
     { key: "withTeam", label: "🔧 Com equipe", value: metrics.withTeam },
     { key: "withPhotos", label: "📷 Com fotos", value: metrics.withPhotos },
-    { key: "withReschedule", label: "🔄 Remarcação", value: metrics.withReschedule, color: "text-amber-600" as const },
-    { key: "withOccurrence", label: "⚠️ Ocorrências", value: metrics.withOccurrence, color: "text-destructive" as const },
-    ...(showPhotoCheckin ? [{ key: "noCheckin", label: "🔍 Sem Check-in", value: metrics.noCheckin, color: "text-orange-600" as const }] : []),
+    { key: "withReschedule", label: "🔄 Remarcação", value: metrics.withReschedule, color: "text-amber-600" },
+    { key: "withOccurrence", label: "⚠️ Ocorrências", value: metrics.withOccurrence, color: "text-destructive" },
+    ...(showPhotoCheckin ? [{ key: "noCheckin", label: "🔍 Sem Check-in", value: metrics.noCheckin, color: "text-orange-600" }] : []),
   ];
 
   // Filters config
