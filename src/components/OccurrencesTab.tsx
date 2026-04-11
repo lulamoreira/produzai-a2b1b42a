@@ -514,7 +514,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           byPriority[p] = (byPriority[p] || 0) + 1;
         });
         return (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+          <div className="kpi-strip flex-wrap">
             {/* Total */}
             <button
               type="button"
