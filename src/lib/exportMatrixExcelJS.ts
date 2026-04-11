@@ -71,7 +71,7 @@ const allWhiteBorders = { top: whiteBorder, bottom: whiteBorder, left: whiteBord
 const whiteFont: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: true };
 const darkFont: Partial<ExcelJS.Font> = { color: { argb: "FF1E293B" } };
 
-const META_LABELS = ["IMAGEM", "CÓDIGO", "LOCAL", "NOME", "TAMANHO", "ESPECIFICAÇÃO", "INSTRUÇÕES DE INSTALAÇÃO"];
+const META_LABELS = ["IMAGEM", "CÓDIGO", "LOCAL", "SUB-LOCAL", "NOME", "TAMANHO", "ESPECIFICAÇÃO", "INSTRUÇÕES DE INSTALAÇÃO"];
 const IMAGE_ROW_INDEX = 0;
 const META_ROW_COUNT = META_LABELS.length;
 
@@ -83,6 +83,7 @@ type MatrixItem = {
   name: string;
   size: string;
   store_category?: string | null;
+  sub_location?: string | null;
   specification?: string;
   installation_instructions?: string;
   image_url?: string | null;
@@ -129,10 +130,11 @@ async function buildTransposedSheet(
         case 0: values.push(""); break;
         case 1: values.push(p.code); break;
         case 2: values.push(p.store_category || ""); break;
-        case 3: values.push(p.name); break;
-        case 4: values.push(p.size); break;
-        case 5: values.push(p.specification || ""); break;
-        case 6: values.push(p.installation_instructions || ""); break;
+        case 3: values.push(p.sub_location || ""); break;
+        case 4: values.push(p.name); break;
+        case 5: values.push(p.size); break;
+        case 6: values.push(p.specification || ""); break;
+        case 7: values.push(p.installation_instructions || ""); break;
         default: values.push("");
       }
     }
