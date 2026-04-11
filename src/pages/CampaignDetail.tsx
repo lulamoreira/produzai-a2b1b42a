@@ -159,7 +159,6 @@ const CampaignDetail = () => {
 
   // ─── Location management ──────────────────────────────
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
-  const [newLocationName, setNewLocationName] = useState("");
 
   // ─── Kit dialogs ───────────────────────────────────────
   const [createKitDialogOpen, setCreateKitDialogOpen] = useState(false);
