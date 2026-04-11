@@ -550,9 +550,9 @@ export function KitDetailDialog({
             </div>
           </div>
         )}
-        {!canEdit && kit.category && (
+        {!canEdit && effectiveCategory && (
           <div className="text-xs text-muted-foreground px-1">
-            📍 Localização: {kit.category}{kit.sub_location ? ` / ${kit.sub_location}` : ""}
+            📍 Localização: {effectiveCategory}{effectiveSub ? ` / ${effectiveSub}` : ""}
           </div>
         )}
 
