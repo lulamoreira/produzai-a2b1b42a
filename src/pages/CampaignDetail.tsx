@@ -444,6 +444,7 @@ const CampaignDetail = () => {
       id: editPieceForm.id,
       code,
       category: editPieceForm.category,
+      sub_location: editPieceForm.sub_location || null,
       name: editPieceForm.name,
       size,
       store_category: editPieceForm.store_category || null,
