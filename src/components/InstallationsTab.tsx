@@ -324,12 +324,21 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         toast.error(t("installations.errorUpload"));
       }
     }
+    const storeName = stores.find(s => s.id === storeId)?.name || "Loja";
     logActivity.mutate({
       campaign_id: campaignId,
       store_id: storeId,
       module: "installations",
       action: `Enviou ${files.length} foto(s)`,
       details: `Categoria: ${category}`,
+    });
+    logCampaignActivity.mutate({
+      campaign_id: campaignId,
+      store_id: storeId,
+      actor_type: "user",
+      action: "foto_enviada",
+      description: `${files.length} foto(s) enviada(s) para ${storeName}`,
+      metadata: { categoria: category, quantidade: files.length },
     });
     toast.success(`${files.length} foto(s) enviada(s)!`);
   };
