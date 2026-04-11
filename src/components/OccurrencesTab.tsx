@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { PRIORITY_OPTIONS } from "@/types/occurrence";
 import { getDefaultStatusValue } from "@/lib/occurrenceHelpers";
@@ -16,6 +16,7 @@ import type { CampaignKit, CampaignKitPiece, CampaignPiece, ClientStore } from "
 import { useCampaignKitPieces, useCampaignKits, useCampaignPieceLocations } from "@/hooks/useMultiClientData";
 import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
 import OccurrenceCard from "./OccurrenceCard";
+import OccurrenceListView from "./OccurrenceListView";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, QrCode, Download, Calendar, CircleDot, GripVertical, Flag, Lock, LockOpen } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, QrCode, Download, Calendar, CircleDot, GripVertical, Flag, Lock, LockOpen, List, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
@@ -85,6 +86,14 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const canEditReporter = canEditReporterProp ?? isAdminOrMaster;
   const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const [bulkLockLoading, setBulkLockLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "cards">(() => {
+    const saved = localStorage.getItem("produzai_ocorrencias_view");
+    return saved === "cards" ? "cards" : "list";
+  });
+  const handleViewModeChange = useCallback((mode: "list" | "cards") => {
+    setViewMode(mode);
+    localStorage.setItem("produzai_ocorrencias_view", mode);
+  }, []);
   const { data: occurrences = [], isLoading } = useOccurrences(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: kits = [] } = useCampaignKits(campaignId);
@@ -392,6 +401,25 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
       {/* Header actions */}
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-1.5">
+          {/* View toggle */}
+          <div className="flex rounded-md border border-[var(--border-default)] overflow-hidden mr-1">
+            <button
+              type="button"
+              onClick={() => handleViewModeChange("list")}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors"
+              style={viewMode === "list" ? { backgroundColor: "var(--s-info-bg)", color: "var(--s-info)", borderRight: "1px solid var(--s-info)" } : { color: "var(--text-secondary)", borderRight: "1px solid var(--border-default)" }}
+            >
+              <List className="w-3.5 h-3.5" /> Lista
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewModeChange("cards")}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors"
+              style={viewMode === "cards" ? { backgroundColor: "var(--s-info-bg)", color: "var(--s-info)" } : { color: "var(--text-secondary)" }}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" /> Cards
+            </button>
+          </div>
           <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyLink}>
             <Copy className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">Copiar Link para acesso a essa página</span><span className="sm:hidden">Copiar Link</span>
           </Button>
@@ -672,6 +700,33 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           <AlertTriangle className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-muted-foreground text-sm">Nenhuma ocorrência registrada.</p>
         </div>
+      ) : viewMode === "list" ? (
+        <OccurrenceListView
+          occurrences={filteredOccurrences}
+          campaignId={campaignId}
+          stores={stores}
+          pieces={pieces}
+          kits={kits}
+          kitPieces={kitPieces}
+          pieceLocations={pieceLocations}
+          canEdit={canEdit}
+          canDelete={canDelete}
+          canEditReporter={canEditReporter}
+          motives={motives}
+          statuses={statuses}
+          defaultStatus={defaultStatus}
+          photosMap={photosMap}
+          campaignName={campaignInfo?.name || ""}
+          agencyName={agencyName}
+          clientName={clientName}
+          getReporterLabel={getReporterLabel}
+          firstPieceKitLabels={firstPieceKitLabels}
+          whatsappLinkTemplate={whatsappLinkTemplate}
+          whatsappContactTemplate={whatsappContactTemplate}
+          onOpenLightbox={(photos, index) => { setLightboxPhotos(photos); setLightboxIndex(index); setLightboxOpen(true); }}
+          canLockCards={canLockCards}
+          scheduleMap={scheduleMap}
+        />
       ) : (
         <div className="grid gap-3 grid-cols-1 md:grid-cols-2 2xl:grid-cols-3">
           {filteredOccurrences.map((occ) => {
