@@ -324,50 +324,38 @@ export default function AppSidebar() {
   const sidebarContent = (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       {/* Logo area */}
-      <div className="flex items-center gap-2 px-3 h-14 border-b border-sidebar-border flex-shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center flex-shrink-0">
-          <span className="text-sm font-black text-white">P</span>
+      <div className="flex items-center gap-2 px-3 h-14 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-500, #8C6F4E)" }}>
+          <span className="text-sm font-bold text-white">P</span>
         </div>
-        {!collapsed && <span className="text-sm font-bold text-sidebar-foreground tracking-tight truncate">ProduzAI</span>}
+        {!collapsed && <span className="text-[15px] font-semibold tracking-tight truncate" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>ProduzAI</span>}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors flex-shrink-0 hidden lg:block"
+          className="ml-auto transition-colors flex-shrink-0 hidden lg:block"
+          style={{ color: "var(--sidebar-text, #A89880)" }}
         >
           {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
-        <button onClick={() => setMobileOpen(false)} className="ml-auto text-sidebar-foreground/50 lg:hidden">
+        <button onClick={() => setMobileOpen(false)} className="ml-auto lg:hidden" style={{ color: "var(--sidebar-text, #A89880)" }}>
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Greeting */}
       {!collapsed && (
-        <div className="px-3 py-2.5 border-b border-sidebar-border flex-shrink-0">
-          <p className="text-sm font-bold text-sidebar-foreground">{getGreeting()}, {displayName}!</p>
+        <div className="px-3 py-2.5 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
+          <p className="text-sm font-bold" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>{getGreeting()}, {displayName}!</p>
         </div>
       )}
 
-      {/* Context indicator */}
+      {/* Context breadcrumb */}
       {!collapsed && isInsideAgency && (
-        <div className="px-3 py-2 border-b border-sidebar-border space-y-1 flex-shrink-0">
-          {agencyName && (
-            <div className="flex items-center gap-1.5">
-              <Building2 className="w-3 h-3 text-sidebar-primary/60 flex-shrink-0" />
-              <span className="text-[10px] text-sidebar-foreground/50 truncate">{agencyName}</span>
-            </div>
-          )}
-          {clientName && (
-            <div className="flex items-center gap-1.5 pl-2">
-              <Briefcase className="w-3 h-3 text-sidebar-primary/50 flex-shrink-0" />
-              <span className="text-[10px] font-medium text-sidebar-foreground/70 truncate">{clientName}</span>
-            </div>
-          )}
-          {campaignName && (
-            <div className="flex items-center gap-1.5 pl-4">
-              <Megaphone className="w-3 h-3 text-sidebar-primary/40 flex-shrink-0" />
-              <span className="text-[10px] font-semibold text-sidebar-foreground/90 truncate">{campaignName}</span>
-            </div>
-          )}
+        <div className="px-3 py-2 space-y-0.5 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
+          <div className="text-[11px] truncate" style={{ color: "var(--sidebar-text, #A89880)" }}>
+            {agencyName && <span>{agencyName}</span>}
+            {clientName && <span> › {clientName}</span>}
+            {campaignName && <span> › {campaignName}</span>}
+          </div>
         </div>
       )}
 
