@@ -274,7 +274,12 @@ const CampaignDetail = () => {
   const [importMatrixDialogOpen, setImportMatrixDialogOpen] = useState(false);
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
-  const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(false);
+  const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(() => {
+    try {
+      const saved = localStorage.getItem('produzai_matrix_filters_open');
+      return saved === null ? true : saved === 'collapsed';
+    } catch { return true; }
+  });
   const [quickEditActive, setQuickEditActive] = useState(false);
   const [matrixCustomExportOpen, setMatrixCustomExportOpen] = useState(false);
   const [automationOpen, setAutomationOpen] = useState(false);
