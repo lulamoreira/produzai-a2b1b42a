@@ -8,7 +8,7 @@ import { useUserClientAccess } from "@/hooks/useMultiClientData";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { Users, Tags, Database, UserCheck, Search, MessageSquareText } from "lucide-react";
+import { Users, Tags, Database, UserCheck, Search, MessageSquareText, Monitor } from "lucide-react";
 import { CreateUserDialog } from "@/components/CreateUserDialog";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserPermissionCard from "@/components/admin/UserPermissionCard";
 import CategoryManager from "@/components/admin/CategoryManager";
 import SystemMessagesManager from "@/components/admin/SystemMessagesManager";
+import InterfaceSettings from "@/components/admin/InterfaceSettings";
 
 const Admin = () => {
   const { t } = useTranslation();
@@ -77,6 +78,11 @@ const Admin = () => {
               <MessageSquareText className="w-4 h-4" /> {t("admin.messages")}
             </TabsTrigger>
             {isAdmin && (
+              <TabsTrigger value="interface" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                <Monitor className="w-4 h-4" /> Interface
+              </TabsTrigger>
+            )}
+            {isAdmin && (
               <TabsTrigger value="backup" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
                 <Database className="w-4 h-4" /> {t("common.backup")}
               </TabsTrigger>
@@ -136,6 +142,12 @@ const Admin = () => {
           <TabsContent value="messages">
             <SystemMessagesManager />
           </TabsContent>
+
+          {isAdmin && (
+            <TabsContent value="interface">
+              <InterfaceSettings />
+            </TabsContent>
+          )}
 
           {isAdmin && (
             <TabsContent value="backup">

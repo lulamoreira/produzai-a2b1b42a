@@ -105,95 +105,112 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Editar Perfil</DialogTitle>
-          <DialogDescription>Atualize seus dados pessoais.</DialogDescription>
+          <DialogDescription>Atualize seus dados pessoais e aparência.</DialogDescription>
         </DialogHeader>
 
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <Label className="text-xs text-muted-foreground">E-mail</Label>
-              <Input value={user?.email || ""} disabled className="bg-muted" />
-            </div>
+        <Tabs defaultValue="dados">
+          <TabsList className="mb-4 bg-muted/50">
+            <TabsTrigger value="dados" className="gap-1.5 text-xs">
+              <User className="w-3.5 h-3.5" /> Dados
+            </TabsTrigger>
+            <TabsTrigger value="aparencia" className="gap-1.5 text-xs">
+              <Palette className="w-3.5 h-3.5" /> Aparência
+            </TabsTrigger>
+          </TabsList>
 
-            <div>
-              <Label className="text-xs">Nome Completo *</Label>
-              <Input
-                value={form.display_name}
-                onChange={(e) => setForm(f => ({ ...f, display_name: e.target.value }))}
-                placeholder="Seu nome completo"
-                maxLength={100}
-              />
-            </div>
-
-            <div>
-              <Label className="text-xs">Apelido</Label>
-              <Input
-                value={form.nickname}
-                onChange={(e) => setForm(f => ({ ...f, nickname: e.target.value }))}
-                placeholder="Como prefere ser chamado"
-                maxLength={50}
-              />
-            </div>
-
-            <div>
-              <Label className="text-xs">Empresa</Label>
-              <Input
-                value={form.company}
-                onChange={(e) => setForm(f => ({ ...f, company: e.target.value }))}
-                placeholder="Nome da empresa onde trabalha"
-                maxLength={100}
-              />
-            </div>
-
-            <div>
-              <Label className="text-xs">Telefone</Label>
-              <Input
-                value={form.phone}
-                onChange={(e) => setForm(f => ({ ...f, phone: maskPhone(e.target.value) }))}
-                placeholder="(00)00000-0000"
-                maxLength={14}
-              />
-              <div className="flex items-center gap-2 mt-2">
-                <Switch
-                  checked={form.phone_is_whatsapp}
-                  onCheckedChange={(v) => setForm(f => ({ ...f, phone_is_whatsapp: v }))}
-                  id="whatsapp-toggle"
-                />
-                <Label htmlFor="whatsapp-toggle" className="text-xs flex items-center gap-1 cursor-pointer">
-                  <MessageCircle className="w-4 h-4 text-green-600" />
-                  Este número é WhatsApp
-                </Label>
+          <TabsContent value="dados">
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
               </div>
-            </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">E-mail</Label>
+                  <Input value={user?.email || ""} disabled className="bg-muted" />
+                </div>
 
-            <div>
-              <Label className="text-xs">Cargo</Label>
-              <Input
-                value={form.job_title}
-                onChange={(e) => setForm(f => ({ ...f, job_title: e.target.value }))}
-                placeholder="Ex: Gerente de Projetos"
-                maxLength={80}
-              />
-            </div>
+                <div>
+                  <Label className="text-xs">Nome Completo *</Label>
+                  <Input
+                    value={form.display_name}
+                    onChange={(e) => setForm(f => ({ ...f, display_name: e.target.value }))}
+                    placeholder="Seu nome completo"
+                    maxLength={100}
+                  />
+                </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-                Cancelar
-              </Button>
-              <Button size="sm" onClick={handleSave} disabled={saving}>
-                {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
-                Salvar
-              </Button>
-            </div>
-          </div>
-        )}
+                <div>
+                  <Label className="text-xs">Apelido</Label>
+                  <Input
+                    value={form.nickname}
+                    onChange={(e) => setForm(f => ({ ...f, nickname: e.target.value }))}
+                    placeholder="Como prefere ser chamado"
+                    maxLength={50}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs">Empresa</Label>
+                  <Input
+                    value={form.company}
+                    onChange={(e) => setForm(f => ({ ...f, company: e.target.value }))}
+                    placeholder="Nome da empresa onde trabalha"
+                    maxLength={100}
+                  />
+                </div>
+
+                <div>
+                  <Label className="text-xs">Telefone</Label>
+                  <Input
+                    value={form.phone}
+                    onChange={(e) => setForm(f => ({ ...f, phone: maskPhone(e.target.value) }))}
+                    placeholder="(00)00000-0000"
+                    maxLength={14}
+                  />
+                  <div className="flex items-center gap-2 mt-2">
+                    <Switch
+                      checked={form.phone_is_whatsapp}
+                      onCheckedChange={(v) => setForm(f => ({ ...f, phone_is_whatsapp: v }))}
+                      id="whatsapp-toggle"
+                    />
+                    <Label htmlFor="whatsapp-toggle" className="text-xs flex items-center gap-1 cursor-pointer">
+                      <MessageCircle className="w-4 h-4 text-green-600" />
+                      Este número é WhatsApp
+                    </Label>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs">Cargo</Label>
+                  <Input
+                    value={form.job_title}
+                    onChange={(e) => setForm(f => ({ ...f, job_title: e.target.value }))}
+                    placeholder="Ex: Gerente de Projetos"
+                    maxLength={80}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+                    Cancelar
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={saving}>
+                    {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+                    Salvar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="aparencia">
+            <AppearanceTab />
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
