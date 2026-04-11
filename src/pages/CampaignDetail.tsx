@@ -389,7 +389,7 @@ const CampaignDetail = () => {
       name: pieceForm.name,
       size,
       store_category: pieceForm.store_category || undefined,
-      sub_location: pieceForm.sub_location || undefined,
+      sub_location: (pieceForm.sub_location && pieceForm.sub_location !== "__none__") ? pieceForm.sub_location : undefined,
       specification: pieceForm.specification,
       installation_instructions: pieceForm.installation_instructions,
       kit_only: pieceForm.kit_only,
