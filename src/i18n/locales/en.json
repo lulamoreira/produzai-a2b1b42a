@@ -131,7 +131,8 @@
     "user": "User"
   },
   "sidebar": {
-    "home": "Home",
+    "home": "Agencies",
+    "admin_users": "Users",
     "agencies": "Agencies",
     "clients": "Clients",
     "campaigns": "Campaigns",
