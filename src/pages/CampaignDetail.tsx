@@ -2428,6 +2428,8 @@ const CampaignDetail = () => {
         kitPieces={kitPieces}
         allPieces={pieces}
         canEdit={canEditPieces}
+        pieceLocations={pieceLocations}
+        pieceSubLocations={pieceSubLocations}
         onDeleteKitPiece={(id) => deleteKitPiece.mutate(id)}
         onDeleteKit={(id) => deleteKit.mutate(id)}
         onAddKitPiece={async (kp) => await addKitPiece.mutateAsync(kp)}
