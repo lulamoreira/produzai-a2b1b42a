@@ -365,8 +365,8 @@ function OccurrenceDetailSheet({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-[520px] max-w-full p-0 flex flex-col overflow-y-auto">
-          {/* Header */}
+        <SheetContent side="right" className="w-[520px] max-w-full p-0 flex flex-col overflow-y-auto sheet-responsive">
+          <div className="sheet-handle md:hidden" />
           <SheetHeader className="px-4 py-3 border-b border-border shrink-0">
             <div className="flex items-center justify-between">
               <div>
