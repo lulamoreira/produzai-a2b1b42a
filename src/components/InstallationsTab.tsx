@@ -531,9 +531,11 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[220px]">
-                <DropdownMenuItem onClick={() => setShowCodes(!showCodes)}>
-                  <Key className="w-3.5 h-3.5 mr-2" /> {showCodes ? t("installations.hideAccessConfig") : t("installations.tempAccessConfig")}
-                </DropdownMenuItem>
+                {isAdminOrMaster && (
+                  <DropdownMenuItem onClick={() => setShowCodes(!showCodes)}>
+                    <Key className="w-3.5 h-3.5 mr-2" /> {showCodes ? "Ocultar Config Acesso" : "Config Acesso Temporário"}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleExport}>
                   <Download className="w-3.5 h-3.5 mr-2" /> Exportar
                 </DropdownMenuItem>

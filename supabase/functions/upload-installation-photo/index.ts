@@ -13,16 +13,17 @@ Deno.serve(async (req) => {
 
   try {
     const form = await req.formData();
-    const teamCode = form.get("team_code") as string | null;
+    const installCode = form.get("install_code") as string | null;
+    const teamCode = form.get("team_code") as string | null; // legacy fallback
     const storeId = form.get("store_id") as string | null;
     const category = (form.get("category") as string) || "during";
     const uploadMethod = (form.get("upload_method") as string) || "upload";
     const photo = form.get("photo") as File | null;
     const mediaType = (form.get("media_type") as string) || "photo";
 
-    if (!teamCode || !storeId || !photo) {
+    if (!storeId || !photo) {
       return new Response(
-        JSON.stringify({ error: "Campos obrigatórios: team_code, store_id, photo" }),
+        JSON.stringify({ error: "Campos obrigatórios: store_id, photo" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -31,40 +32,39 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Validate team code
-    const { data: tc, error: tcErr } = await supabase
-      .from("installation_team_codes")
-      .select("team_id, campaign_id")
-      .eq("code", teamCode.toUpperCase())
-      .maybeSingle();
+    let campaignId: string | null = null;
 
-    if (tcErr || !tc) {
-      return new Response(
-        JSON.stringify({ error: "Código de equipe inválido." }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    if (installCode) {
+      // New system: validate install code
+      const { data: sched, error: schedErr } = await supabase
+        .from("campaign_schedules")
+        .select("campaign_id, store_id")
+        .eq("install_code", installCode.toLowerCase())
+        .eq("store_id", storeId)
+        .maybeSingle();
 
-    // Verify the store belongs to a schedule for this team/campaign
-    const { data: sched } = await supabase
-      .from("campaign_schedules")
-      .select("id")
-      .eq("campaign_id", tc.campaign_id)
-      .eq("team_id", tc.team_id)
-      .eq("store_id", storeId)
-      .limit(1)
-      .maybeSingle();
-
-    if (!sched) {
-      return new Response(
-        JSON.stringify({ error: "Loja não pertence aos agendamentos desta equipe." }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      if (schedErr || !sched) {
+        return new Response(
+          JSON.stringify({ error: "Código de instalação inválido." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      campaignId = sched.campaign_id;
+    } else {
+      // Fallback: no code — require campaign_id in form
+      const formCampaignId = form.get("campaign_id") as string | null;
+      if (!formCampaignId) {
+        return new Response(
+          JSON.stringify({ error: "Código de instalação obrigatório." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      campaignId = formCampaignId;
     }
 
     // Upload photo to storage
     const ext = photo.name?.split(".").pop() || "jpg";
-    const path = `${tc.campaign_id}/${storeId}/${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${ext}`;
+    const path = `${campaignId}/${storeId}/${Date.now()}_${crypto.randomUUID().slice(0, 8)}.${ext}`;
     const arrayBuffer = await photo.arrayBuffer();
     const { error: upErr } = await supabase.storage
       .from("installation-photos")
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     const { data: newPhoto, error: insertErr } = await supabase
       .from("installation_photos")
       .insert({
-        campaign_id: tc.campaign_id,
+        campaign_id: campaignId,
         store_id: storeId,
         photo_url: urlData.publicUrl,
         category,
