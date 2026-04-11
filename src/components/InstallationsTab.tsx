@@ -1141,11 +1141,6 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           );
         })}
       </div>
-
-      {displayedStores.length === 0 && (
-        <p className="text-center text-muted-foreground py-8 text-sm">
-          Nenhuma loja com agendamento encontrada
-        </p>
       )}
 
       {/* Activity Log (admin/master only) */}
