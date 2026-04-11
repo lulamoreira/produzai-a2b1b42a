@@ -16,7 +16,9 @@ import { useOrphanPhotoCleanup } from "@/hooks/useOrphanPhotoCleanup";
 import { useAuth } from "@/hooks/useAuth";
 import { compressImage } from "@/lib/compressImage";
 import DebouncedInput from "@/components/DebouncedInput";
-import TeamCodesPanel from "@/components/TeamCodesPanel";
+import SendInstallCodeDialog from "@/components/SendInstallCodeDialog";
+import AccessWindowConfig from "@/components/AccessWindowConfig";
+import { useInstallCodeGeneration } from "@/hooks/useInstallCodeGeneration";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { useLogActivity } from "@/hooks/useActivityLogs";
@@ -75,10 +77,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
-  const { hasPermission: canManageTeamCodes } = useClientPermission(clientId, "can_manage_team_codes");
   const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const { hasPermission: canViewPhotoCheckin } = useClientPermission(clientId, "can_view_photo_checkin");
-  const showTeamCodesPanel = isAdminOrMaster || canManageTeamCodes;
   const showPhotoCheckin = isAdminOrMaster || canViewPhotoCheckin;
   const logActivity = useLogActivity();
 
@@ -98,6 +98,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
   // UI state
   const [showCodes, setShowCodes] = useState(false);
+  const [sendCodeSchedule, setSendCodeSchedule] = useState<any>(null);
+  const [sendCodeStore, setSendCodeStore] = useState<any>(null);
+  const [sendCodeTeam, setSendCodeTeam] = useState<any>(null);
+  const [sendCodeMembers, setSendCodeMembers] = useState<any[]>([]);
   const [logOpen, setLogOpen] = useState(false);
   const [logStoreId, setLogStoreId] = useState("");
   const [logStoreName, setLogStoreName] = useState("");
@@ -120,6 +124,9 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   // Shared hooks
   const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
   const { storeOccurrenceStatus } = useOccurrenceStatusSync(campaignId);
+
+  // Auto-generate install codes when dual approval is met
+  useInstallCodeGeneration(schedules, campaignId);
 
   // Only show stores that have a schedule with date AND time (original or reschedule)
   const scheduledStores = useMemo(() => stores.filter((s) => {
@@ -374,10 +381,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
   return (
     <div className="space-y-4">
-      {/* Team Codes Panel (shown when toggled from Mais ações) */}
-      {showTeamCodesPanel && showCodes && (
+      {/* AccessWindowConfig (shown when toggled from Mais ações) */}
+      {isAdminOrMaster && showCodes && (
         <div className="aqua-card p-4">
-          <TeamCodesPanel campaignId={campaignId} />
+          <AccessWindowConfig campaignId={campaignId} />
         </div>
       )}
 
@@ -524,9 +531,11 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="min-w-[220px]">
-                <DropdownMenuItem onClick={() => setShowCodes(!showCodes)}>
-                  <Key className="w-3.5 h-3.5 mr-2" /> {showCodes ? t("installations.hideAccessConfig") : t("installations.tempAccessConfig")}
-                </DropdownMenuItem>
+                {isAdminOrMaster && (
+                  <DropdownMenuItem onClick={() => setShowCodes(!showCodes)}>
+                    <Key className="w-3.5 h-3.5 mr-2" /> {showCodes ? "Ocultar Config Acesso" : "Config Acesso Temporário"}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleExport}>
                   <Download className="w-3.5 h-3.5 mr-2" /> Exportar
                 </DropdownMenuItem>
@@ -792,7 +801,23 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       <FileText className="w-3 h-3 text-[var(--text-muted)]" />
                       OS: {effectiveOs}
                     </span>
-                  )}
+                   )}
+                  {/* Install code status indicator — admin/master only */}
+                  {isAdminOrMaster && schedule && (() => {
+                    if (schedule.checkin_timestamp) {
+                      const checkinDate = format(new Date(schedule.checkin_timestamp), "dd/MM HH:mm");
+                      const hasGps = schedule.checkin_lat != null;
+                      return (
+                        <span className={`flex items-center gap-1 text-[10px] font-medium ${hasGps ? "text-[var(--s-success)]" : "text-[var(--s-warning)]"}`}>
+                          ✔ Check-in {checkinDate}{!hasGps && " (sem GPS)"}
+                        </span>
+                      );
+                    }
+                    if (schedule.install_code) {
+                      return <span className="flex items-center gap-1 text-[10px] text-[var(--s-success)]">● Código ativo</span>;
+                    }
+                    return <span className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">○ Código não gerado</span>;
+                  })()}
                 </div>
 
                 {/* Row 4: Photo thumbnails + Complete button + Expand toggle */}
@@ -968,6 +993,77 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                         <><AlertCircle className="w-4 h-4" /> Clique aqui para informar Check-in de fotos para ocorrências</>
                       )}
                     </button>
+                  )}
+
+                  {/* Install code actions — admin/master only */}
+                  {isAdminOrMaster && schedule?.install_code && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Checkin info */}
+                      {schedule.checkin_timestamp && (
+                        <div className="text-xs space-y-0.5">
+                          <p className="font-medium text-[var(--s-success)]">
+                            ✔ Check-in: {format(new Date(schedule.checkin_timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          </p>
+                          {schedule.checkin_lat != null ? (
+                            <p className="text-[var(--text-muted)]">
+                              📍 Precisão: ±{Math.round(schedule.checkin_accuracy || 0)}m{" "}
+                              <a
+                                href={`https://www.google.com/maps?q=${schedule.checkin_lat},${schedule.checkin_lng}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Ver no mapa ↗
+                              </a>
+                            </p>
+                          ) : (
+                            <p className="text-[var(--s-warning)]">⚠ Check-in sem localização</p>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex gap-1.5 ml-auto">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs gap-1.5 h-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSendCodeSchedule(schedule);
+                            setSendCodeStore(store);
+                            setSendCodeTeam(assignedTeam);
+                            setSendCodeMembers(teamMembers);
+                          }}
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                          {schedule.code_sent_at ? `✔ Enviado ${format(new Date(schedule.code_sent_at), "dd/MM HH:mm")}` : "📤 Enviar código"}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-8"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!confirm("Regenerar o código tornará o código anterior inválido imediatamente. Deseja continuar?")) return;
+                            const letters = "abcdefghijklmnopqrstuvwxyz";
+                            const l1 = letters[Math.floor(Math.random() * 26)];
+                            const l2 = letters[Math.floor(Math.random() * 26)];
+                            const nums = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+                            const newCode = `${l1}${l2}${nums}`;
+                            const { error } = await supabase.from("campaign_schedules").update({
+                              install_code: newCode,
+                              install_code_generated_at: new Date().toISOString(),
+                              code_sent_at: null,
+                            } as any).eq("id", schedule.id);
+                            if (error) { toast.error("Erro ao regenerar código."); return; }
+                            queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                            toast.success("Código regenerado!");
+                          }}
+                        >
+                          ⟳
+                        </Button>
+                      </div>
+                    </div>
                   )}
 
                   <hr className="border-[var(--border-subtle)]" />
@@ -1172,6 +1268,20 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           onOpenChange={(open) => { if (!open) setCheckinStore(null); }}
           store={checkinStore}
           photos={photos.filter((p) => p.store_id === checkinStore.id)}
+        />
+      )}
+
+      {/* Send Install Code Dialog */}
+      {sendCodeSchedule && (
+        <SendInstallCodeDialog
+          open={!!sendCodeSchedule}
+          onOpenChange={(open) => { if (!open) { setSendCodeSchedule(null); setSendCodeStore(null); setSendCodeTeam(null); setSendCodeMembers([]); } }}
+          schedule={sendCodeSchedule}
+          store={sendCodeStore}
+          team={sendCodeTeam}
+          teamMembers={sendCodeMembers}
+          agencyName={agencyName}
+          campaignName={campaignName}
         />
       )}
     </div>

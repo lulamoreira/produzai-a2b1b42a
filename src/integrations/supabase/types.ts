@@ -504,10 +504,19 @@ export type Database = {
       campaign_schedules: {
         Row: {
           campaign_id: string
+          checkin_accuracy: number | null
+          checkin_device_info: Json | null
+          checkin_lat: number | null
+          checkin_lng: number | null
+          checkin_timestamp: string | null
+          code_sent_at: string | null
           completed_at: string | null
           completed_by: string | null
           created_at: string
           id: string
+          install_code: string | null
+          install_code_expires_at: string | null
+          install_code_generated_at: string | null
           installation_os: string | null
           installation_preference: string | null
           locked: boolean
@@ -548,10 +557,19 @@ export type Database = {
         }
         Insert: {
           campaign_id: string
+          checkin_accuracy?: number | null
+          checkin_device_info?: Json | null
+          checkin_lat?: number | null
+          checkin_lng?: number | null
+          checkin_timestamp?: string | null
+          code_sent_at?: string | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
           id?: string
+          install_code?: string | null
+          install_code_expires_at?: string | null
+          install_code_generated_at?: string | null
           installation_os?: string | null
           installation_preference?: string | null
           locked?: boolean
@@ -592,10 +610,19 @@ export type Database = {
         }
         Update: {
           campaign_id?: string
+          checkin_accuracy?: number | null
+          checkin_device_info?: Json | null
+          checkin_lat?: number | null
+          checkin_lng?: number | null
+          checkin_timestamp?: string | null
+          code_sent_at?: string | null
           completed_at?: string | null
           completed_by?: string | null
           created_at?: string
           id?: string
+          install_code?: string | null
+          install_code_expires_at?: string | null
+          install_code_generated_at?: string | null
           installation_os?: string | null
           installation_preference?: string | null
           locked?: boolean
@@ -1264,6 +1291,54 @@ export type Database = {
         }
         Relationships: []
       }
+      install_access_log: {
+        Row: {
+          accessed_at: string | null
+          action: string | null
+          campaign_id: string | null
+          id: string
+          install_code: string
+          ip_address: unknown
+          store_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_at?: string | null
+          action?: string | null
+          campaign_id?: string | null
+          id?: string
+          install_code: string
+          ip_address?: unknown
+          store_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_at?: string | null
+          action?: string | null
+          campaign_id?: string | null
+          id?: string
+          install_code?: string
+          ip_address?: unknown
+          store_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "install_access_log_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "install_access_log_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       installation_photos: {
         Row: {
           campaign_id: string
@@ -1314,48 +1389,6 @@ export type Database = {
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "client_stores"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      installation_team_codes: {
-        Row: {
-          campaign_id: string
-          code: string
-          created_at: string
-          created_by: string | null
-          id: string
-          team_id: string
-        }
-        Insert: {
-          campaign_id: string
-          code: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          team_id: string
-        }
-        Update: {
-          campaign_id?: string
-          code?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          team_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "installation_team_codes_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "installation_team_codes_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "installation_teams"
             referencedColumns: ["id"]
           },
         ]
