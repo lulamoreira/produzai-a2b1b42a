@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Camera, Upload, CalendarIcon, Clock, MapPin, Phone, User,
-  CheckCircle, Wrench, Store, FileText,
+  CheckCircle, KeyRound, Store, FileText, Building2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -191,8 +191,11 @@ export default function InstallerPortal() {
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg-page, #F5F2ED)" }}>
         <div className="w-full max-w-sm">
           <div className="text-center mb-6">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3" style={{ background: "rgba(140,111,78,0.12)" }}>
-              <Wrench className="w-8 h-8" style={{ color: "var(--brand-500, #8C6F4E)" }} />
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
+              style={{ background: "#8C6F4E", width: 64, height: 64, borderRadius: 16 }}
+            >
+              <KeyRound className="w-7 h-7 text-white" />
             </div>
             <h1 className="text-xl font-bold text-foreground">Acesso de Instalador</h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -200,7 +203,14 @@ export default function InstallerPortal() {
             </p>
           </div>
 
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-lg space-y-4">
+          <div
+            style={{
+              background: "var(--bg-surface, #fff)", borderRadius: 16,
+              boxShadow: "0 4px 24px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.06)",
+              padding: 32, width: "100%", maxWidth: 380,
+            }}
+            className="space-y-4"
+          >
             <Input
               value={code}
               onChange={(e) => setCode(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 5))}
@@ -225,6 +235,10 @@ export default function InstallerPortal() {
               className="w-full"
               onClick={handleSubmit}
               disabled={loading || code.length !== 5}
+              style={loading || code.length !== 5
+                ? { background: "var(--brand-200)", color: "var(--brand-600)", opacity: 1, cursor: "not-allowed" }
+                : { background: "var(--brand-500)", color: "#FFFFFF" }
+              }
             >
               {loading ? "Validando..." : "Acessar instalação"}
             </Button>
@@ -254,10 +268,11 @@ export default function InstallerPortal() {
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-page, #F5F2ED)" }}>
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b px-4 py-3" style={{ background: "var(--sidebar-bg, #3A2F26)", borderColor: "var(--sidebar-border)" }}>
+      <header className="sticky top-0 z-30 border-b px-4 py-3.5" style={{ background: "var(--brand-800, #3D2E1E)", borderColor: "var(--border-subtle)" }}>
         <div className="flex items-center justify-between max-w-2xl mx-auto">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold truncate" style={{ color: "var(--sidebar-text-active, #fff)" }}>
+          <div className="min-w-0 flex-1 flex items-center gap-2">
+            <Building2 className="w-4 h-4 flex-shrink-0" style={{ color: "#F5EFE6" }} />
+            <p className="text-sm font-semibold truncate" style={{ color: "#F5EFE6" }}>
               {campaign?.name || "Campanha"}
             </p>
           </div>
@@ -341,9 +356,9 @@ export default function InstallerPortal() {
         )}
 
         {checkinDone && (
-          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-xl p-3 flex items-center gap-2">
-            <CheckCircle className="w-4 h-4 text-green-600" />
-            <span className="text-xs text-green-700 dark:text-green-400 font-medium">Check-in registrado!</span>
+          <div className="rounded-xl p-3 flex items-center gap-2" style={{ background: "var(--s-success-bg)", color: "var(--s-success)" }}>
+            <CheckCircle className="w-4 h-4" />
+            <span className="text-xs font-medium">✔ Check-in registrado</span>
           </div>
         )}
 
