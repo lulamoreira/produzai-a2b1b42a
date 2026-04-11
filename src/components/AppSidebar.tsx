@@ -403,7 +403,10 @@ export default function AppSidebar() {
             <div className="relative">
               <button
                 onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-all"
+                style={{ color: "var(--sidebar-text, #A89880)" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }}
                 title={t("common.language")}
               >
                 <Globe className="w-3.5 h-3.5 flex-shrink-0" />
