@@ -50,6 +50,10 @@ import OccurrencesTab from "@/components/OccurrencesTab";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 import SchedulingTab from "@/components/SchedulingTab";
 import InstallationsTab from "@/components/InstallationsTab";
+import InstallationsTabV2 from "@/components/v2/InstallationsTabV2";
+import SchedulingTabV2 from "@/components/v2/SchedulingTabV2";
+import OccurrencesTabV2 from "@/components/v2/OccurrencesTabV2";
+import { useInterfaceMode } from "@/hooks/useInterfaceMode";
 import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaignDialog";
 import SortablePiecesTable, { type UnifiedRow } from "@/components/SortablePiecesTable";
 import SupportMaterialsSection from "@/components/SupportMaterialsSection";
@@ -68,6 +72,7 @@ const CampaignDetail = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const { interfaceMode } = useInterfaceMode();
 
   const locationState = location.state as { initialSection?: string; limitedMode?: boolean } | null;
   const isLimitedMode = locationState?.limitedMode || false;
@@ -2146,33 +2151,55 @@ const CampaignDetail = () => {
 
           {/* ─── SECTION: OCORRÊNCIAS ─── */}
           {activeSection === "occurrences" && (
-            <OccurrencesTab campaignId={campaignId!} clientId={clientId} stores={stores} pieces={pieces} canEdit={canEditOccurrences} canDelete={canDeleteOccurrences} canEditReporter={canEditReporterData} />
+            interfaceMode === "new"
+              ? <OccurrencesTabV2 campaignId={campaignId!} clientId={clientId} stores={stores} pieces={pieces} canEdit={canEditOccurrences} canDelete={canDeleteOccurrences} canEditReporter={canEditReporterData} />
+              : <OccurrencesTab campaignId={campaignId!} clientId={clientId} stores={stores} pieces={pieces} canEdit={canEditOccurrences} canDelete={canDeleteOccurrences} canEditReporter={canEditReporterData} />
           )}
 
           {/* ─── SECTION: AGENDAMENTO ─── */}
           {activeSection === "scheduling" && (
-            <SchedulingTab
-              campaignId={campaignId!}
-              stores={stores.filter((s) => isStoreEnabled(s.id) && s.show_in_scheduling)}
-              canEdit={canEditSchedules}
-              agencyName={agency?.name || ""}
-              clientName={client?.name || ""}
-              campaignName={campaign?.name || ""}
-              clientId={clientId!}
-            />
+            interfaceMode === "new"
+              ? <SchedulingTabV2
+                  campaignId={campaignId!}
+                  stores={stores.filter((s) => isStoreEnabled(s.id) && s.show_in_scheduling)}
+                  canEdit={canEditSchedules}
+                  agencyName={agency?.name || ""}
+                  clientName={client?.name || ""}
+                  campaignName={campaign?.name || ""}
+                  clientId={clientId!}
+                />
+              : <SchedulingTab
+                  campaignId={campaignId!}
+                  stores={stores.filter((s) => isStoreEnabled(s.id) && s.show_in_scheduling)}
+                  canEdit={canEditSchedules}
+                  agencyName={agency?.name || ""}
+                  clientName={client?.name || ""}
+                  campaignName={campaign?.name || ""}
+                  clientId={clientId!}
+                />
           )}
 
           {/* ─── SECTION: INSTALAÇÕES ─── */}
           {activeSection === "installations" && (
-            <InstallationsTab
-              campaignId={campaignId!}
-              campaignName={campaign?.name || ""}
-              stores={stores.filter((s) => isStoreEnabled(s.id) && s.show_in_scheduling)}
-              canEdit={canEditInstallations}
-              clientId={clientId!}
-              agencyName={agency?.name || ""}
-              clientName={client?.name || ""}
-            />
+            interfaceMode === "new"
+              ? <InstallationsTabV2
+                  campaignId={campaignId!}
+                  campaignName={campaign?.name || ""}
+                  stores={stores.filter((s) => isStoreEnabled(s.id) && s.show_in_scheduling)}
+                  canEdit={canEditInstallations}
+                  clientId={clientId!}
+                  agencyName={agency?.name || ""}
+                  clientName={client?.name || ""}
+                />
+              : <InstallationsTab
+                  campaignId={campaignId!}
+                  campaignName={campaign?.name || ""}
+                  stores={stores.filter((s) => isStoreEnabled(s.id) && s.show_in_scheduling)}
+                  canEdit={canEditInstallations}
+                  clientId={clientId!}
+                  agencyName={agency?.name || ""}
+                  clientName={client?.name || ""}
+                />
           )}
 
           {/* ─── SECTION: ORÇAMENTOS ─── */}

@@ -12,6 +12,8 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useProcessInvite } from "@/hooks/useProcessInvite";
 import { PendingUsersAlert } from "@/components/PendingUsersAlert";
 import { NameConfirmDialog } from "@/components/NameConfirmDialog";
+import UserThemeLoader from "@/components/UserThemeLoader";
+import AgencyRouteWrapper from "@/components/AgencyRouteWrapper";
 import AgencySelect from "./pages/AgencySelect";
 import Dashboard from "./pages/Dashboard";
 import ClientDetail from "./pages/ClientDetail";
@@ -85,6 +87,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <>
+      <UserThemeLoader />
       <PendingUsersAlert />
       <NameConfirmDialog />
       {children}
@@ -123,9 +126,11 @@ const App = () => (
               <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
-              <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
-              <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><CampaignDetail /></ProtectedRoute>} />
+              <Route element={<AgencyRouteWrapper />}>
+                <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+                <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><CampaignDetail /></ProtectedRoute>} />
+              </Route>
               <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
               <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />

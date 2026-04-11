@@ -1,0 +1,131 @@
+/* ── Design System v2 — CSS Variables & Utilities ── */
+/* Always loaded, variables namespaced to avoid conflicts */
+
+:root {
+  /* Surfaces */
+  --v2-bg-page: 40 20% 96%;
+  --v2-bg-surface: 0 0% 100%;
+  --v2-bg-elevated: 0 0% 100%;
+
+  /* Borders */
+  --v2-border-subtle: rgba(0, 0, 0, 0.07);
+  --v2-border-default: rgba(0, 0, 0, 0.12);
+  --v2-border-strong: rgba(0, 0, 0, 0.20);
+
+  /* Text */
+  --v2-text-primary: 240 6% 10%;
+  --v2-text-secondary: 240 3% 42%;
+  --v2-text-muted: 240 2% 61%;
+
+  /* Shadows */
+  --v2-shadow-card: 0 1px 2px rgba(0,0,0,0.05), 0 0 0 0.5px rgba(0,0,0,0.08);
+  --v2-shadow-card-hover: 0 2px 8px rgba(0,0,0,0.09), 0 0 0 0.5px rgba(0,0,0,0.10);
+  --v2-shadow-sheet: -4px 0 24px rgba(0,0,0,0.10);
+  --v2-shadow-dropdown: 0 4px 16px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.08);
+
+  /* Status — FIXED, never change with theme */
+  --v2-status-success: 142 71% 37%;
+  --v2-status-success-bg: 138 76% 97%;
+  --v2-status-warning: 38 92% 44%;
+  --v2-status-warning-bg: 48 96% 95%;
+  --v2-status-danger: 0 72% 51%;
+  --v2-status-danger-bg: 0 86% 97%;
+  --v2-status-info: 217 91% 53%;
+  --v2-status-info-bg: 214 100% 97%;
+  --v2-status-neutral: 240 4% 46%;
+  --v2-status-neutral-bg: 240 5% 96%;
+  --v2-status-purple: 263 70% 58%;
+  --v2-status-purple-bg: 263 87% 98%;
+
+  /* Layout */
+  --v2-radius-sm: 6px;
+  --v2-radius-md: 10px;
+  --v2-radius-lg: 14px;
+  --v2-radius-xl: 20px;
+}
+
+/* ── Card v2 ── */
+.card-v2 {
+  background: hsl(var(--v2-bg-surface));
+  border-radius: var(--v2-radius-lg);
+  box-shadow: var(--v2-shadow-card);
+  padding: 16px 20px;
+  transition: box-shadow 0.15s ease;
+  position: relative;
+}
+.card-v2:hover {
+  box-shadow: var(--v2-shadow-card-hover);
+}
+
+/* Status border left */
+.card-v2[data-status="danger"] { border-left: 4px solid hsl(var(--v2-status-danger)); }
+.card-v2[data-status="warning"] { border-left: 4px solid hsl(var(--v2-status-warning)); }
+.card-v2[data-status="success"] { border-left: 4px solid hsl(var(--v2-status-success)); }
+.card-v2[data-status="info"] { border-left: 4px solid hsl(var(--v2-status-info)); }
+.card-v2[data-status="neutral"] { border-left: 4px solid var(--v2-border-default); }
+.card-v2[data-status="purple"] { border-left: 4px solid hsl(var(--v2-status-purple)); }
+
+/* ── Badge v2 ── */
+.badge-v2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+/* ── Card expansion animation ── */
+.card-v2-details {
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+.card-v2-details.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+.card-v2-details.expanded {
+  max-height: 1200px;
+  opacity: 1;
+}
+
+/* ── KPI Strip v2 ── */
+.kpi-strip-v2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.kpi-strip-v2::-webkit-scrollbar {
+  display: none;
+}
+.kpi-strip-v2 .kpi-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  font-size: 13px;
+  color: hsl(var(--v2-text-secondary));
+}
+.kpi-strip-v2 .kpi-item:hover {
+  background: hsl(var(--muted));
+}
+.kpi-strip-v2 .kpi-item.active {
+  background: hsl(var(--primary) / 0.08);
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+.kpi-strip-v2 .kpi-item .kpi-value {
+  font-weight: 700;
+}
+.kpi-strip-v2 .kpi-item.primary .kpi-value {
+  font-size: 18px;
+}
