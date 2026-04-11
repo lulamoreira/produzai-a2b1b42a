@@ -163,6 +163,8 @@ const MatrixFilterSidebar = ({
   collapsed,
   onCollapsedChange,
   customFieldLabels = [],
+  filterLogicMode,
+  onFilterLogicModeChange,
 }: MatrixFilterSidebarProps) => {
   // Extract unique options from pieces for each field
   const filterOptions = useMemo(() => {
