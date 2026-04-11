@@ -158,84 +158,101 @@ function SortableCampaignCard({
     zIndex: isDragging ? 50 : "auto" as any,
   };
   const color = campaign.color || "#6366f1";
+  const initial = (campaign.name || "C").charAt(0).toUpperCase();
 
   return (
     <div
       ref={setNodeRef}
-      style={{ ...style, backgroundColor: color }}
-      className="group aqua-card-colored p-4 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer text-white shadow-lg hover:shadow-xl"
+      style={style}
+      className="group card-base cursor-pointer hover:shadow-md transition-shadow duration-150 relative"
       onClick={onNavigate}
     >
-      <div className="absolute inset-0 rounded-xl" style={{ backgroundColor: color }} />
-      <div className="relative z-10">
-        <div className="flex items-start gap-3">
+      {/* Left color accent border */}
+      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-[var(--radius-card)]" style={{ backgroundColor: color }} />
+
+      <div className="flex items-start gap-3">
+        {canEdit && (
+          <button
+            className="cursor-grab active:cursor-grabbing touch-none p-0.5 mt-1"
+            style={{ color: 'var(--text-muted)' }}
+            {...attributes}
+            {...listeners}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GripVertical className="w-4 h-4" />
+          </button>
+        )}
+
+        {/* Avatar */}
+        <div
+          className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: color }}
+        >
+          <span className="text-white font-semibold text-base">{initial}</span>
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-base truncate" style={{ color: 'var(--text-primary)' }}>
+              {campaign.name}
+            </h3>
+            <span className="badge-base badge-success flex-shrink-0">● {t("clientDashboard.active") || "Ativa"}</span>
+          </div>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            {t("clientDashboard.createdAt") || "Criada em"} {new Date(campaign.created_at).toLocaleDateString()}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-0.5">
           {canEdit && (
-            <button
-              className="cursor-grab active:cursor-grabbing touch-none p-0.5 text-white/70 hover:text-white transition-colors mt-1"
-              {...attributes}
-              {...listeners}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <GripVertical className="w-4 h-4" />
-            </button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                  <Palette className="w-3.5 h-3.5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-52 p-3" onClick={(e) => e.stopPropagation()}>
+                <p className="text-xs font-medium text-muted-foreground mb-2">{t("clientDashboard.campaignColorLabel")}</p>
+                <div className="grid grid-cols-6 gap-1.5">
+                  {CAMPAIGN_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
+                      style={{ backgroundColor: c }}
+                      onClick={(e) => { e.stopPropagation(); onColorChange(c); }}
+                    />
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           )}
-          <div className="w-9 h-9 aqua-icon flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.25), rgba(255,255,255,0.1))' }}>
-            <Megaphone className="w-4 h-4 text-white relative z-10 drop-shadow-sm" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-white text-sm truncate">{campaign.name}</h3>
-            <p className="text-[11px] text-white/70 mt-0.5">
-              {new Date(campaign.created_at).toLocaleDateString()}
-            </p>
-          </div>
-          <div className="flex items-center gap-0.5">
-            {canEdit && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 text-white/70 hover:text-white hover:bg-white/10" onClick={(e) => e.stopPropagation()}>
-                    <Palette className="w-3.5 h-3.5" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-52 p-3" onClick={(e) => e.stopPropagation()}>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">{t("clientDashboard.campaignColorLabel")}</p>
-                  <div className="grid grid-cols-6 gap-1.5">
-                    {CAMPAIGN_COLORS.map((c) => (
-                      <button
-                        key={c}
-                        className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
-                        style={{ backgroundColor: c }}
-                        onClick={(e) => { e.stopPropagation(); onColorChange(c); }}
-                      />
-                    ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-            )}
-            {canDelete && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 flex-shrink-0 text-white/70 hover:text-white hover:bg-white/10" onClick={(e) => e.stopPropagation()}>
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t("clientDashboard.deleteCampaignTitle")}</AlertDialogTitle>
-                    <AlertDialogDescription>{t("clientDashboard.deleteCampaignDesc")}</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                    <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.yes").toUpperCase()}</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-          </div>
+          {canDelete && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("clientDashboard.deleteCampaignTitle")}</AlertDialogTitle>
+                  <AlertDialogDescription>{t("clientDashboard.deleteCampaignDesc")}</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.yes").toUpperCase()}</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
-        <div className="flex items-center gap-1 mt-3 text-xs text-white/70">
-          <span>{t("clientDashboard.access")}</span>
-          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-end mt-3">
+        <span className="text-[13px] font-medium text-primary flex items-center gap-1">
+          {t("clientDashboard.access")} <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+        </span>
       </div>
     </div>
   );
