@@ -374,29 +374,15 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
   return (
     <div className="space-y-4">
-      {/* Team Codes Panel (admin/master or users with permission) */}
-      {showTeamCodesPanel && (
-        <div className="space-y-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs gap-1.5"
-            onClick={() => setShowCodes(!showCodes)}
-          >
-            <Key className="w-3.5 h-3.5" />
-            {showCodes ? t("installations.hideAccessConfig") : t("installations.tempAccessConfig")}
-          </Button>
-          {showCodes && (
-            <div className="aqua-card p-4">
-              <TeamCodesPanel campaignId={campaignId} />
-            </div>
-          )}
+      {/* Team Codes Panel (shown when toggled from Mais ações) */}
+      {showTeamCodesPanel && showCodes && (
+        <div className="aqua-card p-4">
+          <TeamCodesPanel campaignId={campaignId} />
         </div>
       )}
 
-      {/* Filters — Primary row */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap gap-2 items-center">
+      {/* Filters — Single row */}
+      <div className="flex flex-wrap gap-2 items-center">
           <div className="relative flex-1 min-w-[180px] max-w-[320px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
