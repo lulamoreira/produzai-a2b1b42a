@@ -447,7 +447,8 @@ export default function AppSidebar() {
       {/* Mobile menu button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-3 left-3 z-40 lg:hidden w-9 h-9 rounded-lg bg-sidebar flex items-center justify-center text-sidebar-foreground shadow-lg"
+        className="fixed top-3 left-3 z-40 lg:hidden w-9 h-9 rounded-lg flex items-center justify-center shadow-lg"
+        style={{ background: "var(--sidebar-bg, #1C1916)", color: "var(--sidebar-text-active, #F5EFE6)" }}
       >
         <Menu className="w-5 h-5" />
       </button>
