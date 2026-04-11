@@ -2388,6 +2388,32 @@ const CampaignDetail = () => {
         onUpdatePiece={async (piece) => { await updatePiece.mutateAsync(piece as any); }}
         onDeletePiece={(id) => deletePiece.mutate(id)}
         onUpdateKitPiece={async (update) => { await updateKitPiece.mutateAsync(update); }}
+        onDuplicatePiece={async (piece) => {
+          const maxOrder = pieces.length > 0 ? Math.max(...pieces.map(p => p.display_order)) : 0;
+          const maxCode = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;
+          const newPiece = await addPiece.mutateAsync({
+            campaign_id: campaignId,
+            code: maxCode + 1,
+            category: piece.category,
+            name: `${piece.name} - Cópia`,
+            size: piece.size,
+            store_category: piece.store_category || undefined,
+            specification: piece.specification,
+            installation_instructions: piece.installation_instructions,
+            kit_only: piece.kit_only,
+            is_mockup: piece.is_mockup,
+            display_order: maxOrder + 1,
+            image_url: piece.image_url || undefined,
+          });
+          // If the piece is in a kit, also add the duplicated piece to the same kit
+          if (viewKitDetail && newPiece) {
+            const kitPieceEntry = kitPieces.find(kp => kp.piece_id === piece.id && kp.kit_id === viewKitDetail.id);
+            if (kitPieceEntry) {
+              await addKitPiece.mutateAsync({ kit_id: viewKitDetail.id, piece_id: newPiece.id, quantity: kitPieceEntry.quantity });
+            }
+          }
+          toast.success("Peça duplicada com sucesso!");
+        }}
       />
 
       {/* Bulk Delete Pieces Dialog */}
