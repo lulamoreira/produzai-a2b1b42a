@@ -72,6 +72,7 @@ const CampaignDetail = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const { interfaceMode } = useInterfaceMode();
 
   const locationState = location.state as { initialSection?: string; limitedMode?: boolean } | null;
   const isLimitedMode = locationState?.limitedMode || false;
