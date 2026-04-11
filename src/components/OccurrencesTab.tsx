@@ -86,6 +86,14 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const canEditReporter = canEditReporterProp ?? isAdminOrMaster;
   const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const [bulkLockLoading, setBulkLockLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "cards">(() => {
+    const saved = localStorage.getItem("produzai_ocorrencias_view");
+    return saved === "cards" ? "cards" : "list";
+  });
+  const handleViewModeChange = useCallback((mode: "list" | "cards") => {
+    setViewMode(mode);
+    localStorage.setItem("produzai_ocorrencias_view", mode);
+  }, []);
   const { data: occurrences = [], isLoading } = useOccurrences(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: kits = [] } = useCampaignKits(campaignId);
