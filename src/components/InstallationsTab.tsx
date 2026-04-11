@@ -84,6 +84,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const { hasPermission: canViewPhotoCheckin } = useClientPermission(clientId, "can_view_photo_checkin");
   const showPhotoCheckin = isAdminOrMaster || canViewPhotoCheckin;
   const logActivity = useLogActivity();
+  const logCampaignActivity = useLogCampaignActivity();
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
