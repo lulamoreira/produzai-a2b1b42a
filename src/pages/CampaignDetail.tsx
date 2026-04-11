@@ -387,7 +387,7 @@ const CampaignDetail = () => {
       localStorage.setItem("last_store_category", pieceForm.store_category);
     }
     const maxOrder = pieces.length > 0 ? Math.max(...pieces.map(p => p.display_order)) : 0;
-    await addPiece.mutateAsync({
+    const newPiece = await addPiece.mutateAsync({
       campaign_id: campaignId,
       code,
       category: pieceForm.category,
@@ -401,6 +401,9 @@ const CampaignDetail = () => {
       display_order: maxOrder + 1,
       image_url: pieceForm.image_url || undefined,
     });
+    if (pieceForm.sub_location && newPiece?.id) {
+      await supabase.from("campaign_pieces").update({ sub_location: pieceForm.sub_location } as any).eq("id", newPiece.id);
+    }
     setPieceForm({
       code: "", category: "", sub_location: "", name: "",
       width: "", length: "", height: "",
