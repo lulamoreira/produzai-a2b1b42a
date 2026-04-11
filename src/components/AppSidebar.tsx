@@ -16,20 +16,10 @@ import {
   Building2, MessageSquare, Shield, LogOut, Users,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
-  CalendarDays, Camera, DollarSign, Home, Database, Globe,
+  CalendarDays, Camera, DollarSign, Database, Globe, Settings,
 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
-
-interface NavItem {
-  label: string;
-  icon: React.ElementType;
-  href?: string;
-  active?: boolean;
-  color?: string;
-  children?: NavItem[];
-  badge?: number;
-}
 
 const CAMPAIGN_MODULE_KEYS = [
   { key: "stores", tKey: "modules.stores", icon: Store, color: "#6B4F2E" },
@@ -41,6 +31,15 @@ const CAMPAIGN_MODULE_KEYS = [
   { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#4A5568" },
   { key: "chat", tKey: "modules.chat", icon: MessageSquare, color: "#5A4A3A" },
 ];
+
+// localStorage helpers for expansion state
+const getStoredBool = (key: string, fallback: boolean) => {
+  try { const v = localStorage.getItem(key); return v !== null ? v === "true" : fallback; }
+  catch { return fallback; }
+};
+const setStoredBool = (key: string, val: boolean) => {
+  try { localStorage.setItem(key, String(val)); } catch {}
+};
 
 export default function AppSidebar() {
   const navigate = useNavigate();
@@ -54,12 +53,15 @@ export default function AppSidebar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const { currentLanguage, changeLanguage } = useLanguage();
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
+  // Admin menu expansion
+  const [adminOpen, setAdminOpen] = useState(() => getStoredBool("produzai_admin_menu_open", false));
+
+  // Campaign expansion states: campaignId -> boolean
+  const [campaignExpanded, setCampaignExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname, location.search]);
 
-  // Sync body attribute so other components (e.g. back button) can react
   useEffect(() => {
     document.body.setAttribute("data-sidebar-mobile-open", mobileOpen ? "true" : "false");
     return () => { document.body.removeAttribute("data-sidebar-mobile-open"); };
@@ -78,7 +80,9 @@ export default function AppSidebar() {
   const isInsideClient = !!clientId;
   const isInsideCampaign = !!campaignId;
 
-  // Fetch names for context indicator
+  const currentSection = new URLSearchParams(location.search).get("section");
+
+  // Fetch names for breadcrumb
   const { data: agencyName } = useQuery({
     queryKey: ["sidebar-agency", agencyId],
     queryFn: async () => {
@@ -109,15 +113,56 @@ export default function AppSidebar() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const currentSection = new URLSearchParams(location.search).get("section");
+  // Fetch ALL campaigns for the selected client
+  const { data: clientCampaigns = [] } = useQuery({
+    queryKey: ["sidebar-client-campaigns", clientId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaigns")
+        .select("id, name, color, display_order")
+        .eq("client_id", clientId!)
+        .order("display_order", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+    enabled: !!clientId,
+    staleTime: 2 * 60 * 1000,
+  });
 
-  const roleBadge = isAdmin ? "Admin" : isMaster ? "Master" : "Usuário";
+  // Auto-expand active campaign on mount/change
+  useEffect(() => {
+    if (campaignId) {
+      setCampaignExpanded(prev => {
+        // If not yet tracked, init from localStorage or default open
+        if (prev[campaignId] === undefined) {
+          const stored = getStoredBool(`produzai_campanha_${campaignId}_open`, true);
+          return { ...prev, [campaignId]: stored };
+        }
+        return prev;
+      });
+    }
+  }, [campaignId]);
 
-  // Home path depends on user type
-  const homePath = isAdminOrMaster ? "/" : "/my-campaigns";
+  // Auto-expand admin if on admin page
+  useEffect(() => {
+    if (location.pathname.startsWith("/admin") || location.pathname === "/approvals") {
+      setAdminOpen(true);
+    }
+  }, [location.pathname]);
 
-  const toggleGroup = useCallback((key: string) => {
-    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+  const toggleCampaignExpanded = useCallback((id: string) => {
+    setCampaignExpanded(prev => {
+      const next = !prev[id];
+      setStoredBool(`produzai_campanha_${id}_open`, next);
+      return { ...prev, [id]: next };
+    });
+  }, []);
+
+  const toggleAdmin = useCallback(() => {
+    setAdminOpen(prev => {
+      setStoredBool("produzai_admin_menu_open", !prev);
+      return !prev;
+    });
   }, []);
 
   const handleNavigate = useCallback((href?: string) => {
@@ -126,200 +171,27 @@ export default function AppSidebar() {
     navigate(href);
   }, [navigate]);
 
-  useEffect(() => {
-    if (location.pathname.startsWith("/admin") || location.pathname === "/approvals") {
-      setExpandedGroups((prev) => ({ ...prev, admin: true }));
-    }
-    if (isInsideCampaign) {
-      setExpandedGroups((prev) => ({ ...prev, módulos: true }));
-    }
-  }, [location.pathname, isInsideCampaign]);
+  const roleBadge = isAdmin ? "Admin" : isMaster ? "Master" : "Usuário";
+  const homePath = isAdminOrMaster ? "/" : "/my-campaigns";
 
-  const campaignBasePath = isInsideCampaign
-    ? `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}`
-    : "";
-
-  const navItems: NavItem[] = useMemo(() => {
-    const items: NavItem[] = [
-      {
-        label: t("sidebar.home"),
-        icon: Home,
-        href: homePath,
-        active: location.pathname === homePath || location.pathname === "/" || location.pathname === "/agency-select",
-        color: "#8C6F4E",
-      },
-    ];
-
-    if (isInsideAgency) {
-      items.push({
-        label: t("sidebar.clients"),
-        icon: Briefcase,
-        href: `/agency/${agencyId}`,
-        active: location.pathname === `/agency/${agencyId}`,
-        color: "#735A3D",
-      });
-    }
-
-    if (isInsideClient) {
-      items.push({
-        label: t("modules.stores"),
-        icon: Store,
-        href: `/agency/${agencyId}/clients/${clientId}?tab=stores`,
-        active: location.search.includes("tab=stores"),
-        color: "#6B4F2E",
-      });
-      items.push({
-        label: t("sidebar.campaigns"),
-        icon: Megaphone,
-        href: `/agency/${agencyId}/clients/${clientId}`,
-        active: location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores"),
-        color: "#8C6F4E",
-      });
-    }
-
-    if (isInsideCampaign) {
-      items.push({
-        label: campaignName || t("sidebar.campaigns"),
-        icon: Grid3X3,
-        color: "#8C6F4E",
-        active: !!currentSection,
-        children: CAMPAIGN_MODULE_KEYS.map((mod) => ({
-          label: t(mod.tKey),
-          icon: mod.icon,
-          color: mod.color,
-          href: `${campaignBasePath}?section=${mod.key}`,
-          active: currentSection === mod.key,
-        })),
-      });
-    }
-
-    // Chat is now campaign-scoped, no standalone nav item
-
-    if (isAdminOrMaster) {
-      items.push({
-        label: t("header.admin"),
-        icon: Shield,
-        color: "#7A3B2E",
-        active: location.pathname.startsWith("/admin") || location.pathname === "/approvals",
-        children: [
-          {
-            label: t("header.admin"),
-            icon: Shield,
-            href: "/admin",
-            active: location.pathname === "/admin" && !location.search.includes("tab=backup"),
-            color: "#7A3B2E",
-          },
-          {
-            label: t("sidebar.approvals"),
-            icon: Users,
-            href: "/approvals",
-            active: location.pathname === "/approvals",
-            color: "#5C6B3F",
-          },
-        ],
-      });
-    }
-
-    if (isAdmin) {
-      items.push({
-        label: "Backup",
-        icon: Database,
-        color: "#4A5568",
-        href: "/admin?tab=backup",
-        active: location.pathname === "/admin" && location.search.includes("tab=backup"),
-      });
-    }
-
-    return items;
-  }, [location.pathname, location.search, currentSection, isInsideAgency, isInsideClient, isInsideCampaign, agencyId, clientId, campaignBasePath, isAdminOrMaster, isAdmin, homePath, campaignName, t]);
-
-  const renderNavItem = (item: NavItem) => {
-    if (item.children) {
-      const groupKey = item.label.toLowerCase();
-      const isExpanded = expandedGroups[groupKey] ?? false;
-      const hasActiveChild = item.children.some((c) => c.active);
-      return (
-        <div key={item.label}>
-          <button
-            onClick={() => toggleGroup(groupKey)}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all"
-            style={hasActiveChild
-              ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)" }
-              : { color: "var(--sidebar-text)" }
-            }
-            onMouseEnter={e => { if (!hasActiveChild) e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
-            onMouseLeave={e => { if (!hasActiveChild) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; } }}
-            title={collapsed ? item.label : undefined}
-          >
-            <AquaIcon icon={item.icon} size="sm" color={item.color} />
-            {!collapsed && (
-              <>
-                <span className="truncate font-medium flex-1 text-left">{item.label}</span>
-                {isExpanded
-                  ? <ChevronDown className="w-3.5 h-3.5 flex-shrink-0 opacity-40" />
-                  : <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 opacity-40" />
-                }
-              </>
-            )}
-          </button>
-          {!collapsed && isExpanded && (
-            <div className="ml-4 pl-2 mt-0.5 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
-              {item.children.map((child) => (
-                <button
-                  key={child.label}
-                  onClick={() => handleNavigate(child.href)}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
-                  style={child.active
-                    ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", fontWeight: 600, borderLeft: "3px solid var(--sidebar-active-bar)" }
-                    : { color: "var(--sidebar-text)" }
-                  }
-                  onMouseEnter={e => { if (!child.active) { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; } }}
-                  onMouseLeave={e => { if (!child.active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; } }}
-                >
-                  <AquaIcon icon={child.icon} size="xs" color={child.color} />
-                  <span className="truncate">{child.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <button
-        key={item.label}
-        onClick={() => handleNavigate(item.href)}
-        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-        style={item.active
-          ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", borderLeft: "3px solid var(--sidebar-active-bar)", fontWeight: 500 }
-          : { color: "var(--sidebar-text)" }
-        }
-        onMouseEnter={e => { if (!item.active) { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; } }}
-        onMouseLeave={e => { if (!item.active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; } }}
-        title={collapsed ? item.label : undefined}
-      >
-        <div className="relative flex-shrink-0">
-          <AquaIcon icon={item.icon} size="sm" color={item.color} />
-          {item.badge && item.badge > 0 ? (
-            <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
-              {item.badge > 99 ? "99+" : item.badge}
-            </span>
-          ) : null}
-        </div>
-        {!collapsed && (
-          <>
-            <span className="truncate font-medium">{item.label}</span>
-            {item.badge && item.badge > 0 ? (
-              <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                {item.badge > 99 ? "99+" : item.badge}
-              </span>
-            ) : null}
-          </>
-        )}
-      </button>
-    );
+  // Helper: is a campaign module active?
+  const isCampaignModuleActive = (cId: string, modKey: string) => {
+    return campaignId === cId && currentSection === modKey;
   };
+
+  // Style helpers
+  const itemStyle = (active: boolean) => active
+    ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", borderLeft: "3px solid var(--sidebar-active-bar)", fontWeight: 500 as const }
+    : { color: "var(--sidebar-text)" };
+
+  const hoverHandlers = (active: boolean) => ({
+    onMouseEnter: (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!active) { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }
+    },
+    onMouseLeave: (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }
+    },
+  });
 
   const sidebarContent = (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -341,27 +213,200 @@ export default function AppSidebar() {
         </button>
       </div>
 
-      {/* Greeting */}
-      {!collapsed && (
-        <div className="px-3 py-2.5 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
-          <p className="text-sm font-bold" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>{getGreeting()}, {displayName}!</p>
-        </div>
-      )}
-
-      {/* Context breadcrumb */}
+      {/* Breadcrumb contextual */}
       {!collapsed && isInsideAgency && (
         <div className="px-3 py-2 space-y-0.5 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
-          <div className="text-[11px] truncate" style={{ color: "var(--sidebar-text, #A89880)" }}>
-            {agencyName && <span>{agencyName}</span>}
-            {clientName && <span> › {clientName}</span>}
-            {campaignName && <span> › {campaignName}</span>}
-          </div>
+          {agencyName && (
+            <div className="text-[11px] font-semibold uppercase tracking-wider truncate" style={{ color: "var(--brand-400, #A88B6A)" }}>
+              {agencyName}
+            </div>
+          )}
+          {(clientName || campaignName) && (
+            <div className="text-[11px] truncate" style={{ color: "var(--sidebar-text, #A89880)" }}>
+              {clientName}{campaignName ? ` › ${campaignName}` : ""}
+            </div>
+          )}
         </div>
       )}
 
       {/* Navigation */}
       <nav className="min-h-0 flex-1 overflow-y-auto py-3 px-2 space-y-1">
-        {navItems.map(renderNavItem)}
+
+        {/* ── Agências (always visible) ── */}
+        <button
+          onClick={() => handleNavigate(homePath)}
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+          style={itemStyle(location.pathname === homePath || location.pathname === "/" || location.pathname === "/agency-select")}
+          {...hoverHandlers(location.pathname === homePath || location.pathname === "/")}
+          title={collapsed ? t("sidebar.agencies") : undefined}
+        >
+          <AquaIcon icon={Building2} size="sm" color="#8C6F4E" />
+          {!collapsed && <span className="truncate font-medium">{t("sidebar.agencies")}</span>}
+        </button>
+
+        {/* ── Admin (fixed, admin/master only) ── */}
+        {isAdminOrMaster && (
+          <div>
+            <button
+              onClick={toggleAdmin}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all"
+              style={itemStyle(location.pathname.startsWith("/admin") || location.pathname === "/approvals")}
+              {...hoverHandlers(location.pathname.startsWith("/admin") || location.pathname === "/approvals")}
+              title={collapsed ? t("header.admin") : undefined}
+            >
+              <AquaIcon icon={Settings} size="sm" color="#7A3B2E" />
+              {!collapsed && (
+                <>
+                  <span className="truncate font-medium flex-1 text-left">{t("header.admin")}</span>
+                  {adminOpen
+                    ? <ChevronDown className="w-3.5 h-3.5 flex-shrink-0 opacity-40" />
+                    : <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 opacity-40" />
+                  }
+                </>
+              )}
+            </button>
+            {!collapsed && adminOpen && (
+              <div className="ml-4 pl-2 mt-0.5 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
+                <button
+                  onClick={() => handleNavigate("/admin")}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
+                  style={itemStyle(location.pathname === "/admin" && !location.search.includes("tab=backup"))}
+                  {...hoverHandlers(location.pathname === "/admin" && !location.search.includes("tab=backup"))}
+                >
+                  <AquaIcon icon={Users} size="xs" color="#7A3B2E" />
+                  <span className="truncate">{t("sidebar.admin_users", "Usuários")}</span>
+                </button>
+                <button
+                  onClick={() => handleNavigate("/approvals")}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
+                  style={itemStyle(location.pathname === "/approvals")}
+                  {...hoverHandlers(location.pathname === "/approvals")}
+                >
+                  <AquaIcon icon={Shield} size="xs" color="#5C6B3F" />
+                  <span className="truncate">{t("sidebar.approvals")}</span>
+                </button>
+                {isAdmin && (
+                  <button
+                    onClick={() => handleNavigate("/admin?tab=backup")}
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
+                    style={itemStyle(location.pathname === "/admin" && location.search.includes("tab=backup"))}
+                    {...hoverHandlers(location.pathname === "/admin" && location.search.includes("tab=backup"))}
+                  >
+                    <AquaIcon icon={Database} size="xs" color="#4A5568" />
+                    <span className="truncate">Backup</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Separator */}
+        {isInsideAgency && (
+          <div className="my-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
+        )}
+
+        {/* ── Clientes (when inside agency) ── */}
+        {isInsideAgency && (
+          <button
+            onClick={() => handleNavigate(`/agency/${agencyId}`)}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+            style={itemStyle(location.pathname === `/agency/${agencyId}` && !isInsideClient)}
+            {...hoverHandlers(location.pathname === `/agency/${agencyId}` && !isInsideClient)}
+            title={collapsed ? t("sidebar.clients") : undefined}
+          >
+            <AquaIcon icon={Briefcase} size="sm" color="#735A3D" />
+            {!collapsed && <span className="truncate font-medium">{t("sidebar.clients")}</span>}
+          </button>
+        )}
+
+        {/* ── Client context: Lojas + Campanhas (only when client selected) ── */}
+        {isInsideClient && !collapsed && (
+          <>
+            {/* Client section label */}
+            <div className="px-2.5 pt-3 pb-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--brand-300, #C4AD92)" }}>
+                {clientName || t("sidebar.clients")}
+              </span>
+            </div>
+
+            {/* Lojas do Cliente (master) */}
+            <button
+              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
+              style={itemStyle(location.search.includes("tab=stores") && !isInsideCampaign)}
+              {...hoverHandlers(location.search.includes("tab=stores") && !isInsideCampaign)}
+            >
+              <AquaIcon icon={Store} size="xs" color="#6B4F2E" />
+              <span className="truncate">{t("modules.stores")}</span>
+            </button>
+
+            {/* Campanhas header */}
+            <button
+              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}`)}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
+              style={itemStyle(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
+              {...hoverHandlers(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
+            >
+              <AquaIcon icon={Megaphone} size="xs" color="#8C6F4E" />
+              <span className="truncate">{t("sidebar.campaigns")}</span>
+            </button>
+
+            {/* ── All campaigns listed with independent expansors ── */}
+            <div className="ml-6 space-y-0.5 mt-0.5">
+              {clientCampaigns.map((camp) => {
+                const isExpanded = campaignExpanded[camp.id] ?? (camp.id === campaignId);
+                const isActiveCampaign = campaignId === camp.id;
+                const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
+
+                return (
+                  <div key={camp.id}>
+                    {/* Campaign name header */}
+                    <button
+                      onClick={() => toggleCampaignExpanded(camp.id)}
+                      className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[12px] font-semibold uppercase tracking-wider transition-all"
+                      style={{
+                        color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
+                      onMouseLeave={e => { if (!isActiveCampaign) e.currentTarget.style.color = "var(--brand-300, #C4AD92)"; }}
+                    >
+                      <span className="truncate flex-1 text-left">{camp.name}</span>
+                      <ChevronDown
+                        className="w-3 h-3 flex-shrink-0 opacity-40 transition-transform duration-200"
+                        style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}
+                      />
+                    </button>
+
+                    {/* Campaign modules */}
+                    {isExpanded && (
+                      <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
+                        {CAMPAIGN_MODULE_KEYS.map((mod) => {
+                          const modActive = isCampaignModuleActive(camp.id, mod.key);
+                          return (
+                            <button
+                              key={mod.key}
+                              onClick={() => handleNavigate(`${campBasePath}?section=${mod.key}`)}
+                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
+                              style={modActive
+                                ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", fontWeight: 600, borderLeft: "3px solid var(--sidebar-active-bar)" }
+                                : { color: "var(--sidebar-text)" }
+                              }
+                              {...hoverHandlers(modActive)}
+                            >
+                              <AquaIcon icon={mod.icon} size="xs" color={mod.color} />
+                              <span className="truncate">{t(mod.tKey)}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </nav>
 
       {/* Footer */}
@@ -435,7 +480,6 @@ export default function AppSidebar() {
               )}
             </div>
             <InviteButton />
-            {/* <WhatsNewButton /> */}
           </div>
         </div>
       </div>
