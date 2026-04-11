@@ -120,8 +120,8 @@ const CampaignDetail = () => {
   const updatePiece = useUpdateCampaignPiece();
   const updateStorePiece = useUpdateCampaignStorePiece();
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
+  const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
   const addPieceLocation = useAddCampaignPieceLocation();
-  const deletePieceLocation = useDeleteCampaignPieceLocation();
   const updateClientStore = useUpdateClientStore();
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const upsertStoreStatus = useUpsertCampaignStoreStatus();
