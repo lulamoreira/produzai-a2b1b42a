@@ -801,7 +801,23 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       <FileText className="w-3 h-3 text-[var(--text-muted)]" />
                       OS: {effectiveOs}
                     </span>
-                  )}
+                   )}
+                  {/* Install code status indicator — admin/master only */}
+                  {isAdminOrMaster && schedule && (() => {
+                    if (schedule.checkin_timestamp) {
+                      const checkinDate = format(new Date(schedule.checkin_timestamp), "dd/MM HH:mm");
+                      const hasGps = schedule.checkin_lat != null;
+                      return (
+                        <span className={`flex items-center gap-1 text-[10px] font-medium ${hasGps ? "text-[var(--s-success)]" : "text-[var(--s-warning)]"}`}>
+                          ✔ Check-in {checkinDate}{!hasGps && " (sem GPS)"}
+                        </span>
+                      );
+                    }
+                    if (schedule.install_code) {
+                      return <span className="flex items-center gap-1 text-[10px] text-[var(--s-success)]">● Código ativo</span>;
+                    }
+                    return <span className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">○ Código não gerado</span>;
+                  })()}
                 </div>
 
                 {/* Row 4: Photo thumbnails + Complete button + Expand toggle */}
