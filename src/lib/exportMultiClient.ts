@@ -119,6 +119,7 @@ export function exportCampaignPieces(
   const rows = pieces.map((p) => ({
     "Código": p.code,
     "Localização na Loja": p.category,
+    "Sub-localização": (p as any).sub_location || "",
     "Nome": p.name,
     "Medidas": p.size,
     "Modelo de Loja": p.store_category || "",
@@ -128,10 +129,10 @@ export function exportCampaignPieces(
   }));
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{
-    "Código": "", "Localização na Loja": "", "Nome": "", "Medidas": "", "Modelo de Loja": "",
+    "Código": "", "Localização na Loja": "", "Sub-localização": "", "Nome": "", "Medidas": "", "Modelo de Loja": "",
     "Especificação": "", "Instruções de Instalação": "", "Mockup": "",
   }]);
-  ws["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }, { wch: 10 }];
+  ws["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }, { wch: 10 }];
   XLSX.utils.book_append_sheet(wb, ws, "Peças");
 
   // Kit detail sheets
@@ -143,6 +144,7 @@ export function exportCampaignPieces(
       return {
         "Código": piece?.code || 0,
         "Localização na Loja": piece?.category || "",
+        "Sub-localização": (piece as any)?.sub_location || "",
         "Nome": piece?.name || "",
         "Medidas": piece?.size || "",
         "Modelo de Loja": piece?.store_category || "",
@@ -153,7 +155,7 @@ export function exportCampaignPieces(
     });
     if (kitRows.length > 0) {
       const kitWs = XLSX.utils.json_to_sheet(kitRows);
-      kitWs["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }, { wch: 12 }];
+      kitWs["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }, { wch: 12 }];
       XLSX.utils.book_append_sheet(wb, kitWs, `Kit ${kit.code} - ${kit.name}`.slice(0, 31));
     }
   });
@@ -253,12 +255,13 @@ export function exportMatrix(
         "Nome": piece?.name || "",
         "Medidas": piece?.size || "",
         "Localização": piece?.category || "",
+        "Sub-localização": (piece as any)?.sub_location || "",
         "Qtd no Kit": kp.quantity || 1,
       };
     });
     if (kitRows.length > 0) {
       const kitWs = XLSX.utils.json_to_sheet(kitRows);
-      kitWs["!cols"] = [{ wch: 8 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 12 }];
+      kitWs["!cols"] = [{ wch: 8 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 12 }];
       XLSX.utils.book_append_sheet(wb, kitWs, `Kit ${kitSeqCode} - ${kit.name}`.slice(0, 31));
     }
   });

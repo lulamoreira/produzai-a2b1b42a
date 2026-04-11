@@ -8,7 +8,8 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   useCampaign, useClient, useClientStores, useCampaignPieces, useCampaignStorePieces,
   useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece,
-  useCampaignPieceLocations, useAddCampaignPieceLocation, useDeleteCampaignPieceLocation,
+  useCampaignPieceLocations, useAddCampaignPieceLocation, useDeleteCampaignPieceLocation, useUpdateCampaignPieceLocation,
+  useCampaignPieceSubLocations, useAddCampaignPieceSubLocation, useDeleteCampaignPieceSubLocation, useUpdateCampaignPieceSubLocation,
   useUpdateClientStore,
   useCampaignStoreStatus, useUpsertCampaignStoreStatus, useBulkUpsertCampaignStoreStatus,
   useClientStoreModels,
@@ -39,7 +40,8 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, MoreHorizontal, Pencil } from "lucide-react";
+import { cn } from "@/lib/utils";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 import BudgetsTab from "@/components/BudgetsTab";
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -121,6 +123,11 @@ const CampaignDetail = () => {
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const addPieceLocation = useAddCampaignPieceLocation();
   const deletePieceLocation = useDeleteCampaignPieceLocation();
+  const updatePieceLocation = useUpdateCampaignPieceLocation();
+  const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
+  const addPieceSubLocation = useAddCampaignPieceSubLocation();
+  const deletePieceSubLocation = useDeleteCampaignPieceSubLocation();
+  const updatePieceSubLocation = useUpdateCampaignPieceSubLocation();
   const updateClientStore = useUpdateClientStore();
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const upsertStoreStatus = useUpsertCampaignStoreStatus();
@@ -158,6 +165,12 @@ const CampaignDetail = () => {
   // ─── Location management ──────────────────────────────
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [newLocationName, setNewLocationName] = useState("");
+  const [editingLocationId, setEditingLocationId] = useState<string | null>(null);
+  const [editingLocationName, setEditingLocationName] = useState("");
+  const [expandedLocationId, setExpandedLocationId] = useState<string | null>(null);
+  const [newSubLocationName, setNewSubLocationName] = useState("");
+  const [editingSubLocId, setEditingSubLocId] = useState<string | null>(null);
+  const [editingSubLocName, setEditingSubLocName] = useState("");
 
   // ─── Kit dialogs ───────────────────────────────────────
   const [createKitDialogOpen, setCreateKitDialogOpen] = useState(false);
@@ -168,7 +181,7 @@ const CampaignDetail = () => {
   // ─── Piece dialogs ─────────────────────────────────────
   const [pieceDialogOpen, setPieceDialogOpen] = useState(false);
   const [pieceForm, setPieceForm] = useState({
-    code: "", category: "", name: "",
+    code: "", category: "", sub_location: "", name: "",
     width: "", length: "", height: "",
     store_category: typeof window !== "undefined" ? localStorage.getItem("last_store_category") || "" : "",
     specification: "Vide Book/Manual",
@@ -180,7 +193,7 @@ const CampaignDetail = () => {
   const [pieceImageUploading, setPieceImageUploading] = useState(false);
   const [editPieceDialogOpen, setEditPieceDialogOpen] = useState(false);
   const [editPieceForm, setEditPieceForm] = useState({
-    id: "", code: "", category: "", name: "",
+    id: "", code: "", category: "", sub_location: "", name: "",
     width: "", length: "", height: "",
     store_category: "",
     specification: "Vide Book/Manual",
@@ -381,7 +394,7 @@ const CampaignDetail = () => {
       localStorage.setItem("last_store_category", pieceForm.store_category);
     }
     const maxOrder = pieces.length > 0 ? Math.max(...pieces.map(p => p.display_order)) : 0;
-    await addPiece.mutateAsync({
+    const newPiece = await addPiece.mutateAsync({
       campaign_id: campaignId,
       code,
       category: pieceForm.category,
@@ -395,8 +408,11 @@ const CampaignDetail = () => {
       display_order: maxOrder + 1,
       image_url: pieceForm.image_url || undefined,
     });
+    if (pieceForm.sub_location && newPiece?.id) {
+      await supabase.from("campaign_pieces").update({ sub_location: pieceForm.sub_location } as any).eq("id", newPiece.id);
+    }
     setPieceForm({
-      code: "", category: "", name: "",
+      code: "", category: "", sub_location: "", name: "",
       width: "", length: "", height: "",
       store_category: pieceForm.store_category,
       specification: "Vide Book/Manual",
@@ -414,6 +430,7 @@ const CampaignDetail = () => {
       id: piece.id,
       code: String(piece.code),
       category: piece.category,
+      sub_location: (piece as any).sub_location || "",
       name: piece.name,
       width: sizeParts[0] || "",
       height: sizeParts[1] || "",
@@ -445,6 +462,7 @@ const CampaignDetail = () => {
       is_mockup: editPieceForm.is_mockup,
       image_url: editPieceForm.image_url || null,
     });
+    await supabase.from("campaign_pieces").update({ sub_location: editPieceForm.sub_location || null } as any).eq("id", editPieceForm.id);
     setEditPieceDialogOpen(false);
   };
 
@@ -716,7 +734,7 @@ const CampaignDetail = () => {
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.locationInStore")} *</label>
         {pieceLocations.length > 0 ? (
-          <Select value={form.category} onValueChange={(val) => setForm((f) => ({ ...f, category: val }))}>
+          <Select value={form.category} onValueChange={(val) => setForm((f) => ({ ...f, category: val, sub_location: "" }))}>
             <SelectTrigger>
               <SelectValue placeholder={t("pieces.selectLocation")} />
             </SelectTrigger>
@@ -728,6 +746,26 @@ const CampaignDetail = () => {
           <Input value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} required />
         )}
       </div>
+      {/* Sub-location selector */}
+      {form.category && (() => {
+        const selectedLoc = pieceLocations.find(l => l.name === form.category);
+        const subs = selectedLoc ? pieceSubLocations.filter(s => s.location_id === selectedLoc.id) : [];
+        if (subs.length === 0) return null;
+        return (
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Sub-localização</label>
+            <Select value={form.sub_location} onValueChange={(val) => setForm((f) => ({ ...f, sub_location: val }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a sub-localização" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Nenhuma</SelectItem>
+                {subs.map((s) => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+      })()}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.name")} *</label>
         <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
@@ -2323,8 +2361,8 @@ const CampaignDetail = () => {
       </Dialog>
 
       {/* Manage Locations Dialog */}
-      <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
-        <DialogContent>
+      <Dialog open={locationDialogOpen} onOpenChange={(open) => { setLocationDialogOpen(open); if (!open) { setExpandedLocationId(null); setEditingLocationId(null); setEditingSubLocId(null); } }}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
              <DialogTitle>{t("locations.manageLocations")}</DialogTitle>
              <DialogDescription>{t("locations.manageLocationsDesc")}</DialogDescription>
@@ -2358,20 +2396,130 @@ const CampaignDetail = () => {
             {pieceLocations.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">{t("locations.noLocationRegistered")}</p>
             ) : (
-              <div className="space-y-1 max-h-[300px] overflow-y-auto">
-                {[...pieceLocations].sort((a, b) => a.name.localeCompare(b.name)).map((loc) => (
-                  <div key={loc.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
-                    <span className="text-sm">{loc.name}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => deletePieceLocation.mutate(loc.id)}
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
+              <div className="space-y-1 max-h-[400px] overflow-y-auto">
+                {[...pieceLocations].sort((a, b) => a.name.localeCompare(b.name)).map((loc) => {
+                  const isExpanded = expandedLocationId === loc.id;
+                  const subs = pieceSubLocations.filter(s => s.location_id === loc.id).sort((a, b) => a.name.localeCompare(b.name));
+                  return (
+                    <div key={loc.id} className="rounded-md border border-border overflow-hidden">
+                      <div className="flex items-center gap-2 px-3 py-2 bg-muted/50">
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                          onClick={() => setExpandedLocationId(isExpanded ? null : loc.id)}
+                        >
+                          <ChevronDown className={cn("w-4 h-4 transition-transform", isExpanded && "rotate-180")} />
+                        </button>
+                        {editingLocationId === loc.id ? (
+                          <Input
+                            className="h-7 text-sm flex-1"
+                            value={editingLocationName}
+                            onChange={(e) => setEditingLocationName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && editingLocationName.trim()) {
+                                updatePieceLocation.mutate({ id: loc.id, name: editingLocationName.trim() });
+                                setEditingLocationId(null);
+                              }
+                              if (e.key === "Escape") setEditingLocationId(null);
+                            }}
+                            onBlur={() => {
+                              if (editingLocationName.trim() && editingLocationName.trim() !== loc.name) {
+                                updatePieceLocation.mutate({ id: loc.id, name: editingLocationName.trim() });
+                              }
+                              setEditingLocationId(null);
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="text-sm flex-1 cursor-pointer" onClick={() => { setEditingLocationId(loc.id); setEditingLocationName(loc.name); }}>{loc.name}</span>
+                        )}
+                        <span className="text-[10px] text-muted-foreground">{subs.length > 0 ? `${subs.length} sub` : ""}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => { setEditingLocationId(loc.id); setEditingLocationName(loc.name); }}
+                        >
+                          <Pencil className="w-3 h-3 text-muted-foreground" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={() => deletePieceLocation.mutate(loc.id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </Button>
+                      </div>
+                      {isExpanded && (
+                        <div className="px-3 py-2 space-y-1.5 bg-background border-t border-border">
+                          <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Sub-localizações</p>
+                          {subs.map((sub) => (
+                            <div key={sub.id} className="flex items-center gap-2 pl-4">
+                              {editingSubLocId === sub.id ? (
+                                <Input
+                                  className="h-6 text-xs flex-1"
+                                  value={editingSubLocName}
+                                  onChange={(e) => setEditingSubLocName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && editingSubLocName.trim()) {
+                                      updatePieceSubLocation.mutate({ id: sub.id, name: editingSubLocName.trim() });
+                                      setEditingSubLocId(null);
+                                    }
+                                    if (e.key === "Escape") setEditingSubLocId(null);
+                                  }}
+                                  onBlur={() => {
+                                    if (editingSubLocName.trim() && editingSubLocName.trim() !== sub.name) {
+                                      updatePieceSubLocation.mutate({ id: sub.id, name: editingSubLocName.trim() });
+                                    }
+                                    setEditingSubLocId(null);
+                                  }}
+                                  autoFocus
+                                />
+                              ) : (
+                                <span className="text-xs flex-1 cursor-pointer" onClick={() => { setEditingSubLocId(sub.id); setEditingSubLocName(sub.name); }}>{sub.name}</span>
+                              )}
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setEditingSubLocId(sub.id); setEditingSubLocName(sub.name); }}>
+                                <Pencil className="w-2.5 h-2.5 text-muted-foreground" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => deletePieceSubLocation.mutate(sub.id)}>
+                                <Trash2 className="w-2.5 h-2.5 text-destructive" />
+                              </Button>
+                            </div>
+                          ))}
+                          <div className="flex gap-2 pl-4">
+                            <Input
+                              className="h-7 text-xs"
+                              placeholder="Nova sub-localização"
+                              value={expandedLocationId === loc.id ? newSubLocationName : ""}
+                              onChange={(e) => setNewSubLocationName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && newSubLocationName.trim() && campaignId) {
+                                  e.preventDefault();
+                                  addPieceSubLocation.mutate({ location_id: loc.id, campaign_id: campaignId, name: newSubLocationName.trim() });
+                                  setNewSubLocationName("");
+                                }
+                              }}
+                            />
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2"
+                              disabled={!newSubLocationName.trim() || addPieceSubLocation.isPending}
+                              onClick={() => {
+                                if (!campaignId || !newSubLocationName.trim()) return;
+                                addPieceSubLocation.mutate({ location_id: loc.id, campaign_id: campaignId, name: newSubLocationName.trim() });
+                                setNewSubLocationName("");
+                              }}
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
