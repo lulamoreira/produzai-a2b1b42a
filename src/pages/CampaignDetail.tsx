@@ -1729,7 +1729,7 @@ const CampaignDetail = () => {
                 />
 
 
-                  open={matrixCustomExportOpen}
+                <CustomExportDialog
                   onOpenChange={setMatrixCustomExportOpen}
                   title="Exportação Personalizada — Matriz/Rateio"
                   fileName={`Matriz_Rateio_${campaign?.name || "Campanha"}`}
