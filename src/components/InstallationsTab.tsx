@@ -527,17 +527,22 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           </Popover>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex flex-wrap gap-1.5">
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleExport}>
-            <Download className="w-3.5 h-3.5" /> Exportar
-          </Button>
-          {photos.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-xs"
-              onClick={() => {
+      {/* More actions dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 text-xs gap-1 shrink-0">
+              <MoreHorizontal className="w-3.5 h-3.5" /> Mais ações
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[220px]">
+            <DropdownMenuItem onClick={() => setShowCodes(!showCodes)}>
+              <Key className="w-3.5 h-3.5 mr-2" /> {showCodes ? t("installations.hideAccessConfig") : t("installations.tempAccessConfig")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExport}>
+              <Download className="w-3.5 h-3.5 mr-2" /> Exportar
+            </DropdownMenuItem>
+            {photos.length > 0 && (
+              <DropdownMenuItem onClick={() => {
                 const storeNameMap: Record<string, string> = {};
                 stores.forEach((s) => {
                   storeNameMap[s.id] = s.store_code ? `${s.store_code}_${s.name}` : s.name;
@@ -546,77 +551,93 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 downloadAllCampaignPhotosAsZip(photos, storeNameMap, campaignName, (done, total) => {
                   if (done === total) toast.success(t("common.downloadComplete"));
                 }).catch(() => toast.error(t("common.errorDownloading")));
-              }}
-            >
-              <Camera className="w-3.5 h-3.5" /> Baixar todas as fotos ({photos.length})
-            </Button>
-          )}
-          {canLockCards && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-xs"
-              disabled={bulkLockLoading}
-              onClick={async () => {
-                setBulkLockLoading(true);
-                try {
-                  const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
-                  const allLocked = unlocked.length === 0;
-                  const newLocked = !allLocked;
-                  const ids = displayedStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
-                  if (ids.length === 0) { setBulkLockLoading(false); return; }
-                  const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
-                  if (error) throw error;
-                  queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-                  toast.success(newLocked ? `${ids.length} cards bloqueados!` : `${ids.length} cards desbloqueados!`);
-                } catch (err: any) {
-                  toast.error(err.message || t("common.errorChangingLockBulk"));
-                } finally {
-                  setBulkLockLoading(false);
-                }
-              }}
-            >
-              {(() => {
-                const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
-                const allLocked = unlocked.length === 0 && displayedStores.some(s => scheduleMap[s.id]);
-                return allLocked
-                  ? <><LockOpen className="w-3.5 h-3.5" /> Desbloquear Todos</>
-                  : <><Lock className="w-3.5 h-3.5" /> Bloquear Todos</>;
-              })()}
-            </Button>
-          )}
-        </div>
+              }}>
+                <Camera className="w-3.5 h-3.5 mr-2" /> Baixar todas as fotos ({photos.length})
+              </DropdownMenuItem>
+            )}
+            {canLockCards && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-[var(--s-danger)] focus:text-[var(--s-danger)]"
+                  disabled={bulkLockLoading}
+                  onClick={async () => {
+                    setBulkLockLoading(true);
+                    try {
+                      const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                      const allLocked = unlocked.length === 0;
+                      const newLocked = !allLocked;
+                      const ids = displayedStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
+                      if (ids.length === 0) { setBulkLockLoading(false); return; }
+                      const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
+                      if (error) throw error;
+                      queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                      toast.success(newLocked ? `${ids.length} cards bloqueados!` : `${ids.length} cards desbloqueados!`);
+                    } catch (err: any) {
+                      toast.error(err.message || t("common.errorChangingLockBulk"));
+                    } finally {
+                      setBulkLockLoading(false);
+                    }
+                  }}
+                >
+                  {(() => {
+                    const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                    const allLocked = unlocked.length === 0 && displayedStores.some(s => scheduleMap[s.id]);
+                    return allLocked
+                      ? <><LockOpen className="w-3.5 h-3.5 mr-2" /> Desbloquear Todos</>
+                      : <><Lock className="w-3.5 h-3.5 mr-2" /> Bloquear Todos</>;
+                  })()}
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {/* KPI Summary Bar */}
-      <div className="kpi-strip">
+      {/* KPI Summary Strip — inline */}
+      <div
+        className="flex items-baseline overflow-x-auto"
+        style={{
+          padding: "10px 16px",
+          background: "var(--bg-surface)",
+          borderBottom: "1px solid var(--border-subtle)",
+          whiteSpace: "nowrap",
+          WebkitOverflowScrolling: "touch",
+          gap: 0,
+        }}
+      >
         {([
           { key: "total" as const, value: summaryMetrics.total, label: t("common.total"), isTotal: true, dangerWhenPositive: false },
-          { key: "completed" as const, value: summaryMetrics.completed, label: "✅ Concluídas", isTotal: false, dangerWhenPositive: false },
-          { key: "pending" as const, value: summaryMetrics.pending, label: "⏳ Pendentes", isTotal: false, dangerWhenPositive: false },
-          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "🔧 Com equipe", isTotal: false, dangerWhenPositive: false },
-          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: "📷 Com fotos", isTotal: false, dangerWhenPositive: false },
-          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: "🔄 Remarcação", isTotal: false, dangerWhenPositive: false },
-          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: "⚠️ Ocorrências", isTotal: false, dangerWhenPositive: true },
-          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: "🔍 Sem Check-in", isTotal: false, dangerWhenPositive: true, visible: showPhotoCheckin },
-        ]).filter(m => m.visible !== false).map((m) => (
+          { key: "completed" as const, value: summaryMetrics.completed, label: "Concluídas", isTotal: false, dangerWhenPositive: false },
+          { key: "pending" as const, value: summaryMetrics.pending, label: "Pendentes", isTotal: false, dangerWhenPositive: false },
+          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "Com equipe", isTotal: false, dangerWhenPositive: false },
+          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: "Com fotos", isTotal: false, dangerWhenPositive: false },
+          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: "Remarcação", isTotal: false, dangerWhenPositive: false },
+          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: "Ocorrências", isTotal: false, dangerWhenPositive: true },
+          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: "Sem Check-in", isTotal: false, dangerWhenPositive: true, visible: showPhotoCheckin },
+        ]).filter(m => m.visible !== false).map((m, idx, arr) => (
           <button
             key={m.key}
             type="button"
             onClick={() => setSummaryFilter(prev => prev === m.key ? "" : m.key)}
-            className={cn(
-              "flex-shrink-0 bg-card border rounded-lg px-3 py-2 text-center transition-all cursor-pointer hover:shadow-md whitespace-nowrap",
-              summaryFilter === m.key
-                ? "border-primary ring-2 ring-primary/30 shadow-sm"
-                : "border-border"
-            )}
+            className="inline-flex items-baseline gap-1 transition-colors rounded-md hover:bg-[var(--bg-muted)]"
+            style={{
+              padding: "2px 14px",
+              borderRight: idx < arr.length - 1 ? "1px solid var(--border-subtle)" : "none",
+              cursor: "pointer",
+              ...(summaryFilter === m.key ? { backgroundColor: "var(--bg-muted)" } : {}),
+            }}
           >
-            <p className={cn(
-              "font-bold",
-              m.isTotal ? "text-xl" : "text-sm",
-              m.dangerWhenPositive && m.value > 0 ? "text-[var(--s-danger)]" : m.isTotal ? "text-foreground" : "text-[var(--text-secondary)]"
-            )}>{m.value}</p>
-            <p className="text-[10px] text-muted-foreground">{m.label}</p>
+            <span
+              className="font-bold leading-none"
+              style={{
+                fontSize: m.isTotal ? 24 : 20,
+                color: m.dangerWhenPositive && m.value > 0 ? "var(--s-danger)" : m.isTotal ? "var(--text-primary)" : "var(--text-secondary)",
+              }}
+            >
+              {m.value}
+            </span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{m.label}</span>
           </button>
         ))}
       </div>
@@ -744,7 +765,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       <span className="badge-base badge-warning">REM</span>
                     )}
                     {isCardLocked && (
-                      <span className="badge-base badge-danger"><Lock className="w-3 h-3" /> BLOQ</span>
+                      <span className="badge-base badge-neutral"><Lock className="w-3 h-3" /> BLOQ</span>
                     )}
                   </div>
                 </div>
