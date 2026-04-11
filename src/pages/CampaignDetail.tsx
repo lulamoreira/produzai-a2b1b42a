@@ -2324,60 +2324,17 @@ const CampaignDetail = () => {
       </Dialog>
 
       {/* Manage Locations Dialog */}
-      <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-             <DialogTitle>{t("locations.manageLocations")}</DialogTitle>
-             <DialogDescription>{t("locations.manageLocationsDesc")}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder={t("locations.locationName")}
-                value={newLocationName}
-                onChange={(e) => setNewLocationName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newLocationName.trim() && campaignId) {
-                    e.preventDefault();
-                    addPieceLocation.mutate({ campaign_id: campaignId, name: newLocationName.trim() });
-                    setNewLocationName("");
-                  }
-                }}
-              />
-              <Button
-                size="sm"
-                disabled={!newLocationName.trim() || addPieceLocation.isPending}
-                onClick={() => {
-                  if (!campaignId || !newLocationName.trim()) return;
-                  addPieceLocation.mutate({ campaign_id: campaignId, name: newLocationName.trim() });
-                  setNewLocationName("");
-                }}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            {pieceLocations.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">{t("locations.noLocationRegistered")}</p>
-            ) : (
-              <div className="space-y-1 max-h-[300px] overflow-y-auto">
-                {[...pieceLocations].sort((a, b) => a.name.localeCompare(b.name)).map((loc) => (
-                  <div key={loc.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
-                    <span className="text-sm">{loc.name}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => deletePieceLocation.mutate(loc.id)}
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {campaignId && clientId && (
+        <ManageLocationsDialog
+          open={locationDialogOpen}
+          onOpenChange={setLocationDialogOpen}
+          campaignId={campaignId}
+          clientId={clientId}
+          pieceLocations={pieceLocations}
+          subLocations={pieceSubLocations}
+          pieces={pieces}
+        />
+      )}
 
       {/* Create Kit Dialog */}
       {campaignId && (
