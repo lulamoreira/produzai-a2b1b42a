@@ -485,9 +485,11 @@ export function KitDetailDialog({
             <p className="text-[10px] text-muted-foreground">Alterar a localização do kit atualiza todas as peças automaticamente.</p>
             <div className="grid grid-cols-2 gap-2">
               <Select
-                value={kit.category || "__none__"}
+                value={effectiveCategory || "__none__"}
                 onValueChange={async (val) => {
                   const newCategory = val === "__none__" ? null : val;
+                  setLocalCategory(newCategory);
+                  setLocalSubLocation(null);
                   await onUpdateKit({ id: kit.id, category: newCategory, sub_location: null });
                   // Propagate to all pieces in the kit
                   if (onUpdatePiece) {
@@ -510,14 +512,15 @@ export function KitDetailDialog({
                   ))}
                 </SelectContent>
               </Select>
-              {kit.category && pieceSubLocations.filter(s => {
-                const parentLoc = pieceLocations.find(l => l.name === kit.category);
+              {effectiveCategory && pieceSubLocations.filter(s => {
+                const parentLoc = pieceLocations.find(l => l.name === effectiveCategory);
                 return parentLoc && s.location_id === parentLoc.id;
               }).length > 0 && (
                 <Select
-                  value={kit.sub_location || "__none__"}
+                  value={effectiveSub || "__none__"}
                   onValueChange={async (val) => {
                     const newSub = val === "__none__" ? null : val;
+                    setLocalSubLocation(newSub);
                     await onUpdateKit({ id: kit.id, sub_location: newSub });
                     // Propagate to all pieces
                     if (onUpdatePiece) {
@@ -536,7 +539,7 @@ export function KitDetailDialog({
                   <SelectContent>
                     <SelectItem value="__none__">Nenhuma</SelectItem>
                     {pieceSubLocations.filter(s => {
-                      const parentLoc = pieceLocations.find(l => l.name === kit.category);
+                      const parentLoc = pieceLocations.find(l => l.name === effectiveCategory);
                       return parentLoc && s.location_id === parentLoc.id;
                     }).map(sub => (
                       <SelectItem key={sub.id} value={sub.name}>{sub.name}</SelectItem>
