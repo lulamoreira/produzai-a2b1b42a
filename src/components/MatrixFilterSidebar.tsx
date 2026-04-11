@@ -299,7 +299,7 @@ const MatrixFilterSidebar = ({
           onClick={() => onCollapsedChange(true)}
           title="Recolher filtros"
         >
-          <PanelLeftClose className="w-3.5 h-3.5" />
+          <ChevronLeft className="w-3.5 h-3.5" />
         </Button>
       </div>
 
