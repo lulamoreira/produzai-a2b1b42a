@@ -358,7 +358,33 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       details: `${oldVal ?? "(vazio)"} → ${value ?? "(vazio)"}`,
     });
 
-    let extraFields: Record<string, any> = {};
+    // Determine campaign activity action type
+    const isApprovalField = field.includes("approval_status");
+    if (isApprovalField) {
+      const isStore = field.includes("store");
+      const actionType = value === "approved"
+        ? (isStore ? "aprovacao_lojista" : "aprovacao_equipe")
+        : value === "rejected"
+          ? (isStore ? "recusa_lojista" : "recusa_equipe")
+          : null;
+      if (actionType) {
+        logCampaignActivity.mutate({
+          campaign_id: campaignId,
+          store_id: storeId,
+          actor_type: "user",
+          action: actionType,
+          description: `${isStore ? "Aprovação lojista" : "Aprovação equipe"}: ${value === "approved" ? "aprovado" : "recusado"} — ${storeName}`,
+        });
+      }
+    } else if (field === "scheduled_date" || field === "reschedule_date") {
+      logCampaignActivity.mutate({
+        campaign_id: campaignId,
+        store_id: storeId,
+        actor_type: "user",
+        action: field === "scheduled_date" ? "agendamento_criado" : "agendamento_alterado",
+        description: `Agendamento ${field === "reschedule_date" ? "reagendado" : "definido"} para ${storeName}: ${value}`,
+      });
+    }
 
     if (field === "scheduled_date" || field === "scheduled_time") {
       const nextDate = field === "scheduled_date" ? value : (existing?.scheduled_date ?? null);
