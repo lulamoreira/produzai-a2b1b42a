@@ -1605,6 +1605,15 @@ const CampaignDetail = () => {
                         <span className="hidden sm:inline">{t("automation.title")}</span>
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs gap-1.5"
+                      onClick={() => setBudgetExportDialogOpen(true)}
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      <span className="hidden sm:inline">Exportar Orçamento</span>
+                    </Button>
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
