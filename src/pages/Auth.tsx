@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Mail, Lock, User, Eye, EyeOff, Wand2 } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Wand2, Layers } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -141,15 +141,24 @@ const Auth = () => {
         </div>
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <img
-              src="/favicon.png"
-              alt="ProduzAI"
-              className="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-xl shadow-primary/20" />
+            <div
+              className="w-[72px] h-[72px] rounded-[18px] flex items-center justify-center mx-auto mb-4 shadow-xl"
+              style={{ background: "#8C6F4E" }}
+            >
+              <Layers className="w-9 h-9 text-white" />
+            </div>
             <h1 className="text-3xl font-display font-bold text-foreground">
               ProduzAI
             </h1>
-            <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-primary/15 text-primary border border-primary/20">
-              v2.0
+            <span
+              className="inline-block mt-1 rounded-full"
+              style={{
+                background: "var(--brand-100)", color: "var(--brand-700)",
+                fontSize: 10, fontWeight: 600, padding: "2px 8px",
+                letterSpacing: "0.04em",
+              }}
+            >
+              V2.0
             </span>
             <p className="text-sm text-muted-foreground mt-2">
               {t("auth.creativeProductionControl")}
@@ -277,10 +286,10 @@ const Auth = () => {
                 <div className="mb-2">
                    <a
                     href="/instalador"
-                    className="text-sm text-primary hover:underline flex items-center justify-center gap-1.5"
+                    className="hover:underline flex items-center justify-center gap-1.5"
+                    style={{ fontSize: 13, color: "var(--brand-600)" }}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                    {t("auth.enterAsInstaller")}
+                    🔑 {t("auth.enterAsInstaller")}
                   </a>
                 </div>
               )}

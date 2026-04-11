@@ -24,6 +24,7 @@ import { useClientPermission } from "@/hooks/useClientPermission";
 import { useLogActivity } from "@/hooks/useActivityLogs";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
 import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
+import InstallerPreviewDialog from "@/components/InstallerPreviewDialog";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [checkinStore, setCheckinStore] = useState<ClientStore | null>(null);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewStore, setPreviewStore] = useState<any>(null);
+  const [previewSchedule, setPreviewSchedule] = useState<any>(null);
+  const [previewTeam, setPreviewTeam] = useState<any>(null);
 
   const toggleCardExpanded = (storeId: string) => {
     setExpandedCards(prev => {
@@ -1012,74 +1017,94 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                     </button>
                   )}
 
-                  {/* Install code actions — admin/master only */}
-                  {isAdminOrMaster && schedule?.install_code && (
-                    <div className="flex items-center gap-2 flex-wrap">
+                  {/* Install code section — admin/master only */}
+                  {isAdminOrMaster && schedule && (
+                    <div style={{ margin: "12px 0" }}>
+                      <p style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: 6 }}>
+                        CÓDIGO DE ACESSO
+                      </p>
+                      {schedule.install_code ? (
+                        <div
+                          className="flex items-center gap-2 flex-wrap"
+                          style={{ padding: "10px 14px", background: "var(--brand-50)", border: "1px solid var(--brand-200)", borderRadius: 8 }}
+                        >
+                          <span style={{ fontFamily: "'Courier New', monospace", fontSize: 20, fontWeight: 700, letterSpacing: "0.14em", color: "var(--brand-800)", flex: 1, minWidth: 80 }}>
+                            {schedule.install_code}
+                          </span>
+                          <button
+                            className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md border transition-colors hover:border-[var(--s-danger)] hover:text-[var(--s-danger)]"
+                            style={{ borderColor: "var(--border-default)", background: "var(--bg-surface)", color: "var(--text-secondary)", cursor: "pointer", whiteSpace: "nowrap" }}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!confirm("Regenerar o código tornará o código anterior inválido imediatamente. Deseja continuar?")) return;
+                              const letters = "abcdefghijklmnopqrstuvwxyz";
+                              const l1 = letters[Math.floor(Math.random() * 26)];
+                              const l2 = letters[Math.floor(Math.random() * 26)];
+                              const nums = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+                              const newCode = `${l1}${l2}${nums}`;
+                              const { error } = await supabase.from("campaign_schedules").update({
+                                install_code: newCode,
+                                install_code_generated_at: new Date().toISOString(),
+                                code_sent_at: null,
+                              } as any).eq("id", schedule.id);
+                              if (error) { toast.error("Erro ao regenerar código."); return; }
+                              queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                              toast.success("Código regenerado!");
+                            }}
+                          >
+                            ⟳ Regenerar
+                          </button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs gap-1.5 h-8"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSendCodeSchedule(schedule);
+                              setSendCodeStore(store);
+                              setSendCodeTeam(assignedTeam);
+                              setSendCodeMembers(teamMembers);
+                            }}
+                          >
+                            <MessageCircle className="w-3 h-3" />
+                            {schedule.code_sent_at ? `✔ Enviado ${format(new Date(schedule.code_sent_at), "dd/MM HH:mm")}` : "📤 Enviar código"}
+                          </Button>
+                          <button
+                            className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-md border transition-colors"
+                            style={{ borderColor: "var(--brand-300)", background: "var(--brand-50)", color: "var(--brand-700)", cursor: "pointer", whiteSpace: "nowrap" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewStore(store);
+                              setPreviewSchedule(schedule);
+                              setPreviewTeam(assignedTeam);
+                              setPreviewOpen(true);
+                            }}
+                          >
+                            👁 Ver como instalador
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5" style={{ fontSize: 12, color: "var(--text-muted)", padding: "8px 0" }}>
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>Aguardando aprovação dupla para gerar código</span>
+                        </div>
+                      )}
                       {/* Checkin info */}
                       {schedule.checkin_timestamp && (
-                        <div className="text-xs space-y-0.5">
+                        <div className="text-xs space-y-0.5 mt-2">
                           <p className="font-medium text-[var(--s-success)]">
                             ✔ Check-in: {format(new Date(schedule.checkin_timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                           </p>
                           {schedule.checkin_lat != null ? (
                             <p className="text-[var(--text-muted)]">
                               📍 Precisão: ±{Math.round(schedule.checkin_accuracy || 0)}m{" "}
-                              <a
-                                href={`https://www.google.com/maps?q=${schedule.checkin_lat},${schedule.checkin_lng}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                Ver no mapa ↗
-                              </a>
+                              <a href={`https://www.google.com/maps?q=${schedule.checkin_lat},${schedule.checkin_lng}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>Ver no mapa ↗</a>
                             </p>
                           ) : (
                             <p className="text-[var(--s-warning)]">⚠ Check-in sem localização</p>
                           )}
                         </div>
                       )}
-                      <div className="flex gap-1.5 ml-auto">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-xs gap-1.5 h-8"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSendCodeSchedule(schedule);
-                            setSendCodeStore(store);
-                            setSendCodeTeam(assignedTeam);
-                            setSendCodeMembers(teamMembers);
-                          }}
-                        >
-                          <MessageCircle className="w-3 h-3" />
-                          {schedule.code_sent_at ? `✔ Enviado ${format(new Date(schedule.code_sent_at), "dd/MM HH:mm")}` : "📤 Enviar código"}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs h-8"
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (!confirm("Regenerar o código tornará o código anterior inválido imediatamente. Deseja continuar?")) return;
-                            const letters = "abcdefghijklmnopqrstuvwxyz";
-                            const l1 = letters[Math.floor(Math.random() * 26)];
-                            const l2 = letters[Math.floor(Math.random() * 26)];
-                            const nums = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
-                            const newCode = `${l1}${l2}${nums}`;
-                            const { error } = await supabase.from("campaign_schedules").update({
-                              install_code: newCode,
-                              install_code_generated_at: new Date().toISOString(),
-                              code_sent_at: null,
-                            } as any).eq("id", schedule.id);
-                            if (error) { toast.error("Erro ao regenerar código."); return; }
-                            queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-                            toast.success("Código regenerado!");
-                          }}
-                        >
-                          ⟳
-                        </Button>
-                      </div>
                     </div>
                   )}
 
@@ -1301,6 +1326,18 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           campaignName={campaignName}
         />
       )}
+
+      {/* Installer Preview Dialog */}
+      <InstallerPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        campaignName={campaignName}
+        store={previewStore}
+        schedule={previewSchedule}
+        team={previewTeam}
+        contacts={previewStore ? (contactsByStore[previewStore.id] || []) : []}
+        photos={previewStore ? (photosByStore[previewStore.id] || []) : []}
+      />
     </div>
   );
 };
