@@ -149,6 +149,8 @@ interface MatrixFilterSidebarProps {
   collapsed: boolean;
   onCollapsedChange: (collapsed: boolean) => void;
   customFieldLabels?: CustomFieldLabel[];
+  filterLogicMode: FilterLogicMode;
+  onFilterLogicModeChange: (mode: FilterLogicMode) => void;
 }
 
 const MatrixFilterSidebar = ({
