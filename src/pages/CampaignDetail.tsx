@@ -60,6 +60,7 @@ import SortablePiecesTable, { type UnifiedRow } from "@/components/SortablePiece
 import SupportMaterialsSection from "@/components/SupportMaterialsSection";
 import ImportSpecFromCampaign from "@/components/ImportSpecFromCampaign";
 import BulkDeletePiecesDialog from "@/components/BulkDeletePiecesDialog";
+import ManageLocationsDialog from "@/components/ManageLocationsDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters } from "@/components/MatrixFilterSidebar";
 import ModuleGrid from "@/components/ModuleGrid";
