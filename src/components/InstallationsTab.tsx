@@ -630,6 +630,17 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       )}
 
       {/* Store Cards */}
+      {displayedStores.length === 0 ? (
+        <EmptyState
+          icon={Camera}
+          hasActiveFilters={!!(searchTerm || filterState || filterStatus || filterDate || filterCity || filterPeriod || filterTeam || filterLocked || filterReschedule || filterModel || filterCheckin || summaryFilter)}
+          onClearFilters={() => {
+            setSearchTerm(""); setFilterState(""); setFilterCity(""); setFilterStatus(""); setFilterDate("");
+            setFilterPeriod(""); setFilterTeam(""); setFilterLocked(""); setFilterReschedule(""); setFilterModel("");
+            setFilterCheckin(""); setSummaryFilter("");
+          }}
+        />
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
         {displayedStores.map((store) => {
           const colors = getStateColor(store.state);
