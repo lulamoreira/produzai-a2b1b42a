@@ -317,16 +317,26 @@ const CampaignDetail = () => {
       const matchesState = stateFilter === "__all__" || s.state?.trim() === stateFilter;
       const matchesStoreCategory = storeCategoryFilter === "__all__" || true; // applied on matrix level
 
-      // Apply sidebar store filters
+      // Apply sidebar store filters with logic mode
       const sf = storeFilters;
-      if (sf.city.size > 0 && (!s.city || !sf.city.has(s.city))) return false;
-      if (sf.state.size > 0 && (!s.state || !sf.state.has(s.state.trim()))) return false;
-      if (sf.store_model.size > 0 && (!s.store_model || !sf.store_model.has(s.store_model))) return false;
-      if (sf.custom_field_1.size > 0 && (!s.custom_field_1 || !sf.custom_field_1.has(s.custom_field_1))) return false;
-      if (sf.custom_field_2.size > 0 && (!s.custom_field_2 || !sf.custom_field_2.has(s.custom_field_2))) return false;
-      if (sf.custom_field_3.size > 0 && (!s.custom_field_3 || !sf.custom_field_3.has(s.custom_field_3))) return false;
-      if (sf.custom_field_4.size > 0 && (!s.custom_field_4 || !sf.custom_field_4.has(s.custom_field_4))) return false;
-      if (sf.custom_field_5.size > 0 && (!s.custom_field_5 || !sf.custom_field_5.has(s.custom_field_5))) return false;
+      const storeChecks: boolean[] = [];
+      if (sf.city.size > 0) storeChecks.push(!!s.city && sf.city.has(s.city));
+      if (sf.state.size > 0) storeChecks.push(!!s.state && sf.state.has(s.state.trim()));
+      if (sf.store_model.size > 0) storeChecks.push(!!s.store_model && sf.store_model.has(s.store_model));
+      if (sf.custom_field_1.size > 0) storeChecks.push(!!s.custom_field_1 && sf.custom_field_1.has(s.custom_field_1));
+      if (sf.custom_field_2.size > 0) storeChecks.push(!!s.custom_field_2 && sf.custom_field_2.has(s.custom_field_2));
+      if (sf.custom_field_3.size > 0) storeChecks.push(!!s.custom_field_3 && sf.custom_field_3.has(s.custom_field_3));
+      if (sf.custom_field_4.size > 0) storeChecks.push(!!s.custom_field_4 && sf.custom_field_4.has(s.custom_field_4));
+      if (sf.custom_field_5.size > 0) storeChecks.push(!!s.custom_field_5 && sf.custom_field_5.has(s.custom_field_5));
+
+      if (storeChecks.length > 0) {
+        if (filterLogicMode === "and" || filterLogicMode === "and_or") {
+          if (!storeChecks.every(Boolean)) return false;
+        } else {
+          // "or" mode
+          if (!storeChecks.some(Boolean)) return false;
+        }
+      }
 
       return matchesSearch && matchesCity && matchesState && matchesStoreCategory;
     }).sort((a, b) => {
@@ -334,7 +344,7 @@ const CampaignDetail = () => {
       if (stateComp !== 0) return stateComp;
       return a.name.localeCompare(b.name);
     });
-  }, [stores, storeSearch, cityFilter, stateFilter, storeCategoryFilter, storeFilters]);
+  }, [stores, storeSearch, cityFilter, stateFilter, storeCategoryFilter, storeFilters, filterLogicMode]);
 
   const allEnabled = useMemo(() => filteredStores.every(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
   const activeFilteredStores = useMemo(() => filteredStores.filter(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
