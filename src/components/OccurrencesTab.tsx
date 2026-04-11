@@ -773,6 +773,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
 
 
       {/* Occurrences list */}
+      <div className="px-4 pt-3">
       {isLoading ? (
         viewMode === "list" ? <ListSkeleton count={6} /> : <CardSkeleton count={6} />
       ) : occurrences.length === 0 ? (
