@@ -608,8 +608,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   return (
     <div className="space-y-4">
       {/* Filters — Primary row */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap gap-2 items-center">
+      <div className="flex flex-wrap gap-2 items-center">
           <div className="relative flex-1 min-w-[180px] max-w-[320px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
