@@ -1326,6 +1326,18 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           campaignName={campaignName}
         />
       )}
+
+      {/* Installer Preview Dialog */}
+      <InstallerPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        campaignName={campaignName}
+        store={previewStore}
+        schedule={previewSchedule}
+        team={previewTeam}
+        contacts={previewStore ? (contactsByStore[previewStore.id] || []) : []}
+        photos={previewStore ? (photosByStore[previewStore.id] || []) : []}
+      />
     </div>
   );
 };
