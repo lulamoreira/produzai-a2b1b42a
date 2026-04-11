@@ -875,29 +875,31 @@ const CampaignDetail = () => {
       ? visiblePieces
       : visiblePieces.filter((p) => p.store_category === storeCategoryFilter);
 
-    // Apply piece sidebar filters
+    // Apply piece sidebar filters with logic mode
     const f = pieceFilters;
-    if (f.category.size > 0) filtered = filtered.filter((p) => f.category.has(p.category));
-    if (f.name.size > 0) filtered = filtered.filter((p) => f.name.has(p.name));
-    if (f.store_category.size > 0) filtered = filtered.filter((p) => p.store_category && f.store_category.has(p.store_category));
-    if (f.size.size > 0) filtered = filtered.filter((p) => f.size.has(p.size));
-    if (f.specification.size > 0) filtered = filtered.filter((p) => f.specification.has(p.specification));
-    if (f.installation_instructions.size > 0) filtered = filtered.filter((p) => f.installation_instructions.has(p.installation_instructions));
-    if (f.kit_only.size > 0) {
+    const activeChecks: ((p: typeof filtered[0]) => boolean)[] = [];
+    if (f.category.size > 0) activeChecks.push((p) => f.category.has(p.category));
+    if (f.name.size > 0) activeChecks.push((p) => f.name.has(p.name));
+    if (f.store_category.size > 0) activeChecks.push((p) => !!p.store_category && f.store_category.has(p.store_category));
+    if (f.size.size > 0) activeChecks.push((p) => f.size.has(p.size));
+    if (f.specification.size > 0) activeChecks.push((p) => f.specification.has(p.specification));
+    if (f.installation_instructions.size > 0) activeChecks.push((p) => f.installation_instructions.has(p.installation_instructions));
+    if (f.kit_only.size > 0) activeChecks.push((p) => f.kit_only.has(p.kit_only ? "Sim" : "Não"));
+    if (f.is_mockup.size > 0) activeChecks.push((p) => f.is_mockup.has(p.is_mockup ? "Sim" : "Não"));
+
+    if (activeChecks.length > 0) {
       filtered = filtered.filter((p) => {
-        const val = p.kit_only ? "Sim" : "Não";
-        return f.kit_only.has(val);
-      });
-    }
-    if (f.is_mockup.size > 0) {
-      filtered = filtered.filter((p) => {
-        const val = p.is_mockup ? "Sim" : "Não";
-        return f.is_mockup.has(val);
+        const results = activeChecks.map((check) => check(p));
+        if (filterLogicMode === "and" || filterLogicMode === "and_or") {
+          return results.every(Boolean);
+        } else {
+          return results.some(Boolean);
+        }
       });
     }
 
     return filtered;
-  }, [visiblePieces, storeCategoryFilter, pieceFilters]);
+  }, [visiblePieces, storeCategoryFilter, pieceFilters, filterLogicMode]);
 
   // Kits appear as virtual columns in the matrix
   const matrixKits = kits;
