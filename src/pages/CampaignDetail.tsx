@@ -2286,24 +2286,49 @@ const CampaignDetail = () => {
                     });
                     toast.success("Peça duplicada com sucesso!");
                   }}
-                  onDuplicateKit={async (kit) => {
-                    const maxOrder = [...pieces, ...kits].reduce((max, item) => Math.max(max, item.display_order), 0);
-                    const maxCode = kits.length > 0 ? Math.max(...kits.map(k => k.code)) : 0;
-                    const createdKit = await addKit.mutateAsync({
-                      campaign_id: campaignId,
-                      name: `${kit.name} - Cópia`,
-                      code: maxCode + 1,
-                      display_order: maxOrder + 1,
-                    });
-                    if (kit.image_url) await updateKit.mutateAsync({ id: createdKit.id, image_url: kit.image_url });
-                    if (kit.is_mockup) await updateKit.mutateAsync({ id: createdKit.id, is_mockup: true });
-                    // Duplicate kit pieces
-                    const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
-                    for (const kp of kpForKit) {
-                      await addKitPiece.mutateAsync({ kit_id: createdKit.id, piece_id: kp.piece_id, quantity: kp.quantity });
-                    }
-                    toast.success("Kit duplicado com sucesso!");
-                  }}
+                   onDuplicateKit={async (kit) => {
+                     const maxOrder = [...pieces, ...kits].reduce((max, item) => Math.max(max, item.display_order), 0);
+                     const maxCode = kits.length > 0 ? Math.max(...kits.map(k => k.code)) : 0;
+                     const maxPieceCode = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;
+                     const maxPieceOrder = pieces.length > 0 ? Math.max(...pieces.map(p => p.display_order)) : 0;
+                     const createdKit = await addKit.mutateAsync({
+                       campaign_id: campaignId,
+                       name: `${kit.name} - Cópia`,
+                       code: maxCode + 1,
+                       display_order: maxOrder + 1,
+                     });
+                     if (kit.image_url) await updateKit.mutateAsync({ id: createdKit.id, image_url: kit.image_url });
+                     if (kit.is_mockup) await updateKit.mutateAsync({ id: createdKit.id, is_mockup: true });
+                     // Deep clone: create NEW independent pieces for the duplicated kit
+                     const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
+                     let pieceCodeOffset = 0;
+                     let pieceOrderOffset = 0;
+                     for (const kp of kpForKit) {
+                       const originalPiece = pieces.find(p => p.id === kp.piece_id);
+                       if (!originalPiece) continue;
+                       pieceCodeOffset++;
+                       pieceOrderOffset++;
+                       // Create a completely new piece (deep copy)
+                       const newPiece = await addPiece.mutateAsync({
+                         campaign_id: campaignId,
+                         code: maxPieceCode + pieceCodeOffset,
+                         category: originalPiece.category,
+                         name: `${originalPiece.name} - Cópia`,
+                         size: originalPiece.size,
+                         store_category: originalPiece.store_category || undefined,
+                         specification: originalPiece.specification,
+                         installation_instructions: originalPiece.installation_instructions,
+                         kit_only: originalPiece.kit_only,
+                         is_mockup: originalPiece.is_mockup,
+                         display_order: maxPieceOrder + pieceOrderOffset,
+                         image_url: originalPiece.image_url || undefined,
+                         sub_location: originalPiece.sub_location || undefined,
+                       });
+                       // Link the NEW piece to the NEW kit
+                       await addKitPiece.mutateAsync({ kit_id: createdKit.id, piece_id: newPiece.id, quantity: kp.quantity });
+                     }
+                     toast.success(`Kit duplicado com sucesso! ${kpForKit.length} peça(s) copiada(s) de forma independente.`);
+                   }}
                   onReorder={handleReorderUnified}
                 />
               );
