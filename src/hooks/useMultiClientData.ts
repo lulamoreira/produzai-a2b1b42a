@@ -701,6 +701,14 @@ export type CampaignPieceLocation = {
   created_at: string;
 };
 
+export type CampaignPieceSubLocation = {
+  id: string;
+  campaign_id: string;
+  location_id: string;
+  name: string;
+  created_at: string;
+};
+
 export function useCampaignPieceLocations(campaignId: string | undefined) {
   return useQuery({
     queryKey: ["campaign_piece_locations", campaignId],
@@ -718,14 +726,50 @@ export function useCampaignPieceLocations(campaignId: string | undefined) {
   });
 }
 
+export function useCampaignPieceSubLocations(campaignId: string | undefined) {
+  return useQuery({
+    queryKey: ["campaign_piece_sub_locations", campaignId],
+    queryFn: async () => {
+      if (!campaignId) return [];
+      const { data, error } = await supabase
+        .from("campaign_piece_sub_locations")
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .order("name");
+      if (error) throw error;
+      return data as CampaignPieceSubLocation[];
+    },
+    enabled: !!campaignId,
+  });
+}
+
 export function useAddCampaignPieceLocation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (location: { campaign_id: string; name: string }) => {
-      const { error } = await supabase.from("campaign_piece_locations").insert(location);
+      const { data, error } = await supabase.from("campaign_piece_locations").insert(location).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign_piece_locations"] });
+      toast.success("Localização adicionada!");
+    },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useUpdateCampaignPieceLocation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { error } = await supabase.from("campaign_piece_locations").update({ name }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_piece_locations"] }); toast.success("Localização adicionada!"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign_piece_locations"] });
+      toast.success("Nome atualizado!");
+    },
     onError: (e) => toast.error("Erro: " + e.message),
   });
 }
@@ -738,6 +782,52 @@ export function useDeleteCampaignPieceLocation() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_piece_locations"] }); toast.success("Localização removida!"); },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useAddCampaignPieceSubLocation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (sub: { campaign_id: string; location_id: string; name: string }) => {
+      const { data, error } = await supabase.from("campaign_piece_sub_locations").insert(sub).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign_piece_sub_locations"] });
+      toast.success("Sub-localização criada!");
+    },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useUpdateCampaignPieceSubLocation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { error } = await supabase.from("campaign_piece_sub_locations").update({ name }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign_piece_sub_locations"] });
+      toast.success("Nome atualizado!");
+    },
+    onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+export function useDeleteCampaignPieceSubLocation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("campaign_piece_sub_locations").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign_piece_sub_locations"] });
+      toast.success("Sub-localização excluída!");
+    },
     onError: (e) => toast.error("Erro: " + e.message),
   });
 }
