@@ -3,24 +3,10 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { compressImage } from "@/lib/compressImage";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Plus, Upload, Trash2, FileText, Image, File, Download, Pencil, Check, X, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
-
-const CARD_GRADIENTS = [
-  "from-primary/15 to-primary/5 border-primary/25",
-  "from-secondary/15 to-secondary/5 border-secondary/25",
-  "from-accent/15 to-accent/5 border-accent/25",
-];
-
-const ICON_GRADIENTS = [
-  "gradient-primary",
-  "gradient-secondary",
-  "gradient-accent",
-];
+import { Plus, Upload, Trash2, FileText, Image, File, Download, Pencil, Check, X, ExternalLink, Video } from "lucide-react";
 
 interface SupportMaterial {
   id: string;
@@ -39,10 +25,11 @@ interface Props {
 }
 
 function getFileIcon(fileType: string | null) {
-  if (!fileType) return <File className="w-5 h-5" />;
-  if (fileType.startsWith("image/")) return <Image className="w-5 h-5" />;
-  if (fileType === "application/pdf") return <FileText className="w-5 h-5" />;
-  return <File className="w-5 h-5" />;
+  if (!fileType) return <File className="w-4 h-4" />;
+  if (fileType.startsWith("image/")) return <Image className="w-4 h-4" />;
+  if (fileType.startsWith("video/")) return <Video className="w-4 h-4" />;
+  if (fileType === "application/pdf") return <FileText className="w-4 h-4" />;
+  return <File className="w-4 h-4" />;
 }
 
 const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
@@ -161,140 +148,194 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
     if (!error) queryClient.invalidateQueries({ queryKey: ["campaign_support_materials", campaignId] });
   };
 
-  const [isOpen, setIsOpen] = useState(false);
-
   return (
     <div className="mb-6">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="flex items-center justify-between mb-3">
-          <CollapsibleTrigger asChild>
-            <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <FileText className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-bold text-foreground font-display">{t("supportMaterials.title")}</h2>
-              {isOpen ? (
-                <ChevronUp className="w-4 h-4 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
-              )}
-            </button>
-          </CollapsibleTrigger>
+      <div
+        className="overflow-hidden"
+        style={{
+          background: "var(--bg-surface, #fff)",
+          borderRadius: "var(--radius-card, 12px)",
+          boxShadow: "var(--shadow-card)",
+        }}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between"
+          style={{
+            padding: "14px 20px",
+            borderBottom: "1px solid var(--border-subtle, rgba(0,0,0,0.07))",
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4" style={{ color: "var(--text-secondary)" }} />
+            <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+              {t("supportMaterials.title")}
+            </span>
+          </div>
           {canEdit && (
-            <Button size="sm" variant="outline" onClick={() => addCard.mutate()} disabled={addCard.isPending} className="gap-1.5">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => addCard.mutate()}
+              disabled={addCard.isPending}
+              className="gap-1.5 h-7 text-xs"
+            >
               <Plus className="w-3.5 h-3.5" />
               {t("common.add")}
             </Button>
           )}
         </div>
 
-        <CollapsibleContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {materials.map((mat, idx) => {
-              const gradientClass = CARD_GRADIENTS[idx % CARD_GRADIENTS.length];
-              const iconGradient = ICON_GRADIENTS[idx % ICON_GRADIENTS.length];
+        {/* File list */}
+        {materials.length === 0 ? (
+          <div className="px-5 py-8 text-center" style={{ color: "var(--text-muted)" }}>
+            <File className="w-8 h-8 mx-auto mb-2 opacity-40" />
+            <p className="text-sm">{t("supportMaterials.noFile", "Nenhum material adicionado")}</p>
+          </div>
+        ) : (
+          <div>
+            {materials.map((mat) => {
               const isEditing = editingId === mat.id;
               const isUploading = uploadingId === mat.id;
-              const isImageFile = mat.file_type?.startsWith("image/");
 
               return (
-                <Card key={mat.id} className={`bg-gradient-to-br ${gradientClass} border overflow-hidden transition-all hover:shadow-md`}>
-                  <div className="relative h-36 flex items-center justify-center bg-background/30">
-                    {mat.file_url ? (
-                      isImageFile ? (
-                        <img src={mat.file_url} alt={mat.title || "Material"} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="flex flex-col items-center gap-2">
-                          <div className={`w-12 h-12 rounded-xl ${iconGradient} flex items-center justify-center text-white`}>
-                            {getFileIcon(mat.file_type)}
-                          </div>
-                          <span className="text-xs text-muted-foreground max-w-[80%] truncate">{mat.file_name}</span>
-                        </div>
-                      )
-                    ) : (
-                      <div className="flex flex-col items-center gap-2 text-muted-foreground/50">
-                        <div className={`w-12 h-12 rounded-xl ${iconGradient} flex items-center justify-center text-white/70`}>
-                          <Upload className="w-5 h-5" />
-                        </div>
-                        <span className="text-xs">{t("supportMaterials.noFile")}</span>
-                      </div>
-                    )}
-
-                    {canEdit && (
-                      <div className="absolute top-2 right-2 flex gap-1">
-                        {mat.file_url && (
-                          <>
-                            <a href={mat.file_url} target="_blank" rel="noopener noreferrer"
-                              className="w-7 h-7 rounded-md bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
-                              title={t("supportMaterials.openFile")}>
-                              <ExternalLink className="w-3.5 h-3.5 text-foreground" />
-                            </a>
-                            <a href={mat.file_url} download={mat.file_name || "arquivo"}
-                              className="w-7 h-7 rounded-md bg-background/80 backdrop-blur flex items-center justify-center hover:bg-background transition-colors"
-                              title={t("common.download")}>
-                              <Download className="w-3.5 h-3.5 text-foreground" />
-                            </a>
-                            <button onClick={() => removeFile(mat.id)}
-                              className="w-7 h-7 rounded-md bg-destructive/80 backdrop-blur flex items-center justify-center hover:bg-destructive transition-colors"
-                              title={t("supportMaterials.removeFile")}>
-                              <X className="w-3.5 h-3.5 text-white" />
-                            </button>
-                          </>
-                        )}
-                        <button onClick={() => deleteCard.mutate(mat.id)}
-                          className="w-7 h-7 rounded-md bg-destructive/80 backdrop-blur flex items-center justify-center hover:bg-destructive transition-colors"
-                          title={t("supportMaterials.deleteCard")}>
-                          <Trash2 className="w-3.5 h-3.5 text-white" />
-                        </button>
-                      </div>
-                    )}
+                <div
+                  key={mat.id}
+                  className="flex items-center gap-3 transition-colors"
+                  style={{
+                    padding: "12px 20px",
+                    borderBottom: "1px solid var(--border-subtle, rgba(0,0,0,0.07))",
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "var(--bg-muted, #EDE8E0)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                >
+                  {/* File type icon */}
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                    style={{ background: "var(--bg-muted, #EDE8E0)", color: "var(--text-secondary)" }}
+                  >
+                    {getFileIcon(mat.file_type)}
                   </div>
 
-                  <div className="p-4 space-y-3">
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
                     {isEditing ? (
-                      <div className="flex gap-1.5">
-                        <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
-                          placeholder={t("supportMaterials.materialTitle")} className="h-8 text-sm" autoFocus
+                      <div className="flex gap-1.5 items-center">
+                        <Input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          placeholder={t("supportMaterials.materialTitle")}
+                          className="h-7 text-xs"
+                          autoFocus
                           onKeyDown={(e) => {
                             if (e.key === "Enter") updateTitle.mutate({ id: mat.id, title: editTitle });
                             if (e.key === "Escape") setEditingId(null);
-                          }} />
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => updateTitle.mutate({ id: mat.id, title: editTitle })}>
-                          <Check className="w-3.5 h-3.5 text-success" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0" onClick={() => setEditingId(null)}>
-                          <X className="w-3.5 h-3.5 text-muted-foreground" />
-                        </Button>
+                          }}
+                        />
+                        <button
+                          onClick={() => updateTitle.mutate({ id: mat.id, title: editTitle })}
+                          className="p-1 rounded hover:bg-accent"
+                        >
+                          <Check className="w-3.5 h-3.5" style={{ color: "var(--s-success)" }} />
+                        </button>
+                        <button onClick={() => setEditingId(null)} className="p-1 rounded hover:bg-accent">
+                          <X className="w-3.5 h-3.5" style={{ color: "var(--text-muted)" }} />
+                        </button>
                       </div>
                     ) : (
-                      <div className={`flex items-center gap-2 ${canEdit ? "cursor-pointer group" : ""}`}
-                        onClick={() => { if (canEdit) { setEditingId(mat.id); setEditTitle(mat.title); } }}>
-                        <h3 className="font-semibold text-sm text-foreground truncate flex-1">
-                          {mat.title || (
-                            <span className="text-muted-foreground italic">{t("supportMaterials.clickToSetTitle")}</span>
-                          )}
-                        </h3>
-                        {canEdit && <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />}
-                      </div>
-                    )}
-
-                    {canEdit && (
-                      <div className="relative">
-                        <input type="file" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(mat.id, f); e.target.value = ""; }}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={isUploading} />
-                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-border hover:border-primary/40 transition-colors bg-background/40">
-                          <Upload className="w-3.5 h-3.5 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">
-                            {isUploading ? t("common.sending") : t("supportMaterials.sendFile")}
+                      <div
+                        className={`${canEdit ? "cursor-pointer group" : ""}`}
+                        onClick={() => {
+                          if (canEdit) { setEditingId(mat.id); setEditTitle(mat.title); }
+                        }}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="text-[13px] font-medium truncate"
+                            style={{ color: mat.title ? "var(--text-primary)" : "var(--text-muted)" }}
+                          >
+                            {mat.title || mat.file_name || (
+                              <span className="italic">{t("supportMaterials.clickToSetTitle")}</span>
+                            )}
                           </span>
+                          {canEdit && (
+                            <Pencil
+                              className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                              style={{ color: "var(--text-muted)" }}
+                            />
+                          )}
                         </div>
+                        <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
+                          {mat.file_name
+                            ? `${mat.file_name} · ${new Date(mat.created_at).toLocaleDateString("pt-BR")}`
+                            : t("supportMaterials.noFile", "Sem arquivo")}
+                        </p>
                       </div>
                     )}
                   </div>
-                </Card>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {mat.file_url ? (
+                      <>
+                        <a
+                          href={mat.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 rounded-md transition-colors hover:bg-accent"
+                          title={t("supportMaterials.openFile")}
+                          style={{ color: "var(--text-muted)" }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-primary)"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-muted)"; }}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                        <a
+                          href={mat.file_url}
+                          download={mat.file_name || "arquivo"}
+                          className="p-1.5 rounded-md transition-colors hover:bg-accent"
+                          title={t("common.download")}
+                          style={{ color: "var(--text-muted)" }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-primary)"; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-muted)"; }}
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </a>
+                      </>
+                    ) : canEdit ? (
+                      <div className="relative">
+                        <input
+                          type="file"
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileUpload(mat.id, f); e.target.value = ""; }}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          disabled={isUploading}
+                        />
+                        <Button size="sm" variant="outline" className="h-7 text-xs gap-1">
+                          <Upload className="w-3 h-3" />
+                          {isUploading ? t("common.sending") : t("supportMaterials.sendFile")}
+                        </Button>
+                      </div>
+                    ) : null}
+
+                    {canEdit && (
+                      <button
+                        onClick={() => deleteCard.mutate(mat.id)}
+                        className="p-1.5 rounded-md transition-colors hover:bg-accent"
+                        title={t("supportMaterials.deleteCard")}
+                        style={{ color: "var(--text-muted)" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--s-danger)"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-muted)"; }}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
-        </CollapsibleContent>
-      </Collapsible>
+        )}
+      </div>
     </div>
   );
 };
