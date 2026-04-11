@@ -118,7 +118,7 @@ export function exportCampaignPieces(
 ) {
   const rows = pieces.map((p) => ({
     "Código": p.code,
-    "Localização na Loja": p.category,
+    "Localização na Loja": p.sub_location ? `${p.category} / ${p.sub_location}` : p.category,
     "Nome": p.name,
     "Medidas": p.size,
     "Modelo de Loja": p.store_category || "",
@@ -142,7 +142,7 @@ export function exportCampaignPieces(
       const piece = pieceMap.get(kp.piece_id);
       return {
         "Código": piece?.code || 0,
-        "Localização na Loja": piece?.category || "",
+        "Localização na Loja": piece ? (piece.sub_location ? `${piece.category} / ${piece.sub_location}` : piece.category) : "",
         "Nome": piece?.name || "",
         "Medidas": piece?.size || "",
         "Modelo de Loja": piece?.store_category || "",
@@ -252,7 +252,7 @@ export function exportMatrix(
         "Código": piece?.code || 0,
         "Nome": piece?.name || "",
         "Medidas": piece?.size || "",
-        "Localização": piece?.category || "",
+        "Localização": piece ? (piece.sub_location ? `${piece.category} / ${piece.sub_location}` : piece.category) : "",
         "Qtd no Kit": kp.quantity || 1,
       };
     });
