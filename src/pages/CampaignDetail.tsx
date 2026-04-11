@@ -122,6 +122,11 @@ const CampaignDetail = () => {
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const addPieceLocation = useAddCampaignPieceLocation();
   const deletePieceLocation = useDeleteCampaignPieceLocation();
+  const updatePieceLocation = useUpdateCampaignPieceLocation();
+  const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
+  const addPieceSubLocation = useAddCampaignPieceSubLocation();
+  const deletePieceSubLocation = useDeleteCampaignPieceSubLocation();
+  const updatePieceSubLocation = useUpdateCampaignPieceSubLocation();
   const updateClientStore = useUpdateClientStore();
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const upsertStoreStatus = useUpsertCampaignStoreStatus();
