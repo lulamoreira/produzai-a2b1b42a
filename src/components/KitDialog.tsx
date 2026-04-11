@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -281,10 +282,12 @@ interface KitDetailDialogProps {
   kitPieces: CampaignKitPiece[];
   allPieces: CampaignPiece[];
   canEdit?: boolean;
+  pieceLocations?: { id: string; name: string }[];
+  pieceSubLocations?: { id: string; location_id: string; name: string }[];
   onDeleteKitPiece?: (id: string) => void;
   onDeleteKit?: (id: string) => void;
   onAddKitPiece?: (kitPiece: { kit_id: string; piece_id: string; quantity?: number }) => Promise<void>;
-  onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null; is_mockup?: boolean }) => Promise<CampaignKit>;
+  onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null; is_mockup?: boolean; category?: string | null; sub_location?: string | null }) => Promise<CampaignKit>;
   onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
   onDeletePiece?: (id: string) => void;
   onUpdateKitPiece?: (update: { id: string; quantity: number }) => Promise<void>;
@@ -293,6 +296,7 @@ interface KitDetailDialogProps {
 
 export function KitDetailDialog({
   open, onOpenChange, kit, kitPieces, allPieces, canEdit,
+  pieceLocations = [], pieceSubLocations = [],
   onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece, onDuplicatePiece,
 }: KitDetailDialogProps) {
   const [editingPieceId, setEditingPieceId] = useState<string | null>(null);
