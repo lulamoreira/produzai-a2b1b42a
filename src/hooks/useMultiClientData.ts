@@ -86,6 +86,8 @@ export type CampaignKit = {
   display_order: number;
   image_url: string | null;
   is_mockup: boolean;
+  category: string | null;
+  sub_location: string | null;
   created_at: string;
 };
 

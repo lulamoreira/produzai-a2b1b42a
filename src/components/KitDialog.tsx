@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -281,10 +282,12 @@ interface KitDetailDialogProps {
   kitPieces: CampaignKitPiece[];
   allPieces: CampaignPiece[];
   canEdit?: boolean;
+  pieceLocations?: { id: string; name: string }[];
+  pieceSubLocations?: { id: string; location_id: string; name: string }[];
   onDeleteKitPiece?: (id: string) => void;
   onDeleteKit?: (id: string) => void;
   onAddKitPiece?: (kitPiece: { kit_id: string; piece_id: string; quantity?: number }) => Promise<void>;
-  onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null; is_mockup?: boolean }) => Promise<CampaignKit>;
+  onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null; is_mockup?: boolean; category?: string | null; sub_location?: string | null }) => Promise<CampaignKit>;
   onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
   onDeletePiece?: (id: string) => void;
   onUpdateKitPiece?: (update: { id: string; quantity: number }) => Promise<void>;
@@ -293,6 +296,7 @@ interface KitDetailDialogProps {
 
 export function KitDetailDialog({
   open, onOpenChange, kit, kitPieces, allPieces, canEdit,
+  pieceLocations = [], pieceSubLocations = [],
   onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece, onDuplicatePiece,
 }: KitDetailDialogProps) {
   const [editingPieceId, setEditingPieceId] = useState<string | null>(null);
@@ -472,7 +476,81 @@ export function KitDetailDialog({
           </div>
         )}
 
-        {/* Pieces list */}
+        {/* Kit location */}
+        {canEdit && onUpdateKit && pieceLocations.length > 0 && (
+          <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/20">
+            <label className="text-xs font-medium text-foreground">Localização do Kit</label>
+            <p className="text-[10px] text-muted-foreground">Alterar a localização do kit atualiza todas as peças automaticamente.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Select
+                value={kit.category || "__none__"}
+                onValueChange={async (val) => {
+                  const newCategory = val === "__none__" ? null : val;
+                  await onUpdateKit({ id: kit.id, category: newCategory, sub_location: null });
+                  // Propagate to all pieces in the kit
+                  if (onUpdatePiece) {
+                    for (const kp of piecesInKit) {
+                      if (kp.piece) {
+                        await onUpdatePiece({ id: kp.piece.id, category: newCategory || kp.piece.category, sub_location: null });
+                      }
+                    }
+                  }
+                  toast.success("Localização do kit atualizada!");
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Selecione a localização" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Nenhuma</SelectItem>
+                  {pieceLocations.map(loc => (
+                    <SelectItem key={loc.id} value={loc.name}>{loc.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {kit.category && pieceSubLocations.filter(s => {
+                const parentLoc = pieceLocations.find(l => l.name === kit.category);
+                return parentLoc && s.location_id === parentLoc.id;
+              }).length > 0 && (
+                <Select
+                  value={kit.sub_location || "__none__"}
+                  onValueChange={async (val) => {
+                    const newSub = val === "__none__" ? null : val;
+                    await onUpdateKit({ id: kit.id, sub_location: newSub });
+                    // Propagate to all pieces
+                    if (onUpdatePiece) {
+                      for (const kp of piecesInKit) {
+                        if (kp.piece) {
+                          await onUpdatePiece({ id: kp.piece.id, sub_location: newSub });
+                        }
+                      }
+                    }
+                    toast.success("Sub-localização do kit atualizada!");
+                  }}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Sub-localização" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Nenhuma</SelectItem>
+                    {pieceSubLocations.filter(s => {
+                      const parentLoc = pieceLocations.find(l => l.name === kit.category);
+                      return parentLoc && s.location_id === parentLoc.id;
+                    }).map(sub => (
+                      <SelectItem key={sub.id} value={sub.name}>{sub.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
+        )}
+        {!canEdit && kit.category && (
+          <div className="text-xs text-muted-foreground px-1">
+            📍 Localização: {kit.category}{kit.sub_location ? ` / ${kit.sub_location}` : ""}
+          </div>
+        )}
+
         {piecesInKit.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">Nenhuma peça neste kit.</p>
         ) : (
