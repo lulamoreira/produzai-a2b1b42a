@@ -897,6 +897,14 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                                 action: "mark_completed",
                                 details: t("common.installationCompleted"),
                               });
+                              logCampaignActivity.mutate({
+                                campaign_id: campaignId,
+                                store_id: store.id,
+                                actor_name: user?.user_metadata?.display_name || "Usuário",
+                                actor_type: "user",
+                                action: "instalacao_concluida_manual",
+                                description: `${user?.user_metadata?.display_name || "Usuário"} marcou ${store.name} como concluída manualmente`,
+                              });
                               toast.success(t("common.installationCompleted"));
                             } catch {
                               toast.error(t("installations.errorUpdatingCompletion"));
