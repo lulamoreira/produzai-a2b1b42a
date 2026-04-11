@@ -8,7 +8,8 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   useCampaign, useClient, useClientStores, useCampaignPieces, useCampaignStorePieces,
   useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece,
-  useCampaignPieceLocations, useAddCampaignPieceLocation, useDeleteCampaignPieceLocation,
+  useCampaignPieceLocations, useAddCampaignPieceLocation, useDeleteCampaignPieceLocation, useUpdateCampaignPieceLocation,
+  useCampaignPieceSubLocations, useAddCampaignPieceSubLocation, useDeleteCampaignPieceSubLocation, useUpdateCampaignPieceSubLocation,
   useUpdateClientStore,
   useCampaignStoreStatus, useUpsertCampaignStoreStatus, useBulkUpsertCampaignStoreStatus,
   useClientStoreModels,
