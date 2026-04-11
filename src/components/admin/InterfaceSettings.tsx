@@ -45,6 +45,7 @@ export default function InterfaceSettings() {
         .update({ interface_mode: pendingMode })
         .eq("id", pendingAgencyId);
       if (error) throw error;
+      queryClient.setQueryData(["interface_mode", pendingAgencyId], pendingMode);
       queryClient.invalidateQueries({ queryKey: ["agencies_interface_mode"] });
       queryClient.invalidateQueries({ queryKey: ["interface_mode"] });
       toast.success(

@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { createContext, useContext, useCallback, type ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useParams } from "react-router-dom";
+import { useMatch } from "react-router-dom";
 
 type InterfaceMode = "legacy" | "new";
 
@@ -22,7 +22,9 @@ export function useInterfaceMode() {
 }
 
 export function InterfaceModeProvider({ children }: { children: ReactNode }) {
-  const { agencyId } = useParams<{ agencyId?: string }>();
+  const agencyMatch = useMatch("/agency/:agencyId/*");
+  const agencyRootMatch = useMatch("/agency/:agencyId");
+  const agencyId = agencyMatch?.params.agencyId ?? agencyRootMatch?.params.agencyId;
   const queryClient = useQueryClient();
 
   const { data: mode, isLoading } = useQuery({
