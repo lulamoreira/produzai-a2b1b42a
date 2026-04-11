@@ -810,25 +810,40 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         ];
         return (
           <>
-            <div className="kpi-strip">
-              {items.map((m) => (
+            <div
+              className="flex items-baseline overflow-x-auto"
+              style={{
+                padding: "10px 16px",
+                background: "var(--bg-surface)",
+                borderBottom: "1px solid var(--border-subtle)",
+                whiteSpace: "nowrap",
+                WebkitOverflowScrolling: "touch",
+                gap: 0,
+              }}
+            >
+              {items.map((m, idx) => (
                 <button
                   key={m.key}
                   type="button"
                   onClick={() => setSummaryFilter(prev => prev === m.key ? "" : m.key)}
-                  className={cn(
-                    "flex-shrink-0 bg-card border rounded-lg px-3 py-2 text-center transition-all cursor-pointer hover:shadow-md whitespace-nowrap",
-                    summaryFilter === m.key
-                      ? "border-primary ring-2 ring-primary/30 shadow-sm"
-                      : "border-border"
-                  )}
+                  className="inline-flex items-baseline gap-1 transition-colors rounded-md hover:bg-[var(--bg-muted)]"
+                  style={{
+                    padding: "2px 14px",
+                    borderRight: idx < items.length - 1 ? "1px solid var(--border-subtle)" : "none",
+                    cursor: "pointer",
+                    ...(summaryFilter === m.key ? { backgroundColor: "var(--bg-muted)" } : {}),
+                  }}
                 >
-                  <p className={cn(
-                    "font-bold",
-                    m.isTotal ? "text-xl" : "text-sm",
-                    m.dangerWhenPositive && m.value > 0 ? "text-[var(--s-danger)]" : m.isTotal ? "text-foreground" : "text-[var(--text-secondary)]"
-                  )}>{m.value}</p>
-                  <p className="text-[10px] text-muted-foreground">{m.label}</p>
+                  <span
+                    className="font-bold leading-none"
+                    style={{
+                      fontSize: m.isTotal ? 24 : 20,
+                      color: m.dangerWhenPositive && m.value > 0 ? "var(--s-danger)" : m.isTotal ? "var(--text-primary)" : "var(--text-secondary)",
+                    }}
+                  >
+                    {m.value}
+                  </span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{m.label}</span>
                 </button>
               ))}
             </div>
