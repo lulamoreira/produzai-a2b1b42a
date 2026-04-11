@@ -107,6 +107,7 @@
     "continueWithGoogle": "Continue with Google",
     "googleError": "Error connecting with Google.",
     "enterWithTeamCode": "Enter with Team Code",
+    "enterAsInstaller": "Access as Installer",
     "forgotMyPassword": "I forgot my password",
     "magicLink": "Sign in with Magic Link",
     "magicLinkDesc": "We'll send an access link to your email",
