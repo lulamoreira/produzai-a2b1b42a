@@ -280,13 +280,14 @@ export async function exportMatrixExcelJS(
   // Build unified column list sorted by display_order
   type ColItem = MatrixItem & { _type: "piece" | "kit"; display_order: number };
   const allColumns: ColItem[] = [
-    ...pieces.map(p => ({ ...p, _type: "piece" as const, specification: p.specification || "", installation_instructions: p.installation_instructions || "" })),
+    ...pieces.map(p => ({ ...p, _type: "piece" as const, sub_location: (p as any).sub_location || "", specification: p.specification || "", installation_instructions: p.installation_instructions || "" })),
     ...kits.map(k => ({
       id: k.id,
       code: k.code,
       name: k.name,
       size: "",
       store_category: null,
+      sub_location: "",
       specification: "",
       installation_instructions: "",
       image_url: k.image_url,
@@ -314,6 +315,7 @@ export async function exportMatrixExcelJS(
         name: piece?.name ?? "",
         size: piece?.size ?? "",
         store_category: piece?.store_category,
+        sub_location: (piece as any)?.sub_location || "",
         specification: piece?.specification || "",
         installation_instructions: piece?.installation_instructions || "",
         image_url: piece?.image_url,
