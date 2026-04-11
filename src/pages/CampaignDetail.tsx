@@ -1712,7 +1712,23 @@ const CampaignDetail = () => {
                   }}
                 />
 
-                <CustomExportDialog
+                <BudgetExportColorDialog
+                  open={budgetExportDialogOpen}
+                  onOpenChange={setBudgetExportDialogOpen}
+                  onExport={async (palette: ColorPalette) => {
+                    setBudgetExportDialogOpen(false);
+                    toast.loading("Gerando planilha com imagens...", { id: "matrix-excel" });
+                    try {
+                      await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces, palette, pieceLocations, pieceSubLocations);
+                      toast.success("Planilha exportada com sucesso!", { id: "matrix-excel" });
+                    } catch (err) {
+                      console.error(err);
+                      toast.error("Erro ao exportar planilha", { id: "matrix-excel" });
+                    }
+                  }}
+                />
+
+
                   open={matrixCustomExportOpen}
                   onOpenChange={setMatrixCustomExportOpen}
                   title="Exportação Personalizada — Matriz/Rateio"
