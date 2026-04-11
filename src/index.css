@@ -48,6 +48,24 @@
     --success: 152 60% 42%;
     --warning: 38 92% 55%;
     --info: 210 80% 55%;
+
+    /* v2 design tokens */
+    --bg-page:        #F7F6F3;
+    --bg-surface:     #FFFFFF;
+    --border-subtle:  rgba(0,0,0,0.07);
+    --border-default: rgba(0,0,0,0.13);
+    --text-primary:   #17171A;
+    --text-secondary: #68676B;
+    --text-muted:     #9A9A9E;
+    --shadow-card:    0 1px 2px rgba(0,0,0,0.05), 0 0 0 0.5px rgba(0,0,0,0.08);
+    --radius-card:    12px;
+    --radius-badge:   99px;
+    --s-success:    #16A34A; --s-success-bg: #F0FDF4;
+    --s-warning:    #D97706; --s-warning-bg: #FFFBEB;
+    --s-danger:     #DC2626; --s-danger-bg:  #FEF2F2;
+    --s-info:       #2563EB; --s-info-bg:    #EFF6FF;
+    --s-neutral:    #71717A; --s-neutral-bg: #F4F4F5;
+    --s-purple:     #7C3AED; --s-purple-bg:  #F5F3FF;
   }
 
   .dark {
@@ -256,4 +274,38 @@
 /* Hide mobile back button when sidebar is open */
 body[data-sidebar-mobile-open="true"] .mobile-back-btn {
   display: none !important;
+}
+
+/* ─── v2 utility classes ─── */
+.card-base {
+  background: var(--bg-surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  padding: 16px 20px;
+}
+
+.badge-base {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 9px;
+  border-radius: var(--radius-badge);
+  white-space: nowrap;
+}
+
+.badge-success { background: var(--s-success-bg); color: var(--s-success); }
+.badge-warning { background: var(--s-warning-bg); color: var(--s-warning); }
+.badge-danger  { background: var(--s-danger-bg);  color: var(--s-danger);  }
+.badge-info    { background: var(--s-info-bg);    color: var(--s-info);    }
+.badge-neutral { background: var(--s-neutral-bg); color: var(--s-neutral); }
+.badge-purple  { background: var(--s-purple-bg);  color: var(--s-purple);  }
+
+.section-label {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
 }
