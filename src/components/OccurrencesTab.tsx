@@ -34,7 +34,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, QrCode, Download, Calendar, CircleDot, GripVertical, Flag, Lock, LockOpen, List, LayoutGrid } from "lucide-react";
+import { Plus, Trash2, Mail, Settings, AlertTriangle, Copy, ExternalLink, QrCode, Download, Calendar, CircleDot, GripVertical, Flag, Lock, LockOpen, List, LayoutGrid, MoreHorizontal, Search } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
@@ -398,303 +404,376 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     return motives.find((m) => m.id === id)?.description || "—";
   };
 
+  const periodLabel = useMemo(() => {
+    if (!campaignInfo) return "Período";
+    const s = campaignInfo.occurrence_start_date;
+    const e = campaignInfo.occurrence_end_date;
+    if (s && e) return `${format(new Date(s + "T12:00:00"), "dd/MM")} até ${format(new Date(e + "T12:00:00"), "dd/MM")}`;
+    if (s) return `A partir de ${format(new Date(s + "T12:00:00"), "dd/MM")}`;
+    if (e) return `Até ${format(new Date(e + "T12:00:00"), "dd/MM")}`;
+    return "Sem período";
+  }, [campaignInfo]);
+
+  const statusFilterLabel = useMemo(() => {
+    if (selectedStatuses.length === 0) return "Todos os status";
+    if (selectedStatuses.length === 1) {
+      const s = activeStatuses.find(s => s.value === selectedStatuses[0]);
+      return s?.label || selectedStatuses[0];
+    }
+    return `${selectedStatuses.length} status`;
+  }, [selectedStatuses, activeStatuses]);
+
+  const priorityFilterLabel = useMemo(() => {
+    if (selectedPriorities.length === 0) return "Todas as prioridades";
+    if (selectedPriorities.length === 1) {
+      const p = PRIORITY_OPTIONS.find(p => p.value === selectedPriorities[0]);
+      return p?.label || selectedPriorities[0];
+    }
+    return `${selectedPriorities.length} prioridades`;
+  }, [selectedPriorities]);
+
   return (
-    <div className="space-y-4">
-      {/* Header actions */}
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {/* View toggle */}
-          <div className="flex rounded-md border border-[var(--border-default)] overflow-hidden mr-1">
-            <button
-              type="button"
-              onClick={() => handleViewModeChange("list")}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors"
-              style={viewMode === "list" ? { backgroundColor: "var(--s-info-bg)", color: "var(--s-info)", borderRight: "1px solid var(--s-info)" } : { color: "var(--text-secondary)", borderRight: "1px solid var(--border-default)" }}
-            >
-              <List className="w-3.5 h-3.5" /> Lista
-            </button>
-            <button
-              type="button"
-              onClick={() => handleViewModeChange("cards")}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors"
-              style={viewMode === "cards" ? { backgroundColor: "var(--s-info-bg)", color: "var(--s-info)" } : { color: "var(--text-secondary)" }}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" /> Cards
-            </button>
-          </div>
-          <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyLink}>
-            <Copy className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">Copiar Link para acesso a essa página</span><span className="sm:hidden">Copiar Link</span>
-          </Button>
-          <Button variant="outline" size="sm" className="text-xs" onClick={() => setQrOpen(true)}>
-            <QrCode className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">QR-Code para acesso a essa página</span><span className="sm:hidden">QR-Code</span>
-          </Button>
-          <a href={publicLink} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm" className="text-xs">
-              <ExternalLink className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">Incluir Ocorrência</span><span className="sm:hidden">Incluir</span>
-            </Button>
-          </a>
-           {canEdit && (
-            <Button variant="outline" size="sm" className="text-xs" onClick={() => setSettingsOpen(true)}>
-              <Settings className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">Configurar</span><span className="sm:hidden">Config.</span>
-            </Button>
-          )}
-          {canLockCards && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs gap-1.5"
-              disabled={bulkLockLoading}
-              onClick={async () => {
-                setBulkLockLoading(true);
-                try {
-                  const unlocked = filteredOccurrences.filter(o => !(o as any).locked);
-                  const allLocked = unlocked.length === 0 && filteredOccurrences.length > 0;
-                  const newLocked = !allLocked;
-                  const ids = filteredOccurrences.map(o => o.id);
-                  if (ids.length === 0) { setBulkLockLoading(false); return; }
-                  const { error } = await supabase.from("occurrences").update({ locked: newLocked } as any).in("id", ids);
-                  if (error) throw error;
-                  queryClient.invalidateQueries({ queryKey: ["occurrences", campaignId] });
-                  toast.success(newLocked ? `${ids.length} cards bloqueados!` : `${ids.length} cards desbloqueados!`);
-                } catch (err: any) {
-                  toast.error(err.message || t("common.errorChangingLockBulk"));
-                } finally {
-                  setBulkLockLoading(false);
-                }
-              }}
-            >
-              {(() => {
-                const unlocked = filteredOccurrences.filter(o => !(o as any).locked);
-                const allLocked = unlocked.length === 0 && filteredOccurrences.length > 0;
-                return allLocked
-                  ? <><LockOpen className="w-3.5 h-3.5" /> Desbloquear Todos</>
-                  : <><Lock className="w-3.5 h-3.5" /> Bloquear Todos</>;
-              })()}
-            </Button>
-          )}
+    <div className="space-y-0">
+      {/* LAYER 1 — Toolbar */}
+      <div className="flex items-center gap-2 px-4 py-2 border-b" style={{ borderColor: "var(--border-subtle)", minHeight: 44 }}>
+        {/* View toggle */}
+        <div className="flex rounded-md border overflow-hidden shrink-0" style={{ borderColor: "var(--border-default)" }}>
+          <button
+            type="button"
+            onClick={() => handleViewModeChange("list")}
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors"
+            style={viewMode === "list" ? { backgroundColor: "var(--s-info-bg)", color: "var(--s-info)", borderRight: "1px solid var(--s-info)" } : { color: "var(--text-secondary)", borderRight: "1px solid var(--border-default)" }}
+          >
+            <List className="w-3.5 h-3.5" /> Lista
+          </button>
+          <button
+            type="button"
+            onClick={() => handleViewModeChange("cards")}
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors"
+            style={viewMode === "cards" ? { backgroundColor: "var(--s-info-bg)", color: "var(--s-info)" } : { color: "var(--text-secondary)" }}
+          >
+            <LayoutGrid className="w-3.5 h-3.5" /> Cards
+          </button>
         </div>
-        {/* Período de inclusão de ocorrências */}
-        {campaignInfo && (
-          <div className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${
-            campaignInfo.occurrence_start_date || campaignInfo.occurrence_end_date
-              ? 'border-primary/30 bg-primary/5 text-foreground'
-              : 'border-destructive/30 bg-destructive/5 text-destructive'
-          }`}>
-            <Calendar className="w-4 h-4 shrink-0" />
-            {campaignInfo.occurrence_start_date || campaignInfo.occurrence_end_date ? (
-              <span>
-                <strong>Período de inclusão:</strong>{' '}
-                {campaignInfo.occurrence_start_date
-                  ? format(new Date(campaignInfo.occurrence_start_date + 'T12:00:00'), 'dd/MM/yyyy')
-                  : '—'}{' '}
-                até{' '}
-                {campaignInfo.occurrence_end_date
-                  ? format(new Date(campaignInfo.occurrence_end_date + 'T12:00:00'), 'dd/MM/yyyy')
-                  : '—'}
-              </span>
-            ) : (
-              <span><strong>Nenhum período configurado.</strong> A inclusão de ocorrências está bloqueada.</span>
+
+        <span className="text-lg font-semibold flex-1 text-center" style={{ color: "var(--text-primary)" }}>Ocorrências</span>
+
+        {/* Period button */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs shrink-0 transition-colors hover:border-[var(--border-strong)]"
+              style={{ border: "1px solid var(--border-default)", color: "var(--text-secondary)", background: "var(--bg-surface)" }}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              {periodLabel}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-72 p-3 pointer-events-auto" align="end">
+            <p className="text-xs font-medium mb-2" style={{ color: "var(--text-primary)" }}>Período de inclusão</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-0.5 block">Início</label>
+                <Input type="date" value={occStartDate} onChange={(e) => setOccStartDate(e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-0.5 block">Fim</label>
+                <Input type="date" value={occEndDate} onChange={(e) => setOccEndDate(e.target.value)} className="h-8 text-xs" />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <Button size="sm" className="h-7 text-xs" onClick={async () => {
+                const { error } = await supabase.from("campaigns").update({
+                  occurrence_start_date: occStartDate || null,
+                  occurrence_end_date: occEndDate || null,
+                } as any).eq("id", campaignId);
+                if (error) { toast.error(t("occurrences.errorSavingPeriod")); return; }
+                toast.success(t("occurrences.periodSaved"));
+                refetchCampaignInfo();
+              }}>Salvar</Button>
+              <Button variant="outline" size="sm" className="h-7 text-xs" onClick={async () => {
+                setOccStartDate(""); setOccEndDate("");
+                await supabase.from("campaigns").update({ occurrence_start_date: null, occurrence_end_date: null } as any).eq("id", campaignId);
+                toast.success(t("occurrences.periodRemoved"));
+                refetchCampaignInfo();
+              }}>Limpar</Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        {/* More actions dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-8 text-xs gap-1 shrink-0">
+              <MoreHorizontal className="w-3.5 h-3.5" /> Mais ações
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[220px]">
+            <DropdownMenuItem onClick={handleCopyLink}>
+              <Copy className="w-3.5 h-3.5 mr-2" /> Copiar Link para acesso
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setQrOpen(true)}>
+              <QrCode className="w-3.5 h-3.5 mr-2" /> QR-Code para acesso
+            </DropdownMenuItem>
+            {canEdit && (
+              <DropdownMenuItem onClick={() => setSettingsOpen(true)}>
+                <Settings className="w-3.5 h-3.5 mr-2" /> Configurar
+              </DropdownMenuItem>
             )}
-          </div>
-        )}
+            {canLockCards && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-[var(--s-danger)] focus:text-[var(--s-danger)]"
+                  disabled={bulkLockLoading}
+                  onClick={async () => {
+                    setBulkLockLoading(true);
+                    try {
+                      const unlocked = filteredOccurrences.filter(o => !(o as any).locked);
+                      const allLocked = unlocked.length === 0 && filteredOccurrences.length > 0;
+                      const newLocked = !allLocked;
+                      const ids = filteredOccurrences.map(o => o.id);
+                      if (ids.length === 0) { setBulkLockLoading(false); return; }
+                      const { error } = await supabase.from("occurrences").update({ locked: newLocked } as any).in("id", ids);
+                      if (error) throw error;
+                      queryClient.invalidateQueries({ queryKey: ["occurrences", campaignId] });
+                      toast.success(newLocked ? `${ids.length} cards bloqueados!` : `${ids.length} cards desbloqueados!`);
+                    } catch (err: any) {
+                      toast.error(err.message || t("common.errorChangingLockBulk"));
+                    } finally {
+                      setBulkLockLoading(false);
+                    }
+                  }}
+                >
+                  {(() => {
+                    const unlocked = filteredOccurrences.filter(o => !(o as any).locked);
+                    const allLocked = unlocked.length === 0 && filteredOccurrences.length > 0;
+                    return allLocked
+                      ? <><LockOpen className="w-3.5 h-3.5 mr-2" /> Desbloquear Todos</>
+                      : <><Lock className="w-3.5 h-3.5 mr-2" /> Bloquear Todos</>;
+                  })()}
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Primary action */}
+        <a href={publicLink} target="_blank" rel="noopener noreferrer" className="shrink-0">
+          <Button size="sm" className="h-8 text-xs gap-1">
+            <Plus className="w-3.5 h-3.5" /> Incluir Ocorrência
+          </Button>
+        </a>
       </div>
 
-      {/* Summary Dashboard */}
+      {/* LAYER 2 — KPI Strip */}
       {!isLoading && occurrences.length > 0 && (() => {
         const total = filteredOccurrences.length;
         const totalAll = occurrences.length;
         const byStatus: Record<string, number> = {};
-        filteredOccurrences.forEach(o => {
-          const st = o.status || "sem_status";
-          byStatus[st] = (byStatus[st] || 0) + 1;
-        });
+        filteredOccurrences.forEach(o => { const st = o.status || "sem_status"; byStatus[st] = (byStatus[st] || 0) + 1; });
         const byPriority: Record<string, number> = {};
-        filteredOccurrences.forEach(o => {
-          const p = o.priority || "media";
-          byPriority[p] = (byPriority[p] || 0) + 1;
-        });
+        filteredOccurrences.forEach(o => { const p = o.priority || "media"; byPriority[p] = (byPriority[p] || 0) + 1; });
+
+        const kpiItems: { key: string; number: number; label: string; colorClass: string; colorStyle?: string; onClick: () => void; isActive: boolean }[] = [
+          {
+            key: "total", number: total, label: total !== totalAll ? `de ${totalAll} ocorrências` : "ocorrências",
+            colorClass: "total", onClick: () => { setSelectedStatuses([]); setSelectedPriorities([]); },
+            isActive: selectedStatuses.length === 0 && selectedPriorities.length === 0,
+          },
+          ...activeStatuses.map(s => ({
+            key: s.id, number: byStatus[s.value] || 0, label: s.label,
+            colorClass: "", colorStyle: s.color,
+            onClick: () => setSelectedStatuses(prev => prev.length === 1 && prev[0] === s.value ? [] : [s.value]),
+            isActive: selectedStatuses.length === 1 && selectedStatuses[0] === s.value,
+          })),
+          ...PRIORITY_OPTIONS.map(p => ({
+            key: p.value, number: byPriority[p.value] || 0, label: p.label,
+            colorClass: "", colorStyle: p.color,
+            onClick: () => setSelectedPriorities(prev => prev.length === 1 && prev[0] === p.value ? [] : [p.value]),
+            isActive: selectedPriorities.length === 1 && selectedPriorities[0] === p.value,
+          })),
+        ];
+
         return (
-          <div className="kpi-strip flex-wrap">
-            {/* Total */}
-            <button
-              type="button"
-              onClick={() => { setSelectedStatuses([]); setSelectedPriorities([]); }}
-              className={cn(
-                "rounded-lg border border-primary/30 bg-primary/5 p-3 text-center transition-all cursor-pointer hover:shadow-md",
-                selectedStatuses.length === 0 && selectedPriorities.length === 0 ? "ring-2 ring-primary/30 shadow-sm" : ""
-              )}
-            >
-              <p className="text-2xl font-bold text-primary">{total}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{total !== totalAll ? `de ${totalAll}` : ''} ocorrência(s)</p>
-            </button>
-            {/* By status */}
-            {activeStatuses.map((s) => {
-              const count = byStatus[s.value] || 0;
-              const isActive = selectedStatuses.length === 1 && selectedStatuses[0] === s.value;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setSelectedStatuses(isActive ? [] : [s.value])}
-                  className={cn(
-                    "rounded-lg border p-3 text-center transition-all cursor-pointer hover:shadow-md",
-                    isActive ? "ring-2 shadow-sm" : ""
-                  )}
-                  style={{ borderColor: `${s.color}40`, backgroundColor: `${s.color}08`, ...(isActive ? { ringColor: s.color } : {}) }}
+          <div
+            className="flex items-baseline overflow-x-auto"
+            style={{
+              padding: "10px 16px",
+              background: "var(--bg-surface)",
+              borderBottom: "1px solid var(--border-subtle)",
+              whiteSpace: "nowrap",
+              WebkitOverflowScrolling: "touch",
+              gap: 0,
+            }}
+          >
+            {kpiItems.map((item, idx) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={item.onClick}
+                className="inline-flex items-baseline gap-1 transition-colors rounded-md hover:bg-[var(--bg-muted)]"
+                style={{
+                  padding: "2px 14px",
+                  borderRight: idx < kpiItems.length - 1 ? "1px solid var(--border-subtle)" : "none",
+                  cursor: "pointer",
+                  ...(item.isActive ? { backgroundColor: "var(--bg-muted)" } : {}),
+                }}
+              >
+                <span
+                  className="font-bold leading-none"
+                  style={{
+                    fontSize: item.key === "total" ? 24 : 20,
+                    color: item.key === "total" ? "var(--text-primary)" : item.colorStyle,
+                  }}
                 >
-                  <p className="text-2xl font-bold" style={{ color: s.color }}>{count}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{s.label}</p>
-                </button>
-              );
-            })}
-            {/* By priority */}
-            {PRIORITY_OPTIONS.map((p) => {
-              const count = byPriority[p.value] || 0;
-              const isActive = selectedPriorities.length === 1 && selectedPriorities[0] === p.value;
-              return (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => setSelectedPriorities(isActive ? [] : [p.value])}
-                  className={cn(
-                    "rounded-lg border p-3 text-center transition-all cursor-pointer hover:shadow-md",
-                    isActive ? "ring-2 shadow-sm" : ""
-                  )}
-                  style={{ borderColor: `${p.color}40`, backgroundColor: `${p.color}08`, ...(isActive ? { ringColor: p.color } : {}) }}
-                >
-                  <p className="text-2xl font-bold" style={{ color: p.color }}>{count}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{p.label}</p>
-                </button>
-              );
-            })}
+                  {item.number}
+                </span>
+                <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{item.label}</span>
+              </button>
+            ))}
           </div>
         );
       })()}
 
-      {/* Filters */}
+      {/* LAYER 3 — Filters */}
       {!isLoading && occurrences.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-3 space-y-3">
-          {/* Status filter */}
-          <div className="flex flex-wrap gap-1.5 items-center">
-            <span className="text-xs text-muted-foreground font-medium mr-1"><CircleDot className="w-3.5 h-3.5 inline mr-1" />Status:</span>
-            <Button
-              variant={selectedStatuses.length === 0 ? "default" : "outline"}
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => setSelectedStatuses([])}
-            >
-              Todos
-            </Button>
-            {activeStatuses.map((s) => (
-              <Button
-                key={s.id}
-                variant={selectedStatuses.includes(s.value) ? "default" : "outline"}
-                size="sm"
-                className="h-7 text-xs gap-1.5"
-                style={selectedStatuses.includes(s.value) ? { backgroundColor: s.color, borderColor: s.color, color: '#fff' } : { borderColor: s.color, color: s.color }}
-                onClick={() => toggleStatus(s.value)}
+        <div
+          className="flex items-center gap-2 overflow-x-auto"
+          style={{
+            padding: "8px 16px",
+            background: "var(--bg-page)",
+            borderBottom: "1px solid var(--border-subtle)",
+            flexWrap: "nowrap",
+          }}
+        >
+          {/* Status dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="shrink-0 inline-flex items-center gap-1.5 transition-colors"
+                style={{
+                  height: 32, padding: "0 10px", fontSize: 13,
+                  border: `1px solid ${selectedStatuses.length > 0 ? "var(--brand-500, var(--primary))" : "var(--border-default)"}`,
+                  borderRadius: 8, background: "var(--bg-surface)",
+                  color: selectedStatuses.length > 0 ? "var(--brand-600, var(--primary))" : "var(--text-secondary)",
+                  fontWeight: selectedStatuses.length > 0 ? 500 : 400,
+                  whiteSpace: "nowrap", cursor: "pointer",
+                }}
               >
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedStatuses.includes(s.value) ? '#fff' : s.color }} />
-                {s.label}
-              </Button>
-            ))}
+                {selectedStatuses.length === 1 && (() => {
+                  const s = activeStatuses.find(s => s.value === selectedStatuses[0]);
+                  return s ? <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} /> : null;
+                })()}
+                {statusFilterLabel} ▾
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-[180px]">
+              <DropdownMenuItem onClick={() => setSelectedStatuses([])}>
+                <span className={cn("text-xs", selectedStatuses.length === 0 && "font-semibold")}>Todos</span>
+              </DropdownMenuItem>
+              {activeStatuses.map(s => (
+                <DropdownMenuItem key={s.id} onClick={() => toggleStatus(s.value)}>
+                  <span className="flex items-center gap-2 text-xs">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                    {s.label}
+                    {selectedStatuses.includes(s.value) && <span className="ml-auto">✓</span>}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Priority dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="shrink-0 inline-flex items-center gap-1.5 transition-colors"
+                style={{
+                  height: 32, padding: "0 10px", fontSize: 13,
+                  border: `1px solid ${selectedPriorities.length > 0 ? "var(--brand-500, var(--primary))" : "var(--border-default)"}`,
+                  borderRadius: 8, background: "var(--bg-surface)",
+                  color: selectedPriorities.length > 0 ? "var(--brand-600, var(--primary))" : "var(--text-secondary)",
+                  fontWeight: selectedPriorities.length > 0 ? 500 : 400,
+                  whiteSpace: "nowrap", cursor: "pointer",
+                }}
+              >
+                {selectedPriorities.length === 1 && (() => {
+                  const p = PRIORITY_OPTIONS.find(p => p.value === selectedPriorities[0]);
+                  return p ? <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} /> : null;
+                })()}
+                {priorityFilterLabel} ▾
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-[180px]">
+              <DropdownMenuItem onClick={() => setSelectedPriorities([])}>
+                <span className={cn("text-xs", selectedPriorities.length === 0 && "font-semibold")}>Todas</span>
+              </DropdownMenuItem>
+              {PRIORITY_OPTIONS.map(p => (
+                <DropdownMenuItem key={p.value} onClick={() => togglePriority(p.value)}>
+                  <span className="flex items-center gap-2 text-xs">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+                    {p.label}
+                    {selectedPriorities.includes(p.value) && <span className="ml-auto">✓</span>}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Store search */}
+          <div className="relative flex-1 min-w-[140px] max-w-[240px]">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: "var(--text-muted)" }} />
+            <Input
+              placeholder="Nome, apelido ou código"
+              value={searchStore}
+              onChange={(e) => setSearchStore(e.target.value)}
+              className="h-8 text-xs pl-7"
+            />
           </div>
 
-          {/* Priority filter */}
-          <div className="flex flex-wrap gap-1.5 items-center">
-            <span className="text-xs text-muted-foreground font-medium mr-1"><Flag className="w-3.5 h-3.5 inline mr-1" />Prioridade:</span>
-            <Button
-              variant={selectedPriorities.length === 0 ? "default" : "outline"}
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => setSelectedPriorities([])}
-            >
-              Todas
-            </Button>
-            {PRIORITY_OPTIONS.map((p) => (
-              <Button
-                key={p.value}
-                variant={selectedPriorities.includes(p.value) ? "default" : "outline"}
-                size="sm"
-                className="h-7 text-xs gap-1.5"
-                style={selectedPriorities.includes(p.value) ? { backgroundColor: p.color, borderColor: p.color, color: '#fff' } : { borderColor: p.color, color: p.color }}
-                onClick={() => togglePriority(p.value)}
-              >
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: selectedPriorities.includes(p.value) ? '#fff' : p.color }} />
-                {p.label}
-              </Button>
-            ))}
+          {/* State select */}
+          <Select value={filterState || "__all__"} onValueChange={(v) => setFilterState(v === "__all__" ? "" : v)}>
+            <SelectTrigger className="h-8 text-xs w-24 shrink-0"><SelectValue placeholder="UF" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">UF</SelectItem>
+              {stateOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          {/* City select */}
+          <Select value={filterCity || "__all__"} onValueChange={(v) => setFilterCity(v === "__all__" ? "" : v)}>
+            <SelectTrigger className="h-8 text-xs w-32 shrink-0"><SelectValue placeholder="Cidade" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Cidade</SelectItem>
+              {cityOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          {/* Date range */}
+          <div className="flex items-center gap-1 shrink-0">
+            <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="h-8 text-xs w-32" />
+            <span className="text-[11px]" style={{ color: "var(--text-muted)" }}>→</span>
+            <Input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="h-8 text-xs w-32" />
           </div>
 
-          {/* Location + date filters */}
-          <div className="flex flex-wrap gap-2 items-end">
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-muted-foreground font-medium">Buscar loja</label>
-              <Input
-                placeholder={t("filters.searchStoreAlt")}
-                value={searchStore}
-                onChange={(e) => setSearchStore(e.target.value)}
-                className="h-8 text-xs w-44"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-muted-foreground font-medium">Estado</label>
-              <Select value={filterState || "__all__"} onValueChange={(v) => setFilterState(v === "__all__" ? "" : v)}>
-                <SelectTrigger className="h-8 text-xs w-28">
-                  <SelectValue placeholder={t("common.all")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Todos</SelectItem>
-                  {stateOptions.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-muted-foreground font-medium">Cidade</label>
-              <Select value={filterCity || "__all__"} onValueChange={(v) => setFilterCity(v === "__all__" ? "" : v)}>
-                <SelectTrigger className="h-8 text-xs w-36">
-                  <SelectValue placeholder={t("common.allFeminine")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">Todas</SelectItem>
-                  {cityOptions.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-muted-foreground font-medium">Data de</label>
-              <Input
-                type="date"
-                value={filterDateFrom}
-                onChange={(e) => setFilterDateFrom(e.target.value)}
-                className="h-8 text-xs w-36"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-[10px] text-muted-foreground font-medium">Data até</label>
-              <Input
-                type="date"
-                value={filterDateTo}
-                onChange={(e) => setFilterDateTo(e.target.value)}
-                className="h-8 text-xs w-36"
-              />
-            </div>
-            {(searchStore || filterCity || filterState || filterDateFrom || filterDateTo) && (
-              <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => { setSearchStore(""); setFilterCity(""); setFilterState(""); setFilterDateFrom(""); setFilterDateTo(""); }}>
-                Limpar filtros
-              </Button>
-            )}
-          </div>
+          {(searchStore || filterCity || filterState || filterDateFrom || filterDateTo || selectedStatuses.length > 0 || selectedPriorities.length > 0) && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs shrink-0" onClick={() => {
+              setSearchStore(""); setFilterCity(""); setFilterState(""); setFilterDateFrom(""); setFilterDateTo(""); setSelectedStatuses([]); setSelectedPriorities([]);
+            }}>
+              ✕ Limpar
+            </Button>
+          )}
         </div>
       )}
 
 
 
       {/* Occurrences list */}
+      <div className="px-4 pt-3">
       {isLoading ? (
         viewMode === "list" ? <ListSkeleton count={6} /> : <CardSkeleton count={6} />
       ) : occurrences.length === 0 ? (
@@ -788,8 +867,8 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           })}
         </div>
       )}
+      </div>
 
-      {/* Photo lightbox */}
       <PhotoLightbox
         photos={lightboxPhotos}
         initialIndex={lightboxIndex}
