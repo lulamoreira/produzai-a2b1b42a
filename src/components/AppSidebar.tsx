@@ -242,11 +242,13 @@ export default function AppSidebar() {
         <div key={item.label}>
           <button
             onClick={() => toggleGroup(groupKey)}
-            className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all ${
-              hasActiveChild
-                ? "bg-sidebar-accent text-sidebar-primary"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-            }`}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all"
+            style={hasActiveChild
+              ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)" }
+              : { color: "var(--sidebar-text)" }
+            }
+            onMouseEnter={e => { if (!hasActiveChild) e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
+            onMouseLeave={e => { if (!hasActiveChild) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; } }}
             title={collapsed ? item.label : undefined}
           >
             <AquaIcon icon={item.icon} size="sm" color={item.color} />
@@ -254,23 +256,25 @@ export default function AppSidebar() {
               <>
                 <span className="truncate font-medium flex-1 text-left">{item.label}</span>
                 {isExpanded
-                  ? <ChevronDown className="w-3.5 h-3.5 text-sidebar-foreground/40 flex-shrink-0" />
-                  : <ChevronRight className="w-3.5 h-3.5 text-sidebar-foreground/40 flex-shrink-0" />
+                  ? <ChevronDown className="w-3.5 h-3.5 flex-shrink-0 opacity-40" />
+                  : <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 opacity-40" />
                 }
               </>
             )}
           </button>
           {!collapsed && isExpanded && (
-            <div className="ml-4 pl-2 border-l border-sidebar-border/50 mt-0.5 space-y-0.5">
+            <div className="ml-4 pl-2 mt-0.5 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
               {item.children.map((child) => (
                 <button
                   key={child.label}
                   onClick={() => handleNavigate(child.href)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all ${
-                    child.active
-                      ? "bg-sidebar-accent text-sidebar-primary font-semibold"
-                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
-                  }`}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
+                  style={child.active
+                    ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", fontWeight: 600, borderLeft: "3px solid var(--sidebar-active-bar)" }
+                    : { color: "var(--sidebar-text)" }
+                  }
+                  onMouseEnter={e => { if (!child.active) { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; } }}
+                  onMouseLeave={e => { if (!child.active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; } }}
                 >
                   <AquaIcon icon={child.icon} size="xs" color={child.color} />
                   <span className="truncate">{child.label}</span>
@@ -286,11 +290,13 @@ export default function AppSidebar() {
       <button
         key={item.label}
         onClick={() => handleNavigate(item.href)}
-        className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all relative ${
-          item.active
-            ? "bg-sidebar-accent text-sidebar-primary"
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-        }`}
+        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+        style={item.active
+          ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", borderLeft: "3px solid var(--sidebar-active-bar)", fontWeight: 500 }
+          : { color: "var(--sidebar-text)" }
+        }
+        onMouseEnter={e => { if (!item.active) { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; } }}
+        onMouseLeave={e => { if (!item.active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; } }}
         title={collapsed ? item.label : undefined}
       >
         <div className="relative flex-shrink-0">
