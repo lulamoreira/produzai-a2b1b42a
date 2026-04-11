@@ -580,7 +580,8 @@
     "noCampaigns": "Ninguna campaña registrada.",
     "searchStore": "Buscar tienda...",
     "deleteCampaignTitle": "¿Está seguro de que desea eliminar esta campaña?",
-    "deleteCampaignDesc": "Todos los datos asociados a esta campaña se eliminarán permanentemente. Esta acción no se puede deshacer."
+    "deleteCampaignDesc": "Todos los datos asociados a esta campaña se eliminarán permanentemente. Esta acción no se puede deshacer.",
+    "active": "Activa"
   },
   "supportMaterials": {
     "title": "Material de apoyo",

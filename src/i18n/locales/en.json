@@ -580,7 +580,8 @@
     "noCampaigns": "No campaigns registered.",
     "searchStore": "Search store...",
     "deleteCampaignTitle": "Are you sure you want to delete this campaign?",
-    "deleteCampaignDesc": "All data associated with this campaign will be permanently deleted. This action cannot be undone."
+    "deleteCampaignDesc": "All data associated with this campaign will be permanently deleted. This action cannot be undone.",
+    "active": "Active"
   },
   "supportMaterials": {
     "title": "Support Materials",
