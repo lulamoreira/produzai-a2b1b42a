@@ -1,4 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import EmptyState from "@/components/EmptyState";
+import { CardSkeleton, ListSkeleton } from "@/components/CardSkeleton";
 import { useTranslation } from "react-i18next";
 import { PRIORITY_OPTIONS } from "@/types/occurrence";
 import { getDefaultStatusValue } from "@/lib/occurrenceHelpers";
@@ -694,12 +696,21 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
 
       {/* Occurrences list */}
       {isLoading ? (
-        <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
+        viewMode === "list" ? <ListSkeleton count={6} /> : <CardSkeleton count={6} />
       ) : occurrences.length === 0 ? (
-        <div className="text-center py-16">
-          <AlertTriangle className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-          <p className="text-muted-foreground text-sm">Nenhuma ocorrência registrada.</p>
-        </div>
+        <EmptyState
+          icon={AlertTriangle}
+          title="Nenhuma ocorrência registrada."
+          subtitle="Novas ocorrências aparecerão aqui."
+        />
+      ) : filteredOccurrences.length === 0 ? (
+        <EmptyState
+          icon={AlertTriangle}
+          hasActiveFilters={!!(selectedStatuses.length || selectedPriorities.length || searchStore || filterCity || filterState || filterDateFrom || filterDateTo)}
+          onClearFilters={() => {
+            setSelectedStatuses([]); setSelectedPriorities([]); setSearchStore(""); setFilterCity(""); setFilterState(""); setFilterDateFrom(""); setFilterDateTo("");
+          }}
+        />
       ) : viewMode === "list" ? (
         <OccurrenceListView
           occurrences={filteredOccurrences}
