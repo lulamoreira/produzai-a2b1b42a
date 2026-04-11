@@ -317,6 +317,7 @@ export type Database = {
       campaign_kits: {
         Row: {
           campaign_id: string
+          category: string | null
           code: number
           created_at: string
           display_order: number
@@ -324,9 +325,11 @@ export type Database = {
           image_url: string | null
           is_mockup: boolean
           name: string
+          sub_location: string | null
         }
         Insert: {
           campaign_id: string
+          category?: string | null
           code: number
           created_at?: string
           display_order?: number
@@ -334,9 +337,11 @@ export type Database = {
           image_url?: string | null
           is_mockup?: boolean
           name: string
+          sub_location?: string | null
         }
         Update: {
           campaign_id?: string
+          category?: string | null
           code?: number
           created_at?: string
           display_order?: number
@@ -344,6 +349,7 @@ export type Database = {
           image_url?: string | null
           is_mockup?: boolean
           name?: string
+          sub_location?: string | null
         }
         Relationships: [
           {
