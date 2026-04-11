@@ -68,7 +68,7 @@ export default function AppearanceTab() {
                   "flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all",
                   isActive && "bg-muted ring-2 ring-offset-2 ring-offset-background",
                 )}
-                style={isActive ? { ringColor: `hsl(${preset.hue}, 72%, 52%)` } : undefined}
+                style={isActive ? { ["--tw-ring-color" as any]: `hsl(${preset.hue}, 72%, 52%)` } : undefined}
                 onClick={() => setSelectedHue(preset.hue)}
                 onMouseEnter={() => setHoveredHue(preset.hue)}
                 onMouseLeave={() => setHoveredHue(null)}
