@@ -69,6 +69,7 @@ import CampaignChatSection from "@/components/CampaignChatSection";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
+import BudgetExportColorDialog, { type ColorPalette } from "@/components/BudgetExportColorDialog";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -290,6 +291,7 @@ const CampaignDetail = () => {
   const [quickEditActive, setQuickEditActive] = useState(false);
   const [matrixCustomExportOpen, setMatrixCustomExportOpen] = useState(false);
   const [automationOpen, setAutomationOpen] = useState(false);
+  const [budgetExportDialogOpen, setBudgetExportDialogOpen] = useState(false);
 
   const handleFilterSidebarCollapsedChange = useCallback((collapsed: boolean) => {
     setFilterSidebarCollapsed(collapsed);
