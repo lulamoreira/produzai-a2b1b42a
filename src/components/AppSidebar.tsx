@@ -146,7 +146,7 @@ export default function AppSidebar() {
         icon: Home,
         href: homePath,
         active: location.pathname === homePath || location.pathname === "/" || location.pathname === "/agency-select",
-        color: "#6366f1",
+        color: "#8C6F4E",
       },
     ];
 
@@ -156,7 +156,7 @@ export default function AppSidebar() {
         icon: Briefcase,
         href: `/agency/${agencyId}`,
         active: location.pathname === `/agency/${agencyId}`,
-        color: "#8b5cf6",
+        color: "#735A3D",
       });
     }
 
@@ -166,14 +166,14 @@ export default function AppSidebar() {
         icon: Store,
         href: `/agency/${agencyId}/clients/${clientId}?tab=stores`,
         active: location.search.includes("tab=stores"),
-        color: "#6366f1",
+        color: "#6B4F2E",
       });
       items.push({
         label: t("sidebar.campaigns"),
         icon: Megaphone,
         href: `/agency/${agencyId}/clients/${clientId}`,
         active: location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores"),
-        color: "#3b82f6",
+        color: "#8C6F4E",
       });
     }
 
@@ -181,7 +181,7 @@ export default function AppSidebar() {
       items.push({
         label: campaignName || t("sidebar.campaigns"),
         icon: Grid3X3,
-        color: "#8b5cf6",
+        color: "#8C6F4E",
         active: !!currentSection,
         children: CAMPAIGN_MODULE_KEYS.map((mod) => ({
           label: t(mod.tKey),
@@ -199,7 +199,7 @@ export default function AppSidebar() {
       items.push({
         label: t("header.admin"),
         icon: Shield,
-        color: "#f97316",
+        color: "#7A3B2E",
         active: location.pathname.startsWith("/admin") || location.pathname === "/approvals",
         children: [
           {
@@ -207,14 +207,14 @@ export default function AppSidebar() {
             icon: Shield,
             href: "/admin",
             active: location.pathname === "/admin" && !location.search.includes("tab=backup"),
-            color: "#f97316",
+            color: "#7A3B2E",
           },
           {
             label: t("sidebar.approvals"),
             icon: Users,
             href: "/approvals",
             active: location.pathname === "/approvals",
-            color: "#22c55e",
+            color: "#5C6B3F",
           },
         ],
       });
@@ -224,7 +224,7 @@ export default function AppSidebar() {
       items.push({
         label: "Backup",
         icon: Database,
-        color: "#6366f1",
+        color: "#4A5568",
         href: "/admin?tab=backup",
         active: location.pathname === "/admin" && location.search.includes("tab=backup"),
       });
