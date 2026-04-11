@@ -2305,6 +2305,7 @@ const CampaignDetail = () => {
                      });
                      if (kit.image_url) await updateKit.mutateAsync({ id: createdKit.id, image_url: kit.image_url });
                      if (kit.is_mockup) await updateKit.mutateAsync({ id: createdKit.id, is_mockup: true });
+                     if (kit.category || kit.sub_location) await updateKit.mutateAsync({ id: createdKit.id, category: kit.category, sub_location: kit.sub_location });
                      // Deep clone: create NEW independent pieces for the duplicated kit
                      const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
                      let pieceCodeOffset = 0;

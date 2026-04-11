@@ -307,12 +307,14 @@ export function KitDetailDialog({
   const [addPieceSearch, setAddPieceSearch] = useState("");
   const [localImageUrl, setLocalImageUrl] = useState<string | null | undefined>(undefined);
   const [localKitName, setLocalKitName] = useState<string | undefined>(undefined);
+  const [localCategory, setLocalCategory] = useState<string | null | undefined>(undefined);
+  const [localSubLocation, setLocalSubLocation] = useState<string | null | undefined>(undefined);
 
-  // Reset local name when kit changes
+  // Reset local overrides when kit changes
   const displayKitName = localKitName !== undefined ? localKitName : kit?.name ?? "";
-
-  // Sync local image state when kit prop changes
   const effectiveImageUrl = localImageUrl !== undefined ? localImageUrl : kit?.image_url ?? null;
+  const effectiveCategory = localCategory !== undefined ? localCategory : kit?.category ?? null;
+  const effectiveSub = localSubLocation !== undefined ? localSubLocation : kit?.sub_location ?? null;
 
   const piecesInKit = kit ? kitPieces
     .filter(kp => kp.kit_id === kit.id)
@@ -389,7 +391,7 @@ export function KitDetailDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditingPieceId(null); setShowAddPieces(false); setEditingKitName(false); setLocalImageUrl(undefined); setLocalKitName(undefined); } onOpenChange(v); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditingPieceId(null); setShowAddPieces(false); setEditingKitName(false); setLocalImageUrl(undefined); setLocalKitName(undefined); setLocalCategory(undefined); setLocalSubLocation(undefined); } onOpenChange(v); }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -483,9 +485,11 @@ export function KitDetailDialog({
             <p className="text-[10px] text-muted-foreground">Alterar a localização do kit atualiza todas as peças automaticamente.</p>
             <div className="grid grid-cols-2 gap-2">
               <Select
-                value={kit.category || "__none__"}
+                value={effectiveCategory || "__none__"}
                 onValueChange={async (val) => {
                   const newCategory = val === "__none__" ? null : val;
+                  setLocalCategory(newCategory);
+                  setLocalSubLocation(null);
                   await onUpdateKit({ id: kit.id, category: newCategory, sub_location: null });
                   // Propagate to all pieces in the kit
                   if (onUpdatePiece) {
@@ -508,14 +512,15 @@ export function KitDetailDialog({
                   ))}
                 </SelectContent>
               </Select>
-              {kit.category && pieceSubLocations.filter(s => {
-                const parentLoc = pieceLocations.find(l => l.name === kit.category);
+              {effectiveCategory && pieceSubLocations.filter(s => {
+                const parentLoc = pieceLocations.find(l => l.name === effectiveCategory);
                 return parentLoc && s.location_id === parentLoc.id;
               }).length > 0 && (
                 <Select
-                  value={kit.sub_location || "__none__"}
+                  value={effectiveSub || "__none__"}
                   onValueChange={async (val) => {
                     const newSub = val === "__none__" ? null : val;
+                    setLocalSubLocation(newSub);
                     await onUpdateKit({ id: kit.id, sub_location: newSub });
                     // Propagate to all pieces
                     if (onUpdatePiece) {
@@ -534,7 +539,7 @@ export function KitDetailDialog({
                   <SelectContent>
                     <SelectItem value="__none__">Nenhuma</SelectItem>
                     {pieceSubLocations.filter(s => {
-                      const parentLoc = pieceLocations.find(l => l.name === kit.category);
+                      const parentLoc = pieceLocations.find(l => l.name === effectiveCategory);
                       return parentLoc && s.location_id === parentLoc.id;
                     }).map(sub => (
                       <SelectItem key={sub.id} value={sub.name}>{sub.name}</SelectItem>
@@ -545,9 +550,9 @@ export function KitDetailDialog({
             </div>
           </div>
         )}
-        {!canEdit && kit.category && (
+        {!canEdit && effectiveCategory && (
           <div className="text-xs text-muted-foreground px-1">
-            📍 Localização: {kit.category}{kit.sub_location ? ` / ${kit.sub_location}` : ""}
+            📍 Localização: {effectiveCategory}{effectiveSub ? ` / ${effectiveSub}` : ""}
           </div>
         )}
 
