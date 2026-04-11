@@ -9,7 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Package, Edit3, Upload, Link, X, Image, Minus } from "lucide-react";
+import { Plus, Trash2, Package, Edit3, Upload, Link, X, Image, Minus, Copy } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import { supabase } from "@/integrations/supabase/client";
 import { compressImage } from "@/lib/compressImage";
@@ -288,11 +288,12 @@ interface KitDetailDialogProps {
   onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
   onDeletePiece?: (id: string) => void;
   onUpdateKitPiece?: (update: { id: string; quantity: number }) => Promise<void>;
+  onDuplicatePiece?: (piece: CampaignPiece) => Promise<void>;
 }
 
 export function KitDetailDialog({
   open, onOpenChange, kit, kitPieces, allPieces, canEdit,
-  onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece,
+  onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece, onDuplicatePiece,
 }: KitDetailDialogProps) {
   const [editingPieceId, setEditingPieceId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
@@ -592,6 +593,11 @@ export function KitDetailDialog({
                   </div>
                   {canEdit && (
                     <div className="flex items-center gap-1">
+                      {onDuplicatePiece && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDuplicatePiece(p)} title="Duplicar peça">
+                          <Copy className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                       {onUpdatePiece && (
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEditPiece(p)} title="Editar peça">
                           <Edit3 className="w-3.5 h-3.5" />
