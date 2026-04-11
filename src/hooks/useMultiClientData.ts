@@ -68,6 +68,7 @@ export type CampaignPiece = {
   name: string;
   size: string;
   store_category: string | null;
+  sub_location: string | null;
   image_url: string | null;
   specification: string;
   installation_instructions: string;
