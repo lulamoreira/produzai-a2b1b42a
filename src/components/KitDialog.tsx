@@ -302,6 +302,10 @@ export function KitDetailDialog({
   const [kitNameInput, setKitNameInput] = useState("");
   const [addPieceSearch, setAddPieceSearch] = useState("");
   const [localImageUrl, setLocalImageUrl] = useState<string | null | undefined>(undefined);
+  const [localKitName, setLocalKitName] = useState<string | undefined>(undefined);
+
+  // Reset local name when kit changes
+  const displayKitName = localKitName !== undefined ? localKitName : kit?.name ?? "";
 
   // Sync local image state when kit prop changes
   const effectiveImageUrl = localImageUrl !== undefined ? localImageUrl : kit?.image_url ?? null;
