@@ -401,6 +401,25 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
       {/* Header actions */}
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-1.5">
+          {/* View toggle */}
+          <div className="flex rounded-md border border-[var(--border-default)] overflow-hidden mr-1">
+            <button
+              type="button"
+              onClick={() => handleViewModeChange("list")}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors"
+              style={viewMode === "list" ? { backgroundColor: "var(--s-info-bg)", color: "var(--s-info)", borderRight: "1px solid var(--s-info)" } : { color: "var(--text-secondary)", borderRight: "1px solid var(--border-default)" }}
+            >
+              <List className="w-3.5 h-3.5" /> Lista
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewModeChange("cards")}
+              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors"
+              style={viewMode === "cards" ? { backgroundColor: "var(--s-info-bg)", color: "var(--s-info)" } : { color: "var(--text-secondary)" }}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" /> Cards
+            </button>
+          </div>
           <Button variant="outline" size="sm" className="text-xs" onClick={handleCopyLink}>
             <Copy className="w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">Copiar Link para acesso a essa página</span><span className="sm:hidden">Copiar Link</span>
           </Button>
