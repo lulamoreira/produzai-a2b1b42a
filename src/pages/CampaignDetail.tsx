@@ -164,6 +164,12 @@ const CampaignDetail = () => {
   // ─── Location management ──────────────────────────────
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [newLocationName, setNewLocationName] = useState("");
+  const [editingLocationId, setEditingLocationId] = useState<string | null>(null);
+  const [editingLocationName, setEditingLocationName] = useState("");
+  const [expandedLocationId, setExpandedLocationId] = useState<string | null>(null);
+  const [newSubLocationName, setNewSubLocationName] = useState("");
+  const [editingSubLocId, setEditingSubLocId] = useState<string | null>(null);
+  const [editingSubLocName, setEditingSubLocName] = useState("");
 
   // ─── Kit dialogs ───────────────────────────────────────
   const [createKitDialogOpen, setCreateKitDialogOpen] = useState(false);
