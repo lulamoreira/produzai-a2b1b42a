@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { compressImage } from "@/lib/compressImage";
 import DebouncedInput from "@/components/DebouncedInput";
 import SendInstallCodeDialog from "@/components/SendInstallCodeDialog";
+import AccessWindowConfig from "@/components/AccessWindowConfig";
 import { useInstallCodeGeneration } from "@/hooks/useInstallCodeGeneration";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useClientPermission } from "@/hooks/useClientPermission";
