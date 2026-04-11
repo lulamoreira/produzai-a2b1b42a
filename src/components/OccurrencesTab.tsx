@@ -700,6 +700,33 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           <AlertTriangle className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-muted-foreground text-sm">Nenhuma ocorrência registrada.</p>
         </div>
+      ) : viewMode === "list" ? (
+        <OccurrenceListView
+          occurrences={filteredOccurrences}
+          campaignId={campaignId}
+          stores={stores}
+          pieces={pieces}
+          kits={kits}
+          kitPieces={kitPieces}
+          pieceLocations={pieceLocations}
+          canEdit={canEdit}
+          canDelete={canDelete}
+          canEditReporter={canEditReporter}
+          motives={motives}
+          statuses={statuses}
+          defaultStatus={defaultStatus}
+          photosMap={photosMap}
+          campaignName={campaignInfo?.name || ""}
+          agencyName={agencyName}
+          clientName={clientName}
+          getReporterLabel={getReporterLabel}
+          firstPieceKitLabels={firstPieceKitLabels}
+          whatsappLinkTemplate={whatsappLinkTemplate}
+          whatsappContactTemplate={whatsappContactTemplate}
+          onOpenLightbox={(photos, index) => { setLightboxPhotos(photos); setLightboxIndex(index); setLightboxOpen(true); }}
+          canLockCards={canLockCards}
+          scheduleMap={scheduleMap}
+        />
       ) : (
         <div className="grid gap-3 grid-cols-1 md:grid-cols-2 2xl:grid-cols-3">
           {filteredOccurrences.map((occ) => {
