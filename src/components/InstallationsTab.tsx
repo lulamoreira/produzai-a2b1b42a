@@ -124,6 +124,9 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
   const { storeOccurrenceStatus } = useOccurrenceStatusSync(campaignId);
 
+  // Auto-generate install codes when dual approval is met
+  useInstallCodeGeneration(schedules, campaignId);
+
   // Only show stores that have a schedule with date AND time (original or reschedule)
   const scheduledStores = useMemo(() => stores.filter((s) => {
     const sch = scheduleMap[s.id];
@@ -377,10 +380,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
   return (
     <div className="space-y-4">
-      {/* Team Codes Panel (shown when toggled from Mais ações) */}
-      {showTeamCodesPanel && showCodes && (
+      {/* AccessWindowConfig (shown when toggled from Mais ações) */}
+      {isAdminOrMaster && showCodes && (
         <div className="aqua-card p-4">
-          <TeamCodesPanel campaignId={campaignId} />
+          <AccessWindowConfig campaignId={campaignId} />
         </div>
       )}
 
