@@ -20,7 +20,6 @@ const MyCampaigns = () => {
     occurrences: { label: t("modules.occurrences"), icon: AlertTriangle },
     scheduling: { label: t("modules.scheduling"), icon: CalendarDays },
     installations: { label: t("modules.installations"), icon: Camera },
-    };
   };
 
   if (isLoading) {
