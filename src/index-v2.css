@@ -129,3 +129,52 @@
 .kpi-strip-v2 .kpi-item.primary .kpi-value {
   font-size: 18px;
 }
+
+/* ── Responsiveness v2 ── */
+
+/* Tablet: max 2 columns */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .grid.sm\:grid-cols-2.lg\:grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Mobile: 1 column */
+@media (max-width: 639px) {
+  .grid.sm\:grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Mobile font size bump */
+@media (max-width: 768px) {
+  .card-v2 {
+    padding: 14px 16px;
+    font-size: 15px;
+  }
+  .card-v2 button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* KPI strip mobile: 2x2 grid */
+@media (max-width: 640px) {
+  .kpi-strip-v2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .kpi-strip-v2 .kpi-item {
+    justify-content: center;
+    padding: 8px 6px;
+  }
+}
+
+/* Touch targets */
+@media (pointer: coarse) {
+  .card-v2 button,
+  .kpi-strip-v2 .kpi-item {
+    min-height: 48px;
+  }
+}

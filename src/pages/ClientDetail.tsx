@@ -845,6 +845,20 @@ const ClientDetail = () => {
                 </div>
                 <p className="text-muted-foreground text-sm">{t("clientDashboard.noCampaigns")}</p>
               </div>
+            ) : interfaceMode === "new" ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {campaigns.map((c) => (
+                  <CampaignCardV2
+                    key={c.id}
+                    campaign={c}
+                    storeCount={0}
+                    pieceCount={0}
+                    agencyId={agencyId!}
+                    clientId={clientId!}
+                    clientName={client?.name || ""}
+                  />
+                ))}
+              </div>
             ) : (
               <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
                 <SortableContext items={campaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
