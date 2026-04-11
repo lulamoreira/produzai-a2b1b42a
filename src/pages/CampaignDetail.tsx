@@ -284,6 +284,11 @@ const CampaignDetail = () => {
   const [matrixCustomExportOpen, setMatrixCustomExportOpen] = useState(false);
   const [automationOpen, setAutomationOpen] = useState(false);
 
+  const handleFilterSidebarCollapsedChange = useCallback((collapsed: boolean) => {
+    setFilterSidebarCollapsed(collapsed);
+    try { localStorage.setItem('produzai_matrix_filters_open', collapsed ? 'collapsed' : 'expanded'); } catch {}
+  }, []);
+
   // ─── Derived data ──────────────────────────────────────
   const qtyMap = useMemo(() => {
     const map: Record<string, number> = {};
