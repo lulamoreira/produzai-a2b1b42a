@@ -9,6 +9,7 @@ import {
   useCampaign, useClient, useClientStores, useCampaignPieces, useCampaignStorePieces,
   useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece,
   useCampaignPieceLocations, useAddCampaignPieceLocation, useDeleteCampaignPieceLocation,
+  useCampaignPieceSubLocations,
   useUpdateClientStore,
   useCampaignStoreStatus, useUpsertCampaignStoreStatus, useBulkUpsertCampaignStoreStatus,
   useClientStoreModels,
