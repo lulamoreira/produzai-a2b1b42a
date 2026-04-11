@@ -391,6 +391,7 @@ const CampaignDetail = () => {
       campaign_id: campaignId,
       code,
       category: pieceForm.category,
+      sub_location: pieceForm.sub_location || null,
       name: pieceForm.name,
       size,
       store_category: pieceForm.store_category || undefined,
@@ -402,7 +403,7 @@ const CampaignDetail = () => {
       image_url: pieceForm.image_url || undefined,
     });
     setPieceForm({
-      code: "", category: "", name: "",
+      code: "", category: "", sub_location: "", name: "",
       width: "", length: "", height: "",
       store_category: pieceForm.store_category,
       specification: "Vide Book/Manual",
