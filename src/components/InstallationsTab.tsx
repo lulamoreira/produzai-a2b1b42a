@@ -383,7 +383,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
       {/* Filters — Single row */}
       <div className="flex flex-wrap gap-2 items-center">
-          <div className="relative flex-1 min-w-[180px] max-w-[320px]">
+          <div className="relative w-[200px] shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("filters.searchStore")}
