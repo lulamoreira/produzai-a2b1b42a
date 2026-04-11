@@ -386,6 +386,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       });
     }
 
+    let extraFields: Record<string, any> = {};
+
     if (field === "scheduled_date" || field === "scheduled_time") {
       const nextDate = field === "scheduled_date" ? value : (existing?.scheduled_date ?? null);
       const nextTime = field === "scheduled_time" ? value : (existing?.scheduled_time ?? null);
