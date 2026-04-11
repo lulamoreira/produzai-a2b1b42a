@@ -23,6 +23,7 @@ export default function SendInstallCodeDialog({
   open, onOpenChange, schedule, store, team, teamMembers, agencyName, campaignName,
 }: SendInstallCodeDialogProps) {
   const [sending, setSending] = useState(false);
+  const logCampaignActivity = useLogCampaignActivity();
 
   if (!schedule?.install_code) return null;
 
