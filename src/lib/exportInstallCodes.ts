@@ -1,4 +1,4 @@
-import * as ExcelJS from "exceljs";
+import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import type { Schedule } from "@/types/schedule";
 import type { ClientStore } from "@/hooks/useMultiClientData";
