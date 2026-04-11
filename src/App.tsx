@@ -26,7 +26,7 @@ import PublicOccurrenceDetail from "./pages/PublicOccurrenceDetail";
 import Chat from "./pages/Chat";
 import MyCampaigns from "./pages/MyCampaigns";
 import PhotoCheckin from "./pages/PhotoCheckin";
-import InstallerDashboard from "./pages/InstallerDashboard";
+import InstallerPortal from "./pages/InstallerPortal";
 import Unsubscribe from "./pages/Unsubscribe";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -131,7 +131,8 @@ const App = () => (
               <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
               <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
               <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
-              <Route path="/installer" element={<InstallerDashboard />} />
+              <Route path="/installer" element={<InstallerPortal />} />
+              <Route path="/instalador" element={<InstallerPortal />} />
               <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
               <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
               <Route path="/unsubscribe" element={<Unsubscribe />} />

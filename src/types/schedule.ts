@@ -43,4 +43,14 @@ export type Schedule = {
   completed_by: string | null;
   photo_checkin: boolean;
   photo_checkin_at: string | null;
+  // Install code fields
+  install_code: string | null;
+  install_code_generated_at: string | null;
+  install_code_expires_at: string | null;
+  code_sent_at: string | null;
+  checkin_lat: number | null;
+  checkin_lng: number | null;
+  checkin_accuracy: number | null;
+  checkin_timestamp: string | null;
+  checkin_device_info: any;
 };
