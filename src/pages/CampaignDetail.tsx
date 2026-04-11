@@ -987,6 +987,11 @@ const CampaignDetail = () => {
               </button>
             </div>
 
+            <CampaignStatusDashboard
+              campaignId={campaignId!}
+              onNavigate={(section) => setActiveSection(section)}
+            />
+
             <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
 
             {/* Navigation Buttons */}
