@@ -3,7 +3,7 @@ import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, DollarSign, LogOut, Package, Camera } from "lucide-react";
+import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, LogOut, Package, Camera } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import ModuleGrid from "@/components/ModuleGrid";
 
