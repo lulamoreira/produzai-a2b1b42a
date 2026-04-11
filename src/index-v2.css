@@ -178,3 +178,104 @@
     min-height: 48px;
   }
 }
+
+/* ══════════════════════════════════════════════════════════
+   GLOBAL v2 MODE OVERRIDES
+   Applied when data-interface-mode="new" is on <html>
+   ══════════════════════════════════════════════════════════ */
+
+/* Page background — warm off-white */
+[data-interface-mode="new"] body {
+  background-color: hsl(var(--v2-bg-page)) !important;
+}
+
+/* Cards get v2 styling */
+[data-interface-mode="new"] .card-item,
+[data-interface-mode="new"] .card-kpi {
+  border-radius: var(--v2-radius-lg);
+  box-shadow: var(--v2-shadow-card);
+  border: none;
+}
+[data-interface-mode="new"] .card-item:hover,
+[data-interface-mode="new"] .card-kpi:hover {
+  box-shadow: var(--v2-shadow-card-hover);
+}
+
+/* Remove aqua gloss effects in v2 — cleaner, flatter look */
+[data-interface-mode="new"] .aqua-card::before,
+[data-interface-mode="new"] .aqua-card::after,
+[data-interface-mode="new"] .aqua-card-colored::before,
+[data-interface-mode="new"] .aqua-card-colored::after {
+  display: none;
+}
+
+/* Campaign colored cards → subtle left-border style */
+[data-interface-mode="new"] .aqua-card-colored {
+  background: hsl(var(--v2-bg-surface)) !important;
+  border-radius: var(--v2-radius-lg);
+  box-shadow: var(--v2-shadow-card);
+  border-left: 4px solid var(--campaign-color, hsl(var(--primary)));
+  color: hsl(var(--v2-text-primary)) !important;
+}
+[data-interface-mode="new"] .aqua-card-colored .absolute {
+  display: none;
+}
+[data-interface-mode="new"] .aqua-card-colored h3,
+[data-interface-mode="new"] .aqua-card-colored p,
+[data-interface-mode="new"] .aqua-card-colored span,
+[data-interface-mode="new"] .aqua-card-colored button {
+  color: hsl(var(--v2-text-primary)) !important;
+}
+[data-interface-mode="new"] .aqua-card-colored p {
+  color: hsl(var(--v2-text-secondary)) !important;
+}
+
+/* Aqua icons → simpler rounded squares */
+[data-interface-mode="new"] .aqua-icon::before,
+[data-interface-mode="new"] .aqua-icon::after {
+  display: none;
+}
+[data-interface-mode="new"] .aqua-icon {
+  border-radius: var(--v2-radius-sm);
+  box-shadow: none;
+}
+
+/* Header bar → cleaner */
+[data-interface-mode="new"] header.sticky {
+  backdrop-filter: blur(12px);
+}
+
+/* Font: prefer Inter in v2 */
+[data-interface-mode="new"] body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+[data-interface-mode="new"] h1,
+[data-interface-mode="new"] h2,
+[data-interface-mode="new"] h3,
+[data-interface-mode="new"] h4 {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+}
+
+/* Buttons — slightly smaller radius */
+[data-interface-mode="new"] button,
+[data-interface-mode="new"] [role="button"] {
+  border-radius: var(--v2-radius-sm);
+}
+
+/* Inputs */
+[data-interface-mode="new"] input,
+[data-interface-mode="new"] select,
+[data-interface-mode="new"] textarea {
+  border-radius: var(--v2-radius-sm);
+}
+
+/* Dialog / Sheet */
+[data-interface-mode="new"] [role="dialog"] {
+  border-radius: var(--v2-radius-xl);
+}
+
+/* Badge in v2 mode */
+[data-interface-mode="new"] .badge-v2 {
+  font-weight: 600;
+}

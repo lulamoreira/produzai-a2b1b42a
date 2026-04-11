@@ -1,4 +1,5 @@
 import { createContext, useContext, useCallback, type ReactNode } from "react";
+import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMatch } from "react-router-dom";
@@ -54,10 +55,20 @@ export function InterfaceModeProvider({ children }: { children: ReactNode }) {
     queryClient.invalidateQueries({ queryKey: ["interface_mode", agencyId] });
   }, [agencyId, queryClient]);
 
+  const currentMode = mode ?? "legacy";
+
+  // Sync data attribute on <html> so CSS can react globally
+  useEffect(() => {
+    document.documentElement.setAttribute("data-interface-mode", currentMode);
+    return () => {
+      document.documentElement.removeAttribute("data-interface-mode");
+    };
+  }, [currentMode]);
+
   return (
     <InterfaceModeContext.Provider
       value={{
-        interfaceMode: mode ?? "legacy",
+        interfaceMode: currentMode,
         setInterfaceMode,
         isLoading,
       }}
