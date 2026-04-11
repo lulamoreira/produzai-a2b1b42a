@@ -106,6 +106,13 @@ Bom trabalho! 💪`;
         .from("campaign_schedules")
         .update({ code_sent_at: new Date().toISOString() } as any)
         .eq("id", schedule.id);
+      logCampaignActivity.mutate({
+        campaign_id: schedule.campaign_id,
+        store_id: schedule.store_id,
+        actor_type: "user",
+        action: "codigo_enviado",
+        description: `Código de acesso enviado para ${store?.name || "loja"} — equipe ${leaderName}`,
+      });
       onOpenChange(false);
     } catch {
       // silent
