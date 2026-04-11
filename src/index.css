@@ -337,6 +337,7 @@ body[data-sidebar-mobile-open="true"] .mobile-back-btn {
 .badge-info    { background: var(--s-info-bg);    color: var(--s-info);    }
 .badge-neutral { background: var(--s-neutral-bg); color: var(--s-neutral); }
 .badge-purple  { background: var(--s-purple-bg);  color: var(--s-purple);  }
+.badge-brand   { background: var(--brand-100);    color: var(--brand-800); }
 
 .section-label {
   font-size: 11px;
