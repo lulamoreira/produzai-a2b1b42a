@@ -727,7 +727,7 @@ const CampaignDetail = () => {
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.locationInStore")} *</label>
         {pieceLocations.length > 0 ? (
-          <Select value={form.category} onValueChange={(val) => setForm((f) => ({ ...f, category: val }))}>
+          <Select value={form.category} onValueChange={(val) => setForm((f) => ({ ...f, category: val, sub_location: "" }))}>
             <SelectTrigger>
               <SelectValue placeholder={t("pieces.selectLocation")} />
             </SelectTrigger>
@@ -739,6 +739,26 @@ const CampaignDetail = () => {
           <Input value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} required />
         )}
       </div>
+      {/* Sub-location selector */}
+      {form.category && (() => {
+        const selectedLoc = pieceLocations.find(l => l.name === form.category);
+        const subs = selectedLoc ? pieceSubLocations.filter(s => s.location_id === selectedLoc.id) : [];
+        if (subs.length === 0) return null;
+        return (
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Sub-localização</label>
+            <Select value={form.sub_location} onValueChange={(val) => setForm((f) => ({ ...f, sub_location: val }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a sub-localização" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Nenhuma</SelectItem>
+                {subs.map((s) => <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+      })()}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.name")} *</label>
         <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
