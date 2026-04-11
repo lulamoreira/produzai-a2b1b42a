@@ -22,7 +22,7 @@ import { useLogActivity } from "@/hooks/useActivityLogs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -51,10 +51,6 @@ interface SchedulingTabProps {
   campaignName: string;
   clientId: string;
 }
-
-// Schedule type is now imported from @/types/schedule
-
-// Preference options are built inside the component using t()
 
 function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string, storeName?: string) {
   const firstName = contactName.split(" ")[0];
@@ -118,6 +114,17 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [lockLoading, setLockLoading] = useState<Record<string, boolean>>({});
   const [bulkLockLoading, setBulkLockLoading] = useState(false);
   const [expandedOriginal, setExpandedOriginal] = useState<Record<string, boolean>>({});
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+
+  const toggleCardExpanded = (storeId: string) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev);
+      if (next.has(storeId)) next.delete(storeId);
+      else next.add(storeId);
+      return next;
+    });
+  };
 
   // Unread message counts
   const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
@@ -344,10 +351,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       details: `${oldVal ?? "(vazio)"} → ${value ?? "(vazio)"}`,
     });
 
-    // Build extra resets when date/time is cleared
     let extraFields: Record<string, any> = {};
 
-    // Original scheduling fields
     if (field === "scheduled_date" || field === "scheduled_time") {
       const nextDate = field === "scheduled_date" ? value : (existing?.scheduled_date ?? null);
       const nextTime = field === "scheduled_time" ? value : (existing?.scheduled_time ?? null);
@@ -365,7 +370,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       }
     }
 
-    // Reschedule fields
     if (field === "reschedule_date" || field === "reschedule_time") {
       const nextDate = field === "reschedule_date" ? value : (existing?.reschedule_date ?? null);
       const nextTime = field === "reschedule_time" ? value : (existing?.reschedule_time ?? null);
@@ -434,7 +438,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const handleMultiFieldChange = (storeId: string, fields: Record<string, any>) => {
     const existing = scheduleMap[storeId];
 
-    // Log each meaningful field change
     const loggableFields: Record<string, string> = {
       ...fieldLabels,
       suggested_date_2: t("scheduling.suggestedDate2"),
@@ -547,10 +550,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       const vehicles = allVehiclesMap[team.id] || [];
       const incomplete = isTeamIncomplete(members);
 
-      // Add blank separator row between teams
       if (teamIndex > 0) sheetData.push([]);
 
-      // Team header row
       sheetData.push([
         `${t("scheduling.team")}: ${team.name}`,
         "",
@@ -584,24 +585,39 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     toast.success(t("scheduling.teamsExported"));
   };
 
+  // Count active secondary filters
+  const secondaryFilterCount = [filterCity, filterPeriod, filterMessages, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
+
+  // Approval badge helper
+  const approvalBadgeClass = (status: ApprovalStatusValue) => {
+    if (status === "approved") return "badge-success";
+    if (status === "rejected") return "badge-danger";
+    return "badge-warning";
+  };
+  const approvalBadgeText = (status: ApprovalStatusValue) => {
+    if (status === "approved") return `✔ ${t("scheduling.approved")}`;
+    if (status === "rejected") return `✗ ${t("scheduling.rejected")}`;
+    return `⏳ ${t("scheduling.underReview")}`;
+  };
+
   return (
     <div className="space-y-4">
-      {/* Filters */}
+      {/* Filters — Primary row */}
       <div className="space-y-2">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t("filters.searchStore")}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-card border-border"
-          />
-        </div>
         <div className="flex flex-wrap gap-2 items-center">
+          <div className="relative flex-1 min-w-[180px] max-w-[320px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t("filters.searchStore")}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-card border-border h-9 text-sm"
+            />
+          </div>
           <select
             value={filterState}
             onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[150px] h-9"
           >
             <option value="">{t("filters.allStates")}</option>
             {states.map((s) => (
@@ -609,19 +625,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             ))}
           </select>
           <select
-            value={filterCity}
-            onChange={(e) => setFilterCity(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
-          >
-            <option value="">{t("filters.allCities")}</option>
-            {cities.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-          <select
             value={filterApproval}
             onChange={(e) => setFilterApproval(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[160px] h-9"
           >
             <option value="">{t("filters.approvals")}</option>
             <option value="approved">{t("filters.approved")}</option>
@@ -633,7 +639,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             type="date"
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[120px] max-w-[160px]"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[120px] max-w-[160px] h-9"
             title={t("common.filter")}
           />
           {filterDate && (
@@ -641,91 +647,78 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               ✕
             </Button>
           )}
-          <select
-            value={filterPeriod}
-            onChange={(e) => setFilterPeriod(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[140px]"
-          >
-            <option value="">{t("filters.period")}</option>
-            <option value="morning">{t("filters.periodMorning")}</option>
-            <option value="afternoon">{t("filters.periodAfternoon")}</option>
-            <option value="night">{t("filters.periodNight")}</option>
-          </select>
-          {filterPeriod && (
-            <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-muted-foreground" onClick={() => setFilterPeriod("")}>
-              ✕
-            </Button>
-          )}
-          <select
-            value={filterMessages}
-            onChange={(e) => setFilterMessages(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
-          >
-            <option value="">{t("filters.messages")}</option>
-            <option value="unread">{t("filters.newMessages")}</option>
-            <option value="has_messages">{t("filters.withMessages")}</option>
-          </select>
-          <select
-            value={filterTeam}
-            onChange={(e) => setFilterTeam(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
-          >
-            <option value="">{t("filters.team")}</option>
-            <option value="no_team">{t("filters.noTeam")}</option>
-            {teams.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
-          <select
-            value={filterPreference}
-            onChange={(e) => setFilterPreference(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
-          >
-            <option value="">{t("filters.preference")}</option>
-            {PREFERENCE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-          <select
-            value={filterResponsibility}
-            onChange={(e) => setFilterResponsibility(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
-          >
-            <option value="">{t("filters.responsible")}</option>
-            <option value="team">{t("scheduling.teamLabel")}</option>
-            <option value="client">{t("scheduling.client")}</option>
-          </select>
-          <select
-            value={filterLocked}
-            onChange={(e) => setFilterLocked(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
-          >
-            <option value="">{t("filters.lock")}</option>
-            <option value="locked">{t("filters.locked")}</option>
-            <option value="unlocked">{t("filters.unlocked")}</option>
-          </select>
-          <select
-            value={filterReschedule}
-            onChange={(e) => setFilterReschedule(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
-          >
-            <option value="">{t("filters.reschedule")}</option>
-            <option value="yes">{t("filters.withReschedule")}</option>
-            <option value="no">{t("filters.withoutReschedule")}</option>
-          </select>
-          {storeModels.length > 0 && (
-            <select
-              value={filterModel}
-              onChange={(e) => setFilterModel(e.target.value)}
-              className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
-            >
-              <option value="">{t("common.model")}</option>
-              {storeModels.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          )}
+
+          {/* More filters */}
+          <Popover open={showMoreFilters} onOpenChange={setShowMoreFilters}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                Mais filtros
+                {secondaryFilterCount > 0 && (
+                  <span className="badge-base badge-info ml-1">{secondaryFilterCount}</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-4 space-y-3" align="start">
+              <p className="text-xs font-semibold text-foreground">Filtros avançados</p>
+              <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
+                <option value="">{t("filters.allCities")}</option>
+                {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
+                <option value="">{t("filters.period")}</option>
+                <option value="morning">{t("filters.periodMorning")}</option>
+                <option value="afternoon">{t("filters.periodAfternoon")}</option>
+                <option value="night">{t("filters.periodNight")}</option>
+              </select>
+              <select value={filterMessages} onChange={(e) => setFilterMessages(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
+                <option value="">{t("filters.messages")}</option>
+                <option value="unread">{t("filters.newMessages")}</option>
+                <option value="has_messages">{t("filters.withMessages")}</option>
+              </select>
+              <select value={filterTeam} onChange={(e) => setFilterTeam(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
+                <option value="">{t("filters.team")}</option>
+                <option value="no_team">{t("filters.noTeam")}</option>
+                {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              <select value={filterPreference} onChange={(e) => setFilterPreference(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
+                <option value="">{t("filters.preference")}</option>
+                {PREFERENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <select value={filterResponsibility} onChange={(e) => setFilterResponsibility(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
+                <option value="">{t("filters.responsible")}</option>
+                <option value="team">{t("scheduling.teamLabel")}</option>
+                <option value="client">{t("scheduling.client")}</option>
+              </select>
+              <select value={filterLocked} onChange={(e) => setFilterLocked(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
+                <option value="">{t("filters.lock")}</option>
+                <option value="locked">{t("filters.locked")}</option>
+                <option value="unlocked">{t("filters.unlocked")}</option>
+              </select>
+              <select value={filterReschedule} onChange={(e) => setFilterReschedule(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
+                <option value="">{t("filters.reschedule")}</option>
+                <option value="yes">{t("filters.withReschedule")}</option>
+                <option value="no">{t("filters.withoutReschedule")}</option>
+              </select>
+              {storeModels.length > 0 && (
+                <select value={filterModel} onChange={(e) => setFilterModel(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
+                  <option value="">{t("common.model")}</option>
+                  {storeModels.map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+              )}
+              {secondaryFilterCount > 0 && (
+                <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => {
+                  setFilterCity(""); setFilterPeriod(""); setFilterMessages(""); setFilterTeam("");
+                  setFilterPreference(""); setFilterResponsibility(""); setFilterLocked(""); setFilterReschedule(""); setFilterModel("");
+                }}>
+                  Limpar filtros avançados
+                </Button>
+              )}
+            </PopoverContent>
+          </Popover>
         </div>
+
+        {/* Action buttons */}
         <div className="flex flex-wrap gap-1.5">
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setTeamDialogOpen(true)}>
             <Wrench className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{t("scheduling.teams")}</span><span className="sm:hidden">{t("scheduling.teams").slice(0,3)}</span>
@@ -753,7 +746,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
                   if (error) throw error;
                   queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-                  toast.success(newLocked ? t("common.cardsBlocked", { count: ids.length }) : t("common.cardsUnblocked", { count: ids.length }));
+                  toast.success(newLocked ? `${ids.length} ${t("common.cardsBlocked")}` : `${ids.length} ${t("common.cardsUnblocked")}`);
                 } catch (err: any) {
                   toast.error(err.message || t("common.errorChangingLockBulk"));
                 } finally {
@@ -765,7 +758,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
                 const allLocked = unlocked.length === 0 && displayedStores.some(s => scheduleMap[s.id]);
                 return allLocked
-                  ? <><LockOpen className="w-3.5 h-3.5" /> Desbloquear Todos</>
+                  ? <><LockOpen className="w-3.5 h-3.5" /> {t("common.unlockAll")}</>
                   : <><Lock className="w-3.5 h-3.5" /> {t("common.lockAll")}</>;
               })()}
             </Button>
@@ -773,7 +766,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         </div>
       </div>
 
-      {/* Summary Bar - Clickable Filters */}
+      {/* KPI Summary Bar */}
       {(() => {
         const total = filteredStores.length;
         const scheduled = filteredStores.filter(s => {
@@ -786,37 +779,42 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const sch = scheduleMap[s.id];
           return sch?.store_approval_status === "approved" && sch?.team_approval_status === "approved";
         }).length;
-        const withReschedule = filteredStores.filter(s => scheduleMap[s.id]?.reschedule_enabled).length;
         const withTeam = filteredStores.filter(s => scheduleMap[s.id]?.team_id).length;
+        const withReschedule = filteredStores.filter(s => scheduleMap[s.id]?.reschedule_enabled).length;
         const withOccurrence = filteredStores.filter(s => {
           const occ = storeOccurrenceStatus[s.id];
           return occ?.hasOccurrence && !occ.allResolved;
         }).length;
+
         const items = [
-          { key: "total" as const, value: total, label: t("common.total"), color: "text-foreground" },
-          { key: "scheduled" as const, value: scheduled, label: t("scheduling.scheduled"), color: "text-foreground" },
-          { key: "noDate" as const, value: noDate, label: t("scheduling.noDate"), color: "text-amber-600" },
-          { key: "approved" as const, value: approved, label: t("filters.approved"), color: "text-foreground" },
-          { key: "withTeam" as const, value: withTeam, label: t("scheduling.withTeam"), color: "text-foreground" },
-          { key: "withReschedule" as const, value: withReschedule, label: t("dashboard.withReschedule"), color: "text-amber-600" },
-          { key: "withOccurrence" as const, value: withOccurrence, label: t("scheduling.withOccurrence"), color: "text-destructive" },
+          { key: "total" as const, value: total, label: t("common.total"), isTotal: true, dangerWhenPositive: false },
+          { key: "scheduled" as const, value: scheduled, label: t("scheduling.scheduled"), isTotal: false, dangerWhenPositive: false },
+          { key: "noDate" as const, value: noDate, label: t("scheduling.noDate"), isTotal: false, dangerWhenPositive: false },
+          { key: "approved" as const, value: approved, label: t("filters.approved"), isTotal: false, dangerWhenPositive: false },
+          { key: "withTeam" as const, value: withTeam, label: t("scheduling.withTeam"), isTotal: false, dangerWhenPositive: false },
+          { key: "withReschedule" as const, value: withReschedule, label: t("dashboard.withReschedule"), isTotal: false, dangerWhenPositive: false },
+          { key: "withOccurrence" as const, value: withOccurrence, label: t("scheduling.withOccurrence"), isTotal: false, dangerWhenPositive: true },
         ];
         return (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
               {items.map((m) => (
                 <button
                   key={m.key}
                   type="button"
                   onClick={() => setSummaryFilter(prev => prev === m.key ? "" : m.key)}
                   className={cn(
-                    "bg-card border rounded-lg px-3 py-2 text-center transition-all cursor-pointer hover:shadow-md",
+                    "flex-shrink-0 bg-card border rounded-lg px-3 py-2 text-center transition-all cursor-pointer hover:shadow-md whitespace-nowrap",
                     summaryFilter === m.key
                       ? "border-primary ring-2 ring-primary/30 shadow-sm"
                       : "border-border"
                   )}
                 >
-                  <p className={cn("text-lg font-bold", m.color)}>{m.value}</p>
+                  <p className={cn(
+                    "font-bold",
+                    m.isTotal ? "text-xl" : "text-sm",
+                    m.dangerWhenPositive && m.value > 0 ? "text-[var(--s-danger)]" : m.isTotal ? "text-foreground" : "text-[var(--text-secondary)]"
+                  )}>{m.value}</p>
                   <p className="text-[10px] text-muted-foreground">{m.label}</p>
                 </button>
               ))}
@@ -834,9 +832,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       })()}
 
       {/* Store Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
         {displayedStores.map((store) => {
-          const colors = getStateColor(store.state);
           const schedule = scheduleMap[store.id];
           const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
           const storeContacts = contactsByStore[store.id] || [];
@@ -845,7 +842,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const teamVehicles: TeamVehicle[] = schedule?.team_id ? (allVehiclesMap[schedule.team_id] || []) : [];
           const teamIncomplete = assignedTeam ? isTeamIncomplete(teamMembers) : false;
 
-          // Determine effective status: use reschedule if enabled
           const isReschedule = !!schedule?.reschedule_enabled;
           const effectiveStoreStatus = isReschedule
             ? ((schedule?.reschedule_store_approval_status ?? "under_review") as ApprovalStatusValue)
@@ -856,16 +852,27 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const effectiveOs = isReschedule ? schedule?.reschedule_os : schedule?.installation_os;
           const effectiveDate = isReschedule ? schedule?.reschedule_date : schedule?.scheduled_date;
           const effectiveTime = isReschedule ? schedule?.reschedule_time : schedule?.scheduled_time;
+          const effectivePref = isReschedule ? (schedule?.reschedule_preference || "not_informed") : (schedule?.installation_preference || "not_informed");
 
-          const storeApprovalStatus = (schedule?.store_approval_status ?? "under_review") as ApprovalStatusValue;
-          const teamApprovalStatus = (schedule?.team_approval_status ?? "under_review") as ApprovalStatusValue;
           const storeApproved = effectiveStoreStatus === "approved";
           const teamApproved = effectiveTeamStatus === "approved";
           const hasOs = !!(effectiveOs?.trim());
           const fullyApproved = storeApproved && teamApproved && hasOs;
-          const hasPendency = !fullyApproved;
           const isCardLocked = !!schedule?.locked;
           const cardCanEdit = canEdit && (!isCardLocked || isAdminOrMaster);
+          const isExpanded = expandedCards.has(store.id);
+
+          const occStatus = storeOccurrenceStatus[store.id];
+          const hasOpenOccurrence = occStatus?.hasOccurrence && !occStatus.allResolved;
+
+          // Border color: green=fully approved, red=rejected, yellow=pending, gray=no date
+          const borderLeftColor = fullyApproved
+            ? "var(--s-success)"
+            : (effectiveStoreStatus === "rejected" || effectiveTeamStatus === "rejected")
+              ? "var(--s-danger)"
+              : effectiveDate
+                ? "var(--s-warning)"
+                : "var(--s-neutral)";
 
           const handleToggleLock = async () => {
             if (!schedule) return;
@@ -897,27 +904,311 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           return (
             <div
               key={store.id}
-              className={`aqua-card overflow-hidden shadow-sm flex flex-col ${isCardLocked ? "opacity-80" : ""}`}
-              style={{ borderColor: colors.text, borderWidth: 2, border: `2px solid ${colors.text}` }}
+              className={cn(
+                "card-base overflow-hidden flex flex-col transition-shadow duration-150 hover:shadow-md",
+                isCardLocked && "opacity-80"
+              )}
+              style={{ borderLeft: `4px solid ${borderLeftColor}`, padding: 0 }}
             >
-              {/* Header */}
+              {/* COLLAPSED STATE — always visible */}
               <div
-                className="px-4 py-3 relative"
-                style={{ backgroundColor: colors.bg, color: colors.text }}
+                className="px-4 py-3 cursor-pointer select-none"
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest("button, a, label, input, select")) return;
+                  toggleCardExpanded(store.id);
+                }}
               >
-                <div className="font-semibold text-sm break-words leading-snug">{store.name}</div>
-                <div className="flex items-center justify-between mt-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-lg leading-none">{store.store_code || "—"}</span>
-                    <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
+                {/* Row 1: Store name + badges */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm text-[var(--text-primary)] truncate">
+                      {store.name}
+                      {store.nickname && <span className="text-[var(--text-muted)] font-normal"> — {store.nickname}</span>}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-0.5">
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {hasOpenOccurrence && (() => {
+                      const currentPath = window.location.pathname;
+                      const occUrl = `${currentPath}?section=occurrences&filterStore=${encodeURIComponent(store.name)}`;
+                      return (
+                        <a href={occUrl} target="_blank" rel="noopener noreferrer" className="badge-base badge-danger no-underline hover:opacity-80" onClick={(e) => e.stopPropagation()}>
+                          <AlertTriangle className="w-3 h-3" />
+                          Ocorrência ({occStatus!.count})
+                        </a>
+                      );
+                    })()}
+                    {isReschedule && <span className="badge-base badge-warning">REM</span>}
+                    {isCardLocked && <span className="badge-base badge-danger"><Lock className="w-3 h-3" /> BLOQ</span>}
+                    {/* Chat badge */}
+                    {(chatCounts?.unreadPerStore[store.id] || 0) > 0 && (
+                      <span className="badge-base badge-danger">
+                        <MessageCircle className="w-3 h-3" /> {chatCounts!.unreadPerStore[store.id]}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Row 2: Code + State + City */}
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  {store.store_code && <span className="font-mono font-semibold text-[var(--text-secondary)]">{store.store_code}</span>}
+                  {store.store_code && " · "}
+                  {store.state || "—"} · {store.city || "—"}
+                </p>
+
+                {/* Row 3: Team + Date + Time + Preference */}
+                <div className="flex items-center gap-2 mt-1.5 text-xs text-[var(--text-secondary)] flex-wrap">
+                  {assignedTeam && (
+                    <span className="flex items-center gap-1">
+                      <Wrench className="w-3 h-3 text-[var(--text-muted)]" />
+                      <span className="font-medium">{assignedTeam.name}</span>
+                    </span>
+                  )}
+                  {effectiveDate && (
+                    <span className="flex items-center gap-1">
+                      <CalendarIcon className="w-3 h-3 text-[var(--text-muted)]" />
+                      {format(new Date(effectiveDate + "T12:00:00"), "dd/MM/yyyy")}
+                    </span>
+                  )}
+                  {effectiveTime && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-[var(--text-muted)]" />
+                      {effectiveTime}
+                    </span>
+                  )}
+                  <span className="text-[var(--text-muted)]">{prefLabel(effectivePref)}</span>
+                </div>
+
+                {/* Row 4: Approval badges + chevron */}
+                <div className="flex items-center justify-between mt-2 gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">{t("scheduling.storeowner")}</span>
+                      <span className={cn("badge-base", approvalBadgeClass(effectiveStoreStatus))}>{approvalBadgeText(effectiveStoreStatus)}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">{t("scheduling.teamLabel")}</span>
+                      <span className={cn("badge-base", approvalBadgeClass(effectiveTeamStatus))}>{approvalBadgeText(effectiveTeamStatus)}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="w-7 h-7 rounded-md bg-[var(--bg-page)] border border-[var(--border-default)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors flex-shrink-0"
+                    onClick={(e) => { e.stopPropagation(); toggleCardExpanded(store.id); }}
+                  >
+                    {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* EXPANDED STATE */}
+              <div
+                className="overflow-hidden transition-all duration-250 ease-in-out"
+                style={{ maxHeight: isExpanded ? "4000px" : "0px", opacity: isExpanded ? 1 : 0 }}
+              >
+                <div className="border-t border-[var(--border-subtle)] px-4 py-3 space-y-3 bg-card">
+                  {/* Contact info */}
+                  <StoreContactsDisplay
+                    store={store}
+                    contacts={storeContacts}
+                    roleMap={roleMap}
+                    schedule={schedule}
+                    agencyName={agencyName}
+                    clientName={clientName}
+                    campaignName={campaignName}
+                    messageTemplate={schedulingMsgTemplate}
+                  />
+
+                  <hr className="border-[var(--border-subtle)]" />
+
+                  {/* Team assignment */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                      <Wrench className="w-3 h-3" /> {t("scheduling.installationTeam")}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        disabled={!cardCanEdit}
+                        value={schedule?.team_id || ""}
+                        onChange={(e) => handleFieldChange(store.id, "team_id", e.target.value || null)}
+                        className="flex-1 h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                      >
+                        <option value="">{t("scheduling.noTeam")}</option>
+                        {teams.map((t) => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
+                      {assignedTeam && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="ghost" size="sm" className={cn("h-7 text-xs gap-1 px-2", teamIncomplete && "text-amber-500")}>
+                              {teamIncomplete && <AlertTriangle className="w-3 h-3" />}
+                              <Users className="w-3 h-3" /> Ver
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-80 max-h-64 overflow-y-auto p-3" align="start">
+                            <TeamCardContent team={assignedTeam} members={teamMembers} vehicles={teamVehicles} />
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </div>
+                    {assignedTeam && teamIncomplete && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400">
+                        <AlertTriangle className="w-4 h-4 shrink-0" />
+                        <span className="text-xs font-medium">{t("scheduling.teamIncomplete")}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Scheduling fields */}
+                  {isReschedule ? (
+                    <>
+                      {/* Collapsible original data */}
+                      <div className="rounded-md border border-muted bg-muted/20">
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide hover:bg-muted/40 transition-colors"
+                          onClick={() => setExpandedOriginal(prev => ({ ...prev, [store.id]: !prev[store.id] }))}
+                        >
+                          <span>{t("scheduling.originalData")}</span>
+                          {expandedOriginal[store.id] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        </button>
+                        {expandedOriginal[store.id] && (
+                          <div className="px-3 pb-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
+                            <div><span className="font-medium text-foreground">Data:</span> {schedule?.scheduled_date ? format(new Date(schedule.scheduled_date + "T12:00:00"), "dd/MM/yyyy") : "—"}</div>
+                            <div><span className="font-medium text-foreground">Horário:</span> {schedule?.scheduled_time || "—"}</div>
+                            <div><span className="font-medium text-foreground">OS:</span> {schedule?.installation_os || "—"}</div>
+                            <div><span className="font-medium text-foreground">Preferência:</span> {prefLabel(schedule?.installation_preference || "not_informed")}</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Reschedule fields as primary */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium text-foreground flex items-center gap-1"><CalendarIcon className="w-3 h-3" /> {t("common.date")}</label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" size="sm" disabled={!cardCanEdit} className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !schedule?.reschedule_date && "text-muted-foreground")}>
+                                <span className="truncate">{schedule?.reschedule_date ? format(new Date(schedule.reschedule_date + "T12:00:00"), "dd/MM/yyyy") : "Selecionar"}</span>
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar mode="single" selected={schedule?.reschedule_date ? new Date(schedule.reschedule_date + "T12:00:00") : undefined} onSelect={(date) => handleFieldChange(store.id, "reschedule_date", date ? format(date, "yyyy-MM-dd") : null)} locale={ptBR} className="p-3 pointer-events-auto" />
+                              {schedule?.reschedule_date && (
+                                <div className="px-3 pb-3">
+                                  <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => handleFieldChange(store.id, "reschedule_date", null)}>Limpar data</Button>
+                                </div>
+                              )}
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium text-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> {t("common.time")}</label>
+                          <div className="flex items-center gap-1">
+                            <DebouncedInput type="time" disabled={!cardCanEdit} value={schedule?.reschedule_time || ""} onValueCommit={(val) => handleFieldChange(store.id, "reschedule_time", val || null)} className="h-8 text-xs flex-1" />
+                            {schedule?.reschedule_time && cardCanEdit && (
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "reschedule_time", null)} title={t("common.remove")}>✕</Button>
+                            )}
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium text-foreground flex items-center gap-1"><FileText className="w-3 h-3" /> {t("scheduling.installationOs")}</label>
+                          <DebouncedInput disabled={!cardCanEdit} placeholder={t("scheduling.osNumber")} value={schedule?.reschedule_os || ""} onValueCommit={(val) => handleFieldChange(store.id, "reschedule_os", val || null)} className="h-8 text-xs" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-medium text-foreground flex items-center gap-1"><Sun className="w-3 h-3" /> {t("scheduling.preferenceLabel")}</label>
+                          <select disabled={!cardCanEdit} value={schedule?.reschedule_preference || "not_informed"} onChange={(e) => handleFieldChange(store.id, "reschedule_preference", e.target.value)} className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2">
+                            {PREFERENCE_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground flex items-center gap-1"><CalendarIcon className="w-3 h-3" /> {t("common.date")}</label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" disabled={!cardCanEdit} className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !schedule?.scheduled_date && "text-muted-foreground")}>
+                              <span className="truncate">{selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar"}</span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={selectedDate} onSelect={(date) => handleFieldChange(store.id, "scheduled_date", date ? format(date, "yyyy-MM-dd") : null)} locale={ptBR} className="p-3 pointer-events-auto" />
+                            {selectedDate && (
+                              <div className="px-3 pb-3">
+                                <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => handleFieldChange(store.id, "scheduled_date", null)}>Limpar data</Button>
+                              </div>
+                            )}
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground flex items-center gap-1"><Clock className="w-3 h-3" /> {t("common.time")}</label>
+                        <div className="flex items-center gap-1">
+                          <DebouncedInput type="time" disabled={!cardCanEdit} value={schedule?.scheduled_time || ""} onValueCommit={(val) => handleFieldChange(store.id, "scheduled_time", val || null)} className="h-8 text-xs flex-1" />
+                          {schedule?.scheduled_time && cardCanEdit && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "scheduled_time", null)} title={t("common.remove")}>✕</Button>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground flex items-center gap-1">
+                          <FileText className="w-3 h-3" /> {t("scheduling.installationOs")}
+                          {!hasOs && schedule?.scheduled_date && schedule?.scheduled_time && <AlertTriangle className="w-3 h-3 text-amber-500" />}
+                        </label>
+                        <DebouncedInput disabled={!cardCanEdit} placeholder={t("scheduling.osNumber")} value={schedule?.installation_os || ""} onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)} className="h-8 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-medium text-foreground flex items-center gap-1"><Sun className="w-3 h-3" /> {t("scheduling.preferenceLabel")}</label>
+                        <select disabled={!cardCanEdit} value={schedule?.installation_preference || "not_informed"} onChange={(e) => handleFieldChange(store.id, "installation_preference", e.target.value)} className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2">
+                          {PREFERENCE_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  <hr className="border-[var(--border-subtle)]" />
+
+                  {/* Approval Toggles */}
+                  {isReschedule ? (
+                    <RescheduleApprovalToggles
+                      schedule={schedule}
+                      storeId={store.id}
+                      campaignId={campaignId}
+                      canEdit={cardCanEdit}
+                      hasDateAndTime={!!(schedule?.reschedule_date && schedule?.reschedule_time)}
+                      onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
+                    />
+                  ) : (
+                    <ApprovalToggles
+                      schedule={schedule}
+                      storeId={store.id}
+                      campaignId={campaignId}
+                      canEdit={cardCanEdit}
+                      hasDateAndTime={!!(schedule?.scheduled_date && schedule?.scheduled_time)}
+                      onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
+                    />
+                  )}
+
+                  {/* Reschedule Section */}
+                  <RescheduleSection
+                    schedule={schedule}
+                    storeId={store.id}
+                    campaignId={campaignId}
+                    canEdit={cardCanEdit}
+                    teams={teams}
+                    teamMap={teamMap}
+                    onFieldChange={(field, value) => handleFieldChange(store.id, field, value)}
+                    onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
+                  />
+
+                  {/* Action buttons: Chat, History, Lock, Log */}
+                  <div className="flex flex-wrap gap-2 pt-1">
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 shrink-0 relative"
-                      style={{ color: colors.text }}
-                      title={t("modules.chat")}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1.5 min-h-[44px] relative"
                       onClick={() => {
                         setChatStoreId(store.id);
                         setChatStoreName(store.name);
@@ -925,408 +1216,63 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         markAsRead.mutate({ contextType: "schedule_chat", contextId: `${campaignId}:${store.id}` });
                       }}
                     >
-                      <MessageCircle className="w-4 h-4" />
+                      <MessageCircle className="w-4 h-4" /> {t("modules.chat")}
                       {(chatCounts?.unreadPerStore[store.id] || 0) > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center px-0.5">
-                          {chatCounts!.unreadPerStore[store.id]}
-                        </span>
-                      )}
-                      {(chatCounts?.totalPerStore[store.id] || 0) > 0 && !(chatCounts?.unreadPerStore[store.id]) && (
-                        <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] rounded-full bg-muted text-muted-foreground text-[9px] font-bold flex items-center justify-center px-0.5">
-                          {chatCounts!.totalPerStore[store.id]}
-                        </span>
+                        <span className="badge-base badge-danger ml-1">{chatCounts!.unreadPerStore[store.id]}</span>
                       )}
                     </Button>
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 shrink-0"
-                      style={{ color: colors.text }}
-                      title={t("common.details")}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1.5 min-h-[44px]"
                       onClick={() => {
                         setHistoryStoreId(store.id);
                         setHistoryStoreName(store.name);
                         setHistoryOpen(true);
                       }}
                     >
-                      <History className="w-4 h-4" />
+                      <History className="w-4 h-4" /> {t("common.details")}
                     </Button>
+                    {canLockCards && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn("text-xs gap-1.5 min-h-[44px]", isCardLocked ? "text-destructive" : "")}
+                        onClick={handleToggleLock}
+                        disabled={!!lockLoading[store.id]}
+                      >
+                        {isCardLocked ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
+                        {isCardLocked ? t("common.blocked") : t("common.released")}
+                      </Button>
+                    )}
                     {isAdminOrMaster && (
                       <Button
                         variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0"
-                        style={{ color: colors.text }}
-                        title={t("common.details")}
+                        size="sm"
+                        className="text-xs gap-1.5 min-h-[44px]"
                         onClick={() => {
                           setLogStoreId(store.id);
                           setLogStoreName(store.name);
                           setLogOpen(true);
                         }}
                       >
-                        <ClipboardList className="w-4 h-4" />
+                        <ClipboardList className="w-4 h-4" /> Log
                       </Button>
-                    )}
-                    {canLockCards && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`h-7 w-7 shrink-0 ${isCardLocked ? "text-destructive" : ""}`}
-                        style={!isCardLocked ? { color: colors.text } : undefined}
-                        title={isCardLocked ? t("common.released") : t("common.blocked")}
-                        onClick={handleToggleLock}
-                        disabled={!!lockLoading[store.id]}
-                      >
-                        {isCardLocked ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
-                      </Button>
-                    )}
-                    {fullyApproved ? (
-                      <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600 drop-shadow" />
-                    ) : (effectiveStoreStatus === "approved" && effectiveTeamStatus === "approved" && !hasOs && effectiveDate && effectiveTime) ? (
-                      <span className="text-[10px] font-bold text-destructive whitespace-nowrap leading-tight text-center shrink-0 bg-destructive/10 px-1.5 py-0.5 rounded">{t("scheduling.missingOs")}</span>
-                    ) : (
-                      <AlertCircle className="w-6 h-6 shrink-0 text-amber-500 drop-shadow" />
                     )}
                   </div>
-                </div>
-                {isReschedule && (
-                  <span className="absolute top-1 right-1 text-[8px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full leading-none">REM</span>
-                )}
-                {isCardLocked && !isReschedule && (
-                  <span className="absolute top-1 right-1 text-[8px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5">
-                    <Lock className="w-2.5 h-2.5" /> BLOQ
-                  </span>
-                )}
-                {isCardLocked && isReschedule && (
-                  <span className="absolute top-1 left-1 text-[8px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5">
-                    <Lock className="w-2.5 h-2.5" /> BLOQ
-                  </span>
-                )}
-              </div>
 
-              {/* Body */}
-              <div className="p-4 space-y-3 bg-card flex-1">
-                {/* Address */}
-                <div className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">{t("common.address")}:</span> {buildAddress(store)}
-                </div>
-
-                {/* Contacts section */}
-                <StoreContactsDisplay
-                  store={store}
-                  contacts={storeContacts}
-                  roleMap={roleMap}
-                  schedule={schedule}
-                  agencyName={agencyName}
-                  clientName={clientName}
-                  campaignName={campaignName}
-                  messageTemplate={schedulingMsgTemplate}
-                />
-
-                <hr className="border-border" />
-
-                {/* Team assignment */}
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                    <Wrench className="w-3 h-3" /> {t("scheduling.installationTeam")}
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <select
-                      disabled={!cardCanEdit}
-                      value={schedule?.team_id || ""}
-                      onChange={(e) => handleFieldChange(store.id, "team_id", e.target.value || null)}
-                      className="flex-1 h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                  {/* Close button */}
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      className="w-7 h-7 rounded-md bg-[var(--bg-page)] border border-[var(--border-default)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                      onClick={() => toggleCardExpanded(store.id)}
                     >
-                      <option value="">{t("scheduling.noTeam")}</option>
-                      {teams.map((t) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                      ))}
-                    </select>
-                    {assignedTeam && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" size="sm" className={cn("h-7 text-xs gap-1 px-2", teamIncomplete && "text-amber-500")}>
-                            {teamIncomplete && <AlertTriangle className="w-3 h-3" />}
-                            <Users className="w-3 h-3" /> Ver
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 max-h-64 overflow-y-auto p-3" align="start">
-                          <TeamCardContent team={assignedTeam} members={teamMembers} vehicles={teamVehicles} />
-                        </PopoverContent>
-                      </Popover>
-                    )}
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
                   </div>
-                  {assignedTeam && teamIncomplete && (
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400">
-                      <AlertTriangle className="w-4 h-4 shrink-0" />
-                      <span className="text-xs font-medium">{t("scheduling.teamIncomplete")}</span>
-                    </div>
-                  )}
                 </div>
-
-                {/* Scheduling fields - show reschedule as primary when enabled */}
-                {isReschedule ? (
-                  <>
-                    {/* Collapsible original data */}
-                    <div className="rounded-md border border-muted bg-muted/20">
-                      <button
-                        type="button"
-                        className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide hover:bg-muted/40 transition-colors"
-                        onClick={() => setExpandedOriginal(prev => ({ ...prev, [store.id]: !prev[store.id] }))}
-                      >
-                        <span>{t("scheduling.originalData")}</span>
-                        {expandedOriginal[store.id] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                      </button>
-                      {expandedOriginal[store.id] && (
-                        <div className="px-3 pb-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
-                          <div><span className="font-medium text-foreground">Data:</span> {schedule?.scheduled_date ? format(new Date(schedule.scheduled_date + "T12:00:00"), "dd/MM/yyyy") : "—"}</div>
-                          <div><span className="font-medium text-foreground">Horário:</span> {schedule?.scheduled_time || "—"}</div>
-                          <div><span className="font-medium text-foreground">OS:</span> {schedule?.installation_os || "—"}</div>
-                          <div><span className="font-medium text-foreground">Preferência:</span> {prefLabel(schedule?.installation_preference || "not_informed")}</div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Reschedule fields as primary */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* Date */}
-                      <div className="space-y-1">
-                        <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                          <CalendarIcon className="w-3 h-3" /> {t("common.date")}
-                        </label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled={!cardCanEdit}
-                              className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !schedule?.reschedule_date && "text-muted-foreground")}
-                            >
-                              <span className="truncate">{schedule?.reschedule_date ? format(new Date(schedule.reschedule_date + "T12:00:00"), "dd/MM/yyyy") : "Selecionar"}</span>
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={schedule?.reschedule_date ? new Date(schedule.reschedule_date + "T12:00:00") : undefined}
-                              onSelect={(date) => handleFieldChange(store.id, "reschedule_date", date ? format(date, "yyyy-MM-dd") : null)}
-                              locale={ptBR}
-                              className="p-3 pointer-events-auto"
-                            />
-                            {schedule?.reschedule_date && (
-                              <div className="px-3 pb-3">
-                                <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => handleFieldChange(store.id, "reschedule_date", null)}>
-                                  Limpar data
-                                </Button>
-                              </div>
-                            )}
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-
-                      {/* Time */}
-                      <div className="space-y-1">
-                        <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> {t("common.time")}
-                        </label>
-                        <div className="flex items-center gap-1">
-                          <DebouncedInput
-                            type="time"
-                            disabled={!cardCanEdit}
-                            value={schedule?.reschedule_time || ""}
-                            onValueCommit={(val) => handleFieldChange(store.id, "reschedule_time", val || null)}
-                            className="h-8 text-xs flex-1"
-                          />
-                          {schedule?.reschedule_time && cardCanEdit && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "reschedule_time", null)} title={t("common.remove")}>
-                              ✕
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* OS */}
-                      <div className="space-y-1">
-                        <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                          <FileText className="w-3 h-3" /> {t("scheduling.installationOs")}
-                          {!hasOs && schedule?.reschedule_date && schedule?.reschedule_time && (
-                            <AlertTriangle className="w-3 h-3 text-amber-500" />
-                          )}
-                        </label>
-                        <DebouncedInput
-                          disabled={!cardCanEdit}
-                          placeholder={t("scheduling.osNumber")}
-                          value={schedule?.reschedule_os || ""}
-                          onValueCommit={(val) => handleFieldChange(store.id, "reschedule_os", val || null)}
-                          className="h-8 text-xs"
-                        />
-                      </div>
-
-                      {/* Preference - always visible */}
-                      <div className="space-y-1">
-                        <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                          <Sun className="w-3 h-3" /> {t("scheduling.preferenceLabel")}
-                        </label>
-                        <select
-                          disabled={!cardCanEdit}
-                          value={schedule?.installation_preference || "not_informed"}
-                          onChange={(e) => handleFieldChange(store.id, "installation_preference", e.target.value)}
-                          className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
-                        >
-                          {PREFERENCE_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Date */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                        <CalendarIcon className="w-3 h-3" /> {t("common.date")}
-                      </label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={!cardCanEdit}
-                            className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !selectedDate && "text-muted-foreground")}
-                          >
-                            <span className="truncate">{selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar"}</span>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={(date) => handleFieldChange(store.id, "scheduled_date", date ? format(date, "yyyy-MM-dd") : null)}
-                            locale={ptBR}
-                            className="p-3 pointer-events-auto"
-                          />
-                          {selectedDate && (
-                            <div className="px-3 pb-3">
-                              <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => handleFieldChange(store.id, "scheduled_date", null)}>
-                                Limpar data
-                              </Button>
-                            </div>
-                          )}
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    {/* Time */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                        <Clock className="w-3 h-3" /> {t("common.time")}
-                      </label>
-                      <div className="flex items-center gap-1">
-                        <DebouncedInput
-                          type="time"
-                          disabled={!cardCanEdit}
-                          value={schedule?.scheduled_time || ""}
-                          onValueCommit={(val) => handleFieldChange(store.id, "scheduled_time", val || null)}
-                          className="h-8 text-xs flex-1"
-                        />
-                        {schedule?.scheduled_time && cardCanEdit && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive shrink-0" onClick={() => handleFieldChange(store.id, "scheduled_time", null)} title={t("common.remove")}>
-                            ✕
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* OS */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                        <FileText className="w-3 h-3" /> {t("scheduling.installationOs")}
-                        {!hasOs && schedule?.scheduled_date && schedule?.scheduled_time && (
-                          <AlertTriangle className="w-3 h-3 text-amber-500" />
-                        )}
-                      </label>
-                      <DebouncedInput
-                        disabled={!cardCanEdit}
-                        placeholder={t("scheduling.osNumber")}
-                        value={schedule?.installation_os || ""}
-                        onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)}
-                        className="h-8 text-xs"
-                      />
-                    </div>
-
-                    {/* Preference */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium text-foreground flex items-center gap-1">
-                        <Sun className="w-3 h-3" /> {t("scheduling.preferenceLabel")}
-                      </label>
-                      <select
-                        disabled={!cardCanEdit}
-                        value={schedule?.installation_preference || "not_informed"}
-                        onChange={(e) => handleFieldChange(store.id, "installation_preference", e.target.value)}
-                        className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
-                      >
-                        {PREFERENCE_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
               </div>
-
-              {/* Footer - Approval Toggles: use reschedule approval when reschedule is active */}
-              {isReschedule ? (
-                <RescheduleApprovalToggles
-                  schedule={schedule}
-                  storeId={store.id}
-                  campaignId={campaignId}
-                  canEdit={cardCanEdit}
-                  hasDateAndTime={!!(schedule?.reschedule_date && schedule?.reschedule_time)}
-                  onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
-                />
-              ) : (
-                <ApprovalToggles
-                  schedule={schedule}
-                  storeId={store.id}
-                  campaignId={campaignId}
-                  canEdit={cardCanEdit}
-                  hasDateAndTime={!!(schedule?.scheduled_date && schedule?.scheduled_time)}
-                  onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
-                />
-              )}
-
-              {/* Occurrence Status Indicator */}
-              {(() => {
-                const occStatus = storeOccurrenceStatus[store.id];
-                const hasOpenOccurrence = occStatus?.hasOccurrence && !occStatus.allResolved;
-                const isOk = !hasOpenOccurrence;
-                
-                const currentPath = window.location.pathname;
-                const occUrl = `${currentPath}?section=occurrences&filterStore=${encodeURIComponent(store.name)}`;
-
-                if (isOk) return null;
-                return (
-                  <div className="mx-4 mb-3 mt-1 flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold bg-destructive/10 text-destructive border border-destructive/30">
-                    <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <a href={occUrl} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80 cursor-pointer">
-                      {t("occurrences.occurrenceRegistered", { count: occStatus!.count })}
-                    </a>
-                  </div>
-                );
-              })()}
-
-              {/* Reschedule Section - toggle only, no duplicate fields */}
-              <RescheduleSection
-                schedule={schedule}
-                storeId={store.id}
-                campaignId={campaignId}
-                canEdit={cardCanEdit}
-                teams={teams}
-                teamMap={teamMap}
-                onFieldChange={(field, value) => handleFieldChange(store.id, field, value)}
-                onMultiUpdate={(fields) => handleMultiFieldChange(store.id, fields)}
-              />
             </div>
           );
         })}
@@ -1400,7 +1346,6 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
   const storeStatus = optimisticStoreStatus ?? dbStoreStatus;
   const teamStatus = optimisticTeamStatus ?? dbTeamStatus;
 
-  // Reset optimistic state when DB catches up
   useEffect(() => {
     if (optimisticStoreStatus && dbStoreStatus === optimisticStoreStatus) setOptimisticStoreStatus(null);
   }, [dbStoreStatus, optimisticStoreStatus]);
@@ -1416,7 +1361,6 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
   const [localSuggestedDate2, setLocalSuggestedDate2] = useState((schedule as any)?.suggested_date_2 || "");
   const [localSuggestedTime2, setLocalSuggestedTime2] = useState((schedule as any)?.suggested_time_2 || "");
 
-  // Sync local state when schedule changes
   useEffect(() => {
     setLocalSuggestedDate(schedule?.suggested_date || "");
     setLocalSuggestedTime(schedule?.suggested_time || "");
@@ -1444,13 +1388,11 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
       updates.responsibility_at = null;
     }
 
-    // Clear suggested fields when changing away from rejected
     if (field === "store_approval_status" && newVal !== "rejected") {
       updates.suggested_date = null;
       updates.suggested_time = null;
     }
 
-    // When team disapproves, set responsibility to client
     if (field === "team_approval_status" && newVal === "rejected") {
       updates.responsibility = "client";
       updates.responsibility_at = now;
@@ -1489,7 +1431,6 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
 
     const now = new Date().toISOString();
 
-    // Save history BEFORE mutating state
     if (user) {
       let dataPart = "Não definida";
       if (oldDate) {
@@ -1508,7 +1449,6 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
       if (histErr) console.error("Erro ao salvar histórico:", histErr);
     }
 
-    // Optimistic UI: instantly update status and clear suggestions
     setOptimisticStoreStatus("approved");
     setOptimisticTeamStatus("approved");
     setLocalSuggestedDate("");
@@ -1549,7 +1489,7 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
   const hasSuggestionValues2 = !!(localSuggestedDate2 || localSuggestedTime2);
 
   return (
-    <div className={cn("border-t border-border bg-muted/30 px-4 py-3 space-y-2", !hasDateAndTime && "opacity-50")}>
+    <div className={cn("space-y-2", !hasDateAndTime && "opacity-50")}>
       <p className="text-[11px] font-semibold text-foreground uppercase tracking-wide mb-1">
         {t("scheduling.approvalStatus")}
         {!hasDateAndTime && <span className="ml-2 text-muted-foreground font-normal normal-case">({t("scheduling.fillDateTime")})</span>}
@@ -1562,97 +1502,43 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
         disabled={sectionDisabled}
       />
 
-      {/* Suggested date/time when LOJISTA is rejected */}
       {showSuggestion && (
         <div className="ml-[78px] space-y-3 p-3 rounded-lg border border-red-500/30 bg-red-500/5">
           <p className="text-[10px] font-semibold text-destructive uppercase tracking-wide">{t("scheduling.storeownerSuggestions")}</p>
-          
-          {/* Sugestão 1 */}
           <div className="space-y-2">
             <p className="text-[10px] font-medium text-muted-foreground">{t("scheduling.option1")}</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedDate")}</label>
-                <input
-                  type="date"
-                  disabled={!canEdit}
-                  value={localSuggestedDate}
-                  onChange={(e) => {
-                    setLocalSuggestedDate(e.target.value);
-                    handleSaveSuggested("suggested_date", e.target.value);
-                  }}
-                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
-                />
+                <input type="date" disabled={!canEdit} value={localSuggestedDate} onChange={(e) => { setLocalSuggestedDate(e.target.value); handleSaveSuggested("suggested_date", e.target.value); }} className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedTime")}</label>
-                <input
-                  type="time"
-                  disabled={!canEdit}
-                  value={localSuggestedTime}
-                  onChange={(e) => {
-                    setLocalSuggestedTime(e.target.value);
-                    handleSaveSuggested("suggested_time", e.target.value);
-                  }}
-                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
-                />
+                <input type="time" disabled={!canEdit} value={localSuggestedTime} onChange={(e) => { setLocalSuggestedTime(e.target.value); handleSaveSuggested("suggested_time", e.target.value); }} className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
               </div>
             </div>
             {hasSuggestionValues && canEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7"
-                onClick={() => handleAcceptSuggestion(1)}
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                {t("scheduling.acceptOption", { n: 1 })}
+              <Button variant="outline" size="sm" className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7" onClick={() => handleAcceptSuggestion(1)}>
+                <CheckCircle2 className="w-3.5 h-3.5" /> {t("scheduling.acceptOption", { n: 1 })}
               </Button>
             )}
           </div>
-
           <div className="border-t border-border" />
-
-          {/* Sugestão 2 */}
           <div className="space-y-2">
             <p className="text-[10px] font-medium text-muted-foreground">{t("scheduling.option2")}</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedDate2")}</label>
-                <input
-                  type="date"
-                  disabled={!canEdit}
-                  value={localSuggestedDate2}
-                  onChange={(e) => {
-                    setLocalSuggestedDate2(e.target.value);
-                    handleSaveSuggested("suggested_date_2" as any, e.target.value);
-                  }}
-                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
-                />
+                <input type="date" disabled={!canEdit} value={localSuggestedDate2} onChange={(e) => { setLocalSuggestedDate2(e.target.value); handleSaveSuggested("suggested_date_2" as any, e.target.value); }} className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedTime2")}</label>
-                <input
-                  type="time"
-                  disabled={!canEdit}
-                  value={localSuggestedTime2}
-                  onChange={(e) => {
-                    setLocalSuggestedTime2(e.target.value);
-                    handleSaveSuggested("suggested_time_2" as any, e.target.value);
-                  }}
-                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2"
-                />
+                <input type="time" disabled={!canEdit} value={localSuggestedTime2} onChange={(e) => { setLocalSuggestedTime2(e.target.value); handleSaveSuggested("suggested_time_2" as any, e.target.value); }} className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
               </div>
             </div>
             {hasSuggestionValues2 && canEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7"
-                onClick={() => handleAcceptSuggestion(2)}
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                {t("scheduling.acceptOption", { n: 2 })}
+              <Button variant="outline" size="sm" className="w-full text-xs gap-1.5 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 h-7" onClick={() => handleAcceptSuggestion(2)}>
+                <CheckCircle2 className="w-3.5 h-3.5" /> {t("scheduling.acceptOption", { n: 2 })}
               </Button>
             )}
           </div>
@@ -1705,7 +1591,6 @@ function RescheduleSection({ schedule, storeId, campaignId, canEdit, teams, team
     if (!canEdit) return;
     const updates: Record<string, any> = { reschedule_enabled: enabled };
     if (!enabled) {
-      // Clear all reschedule fields
       updates.reschedule_date = null;
       updates.reschedule_time = null;
       updates.reschedule_os = null;
@@ -1724,13 +1609,9 @@ function RescheduleSection({ schedule, storeId, campaignId, canEdit, teams, team
     onMultiUpdate(updates);
   };
 
-  const rescheduleDate = schedule?.reschedule_date ? new Date(schedule.reschedule_date + "T12:00:00") : undefined;
-  const hasRescheduleDateTime = !!(schedule?.reschedule_date && schedule?.reschedule_time);
-
   return (
     <div className="border-t-2 border-orange-400/50">
-      {/* Toggle */}
-      <div className="px-4 py-2 flex items-center justify-between bg-orange-500/5">
+      <div className="px-0 py-2 flex items-center justify-between">
         <span className="text-[11px] font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
           {t("scheduling.rescheduleInstallation")}
         </span>
@@ -1745,19 +1626,13 @@ function RescheduleSection({ schedule, storeId, campaignId, canEdit, teams, team
               !canEdit && "opacity-50 cursor-not-allowed"
             )}
           >
-            <span
-              className={cn(
-                "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition-transform",
-                isEnabled ? "translate-x-5" : "translate-x-0"
-              )}
-            />
+            <span className={cn("pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition-transform", isEnabled ? "translate-x-5" : "translate-x-0")} />
           </button>
           <span className="text-[10px] font-bold text-muted-foreground">{isEnabled ? t("common.yes") : t("common.no")}</span>
         </div>
       </div>
-
       {isEnabled && (
-        <div className="px-4 py-2 bg-orange-500/5">
+        <div className="py-1">
           <p className="text-[10px] text-muted-foreground">
             Os campos de Data, Horário, OS e Aprovação acima já refletem os dados da remarcação.
           </p>
@@ -1924,15 +1799,11 @@ function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, has
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedDate")}</label>
-                <input type="date" disabled={!canEdit} value={localSuggestedDate}
-                  onChange={(e) => { setLocalSuggestedDate(e.target.value); handleSaveSuggested("reschedule_suggested_date", e.target.value); }}
-                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
+                <input type="date" disabled={!canEdit} value={localSuggestedDate} onChange={(e) => { setLocalSuggestedDate(e.target.value); handleSaveSuggested("reschedule_suggested_date", e.target.value); }} className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedTime")}</label>
-                <input type="time" disabled={!canEdit} value={localSuggestedTime}
-                  onChange={(e) => { setLocalSuggestedTime(e.target.value); handleSaveSuggested("reschedule_suggested_time", e.target.value); }}
-                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
+                <input type="time" disabled={!canEdit} value={localSuggestedTime} onChange={(e) => { setLocalSuggestedTime(e.target.value); handleSaveSuggested("reschedule_suggested_time", e.target.value); }} className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
               </div>
             </div>
             {hasSuggestionValues && canEdit && (
@@ -1947,15 +1818,11 @@ function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, has
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedDate2")}</label>
-                <input type="date" disabled={!canEdit} value={localSuggestedDate2}
-                  onChange={(e) => { setLocalSuggestedDate2(e.target.value); handleSaveSuggested("reschedule_suggested_date_2", e.target.value); }}
-                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
+                <input type="date" disabled={!canEdit} value={localSuggestedDate2} onChange={(e) => { setLocalSuggestedDate2(e.target.value); handleSaveSuggested("reschedule_suggested_date_2", e.target.value); }} className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
               </div>
               <div className="space-y-1">
                 <label className="text-[10px] font-medium text-muted-foreground">{t("scheduling.suggestedTime2")}</label>
-                <input type="time" disabled={!canEdit} value={localSuggestedTime2}
-                  onChange={(e) => { setLocalSuggestedTime2(e.target.value); handleSaveSuggested("reschedule_suggested_time_2", e.target.value); }}
-                  className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
+                <input type="time" disabled={!canEdit} value={localSuggestedTime2} onChange={(e) => { setLocalSuggestedTime2(e.target.value); handleSaveSuggested("reschedule_suggested_time_2", e.target.value); }} className="w-full h-7 text-xs rounded-md border border-border bg-card text-foreground px-2" />
               </div>
             </div>
             {hasSuggestionValues2 && canEdit && (
@@ -1991,6 +1858,7 @@ function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, has
   );
 }
 
+// ─── Sub-component: ThreeStateToggle ────────────────────
 
 interface ThreeStateToggleProps {
   label: string;
@@ -2008,7 +1876,6 @@ const STATUS_CONFIG: Record<ApprovalStatusValue, { label: string; bg: string; bo
 
 function ThreeStateToggle({ label, value, onChange, timestamp, disabled }: ThreeStateToggleProps) {
   const options: ApprovalStatusValue[] = ["approved", "under_review", "rejected"];
-  // Fallback for legacy DB values like "pending"
   const safeValue: ApprovalStatusValue = STATUS_CONFIG[value] ? value : "under_review";
   const activeIdx = options.indexOf(safeValue);
   const cfg = STATUS_CONFIG[safeValue];
@@ -2018,12 +1885,11 @@ function ThreeStateToggle({ label, value, onChange, timestamp, disabled }: Three
       <span className="text-[10px] font-semibold text-muted-foreground w-[70px] shrink-0 uppercase tracking-wide">{label}</span>
       <div
         className={cn(
-          "relative flex items-center rounded-full h-7 w-full max-w-[280px] border transition-colors select-none overflow-hidden",
+          "relative flex items-center rounded-full h-8 w-full max-w-[280px] border transition-colors select-none overflow-hidden",
           disabled && "opacity-60 cursor-not-allowed",
           cfg.bg, cfg.border
         )}
       >
-        {/* Sliding indicator */}
         <span
           className={cn(
             "absolute top-0.5 bottom-0.5 rounded-full transition-all duration-300 shadow-sm pointer-events-none",
@@ -2041,7 +1907,7 @@ function ThreeStateToggle({ label, value, onChange, timestamp, disabled }: Three
             disabled={disabled}
             onClick={() => onChange(opt)}
             className={cn(
-              "relative z-10 flex-1 text-center text-[9px] font-bold transition-colors cursor-pointer h-full",
+              "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors cursor-pointer min-h-[44px]",
               i === activeIdx ? "text-primary-foreground" : "text-foreground"
             )}
           >
@@ -2075,7 +1941,7 @@ function ToggleSwitch({ label, leftLabel, rightLabel, isLeft, onClickLeft, onCli
       <span className="text-[10px] font-semibold text-muted-foreground w-[70px] shrink-0 uppercase tracking-wide">{label}</span>
       <div
         className={cn(
-          "relative flex items-center rounded-full h-7 w-full max-w-[220px] border transition-colors select-none overflow-hidden",
+          "relative flex items-center rounded-full h-8 w-full max-w-[220px] border transition-colors select-none overflow-hidden",
           disabled && "opacity-60 cursor-not-allowed",
           isLeft
             ? "bg-emerald-500/15 border-emerald-500/40"
@@ -2095,7 +1961,7 @@ function ToggleSwitch({ label, leftLabel, rightLabel, isLeft, onClickLeft, onCli
           disabled={disabled}
           onClick={onClickLeft}
           className={cn(
-            "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors cursor-pointer h-full",
+            "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors cursor-pointer min-h-[44px]",
             isLeft ? "text-primary-foreground" : "text-foreground"
           )}
         >{leftLabel}</button>
@@ -2104,7 +1970,7 @@ function ToggleSwitch({ label, leftLabel, rightLabel, isLeft, onClickLeft, onCli
           disabled={disabled}
           onClick={onClickRight}
           className={cn(
-            "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors cursor-pointer h-full",
+            "relative z-10 flex-1 text-center text-[10px] font-bold transition-colors cursor-pointer min-h-[44px]",
             !isLeft ? "text-primary-foreground" : "text-foreground"
           )}
         >{rightLabel}</button>
