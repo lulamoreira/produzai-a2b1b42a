@@ -467,6 +467,7 @@ export function useAddCampaignPiece() {
         name: newPiece.name,
         size: newPiece.size,
         store_category: newPiece.store_category || null,
+        sub_location: null,
         image_url: newPiece.image_url || null,
         specification: newPiece.specification || "",
         installation_instructions: newPiece.installation_instructions || "",
