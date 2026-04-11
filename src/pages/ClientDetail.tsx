@@ -247,6 +247,7 @@ const ClientDetail = () => {
   const { agencyId, clientId } = useParams<{ agencyId: string; clientId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { interfaceMode } = useInterfaceMode();
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaigns } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canDeleteCampaigns } = useClientPermission(clientId, "can_delete_campaigns");
