@@ -1536,6 +1536,8 @@ const CampaignDetail = () => {
                   ...(client?.custom_field_4_label ? [{ key: "custom_field_4" as const, label: client.custom_field_4_label }] : []),
                   ...(client?.custom_field_5_label ? [{ key: "custom_field_5" as const, label: client.custom_field_5_label }] : []),
                 ]}
+                filterLogicMode={filterLogicMode}
+                onFilterLogicModeChange={setFilterLogicMode}
               />
 
               {/* Matrix Content */}
