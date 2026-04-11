@@ -28,7 +28,7 @@ import {
   Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle,
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
   Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList, Lock, LockOpen,
-  CheckCircle2, AlertCircle,
+  CheckCircle2, AlertCircle, ChevronDown, ChevronUp, SlidersHorizontal, Filter,
 } from "lucide-react";
 import { downloadPhotosAsZip, downloadAllCampaignPhotosAsZip } from "@/lib/downloadPhotosZip";
 import { format } from "date-fns";
@@ -100,6 +100,17 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [bulkLockLoading, setBulkLockLoading] = useState(false);
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
   const [checkinStore, setCheckinStore] = useState<ClientStore | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+
+  const toggleCardExpanded = (storeId: string) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev);
+      if (next.has(storeId)) next.delete(storeId);
+      else next.add(storeId);
+      return next;
+    });
+  };
 
   // Shared hooks
   const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
@@ -353,6 +364,9 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
     return { total, completed, pending, withTeam, withPhotos, withReschedule, withOccurrence, noCheckin };
   }, [filteredStores, scheduleMap, photosByStore, storeOccurrenceStatus]);
 
+  // Count active secondary filters
+  const secondaryFilterCount = [filterCity, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
+
   return (
     <div className="space-y-4">
       {/* Team Codes Panel (admin/master or users with permission) */}
@@ -375,38 +389,30 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         </div>
       )}
 
-      {/* Filters */}
+      {/* Filters — Primary row */}
       <div className="space-y-2">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t("filters.searchStore")}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 bg-card border-border"
-          />
-        </div>
         <div className="flex flex-wrap gap-2 items-center">
+          <div className="relative flex-1 min-w-[180px] max-w-[320px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t("filters.searchStore")}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 bg-card border-border h-9 text-sm"
+            />
+          </div>
           <select
             value={filterState}
             onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[150px] h-9"
           >
             <option value="">Todos estados</option>
             {states.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           <select
-            value={filterCity}
-            onChange={(e) => setFilterCity(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
-          >
-            <option value="">Todas cidades</option>
-            {cities.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[150px] h-9"
           >
             <option value="">Todos status</option>
             <option value="completed">✅ Concluídas</option>
@@ -417,7 +423,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             type="date"
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[120px] max-w-[160px]"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[120px] max-w-[160px] h-9"
             title={t("common.filter")}
           />
           {filterDate && (
@@ -425,63 +431,101 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
               ✕
             </Button>
           )}
-          <select
-            value={filterPeriod}
-            onChange={(e) => setFilterPeriod(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[140px]"
-          >
-            <option value="">Período</option>
-            <option value="morning">🌅 Manhã</option>
-            <option value="afternoon">☀️ Tarde</option>
-            <option value="night">🌙 Noite</option>
-          </select>
-          {filterPeriod && (
-            <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-muted-foreground" onClick={() => setFilterPeriod("")}>
-              ✕
-            </Button>
-          )}
-          <select
-            value={filterTeam}
-            onChange={(e) => setFilterTeam(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[160px]"
-          >
-            <option value="">Equipe</option>
-            <option value="no_team">Sem equipe</option>
-            {teams.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
-          <select
-            value={filterLocked}
-            onChange={(e) => setFilterLocked(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
-          >
-            <option value="">Bloqueio</option>
-            <option value="locked">🔒 Bloqueado</option>
-            <option value="unlocked">🔓 Liberado</option>
-          </select>
-          <select
-            value={filterReschedule}
-            onChange={(e) => setFilterReschedule(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
-          >
-            <option value="">Remarcação</option>
-            <option value="yes">Com remarcação</option>
-            <option value="no">Sem remarcação</option>
-          </select>
-          {storeModels.length > 0 && (
-            <select
-              value={filterModel}
-              onChange={(e) => setFilterModel(e.target.value)}
-              className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[100px] max-w-[150px]"
-            >
-              <option value="">Modelo</option>
-              {storeModels.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          )}
+
+          {/* More filters button */}
+          <Popover open={showMoreFilters} onOpenChange={setShowMoreFilters}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                Mais filtros
+                {secondaryFilterCount > 0 && (
+                  <span className="badge-base badge-info ml-1">{secondaryFilterCount}</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 p-4 space-y-3" align="start">
+              <p className="text-xs font-semibold text-foreground">Filtros avançados</p>
+              <select
+                value={filterCity}
+                onChange={(e) => setFilterCity(e.target.value)}
+                className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
+              >
+                <option value="">Todas cidades</option>
+                {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select
+                value={filterPeriod}
+                onChange={(e) => setFilterPeriod(e.target.value)}
+                className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
+              >
+                <option value="">Período</option>
+                <option value="morning">🌅 Manhã</option>
+                <option value="afternoon">☀️ Tarde</option>
+                <option value="night">🌙 Noite</option>
+              </select>
+              <select
+                value={filterTeam}
+                onChange={(e) => setFilterTeam(e.target.value)}
+                className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
+              >
+                <option value="">Equipe</option>
+                <option value="no_team">Sem equipe</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+              <select
+                value={filterLocked}
+                onChange={(e) => setFilterLocked(e.target.value)}
+                className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
+              >
+                <option value="">Bloqueio</option>
+                <option value="locked">🔒 Bloqueado</option>
+                <option value="unlocked">🔓 Liberado</option>
+              </select>
+              <select
+                value={filterReschedule}
+                onChange={(e) => setFilterReschedule(e.target.value)}
+                className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
+              >
+                <option value="">Remarcação</option>
+                <option value="yes">Com remarcação</option>
+                <option value="no">Sem remarcação</option>
+              </select>
+              {storeModels.length > 0 && (
+                <select
+                  value={filterModel}
+                  onChange={(e) => setFilterModel(e.target.value)}
+                  className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
+                >
+                  <option value="">Modelo</option>
+                  {storeModels.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              )}
+              {secondaryFilterCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={() => {
+                    setFilterCity("");
+                    setFilterPeriod("");
+                    setFilterTeam("");
+                    setFilterLocked("");
+                    setFilterReschedule("");
+                    setFilterModel("");
+                  }}
+                >
+                  Limpar filtros avançados
+                </Button>
+              )}
+            </PopoverContent>
+          </Popover>
         </div>
+
+        {/* Action buttons */}
         <div className="flex flex-wrap gap-1.5">
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleExport}>
             <Download className="w-3.5 h-3.5" /> Exportar
@@ -542,30 +586,34 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         </div>
       </div>
 
-      {/* Summary Bar - Clickable Filters */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+      {/* KPI Summary Bar */}
+      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
         {([
-          { key: "total" as const, value: summaryMetrics.total, label: t("common.total"), color: "text-foreground", visible: true },
-          { key: "completed" as const, value: summaryMetrics.completed, label: "✅ Concluídas", color: "text-emerald-600", visible: true },
-          { key: "pending" as const, value: summaryMetrics.pending, label: "⏳ Pendentes", color: "text-amber-600", visible: true },
-          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "🔧 Com equipe", color: "text-foreground", visible: true },
-          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: "📷 Com fotos", color: "text-foreground", visible: true },
-          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: "🔄 Com remarcação", color: "text-amber-600", visible: true },
-          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: "⚠️ Ocorrências", color: "text-destructive", visible: true },
-          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: "🔍 Sem Check-in", color: "text-orange-600", visible: showPhotoCheckin },
-        ]).filter(m => m.visible).map((m) => (
+          { key: "total" as const, value: summaryMetrics.total, label: t("common.total"), isTotal: true, dangerWhenPositive: false },
+          { key: "completed" as const, value: summaryMetrics.completed, label: "✅ Concluídas", isTotal: false, dangerWhenPositive: false },
+          { key: "pending" as const, value: summaryMetrics.pending, label: "⏳ Pendentes", isTotal: false, dangerWhenPositive: false },
+          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "🔧 Com equipe", isTotal: false, dangerWhenPositive: false },
+          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: "📷 Com fotos", isTotal: false, dangerWhenPositive: false },
+          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: "🔄 Remarcação", isTotal: false, dangerWhenPositive: false },
+          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: "⚠️ Ocorrências", isTotal: false, dangerWhenPositive: true },
+          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: "🔍 Sem Check-in", isTotal: false, dangerWhenPositive: true, visible: showPhotoCheckin },
+        ]).filter(m => m.visible !== false).map((m) => (
           <button
             key={m.key}
             type="button"
             onClick={() => setSummaryFilter(prev => prev === m.key ? "" : m.key)}
             className={cn(
-              "bg-card border rounded-lg px-3 py-2 text-center transition-all cursor-pointer hover:shadow-md",
+              "flex-shrink-0 bg-card border rounded-lg px-3 py-2 text-center transition-all cursor-pointer hover:shadow-md whitespace-nowrap",
               summaryFilter === m.key
                 ? "border-primary ring-2 ring-primary/30 shadow-sm"
                 : "border-border"
             )}
           >
-            <p className={cn("text-lg font-bold", m.color)}>{m.value}</p>
+            <p className={cn(
+              "font-bold",
+              m.isTotal ? "text-xl" : "text-sm",
+              m.dangerWhenPositive && m.value > 0 ? "text-[var(--s-danger)]" : m.isTotal ? "text-foreground" : "text-[var(--text-secondary)]"
+            )}>{m.value}</p>
             <p className="text-[10px] text-muted-foreground">{m.label}</p>
           </button>
         ))}
@@ -580,7 +628,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       )}
 
       {/* Store Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
         {displayedStores.map((store) => {
           const colors = getStateColor(store.state);
           const schedule = scheduleMap[store.id];
@@ -598,6 +646,17 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           const catForStore = uploadCategory[store.id] || "before";
           const isCardLocked = !!schedule?.locked;
           const cardCanEdit = canEdit && (!isCardLocked || isAdminOrMaster);
+          const isExpanded = expandedCards.has(store.id);
+
+          const occStatus = storeOccurrenceStatus[store.id];
+          const hasOpenOccurrence = occStatus?.hasOccurrence && !occStatus.allResolved;
+
+          // Border color logic: green=completed, red=occurrence, yellow=pending, gray=no date
+          const borderLeftColor = schedule?.completed_at
+            ? "var(--s-success)"
+            : hasOpenOccurrence
+              ? "var(--s-danger)"
+              : (effectiveDate ? "var(--s-warning)" : "var(--s-neutral)");
 
           const handleToggleLock = async () => {
             if (!schedule) return;
@@ -625,344 +684,445 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             }
           };
 
-          // Occurrence status
-          const occStatus = storeOccurrenceStatus[store.id];
-          const hasOpenOccurrence = occStatus?.hasOccurrence && !occStatus.allResolved;
-
           return (
             <div
               key={store.id}
-              className={`aqua-card overflow-hidden shadow-sm flex flex-col ${isCardLocked ? "opacity-80" : ""}`}
-              style={{ borderColor: colors.text, borderWidth: 2, border: `2px solid ${colors.text}` }}
+              className={cn(
+                "card-base overflow-hidden flex flex-col transition-shadow duration-150 hover:shadow-md",
+                isCardLocked && "opacity-80"
+              )}
+              style={{ borderLeft: `4px solid ${borderLeftColor}`, padding: 0 }}
             >
-              {/* Header */}
+              {/* COLLAPSED STATE — always visible */}
               <div
-                className="px-4 py-3 relative"
-                style={{ backgroundColor: colors.bg, color: colors.text }}
+                className="px-4 py-3 cursor-pointer select-none"
+                onClick={(e) => {
+                  // Don't toggle if clicking a button/link inside
+                  if ((e.target as HTMLElement).closest("button, a, label, input, select")) return;
+                  toggleCardExpanded(store.id);
+                }}
               >
-                <div className="font-semibold text-sm break-words leading-snug">{store.name}</div>
-                <div className="flex items-center justify-between mt-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-lg leading-none">{store.store_code || "—"}</span>
-                    <span className="text-xs opacity-80">{store.state} · {store.city || "—"}</span>
+                {/* Row 1: Store name + occurrence badge */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm text-[var(--text-primary)] truncate">
+                      {store.name}
+                      {store.nickname && <span className="text-[var(--text-muted)] font-normal"> — {store.nickname}</span>}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-0.5">
-                    {schedule?.completed_at && (
-                      <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: '#22c55e' }} />
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {hasOpenOccurrence && (() => {
+                      const currentPath = window.location.pathname;
+                      const occUrl = `${currentPath}?section=occurrences&filterStore=${encodeURIComponent(store.name)}`;
+                      return (
+                        <a
+                          href={occUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="badge-base badge-danger no-underline hover:opacity-80"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <AlertTriangle className="w-3 h-3" />
+                          Ocorrência ({occStatus!.count})
+                        </a>
+                      );
+                    })()}
+                    {isReschedule && (
+                      <span className="badge-base badge-warning">REM</span>
                     )}
-                    {storePhotos.length > 0 && (
-                      <span className="flex items-center gap-1 text-xs font-bold opacity-80">
-                        <Image className="w-3.5 h-3.5" /> {storePhotos.length}
+                    {isCardLocked && (
+                      <span className="badge-base badge-danger"><Lock className="w-3 h-3" /> BLOQ</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Row 2: Code + State + City */}
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  {store.store_code && <span className="font-mono font-semibold text-[var(--text-secondary)]">{store.store_code}</span>}
+                  {store.store_code && " · "}
+                  {store.state || "—"} · {store.city || "—"}
+                </p>
+
+                {/* Row 3: Team + Date + Time + OS */}
+                <div className="flex items-center gap-2 mt-1.5 text-xs text-[var(--text-secondary)] flex-wrap">
+                  {assignedTeam && (
+                    <span className="flex items-center gap-1">
+                      <Wrench className="w-3 h-3 text-[var(--text-muted)]" />
+                      <span className="font-medium">{assignedTeam.name}</span>
+                    </span>
+                  )}
+                  {selectedDate && (
+                    <span className="flex items-center gap-1">
+                      <CalendarIcon className="w-3 h-3 text-[var(--text-muted)]" />
+                      {format(selectedDate, "dd/MM/yyyy")}
+                    </span>
+                  )}
+                  {effectiveTime && (
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-[var(--text-muted)]" />
+                      {effectiveTime}
+                    </span>
+                  )}
+                  {effectiveOs && (
+                    <span className="flex items-center gap-1">
+                      <FileText className="w-3 h-3 text-[var(--text-muted)]" />
+                      OS: {effectiveOs}
+                    </span>
+                  )}
+                </div>
+
+                {/* Row 4: Photo thumbnails + Complete button + Expand toggle */}
+                <div className="flex items-center justify-between mt-2.5 gap-2">
+                  <div className="flex items-center gap-1.5">
+                    {storePhotos.slice(0, 4).map((photo) => (
+                      <img
+                        key={photo.id}
+                        src={photo.photo_url}
+                        alt=""
+                        className="w-8 h-8 rounded object-cover border border-[var(--border-subtle)]"
+                        onClick={(e) => { e.stopPropagation(); setCheckinStore(store); }}
+                        onError={() => handleMediaError(photo.id, photo.campaign_id)}
+                      />
+                    ))}
+                    {storePhotos.length > 4 && (
+                      <span
+                        className="w-8 h-8 rounded bg-[var(--s-neutral-bg)] border border-[var(--border-subtle)] flex items-center justify-center text-[10px] font-bold text-[var(--text-muted)] cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); setCheckinStore(store); }}
+                      >
+                        +{storePhotos.length - 4}
                       </span>
                     )}
-                    {canLockCards && (
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {schedule?.completed_at ? (
+                      <span className="badge-base badge-success">
+                        <CheckCircle className="w-3 h-3" /> Concluída
+                      </span>
+                    ) : (
+                      canEdit && schedule && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs gap-1.5 h-8"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              const { error } = await supabase
+                                .from("campaign_schedules")
+                                .update({
+                                  completed_at: new Date().toISOString(),
+                                  completed_by: "agency",
+                                })
+                                .eq("id", schedule.id);
+                              if (error) throw error;
+                              queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                              logActivity.mutate({
+                                campaign_id: campaignId,
+                                store_id: store.id,
+                                module: "installations",
+                                action: "mark_completed",
+                                details: t("common.installationCompleted"),
+                              });
+                              toast.success(t("common.installationCompleted"));
+                            } catch {
+                              toast.error(t("installations.errorUpdatingCompletion"));
+                            }
+                          }}
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" /> {t("installations.markComplete")}
+                        </Button>
+                      )
+                    )}
+
+                    <button
+                      type="button"
+                      className="w-7 h-7 rounded-md bg-[var(--bg-page)] border border-[var(--border-default)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                      onClick={(e) => { e.stopPropagation(); toggleCardExpanded(store.id); }}
+                    >
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* EXPANDED STATE — shown on toggle */}
+              <div
+                className="overflow-hidden transition-all duration-250 ease-in-out"
+                style={{
+                  maxHeight: isExpanded ? "2000px" : "0px",
+                  opacity: isExpanded ? 1 : 0,
+                }}
+              >
+                <div className="border-t border-[var(--border-subtle)] px-4 py-3 space-y-3 bg-card">
+                  {/* Address */}
+                  <div className="flex items-start gap-2 text-xs text-[var(--text-secondary)]">
+                    <span className="text-base">📍</span>
+                    <span>{buildAddress(store)}</span>
+                  </div>
+
+                  {/* Contact */}
+                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                    <span className="text-base">👤</span>
+                    <span>{primaryContact?.name || store.manager_name || "—"}</span>
+                    {(primaryContact?.phone || store.phone) && (
+                      <span className="text-[var(--text-muted)]">· ({primaryContact?.phone || store.phone})</span>
+                    )}
+                  </div>
+
+                  {/* Team details popover */}
+                  {assignedTeam && (
+                    <div className="flex items-center gap-2 text-xs">
+                      <Wrench className="w-3 h-3 text-[var(--text-muted)]" />
+                      <span className="font-medium">{assignedTeam.name}</span>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 px-2">
+                            <Users className="w-3 h-3" /> Ver equipe
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 max-h-64 overflow-y-auto p-3" align="start">
+                          <TeamCardContent team={assignedTeam} members={teamMembers} vehicles={teamVehicles} />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
+
+                  <hr className="border-[var(--border-subtle)]" />
+
+                  {/* Completion status message */}
+                  {schedule?.completed_at && (
+                    <div className="flex items-center gap-2 text-xs bg-[var(--s-success-bg)] text-[var(--s-success)] rounded-lg px-3 py-2">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      <span className="font-medium">
+                        {schedule.completed_by === "agency"
+                          ? `Marcada manualmente como concluída pela equipe da Agência, em: ${format(new Date(schedule.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
+                          : `Concluída em ${format(new Date(schedule.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
+                        }
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Photo Check-in */}
+                  {showPhotoCheckin && schedule && (
+                    <button
+                      type="button"
+                      className={cn(
+                        "w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors border min-h-[44px]",
+                        schedule.photo_checkin
+                          ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 hover:bg-emerald-500/20"
+                          : "bg-orange-500/10 text-orange-700 border-orange-500/30 hover:bg-orange-500/20"
+                      )}
+                      onClick={async () => {
+                        const newVal = !schedule.photo_checkin;
+                        try {
+                          const { error } = await supabase
+                            .from("campaign_schedules")
+                            .update({
+                              photo_checkin: newVal,
+                              photo_checkin_at: newVal ? new Date().toISOString() : null,
+                            } as any)
+                            .eq("id", schedule.id);
+                          if (error) throw error;
+                          queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                          logActivity.mutate({
+                            campaign_id: campaignId,
+                            store_id: store.id,
+                            module: "installations",
+                            action: newVal ? "photo_checkin_done" : "photo_checkin_removed",
+                            details: newVal ? t("installations.checkinDone") : t("installations.checkinRemoved"),
+                          });
+                          toast.success(newVal ? t("installations.checkinDone") : t("installations.checkinRemoved"));
+                        } catch {
+                          toast.error(t("installations.errorUpdatingCheckin"));
+                        }
+                      }}
+                    >
+                      {schedule.photo_checkin && schedule.photo_checkin_at ? (
+                        <><CheckCircle2 className="w-4 h-4" /> Fotos para ocorrências verificadas em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
+                      ) : (
+                        <><AlertCircle className="w-4 h-4" /> Clique aqui para informar Check-in de fotos para ocorrências</>
+                      )}
+                    </button>
+                  )}
+
+                  <hr className="border-[var(--border-subtle)]" />
+
+                  {/* Lock toggle */}
+                  {canLockCards && (
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"
-                        size="icon"
-                        className={`h-7 w-7 shrink-0 ${isCardLocked ? "text-destructive" : ""}`}
-                        style={!isCardLocked ? { color: colors.text } : undefined}
+                        size="sm"
+                        className={cn("h-11 text-xs gap-1.5", isCardLocked ? "text-destructive" : "")}
                         title={isCardLocked ? t("common.released") : t("common.blocked")}
                         onClick={handleToggleLock}
                         disabled={!!lockLoading[store.id]}
                       >
                         {isCardLocked ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
+                        {isCardLocked ? t("common.blocked") : t("common.released")}
                       </Button>
-                    )}
-                    {isAdminOrMaster && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0"
-                        style={{ color: colors.text }}
-                        title={t("common.details")}
-                        onClick={() => {
-                          setLogStoreId(store.id);
-                          setLogStoreName(store.name);
-                          setLogOpen(true);
-                        }}
-                      >
-                        <ClipboardList className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                {isReschedule && (
-                  <span className="absolute top-1 right-1 text-[8px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full leading-none">REM</span>
-                )}
-                {isCardLocked && !isReschedule && (
-                  <span className="absolute top-1 right-1 text-[8px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5">
-                    <Lock className="w-2.5 h-2.5" /> BLOQ
-                  </span>
-                )}
-                {isCardLocked && isReschedule && (
-                  <span className="absolute top-1 left-1 text-[8px] font-bold bg-destructive text-destructive-foreground px-1.5 py-0.5 rounded-full leading-none flex items-center gap-0.5">
-                    <Lock className="w-2.5 h-2.5" /> BLOQ
-                  </span>
-                )}
-              </div>
-
-              {/* Occurrence Status Indicator */}
-              {hasOpenOccurrence && (() => {
-                const currentPath = window.location.pathname;
-                const occUrl = `${currentPath}?section=occurrences&filterStore=${encodeURIComponent(store.name)}`;
-                return (
-                  <div className="mx-4 mb-1 mt-3 flex items-center gap-2 rounded-md px-3 py-2 text-xs font-semibold bg-destructive/10 text-destructive border border-destructive/30">
-                    <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <a href={occUrl} target="_blank" rel="noopener noreferrer" className="underline hover:opacity-80 cursor-pointer">
-                      Ocorrência registrada ({occStatus!.count})
-                    </a>
-                  </div>
-                );
-              })()}
-
-              <div className="p-4 space-y-3 bg-card flex-1">
-                {/* Address */}
-                <div className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">Endereço:</span> {buildAddress(store)}
-                </div>
-
-                {/* Contact */}
-                <div className="text-xs text-muted-foreground flex flex-wrap gap-x-4">
-                  <span><span className="font-medium text-foreground">Contato:</span> {primaryContact?.name || store.manager_name || "—"}</span>
-                  <span><span className="font-medium text-foreground">Tel:</span> {primaryContact?.phone || store.phone || "—"}</span>
-                </div>
-
-                <hr className="border-border" />
-
-                {/* Team */}
-                {assignedTeam && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <Wrench className="w-3 h-3 text-muted-foreground" />
-                    <span className="font-medium text-foreground">{assignedTeam.name}</span>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 text-xs gap-1 px-2">
-                          <Users className="w-3 h-3" /> Ver
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80 max-h-64 overflow-y-auto p-3" align="start">
-                        <TeamCardContent team={assignedTeam} members={teamMembers} vehicles={teamVehicles} />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                )}
-
-                {/* Schedule info */}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  {selectedDate && (
-                    <span className="flex items-center gap-1">
-                      <CalendarIcon className="w-3 h-3" />
-                      <span className="font-medium text-foreground">{format(selectedDate, "dd/MM/yyyy")}</span>
-                    </span>
-                  )}
-                  {effectiveTime && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span className="font-medium text-foreground">{effectiveTime}</span>
-                    </span>
-                  )}
-                  {effectiveOs && (
-                    <span className="flex items-center gap-1">
-                      <FileText className="w-3 h-3" />
-                      <span className="font-medium text-foreground">OS: {effectiveOs}</span>
-                    </span>
-                  )}
-                  {isReschedule && (
-                    <span className="text-[10px] font-bold bg-orange-500 text-white px-1.5 py-0.5 rounded-full">REMARCAÇÃO</span>
-                  )}
-                </div>
-
-                {/* Completion status */}
-                {schedule?.completed_at && (
-                  <div className="flex items-center gap-2 text-xs bg-success/10 text-success rounded-lg px-3 py-1.5">
-                    <CheckCircle className="w-3.5 h-3.5" />
-                    <span className="font-medium">
-                      {schedule.completed_by === "agency"
-                        ? `Marcada manualmente como concluída pela equipe da Agência, em: ${format(new Date(schedule.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
-                        : `Concluída em ${format(new Date(schedule.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
-                      }
-                    </span>
-                  </div>
-                )}
-
-                {/* Photo Check-in for occurrences */}
-                {showPhotoCheckin && schedule && (
-                  <button
-                    type="button"
-                    className={cn(
-                      "w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors border",
-                      schedule.photo_checkin
-                        ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 hover:bg-emerald-500/20"
-                        : "bg-orange-500/10 text-orange-700 border-orange-500/30 hover:bg-orange-500/20"
-                    )}
-                    onClick={async () => {
-                      const newVal = !schedule.photo_checkin;
-                      try {
-                        const { error } = await supabase
-                          .from("campaign_schedules")
-                          .update({
-                            photo_checkin: newVal,
-                            photo_checkin_at: newVal ? new Date().toISOString() : null,
-                          } as any)
-                          .eq("id", schedule.id);
-                        if (error) throw error;
-                        queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-                        logActivity.mutate({
-                          campaign_id: campaignId,
-                          store_id: store.id,
-                          module: "installations",
-                          action: newVal ? "photo_checkin_done" : "photo_checkin_removed",
-                          details: newVal ? t("installations.checkinDone") : t("installations.checkinRemoved"),
-                        });
-                        toast.success(newVal ? t("installations.checkinDone") : t("installations.checkinRemoved"));
-                      } catch {
-                        toast.error(t("installations.errorUpdatingCheckin"));
-                      }
-                    }}
-                  >
-                    {schedule.photo_checkin && schedule.photo_checkin_at ? (
-                      <><CheckCircle2 className="w-4 h-4" /> Fotos para ocorrências verificadas em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
-                    ) : (
-                      <><AlertCircle className="w-4 h-4" /> Clique aqui para informar Check-in de fotos para ocorrências</>
-                    )}
-                  </button>
-                )}
-
-                <hr className="border-border" />
-
-                {/* Photo thumbnails */}
-                {storePhotos.length > 0 && (
-                  <div className="space-y-1.5">
-                    <div className="flex gap-1.5 flex-wrap">
-                      {storePhotos.slice(0, 6).map((photo) => (
-                        <img
-                          key={photo.id}
-                          src={photo.photo_url}
-                          alt=""
-                          className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
-                          onClick={() => setCheckinStore(store)}
-                          onError={() => handleMediaError(photo.id, photo.campaign_id)}
-                        />
-                      ))}
-                      {storePhotos.length > 6 && (
-                        <button
-                          className="w-12 h-12 rounded-md bg-muted border border-border flex items-center justify-center text-xs font-bold text-muted-foreground hover:bg-muted/80"
-                          onClick={() => setCheckinStore(store)}
+                      {isAdminOrMaster && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-11 text-xs gap-1.5"
+                          onClick={() => {
+                            setLogStoreId(store.id);
+                            setLogStoreName(store.name);
+                            setLogOpen(true);
+                          }}
                         >
-                          +{storePhotos.length - 6}
-                        </button>
+                          <ClipboardList className="w-4 h-4" /> Log
+                        </Button>
                       )}
                     </div>
+                  )}
+
+                  {/* Photo gallery expanded */}
+                  {storePhotos.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="flex gap-1.5 flex-wrap">
+                        {storePhotos.slice(0, 6).map((photo) => (
+                          <img
+                            key={photo.id}
+                            src={photo.photo_url}
+                            alt=""
+                            className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
+                            onClick={() => setCheckinStore(store)}
+                            onError={() => handleMediaError(photo.id, photo.campaign_id)}
+                          />
+                        ))}
+                        {storePhotos.length > 6 && (
+                          <button
+                            className="w-12 h-12 rounded-md bg-muted border border-border flex items-center justify-center text-xs font-bold text-muted-foreground hover:bg-muted/80"
+                            onClick={() => setCheckinStore(store)}
+                          >
+                            +{storePhotos.length - 6}
+                          </button>
+                        )}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs gap-1.5 w-full min-h-[44px]"
+                        onClick={() => {
+                          toast.info(t("common.preparing"));
+                          downloadPhotosAsZip(storePhotos, {
+                            module: "Instalacao",
+                            campaignName,
+                            storeName: store.name,
+                          }).then(() => toast.success(t("common.downloadComplete"))).catch(() => toast.error(t("common.errorDownloading")));
+                        }}
+                      >
+                        <Download className="w-3 h-3" />
+                        Baixar {storePhotos.length} foto(s) (.zip)
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Upload section */}
+                  {canEdit && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <select
+                        value={catForStore}
+                        onChange={(e) => setUploadCategory((prev) => ({ ...prev, [store.id]: e.target.value }))}
+                        className="h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                      >
+                        {CATEGORY_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
+                        ))}
+                      </select>
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => { handleUploadPhoto(store.id, e.target.files); e.target.value = ""; }}
+                        />
+                        <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none min-h-[44px]" asChild>
+                          <span><Upload className="w-3 h-3" /> Upload</span>
+                        </Button>
+                      </label>
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          className="hidden"
+                          onChange={(e) => { handleUploadPhoto(store.id, e.target.files); e.target.value = ""; }}
+                        />
+                        <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none min-h-[44px]" asChild>
+                          <span><Camera className="w-3 h-3" /> Foto</span>
+                        </Button>
+                      </label>
+                    </div>
+                  )}
+
+                  {/* Footer actions */}
+                  <div className="space-y-2 pt-1">
+                    {/* Undo completion */}
+                    {canEdit && schedule?.completed_at && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs gap-2 min-h-[44px] text-[var(--s-warning)]"
+                        onClick={async () => {
+                          try {
+                            const { error } = await supabase
+                              .from("campaign_schedules")
+                              .update({
+                                completed_at: null,
+                                completed_by: null,
+                              })
+                              .eq("id", schedule.id);
+                            if (error) throw error;
+                            queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                            logActivity.mutate({
+                              campaign_id: campaignId,
+                              store_id: store.id,
+                              module: "installations",
+                              action: "remove_completion",
+                              details: t("common.markRemoved"),
+                            });
+                            toast.success(t("common.markRemoved"));
+                          } catch {
+                            toast.error(t("installations.errorUpdatingCompletion"));
+                          }
+                        }}
+                      >
+                        Desfazer conclusão
+                      </Button>
+                    )}
+
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-xs gap-1.5 w-full"
-                      onClick={() => {
-                        toast.info(t("common.preparing"));
-                        downloadPhotosAsZip(storePhotos, {
-                          module: "Instalacao",
-                          campaignName,
-                          storeName: store.name,
-                        }).then(() => toast.success(t("common.downloadComplete"))).catch(() => toast.error(t("common.errorDownloading")));
-                      }}
+                      className="w-full text-xs gap-2 min-h-[44px]"
+                      onClick={() => setCheckinStore(store)}
                     >
-                      <Download className="w-3 h-3" />
-                      Baixar {storePhotos.length} foto(s) (.zip)
+                      <Camera className="w-4 h-4" />
+                      Checkin Fotográfico
+                      {storePhotos.length > 0 && (
+                        <span className="ml-auto bg-primary/15 text-primary font-bold px-2 py-0.5 rounded-full text-[10px]">
+                          {storePhotos.length}
+                        </span>
+                      )}
                     </Button>
                   </div>
-                )}
 
-                {/* Upload section - never locked, any editor can upload */}
-                {canEdit && (
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <select
-                      value={catForStore}
-                      onChange={(e) => setUploadCategory((prev) => ({ ...prev, [store.id]: e.target.value }))}
-                      className="h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                  {/* Close button */}
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      className="w-7 h-7 rounded-md bg-[var(--bg-page)] border border-[var(--border-default)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                      onClick={() => toggleCardExpanded(store.id)}
                     >
-                      {CATEGORY_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>{t(opt.labelKey)}</option>
-                      ))}
-                    </select>
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={(e) => { handleUploadPhoto(store.id, e.target.files); e.target.value = ""; }}
-                      />
-                      <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none" asChild>
-                        <span><Upload className="w-3 h-3" /> Upload</span>
-                      </Button>
-                    </label>
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        className="hidden"
-                        onChange={(e) => { handleUploadPhoto(store.id, e.target.files); e.target.value = ""; }}
-                      />
-                      <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none" asChild>
-                        <span><Camera className="w-3 h-3" /> Foto</span>
-                      </Button>
-                    </label>
+                      <ChevronUp className="w-4 h-4" />
+                    </button>
                   </div>
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="border-t border-border bg-muted/30 px-4 py-3 space-y-2">
-                {/* Mark complete - any editor, not blocked by card lock */}
-                {canEdit && schedule && (
-                  <Button
-                    variant={schedule.completed_at ? "default" : "outline"}
-                    size="sm"
-                    className={cn("w-full text-xs gap-2", schedule.completed_at && "bg-green-600 hover:bg-green-700")}
-                    onClick={async () => {
-                      const isCompleted = !!schedule.completed_at;
-                      try {
-                        const { error } = await supabase
-                          .from("campaign_schedules")
-                          .update({
-                            completed_at: isCompleted ? null : new Date().toISOString(),
-                            completed_by: isCompleted ? null : "agency",
-                          })
-                          .eq("id", schedule.id);
-                        if (error) throw error;
-                        queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-                        logActivity.mutate({
-                          campaign_id: campaignId,
-                          store_id: store.id,
-                          module: "installations",
-                          action: isCompleted ? "remove_completion" : "mark_completed",
-                          details: isCompleted ? t("common.markRemoved") : t("common.installationCompleted"),
-                        });
-                        toast.success(isCompleted ? t("common.markRemoved") : t("common.installationCompleted"));
-                      } catch {
-                        toast.error(t("installations.errorUpdatingCompletion"));
-                      }
-                    }}
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    {schedule.completed_at ? t("installations.installationCompleted") : t("installations.markComplete")}
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs gap-2"
-                  onClick={() => setCheckinStore(store)}
-                >
-                  <Camera className="w-4 h-4" />
-                  Checkin Fotográfico
-                  {storePhotos.length > 0 && (
-                    <span className="ml-auto bg-primary/15 text-primary font-bold px-2 py-0.5 rounded-full text-[10px]">
-                      {storePhotos.length}
-                    </span>
-                  )}
-                </Button>
+                </div>
               </div>
             </div>
           );
