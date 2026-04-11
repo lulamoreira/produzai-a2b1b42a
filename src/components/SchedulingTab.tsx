@@ -24,7 +24,10 @@ import { useLogActivity } from "@/hooks/useActivityLogs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp, SlidersHorizontal } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp, SlidersHorizontal, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -720,52 +723,60 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           </Popover>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex flex-wrap gap-1.5">
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setTeamDialogOpen(true)}>
-            <Wrench className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{t("scheduling.teams")}</span><span className="sm:hidden">{t("scheduling.teams").slice(0,3)}</span>
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleExportTeams}>
-            <Users className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{t("scheduling.exportTeams")}</span><span className="sm:hidden">{t("common.export")}</span>
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleExport}>
-            <Download className="w-3.5 h-3.5" /> {t("common.export")}
-          </Button>
-          {canLockCards && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-xs"
-              disabled={bulkLockLoading}
-              onClick={async () => {
-                setBulkLockLoading(true);
-                try {
-                  const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
-                  const allLocked = unlocked.length === 0;
-                  const newLocked = !allLocked;
-                  const ids = displayedStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
-                  if (ids.length === 0) { setBulkLockLoading(false); return; }
-                  const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
-                  if (error) throw error;
-                  queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-                  toast.success(newLocked ? `${ids.length} ${t("common.cardsBlocked")}` : `${ids.length} ${t("common.cardsUnblocked")}`);
-                } catch (err: any) {
-                  toast.error(err.message || t("common.errorChangingLockBulk"));
-                } finally {
-                  setBulkLockLoading(false);
-                }
-              }}
-            >
-              {(() => {
-                const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
-                const allLocked = unlocked.length === 0 && displayedStores.some(s => scheduleMap[s.id]);
-                return allLocked
-                  ? <><LockOpen className="w-3.5 h-3.5" /> {t("common.unlockAll")}</>
-                  : <><Lock className="w-3.5 h-3.5" /> {t("common.lockAll")}</>;
-              })()}
+      {/* More actions dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 text-xs gap-1 shrink-0">
+              <MoreHorizontal className="w-3.5 h-3.5" /> Mais ações
             </Button>
-          )}
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[220px]">
+            <DropdownMenuItem onClick={() => setTeamDialogOpen(true)}>
+              <Wrench className="w-3.5 h-3.5 mr-2" /> {t("scheduling.teams")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportTeams}>
+              <Users className="w-3.5 h-3.5 mr-2" /> {t("scheduling.exportTeams")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExport}>
+              <Download className="w-3.5 h-3.5 mr-2" /> {t("common.export")}
+            </DropdownMenuItem>
+            {canLockCards && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-[var(--s-danger)] focus:text-[var(--s-danger)]"
+                  disabled={bulkLockLoading}
+                  onClick={async () => {
+                    setBulkLockLoading(true);
+                    try {
+                      const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                      const allLocked = unlocked.length === 0;
+                      const newLocked = !allLocked;
+                      const ids = displayedStores.map(s => scheduleMap[s.id]?.id).filter(Boolean) as string[];
+                      if (ids.length === 0) { setBulkLockLoading(false); return; }
+                      const { error } = await supabase.from("campaign_schedules").update({ locked: newLocked } as any).in("id", ids);
+                      if (error) throw error;
+                      queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                      toast.success(newLocked ? `${ids.length} ${t("common.cardsBlocked")}` : `${ids.length} ${t("common.cardsUnblocked")}`);
+                    } catch (err: any) {
+                      toast.error(err.message || t("common.errorChangingLockBulk"));
+                    } finally {
+                      setBulkLockLoading(false);
+                    }
+                  }}
+                >
+                  {(() => {
+                    const unlocked = displayedStores.filter(s => scheduleMap[s.id] && !scheduleMap[s.id]?.locked);
+                    const allLocked = unlocked.length === 0 && displayedStores.some(s => scheduleMap[s.id]);
+                    return allLocked
+                      ? <><LockOpen className="w-3.5 h-3.5 mr-2" /> {t("common.unlockAll")}</>
+                      : <><Lock className="w-3.5 h-3.5 mr-2" /> {t("common.lockAll")}</>;
+                  })()}
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* KPI Summary Bar */}
@@ -799,25 +810,40 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         ];
         return (
           <>
-            <div className="kpi-strip">
-              {items.map((m) => (
+            <div
+              className="flex items-baseline overflow-x-auto"
+              style={{
+                padding: "10px 16px",
+                background: "var(--bg-surface)",
+                borderBottom: "1px solid var(--border-subtle)",
+                whiteSpace: "nowrap",
+                WebkitOverflowScrolling: "touch",
+                gap: 0,
+              }}
+            >
+              {items.map((m, idx) => (
                 <button
                   key={m.key}
                   type="button"
                   onClick={() => setSummaryFilter(prev => prev === m.key ? "" : m.key)}
-                  className={cn(
-                    "flex-shrink-0 bg-card border rounded-lg px-3 py-2 text-center transition-all cursor-pointer hover:shadow-md whitespace-nowrap",
-                    summaryFilter === m.key
-                      ? "border-primary ring-2 ring-primary/30 shadow-sm"
-                      : "border-border"
-                  )}
+                  className="inline-flex items-baseline gap-1 transition-colors rounded-md hover:bg-[var(--bg-muted)]"
+                  style={{
+                    padding: "2px 14px",
+                    borderRight: idx < items.length - 1 ? "1px solid var(--border-subtle)" : "none",
+                    cursor: "pointer",
+                    ...(summaryFilter === m.key ? { backgroundColor: "var(--bg-muted)" } : {}),
+                  }}
                 >
-                  <p className={cn(
-                    "font-bold",
-                    m.isTotal ? "text-xl" : "text-sm",
-                    m.dangerWhenPositive && m.value > 0 ? "text-[var(--s-danger)]" : m.isTotal ? "text-foreground" : "text-[var(--text-secondary)]"
-                  )}>{m.value}</p>
-                  <p className="text-[10px] text-muted-foreground">{m.label}</p>
+                  <span
+                    className="font-bold leading-none"
+                    style={{
+                      fontSize: m.isTotal ? 24 : 20,
+                      color: m.dangerWhenPositive && m.value > 0 ? "var(--s-danger)" : m.isTotal ? "var(--text-primary)" : "var(--text-secondary)",
+                    }}
+                  >
+                    {m.value}
+                  </span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{m.label}</span>
                 </button>
               ))}
             </div>
@@ -940,7 +966,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       );
                     })()}
                     {isReschedule && <span className="badge-base badge-warning">REM</span>}
-                    {isCardLocked && <span className="badge-base badge-danger"><Lock className="w-3 h-3" /> BLOQ</span>}
+                    {isCardLocked && <span className="badge-base badge-neutral"><Lock className="w-3 h-3" /> BLOQ</span>}
                     {/* Chat badge */}
                     {(chatCounts?.unreadPerStore[store.id] || 0) > 0 && (
                       <span className="badge-base badge-danger">
