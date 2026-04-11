@@ -22,6 +22,7 @@ import { useInstallCodeGeneration } from "@/hooks/useInstallCodeGeneration";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { useLogActivity } from "@/hooks/useActivityLogs";
+import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
 import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
 import InstallerPreviewDialog from "@/components/InstallerPreviewDialog";
