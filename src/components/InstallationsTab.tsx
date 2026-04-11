@@ -45,6 +45,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { downloadWorkbook } from "@/lib/downloadWorkbook";
 import { buildExportFileName } from "@/lib/exportFileName";
+import { exportInstallCodes } from "@/lib/exportInstallCodes";
 import {
   useInstallationTeams,
   useAllTeamMembers,
@@ -539,6 +540,22 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 <DropdownMenuItem onClick={handleExport}>
                   <Download className="w-3.5 h-3.5 mr-2" /> Exportar
                 </DropdownMenuItem>
+                {isAdminOrMaster && (
+                  <DropdownMenuItem onClick={() => {
+                    exportInstallCodes({
+                      campaignName,
+                      clientName,
+                      agencyName,
+                      stores: displayedStores,
+                      scheduleMap,
+                      teamMap,
+                      membersByTeam: allMembersMap,
+                    }).then(() => toast.success("Planilha de códigos exportada!"))
+                      .catch((e: Error) => toast.error(e.message || "Erro ao exportar"));
+                  }}>
+                    <FileText className="w-3.5 h-3.5 mr-2" /> Exportar códigos (.xlsx)
+                  </DropdownMenuItem>
+                )}
                 {photos.length > 0 && (
                   <DropdownMenuItem onClick={() => {
                     const storeNameMap: Record<string, string> = {};
