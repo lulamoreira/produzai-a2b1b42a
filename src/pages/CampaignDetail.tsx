@@ -421,6 +421,7 @@ const CampaignDetail = () => {
       id: piece.id,
       code: String(piece.code),
       category: piece.category,
+      sub_location: (piece as any).sub_location || "",
       name: piece.name,
       width: sizeParts[0] || "",
       height: sizeParts[1] || "",

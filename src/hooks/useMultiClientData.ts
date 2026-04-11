@@ -450,7 +450,7 @@ export function useCampaignPieces(campaignId: string | undefined) {
 export function useAddCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (piece: { campaign_id: string; code: number; category: string; name: string; size: string; store_category?: string; image_url?: string; specification?: string; installation_instructions?: string; kit_only?: boolean; is_mockup?: boolean; display_order?: number }) => {
+    mutationFn: async (piece: { campaign_id: string; code: number; category: string; name: string; size: string; store_category?: string; image_url?: string; specification?: string; installation_instructions?: string; kit_only?: boolean; is_mockup?: boolean; display_order?: number; sub_location?: string | null }) => {
       const { data, error } = await supabase.from("campaign_pieces").insert(piece).select().single();
       if (error) throw error;
       return data as CampaignPiece;
