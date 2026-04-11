@@ -200,8 +200,8 @@ const PublicOccurrenceDetail = () => {
       {/* Header */}
       <header className="border-b border-border bg-card/80 backdrop-blur-sm">
         <div className="max-w-2xl mx-auto px-4 py-5 text-center">
-          <div className="w-14 h-14 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-3 shadow-glow-primary">
-            <AlertTriangle className="w-7 h-7 text-white" />
+          <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-3 shadow-glow-primary">
+            <AlertTriangle className="w-5 h-5 text-white" />
           </div>
           <h1 className="text-xl font-bold text-foreground">Detalhes da Ocorrência</h1>
           {clientName && campaign && (

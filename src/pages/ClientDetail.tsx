@@ -1,4 +1,6 @@
 import { useState, useRef, useCallback } from "react";
+import { useInterfaceMode } from "@/hooks/useInterfaceMode";
+import CampaignCardV2 from "@/components/v2/CampaignCardV2";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -245,6 +247,7 @@ const ClientDetail = () => {
   const { agencyId, clientId } = useParams<{ agencyId: string; clientId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { interfaceMode } = useInterfaceMode();
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaigns } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canDeleteCampaigns } = useClientPermission(clientId, "can_delete_campaigns");
@@ -841,6 +844,20 @@ const ClientDetail = () => {
                   <Megaphone className="w-8 h-8 text-white" />
                 </div>
                 <p className="text-muted-foreground text-sm">{t("clientDashboard.noCampaigns")}</p>
+              </div>
+            ) : interfaceMode === "new" ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {campaigns.map((c) => (
+                  <CampaignCardV2
+                    key={c.id}
+                    campaign={c}
+                    storeCount={0}
+                    pieceCount={0}
+                    agencyId={agencyId!}
+                    clientId={clientId!}
+                    clientName={client?.name || ""}
+                  />
+                ))}
               </div>
             ) : (
               <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
