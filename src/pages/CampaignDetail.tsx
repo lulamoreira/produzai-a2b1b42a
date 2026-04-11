@@ -442,7 +442,7 @@ const CampaignDetail = () => {
       name: editPieceForm.name,
       size,
       store_category: editPieceForm.store_category || null,
-      sub_location: editPieceForm.sub_location || null,
+      sub_location: (editPieceForm.sub_location && editPieceForm.sub_location !== "__none__") ? editPieceForm.sub_location : null,
       specification: editPieceForm.specification,
       installation_instructions: editPieceForm.installation_instructions,
       kit_only: editPieceForm.kit_only,
