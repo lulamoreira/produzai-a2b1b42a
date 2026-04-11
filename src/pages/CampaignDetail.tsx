@@ -174,7 +174,7 @@ const CampaignDetail = () => {
   // ─── Piece dialogs ─────────────────────────────────────
   const [pieceDialogOpen, setPieceDialogOpen] = useState(false);
   const [pieceForm, setPieceForm] = useState({
-    code: "", category: "", name: "",
+    code: "", category: "", sub_location: "", name: "",
     width: "", length: "", height: "",
     store_category: typeof window !== "undefined" ? localStorage.getItem("last_store_category") || "" : "",
     specification: "Vide Book/Manual",
@@ -186,7 +186,7 @@ const CampaignDetail = () => {
   const [pieceImageUploading, setPieceImageUploading] = useState(false);
   const [editPieceDialogOpen, setEditPieceDialogOpen] = useState(false);
   const [editPieceForm, setEditPieceForm] = useState({
-    id: "", code: "", category: "", name: "",
+    id: "", code: "", category: "", sub_location: "", name: "",
     width: "", length: "", height: "",
     store_category: "",
     specification: "Vide Book/Manual",
