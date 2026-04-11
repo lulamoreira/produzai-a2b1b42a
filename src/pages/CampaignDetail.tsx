@@ -1632,19 +1632,7 @@ const CampaignDetail = () => {
                           <Download className="w-4 h-4 mr-2" />
                           {t("matrix.customExport")}
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={async () => {
-                          toast.loading("Gerando planilha com imagens...", { id: "matrix-excel" });
-                          try {
-                            await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces);
-                            toast.success("Planilha exportada com sucesso!", { id: "matrix-excel" });
-                          } catch (err) {
-                            console.error(err);
-                            toast.error("Erro ao exportar planilha", { id: "matrix-excel" });
-                          }
-                        }}>
-                          <FileSpreadsheet className="w-4 h-4 mr-2" />
-                          Exportar Orçamento
-                        </DropdownMenuItem>
+
 
                         {canEditCampaign && (
                           <>
