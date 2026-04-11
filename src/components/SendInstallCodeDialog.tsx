@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Copy, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 
 interface SendInstallCodeDialogProps {
   open: boolean;
