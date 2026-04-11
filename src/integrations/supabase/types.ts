@@ -53,6 +53,7 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           id: string
+          interface_mode: string
           logo_url: string | null
           name: string
         }
@@ -61,6 +62,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          interface_mode?: string
           logo_url?: string | null
           name: string
         }
@@ -69,6 +71,7 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           id?: string
+          interface_mode?: string
           logo_url?: string | null
           name?: string
         }
@@ -1912,6 +1915,7 @@ export type Database = {
           phone: string | null
           phone_is_whatsapp: boolean | null
           preferred_language: string | null
+          theme_hue: number
           updated_at: string
           user_id: string
         }
@@ -1928,6 +1932,7 @@ export type Database = {
           phone?: string | null
           phone_is_whatsapp?: boolean | null
           preferred_language?: string | null
+          theme_hue?: number
           updated_at?: string
           user_id: string
         }
@@ -1944,6 +1949,7 @@ export type Database = {
           phone?: string | null
           phone_is_whatsapp?: boolean | null
           preferred_language?: string | null
+          theme_hue?: number
           updated_at?: string
           user_id?: string
         }
