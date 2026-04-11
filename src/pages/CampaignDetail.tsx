@@ -1509,7 +1509,7 @@ const CampaignDetail = () => {
                 onFiltersChange={setPieceFilters}
                 onStoreFiltersChange={setStoreFilters}
                 collapsed={filterSidebarCollapsed}
-                onCollapsedChange={setFilterSidebarCollapsed}
+                onCollapsedChange={handleFilterSidebarCollapsedChange}
                 customFieldLabels={[
                   ...(client?.custom_field_1_label ? [{ key: "custom_field_1" as const, label: client.custom_field_1_label }] : []),
                   ...(client?.custom_field_2_label ? [{ key: "custom_field_2" as const, label: client.custom_field_2_label }] : []),
