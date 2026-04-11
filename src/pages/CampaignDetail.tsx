@@ -1583,6 +1583,18 @@ const CampaignDetail = () => {
                       ]}
                     />
 
+                    {canEditCampaign && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs gap-1.5 border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/50"
+                        onClick={() => setAutomationOpen(true)}
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span className="hidden sm:inline">{t("automation.title")}</span>
+                      </Button>
+                    )}
+
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button size="sm" variant="outline" className="text-xs gap-1.5">
@@ -1628,11 +1640,6 @@ const CampaignDetail = () => {
                             <DropdownMenuItem onClick={() => setImportMatrixDialogOpen(true)}>
                               <Copy className="w-4 h-4 mr-2" />
                               {t("matrix.fromOtherCampaign")}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setAutomationOpen(true)}>
-                              <Sparkles className="w-4 h-4 mr-2" />
-                              {t("automation.title")}
                             </DropdownMenuItem>
                           </>
                         )}
