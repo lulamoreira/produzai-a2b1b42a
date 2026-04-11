@@ -995,6 +995,77 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                     </button>
                   )}
 
+                  {/* Install code actions — admin/master only */}
+                  {isAdminOrMaster && schedule?.install_code && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Checkin info */}
+                      {schedule.checkin_timestamp && (
+                        <div className="text-xs space-y-0.5">
+                          <p className="font-medium text-[var(--s-success)]">
+                            ✔ Check-in: {format(new Date(schedule.checkin_timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          </p>
+                          {schedule.checkin_lat != null ? (
+                            <p className="text-[var(--text-muted)]">
+                              📍 Precisão: ±{Math.round(schedule.checkin_accuracy || 0)}m{" "}
+                              <a
+                                href={`https://www.google.com/maps?q=${schedule.checkin_lat},${schedule.checkin_lng}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Ver no mapa ↗
+                              </a>
+                            </p>
+                          ) : (
+                            <p className="text-[var(--s-warning)]">⚠ Check-in sem localização</p>
+                          )}
+                        </div>
+                      )}
+                      <div className="flex gap-1.5 ml-auto">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs gap-1.5 h-8"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSendCodeSchedule(schedule);
+                            setSendCodeStore(store);
+                            setSendCodeTeam(assignedTeam);
+                            setSendCodeMembers(teamMembers);
+                          }}
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                          {schedule.code_sent_at ? `✔ Enviado ${format(new Date(schedule.code_sent_at), "dd/MM HH:mm")}` : "📤 Enviar código"}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-8"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!confirm("Regenerar o código tornará o código anterior inválido imediatamente. Deseja continuar?")) return;
+                            const letters = "abcdefghijklmnopqrstuvwxyz";
+                            const l1 = letters[Math.floor(Math.random() * 26)];
+                            const l2 = letters[Math.floor(Math.random() * 26)];
+                            const nums = String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+                            const newCode = `${l1}${l2}${nums}`;
+                            const { error } = await supabase.from("campaign_schedules").update({
+                              install_code: newCode,
+                              install_code_generated_at: new Date().toISOString(),
+                              code_sent_at: null,
+                            } as any).eq("id", schedule.id);
+                            if (error) { toast.error("Erro ao regenerar código."); return; }
+                            queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                            toast.success("Código regenerado!");
+                          }}
+                        >
+                          ⟳
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <hr className="border-[var(--border-subtle)]" />
 
                   {/* Lock toggle */}
