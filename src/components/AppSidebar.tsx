@@ -230,7 +230,7 @@ export default function AppSidebar() {
       )}
 
       {/* Navigation */}
-      <nav className="min-h-0 flex-1 overflow-y-auto py-3 px-2 space-y-1">
+      <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-1">
 
         {/* ── Agências (always visible) ── */}
         <button
