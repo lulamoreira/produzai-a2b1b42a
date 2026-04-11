@@ -302,6 +302,10 @@ export function KitDetailDialog({
   const [kitNameInput, setKitNameInput] = useState("");
   const [addPieceSearch, setAddPieceSearch] = useState("");
   const [localImageUrl, setLocalImageUrl] = useState<string | null | undefined>(undefined);
+  const [localKitName, setLocalKitName] = useState<string | undefined>(undefined);
+
+  // Reset local name when kit changes
+  const displayKitName = localKitName !== undefined ? localKitName : kit?.name ?? "";
 
   // Sync local image state when kit prop changes
   const effectiveImageUrl = localImageUrl !== undefined ? localImageUrl : kit?.image_url ?? null;
@@ -381,7 +385,7 @@ export function KitDetailDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditingPieceId(null); setShowAddPieces(false); setEditingKitName(false); setLocalImageUrl(undefined); } onOpenChange(v); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditingPieceId(null); setShowAddPieces(false); setEditingKitName(false); setLocalImageUrl(undefined); setLocalKitName(undefined); } onOpenChange(v); }}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -395,24 +399,26 @@ export function KitDetailDialog({
                   autoFocus
                   onKeyDown={async (e) => {
                     if (e.key === "Enter" && kitNameInput.trim()) {
-                      await onUpdateKit({ id: kit.id, name: kitNameInput.trim() });
+                      setLocalKitName(kitNameInput.trim());
                       setEditingKitName(false);
                       toast.success("Nome atualizado!");
+                      await onUpdateKit({ id: kit.id, name: kitNameInput.trim() });
                     }
                   }}
                 />
                 <Button size="sm" className="h-8 text-xs" onClick={async () => {
                   if (kitNameInput.trim()) {
-                    await onUpdateKit({ id: kit.id, name: kitNameInput.trim() });
+                    setLocalKitName(kitNameInput.trim());
                     setEditingKitName(false);
                     toast.success("Nome atualizado!");
+                    await onUpdateKit({ id: kit.id, name: kitNameInput.trim() });
                   }
                 }}>Salvar</Button>
               </div>
             ) : (
               <span className="flex items-center gap-2">
                 <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{kit.code}</span>
-                Kit: {kit.name}
+                Kit: {displayKitName}
                 {canEdit && onUpdateKit && (
                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setKitNameInput(kit.name); setEditingKitName(true); }}>
                     <Edit3 className="w-3 h-3" />
