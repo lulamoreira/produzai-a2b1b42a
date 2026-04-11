@@ -1,10 +1,12 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import {
   Camera, Upload, CalendarIcon, Clock, MapPin, Phone, User,
-  CheckCircle, KeyRound, Store, FileText, Building2,
+  CheckCircle, KeyRound, Store, FileText, Building2, AlertTriangle,
+  ArrowDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -28,6 +30,8 @@ const CATEGORY_OPTIONS = [
   { value: "after", label: "Depois", icon: "🟢" },
 ];
 
+const MINIMO_FOTOS = 10;
+
 export default function InstallerPortal() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,6 +41,12 @@ export default function InstallerPortal() {
   const [localPhotos, setLocalPhotos] = useState<any[]>([]);
   const [checkinDone, setCheckinDone] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [validacaoError, setValidacaoError] = useState<{
+    ativa: boolean;
+    totalEnviado: number;
+    faltam: number;
+  } | null>(null);
+  const [tentandoConcluir, setTentandoConcluir] = useState(false);
 
   // Auto-submit when 5 chars
   useEffect(() => {
@@ -162,10 +172,28 @@ export default function InstallerPortal() {
       }
     }
     toast.success(`${files.length} foto(s) enviada(s)!`);
+    // Clear validation error if now above minimum
+    setValidacaoError(null);
   };
 
   const handleComplete = async () => {
     if (!data) return;
+
+    const totalMidias = localPhotos.length;
+
+    // Validation: minimum 10 photos/videos for installer portal
+    if (totalMidias < MINIMO_FOTOS) {
+      setValidacaoError({
+        ativa: true,
+        totalEnviado: totalMidias,
+        faltam: MINIMO_FOTOS - totalMidias,
+      });
+      return;
+    }
+
+    setValidacaoError(null);
+    setTentandoConcluir(true);
+
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const res = await fetch(
@@ -182,6 +210,8 @@ export default function InstallerPortal() {
       toast.success("Instalação concluída! 🎉");
     } catch (err: any) {
       toast.error(err.message || "Erro ao concluir.");
+    } finally {
+      setTentandoConcluir(false);
     }
   };
 
@@ -264,6 +294,8 @@ export default function InstallerPortal() {
   const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
   const preference = schedule?.installation_preference;
   const prefLabel = preference === "morning" ? "Manhã" : preference === "afternoon" ? "Tarde" : preference === "night" ? "Noite" : "";
+  const totalMidias = localPhotos.length;
+  const atingiuMinimo = totalMidias >= MINIMO_FOTOS;
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-page, #F5F2ED)" }}>
@@ -363,8 +395,27 @@ export default function InstallerPortal() {
         )}
 
         {/* Photos */}
-        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+        <div className="bg-card border border-border rounded-xl p-4 space-y-3" id="secao-fotos">
           <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Fotos da instalação</p>
+
+          {/* Progress bar */}
+          <div className="flex flex-col gap-1.5">
+            <div className="w-full h-[5px] rounded-full overflow-hidden" style={{ background: "var(--border-subtle)" }}>
+              <div
+                className="h-full rounded-full transition-all duration-400"
+                style={{
+                  width: `${Math.min((totalMidias / MINIMO_FOTOS) * 100, 100)}%`,
+                  background: atingiuMinimo ? "#16A34A" : "var(--brand-500, #8C6F4E)",
+                }}
+              />
+            </div>
+            <p className="text-xs font-medium text-muted-foreground">
+              {atingiuMinimo
+                ? `✓ ${totalMidias} mídias — pode concluir`
+                : `${totalMidias}/${MINIMO_FOTOS} mídias — envie mais ${MINIMO_FOTOS - totalMidias} para concluir`
+              }
+            </p>
+          </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <select
@@ -416,15 +467,98 @@ export default function InstallerPortal() {
           )}
         </div>
 
-        {/* Complete */}
-        {localPhotos.length > 0 && !isCompleted && (
+        {/* Validation error */}
+        {validacaoError?.ativa && !isCompleted && (
+          <div
+            className="rounded-[14px] p-6 flex flex-col items-center gap-3 text-center animate-in fade-in slide-in-from-bottom-2 duration-300"
+            style={{
+              background: "#FEF2F2",
+              border: "2px solid #DC2626",
+            }}
+          >
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: "#DC2626" }}
+            >
+              <AlertTriangle className="w-7 h-7 text-white" />
+            </div>
+
+            <p className="text-[17px] font-bold leading-tight" style={{ color: "#7F1D1D" }}>
+              Você ainda não pode sair desta loja
+            </p>
+
+            <p className="text-sm leading-relaxed max-w-[340px]" style={{ color: "#991B1B" }}>
+              Nossa equipe precisa verificar cada detalhe da instalação antes
+              de liberar o pagamento da sua equipe. Para isso, precisamos de no mínimo{" "}
+              <strong style={{ color: "#7F1D1D" }}>10 fotos ou vídeos</strong> do serviço realizado.
+            </p>
+
+            <p className="text-[15px] font-medium" style={{ color: "#991B1B" }}>
+              Você enviou apenas {validacaoError.totalEnviado} {validacaoError.totalEnviado === 1 ? "mídia" : "mídias"}.
+              Faltam {validacaoError.faltam} {validacaoError.faltam === 1 ? "foto ou vídeo" : "fotos ou vídeos"} para liberar a conclusão.
+            </p>
+
+            <p
+              className="text-[13px] rounded-lg px-3.5 py-2.5 w-full"
+              style={{ color: "#B91C1C", background: "rgba(220,38,38,0.08)" }}
+            >
+              ⚠ Instalações sem documentação suficiente ficam pendentes de verificação
+              e podem atrasar o pagamento de toda a equipe.
+            </p>
+
+            {/* Progress */}
+            <div className="w-full flex flex-col gap-1.5">
+              <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "rgba(220,38,38,0.15)" }}>
+                <div
+                  className="h-full rounded-full transition-all duration-300"
+                  style={{
+                    width: `${(validacaoError.totalEnviado / MINIMO_FOTOS) * 100}%`,
+                    background: "#DC2626",
+                  }}
+                />
+              </div>
+              <p className="text-[13px] font-semibold" style={{ color: "#991B1B" }}>
+                {validacaoError.totalEnviado} / {MINIMO_FOTOS} mídias enviadas
+              </p>
+            </div>
+
+            <button
+              className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-[10px] text-sm font-semibold text-white transition-colors min-h-[48px]"
+              style={{ background: "#DC2626" }}
+              onMouseOver={(e) => (e.currentTarget.style.background = "#B91C1C")}
+              onMouseOut={(e) => (e.currentTarget.style.background = "#DC2626")}
+              onClick={() => {
+                setValidacaoError(null);
+                document.getElementById("secao-fotos")?.scrollIntoView({ behavior: "smooth" });
+              }}
+            >
+              <ArrowDown className="w-4 h-4" />
+              Voltar e adicionar mais fotos
+            </button>
+          </div>
+        )}
+
+        {/* Complete button */}
+        {!isCompleted && (
           <Button
-            className="w-full h-12 text-sm gap-2"
+            className={`w-full h-12 text-sm gap-2 ${
+              validacaoError?.ativa ? "opacity-40 cursor-not-allowed pointer-events-none" : ""
+            } ${!atingiuMinimo && !validacaoError?.ativa ? "" : ""}`}
             variant="default"
             onClick={handleComplete}
+            disabled={tentandoConcluir || validacaoError?.ativa === true}
+            style={!atingiuMinimo && !validacaoError?.ativa
+              ? { background: "var(--brand-300)", color: "var(--brand-800)" }
+              : undefined
+            }
           >
             <CheckCircle className="w-5 h-5" />
-            Instalação Concluída
+            {tentandoConcluir
+              ? "Verificando..."
+              : atingiuMinimo
+                ? "Instalação Concluída"
+                : `Instalação Concluída (${totalMidias}/${MINIMO_FOTOS} fotos)`
+            }
           </Button>
         )}
 
