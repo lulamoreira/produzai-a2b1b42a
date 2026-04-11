@@ -455,6 +455,7 @@ const CampaignDetail = () => {
       is_mockup: editPieceForm.is_mockup,
       image_url: editPieceForm.image_url || null,
     });
+    await supabase.from("campaign_pieces").update({ sub_location: editPieceForm.sub_location || null } as any).eq("id", editPieceForm.id);
     setEditPieceDialogOpen(false);
   };
 
