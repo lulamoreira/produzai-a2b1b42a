@@ -307,12 +307,14 @@ export function KitDetailDialog({
   const [addPieceSearch, setAddPieceSearch] = useState("");
   const [localImageUrl, setLocalImageUrl] = useState<string | null | undefined>(undefined);
   const [localKitName, setLocalKitName] = useState<string | undefined>(undefined);
+  const [localCategory, setLocalCategory] = useState<string | null | undefined>(undefined);
+  const [localSubLocation, setLocalSubLocation] = useState<string | null | undefined>(undefined);
 
-  // Reset local name when kit changes
+  // Reset local overrides when kit changes
   const displayKitName = localKitName !== undefined ? localKitName : kit?.name ?? "";
-
-  // Sync local image state when kit prop changes
   const effectiveImageUrl = localImageUrl !== undefined ? localImageUrl : kit?.image_url ?? null;
+  const effectiveCategory = localCategory !== undefined ? localCategory : kit?.category ?? null;
+  const effectiveSub = localSubLocation !== undefined ? localSubLocation : kit?.sub_location ?? null;
 
   const piecesInKit = kit ? kitPieces
     .filter(kp => kp.kit_id === kit.id)
