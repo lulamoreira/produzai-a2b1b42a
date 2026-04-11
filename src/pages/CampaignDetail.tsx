@@ -278,6 +278,7 @@ const CampaignDetail = () => {
   const [importMatrixDialogOpen, setImportMatrixDialogOpen] = useState(false);
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
+  const [filterLogicMode, setFilterLogicMode] = useState<FilterLogicMode>("and_or");
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(() => {
     try {
       const saved = localStorage.getItem('produzai_matrix_filters_open');
