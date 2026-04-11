@@ -117,6 +117,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const { isAdminOrMaster } = useUserRole();
   const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const logActivity = useLogActivity();
+  const logCampaignActivity = useLogCampaignActivity();
   const [lockLoading, setLockLoading] = useState<Record<string, boolean>>({});
   const [bulkLockLoading, setBulkLockLoading] = useState(false);
   const [expandedOriginal, setExpandedOriginal] = useState<Record<string, boolean>>({});
