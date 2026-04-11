@@ -16,7 +16,8 @@ import { useOrphanPhotoCleanup } from "@/hooks/useOrphanPhotoCleanup";
 import { useAuth } from "@/hooks/useAuth";
 import { compressImage } from "@/lib/compressImage";
 import DebouncedInput from "@/components/DebouncedInput";
-import TeamCodesPanel from "@/components/TeamCodesPanel";
+import SendInstallCodeDialog from "@/components/SendInstallCodeDialog";
+import { useInstallCodeGeneration } from "@/hooks/useInstallCodeGeneration";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { useLogActivity } from "@/hooks/useActivityLogs";
@@ -75,10 +76,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
-  const { hasPermission: canManageTeamCodes } = useClientPermission(clientId, "can_manage_team_codes");
   const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const { hasPermission: canViewPhotoCheckin } = useClientPermission(clientId, "can_view_photo_checkin");
-  const showTeamCodesPanel = isAdminOrMaster || canManageTeamCodes;
   const showPhotoCheckin = isAdminOrMaster || canViewPhotoCheckin;
   const logActivity = useLogActivity();
 
@@ -98,6 +97,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
   // UI state
   const [showCodes, setShowCodes] = useState(false);
+  const [sendCodeSchedule, setSendCodeSchedule] = useState<any>(null);
+  const [sendCodeStore, setSendCodeStore] = useState<any>(null);
+  const [sendCodeTeam, setSendCodeTeam] = useState<any>(null);
+  const [sendCodeMembers, setSendCodeMembers] = useState<any[]>([]);
   const [logOpen, setLogOpen] = useState(false);
   const [logStoreId, setLogStoreId] = useState("");
   const [logStoreName, setLogStoreName] = useState("");
