@@ -1199,6 +1199,20 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           photos={photos.filter((p) => p.store_id === checkinStore.id)}
         />
       )}
+
+      {/* Send Install Code Dialog */}
+      {sendCodeSchedule && (
+        <SendInstallCodeDialog
+          open={!!sendCodeSchedule}
+          onOpenChange={(open) => { if (!open) { setSendCodeSchedule(null); setSendCodeStore(null); setSendCodeTeam(null); setSendCodeMembers([]); } }}
+          schedule={sendCodeSchedule}
+          store={sendCodeStore}
+          team={sendCodeTeam}
+          teamMembers={sendCodeMembers}
+          agencyName={agencyName}
+          campaignName={campaignName}
+        />
+      )}
     </div>
   );
 };
