@@ -64,6 +64,7 @@ import ManageLocationsDialog from "@/components/ManageLocationsDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters, type FilterLogicMode } from "@/components/MatrixFilterSidebar";
 import ModuleGrid from "@/components/ModuleGrid";
+import CampaignStatusDashboard from "@/components/CampaignStatusDashboard";
 import CampaignChatSection from "@/components/CampaignChatSection";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
@@ -985,6 +986,11 @@ const CampaignDetail = () => {
                 <span className="text-[13px] group-hover:underline" style={{ color: "var(--text-muted)" }}>{t("pieces.registered")}</span>
               </button>
             </div>
+
+            <CampaignStatusDashboard
+              campaignId={campaignId!}
+              onNavigate={(section) => setActiveSection(section)}
+            />
 
             <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
 
