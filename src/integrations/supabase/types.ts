@@ -413,6 +413,45 @@ export type Database = {
           },
         ]
       }
+      campaign_piece_sub_locations: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          location_id: string
+          name: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          location_id: string
+          name: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          location_id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_piece_sub_locations_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_piece_sub_locations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_piece_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_pieces: {
         Row: {
           campaign_id: string
@@ -429,6 +468,7 @@ export type Database = {
           size: string
           specification: string
           store_category: string | null
+          sub_location: string | null
         }
         Insert: {
           campaign_id: string
@@ -445,6 +485,7 @@ export type Database = {
           size: string
           specification?: string
           store_category?: string | null
+          sub_location?: string | null
         }
         Update: {
           campaign_id?: string
@@ -461,6 +502,7 @@ export type Database = {
           size?: string
           specification?: string
           store_category?: string | null
+          sub_location?: string | null
         }
         Relationships: [
           {

@@ -9,6 +9,7 @@ import {
   useCampaign, useClient, useClientStores, useCampaignPieces, useCampaignStorePieces,
   useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece,
   useCampaignPieceLocations, useAddCampaignPieceLocation, useDeleteCampaignPieceLocation,
+  useCampaignPieceSubLocations,
   useUpdateClientStore,
   useCampaignStoreStatus, useUpsertCampaignStoreStatus, useBulkUpsertCampaignStoreStatus,
   useClientStoreModels,
@@ -59,6 +60,7 @@ import SortablePiecesTable, { type UnifiedRow } from "@/components/SortablePiece
 import SupportMaterialsSection from "@/components/SupportMaterialsSection";
 import ImportSpecFromCampaign from "@/components/ImportSpecFromCampaign";
 import BulkDeletePiecesDialog from "@/components/BulkDeletePiecesDialog";
+import ManageLocationsDialog from "@/components/ManageLocationsDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters } from "@/components/MatrixFilterSidebar";
 import ModuleGrid from "@/components/ModuleGrid";
@@ -119,8 +121,8 @@ const CampaignDetail = () => {
   const updatePiece = useUpdateCampaignPiece();
   const updateStorePiece = useUpdateCampaignStorePiece();
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
+  const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
   const addPieceLocation = useAddCampaignPieceLocation();
-  const deletePieceLocation = useDeleteCampaignPieceLocation();
   const updateClientStore = useUpdateClientStore();
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const upsertStoreStatus = useUpsertCampaignStoreStatus();
@@ -157,7 +159,6 @@ const CampaignDetail = () => {
 
   // ─── Location management ──────────────────────────────
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
-  const [newLocationName, setNewLocationName] = useState("");
 
   // ─── Kit dialogs ───────────────────────────────────────
   const [createKitDialogOpen, setCreateKitDialogOpen] = useState(false);
@@ -168,7 +169,7 @@ const CampaignDetail = () => {
   // ─── Piece dialogs ─────────────────────────────────────
   const [pieceDialogOpen, setPieceDialogOpen] = useState(false);
   const [pieceForm, setPieceForm] = useState({
-    code: "", category: "", name: "",
+    code: "", category: "", sub_location: "", name: "",
     width: "", length: "", height: "",
     store_category: typeof window !== "undefined" ? localStorage.getItem("last_store_category") || "" : "",
     specification: "Vide Book/Manual",
@@ -180,7 +181,7 @@ const CampaignDetail = () => {
   const [pieceImageUploading, setPieceImageUploading] = useState(false);
   const [editPieceDialogOpen, setEditPieceDialogOpen] = useState(false);
   const [editPieceForm, setEditPieceForm] = useState({
-    id: "", code: "", category: "", name: "",
+    id: "", code: "", category: "", sub_location: "", name: "",
     width: "", length: "", height: "",
     store_category: "",
     specification: "Vide Book/Manual",
@@ -388,6 +389,7 @@ const CampaignDetail = () => {
       name: pieceForm.name,
       size,
       store_category: pieceForm.store_category || undefined,
+      sub_location: (pieceForm.sub_location && pieceForm.sub_location !== "__none__") ? pieceForm.sub_location : undefined,
       specification: pieceForm.specification,
       installation_instructions: pieceForm.installation_instructions,
       kit_only: pieceForm.kit_only,
@@ -396,7 +398,7 @@ const CampaignDetail = () => {
       image_url: pieceForm.image_url || undefined,
     });
     setPieceForm({
-      code: "", category: "", name: "",
+      code: "", category: "", sub_location: "", name: "",
       width: "", length: "", height: "",
       store_category: pieceForm.store_category,
       specification: "Vide Book/Manual",
@@ -414,6 +416,7 @@ const CampaignDetail = () => {
       id: piece.id,
       code: String(piece.code),
       category: piece.category,
+      sub_location: piece.sub_location || "",
       name: piece.name,
       width: sizeParts[0] || "",
       height: sizeParts[1] || "",
@@ -439,6 +442,7 @@ const CampaignDetail = () => {
       name: editPieceForm.name,
       size,
       store_category: editPieceForm.store_category || null,
+      sub_location: (editPieceForm.sub_location && editPieceForm.sub_location !== "__none__") ? editPieceForm.sub_location : null,
       specification: editPieceForm.specification,
       installation_instructions: editPieceForm.installation_instructions,
       kit_only: editPieceForm.kit_only,
@@ -716,7 +720,7 @@ const CampaignDetail = () => {
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.locationInStore")} *</label>
         {pieceLocations.length > 0 ? (
-          <Select value={form.category} onValueChange={(val) => setForm((f) => ({ ...f, category: val }))}>
+          <Select value={form.category} onValueChange={(val) => setForm((f) => ({ ...f, category: val, sub_location: "" }))}>
             <SelectTrigger>
               <SelectValue placeholder={t("pieces.selectLocation")} />
             </SelectTrigger>
@@ -728,6 +732,26 @@ const CampaignDetail = () => {
           <Input value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} required />
         )}
       </div>
+      {/* Sub-location selector */}
+      {(() => {
+        const selectedParent = pieceLocations.find((l) => l.name === form.category);
+        const availableSubs = selectedParent ? pieceSubLocations.filter((s) => s.location_id === selectedParent.id) : [];
+        if (availableSubs.length === 0) return null;
+        return (
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">Sub-localização</label>
+            <Select value={form.sub_location} onValueChange={(val) => setForm((f) => ({ ...f, sub_location: val }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">— Nenhuma —</SelectItem>
+                {availableSubs.map((sub) => <SelectItem key={sub.id} value={sub.name}>{sub.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        );
+      })()}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("common.name")} *</label>
         <Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
@@ -2323,60 +2347,17 @@ const CampaignDetail = () => {
       </Dialog>
 
       {/* Manage Locations Dialog */}
-      <Dialog open={locationDialogOpen} onOpenChange={setLocationDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-             <DialogTitle>{t("locations.manageLocations")}</DialogTitle>
-             <DialogDescription>{t("locations.manageLocationsDesc")}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder={t("locations.locationName")}
-                value={newLocationName}
-                onChange={(e) => setNewLocationName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && newLocationName.trim() && campaignId) {
-                    e.preventDefault();
-                    addPieceLocation.mutate({ campaign_id: campaignId, name: newLocationName.trim() });
-                    setNewLocationName("");
-                  }
-                }}
-              />
-              <Button
-                size="sm"
-                disabled={!newLocationName.trim() || addPieceLocation.isPending}
-                onClick={() => {
-                  if (!campaignId || !newLocationName.trim()) return;
-                  addPieceLocation.mutate({ campaign_id: campaignId, name: newLocationName.trim() });
-                  setNewLocationName("");
-                }}
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            {pieceLocations.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-4">{t("locations.noLocationRegistered")}</p>
-            ) : (
-              <div className="space-y-1 max-h-[300px] overflow-y-auto">
-                {[...pieceLocations].sort((a, b) => a.name.localeCompare(b.name)).map((loc) => (
-                  <div key={loc.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
-                    <span className="text-sm">{loc.name}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => deletePieceLocation.mutate(loc.id)}
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {campaignId && clientId && (
+        <ManageLocationsDialog
+          open={locationDialogOpen}
+          onOpenChange={setLocationDialogOpen}
+          campaignId={campaignId}
+          clientId={clientId}
+          pieceLocations={pieceLocations}
+          subLocations={pieceSubLocations}
+          pieces={pieces}
+        />
+      )}
 
       {/* Create Kit Dialog */}
       {campaignId && (
