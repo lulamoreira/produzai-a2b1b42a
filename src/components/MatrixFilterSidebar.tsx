@@ -232,21 +232,35 @@ const MatrixFilterSidebar = ({
 
   if (collapsed) {
     return (
-      <div className="hidden lg:flex flex-col items-center py-3 gap-2 border-r border-border bg-card/50 w-10 shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => onCollapsedChange(false)}
-          title="Abrir filtros"
-        >
-          <PanelLeft className="w-4 h-4" />
-        </Button>
+      <div className="hidden lg:flex flex-col items-center py-3 gap-2 border-r border-border bg-card/50 shrink-0 relative" style={{ width: 40, transition: 'width 0.2s ease' }}>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => onCollapsedChange(false)}
+              >
+                <SlidersHorizontal className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Filtros</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         {activeFilterCount > 0 && (
           <span className="bg-primary text-primary-foreground text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
             {activeFilterCount}
           </span>
         )}
+        {/* Toggle chevron on border */}
+        <button
+          onClick={() => onCollapsedChange(false)}
+          className="absolute top-1/2 -translate-y-1/2 -right-[10px] z-10 flex items-center justify-center bg-[var(--bg-surface)] border border-[var(--border-default)]"
+          style={{ width: 20, height: 48, borderRadius: '0 6px 6px 0' }}
+        >
+          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+        </button>
       </div>
     );
   }
