@@ -32,14 +32,14 @@ interface NavItem {
 }
 
 const CAMPAIGN_MODULE_KEYS = [
-  { key: "stores", tKey: "modules.stores", icon: Store, color: "#6366f1" },
-  { key: "matrix", tKey: "modules.matrix", icon: Grid3X3, color: "#8b5cf6" },
-  { key: "pieces", tKey: "modules.pieces", icon: LayoutList, color: "#3b82f6" },
-  { key: "occurrences", tKey: "modules.occurrences", icon: AlertTriangle, color: "#ef4444" },
-  { key: "scheduling", tKey: "modules.scheduling", icon: CalendarDays, color: "#22c55e" },
-  { key: "installations", tKey: "modules.installations", icon: Camera, color: "#f97316" },
-  { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#14b8a6" },
-  { key: "chat", tKey: "modules.chat", icon: MessageSquare, color: "#06b6d4" },
+  { key: "stores", tKey: "modules.stores", icon: Store, color: "#6B4F2E" },
+  { key: "matrix", tKey: "modules.matrix", icon: Grid3X3, color: "#8C6F4E" },
+  { key: "pieces", tKey: "modules.pieces", icon: LayoutList, color: "#A07850" },
+  { key: "occurrences", tKey: "modules.occurrences", icon: AlertTriangle, color: "#7A3B2E" },
+  { key: "scheduling", tKey: "modules.scheduling", icon: CalendarDays, color: "#5C6B3F" },
+  { key: "installations", tKey: "modules.installations", icon: Camera, color: "#7B5E3A" },
+  { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#4A5568" },
+  { key: "chat", tKey: "modules.chat", icon: MessageSquare, color: "#5A4A3A" },
 ];
 
 export default function AppSidebar() {
@@ -146,7 +146,7 @@ export default function AppSidebar() {
         icon: Home,
         href: homePath,
         active: location.pathname === homePath || location.pathname === "/" || location.pathname === "/agency-select",
-        color: "#6366f1",
+        color: "#8C6F4E",
       },
     ];
 
@@ -156,7 +156,7 @@ export default function AppSidebar() {
         icon: Briefcase,
         href: `/agency/${agencyId}`,
         active: location.pathname === `/agency/${agencyId}`,
-        color: "#8b5cf6",
+        color: "#735A3D",
       });
     }
 
@@ -166,14 +166,14 @@ export default function AppSidebar() {
         icon: Store,
         href: `/agency/${agencyId}/clients/${clientId}?tab=stores`,
         active: location.search.includes("tab=stores"),
-        color: "#6366f1",
+        color: "#6B4F2E",
       });
       items.push({
         label: t("sidebar.campaigns"),
         icon: Megaphone,
         href: `/agency/${agencyId}/clients/${clientId}`,
         active: location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores"),
-        color: "#3b82f6",
+        color: "#8C6F4E",
       });
     }
 
@@ -181,7 +181,7 @@ export default function AppSidebar() {
       items.push({
         label: campaignName || t("sidebar.campaigns"),
         icon: Grid3X3,
-        color: "#8b5cf6",
+        color: "#8C6F4E",
         active: !!currentSection,
         children: CAMPAIGN_MODULE_KEYS.map((mod) => ({
           label: t(mod.tKey),
@@ -199,7 +199,7 @@ export default function AppSidebar() {
       items.push({
         label: t("header.admin"),
         icon: Shield,
-        color: "#f97316",
+        color: "#7A3B2E",
         active: location.pathname.startsWith("/admin") || location.pathname === "/approvals",
         children: [
           {
@@ -207,14 +207,14 @@ export default function AppSidebar() {
             icon: Shield,
             href: "/admin",
             active: location.pathname === "/admin" && !location.search.includes("tab=backup"),
-            color: "#f97316",
+            color: "#7A3B2E",
           },
           {
             label: t("sidebar.approvals"),
             icon: Users,
             href: "/approvals",
             active: location.pathname === "/approvals",
-            color: "#22c55e",
+            color: "#5C6B3F",
           },
         ],
       });
@@ -224,7 +224,7 @@ export default function AppSidebar() {
       items.push({
         label: "Backup",
         icon: Database,
-        color: "#6366f1",
+        color: "#4A5568",
         href: "/admin?tab=backup",
         active: location.pathname === "/admin" && location.search.includes("tab=backup"),
       });
@@ -242,11 +242,13 @@ export default function AppSidebar() {
         <div key={item.label}>
           <button
             onClick={() => toggleGroup(groupKey)}
-            className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all ${
-              hasActiveChild
-                ? "bg-sidebar-accent text-sidebar-primary"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-            }`}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all"
+            style={hasActiveChild
+              ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)" }
+              : { color: "var(--sidebar-text)" }
+            }
+            onMouseEnter={e => { if (!hasActiveChild) e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
+            onMouseLeave={e => { if (!hasActiveChild) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; } }}
             title={collapsed ? item.label : undefined}
           >
             <AquaIcon icon={item.icon} size="sm" color={item.color} />
@@ -254,23 +256,25 @@ export default function AppSidebar() {
               <>
                 <span className="truncate font-medium flex-1 text-left">{item.label}</span>
                 {isExpanded
-                  ? <ChevronDown className="w-3.5 h-3.5 text-sidebar-foreground/40 flex-shrink-0" />
-                  : <ChevronRight className="w-3.5 h-3.5 text-sidebar-foreground/40 flex-shrink-0" />
+                  ? <ChevronDown className="w-3.5 h-3.5 flex-shrink-0 opacity-40" />
+                  : <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 opacity-40" />
                 }
               </>
             )}
           </button>
           {!collapsed && isExpanded && (
-            <div className="ml-4 pl-2 border-l border-sidebar-border/50 mt-0.5 space-y-0.5">
+            <div className="ml-4 pl-2 mt-0.5 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
               {item.children.map((child) => (
                 <button
                   key={child.label}
                   onClick={() => handleNavigate(child.href)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all ${
-                    child.active
-                      ? "bg-sidebar-accent text-sidebar-primary font-semibold"
-                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground"
-                  }`}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
+                  style={child.active
+                    ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", fontWeight: 600, borderLeft: "3px solid var(--sidebar-active-bar)" }
+                    : { color: "var(--sidebar-text)" }
+                  }
+                  onMouseEnter={e => { if (!child.active) { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; } }}
+                  onMouseLeave={e => { if (!child.active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; } }}
                 >
                   <AquaIcon icon={child.icon} size="xs" color={child.color} />
                   <span className="truncate">{child.label}</span>
@@ -286,11 +290,13 @@ export default function AppSidebar() {
       <button
         key={item.label}
         onClick={() => handleNavigate(item.href)}
-        className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all relative ${
-          item.active
-            ? "bg-sidebar-accent text-sidebar-primary"
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-        }`}
+        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+        style={item.active
+          ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", borderLeft: "3px solid var(--sidebar-active-bar)", fontWeight: 500 }
+          : { color: "var(--sidebar-text)" }
+        }
+        onMouseEnter={e => { if (!item.active) { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; } }}
+        onMouseLeave={e => { if (!item.active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; } }}
         title={collapsed ? item.label : undefined}
       >
         <div className="relative flex-shrink-0">
@@ -318,50 +324,38 @@ export default function AppSidebar() {
   const sidebarContent = (
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       {/* Logo area */}
-      <div className="flex items-center gap-2 px-3 h-14 border-b border-sidebar-border flex-shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center flex-shrink-0">
-          <span className="text-sm font-black text-white">P</span>
+      <div className="flex items-center gap-2 px-3 h-14 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-500, #8C6F4E)" }}>
+          <span className="text-sm font-bold text-white">P</span>
         </div>
-        {!collapsed && <span className="text-sm font-bold text-sidebar-foreground tracking-tight truncate">ProduzAI</span>}
+        {!collapsed && <span className="text-[15px] font-semibold tracking-tight truncate" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>ProduzAI</span>}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors flex-shrink-0 hidden lg:block"
+          className="ml-auto transition-colors flex-shrink-0 hidden lg:block"
+          style={{ color: "var(--sidebar-text, #A89880)" }}
         >
           {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
-        <button onClick={() => setMobileOpen(false)} className="ml-auto text-sidebar-foreground/50 lg:hidden">
+        <button onClick={() => setMobileOpen(false)} className="ml-auto lg:hidden" style={{ color: "var(--sidebar-text, #A89880)" }}>
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Greeting */}
       {!collapsed && (
-        <div className="px-3 py-2.5 border-b border-sidebar-border flex-shrink-0">
-          <p className="text-sm font-bold text-sidebar-foreground">{getGreeting()}, {displayName}!</p>
+        <div className="px-3 py-2.5 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
+          <p className="text-sm font-bold" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>{getGreeting()}, {displayName}!</p>
         </div>
       )}
 
-      {/* Context indicator */}
+      {/* Context breadcrumb */}
       {!collapsed && isInsideAgency && (
-        <div className="px-3 py-2 border-b border-sidebar-border space-y-1 flex-shrink-0">
-          {agencyName && (
-            <div className="flex items-center gap-1.5">
-              <Building2 className="w-3 h-3 text-sidebar-primary/60 flex-shrink-0" />
-              <span className="text-[10px] text-sidebar-foreground/50 truncate">{agencyName}</span>
-            </div>
-          )}
-          {clientName && (
-            <div className="flex items-center gap-1.5 pl-2">
-              <Briefcase className="w-3 h-3 text-sidebar-primary/50 flex-shrink-0" />
-              <span className="text-[10px] font-medium text-sidebar-foreground/70 truncate">{clientName}</span>
-            </div>
-          )}
-          {campaignName && (
-            <div className="flex items-center gap-1.5 pl-4">
-              <Megaphone className="w-3 h-3 text-sidebar-primary/40 flex-shrink-0" />
-              <span className="text-[10px] font-semibold text-sidebar-foreground/90 truncate">{campaignName}</span>
-            </div>
-          )}
+        <div className="px-3 py-2 space-y-0.5 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
+          <div className="text-[11px] truncate" style={{ color: "var(--sidebar-text, #A89880)" }}>
+            {agencyName && <span>{agencyName}</span>}
+            {clientName && <span> › {clientName}</span>}
+            {campaignName && <span> › {campaignName}</span>}
+          </div>
         </div>
       )}
 
@@ -370,26 +364,32 @@ export default function AppSidebar() {
         {navItems.map(renderNavItem)}
       </nav>
 
-      {/* Footer – always visible, safe-area aware */}
-      <div className="shrink-0 border-t border-sidebar-border bg-sidebar" style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
+      {/* Footer */}
+      <div className="shrink-0" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))", paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
         <div className="px-2 pt-2">
           <button
             onClick={() => setProfileOpen(true)}
-            className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all"
+            className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all"
+            style={{ color: "var(--sidebar-text, #A89880)" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }}
           >
-            <div className="w-8 h-8 rounded-full bg-sidebar-primary/30 flex items-center justify-center flex-shrink-0">
-              <span className="text-xs font-bold text-sidebar-primary">{displayName.charAt(0).toUpperCase()}</span>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-600, #735A3D)" }}>
+              <span className="text-[13px] font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
             </div>
             {!collapsed && (
               <div className="flex-1 text-left min-w-0">
-                <p className="text-xs font-semibold truncate text-sidebar-foreground">{displayName}</p>
-                <p className="text-[10px] text-sidebar-foreground/50 truncate">{roleBadge}</p>
+                <p className="text-[13px] font-semibold truncate" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>{displayName}</p>
+                <p className="text-[11px] truncate" style={{ color: "var(--sidebar-text, #A89880)" }}>{roleBadge}</p>
               </div>
             )}
           </button>
           <button
             onClick={signOut}
-            className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-xs text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-all ${collapsed ? "justify-center" : ""}`}
+            className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[12px] transition-all ${collapsed ? "justify-center" : ""}`}
+            style={{ color: "var(--sidebar-text, #A89880)" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--s-danger, #DC2626)"; }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--sidebar-text, #A89880)"; }}
             title="Sair"
           >
             <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
@@ -397,13 +397,16 @@ export default function AppSidebar() {
           </button>
         </div>
 
-        <div className="px-2 pt-2 border-t border-sidebar-border">
+        <div className="px-2 pt-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
           <div className={`flex ${collapsed ? "flex-col" : ""} items-center gap-1`}>
             {/* Language selector */}
             <div className="relative">
               <button
                 onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all"
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-all"
+                style={{ color: "var(--sidebar-text, #A89880)" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }}
                 title={t("common.language")}
               >
                 <Globe className="w-3.5 h-3.5 flex-shrink-0" />
@@ -444,7 +447,8 @@ export default function AppSidebar() {
       {/* Mobile menu button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-3 left-3 z-40 lg:hidden w-9 h-9 rounded-lg bg-sidebar flex items-center justify-center text-sidebar-foreground shadow-lg"
+        className="fixed top-3 left-3 z-40 lg:hidden w-9 h-9 rounded-lg flex items-center justify-center shadow-lg"
+        style={{ background: "var(--sidebar-bg, #1C1916)", color: "var(--sidebar-text-active, #F5EFE6)" }}
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -455,12 +459,18 @@ export default function AppSidebar() {
       )}
 
       {/* Mobile sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 flex h-dvh max-h-dvh flex-col bg-sidebar border-r border-sidebar-border w-[220px] overflow-hidden transition-transform duration-300 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh max-h-dvh flex-col w-[220px] overflow-hidden transition-transform duration-300 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        style={{ background: "var(--sidebar-bg, #1C1916)", borderRight: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}
+      >
         {sidebarContent}
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-30 hidden h-dvh max-h-dvh lg:flex flex-col bg-sidebar border-r border-sidebar-border overflow-hidden transition-all duration-300 ${collapsed ? "w-[60px]" : "w-[220px]"}`}>
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 hidden h-dvh max-h-dvh lg:flex flex-col overflow-hidden transition-all duration-300 ${collapsed ? "w-[60px]" : "w-[220px]"}`}
+        style={{ background: "var(--sidebar-bg, #1C1916)", borderRight: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}
+      >
         {sidebarContent}
       </aside>
 
