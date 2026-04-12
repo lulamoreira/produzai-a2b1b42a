@@ -197,6 +197,8 @@ export default function OccurrenceListView({
         whatsappContactTemplate={whatsappContactTemplate}
         onOpenLightbox={onOpenLightbox}
         canLockCards={canLockCards}
+        agencyId={agencyId}
+        clientId={clientId}
         getStoreName={(id) => {
           if (!id) return "—";
           const s = stores.find(s => s.id === id);
@@ -239,6 +241,8 @@ interface OccurrenceDetailSheetProps {
   whatsappContactTemplate?: string;
   onOpenLightbox: (photos: string[], index: number) => void;
   canLockCards?: boolean;
+  agencyId?: string;
+  clientId?: string;
   getStoreName: (id: string | null) => string;
   getStoreInfo: (id: string | null) => { code: string; state: string; city: string };
   getMotiveName: (id: string | null) => string;
@@ -250,7 +254,7 @@ function OccurrenceDetailSheet({
   canEdit: canEditProp, canDelete, canEditReporter: canEditReporterProp, motives, statuses, activeStatuses, defaultStatus,
   photosMap, campaignName, agencyName, clientName, getReporterLabel,
   firstPieceKitLabels, whatsappLinkTemplate, whatsappContactTemplate,
-  onOpenLightbox, canLockCards, getStoreName, getStoreInfo, getMotiveName, getPieceName,
+  onOpenLightbox, canLockCards, agencyId, clientId, getStoreName, getStoreInfo, getMotiveName, getPieceName,
 }: OccurrenceDetailSheetProps) {
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
