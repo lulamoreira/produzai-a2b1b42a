@@ -76,37 +76,20 @@ Deno.serve(async (req) => {
       origPieces = data || [];
     }
 
-    // 3. Bulk shift display_orders (2 queries instead of N)
-    await Promise.all([
-      supabase.rpc("execute_sql", {} as any).then(() => null).catch(() => null), // no-op placeholder
-    ]);
-
-    // Use direct updates with gte filter for bulk shift
-    const [shiftPiecesRes, shiftKitsRes] = await Promise.all([
+    // 3. Bulk shift display_orders — fetch items then update in parallel
+    const [{ data: piecesToShift }, { data: kitsToShift }] = await Promise.all([
       supabase
         .from("campaign_pieces")
-        .update({ display_order: 0 }) // placeholder, we need raw SQL for increment
-        .eq("campaign_id", "no-op"),
+        .select("id, display_order")
+        .eq("campaign_id", campaign_id)
+        .gt("display_order", orig_order),
       supabase
         .from("campaign_kits")
-        .update({ display_order: 0 })
-        .eq("campaign_id", "no-op"),
+        .select("id, display_order")
+        .eq("campaign_id", campaign_id)
+        .gt("display_order", orig_order),
     ]);
 
-    // Since Supabase JS doesn't support SET col = col + N, we fetch and update
-    const { data: piecesToShift } = await supabase
-      .from("campaign_pieces")
-      .select("id, display_order")
-      .eq("campaign_id", campaign_id)
-      .gt("display_order", orig_order);
-
-    const { data: kitsToShift } = await supabase
-      .from("campaign_kits")
-      .select("id, display_order")
-      .eq("campaign_id", campaign_id)
-      .gt("display_order", orig_order);
-
-    // Batch shift — still parallel but server-side so much faster
     const shiftPromises: Promise<any>[] = [];
     for (const p of (piecesToShift || [])) {
       shiftPromises.push(
@@ -118,9 +101,11 @@ Deno.serve(async (req) => {
         supabase.from("campaign_kits").update({ display_order: k.display_order + slots_needed }).eq("id", k.id)
       );
     }
-    await Promise.all(shiftPromises);
+    if (shiftPromises.length > 0) {
+      await Promise.all(shiftPromises);
+    }
 
-    // 4. Insert new kit
+    // 4. Insert new kit with all metadata
     const { data: newKit, error: newKitErr } = await supabase
       .from("campaign_kits")
       .insert({
@@ -178,10 +163,9 @@ Deno.serve(async (req) => {
 
     // 6. Batch insert kit_piece links
     if (newPieces.length > 0) {
-      const kitPieceInserts = newPieces.map((np: any) => {
-        // Match by original piece name (without " - Cópia") to get quantity
-        const origName = np.name.replace(/ - Cópia$/, "");
-        const origPiece = origPieces.find((op: any) => op.name === origName);
+      // Match new pieces to original pieces by index order (same order as origPieces)
+      const kitPieceInserts = newPieces.map((np: any, idx: number) => {
+        const origPiece = origPieces[idx];
         const kp = origPiece ? kpList.find((k: any) => k.piece_id === origPiece.id) : null;
         return {
           kit_id: newKit.id,
