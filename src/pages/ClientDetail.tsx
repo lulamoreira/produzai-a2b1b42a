@@ -145,10 +145,11 @@ const CAMPAIGN_COLORS = [
 ];
 
 function SortableCampaignCard({
-  campaign, canDelete, canEdit, onNavigate, onDelete, onColorChange,
+  campaign, canDelete, canEdit, onNavigate, onDelete, onColorChange, isFavorited, onToggleFavorite,
 }: {
   campaign: Campaign; canDelete: boolean; canEdit: boolean;
   onNavigate: () => void; onDelete: () => void; onColorChange: (c: string) => void;
+  isFavorited: boolean; onToggleFavorite: () => void;
 }) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: campaign.id });

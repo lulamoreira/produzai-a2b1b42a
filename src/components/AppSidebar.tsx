@@ -18,7 +18,7 @@ import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 
 import {
-  Building2, Shield, LogOut, Users,
+  Building2, Shield, LogOut, Users, Star,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
   CalendarDays, Camera, DollarSign, Database, Globe, Settings, History,
