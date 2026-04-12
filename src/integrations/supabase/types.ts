@@ -2697,6 +2697,10 @@ export type Database = {
           read_ct: number
         }[]
       }
+      shift_display_orders: {
+        Args: { p_after_order: number; p_campaign_id: string; p_slots: number }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "viewer" | "master"
