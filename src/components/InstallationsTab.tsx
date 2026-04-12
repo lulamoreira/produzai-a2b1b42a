@@ -137,7 +137,112 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
     });
   };
 
-  // Shared hooks
+  const toggleStoreSelection = useCallback((storeId: string) => {
+    setSelectedStores(prev => {
+      const next = new Set(prev);
+      if (next.has(storeId)) next.delete(storeId);
+      else next.add(storeId);
+      return next;
+    });
+  }, []);
+
+  const hasAnySelected = selectedStores.size > 0;
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedStores.size === displayedStores.length && displayedStores.length > 0) {
+      setSelectedStores(new Set());
+    } else {
+      setSelectedStores(new Set(displayedStores.map(s => s.id)));
+    }
+  }, [displayedStores, selectedStores.size]);
+
+  const getSelectedScheduleIds = useCallback(() => {
+    return Array.from(selectedStores)
+      .map(sid => scheduleMap[sid]?.id)
+      .filter(Boolean) as string[];
+  }, [selectedStores, scheduleMap]);
+
+  const handleBulkApproveStore = async () => {
+    const ids = getSelectedScheduleIds();
+    if (ids.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase.from("campaign_schedules").update({
+        store_approval_status: "approved",
+        store_approved: true,
+        store_approved_at: new Date().toISOString(),
+      } as any).in("id", ids);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+      setSelectedStores(new Set());
+      toast.success(`${ids.length} loja(s) aprovada(s) pelo lojista!`);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao aprovar lojista");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkApproveTeam = async () => {
+    const ids = getSelectedScheduleIds();
+    if (ids.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase.from("campaign_schedules").update({
+        team_approval_status: "approved",
+        team_approved: true,
+        team_approved_at: new Date().toISOString(),
+      } as any).in("id", ids);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+      setSelectedStores(new Set());
+      toast.success(`${ids.length} loja(s) aprovada(s) pela equipe!`);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao aprovar equipe");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkUnlock = async () => {
+    const ids = getSelectedScheduleIds();
+    if (ids.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase.from("campaign_schedules").update({ locked: false } as any).in("id", ids);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+      setSelectedStores(new Set());
+      toast.success(`${ids.length} card(s) desbloqueado(s)!`);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao desbloquear");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDownloadPhotos = async () => {
+    const selectedPhotos = photos.filter(p => selectedStores.has(p.store_id));
+    if (selectedPhotos.length === 0) {
+      toast.info("Nenhuma foto encontrada nas lojas selecionadas");
+      return;
+    }
+    const storeNameMap: Record<string, string> = {};
+    stores.forEach(s => {
+      if (selectedStores.has(s.id)) {
+        storeNameMap[s.id] = s.store_code ? `${s.store_code}_${s.name}` : s.name;
+      }
+    });
+    toast.info(`Preparando download de ${selectedPhotos.length} arquivo(s)...`);
+    try {
+      await downloadAllCampaignPhotosAsZip(selectedPhotos, storeNameMap, campaignName, (done, total) => {
+        if (done === total) toast.success(t("common.downloadComplete"));
+      });
+      setSelectedStores(new Set());
+    } catch {
+      toast.error(t("common.errorDownloading"));
+    }
+  };
   const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
   const { storeOccurrenceStatus } = useOccurrenceStatusSync(campaignId);
 
