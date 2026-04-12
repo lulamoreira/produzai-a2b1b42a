@@ -93,6 +93,25 @@ Deno.serve(async (req) => {
       user_agent: userAgent,
     });
 
+    // Dispatch checkin notification when action is "checkin" (silent)
+    if (action === "checkin") {
+      const agencyId = (schedule as any).campaigns?.clients?.agency_id;
+      const storeName = (schedule as any).client_stores?.name || "Loja";
+      const clientId = (schedule as any).campaigns?.client_id;
+      if (agencyId) {
+        supabase.rpc("criar_notificacao", {
+          _agency_id: agencyId,
+          _campaign_id: schedule.campaign_id,
+          _store_id: schedule.store_id,
+          _client_id: clientId ?? null,
+          _type: "checkin_realizado",
+          _title: "Check-in realizado",
+          _body: `Instalador fez check-in em ${storeName}`,
+          _action_url: `/campanhas/${schedule.campaign_id}/instalacoes`,
+        }).catch(() => {});
+      }
+    }
+
     // Get store contacts
     const { data: contacts } = await supabase
       .from("store_contacts")
