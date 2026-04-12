@@ -340,80 +340,114 @@ export default function AppSidebar() {
           </button>
         )}
 
-        {/* ── Client context: Lojas + Campanhas (only when client selected) ── */}
-        {isInsideClient && !collapsed && (
+        {/* ── Limited user: render ALL permitted clients & campaigns ── */}
+        {isLimited && !collapsed && limitedClientGroups.length > 0 && (
           <>
-            {/* Client section label */}
+            {limitedClientGroups.map((group) => (
+              <div key={group.clientId}>
+                <div className="px-2.5 pt-3 pb-1">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--brand-300, #C4AD92)" }}>
+                    {group.clientName}
+                  </span>
+                </div>
+                <div className="ml-6 space-y-0.5 mt-0.5">
+                  {group.campaigns.map((camp) => {
+                    const isExpanded = campaignExpanded[camp.campaignId] ?? (camp.campaignId === campaignId);
+                    const isActiveCampaign = campaignId === camp.campaignId;
+                    const campBasePath = `/agency/${group.agencyId}/clients/${group.clientId}/campaigns/${camp.campaignId}`;
+                    return (
+                      <div key={camp.campaignId}>
+                        <button
+                          onClick={() => toggleCampaignExpanded(camp.campaignId)}
+                          className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[12px] font-semibold uppercase tracking-wider transition-all"
+                          style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
+                          onMouseEnter={e => { e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
+                          onMouseLeave={e => { if (!isActiveCampaign) e.currentTarget.style.color = "var(--brand-300, #C4AD92)"; }}
+                        >
+                          <span className="truncate flex-1 text-left">{camp.campaignName}</span>
+                          <ChevronDown className="w-3 h-3 flex-shrink-0 opacity-40 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }} />
+                        </button>
+                        {isExpanded && (
+                          <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
+                            {CAMPAIGN_MODULE_KEYS.filter(mod => {
+                              if (mod.key === "budgets") return false;
+                              return camp.modules.includes(mod.key);
+                            }).map((mod) => {
+                              const modActive = isCampaignModuleActive(camp.campaignId, mod.key);
+                              return (
+                                <button
+                                  key={mod.key}
+                                  onClick={() => handleNavigate(`${campBasePath}?section=${mod.key}`)}
+                                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
+                                  style={modActive
+                                    ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", fontWeight: 600, borderLeft: "3px solid var(--sidebar-active-bar)" }
+                                    : { color: "var(--sidebar-text)" }
+                                  }
+                                  {...hoverHandlers(modActive)}
+                                >
+                                  <AquaIcon icon={mod.icon} size="xs" color={mod.color} />
+                                  <span className="truncate">{t(mod.tKey)}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </>
+        )}
+
+        {/* ── Client context: Lojas + Campanhas (non-limited users only) ── */}
+        {!isLimited && isInsideClient && !collapsed && (
+          <>
             <div className="px-2.5 pt-3 pb-1">
               <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--brand-300, #C4AD92)" }}>
                 {clientName || t("sidebar.clients")}
               </span>
             </div>
-
-            {/* Lojas do Cliente (hidden for limited users) */}
-            {!isLimited && (
-              <button
-                onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}
-                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
-                style={itemStyle(location.search.includes("tab=stores") && !isInsideCampaign)}
-                {...hoverHandlers(location.search.includes("tab=stores") && !isInsideCampaign)}
-              >
-                <AquaIcon icon={Store} size="xs" color="#6B4F2E" />
-                <span className="truncate">{t("modules.stores")}</span>
-              </button>
-            )}
-
-            {/* Campanhas header (hidden for limited users) */}
-            {!isLimited && (
-              <button
-                onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}`)}
-                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
-                style={itemStyle(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
-                {...hoverHandlers(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
-              >
-                <AquaIcon icon={Megaphone} size="xs" color="#8C6F4E" />
-                <span className="truncate">{t("sidebar.campaigns")}</span>
-              </button>
-            )}
-
-            {/* ── Campaigns listed with independent expansors ── */}
+            <button
+              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
+              style={itemStyle(location.search.includes("tab=stores") && !isInsideCampaign)}
+              {...hoverHandlers(location.search.includes("tab=stores") && !isInsideCampaign)}
+            >
+              <AquaIcon icon={Store} size="xs" color="#6B4F2E" />
+              <span className="truncate">{t("modules.stores")}</span>
+            </button>
+            <button
+              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}`)}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
+              style={itemStyle(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
+              {...hoverHandlers(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
+            >
+              <AquaIcon icon={Megaphone} size="xs" color="#8C6F4E" />
+              <span className="truncate">{t("sidebar.campaigns")}</span>
+            </button>
             <div className="ml-6 space-y-0.5 mt-0.5">
-              {(isLimited
-                ? clientCampaigns.filter(c => limitedCampaigns.some(lc => lc.campaignId === c.id))
-                : clientCampaigns
-              ).map((camp) => {
+              {clientCampaigns.map((camp) => {
                 const isExpanded = campaignExpanded[camp.id] ?? (camp.id === campaignId);
                 const isActiveCampaign = campaignId === camp.id;
                 const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
-                const allowedModules = isLimited
-                  ? limitedCampaigns.find(lc => lc.campaignId === camp.id)?.modules ?? []
-                  : null;
-
                 return (
                   <div key={camp.id}>
-                    {/* Campaign name header */}
                     <button
                       onClick={() => toggleCampaignExpanded(camp.id)}
                       className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[12px] font-semibold uppercase tracking-wider transition-all"
-                      style={{
-                        color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)",
-                      }}
+                      style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
                       onMouseEnter={e => { e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
                       onMouseLeave={e => { if (!isActiveCampaign) e.currentTarget.style.color = "var(--brand-300, #C4AD92)"; }}
                     >
                       <span className="truncate flex-1 text-left">{camp.name}</span>
-                      <ChevronDown
-                        className="w-3 h-3 flex-shrink-0 opacity-40 transition-transform duration-200"
-                        style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}
-                      />
+                      <ChevronDown className="w-3 h-3 flex-shrink-0 opacity-40 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }} />
                     </button>
-
-                    {/* Campaign modules */}
                     {isExpanded && (
                       <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
                         {CAMPAIGN_MODULE_KEYS.filter(mod => {
                           if (mod.key === "budgets" && !isAdmin) return false;
-                          if (isLimited && allowedModules && !allowedModules.includes(mod.key)) return false;
                           return true;
                         }).map((mod) => {
                           const modActive = isCampaignModuleActive(camp.id, mod.key);
