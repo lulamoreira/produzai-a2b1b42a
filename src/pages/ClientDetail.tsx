@@ -145,11 +145,11 @@ const CAMPAIGN_COLORS = [
 ];
 
 function SortableCampaignCard({
-  campaign, canDelete, canEdit, onNavigate, onDelete, onColorChange, isFavorited, onToggleFavorite,
+  campaign, canDelete, canEdit, onNavigate, onDelete, onColorChange, isFavorited, onToggleFavorite, showFavorite,
 }: {
   campaign: Campaign; canDelete: boolean; canEdit: boolean;
   onNavigate: () => void; onDelete: () => void; onColorChange: (c: string) => void;
-  isFavorited: boolean; onToggleFavorite: () => void;
+  isFavorited: boolean; onToggleFavorite: () => void; showFavorite: boolean;
 }) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: campaign.id });
@@ -206,14 +206,16 @@ function SortableCampaignCard({
         </div>
 
         <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 flex-shrink-0"
-            onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-          >
-            <Star className={`w-3.5 h-3.5 ${isFavorited ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
-          </Button>
+          {showFavorite && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 flex-shrink-0"
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+            >
+              <Star className={`w-3.5 h-3.5 ${isFavorited ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
+            </Button>
+          )}
           {canEdit && (
             <Popover>
               <PopoverTrigger asChild>

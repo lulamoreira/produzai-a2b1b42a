@@ -264,8 +264,8 @@ export default function AppSidebar() {
           </button>
         )}
 
-        {/* ── Favoritos (hidden for limited users) ── */}
-        {!isLimited && (
+        {/* ── Favoritos (admin/master only) ── */}
+        {isAdminOrMaster && (
           <button
             onClick={() => handleNavigate("/favorites")}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
