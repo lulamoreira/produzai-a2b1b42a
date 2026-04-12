@@ -14,6 +14,7 @@ import ActivityLogPanel from "./ActivityLogPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -21,18 +22,19 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Flag, Trash2, ExternalLink, Link2, MessageCircle, Phone,
   Save, ClipboardList, Loader2, Lock, LockOpen, ChevronRight,
-  MapPin, Puzzle, Calendar, User, Pencil, RotateCcw,
+  MapPin, Puzzle, Calendar as CalendarIcon, User, Pencil, RotateCcw,
+  FileText, CalendarClock, Building2, Wrench, CalendarCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PRIORITY_OPTIONS } from "@/types/occurrence";
 import { getStatusLabel, getStatusColor, getDefaultStatusValue } from "@/lib/occurrenceHelpers";
 import PhotoLightbox from "./PhotoLightbox";
+import DebouncedTextarea from "@/components/DebouncedTextarea";
 
 const GERAL_LOCATION = "GERAL - NA LOJA TODA";
 const NAO_SEI_LOCATION = "NÃO SEI O LOCAL";
@@ -421,13 +423,15 @@ function OccurrenceDetailSheet({
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-            {/* Section 1: Identification */}
-            <div className="space-y-2">
-              <h4 className="section-label">Identificação</h4>
+            {/* Section 1: Identificação (always visible) */}
+            <div className="space-y-0">
+              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-2">
+                <FileText className="w-3 h-3" /> Identificação
+              </h4>
 
               {/* Status + Priority editable */}
               {canEdit && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 mb-2">
                   <div className="flex-1">
                     <label className="text-[10px] text-muted-foreground mb-0.5 block">Status</label>
                     <Select value={status} onValueChange={(v) => setDraftField("status", v)}>
@@ -463,40 +467,50 @@ function OccurrenceDetailSheet({
                 </div>
               )}
 
-              {getReporterLabel(occ.reporter_type) && (
-                <div className="flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">{getReporterLabel(occ.reporter_type)}</span>
+              {/* Read-only label+value rows with Separator */}
+              <div className="space-y-0">
+                {getReporterLabel(occ.reporter_type) && (
+                  <>
+                    <div className="flex items-center justify-between py-1.5">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Tipo</span>
+                      <span className="text-xs text-foreground">{getReporterLabel(occ.reporter_type)}</span>
+                    </div>
+                    <Separator />
+                  </>
+                )}
+                <div className="flex items-center justify-between py-1.5">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1"><MapPin className="w-3 h-3" /> Localização</span>
+                  <span className="text-xs text-foreground">{merged.location_in_store || "—"}</span>
                 </div>
-              )}
-
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-xs">{merged.location_in_store || "—"}</span>
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <Puzzle className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-xs">{getPieceName(merged.piece_id)}</span>
-              </div>
-
-              <div className="text-xs">
-                <span className="text-muted-foreground font-medium">Motivo: </span>
-                <span>{getMotiveName(occ.motive_id)}</span>
-              </div>
-
-              {occ.description && (
-                <p className="text-xs text-muted-foreground whitespace-pre-wrap">{occ.description}</p>
-              )}
-
-              <div className="text-[11px] text-muted-foreground flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                Criado: {occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}
+                <Separator />
+                <div className="flex items-center justify-between py-1.5">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1"><Puzzle className="w-3 h-3" /> Peça / Kit</span>
+                  <span className="text-xs text-foreground">{getPieceName(merged.piece_id)}</span>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between py-1.5">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Motivo</span>
+                  <span className="text-xs text-foreground">{getMotiveName(occ.motive_id)}</span>
+                </div>
+                {occ.description && (
+                  <>
+                    <Separator />
+                    <div className="py-1.5">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block mb-0.5">Descrição</span>
+                      <p className="text-xs text-foreground whitespace-pre-wrap">{occ.description}</p>
+                    </div>
+                  </>
+                )}
+                <Separator />
+                <div className="flex items-center justify-between py-1.5">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1"><CalendarIcon className="w-3 h-3" /> Criado em</span>
+                  <span className="text-xs text-foreground">{occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}</span>
+                </div>
               </div>
 
               {/* Photos */}
               {(photosMap[occ.id]?.length ?? 0) > 0 && (
-                <div className="flex gap-1.5 mt-1">
+                <div className="flex gap-1.5 mt-2">
                   {photosMap[occ.id].map((url, i) => (
                     <button key={i} type="button" className="w-16 h-16 rounded-lg border border-border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all"
                       onClick={() => onOpenLightbox(photosMap[occ.id], i)}>
@@ -507,28 +521,146 @@ function OccurrenceDetailSheet({
               )}
             </div>
 
-            <hr className="border-border" />
+            <Separator />
 
-            {/* Section 2: Reporter Data (Accordion) */}
-            <Accordion type="single" collapsible>
-              <AccordionItem value="reporter" className="border-none">
-                <AccordionTrigger className="text-xs font-semibold py-2 hover:no-underline">
-                  <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> Dados do Reclamante</span>
-                </AccordionTrigger>
-                <AccordionContent className="pt-1">
-                  <div className="space-y-1.5 text-xs">
-                    <p><span className="text-muted-foreground">Tipo: </span>{occ.reporter_type === "agency" ? "Agência" : occ.reporter_type === "cliente" ? "Cliente" : occ.reporter_type === "fornecedor" ? "Fornecedor" : "Lojista"}</p>
-                    <p><span className="text-muted-foreground">Nome: </span>{occ.reporter_name || "—"}</p>
-                    <p><span className="text-muted-foreground">WhatsApp: </span>{occ.reporter_phone_ddd && occ.reporter_phone_number ? `(${occ.reporter_phone_ddd}) ${occ.reporter_phone_number}` : "—"}</p>
-                    <p><span className="text-muted-foreground">E-mail: </span>{occ.reporter_email || "—"}</p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+            {/* Section 2: Resolução (always visible) */}
+            <div className="space-y-3">
+              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                <CalendarClock className="w-3 h-3" /> Resolução
+              </h4>
 
-            <hr className="border-border" />
+              {/* Resolução prevista */}
+              <div>
+                <label className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
+                  Resolução prevista para:
+                </label>
+                {canEdit ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="h-7 text-xs w-full justify-start">
+                        <CalendarIcon className="w-3 h-3 mr-1.5" />
+                        {merged.expected_resolution_date
+                          ? format(new Date(merged.expected_resolution_date), "dd/MM/yyyy", { locale: ptBR })
+                          : "Selecione uma data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={merged.expected_resolution_date ? new Date(merged.expected_resolution_date) : undefined}
+                        onSelect={(date) => {
+                          const val = date ? format(date, "yyyy-MM-dd") : null;
+                          setDraftField("expected_resolution_date", val);
+                          if (val && merged.status !== "resolved" && merged.status !== "nao_procede") {
+                            setDraftField("status", "andamento");
+                          }
+                        }}
+                        className="p-3 pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                ) : (
+                  <span className="text-xs font-semibold">
+                    {merged.expected_resolution_date ? format(new Date(merged.expected_resolution_date), "dd/MM/yyyy", { locale: ptBR }) : "—"}
+                  </span>
+                )}
+              </div>
 
-            {/* Section 3-6: OccurrenceDetailFields handles Agency Obs, Actions, Resolution, Reinstallation, Comments, Photos */}
+              {/* Observação da Agência */}
+              <div>
+                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
+                  <Building2 className="w-3 h-3" /> Observação da Agência
+                </label>
+                {canEdit ? (
+                  <DebouncedTextarea
+                    className="text-xs min-h-[2rem] max-h-[4rem] resize-none"
+                    rows={2}
+                    value={merged.agency_observation || ""}
+                    onValueCommit={(v) => setDraftField("agency_observation", v)}
+                    placeholder="Observação da agência..."
+                  />
+                ) : (
+                  <span className="text-xs text-muted-foreground">{merged.agency_observation || "—"}</span>
+                )}
+              </div>
+
+              {/* Ações Tomadas */}
+              <div>
+                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
+                  <Wrench className="w-3 h-3" /> Ações Tomadas
+                </label>
+                {canEdit ? (
+                  <DebouncedTextarea
+                    className="text-xs min-h-[3.5rem] max-h-[5rem] resize-none"
+                    rows={3}
+                    value={merged.actions_taken || ""}
+                    onValueCommit={(v) => setDraftField("actions_taken", v)}
+                    placeholder="Descreva as ações tomadas..."
+                  />
+                ) : (
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap">{merged.actions_taken || "—"}</p>
+                )}
+              </div>
+
+              {/* Resolvido dia - só aparece se status = resolved */}
+              {merged.status === "resolved" && (
+                <div className="bg-success/10 rounded-lg p-2 border border-success/20">
+                  <label className="text-[10px] font-bold text-success uppercase tracking-wider flex items-center gap-1 mb-1">
+                    <CalendarCheck className="w-3 h-3" /> Resolvido dia:
+                  </label>
+                  {canEdit ? (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="h-7 text-xs w-full justify-start">
+                          <CalendarIcon className="w-3 h-3 mr-1.5" />
+                          {merged.resolved_date
+                            ? format(new Date(merged.resolved_date), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                            : "Selecione uma data"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={merged.resolved_date ? new Date(merged.resolved_date) : undefined}
+                          onSelect={(date) => {
+                            if (date) {
+                              const existing = merged.resolved_date ? new Date(merged.resolved_date) : new Date();
+                              date.setHours(existing.getHours(), existing.getMinutes());
+                              setDraftField("resolved_date", date.toISOString());
+                            } else {
+                              setDraftField("resolved_date", null);
+                            }
+                          }}
+                          className="p-3 pointer-events-auto"
+                        />
+                        <div className="p-3 border-t flex gap-2 items-center">
+                          <label className="text-xs text-muted-foreground">Hora:</label>
+                          <input
+                            type="time"
+                            className="h-7 text-xs w-auto border rounded px-2"
+                            value={merged.resolved_date ? format(new Date(merged.resolved_date), "HH:mm") : ""}
+                            onChange={(e) => {
+                              const [h, m] = e.target.value.split(":").map(Number);
+                              const d = merged.resolved_date ? new Date(merged.resolved_date) : new Date();
+                              d.setHours(h, m);
+                              setDraftField("resolved_date", d.toISOString());
+                            }}
+                          />
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  ) : (
+                    <span className="text-xs font-semibold">
+                      {merged.resolved_date ? format(new Date(merged.resolved_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : "—"}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Collapsible sections: Reporter, Reinstallation, Comments, Photos */}
             <OccurrenceDetailFields
               occ={merged}
               campaignId={campaignId}

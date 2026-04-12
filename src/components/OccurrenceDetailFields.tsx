@@ -141,225 +141,115 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
     });
   };
 
+  // Collapsible state for each section
+  const [reinstallOpen, setReinstallOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [photosOpen, setPhotosOpen] = useState(false);
+
+  const CollapsibleSection = ({ icon: Icon, label, open, onToggle, children }: {
+    icon: React.ElementType; label: string; open: boolean; onToggle: () => void; children: React.ReactNode;
+  }) => (
+    <div className="rounded-lg overflow-hidden" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+      <button
+        type="button"
+        className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/40 transition-colors"
+        onClick={onToggle}
+      >
+        <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)" }} className="flex items-center gap-1">
+          <Icon className="w-3 h-3" /> {label}
+        </span>
+        {open ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+      </button>
+      {open && <div className="p-3 space-y-2 bg-card">{children}</div>}
+    </div>
+  );
+
   return (
     <div className="space-y-3 mt-3 pt-3 border-t border-border/50">
-      {/* 1 - Dados do Reclamante */}
-      <div className="rounded-lg overflow-hidden" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-        <button
-          type="button"
-          className="w-full flex items-center justify-between px-3 py-2 hover:bg-muted/40 transition-colors"
-          onClick={() => setReporterOpen(!reporterOpen)}
-        >
-          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)" }} className="flex items-center gap-1">
-            <User className="w-3 h-3" /> Dados do Reclamante
-          </span>
-          {reporterOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
-        </button>
-        {reporterOpen && (
-          <div className="p-3 space-y-2 bg-card">
-            {/* Simplified view for agency/client/supplier */}
-            {(occ.reporter_type === "agency" || occ.reporter_type === "cliente" || occ.reporter_type === "fornecedor") ? (
-              <div className="space-y-1.5">
-                <p className="text-xs">
-                  <span className="text-muted-foreground">Reclamação partiu de: </span>
-                  <strong className="text-foreground">
-                    {occ.reporter_type === "agency" ? "Agência" : occ.reporter_type === "cliente" ? "Cliente" : "Fornecedor"}
-                  </strong>
-                </p>
-                {occ.reporter_name && (
-                  <p className="text-xs">
-                    <span className="text-muted-foreground">Responsável: </span>
-                    <strong className="text-foreground">{occ.reporter_name}</strong>
-                  </p>
-                )}
-                {canEditReporter && (
-                  <div className="pt-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 text-[10px] gap-1 px-2"
-                      onClick={() => setReporterEditing(!reporterEditing)}
-                    >
-                      <Pencil className="w-3 h-3" />
-                      {reporterEditing ? "Concluir" : "Editar nome"}
-                    </Button>
-                    {reporterEditing && (
-                      <DebouncedInput
-                        className="h-7 text-xs mt-1"
-                        value={occ.reporter_name || ""}
-                        onValueCommit={(v) => handleFieldUpdate("reporter_name", v)}
-                        placeholder="Nome do responsável..."
-                      />
-                    )}
-                  </div>
+      {/* 1 - Dados do Reclamante (collapsed by default) */}
+      <CollapsibleSection icon={User} label="Dados do Reclamante" open={reporterOpen} onToggle={() => setReporterOpen(!reporterOpen)}>
+        {(occ.reporter_type === "agency" || occ.reporter_type === "cliente" || occ.reporter_type === "fornecedor") ? (
+          <div className="space-y-1.5">
+            <p className="text-xs">
+              <span className="text-muted-foreground">Reclamação partiu de: </span>
+              <strong className="text-foreground">
+                {occ.reporter_type === "agency" ? "Agência" : occ.reporter_type === "cliente" ? "Cliente" : "Fornecedor"}
+              </strong>
+            </p>
+            {occ.reporter_name && (
+              <p className="text-xs">
+                <span className="text-muted-foreground">Responsável: </span>
+                <strong className="text-foreground">{occ.reporter_name}</strong>
+              </p>
+            )}
+            {canEditReporter && (
+              <div className="pt-1">
+                <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={() => setReporterEditing(!reporterEditing)}>
+                  <Pencil className="w-3 h-3" />
+                  {reporterEditing ? "Concluir" : "Editar nome"}
+                </Button>
+                {reporterEditing && (
+                  <DebouncedInput
+                    className="h-7 text-xs mt-1"
+                    value={occ.reporter_name || ""}
+                    onValueCommit={(v) => handleFieldUpdate("reporter_name", v)}
+                    placeholder="Nome do responsável..."
+                  />
                 )}
               </div>
-            ) : (
-              <>
-                {canEditReporter && (
-                  <div className="flex justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 text-[10px] gap-1 px-2"
-                      onClick={() => setReporterEditing(!reporterEditing)}
-                    >
-                      <Pencil className="w-3 h-3" />
-                      {reporterEditing ? "Concluir" : "Editar"}
-                    </Button>
-                  </div>
-                )}
-                <div>
-                  <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
-                    <User className="w-3 h-3" /> Nome
-                  </label>
-                  {reporterEditing ? (
-                    <DebouncedInput
-                      className="h-7 text-xs"
-                      value={occ.reporter_name || ""}
-                      onValueCommit={(v) => handleFieldUpdate("reporter_name", v)}
-                      placeholder="Nome do reclamante..."
-                    />
-                  ) : (
-                    <span className="text-xs font-medium">{occ.reporter_name || "—"}</span>
-                  )}
-                </div>
-                <div>
-                  <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
-                    <Phone className="w-3 h-3" /> WhatsApp
-                  </label>
-                  {reporterEditing ? (
-                    <div className="flex gap-1.5">
-                      <DebouncedInput
-                        className="h-7 text-xs w-16"
-                        value={occ.reporter_phone_ddd || ""}
-                        onValueCommit={(v) => handleFieldUpdate("reporter_phone_ddd", v)}
-                        placeholder="DDD"
-                        maxLength={2}
-                      />
-                      <DebouncedInput
-                        className="h-7 text-xs flex-1"
-                        value={occ.reporter_phone_number || ""}
-                        onValueCommit={(v) => handleFieldUpdate("reporter_phone_number", v)}
-                        placeholder="Número"
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-xs font-medium">
-                      {occ.reporter_phone_ddd && occ.reporter_phone_number
-                        ? `(${occ.reporter_phone_ddd}) ${occ.reporter_phone_number}`
-                        : "—"}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
-                    <Mail className="w-3 h-3" /> E-mail
-                  </label>
-                  {reporterEditing ? (
-                    <DebouncedInput
-                      className="h-7 text-xs"
-                      value={occ.reporter_email || ""}
-                      onValueCommit={(v) => handleFieldUpdate("reporter_email", v)}
-                      placeholder="email@loja.com"
-                    />
-                  ) : (
-                    <span className="text-xs font-medium">{occ.reporter_email || "—"}</span>
-                  )}
-                </div>
-              </>
             )}
           </div>
-        )}
-      </div>
-
-      {/* 2 - Observação da Agência */}
-      <div>
-        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
-          <Building2 className="w-3 h-3" /> Observação da Agência
-        </label>
-        {canEdit ? (
-          <DebouncedTextarea
-            className="text-xs min-h-[2rem] max-h-[4rem] resize-none"
-            rows={2}
-            value={occ.agency_observation || ""}
-            onValueCommit={(v) => handleFieldUpdate("agency_observation", v)}
-            placeholder="Observação da agência..."
-          />
         ) : (
-          <span className="text-xs text-muted-foreground">{occ.agency_observation || "—"}</span>
-        )}
-      </div>
-
-      {/* 3 - Ações Tomadas */}
-      <div>
-        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
-          <Wrench className="w-3 h-3" /> Ações Tomadas
-        </label>
-        {canEdit ? (
-          <DebouncedTextarea
-            className="text-xs min-h-[3.5rem] max-h-[5rem] resize-none"
-            rows={3}
-            value={occ.actions_taken || ""}
-            onValueCommit={(v) => handleFieldUpdate("actions_taken", v)}
-            placeholder="Descreva as ações tomadas..."
-          />
-        ) : (
-          <div className="relative">
-            <p className={cn("text-xs text-muted-foreground whitespace-pre-wrap", !actionsExpanded && "line-clamp-3")}>
-              {occ.actions_taken || "—"}
-            </p>
-            {(occ.actions_taken?.length || 0) > 150 && (
-              <Button variant="ghost" size="sm" className="h-5 text-[10px] p-0 mt-0.5" onClick={() => setActionsExpanded(!actionsExpanded)}>
-                {actionsExpanded ? <><ChevronUp className="w-3 h-3 mr-0.5" /> Menos</> : <><ChevronDown className="w-3 h-3 mr-0.5" /> Mais</>}
-              </Button>
+          <>
+            {canEditReporter && (
+              <div className="flex justify-end">
+                <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={() => setReporterEditing(!reporterEditing)}>
+                  <Pencil className="w-3 h-3" />
+                  {reporterEditing ? "Concluir" : "Editar"}
+                </Button>
+              </div>
             )}
-          </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                <User className="w-3 h-3" /> Nome
+              </label>
+              {reporterEditing ? (
+                <DebouncedInput className="h-7 text-xs" value={occ.reporter_name || ""} onValueCommit={(v) => handleFieldUpdate("reporter_name", v)} placeholder="Nome do reclamante..." />
+              ) : (
+                <span className="text-xs font-medium">{occ.reporter_name || "—"}</span>
+              )}
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                <Phone className="w-3 h-3" /> WhatsApp
+              </label>
+              {reporterEditing ? (
+                <div className="flex gap-1.5">
+                  <DebouncedInput className="h-7 text-xs w-16" value={occ.reporter_phone_ddd || ""} onValueCommit={(v) => handleFieldUpdate("reporter_phone_ddd", v)} placeholder="DDD" maxLength={2} />
+                  <DebouncedInput className="h-7 text-xs flex-1" value={occ.reporter_phone_number || ""} onValueCommit={(v) => handleFieldUpdate("reporter_phone_number", v)} placeholder="Número" />
+                </div>
+              ) : (
+                <span className="text-xs font-medium">
+                  {occ.reporter_phone_ddd && occ.reporter_phone_number ? `(${occ.reporter_phone_ddd}) ${occ.reporter_phone_number}` : "—"}
+                </span>
+              )}
+            </div>
+            <div>
+              <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-0.5">
+                <Mail className="w-3 h-3" /> E-mail
+              </label>
+              {reporterEditing ? (
+                <DebouncedInput className="h-7 text-xs" value={occ.reporter_email || ""} onValueCommit={(v) => handleFieldUpdate("reporter_email", v)} placeholder="email@loja.com" />
+              ) : (
+                <span className="text-xs font-medium">{occ.reporter_email || "—"}</span>
+              )}
+            </div>
+          </>
         )}
-      </div>
+      </CollapsibleSection>
 
-      {/* 4 - Resolução Prevista */}
-      <div className="rounded-lg p-2" style={{ borderTop: "1px solid var(--border-subtle)", paddingTop: 12 }}>
-        <label style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)" }} className="flex items-center gap-1 mb-1">
-          <CalendarClock className="w-3 h-3" /> Resolução prevista para:
-        </label>
-        {canEdit ? (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="h-7 text-xs w-full justify-start">
-                <CalendarIcon className="w-3 h-3 mr-1.5" />
-                {occ.expected_resolution_date
-                  ? format(new Date(occ.expected_resolution_date), "dd/MM/yyyy", { locale: ptBR })
-                  : "Selecione uma data"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={occ.expected_resolution_date ? new Date(occ.expected_resolution_date) : undefined}
-                onSelect={(date) => {
-                  const val = date ? format(date, "yyyy-MM-dd") : null;
-                  handleFieldUpdate("expected_resolution_date", val);
-                  // Auto-set status to "Em andamento" when a date is set (mirrors DB trigger)
-                  if (val && occ.status !== "resolved" && occ.status !== "nao_procede") {
-                    handleFieldUpdate("status", "andamento");
-                  }
-                }}
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-        ) : (
-          <span className="text-xs font-semibold">
-            {occ.expected_resolution_date
-              ? format(new Date(occ.expected_resolution_date), "dd/MM/yyyy", { locale: ptBR })
-              : "—"}
-          </span>
-        )}
-      </div>
-
-      {/* 5 - Precisa de Reinstalação */}
-      <div>
+      {/* 2 - Reinstalação (collapsed by default) */}
+      <CollapsibleSection icon={RotateCcw} label="Reinstalação" open={reinstallOpen} onToggle={() => setReinstallOpen(!reinstallOpen)}>
         <div className="flex items-center gap-2">
           <Checkbox
             checked={!!occ.needs_reinstallation}
@@ -382,12 +272,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
             <div>
               <label className="text-[10px] text-muted-foreground mb-0.5 block">Nova OS para Reinstalação</label>
               {canEdit ? (
-                <DebouncedInput
-                  className="h-7 text-xs"
-                  value={occ.reinstallation_os || ""}
-                  onValueCommit={(v) => handleFieldUpdate("reinstallation_os", v)}
-                  placeholder="Número da OS..."
-                />
+                <DebouncedInput className="h-7 text-xs" value={occ.reinstallation_os || ""} onValueCommit={(v) => handleFieldUpdate("reinstallation_os", v)} placeholder="Número da OS..." />
               ) : (
                 <span className="text-xs">{occ.reinstallation_os || "—"}</span>
               )}
@@ -399,9 +284,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="h-7 text-xs w-full justify-start">
                       <CalendarIcon className="w-3 h-3 mr-1.5" />
-                      {occ.reinstallation_datetime
-                        ? format(new Date(occ.reinstallation_datetime), "dd/MM/yyyy HH:mm", { locale: ptBR })
-                        : "Selecione data e hora"}
+                      {occ.reinstallation_datetime ? format(new Date(occ.reinstallation_datetime), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "Selecione data e hora"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -419,9 +302,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
                     />
                     <div className="p-3 border-t flex gap-2 items-center">
                       <label className="text-xs text-muted-foreground">Hora:</label>
-                      <Input
-                        type="time"
-                        className="h-7 text-xs w-auto"
+                      <Input type="time" className="h-7 text-xs w-auto"
                         value={occ.reinstallation_datetime ? format(new Date(occ.reinstallation_datetime), "HH:mm") : ""}
                         onChange={(e) => {
                           const [h, m] = e.target.value.split(":").map(Number);
@@ -434,22 +315,15 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
                   </PopoverContent>
                 </Popover>
               ) : (
-                <span className="text-xs">
-                  {occ.reinstallation_datetime
-                    ? format(new Date(occ.reinstallation_datetime), "dd/MM/yyyy HH:mm", { locale: ptBR })
-                    : "—"}
-                </span>
+                <span className="text-xs">{occ.reinstallation_datetime ? format(new Date(occ.reinstallation_datetime), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}</span>
               )}
             </div>
           </div>
         )}
-      </div>
+      </CollapsibleSection>
 
-      {/* 6 - Observações (Chat) */}
-      <div>
-        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
-          <MessageSquare className="w-3 h-3" /> Observações
-        </label>
+      {/* 3 - Observações / Chat (collapsed by default) */}
+      <CollapsibleSection icon={MessageSquare} label="Observações" open={commentsOpen} onToggle={() => setCommentsOpen(!commentsOpen)}>
         <div className="bg-muted/30 rounded-lg p-2 max-h-32 overflow-y-auto space-y-1.5">
           {comments.length === 0 && (
             <p className="text-[10px] text-muted-foreground italic">Nenhuma observação ainda.</p>
@@ -458,18 +332,13 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
             <div key={c.id} className="text-xs">
               <span className="font-semibold text-primary">{c.user_display_name}:</span>{" "}
               <span className="text-foreground">{c.content}</span>
-              <span className="text-[9px] text-muted-foreground ml-1.5">
-                {format(new Date(c.created_at), "dd/MM HH:mm")}
-              </span>
+              <span className="text-[9px] text-muted-foreground ml-1.5">{format(new Date(c.created_at), "dd/MM HH:mm")}</span>
             </div>
           ))}
         </div>
         {canEdit && (
           <div className="flex gap-1.5 mt-1.5">
-            <Input
-              className="h-7 text-xs flex-1"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
+            <Input className="h-7 text-xs flex-1" value={commentText} onChange={(e) => setCommentText(e.target.value)}
               placeholder="Escreva uma observação..."
               onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddComment())}
             />
@@ -478,105 +347,28 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
             </Button>
           </div>
         )}
-      </div>
+      </CollapsibleSection>
 
-      {/* 7 - Resolvido dia (com hora) - só aparece se status = resolvida */}
-      {occ.status === "resolved" && (
-        <div className="bg-success/10 rounded-lg p-2 border border-success/20">
-          <label className="text-[10px] font-bold text-success uppercase tracking-wider flex items-center gap-1 mb-1">
-            <CalendarCheck className="w-3 h-3" /> Resolvido dia:
-          </label>
-          {canEdit ? (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="h-7 text-xs w-full justify-start">
-                  <CalendarIcon className="w-3 h-3 mr-1.5" />
-                  {occ.resolved_date
-                    ? format(new Date(occ.resolved_date), "dd/MM/yyyy HH:mm", { locale: ptBR })
-                    : "Selecione uma data"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={occ.resolved_date ? new Date(occ.resolved_date) : undefined}
-                  onSelect={(date) => {
-                    if (date) {
-                      const existing = occ.resolved_date ? new Date(occ.resolved_date) : new Date();
-                      date.setHours(existing.getHours(), existing.getMinutes());
-                      handleFieldUpdate("resolved_date", date.toISOString());
-                    } else {
-                      handleFieldUpdate("resolved_date", null);
-                    }
-                  }}
-                  className="p-3 pointer-events-auto"
-                />
-                <div className="p-3 border-t flex gap-2 items-center">
-                  <label className="text-xs text-muted-foreground">Hora:</label>
-                  <Input
-                    type="time"
-                    className="h-7 text-xs w-auto"
-                    value={occ.resolved_date ? format(new Date(occ.resolved_date), "HH:mm") : ""}
-                    onChange={(e) => {
-                      const [h, m] = e.target.value.split(":").map(Number);
-                      const d = occ.resolved_date ? new Date(occ.resolved_date) : new Date();
-                      d.setHours(h, m);
-                      handleFieldUpdate("resolved_date", d.toISOString());
-                    }}
-                  />
-                </div>
-              </PopoverContent>
-            </Popover>
-          ) : (
-            <span className="text-xs font-semibold">
-              {occ.resolved_date
-                ? format(new Date(occ.resolved_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-                : "—"}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* 8 - Fotos de Resolução / Problema */}
-      <div>
-        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1 mb-1">
-          <ImagePlus className="w-3 h-3" /> Fotos da Resolução / Problema
-        </label>
+      {/* 4 - Fotos da Resolução (collapsed by default) */}
+      <CollapsibleSection icon={ImagePlus} label="Fotos da Resolução" open={photosOpen} onToggle={() => setPhotosOpen(!photosOpen)}>
         <div className="flex gap-1.5 flex-wrap">
           {resolutionPhotos.map((p, i) => (
-            <button
-              key={p.id}
-              type="button"
+            <button key={p.id} type="button"
               className="w-16 h-16 rounded-lg border border-border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all flex-shrink-0"
-              onClick={() => { setLightboxIndex(i); setLightboxOpen(true); }}
-            >
+              onClick={() => { setLightboxIndex(i); setLightboxOpen(true); }}>
               <img src={p.photo_url} alt={`Resolução ${i + 1}`} className="w-full h-full object-cover" />
             </button>
           ))}
           {canEdit && resolutionPhotos.length < 3 && (
-            <button
-              type="button"
+            <button type="button"
               className="w-16 h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-            >
-              {uploading ? (
-                <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" />
-              ) : (
-                <ImagePlus className="w-5 h-5" />
-              )}
+              onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+              {uploading ? <div className="animate-spin w-4 h-4 border-2 border-primary border-t-transparent rounded-full" /> : <ImagePlus className="w-5 h-5" />}
             </button>
           )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={handlePhotoUpload}
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
         </div>
-      </div>
+      </CollapsibleSection>
 
       <PhotoLightbox
         photos={resolutionPhotos.map((p) => p.photo_url)}
