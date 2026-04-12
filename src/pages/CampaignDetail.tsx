@@ -2385,7 +2385,7 @@ const CampaignDetail = () => {
                      }
                      const createdKit = await addKit.mutateAsync({
                        campaign_id: campaignId,
-                       name: `${kit.name} - Cópia`,
+                       name: `${kit.name.startsWith("KIT ") ? kit.name : `KIT ${kit.name}`} - Cópia`,
                        code: maxCode + 1,
                        display_order: origOrder + 1,
                      });

@@ -139,11 +139,16 @@ export function CreateKitDialog({
     );
   }, [availablePieces, createSearch]);
 
+  const ensureKitPrefix = (name: string) => {
+    const trimmed = name.trim();
+    return trimmed.startsWith("KIT ") ? trimmed : `KIT ${trimmed}`;
+  };
+
   const handleCreateKit = async () => {
     if (!kitName.trim()) return;
     setSaving(true);
     try {
-      const kit = await onCreateKit({ campaign_id: campaignId, name: kitName.trim(), code: nextCode });
+      const kit = await onCreateKit({ campaign_id: campaignId, name: ensureKitPrefix(kitName), code: nextCode });
       setCreatedKit(kit);
       setStep("pieces");
     } finally {
@@ -414,17 +419,18 @@ export function KitDetailDialog({
                 />
                 <Button size="sm" className="h-8 text-xs" onClick={async () => {
                   if (kitNameInput.trim()) {
-                    setLocalKitName(kitNameInput.trim());
+                    const safeName = kitNameInput.trim().startsWith("KIT ") ? kitNameInput.trim() : `KIT ${kitNameInput.trim()}`;
+                    setLocalKitName(safeName);
                     setEditingKitName(false);
                     toast.success("Nome atualizado!");
-                    await onUpdateKit({ id: kit.id, name: kitNameInput.trim() });
+                    await onUpdateKit({ id: kit.id, name: safeName });
                   }
                 }}>Salvar</Button>
               </div>
             ) : (
               <span className="flex items-center gap-2">
                 <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{kit.code}</span>
-                KIT {displayKitName}
+                {displayKitName}
                 {canEdit && onUpdateKit && (
                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setKitNameInput(kit.name); setEditingKitName(true); }}>
                     <Edit3 className="w-3 h-3" />
@@ -791,7 +797,7 @@ export function KitDetailDialog({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir kit "KIT {kit.name}"?</AlertDialogTitle>
+                  <AlertDialogTitle>Excluir kit "{kit.name}"?</AlertDialogTitle>
                   <AlertDialogDescription>O kit será removido. As peças que o compõem continuarão existindo.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
