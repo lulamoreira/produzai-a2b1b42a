@@ -3,13 +3,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { useTranslation } from "react-i18next";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { SidebarStateProvider } from "@/hooks/useSidebarState";
 import { useUserApprovalStatus } from "@/hooks/useUserApproval";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useProcessInvite } from "@/hooks/useProcessInvite";
+import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
+import { supabase } from "@/integrations/supabase/client";
 import { PendingUsersAlert } from "@/components/PendingUsersAlert";
 import { NameConfirmDialog } from "@/components/NameConfirmDialog";
 import AgencySelect from "./pages/AgencySelect";
@@ -91,6 +93,40 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       {children}
     </>
   );
+};
+
+const HomeRedirect = () => {
+  const { user } = useAuth();
+  const { isAdminOrMaster } = useUserRole();
+  const { isLimited } = useUserDirectAccess();
+  const { data: hasFavorites, isLoading } = useQuery({
+    queryKey: ["has_favorites", user?.id],
+    enabled: !!user && isAdminOrMaster,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_campaign_favorites")
+        .select("id")
+        .eq("user_id", user!.id)
+        .limit(1);
+      return (data?.length ?? 0) > 0;
+    },
+  });
+
+  if (isLimited) return <Navigate to="/my-campaigns" replace />;
+
+  if (isAdminOrMaster && isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (isAdminOrMaster && hasFavorites) {
+    return <Navigate to="/favorites" replace />;
+  }
+
+  return <AgencySelect />;
 };
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
