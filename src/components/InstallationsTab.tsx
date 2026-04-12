@@ -751,6 +751,41 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         </div>
       )}
 
+      {/* Grouping & Sorting Toolbar */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground font-medium">Agrupar:</span>
+          <ToggleGroup
+            type="single"
+            value={groupBy}
+            onValueChange={(v) => { if (v) setGroupBy(v as any); }}
+            size="sm"
+            className="gap-0.5"
+          >
+            <ToggleGroupItem value="none" className="text-xs h-7 px-2.5 rounded-full">Nenhum</ToggleGroupItem>
+            <ToggleGroupItem value="state" className="text-xs h-7 px-2.5 rounded-full">Estado</ToggleGroupItem>
+            <ToggleGroupItem value="team" className="text-xs h-7 px-2.5 rounded-full">Equipe</ToggleGroupItem>
+            <ToggleGroupItem value="status" className="text-xs h-7 px-2.5 rounded-full">Status</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="h-7 w-[180px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name_az">Nome A→Z</SelectItem>
+              <SelectItem value="name_za">Nome Z→A</SelectItem>
+              <SelectItem value="date_asc">Data mais antiga</SelectItem>
+              <SelectItem value="date_desc">Data mais recente</SelectItem>
+              <SelectItem value="most_photos">Mais fotos</SelectItem>
+              <SelectItem value="occurrences_first">Com ocorrências primeiro</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       {/* Store Cards */}
       {displayedStores.length === 0 ? (
         <EmptyState
@@ -763,8 +798,17 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           }}
         />
       ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-        {displayedStores.map((store) => {
+      <div className="space-y-4">
+        {groupedStores.map((group) => (
+          <div key={group.label || "__all"}>
+            {group.label && (
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
+                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{group.stores.length}</span>
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+        {group.stores.map((store) => {
           const colors = getStateColor(store.state);
           const schedule = scheduleMap[store.id];
           const assignedTeam = schedule?.team_id ? teamMap[schedule.team_id] : null;
