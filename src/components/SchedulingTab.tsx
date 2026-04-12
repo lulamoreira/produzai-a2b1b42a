@@ -15,10 +15,10 @@ import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
-import ScheduleCardChat from "@/components/ScheduleCardChat";
+
 import ScheduleHistorySheet from "@/components/ScheduleHistorySheet";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
-import { useScheduleChatUnreadCounts, useMarkAsRead } from "@/hooks/useChatReadStatus";
+
 import { useUserRole } from "@/hooks/useUserRole";
 import { useLogActivity } from "@/hooks/useActivityLogs";
 import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
