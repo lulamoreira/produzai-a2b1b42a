@@ -1851,7 +1851,7 @@ const CampaignDetail = () => {
                                     >
                                       <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
                                       <span className="text-xs font-bold">{p.code}</span>
-                                      <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{p.name}</span>
+                                      <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[100px] whitespace-normal break-words">{p.name}</span>
                                       {p.store_category && (
                                         <span className="text-[9px] bg-accent text-accent-foreground px-1 rounded">{p.store_category}</span>
                                       )}
@@ -1871,7 +1871,7 @@ const CampaignDetail = () => {
                                       </div>
                                     )}
                                     <span className="text-xs font-bold text-primary">{kit.code}</span>
-                                    <span className="text-[10px] text-muted-foreground truncate max-w-[90px]">{kit.name}</span>
+                                    <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[100px] whitespace-normal break-words">{kit.name}</span>
                                   </button>
                                 </TableHead>
                               );
