@@ -337,34 +337,44 @@ export default function AppSidebar() {
               </span>
             </div>
 
-            {/* Lojas do Cliente (master) */}
-            <button
-              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
-              style={itemStyle(location.search.includes("tab=stores") && !isInsideCampaign)}
-              {...hoverHandlers(location.search.includes("tab=stores") && !isInsideCampaign)}
-            >
-              <AquaIcon icon={Store} size="xs" color="#6B4F2E" />
-              <span className="truncate">{t("modules.stores")}</span>
-            </button>
+            {/* Lojas do Cliente (hidden for limited users) */}
+            {!isLimited && (
+              <button
+                onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
+                style={itemStyle(location.search.includes("tab=stores") && !isInsideCampaign)}
+                {...hoverHandlers(location.search.includes("tab=stores") && !isInsideCampaign)}
+              >
+                <AquaIcon icon={Store} size="xs" color="#6B4F2E" />
+                <span className="truncate">{t("modules.stores")}</span>
+              </button>
+            )}
 
-            {/* Campanhas header */}
-            <button
-              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}`)}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
-              style={itemStyle(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
-              {...hoverHandlers(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
-            >
-              <AquaIcon icon={Megaphone} size="xs" color="#8C6F4E" />
-              <span className="truncate">{t("sidebar.campaigns")}</span>
-            </button>
+            {/* Campanhas header (hidden for limited users) */}
+            {!isLimited && (
+              <button
+                onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}`)}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
+                style={itemStyle(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
+                {...hoverHandlers(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
+              >
+                <AquaIcon icon={Megaphone} size="xs" color="#8C6F4E" />
+                <span className="truncate">{t("sidebar.campaigns")}</span>
+              </button>
+            )}
 
-            {/* ── All campaigns listed with independent expansors ── */}
+            {/* ── Campaigns listed with independent expansors ── */}
             <div className="ml-6 space-y-0.5 mt-0.5">
-              {clientCampaigns.map((camp) => {
+              {(isLimited
+                ? clientCampaigns.filter(c => limitedCampaigns.some(lc => lc.campaignId === c.id))
+                : clientCampaigns
+              ).map((camp) => {
                 const isExpanded = campaignExpanded[camp.id] ?? (camp.id === campaignId);
                 const isActiveCampaign = campaignId === camp.id;
                 const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
+                const allowedModules = isLimited
+                  ? limitedCampaigns.find(lc => lc.campaignId === camp.id)?.modules ?? []
+                  : null;
 
                 return (
                   <div key={camp.id}>
@@ -388,7 +398,11 @@ export default function AppSidebar() {
                     {/* Campaign modules */}
                     {isExpanded && (
                       <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
-                        {CAMPAIGN_MODULE_KEYS.filter(mod => mod.key !== "budgets" || isAdmin).map((mod) => {
+                        {CAMPAIGN_MODULE_KEYS.filter(mod => {
+                          if (mod.key === "budgets" && !isAdmin) return false;
+                          if (isLimited && allowedModules && !allowedModules.includes(mod.key)) return false;
+                          return true;
+                        }).map((mod) => {
                           const modActive = isCampaignModuleActive(camp.id, mod.key);
                           return (
                             <button
