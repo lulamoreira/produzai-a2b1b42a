@@ -60,6 +60,68 @@ export default function InstallerPortal() {
     }
   }, [code]);
 
+  // Chat: fetch messages via edge function
+  const fetchChatMessages = useCallback(async () => {
+    if (!code || code.length !== 5) return;
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/installer-read-messages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: code.toLowerCase() }),
+        }
+      );
+      const result = await res.json();
+      if (res.ok && result.messages) {
+        setChatMessages(result.messages);
+      }
+    } catch { /* silent */ }
+  }, [code]);
+
+  // Poll chat every 10 seconds when chat is open and data exists
+  useEffect(() => {
+    if (!data || !chatOpen) return;
+    fetchChatMessages();
+    const interval = setInterval(fetchChatMessages, 10000);
+    return () => clearInterval(interval);
+  }, [data, chatOpen, fetchChatMessages]);
+
+  // Scroll chat to bottom
+  useEffect(() => {
+    if (chatOpen) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, chatOpen]);
+
+  const handleSendChat = async () => {
+    const text = chatInput.trim();
+    if (!text || !data) return;
+    setChatSending(true);
+    try {
+      const installerName = data.members?.find((m: any) => m.is_leader)?.name
+        || data.members?.[0]?.name
+        || data.team?.name
+        || "Instalador";
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/installer-send-message`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: code.toLowerCase(), content: text, installer_name: installerName }),
+        }
+      );
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+      setChatInput("");
+      fetchChatMessages();
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao enviar mensagem.");
+    } finally {
+      setChatSending(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (code.length !== 5) return;
     setLoading(true);
