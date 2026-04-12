@@ -47,6 +47,11 @@ export default function InstallerPortal() {
     faltam: number;
   } | null>(null);
   const [tentandoConcluir, setTentandoConcluir] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [chatSending, setChatSending] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-submit when 5 chars
   useEffect(() => {
