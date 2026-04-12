@@ -331,6 +331,40 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
     });
   }, [filteredStores, summaryFilter, scheduleMap, photosByStore, storeOccurrenceStatus]);
 
+  // Grouped stores for rendering with group headers
+  const groupedStores = useMemo(() => {
+    if (groupBy === "none") {
+      return [{ label: "", stores: displayedStores }];
+    }
+    const groupMap = new Map<string, ClientStore[]>();
+    displayedStores.forEach((s) => {
+      let key: string;
+      switch (groupBy) {
+        case "state":
+          key = s.state?.trim() || "Sem estado";
+          break;
+        case "team": {
+          const sch = scheduleMap[s.id];
+          const tm = sch?.team_id ? teamMap[sch.team_id] : null;
+          key = tm?.name || "Sem equipe";
+          break;
+        }
+        case "status": {
+          const sch2 = scheduleMap[s.id];
+          key = sch2?.completed_at ? "Concluídas" : "Pendentes";
+          break;
+        }
+        default:
+          key = "";
+      }
+      if (!groupMap.has(key)) groupMap.set(key, []);
+      groupMap.get(key)!.push(s);
+    });
+    return Array.from(groupMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([label, storesToGroup]) => ({ label, stores: storesToGroup }));
+  }, [displayedStores, groupBy, scheduleMap, teamMap]);
+
   const handleUploadPhoto = async (storeId: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
     const category = uploadCategory[storeId] || "before";
