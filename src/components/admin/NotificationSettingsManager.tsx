@@ -60,7 +60,23 @@ export default function NotificationSettingsManager() {
     enabled: !!user && !profile?.agency_id,
   });
 
-  const agencyId = profile?.agency_id || agencyAccess?.agency_id;
+  // Fallback for admins: query the first agency directly
+  const { data: fallbackAgency } = useQuery({
+    queryKey: ["first_agency_fallback"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("agencies")
+        .select("id")
+        .is("deleted_at", null)
+        .order("name")
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    enabled: isAdmin && !profile?.agency_id && !agencyAccess?.agency_id,
+  });
+
+  const agencyId = profile?.agency_id || agencyAccess?.agency_id || fallbackAgency?.id;
   const { settings, isLoading, updateSetting } = useNotificationSettings(agencyId ?? undefined);
 
   // Admin sees all 4 columns; master sees 3 (no admin column)
