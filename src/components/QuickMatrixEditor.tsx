@@ -6,7 +6,7 @@ import {
 import { Edit3, Save, X, Package, Sparkles, Loader2, Send, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import PieceThumbnail from "@/components/PieceThumbnail";
-import { getKitDisplayName } from "@/lib/kitUtils";
+
 import { supabase } from "@/integrations/supabase/client";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
 import {
@@ -532,7 +532,7 @@ const QuickMatrixEditor = ({
                             </div>
                           )}
                           <span className="text-xs font-bold text-primary">{kit.code}</span>
-                          <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[120px] whitespace-normal break-words">{getKitDisplayName(kit)}</span>
+                          <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[120px] whitespace-normal break-words">{kit.name}</span>
                         </DraggableColHeader>
                       );
                     })}

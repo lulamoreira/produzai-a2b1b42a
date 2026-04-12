@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { GripVertical, Edit3, Trash2, CheckSquare, Package, Palette, Copy } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
-import { getKitDisplayName } from "@/lib/kitUtils";
+
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import type { CampaignPiece, ClientStore, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
 
@@ -102,7 +102,7 @@ function SortableRow({
             onClick={() => onKitClick(kit)}
           >
             <span className="flex items-center gap-1.5">
-              {getKitDisplayName(kit)}
+              {kit.name}
               {kit.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">MOCKUP</span>}
             </span>
             <span className="text-[11px] text-muted-foreground block">
