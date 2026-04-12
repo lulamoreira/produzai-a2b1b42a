@@ -23,7 +23,8 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star } from "lucide-react";
+import { useFavoriteIds, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 import StoresMatrixTable from "@/components/StoresMatrixTable";
 import StoreFullCardView from "@/components/StoreFullCardView";
 import {
@@ -204,6 +205,14 @@ function SortableCampaignCard({
         </div>
 
         <div className="flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 flex-shrink-0"
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+          >
+            <Star className={`w-3.5 h-3.5 ${isFavorited ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
+          </Button>
           {canEdit && (
             <Popover>
               <PopoverTrigger asChild>
