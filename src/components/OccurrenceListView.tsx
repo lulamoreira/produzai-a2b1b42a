@@ -14,6 +14,7 @@ import ActivityLogPanel from "./ActivityLogPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -21,18 +22,19 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Flag, Trash2, ExternalLink, Link2, MessageCircle, Phone,
   Save, ClipboardList, Loader2, Lock, LockOpen, ChevronRight,
-  MapPin, Puzzle, Calendar, User, Pencil, RotateCcw,
+  MapPin, Puzzle, Calendar as CalendarIcon, User, Pencil, RotateCcw,
+  FileText, CalendarClock, Building2, Wrench, CalendarCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PRIORITY_OPTIONS } from "@/types/occurrence";
 import { getStatusLabel, getStatusColor, getDefaultStatusValue } from "@/lib/occurrenceHelpers";
 import PhotoLightbox from "./PhotoLightbox";
+import DebouncedTextarea from "@/components/DebouncedTextarea";
 
 const GERAL_LOCATION = "GERAL - NA LOJA TODA";
 const NAO_SEI_LOCATION = "NÃO SEI O LOCAL";
