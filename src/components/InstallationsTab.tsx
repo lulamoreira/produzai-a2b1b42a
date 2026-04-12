@@ -35,10 +35,13 @@ import {
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
   Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList, Lock, LockOpen,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, SlidersHorizontal, Filter, MoreHorizontal,
+  ArrowUpDown,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { downloadPhotosAsZip, downloadAllCampaignPhotosAsZip } from "@/lib/downloadPhotosZip";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -99,6 +102,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [filterModel, setFilterModel] = useState("");
   const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "withReschedule" | "withOccurrence" | "noCheckin">("");
   const [filterCheckin, setFilterCheckin] = useState("");
+  const [groupBy, setGroupBy] = useState<"none" | "state" | "team" | "status">("none");
+  const [sortBy, setSortBy] = useState<string>("name_az");
 
   // UI state
   const [showCodes, setShowCodes] = useState(false);
@@ -271,11 +276,41 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
       return matchesSearch && matchesState && matchesCity && matchesStatus && matchesDate && matchesPeriod && matchesTeam && matchesLocked && matchesReschedule && matchesModel && matchesCheckin;
     }).sort((a, b) => {
-      const stateComp = (a.state || "").localeCompare(b.state || "");
-      if (stateComp !== 0) return stateComp;
-      return a.name.localeCompare(b.name);
+      switch (sortBy) {
+        case "name_za":
+          return b.name.localeCompare(a.name);
+        case "date_asc": {
+          const schA = scheduleMap[a.id];
+          const schB = scheduleMap[b.id];
+          const dA = (schA?.reschedule_enabled ? schA?.reschedule_date : schA?.scheduled_date) || "9999";
+          const dB = (schB?.reschedule_enabled ? schB?.reschedule_date : schB?.scheduled_date) || "9999";
+          return dA.localeCompare(dB) || a.name.localeCompare(b.name);
+        }
+        case "date_desc": {
+          const schA2 = scheduleMap[a.id];
+          const schB2 = scheduleMap[b.id];
+          const dA2 = (schA2?.reschedule_enabled ? schA2?.reschedule_date : schA2?.scheduled_date) || "";
+          const dB2 = (schB2?.reschedule_enabled ? schB2?.reschedule_date : schB2?.scheduled_date) || "";
+          return dB2.localeCompare(dA2) || a.name.localeCompare(b.name);
+        }
+        case "most_photos":
+          return (photosByStore[b.id] || []).length - (photosByStore[a.id] || []).length || a.name.localeCompare(b.name);
+        case "occurrences_first": {
+          const occA = storeOccurrenceStatus[a.id];
+          const occB = storeOccurrenceStatus[b.id];
+          const hasA = occA?.hasOccurrence && !occA.allResolved ? 1 : 0;
+          const hasB = occB?.hasOccurrence && !occB.allResolved ? 1 : 0;
+          return hasB - hasA || a.name.localeCompare(b.name);
+        }
+        case "name_az":
+        default: {
+          const stateComp = (a.state || "").localeCompare(b.state || "");
+          if (stateComp !== 0) return stateComp;
+          return a.name.localeCompare(b.name);
+        }
+      }
     });
-  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, filterDate, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel, filterCheckin, scheduleMap, photosByStore]);
+  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, filterDate, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel, filterCheckin, scheduleMap, photosByStore, storeOccurrenceStatus, sortBy]);
 
   // Apply summary filter on top of filteredStores
   const displayedStores = useMemo(() => {
