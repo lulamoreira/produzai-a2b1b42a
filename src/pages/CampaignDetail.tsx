@@ -1603,6 +1603,17 @@ const CampaignDetail = () => {
                         ...(client?.custom_field_4_label ? [{ key: "custom_field_4", label: client.custom_field_4_label }] : []),
                         ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label }] : []),
                       ]}
+                      onReorderColumns={async (reordered) => {
+                        for (const item of reordered) {
+                          if (item.type === "piece") {
+                            await supabase.from("campaign_pieces").update({ display_order: item.display_order }).eq("id", item.id);
+                          } else {
+                            await supabase.from("campaign_kits").update({ display_order: item.display_order }).eq("id", item.id);
+                          }
+                        }
+                        queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+                        queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
+                      }}
                     />
 
                     {canEditCampaign && (
