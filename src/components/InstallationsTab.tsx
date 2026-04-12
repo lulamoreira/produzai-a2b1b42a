@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import EmptyState from "@/components/EmptyState";
 import { CardSkeleton } from "@/components/CardSkeleton";
 import { useTranslation } from "react-i18next";
@@ -46,6 +46,7 @@ import { downloadPhotosAsZip, downloadAllCampaignPhotosAsZip } from "@/lib/downl
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { downloadWorkbook } from "@/lib/downloadWorkbook";
@@ -119,6 +120,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
   const [checkinStore, setCheckinStore] = useState<ClientStore | null>(null);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [selectedStores, setSelectedStores] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewStore, setPreviewStore] = useState<any>(null);
@@ -133,6 +136,17 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       return next;
     });
   };
+
+  const toggleStoreSelection = useCallback((storeId: string) => {
+    setSelectedStores(prev => {
+      const next = new Set(prev);
+      if (next.has(storeId)) next.delete(storeId);
+      else next.add(storeId);
+      return next;
+    });
+  }, []);
+
+  const hasAnySelected = selectedStores.size > 0;
 
   // Shared hooks
   const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
@@ -331,7 +345,102 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
     });
   }, [filteredStores, summaryFilter, scheduleMap, photosByStore, storeOccurrenceStatus]);
 
-  // Grouped stores for rendering with group headers
+  const handleSelectAll = useCallback(() => {
+    if (selectedStores.size === displayedStores.length && displayedStores.length > 0) {
+      setSelectedStores(new Set());
+    } else {
+      setSelectedStores(new Set(displayedStores.map(s => s.id)));
+    }
+  }, [displayedStores, selectedStores.size]);
+
+  const getSelectedScheduleIds = useCallback(() => {
+    return Array.from(selectedStores)
+      .map(sid => scheduleMap[sid]?.id)
+      .filter(Boolean) as string[];
+  }, [selectedStores, scheduleMap]);
+
+  const handleBulkApproveStore = async () => {
+    const ids = getSelectedScheduleIds();
+    if (ids.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase.from("campaign_schedules").update({
+        store_approval_status: "approved",
+        store_approved: true,
+        store_approved_at: new Date().toISOString(),
+      } as any).in("id", ids);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+      setSelectedStores(new Set());
+      toast.success(`${ids.length} loja(s) aprovada(s) pelo lojista!`);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao aprovar lojista");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkApproveTeam = async () => {
+    const ids = getSelectedScheduleIds();
+    if (ids.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase.from("campaign_schedules").update({
+        team_approval_status: "approved",
+        team_approved: true,
+        team_approved_at: new Date().toISOString(),
+      } as any).in("id", ids);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+      setSelectedStores(new Set());
+      toast.success(`${ids.length} loja(s) aprovada(s) pela equipe!`);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao aprovar equipe");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkUnlock = async () => {
+    const ids = getSelectedScheduleIds();
+    if (ids.length === 0) return;
+    setBulkActionLoading(true);
+    try {
+      const { error } = await supabase.from("campaign_schedules").update({ locked: false } as any).in("id", ids);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+      setSelectedStores(new Set());
+      toast.success(`${ids.length} card(s) desbloqueado(s)!`);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao desbloquear");
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  const handleBulkDownloadPhotos = async () => {
+    const selectedPhotos = photos.filter(p => selectedStores.has(p.store_id));
+    if (selectedPhotos.length === 0) {
+      toast.info("Nenhuma foto encontrada nas lojas selecionadas");
+      return;
+    }
+    const storeNameMap: Record<string, string> = {};
+    stores.forEach(s => {
+      if (selectedStores.has(s.id)) {
+        storeNameMap[s.id] = s.store_code ? `${s.store_code}_${s.name}` : s.name;
+      }
+    });
+    toast.info(`Preparando download de ${selectedPhotos.length} arquivo(s)...`);
+    try {
+      await downloadAllCampaignPhotosAsZip(selectedPhotos, storeNameMap, campaignName, (done, total) => {
+        if (done === total) toast.success(t("common.downloadComplete"));
+      });
+      setSelectedStores(new Set());
+    } catch {
+      toast.error(t("common.errorDownloading"));
+    }
+  };
+
   const groupedStores = useMemo(() => {
     if (groupBy === "none") {
       return [{ label: "", stores: displayedStores }];
@@ -751,6 +860,39 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         </div>
       )}
 
+      {/* Bulk Action Bar */}
+      {hasAnySelected && (
+        <div className="sticky top-0 z-20 flex items-center gap-2 flex-wrap rounded-lg px-4 py-2.5 border border-primary/30 bg-primary/5 backdrop-blur-sm shadow-sm">
+          <Checkbox
+            checked={selectedStores.size === displayedStores.length && displayedStores.length > 0}
+            onCheckedChange={handleSelectAll}
+          />
+          <span className="text-sm font-medium text-foreground">{selectedStores.size} selecionado(s)</span>
+          <div className="flex-1" />
+          {canEdit && (
+            <>
+              <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" disabled={bulkActionLoading} onClick={handleBulkApproveStore}>
+                <CheckCircle2 className="w-3.5 h-3.5" /> Aprovar Lojista
+              </Button>
+              <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" disabled={bulkActionLoading} onClick={handleBulkApproveTeam}>
+                <CheckCircle2 className="w-3.5 h-3.5" /> Aprovar Equipe
+              </Button>
+            </>
+          )}
+          {canLockCards && (
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" disabled={bulkActionLoading} onClick={handleBulkUnlock}>
+              <LockOpen className="w-3.5 h-3.5" /> Desbloquear
+            </Button>
+          )}
+          <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" disabled={bulkActionLoading} onClick={handleBulkDownloadPhotos}>
+            <Download className="w-3.5 h-3.5" /> Baixar fotos
+          </Button>
+          <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => setSelectedStores(new Set())}>
+            Limpar
+          </Button>
+        </div>
+      )}
+
       {/* Grouping & Sorting Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-1.5">
@@ -867,11 +1009,26 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             <div
               key={store.id}
               className={cn(
-                "card-base overflow-hidden flex flex-col transition-shadow duration-150 hover:shadow-md",
-                isCardLocked && "opacity-80"
+                "group/card card-base overflow-hidden flex flex-col transition-shadow duration-150 hover:shadow-md relative",
+                isCardLocked && "opacity-80",
+                selectedStores.has(store.id) && "ring-2 ring-primary/40"
               )}
               style={{ borderLeft: `4px solid ${borderLeftColor}`, padding: 0 }}
             >
+              {/* Selection checkbox */}
+              <div
+                className={cn(
+                  "absolute top-2 left-6 z-10 transition-opacity",
+                  hasAnySelected ? "opacity-100" : "opacity-0 group-hover/card:opacity-100"
+                )}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Checkbox
+                  checked={selectedStores.has(store.id)}
+                  onCheckedChange={() => toggleStoreSelection(store.id)}
+                  className="bg-background shadow-sm"
+                />
+              </div>
               {/* COLLAPSED STATE — always visible */}
               <div
                 className="px-4 py-3 cursor-pointer select-none"
