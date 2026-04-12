@@ -2603,7 +2603,8 @@ const CampaignDetail = () => {
               }
               let kitCount = 0;
               for (const kit of kitsToImport) {
-                const createdKit = await addKit.mutateAsync({ campaign_id: campaignId, name: kit.name, code: kit.code });
+                const importName = kit.name.startsWith("KIT ") ? kit.name : `KIT ${kit.name}`;
+                const createdKit = await addKit.mutateAsync({ campaign_id: campaignId, name: importName, code: kit.code });
                 kitCount++;
                 if (kit.image_url) await updateKit.mutateAsync({ id: createdKit.id, image_url: kit.image_url });
                 for (const kp of kit.pieces) {
