@@ -2527,6 +2527,35 @@ export type Database = {
           },
         ]
       }
+      user_campaign_favorites: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_campaign_favorites_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_client_access: {
         Row: {
           can_edit: boolean

@@ -23,7 +23,8 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star } from "lucide-react";
+import { useFavoriteIds, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 import StoresMatrixTable from "@/components/StoresMatrixTable";
 import StoreFullCardView from "@/components/StoreFullCardView";
 import {
@@ -144,10 +145,11 @@ const CAMPAIGN_COLORS = [
 ];
 
 function SortableCampaignCard({
-  campaign, canDelete, canEdit, onNavigate, onDelete, onColorChange,
+  campaign, canDelete, canEdit, onNavigate, onDelete, onColorChange, isFavorited, onToggleFavorite,
 }: {
   campaign: Campaign; canDelete: boolean; canEdit: boolean;
   onNavigate: () => void; onDelete: () => void; onColorChange: (c: string) => void;
+  isFavorited: boolean; onToggleFavorite: () => void;
 }) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: campaign.id });
@@ -204,6 +206,14 @@ function SortableCampaignCard({
         </div>
 
         <div className="flex items-center gap-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 flex-shrink-0"
+            onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+          >
+            <Star className={`w-3.5 h-3.5 ${isFavorited ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
+          </Button>
           {canEdit && (
             <Popover>
               <PopoverTrigger asChild>
@@ -272,6 +282,8 @@ const ClientDetail = () => {
   useLanguage((client as any)?.language);
   const { t } = useTranslation();
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
+  const { data: favoriteIds } = useFavoriteIds();
+  const toggleFavorite = useToggleFavorite();
 
   const { data: agencyInfo } = useQuery({
     queryKey: ["agency_name", agencyId],
@@ -872,6 +884,8 @@ const ClientDetail = () => {
                         onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
                         onDelete={() => deleteCampaign.mutate(c.id)}
                         onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
+                        isFavorited={favoriteIds?.has(c.id) ?? false}
+                        onToggleFavorite={() => toggleFavorite.mutate({ campaignId: c.id, isFavorited: favoriteIds?.has(c.id) ?? false })}
                       />
                     ))}
                   </div>

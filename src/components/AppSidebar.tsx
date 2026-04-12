@@ -18,7 +18,7 @@ import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 
 import {
-  Building2, Shield, LogOut, Users,
+  Building2, Shield, LogOut, Users, Star,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
   CalendarDays, Camera, DollarSign, Database, Globe, Settings, History,
@@ -261,6 +261,20 @@ export default function AppSidebar() {
           >
             <AquaIcon icon={Building2} size="sm" color="#8C6F4E" />
             {!collapsed && <span className="truncate font-medium">{t("sidebar.agencies")}</span>}
+          </button>
+        )}
+
+        {/* ── Favoritos (hidden for limited users) ── */}
+        {!isLimited && (
+          <button
+            onClick={() => handleNavigate("/favorites")}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+            style={itemStyle(location.pathname === "/favorites")}
+            {...hoverHandlers(location.pathname === "/favorites")}
+            title={collapsed ? t("sidebar.favorites", "Favoritos") : undefined}
+          >
+            <AquaIcon icon={Star} size="sm" color="#eab308" />
+            {!collapsed && <span className="truncate font-medium">{t("sidebar.favorites", "Favoritos")}</span>}
           </button>
         )}
 
