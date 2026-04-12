@@ -424,7 +424,7 @@ export function KitDetailDialog({
             ) : (
               <span className="flex items-center gap-2">
                 <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{kit.code}</span>
-                Kit: {displayKitName}
+                KIT {displayKitName}
                 {canEdit && onUpdateKit && (
                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setKitNameInput(kit.name); setEditingKitName(true); }}>
                     <Edit3 className="w-3 h-3" />
@@ -791,7 +791,7 @@ export function KitDetailDialog({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir kit "{kit.name}"?</AlertDialogTitle>
+                  <AlertDialogTitle>Excluir kit "KIT {kit.name}"?</AlertDialogTitle>
                   <AlertDialogDescription>O kit será removido. As peças que o compõem continuarão existindo.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

@@ -1803,7 +1803,7 @@ const CampaignDetail = () => {
                       const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
                       base.push({
                         key: `kit_${kit.id}`,
-                        label: `Kit ${kit.code} - ${kit.name}`,
+                        label: `KIT ${kit.code} - ${kit.name}`,
                         getValue: (s: ClientStore) => {
                           if (kpForKit.length === 0) return 0;
                           return Math.min(...kpForKit.map(kp => {
@@ -1909,7 +1909,7 @@ const CampaignDetail = () => {
                                       </div>
                                     )}
                                     <span className="text-xs font-bold text-primary">{kit.code}</span>
-                                    <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[100px] whitespace-normal break-words">{kit.name}</span>
+                                    <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[100px] whitespace-normal break-words">KIT {kit.name}</span>
                                   </button>
                                 </TableHead>
                               );

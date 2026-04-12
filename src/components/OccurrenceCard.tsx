@@ -62,7 +62,7 @@ function getOccurrencePieceOptions({
     const members = filteredPieces.filter((p) => memberIds.includes(p.id));
     if (members.length === 0) return;
     // Add the kit itself as selectable with kit: prefix
-    kitAndMemberItems.push({ value: `kit:${kit.id}`, label: `Kit ${kit.code} - ${kit.name}`, sortOrder: kit.display_order });
+    kitAndMemberItems.push({ value: `kit:${kit.id}`, label: `KIT ${kit.code} - ${kit.name}`, sortOrder: kit.display_order });
     // Add each individual kit member piece
     members.forEach((p) => {
       kitAndMemberItems.push({ value: p.id, label: `  ↳ ${p.code} - ${p.name}`, sortOrder: kit.display_order + 0.001 });

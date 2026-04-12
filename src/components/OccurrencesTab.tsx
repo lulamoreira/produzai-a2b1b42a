@@ -385,7 +385,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
       const firstMemberPiece = pieces.find((piece) => memberPieceIds.includes(piece.id));
 
       if (firstMemberPiece) {
-        labels.set(firstMemberPiece.id, `Kit ${kit.code} - ${kit.name}`);
+        labels.set(firstMemberPiece.id, `KIT ${kit.code} - ${kit.name}`);
       }
     });
 
