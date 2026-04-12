@@ -400,6 +400,70 @@ export type Database = {
           },
         ]
       }
+      campaign_message_reads: {
+        Row: {
+          campaign_id: string
+          id: string
+          last_read_at: string
+          user_id: string
+        }
+        Insert: {
+          campaign_id: string
+          id?: string
+          last_read_at?: string
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string
+          id?: string
+          last_read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_message_reads_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_messages: {
+        Row: {
+          campaign_id: string
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          sender_id: string
+        }
+        Insert: {
+          campaign_id: string
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          sender_id: string
+        }
+        Update: {
+          campaign_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_notification_emails: {
         Row: {
           campaign_id: string
@@ -2554,6 +2618,10 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      has_campaign_access: {
+        Args: { _campaign_id: string; _user_id: string }
+        Returns: boolean
       }
       has_campaign_category_permission: {
         Args: { _campaign_id: string; _permission: string; _user_id: string }
