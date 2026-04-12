@@ -1,9 +1,12 @@
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import AppSidebar from "@/components/AppSidebar";
 import NotificationBell from "@/components/NotificationBell";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import CampaignChatPanel from "@/components/CampaignChatPanel";
+import { ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useSidebarState } from "@/hooks/useSidebarState";
+import { useCampaignUnreadCount } from "@/hooks/useCampaignChat";
+import { Button } from "@/components/ui/button";
 
 export interface BreadcrumbItem {
   label: string;
@@ -21,16 +24,26 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
   const navigate = useNavigate();
   const location = useLocation();
   const { collapsed } = useSidebarState();
+  const params = useParams<{ campaignId?: string }>();
+  const campaignId = params.campaignId;
 
-  const isRootPage = location.pathname === "/" || location.pathname === "/admin" || location.pathname === "/chat" || location.pathname === "/my-campaigns" || location.pathname === "/approvals";
+  const [chatOpen, setChatOpen] = useState(false);
+  const { data: unreadCount = 0 } = useCampaignUnreadCount(campaignId);
 
+  // Derive campaign name from last breadcrumb if available
+  const campaignName = breadcrumbs && breadcrumbs.length > 0
+    ? breadcrumbs[breadcrumbs.length - 1]?.label
+    : undefined;
+
+  const isRootPage = location.pathname === "/" || location.pathname === "/admin" || location.pathname === "/my-campaigns" || location.pathname === "/approvals";
+
+  const searchParams = new URLSearchParams(location.search);
   const backHref = breadcrumbs
     ?.slice(0, -1)
     .reverse()
     .find((c) => c.href)?.href;
 
-  const params = new URLSearchParams(location.search);
-  const sectionBaseHref = (params.has("section") || params.has("tab")) ? location.pathname : null;
+  const sectionBaseHref = (searchParams.has("section") || searchParams.has("tab")) ? location.pathname : null;
   const currentUrl = `${location.pathname}${location.search}`;
   const from = (location.state as { from?: string } | null)?.from;
 
@@ -77,8 +90,23 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
         </button>
       )}
 
-      {/* Fixed notification bell for mobile */}
-      <div className="lg:hidden fixed top-3 right-3 z-40">
+      {/* Fixed notification bell + chat for mobile */}
+      <div className="lg:hidden fixed top-3 right-3 z-40 flex items-center gap-1.5">
+        {campaignId && (
+          <Button
+            size="icon"
+            variant="outline"
+            className="relative h-8 w-8 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]"
+            onClick={() => setChatOpen(true)}
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-destructive rounded-full">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </Button>
+        )}
         <NotificationBell />
       </div>
 
@@ -121,6 +149,23 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
               ) : null}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
+              {campaignId && (
+                <div className="hidden lg:block">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="relative h-8 w-8 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]"
+                    onClick={() => setChatOpen(true)}
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-destructive rounded-full">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </Button>
+                </div>
+              )}
               <div className="hidden lg:block">
                 <NotificationBell />
               </div>
@@ -141,6 +186,16 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
           {children}
         </main>
       </div>
+
+      {/* Campaign Chat Panel */}
+      {campaignId && (
+        <CampaignChatPanel
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          campaignId={campaignId}
+          campaignName={campaignName}
+        />
+      )}
     </div>
   );
 }
