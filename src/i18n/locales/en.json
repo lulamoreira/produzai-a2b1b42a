@@ -147,7 +147,7 @@
   },
   "modules": {
     "stores": "Stores",
-    "matrix": "Matrix/Allocation",
+    "matrix": "Allocation",
     "pieces": "Pieces",
     "occurrences": "Occurrences",
     "scheduling": "Scheduling",
@@ -602,11 +602,11 @@
     "errorRemove": "Error removing"
   },
   "matrix": {
-    "title": "Matrix/Allocation",
-    "exportMatrix": "Export Matrix",
+    "title": "Allocation",
+    "exportMatrix": "Export Allocation",
     "customExport": "Custom Exp.",
     "fromOtherCampaign": "From other camp.",
-    "customExportTitle": "Custom Export — Matrix/Allocation",
+    "customExportTitle": "Custom Export — Allocation",
     "store": "Store",
     "storeNickname": "Nickname",
     "storeCodeLabel": "Store Code",

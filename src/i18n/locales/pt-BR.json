@@ -147,7 +147,7 @@
   },
   "modules": {
     "stores": "Lojas",
-    "matrix": "Matriz/Rateio",
+    "matrix": "Rateio",
     "pieces": "Peças",
     "occurrences": "Ocorrências",
     "scheduling": "Agendamento",
@@ -602,11 +602,11 @@
     "errorRemove": "Erro ao remover"
   },
   "matrix": {
-    "title": "Matriz/Rateio",
-    "exportMatrix": "Exportar Matriz",
+    "title": "Rateio",
+    "exportMatrix": "Exportar Rateio",
     "customExport": "Export. Pers.",
     "fromOtherCampaign": "De outra camp.",
-    "customExportTitle": "Exportação Personalizada — Matriz/Rateio",
+    "customExportTitle": "Exportação Personalizada — Rateio",
     "store": "Loja",
     "storeNickname": "Apelido",
     "storeCodeLabel": "Código Loja",

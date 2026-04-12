@@ -147,7 +147,7 @@
   },
   "modules": {
     "stores": "Tiendas",
-    "matrix": "Matriz/Prorrateo",
+    "matrix": "Prorrateo",
     "pieces": "Piezas",
     "occurrences": "Ocurrencias",
     "scheduling": "Programación",
@@ -602,11 +602,11 @@
     "errorRemove": "Error al eliminar"
   },
   "matrix": {
-    "title": "Matriz/Prorrateo",
-    "exportMatrix": "Exportar Matriz",
+    "title": "Prorrateo",
+    "exportMatrix": "Exportar Prorrateo",
     "customExport": "Export. Pers.",
     "fromOtherCampaign": "De otra camp.",
-    "customExportTitle": "Exportación Personalizada — Matriz/Prorrateo",
+    "customExportTitle": "Exportación Personalizada — Prorrateo",
     "store": "Tienda",
     "storeNickname": "Apodo",
     "storeCodeLabel": "Código Tienda",
