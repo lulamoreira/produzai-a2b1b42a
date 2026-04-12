@@ -190,7 +190,7 @@ export default function AppSidebar() {
   }, [navigate]);
 
   const roleBadge = isAdmin ? "Admin" : isMaster ? "Master" : "Usuário";
-  const homePath = isAdminOrMaster ? "/" : "/my-campaigns";
+  const homePath = isAdminOrMaster ? "/agencies" : "/my-campaigns";
 
   // Helper: is a campaign module active?
   const isCampaignModuleActive = (cId: string, modKey: string) => {
@@ -264,8 +264,8 @@ export default function AppSidebar() {
           </button>
         )}
 
-        {/* ── Favoritos (hidden for limited users) ── */}
-        {!isLimited && (
+        {/* ── Favoritos (admin/master only) ── */}
+        {isAdminOrMaster && (
           <button
             onClick={() => handleNavigate("/favorites")}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"

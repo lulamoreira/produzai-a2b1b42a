@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCampaignFavorites, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 import AppLayout from "@/components/AppLayout";
-import { Star, ArrowRight } from "lucide-react";
+import { Star, ArrowRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Favorites = () => {
@@ -100,6 +100,19 @@ const Favorites = () => {
             })}
           </div>
         )}
+
+        {/* Link to all agencies */}
+        <div className="mt-8 pt-6 border-t" style={{ borderColor: "var(--border)" }}>
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => navigate("/agencies")}
+          >
+            <Building2 className="w-4 h-4" />
+            {t("favorites.viewAllAgencies", "Ver todas as agências")}
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
     </AppLayout>
   );

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star } from "lucide-react";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks/useCampaignFavorites";
+import { useUserRole } from "@/hooks/useUserRole";
 import StoresMatrixTable from "@/components/StoresMatrixTable";
 import StoreFullCardView from "@/components/StoreFullCardView";
 import {
@@ -145,11 +146,11 @@ const CAMPAIGN_COLORS = [
 ];
 
 function SortableCampaignCard({
-  campaign, canDelete, canEdit, onNavigate, onDelete, onColorChange, isFavorited, onToggleFavorite,
+  campaign, canDelete, canEdit, onNavigate, onDelete, onColorChange, isFavorited, onToggleFavorite, showFavorite,
 }: {
   campaign: Campaign; canDelete: boolean; canEdit: boolean;
   onNavigate: () => void; onDelete: () => void; onColorChange: (c: string) => void;
-  isFavorited: boolean; onToggleFavorite: () => void;
+  isFavorited: boolean; onToggleFavorite: () => void; showFavorite: boolean;
 }) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: campaign.id });
@@ -206,14 +207,16 @@ function SortableCampaignCard({
         </div>
 
         <div className="flex items-center gap-0.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 flex-shrink-0"
-            onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-          >
-            <Star className={`w-3.5 h-3.5 ${isFavorited ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
-          </Button>
+          {showFavorite && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 flex-shrink-0"
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+            >
+              <Star className={`w-3.5 h-3.5 ${isFavorited ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`} />
+            </Button>
+          )}
           {canEdit && (
             <Popover>
               <PopoverTrigger asChild>
@@ -284,6 +287,7 @@ const ClientDetail = () => {
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
+  const { isAdminOrMaster } = useUserRole();
 
   const { data: agencyInfo } = useQuery({
     queryKey: ["agency_name", agencyId],
@@ -886,6 +890,7 @@ const ClientDetail = () => {
                         onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
                         isFavorited={favoriteIds?.has(c.id) ?? false}
                         onToggleFavorite={() => toggleFavorite.mutate({ campaignId: c.id, isFavorited: favoriteIds?.has(c.id) ?? false })}
+                        showFavorite={isAdminOrMaster}
                       />
                     ))}
                   </div>
