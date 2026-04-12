@@ -1642,31 +1642,34 @@ export type Database = {
       notification_settings: {
         Row: {
           agency_id: string
+          category_id: string | null
           created_at: string
           enabled: boolean
           event_type: string
           id: string
-          role_scope: string
+          role_scope: string | null
           updated_at: string | null
           updated_by: string | null
         }
         Insert: {
           agency_id: string
+          category_id?: string | null
           created_at?: string
           enabled?: boolean
           event_type: string
           id?: string
-          role_scope: string
+          role_scope?: string | null
           updated_at?: string | null
           updated_by?: string | null
         }
         Update: {
           agency_id?: string
+          category_id?: string | null
           created_at?: string
           enabled?: boolean
           event_type?: string
           id?: string
-          role_scope?: string
+          role_scope?: string | null
           updated_at?: string | null
           updated_by?: string | null
         }
@@ -1676,6 +1679,13 @@ export type Database = {
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_settings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "permission_categories"
             referencedColumns: ["id"]
           },
         ]

@@ -7,7 +7,8 @@ export interface NotificationSetting {
   id: string;
   agency_id: string;
   event_type: string;
-  role_scope: string;
+  role_scope: string | null;
+  category_id: string | null;
   enabled: boolean;
   updated_at: string | null;
   updated_by: string | null;
@@ -25,14 +26,14 @@ export function useNotificationSettings(agencyId?: string) {
         .from("notification_settings")
         .select("*")
         .eq("agency_id", agencyId)
-        .order("event_type")
-        .order("role_scope");
+        .order("event_type");
       if (error) throw error;
       return (data ?? []) as unknown as NotificationSetting[];
     },
     enabled: !!agencyId,
   });
 
+  /** Upsert a role_scope-based setting */
   const updateSetting = async (eventType: string, roleScope: string, enabled: boolean) => {
     if (!agencyId || !user) return;
 
@@ -56,6 +57,7 @@ export function useNotificationSettings(agencyId?: string) {
           agency_id: agencyId,
           event_type: eventType,
           role_scope: roleScope,
+          category_id: null,
           enabled,
           updated_by: user.id,
         } as any);
@@ -69,5 +71,43 @@ export function useNotificationSettings(agencyId?: string) {
     toast.success("Configuração salva");
   };
 
-  return { settings, isLoading, updateSetting };
+  /** Upsert a category_id-based setting */
+  const updateCategorySetting = async (eventType: string, categoryId: string, enabled: boolean) => {
+    if (!agencyId || !user) return;
+
+    const existing = settings.find(
+      (s) => s.event_type === eventType && s.category_id === categoryId
+    );
+
+    if (existing) {
+      const { error } = await supabase
+        .from("notification_settings")
+        .update({ enabled, updated_at: new Date().toISOString(), updated_by: user.id } as any)
+        .eq("id", existing.id);
+      if (error) {
+        toast.error("Erro ao salvar configuração");
+        return;
+      }
+    } else {
+      const { error } = await supabase
+        .from("notification_settings")
+        .insert({
+          agency_id: agencyId,
+          event_type: eventType,
+          role_scope: null,
+          category_id: categoryId,
+          enabled,
+          updated_by: user.id,
+        } as any);
+      if (error) {
+        toast.error("Erro ao salvar configuração");
+        return;
+      }
+    }
+
+    queryClient.invalidateQueries({ queryKey: ["notification_settings", agencyId] });
+    toast.success("Configuração salva");
+  };
+
+  return { settings, isLoading, updateSetting, updateCategorySetting };
 }

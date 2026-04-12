@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
+import { usePermissionCategories } from "@/hooks/usePermissionCategories";
 import { Switch } from "@/components/ui/switch";
 
 const EVENTOS = [
@@ -17,7 +18,7 @@ const EVENTOS = [
   { type: "novo_usuario_pendente", label: "Novo usuário aguardando" },
 ];
 
-const ALL_COLUNAS = [
+const ROLE_COLUNAS = [
   { scope: "admin", label: "Admin" },
   { scope: "master_global", label: "Master Global" },
   { scope: "master_cliente", label: "Master de Cliente" },
@@ -77,10 +78,11 @@ export default function NotificationSettingsManager() {
   });
 
   const agencyId = profile?.agency_id || agencyAccess?.agency_id || fallbackAgency?.id;
-  const { settings, isLoading, updateSetting } = useNotificationSettings(agencyId ?? undefined);
+  const { settings, isLoading, updateSetting, updateCategorySetting } = useNotificationSettings(agencyId ?? undefined);
+  const { data: categories = [] } = usePermissionCategories();
 
-  // Admin sees all 4 columns; master sees 3 (no admin column)
-  const colunas = isAdmin ? ALL_COLUNAS : ALL_COLUNAS.filter((c) => c.scope !== "admin");
+  // Admin sees all 4 role columns; master sees 3 (no admin column)
+  const roleColunas = isAdmin ? ROLE_COLUNAS : ROLE_COLUNAS.filter((c) => c.scope !== "admin");
 
   if (isLoading || !agencyId) {
     return (
@@ -102,9 +104,14 @@ export default function NotificationSettingsManager() {
           <thead>
             <tr className="border-b">
               <th className="text-left py-2 pr-4 font-medium text-muted-foreground">Evento</th>
-              {colunas.map((col) => (
+              {roleColunas.map((col) => (
                 <th key={col.scope} className="text-center py-2 px-3 font-medium text-muted-foreground whitespace-nowrap">
                   {col.label}
+                </th>
+              ))}
+              {categories.map((cat) => (
+                <th key={cat.id} className="text-center py-2 px-3 font-medium text-muted-foreground whitespace-nowrap">
+                  {cat.name}
                 </th>
               ))}
             </tr>
@@ -113,7 +120,8 @@ export default function NotificationSettingsManager() {
             {EVENTOS.map((evento) => (
               <tr key={evento.type} className="border-b border-border/40 hover:bg-muted/30">
                 <td className="py-3 pr-4 font-medium">{evento.label}</td>
-                {colunas.map((col) => {
+                {/* Role-based columns */}
+                {roleColunas.map((col) => {
                   const setting = settings.find(
                     (s) => s.event_type === evento.type && s.role_scope === col.scope
                   );
@@ -122,6 +130,20 @@ export default function NotificationSettingsManager() {
                       <Switch
                         checked={setting?.enabled ?? false}
                         onCheckedChange={(val) => updateSetting(evento.type, col.scope, val)}
+                      />
+                    </td>
+                  );
+                })}
+                {/* Category-based columns */}
+                {categories.map((cat) => {
+                  const setting = settings.find(
+                    (s) => s.event_type === evento.type && s.category_id === cat.id
+                  );
+                  return (
+                    <td key={cat.id} className="text-center py-3 px-3">
+                      <Switch
+                        checked={setting?.enabled ?? false}
+                        onCheckedChange={(val) => updateCategorySetting(evento.type, cat.id, val)}
                       />
                     </td>
                   );
