@@ -10,7 +10,7 @@ import "leaflet/dist/leaflet.css";
 interface Props {
   stores: ClientStore[];
   scheduleMap: Record<string, Schedule>;
-  storeOccurrenceStatus: Record<string, boolean>;
+  storeOccurrenceStatus: Record<string, { hasOccurrence: boolean; allResolved: boolean; count: number }>;
   photosByStore: Record<string, any[]>;
 }
 
@@ -109,7 +109,7 @@ export default function InstallationsMapView({ stores, scheduleMap, storeOccurre
         const coords = localCoords[s.id];
         const schedule = scheduleMap[s.id];
         const isCompleted = !!schedule?.completed_at;
-        const hasOccurrence = !!storeOccurrenceStatus[s.id];
+        const hasOccurrence = storeOccurrenceStatus[s.id]?.hasOccurrence && !storeOccurrenceStatus[s.id]?.allResolved;
         let color = "#f59e0b"; // amber = pending
         let status = "Pendente";
         if (isCompleted) {
