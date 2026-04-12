@@ -58,7 +58,7 @@ export function useDisplayName() {
       if (!user) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, nickname")
+        .select("display_name, nickname, avatar_url")
         .eq("user_id", user.id)
         .maybeSingle();
       return data;
@@ -67,7 +67,9 @@ export function useDisplayName() {
   });
 
   const raw = (profile as any)?.nickname || profile?.display_name || user?.email?.split("@")[0] || "";
-  return capitalizeName(raw);
+  const displayName = capitalizeName(raw);
+  const avatarUrl: string | null = (profile as any)?.avatar_url || null;
+  return { displayName, avatarUrl };
 }
 
 export default function AppHeader({
@@ -85,7 +87,7 @@ export default function AppHeader({
   const { user, signOut } = useAuth();
   const { isAdmin, isMaster, isAdminOrMaster, role } = useUserRole();
   const navigate = useNavigate();
-  const displayName = useDisplayName();
+  const { displayName, avatarUrl } = useDisplayName();
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const { t } = useTranslation();
   const { currentLanguage, changeLanguage } = useLanguage();

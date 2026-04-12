@@ -64,7 +64,7 @@ export default function AppSidebar() {
     }
     return Array.from(map.values());
   }, [isLimited, limitedCampaigns]);
-  const displayName = useDisplayName();
+  const { displayName, avatarUrl } = useDisplayName();
   const { collapsed, setCollapsed } = useSidebarState();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useTranslation();
@@ -487,8 +487,12 @@ export default function AppSidebar() {
             onMouseEnter={e => { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }}
           >
-            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-600, #735A3D)" }}>
-              <span className="text-[13px] font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: avatarUrl ? "transparent" : "var(--brand-600, #735A3D)" }}>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
+              ) : (
+                <span className="text-[13px] font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
+              )}
             </div>
             {!collapsed && (
               <div className="flex-1 text-left min-w-0">
