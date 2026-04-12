@@ -289,7 +289,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       result = result.filter((s) => !scheduleMap[s.id]?.reschedule_enabled);
     }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterMessages, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap, chatCounts]);
+  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterMessages, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap]);
 
   // Apply summary filter on top of filteredStores
   const displayedStores = useMemo(() => {
