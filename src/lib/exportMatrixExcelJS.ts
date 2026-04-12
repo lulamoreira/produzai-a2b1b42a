@@ -323,6 +323,10 @@ export async function exportMatrixExcelJS(
   const colors = makeColors(palette);
   const locData: LocationData = { locations, subLocations };
 
+  // Build full hierarchy title
+  const titleParts = [agencyName, clientName, campaignName].filter(Boolean);
+  const fullTitle = titleParts.join(" / ");
+
   // Build unified column list
   type ColItem = MatrixItem & { _type: "piece" | "kit"; display_order: number };
   const allColumns: ColItem[] = [
