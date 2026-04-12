@@ -2304,8 +2304,15 @@ const CampaignDetail = () => {
                      }
                    }}
                   onDuplicate={async (piece) => {
-                    const maxOrder = pieces.length > 0 ? Math.max(...pieces.map(p => p.display_order)) : 0;
+                    const origOrder = piece.display_order;
                     const maxCode = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;
+                    // Shift all pieces and kits after the original down by 1
+                    for (const p of pieces.filter(p => p.display_order > origOrder)) {
+                      await supabase.from("campaign_pieces").update({ display_order: p.display_order + 1 }).eq("id", p.id);
+                    }
+                    for (const k of kits.filter(k => k.display_order > origOrder)) {
+                      await supabase.from("campaign_kits").update({ display_order: k.display_order + 1 }).eq("id", k.id);
+                    }
                     await addPiece.mutateAsync({
                       campaign_id: campaignId,
                       code: maxCode + 1,
@@ -2317,27 +2324,37 @@ const CampaignDetail = () => {
                       installation_instructions: piece.installation_instructions,
                       kit_only: piece.kit_only,
                       is_mockup: piece.is_mockup,
-                      display_order: maxOrder + 1,
+                      display_order: origOrder + 1,
                       image_url: piece.image_url || undefined,
                     });
+                    queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+                    queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
                     toast.success("Peça duplicada com sucesso!");
                   }}
                    onDuplicateKit={async (kit) => {
-                     const maxOrder = [...pieces, ...kits].reduce((max, item) => Math.max(max, item.display_order), 0);
+                     const origOrder = kit.display_order;
                      const maxCode = kits.length > 0 ? Math.max(...kits.map(k => k.code)) : 0;
                      const maxPieceCode = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;
-                     const maxPieceOrder = pieces.length > 0 ? Math.max(...pieces.map(p => p.display_order)) : 0;
+                     // Count how many slots we need: 1 for kit + N for deep-cloned pieces
+                     const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
+                     const slotsNeeded = 1 + kpForKit.length;
+                     // Shift all pieces and kits after the original down
+                     for (const p of pieces.filter(p => p.display_order > origOrder)) {
+                       await supabase.from("campaign_pieces").update({ display_order: p.display_order + slotsNeeded }).eq("id", p.id);
+                     }
+                     for (const k of kits.filter(k => k.display_order > origOrder)) {
+                       await supabase.from("campaign_kits").update({ display_order: k.display_order + slotsNeeded }).eq("id", k.id);
+                     }
                      const createdKit = await addKit.mutateAsync({
                        campaign_id: campaignId,
                        name: `${kit.name} - Cópia`,
                        code: maxCode + 1,
-                       display_order: maxOrder + 1,
+                       display_order: origOrder + 1,
                      });
                      if (kit.image_url) await updateKit.mutateAsync({ id: createdKit.id, image_url: kit.image_url });
                      if (kit.is_mockup) await updateKit.mutateAsync({ id: createdKit.id, is_mockup: true });
                      if (kit.category || kit.sub_location) await updateKit.mutateAsync({ id: createdKit.id, category: kit.category, sub_location: kit.sub_location });
                      // Deep clone: create NEW independent pieces for the duplicated kit
-                     const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
                      let pieceCodeOffset = 0;
                      let pieceOrderOffset = 0;
                      for (const kp of kpForKit) {
@@ -2345,7 +2362,6 @@ const CampaignDetail = () => {
                        if (!originalPiece) continue;
                        pieceCodeOffset++;
                        pieceOrderOffset++;
-                       // Create a completely new piece (deep copy)
                        const newPiece = await addPiece.mutateAsync({
                          campaign_id: campaignId,
                          code: maxPieceCode + pieceCodeOffset,
@@ -2357,13 +2373,14 @@ const CampaignDetail = () => {
                          installation_instructions: originalPiece.installation_instructions,
                          kit_only: originalPiece.kit_only,
                          is_mockup: originalPiece.is_mockup,
-                         display_order: maxPieceOrder + pieceOrderOffset,
+                         display_order: origOrder + 1 + pieceOrderOffset,
                          image_url: originalPiece.image_url || undefined,
                          sub_location: originalPiece.sub_location || undefined,
                        });
-                       // Link the NEW piece to the NEW kit
                        await addKitPiece.mutateAsync({ kit_id: createdKit.id, piece_id: newPiece.id, quantity: kp.quantity });
                      }
+                     queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+                     queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
                      toast.success(`Kit duplicado com sucesso! ${kpForKit.length} peça(s) copiada(s) de forma independente.`);
                    }}
                   onReorder={handleReorderUnified}
