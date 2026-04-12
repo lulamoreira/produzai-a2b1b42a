@@ -21,7 +21,7 @@ const MODULE_COLORS: Record<string, string> = {
   scheduling: "#5C6B3F",
   installations: "#7B5E3A",
   budgets: "#4A5568",
-  chat: "#5A4A3A",
+  
   history: "#6B5B4E",
 };
 

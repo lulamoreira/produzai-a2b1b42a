@@ -65,7 +65,7 @@ import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaig
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters, type FilterLogicMode } from "@/components/MatrixFilterSidebar";
 import ModuleGrid from "@/components/ModuleGrid";
 import CampaignStatusDashboard from "@/components/CampaignStatusDashboard";
-import CampaignChatSection from "@/components/CampaignChatSection";
+
 import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
@@ -1019,7 +1019,7 @@ const CampaignDetail = () => {
                 { key: "scheduling", label: t("modules.scheduling"), icon: CalendarDays, visible: canViewSchedules, color: "#5C6B3F" },
                 { key: "installations", label: t("modules.installations"), icon: Camera, visible: canViewInstallations, color: "#7B5E3A" },
                 { key: "budgets", label: t("modules.budgets"), icon: DollarSign, visible: isAdmin, color: "#4A5568" },
-                { key: "chat", label: t("modules.chat"), icon: MessageSquare, visible: canViewCampaigns, color: "#5A4A3A" },
+                
                 { key: "history", label: t("modules.history"), icon: History, visible: canViewCampaigns, color: "#6B5B4E" },
               ]}
               onSelect={(key) => setActiveSection(key)}
@@ -2409,10 +2409,6 @@ const CampaignDetail = () => {
             <BudgetsTab campaignId={campaignId!} canEdit={canEditCampaign} currencyCode={client?.currency_code} />
           )}
 
-          {/* ─── SECTION: CHAT ─── */}
-          {activeSection === "chat" && campaignId && (
-            <CampaignChatSection campaignId={campaignId} />
-          )}
 
           {/* ─── SECTION: HISTORY ─── */}
           {activeSection === "history" && campaignId && (

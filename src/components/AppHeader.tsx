@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Shield, MessageSquare, ArrowLeft, UserCog, ChevronRight, Globe } from "lucide-react";
+import { LogOut, Shield, ArrowLeft, UserCog, ChevronRight, Globe } from "lucide-react";
 import { WhatsNewButton } from "@/components/WhatsNewSheet";
 import { InviteButton } from "@/components/InviteButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -164,10 +164,6 @@ export default function AppHeader({
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]" onClick={() => navigate("/chat")}>
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline text-xs font-semibold">{t("header.chat")}</span>
-              </Button>
               {isAdminOrMaster && (
                 <Button size="icon" variant="outline" className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]" onClick={() => navigate("/admin")}>
                   <Shield className="w-3.5 h-3.5" />

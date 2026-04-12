@@ -71,7 +71,7 @@ function encodeFieldLabel(name: string, type: FieldType): string {
 }
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
-import ChatTabContent from "@/components/ChatTabContent";
+
 import * as XLSX from "xlsx";
 import { capitalizeName } from "@/lib/utils";
 
