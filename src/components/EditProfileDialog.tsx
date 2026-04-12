@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,8 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { Loader2, MessageCircle } from "lucide-react";
+import { Loader2, MessageCircle, Camera } from "lucide-react";
+import { compressImage } from "@/lib/compressImage";
+import { useLanguage } from "@/hooks/useLanguage";
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -28,6 +35,9 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { currentLanguage, changeLanguage } = useLanguage();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile_full", user?.id],
@@ -35,7 +45,7 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
       if (!user) return null;
       const { data } = await supabase
         .from("profiles")
-        .select("display_name, phone, job_title, nickname, company, phone_is_whatsapp")
+        .select("display_name, phone, job_title, nickname, company, phone_is_whatsapp, avatar_url, preferred_language")
         .eq("user_id", user.id)
         .maybeSingle();
       return data;
@@ -50,7 +60,10 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
     nickname: "",
     company: "",
     phone_is_whatsapp: false,
+    avatar_url: "" as string | null,
   });
+
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(currentLanguage);
 
   useEffect(() => {
     if (profile) {
@@ -61,9 +74,61 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
         nickname: (profile as any).nickname || "",
         company: (profile as any).company || "",
         phone_is_whatsapp: (profile as any).phone_is_whatsapp || false,
+        avatar_url: (profile as any).avatar_url || null,
       });
+      setSelectedLanguage((profile as any).preferred_language || currentLanguage);
     }
   }, [profile]);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione um arquivo de imagem.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const compressed = await compressImage(file, 400, 0.8);
+      const path = `${user.id}/${Date.now()}.jpg`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, compressed, { contentType: "image/jpeg", upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(path);
+
+      const publicUrl = urlData.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl } as any)
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      setForm(f => ({ ...f, avatar_url: publicUrl }));
+      queryClient.invalidateQueries({ queryKey: ["profile_display"] });
+      queryClient.invalidateQueries({ queryKey: ["profile_full"] });
+      toast.success("Foto atualizada!");
+    } catch (err: any) {
+      console.error("Avatar upload error:", err);
+      toast.error("Erro ao enviar foto.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -78,6 +143,12 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
     }
 
     setSaving(true);
+
+    // Update language if changed
+    if (selectedLanguage !== currentLanguage) {
+      changeLanguage(selectedLanguage as SupportedLanguage);
+    }
+
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -103,6 +174,8 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
     onOpenChange(false);
   };
 
+  const initials = (form.display_name || user?.email || "U").charAt(0).toUpperCase();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
@@ -117,6 +190,39 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Avatar upload */}
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={handleAvatarClick}
+                disabled={uploading}
+                className="relative group rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <Avatar className="w-20 h-20">
+                  {form.avatar_url && (
+                    <AvatarImage src={form.avatar_url} alt="Avatar" />
+                  )}
+                  <AvatarFallback className="text-2xl font-bold bg-primary/15 text-primary">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  {uploading ? (
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  ) : (
+                    <Camera className="w-5 h-5 text-white" />
+                  )}
+                </div>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+            </div>
+
             <div>
               <Label className="text-xs text-muted-foreground">E-mail</Label>
               <Input value={user?.email || ""} disabled className="bg-muted" />
@@ -181,6 +287,24 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
                 placeholder="Ex: Gerente de Projetos"
                 maxLength={80}
               />
+            </div>
+
+            {/* Language selector */}
+            <div>
+              <Label className="text-xs">Idioma</Label>
+              <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      <span className="mr-2">{lang.flag}</span>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
