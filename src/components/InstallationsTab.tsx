@@ -36,7 +36,7 @@ import {
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
   Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList, Lock, LockOpen,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, SlidersHorizontal, Filter, MoreHorizontal,
-  ArrowUpDown,
+  ArrowUpDown, LayoutGrid, MapPin,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -106,6 +106,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [filterCheckin, setFilterCheckin] = useState("");
   const [groupBy, setGroupBy] = useState<"none" | "state" | "team" | "status">("none");
   const [sortBy, setSortBy] = useState<string>("name_az");
+  const [viewMode, setViewMode] = useState<"cards" | "map">("cards");
 
   // UI state
   const [showCodes, setShowCodes] = useState(false);
