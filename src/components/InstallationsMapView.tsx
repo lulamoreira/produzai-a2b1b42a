@@ -28,11 +28,11 @@ function delay(ms: number) {
 
 function escapeHtml(value: string) {
   return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 async function geocodeStore(store: ClientStore): Promise<{ lat: number; lng: number } | null> {
@@ -164,7 +164,7 @@ export default function InstallationsMapView({ stores, scheduleMap, storeOccurre
         const hasOpenOccurrence = !!occurrenceState?.hasOccurrence && !occurrenceState?.allResolved;
         const isCompleted = !!schedule?.completed_at;
 
-        let color = MARKER_COLORS.pending;
+        let color: string = MARKER_COLORS.pending;
         let status = "Pendente";
 
         if (hasOpenOccurrence) {
