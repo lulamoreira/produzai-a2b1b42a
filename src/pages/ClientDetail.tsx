@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star } from "lucide-react";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks/useCampaignFavorites";
+import { useUserRole } from "@/hooks/useUserRole";
 import StoresMatrixTable from "@/components/StoresMatrixTable";
 import StoreFullCardView from "@/components/StoreFullCardView";
 import {
@@ -286,6 +287,7 @@ const ClientDetail = () => {
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
+  const { isAdminOrMaster } = useUserRole();
 
   const { data: agencyInfo } = useQuery({
     queryKey: ["agency_name", agencyId],
@@ -888,6 +890,7 @@ const ClientDetail = () => {
                         onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
                         isFavorited={favoriteIds?.has(c.id) ?? false}
                         onToggleFavorite={() => toggleFavorite.mutate({ campaignId: c.id, isFavorited: favoriteIds?.has(c.id) ?? false })}
+                        showFavorite={isAdminOrMaster}
                       />
                     ))}
                   </div>
