@@ -18,7 +18,7 @@ import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 
 import {
-  Building2, MessageSquare, Shield, LogOut, Users,
+  Building2, Shield, LogOut, Users,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
   CalendarDays, Camera, DollarSign, Database, Globe, Settings, History,
@@ -32,7 +32,7 @@ const CAMPAIGN_MODULE_KEYS = [
   { key: "scheduling", tKey: "modules.scheduling", icon: CalendarDays, color: "#5C6B3F" },
   { key: "installations", tKey: "modules.installations", icon: Camera, color: "#7B5E3A" },
   { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#4A5568" },
-  { key: "chat", tKey: "modules.chat", icon: MessageSquare, color: "#5A4A3A" },
+  
   { key: "history", tKey: "modules.history", icon: History, color: "#6B5B4E" },
 ];
 

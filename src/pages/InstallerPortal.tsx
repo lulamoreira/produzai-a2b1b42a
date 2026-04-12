@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import {
   Camera, Upload, CalendarIcon, Clock, MapPin, Phone, User,
   CheckCircle, KeyRound, Store, FileText, Building2, AlertTriangle,
-  ArrowDown, MessageCircle, Send, ChevronDown, ChevronUp, HardHat,
+  ArrowDown, ChevronDown, ChevronUp,
   WifiOff, Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
@@ -70,11 +70,6 @@ export default function InstallerPortal() {
     faltam: number;
   } | null>(null);
   const [tentandoConcluir, setTentandoConcluir] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [chatSending, setChatSending] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const [offlineLoaded, setOfflineLoaded] = useState(false);
   const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
   const [pendingPhotoCount, setPendingPhotoCount] = useState(0);
@@ -113,67 +108,6 @@ export default function InstallerPortal() {
     }
   }, [code]);
 
-  // Chat: fetch messages via edge function
-  const fetchChatMessages = useCallback(async () => {
-    if (!code || code.length !== 5 || !isOnline) return;
-    try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/installer-read-messages`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: code.toLowerCase() }),
-        }
-      );
-      const result = await res.json();
-      if (res.ok && result.messages) {
-        setChatMessages(result.messages);
-      }
-    } catch { /* silent */ }
-  }, [code, isOnline]);
-
-  // Poll chat every 10 seconds when chat is open and data exists
-  useEffect(() => {
-    if (!data || !chatOpen || !isOnline) return;
-    fetchChatMessages();
-    const interval = setInterval(fetchChatMessages, 10000);
-    return () => clearInterval(interval);
-  }, [data, chatOpen, fetchChatMessages, isOnline]);
-
-  // Scroll chat to bottom
-  useEffect(() => {
-    if (chatOpen) chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, chatOpen]);
-
-  const handleSendChat = async () => {
-    const text = chatInput.trim();
-    if (!text || !data) return;
-    setChatSending(true);
-    try {
-      const installerName = data.members?.find((m: any) => m.is_leader)?.name
-        || data.members?.[0]?.name
-        || data.team?.name
-        || "Instalador";
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const res = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/installer-send-message`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: code.toLowerCase(), content: text, installer_name: installerName }),
-        }
-      );
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error);
-      setChatInput("");
-      fetchChatMessages();
-    } catch (err: any) {
-      toast.error(err.message || "Erro ao enviar mensagem.");
-    } finally {
-      setChatSending(false);
-    }
-  };
 
   const handleSubmit = async () => {
     if (code.length !== 5) return;
@@ -830,81 +764,6 @@ export default function InstallerPortal() {
           </div>
         )}
 
-        {/* Installer Chat */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-          <button
-            className="w-full px-4 py-3 flex items-center justify-between text-left"
-            onClick={() => setChatOpen(!chatOpen)}
-          >
-            <span className="flex items-center gap-2 text-xs font-semibold text-foreground uppercase tracking-wide">
-              <MessageCircle className="w-4 h-4" />
-              Dúvidas / Chat
-              {chatMessages.length > 0 && (
-                <span className="text-[10px] font-normal text-muted-foreground">
-                  ({chatMessages.length})
-                </span>
-              )}
-            </span>
-            {chatOpen ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-          </button>
-
-          {chatOpen && (
-            <div className="border-t border-border">
-              {!isOnline ? (
-                <div className="p-6 text-center text-muted-foreground">
-                  <WifiOff className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  <p className="text-sm font-medium">Indisponível offline</p>
-                  <p className="text-xs mt-1">O chat estará disponível quando a conexão voltar.</p>
-                </div>
-              ) : (
-                <>
-                  <div className="max-h-64 overflow-y-auto p-3 space-y-2">
-                    {chatMessages.length === 0 && (
-                      <p className="text-xs text-muted-foreground text-center py-4">
-                        Nenhuma mensagem. Envie uma dúvida para a equipe!
-                      </p>
-                    )}
-                    {chatMessages.map((msg: any) => (
-                      <div key={msg.id} className={`flex flex-col ${msg.is_installer ? "items-end" : "items-start"}`}>
-                        <span className="text-[10px] text-muted-foreground mb-0.5 px-1 flex items-center gap-1">
-                          {msg.is_installer && <HardHat className="w-3 h-3" />}
-                          {msg.sender_name}
-                        </span>
-                        <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                          msg.is_installer
-                            ? "bg-amber-100 dark:bg-amber-900/30 text-foreground border border-amber-200 dark:border-amber-800"
-                            : "bg-muted text-foreground"
-                        }`}>
-                          {msg.image_url && (
-                            <img src={msg.image_url} alt="" className="max-w-full rounded-md mb-1 max-h-32 object-cover" />
-                          )}
-                          {msg.content && <span className="whitespace-pre-wrap break-words">{msg.content}</span>}
-                        </div>
-                        <span className="text-[10px] text-muted-foreground mt-0.5 px-1">
-                          {new Date(msg.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      </div>
-                    ))}
-                    <div ref={chatEndRef} />
-                  </div>
-
-                  <div className="border-t border-border p-3 flex gap-2">
-                    <Input
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      placeholder="Envie uma dúvida..."
-                      className="text-sm"
-                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendChat(); } }}
-                    />
-                    <Button size="icon" onClick={handleSendChat} disabled={!chatInput.trim() || chatSending}>
-                      <Send className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
 
         {/* Complete button */}
         {!isCompleted && (

@@ -15,10 +15,10 @@ import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
-import ScheduleCardChat from "@/components/ScheduleCardChat";
+
 import ScheduleHistorySheet from "@/components/ScheduleHistorySheet";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
-import { useScheduleChatUnreadCounts, useMarkAsRead } from "@/hooks/useChatReadStatus";
+
 import { useUserRole } from "@/hooks/useUserRole";
 import { useLogActivity } from "@/hooks/useActivityLogs";
 import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
@@ -95,11 +95,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatStoreId, setChatStoreId] = useState("");
-  const [chatStoreName, setChatStoreName] = useState("");
   const [filterApproval, setFilterApproval] = useState("");
-  const [filterMessages, setFilterMessages] = useState("");
+  
   const [filterDate, setFilterDate] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("");
   const [filterTeam, setFilterTeam] = useState("");
@@ -134,9 +131,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     });
   };
 
-  // Unread message counts
-  const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
-  const markAsRead = useMarkAsRead();
 
   // Fetch all contacts for the client
   const { data: allContacts = [] } = useStoreContactsByClient(clientId);
@@ -265,11 +259,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         return true;
       });
     }
-    if (filterMessages === "unread") {
-      result = result.filter((s) => (chatCounts?.unreadPerStore[s.id] || 0) > 0);
-    } else if (filterMessages === "has_messages") {
-      result = result.filter((s) => (chatCounts?.totalPerStore[s.id] || 0) > 0);
-    }
     if (filterTeam) {
       if (filterTeam === "no_team") {
         result = result.filter((s) => !scheduleMap[s.id]?.team_id);
@@ -300,7 +289,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       result = result.filter((s) => !scheduleMap[s.id]?.reschedule_enabled);
     }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterMessages, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap, chatCounts]);
+  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap]);
 
   // Apply summary filter on top of filteredStores
   const displayedStores = useMemo(() => {
@@ -650,7 +639,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   };
 
   // Count active secondary filters
-  const secondaryFilterCount = [filterCity, filterPeriod, filterMessages, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
+  const secondaryFilterCount = [filterCity, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
 
   // Approval badge helper
   const approvalBadgeClass = (status: ApprovalStatusValue) => {
@@ -734,11 +723,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 <option value="afternoon">{t("filters.periodAfternoon")}</option>
                 <option value="night">{t("filters.periodNight")}</option>
               </select>
-              <select value={filterMessages} onChange={(e) => setFilterMessages(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
-                <option value="">{t("filters.messages")}</option>
-                <option value="unread">{t("filters.newMessages")}</option>
-                <option value="has_messages">{t("filters.withMessages")}</option>
-              </select>
               <select value={filterTeam} onChange={(e) => setFilterTeam(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
                 <option value="">{t("filters.team")}</option>
                 <option value="no_team">{t("filters.noTeam")}</option>
@@ -771,7 +755,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               )}
               {secondaryFilterCount > 0 && (
                 <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => {
-                  setFilterCity(""); setFilterPeriod(""); setFilterMessages(""); setFilterTeam("");
+                  setFilterCity(""); setFilterPeriod(""); setFilterTeam("");
                   setFilterPreference(""); setFilterResponsibility(""); setFilterLocked(""); setFilterReschedule(""); setFilterModel("");
                 }}>
                   Limpar filtros avançados
@@ -1026,12 +1010,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     })()}
                     {isReschedule && <span className="badge-base badge-warning">REM</span>}
                     {isCardLocked && <span className="badge-base badge-neutral"><Lock className="w-3 h-3" /> BLOQ</span>}
-                    {/* Chat badge */}
-                    {(chatCounts?.unreadPerStore[store.id] || 0) > 0 && (
-                      <span className="badge-base badge-danger">
-                        <MessageCircle className="w-3 h-3" /> {chatCounts!.unreadPerStore[store.id]}
-                      </span>
-                    )}
                   </div>
                 </div>
 
@@ -1295,22 +1273,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-xs gap-1.5 min-h-[44px] relative"
-                      onClick={() => {
-                        setChatStoreId(store.id);
-                        setChatStoreName(store.name);
-                        setChatOpen(true);
-                        markAsRead.mutate({ contextType: "schedule_chat", contextId: `${campaignId}:${store.id}` });
-                      }}
-                    >
-                      <MessageCircle className="w-4 h-4" /> {t("modules.chat")}
-                      {(chatCounts?.unreadPerStore[store.id] || 0) > 0 && (
-                        <span className="badge-base badge-danger ml-1">{chatCounts!.unreadPerStore[store.id]}</span>
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
                       className="text-xs gap-1.5 min-h-[44px]"
                       onClick={() => {
                         setHistoryStoreId(store.id);
@@ -1368,11 +1330,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       {displayedStores.length === 0 && (
         <EmptyState
           icon={CalendarIcon}
-          hasActiveFilters={!!(searchTerm || filterState || filterCity || filterApproval || filterDate || filterPeriod || filterTeam || filterPreference || filterResponsibility || filterLocked || filterReschedule || filterModel || filterMessages || summaryFilter)}
+          hasActiveFilters={!!(searchTerm || filterState || filterCity || filterApproval || filterDate || filterPeriod || filterTeam || filterPreference || filterResponsibility || filterLocked || filterReschedule || filterModel || summaryFilter)}
           onClearFilters={() => {
             setSearchTerm(""); setFilterState(""); setFilterCity(""); setFilterApproval(""); setFilterDate("");
             setFilterPeriod(""); setFilterTeam(""); setFilterPreference(""); setFilterResponsibility("");
-            setFilterLocked(""); setFilterReschedule(""); setFilterModel(""); setFilterMessages(""); setSummaryFilter("");
+            setFilterLocked(""); setFilterReschedule(""); setFilterModel(""); setSummaryFilter("");
           }}
         />
       )}
@@ -1385,14 +1347,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         canEdit={canEdit}
       />
 
-      {/* Per-card Chat */}
-      <ScheduleCardChat
-        open={chatOpen}
-        onOpenChange={setChatOpen}
-        campaignId={campaignId}
-        storeId={chatStoreId}
-        storeName={chatStoreName}
-      />
 
       {/* Per-card History */}
       <ScheduleHistorySheet
