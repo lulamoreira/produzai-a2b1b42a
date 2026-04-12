@@ -64,7 +64,7 @@ export default function AppSidebar() {
     }
     return Array.from(map.values());
   }, [isLimited, limitedCampaigns]);
-  const displayName = useDisplayName();
+  const { displayName, avatarUrl } = useDisplayName();
   const { collapsed, setCollapsed } = useSidebarState();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useTranslation();
