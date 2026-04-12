@@ -289,7 +289,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       result = result.filter((s) => !scheduleMap[s.id]?.reschedule_enabled);
     }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterMessages, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap]);
+  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap]);
 
   // Apply summary filter on top of filteredStores
   const displayedStores = useMemo(() => {
@@ -639,7 +639,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   };
 
   // Count active secondary filters
-  const secondaryFilterCount = [filterCity, filterPeriod, filterMessages, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
+  const secondaryFilterCount = [filterCity, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
 
   // Approval badge helper
   const approvalBadgeClass = (status: ApprovalStatusValue) => {
@@ -755,7 +755,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               )}
               {secondaryFilterCount > 0 && (
                 <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => {
-                  setFilterCity(""); setFilterPeriod(""); setFilterMessages(""); setFilterTeam("");
+                  setFilterCity(""); setFilterPeriod(""); setFilterTeam("");
                   setFilterPreference(""); setFilterResponsibility(""); setFilterLocked(""); setFilterReschedule(""); setFilterModel("");
                 }}>
                   Limpar filtros avançados
@@ -1330,11 +1330,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       {displayedStores.length === 0 && (
         <EmptyState
           icon={CalendarIcon}
-          hasActiveFilters={!!(searchTerm || filterState || filterCity || filterApproval || filterDate || filterPeriod || filterTeam || filterPreference || filterResponsibility || filterLocked || filterReschedule || filterModel || filterMessages || summaryFilter)}
+          hasActiveFilters={!!(searchTerm || filterState || filterCity || filterApproval || filterDate || filterPeriod || filterTeam || filterPreference || filterResponsibility || filterLocked || filterReschedule || filterModel || summaryFilter)}
           onClearFilters={() => {
             setSearchTerm(""); setFilterState(""); setFilterCity(""); setFilterApproval(""); setFilterDate("");
             setFilterPeriod(""); setFilterTeam(""); setFilterPreference(""); setFilterResponsibility("");
-            setFilterLocked(""); setFilterReschedule(""); setFilterModel(""); setFilterMessages(""); setSummaryFilter("");
+            setFilterLocked(""); setFilterReschedule(""); setFilterModel(""); setSummaryFilter("");
           }}
         />
       )}
