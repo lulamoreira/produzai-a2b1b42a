@@ -46,6 +46,7 @@ import { downloadPhotosAsZip, downloadAllCampaignPhotosAsZip } from "@/lib/downl
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { downloadWorkbook } from "@/lib/downloadWorkbook";
@@ -119,6 +120,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [uploadCategory, setUploadCategory] = useState<Record<string, string>>({});
   const [checkinStore, setCheckinStore] = useState<ClientStore | null>(null);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [selectedStores, setSelectedStores] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewStore, setPreviewStore] = useState<any>(null);
