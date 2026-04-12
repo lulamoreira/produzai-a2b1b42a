@@ -1009,10 +1009,26 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             <div
               key={store.id}
               className={cn(
-                "card-base overflow-hidden flex flex-col transition-shadow duration-150 hover:shadow-md",
-                isCardLocked && "opacity-80"
+                "group/card card-base overflow-hidden flex flex-col transition-shadow duration-150 hover:shadow-md relative",
+                isCardLocked && "opacity-80",
+                selectedStores.has(store.id) && "ring-2 ring-primary/40"
               )}
               style={{ borderLeft: `4px solid ${borderLeftColor}`, padding: 0 }}
+            >
+              {/* Selection checkbox */}
+              <div
+                className={cn(
+                  "absolute top-2 left-6 z-10 transition-opacity",
+                  hasAnySelected ? "opacity-100" : "opacity-0 group-hover/card:opacity-100"
+                )}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Checkbox
+                  checked={selectedStores.has(store.id)}
+                  onCheckedChange={() => toggleStoreSelection(store.id)}
+                  className="bg-background shadow-sm"
+                />
+              </div>
             >
               {/* COLLAPSED STATE — always visible */}
               <div
