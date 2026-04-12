@@ -32,3 +32,9 @@ verify_jwt = false
 
 [functions.handle-email-suppression]
 verify_jwt = false
+
+[functions.installer-send-message]
+verify_jwt = false
+
+[functions.installer-read-messages]
+verify_jwt = false

@@ -2226,6 +2226,9 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          image_url: string | null
+          installer_name: string | null
+          is_installer: boolean
           sender_id: string
           store_id: string
         }
@@ -2234,6 +2237,9 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          image_url?: string | null
+          installer_name?: string | null
+          is_installer?: boolean
           sender_id: string
           store_id: string
         }
@@ -2242,6 +2248,9 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          image_url?: string | null
+          installer_name?: string | null
+          is_installer?: boolean
           sender_id?: string
           store_id?: string
         }
