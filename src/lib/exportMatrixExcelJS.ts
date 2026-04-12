@@ -379,7 +379,7 @@ export async function exportMatrixExcelJS(
 
   // ABA 1 – Main matrix
   const ws = wb.addWorksheet("Matriz Lojas x Peças");
-  await buildTransposedSheet(wb, ws, campaignName, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames);
+  await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames);
 
   // Kit tabs
   for (const kit of kits) {
