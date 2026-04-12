@@ -1644,25 +1644,31 @@ export type Database = {
           agency_id: string
           created_at: string
           enabled: boolean
+          event_type: string
           id: string
-          notification_type: string
-          role_scope: Database["public"]["Enums"]["notification_role_scope"]
+          role_scope: string
+          updated_at: string | null
+          updated_by: string | null
         }
         Insert: {
           agency_id: string
           created_at?: string
           enabled?: boolean
+          event_type: string
           id?: string
-          notification_type: string
-          role_scope: Database["public"]["Enums"]["notification_role_scope"]
+          role_scope: string
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Update: {
           agency_id?: string
           created_at?: string
           enabled?: boolean
+          event_type?: string
           id?: string
-          notification_type?: string
-          role_scope?: Database["public"]["Enums"]["notification_role_scope"]
+          role_scope?: string
+          updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -1677,44 +1683,44 @@ export type Database = {
       notifications: {
         Row: {
           action_url: string | null
+          body: string
           campaign_id: string | null
           client_id: string | null
           created_at: string
           id: string
-          message: string | null
           metadata: Json | null
-          notification_type: string
           read: boolean
           store_id: string | null
           title: string
+          type: string
           user_id: string
         }
         Insert: {
           action_url?: string | null
+          body: string
           campaign_id?: string | null
           client_id?: string | null
           created_at?: string
           id?: string
-          message?: string | null
           metadata?: Json | null
-          notification_type: string
           read?: boolean
           store_id?: string | null
           title: string
+          type: string
           user_id: string
         }
         Update: {
           action_url?: string | null
+          body?: string
           campaign_id?: string | null
           client_id?: string | null
           created_at?: string
           id?: string
-          message?: string | null
           metadata?: Json | null
-          notification_type?: string
           read?: boolean
           store_id?: string | null
           title?: string
+          type?: string
           user_id?: string
         }
         Relationships: [
@@ -2648,6 +2654,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      criar_notificacao: {
+        Args: {
+          _action_url?: string
+          _agency_id: string
+          _body?: string
+          _campaign_id?: string
+          _client_id?: string
+          _store_id?: string
+          _title?: string
+          _type?: string
+        }
+        Returns: undefined
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -2705,11 +2724,6 @@ export type Database = {
     Enums: {
       app_role: "admin" | "viewer" | "master"
       approval_status: "pending" | "approved" | "rejected"
-      notification_role_scope:
-        | "admin"
-        | "master_global"
-        | "master_cliente"
-        | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2839,12 +2853,6 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "viewer", "master"],
       approval_status: ["pending", "approved", "rejected"],
-      notification_role_scope: [
-        "admin",
-        "master_global",
-        "master_cliente",
-        "viewer",
-      ],
     },
   },
 } as const
