@@ -35,10 +35,13 @@ import {
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
   Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList, Lock, LockOpen,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, SlidersHorizontal, Filter, MoreHorizontal,
+  ArrowUpDown,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { downloadPhotosAsZip, downloadAllCampaignPhotosAsZip } from "@/lib/downloadPhotosZip";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -99,6 +102,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [filterModel, setFilterModel] = useState("");
   const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "withReschedule" | "withOccurrence" | "noCheckin">("");
   const [filterCheckin, setFilterCheckin] = useState("");
+  const [groupBy, setGroupBy] = useState<"none" | "state" | "team" | "status">("none");
+  const [sortBy, setSortBy] = useState<string>("name_az");
 
   // UI state
   const [showCodes, setShowCodes] = useState(false);
@@ -271,11 +276,41 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
       return matchesSearch && matchesState && matchesCity && matchesStatus && matchesDate && matchesPeriod && matchesTeam && matchesLocked && matchesReschedule && matchesModel && matchesCheckin;
     }).sort((a, b) => {
-      const stateComp = (a.state || "").localeCompare(b.state || "");
-      if (stateComp !== 0) return stateComp;
-      return a.name.localeCompare(b.name);
+      switch (sortBy) {
+        case "name_za":
+          return b.name.localeCompare(a.name);
+        case "date_asc": {
+          const schA = scheduleMap[a.id];
+          const schB = scheduleMap[b.id];
+          const dA = (schA?.reschedule_enabled ? schA?.reschedule_date : schA?.scheduled_date) || "9999";
+          const dB = (schB?.reschedule_enabled ? schB?.reschedule_date : schB?.scheduled_date) || "9999";
+          return dA.localeCompare(dB) || a.name.localeCompare(b.name);
+        }
+        case "date_desc": {
+          const schA2 = scheduleMap[a.id];
+          const schB2 = scheduleMap[b.id];
+          const dA2 = (schA2?.reschedule_enabled ? schA2?.reschedule_date : schA2?.scheduled_date) || "";
+          const dB2 = (schB2?.reschedule_enabled ? schB2?.reschedule_date : schB2?.scheduled_date) || "";
+          return dB2.localeCompare(dA2) || a.name.localeCompare(b.name);
+        }
+        case "most_photos":
+          return (photosByStore[b.id] || []).length - (photosByStore[a.id] || []).length || a.name.localeCompare(b.name);
+        case "occurrences_first": {
+          const occA = storeOccurrenceStatus[a.id];
+          const occB = storeOccurrenceStatus[b.id];
+          const hasA = occA?.hasOccurrence && !occA.allResolved ? 1 : 0;
+          const hasB = occB?.hasOccurrence && !occB.allResolved ? 1 : 0;
+          return hasB - hasA || a.name.localeCompare(b.name);
+        }
+        case "name_az":
+        default: {
+          const stateComp = (a.state || "").localeCompare(b.state || "");
+          if (stateComp !== 0) return stateComp;
+          return a.name.localeCompare(b.name);
+        }
+      }
     });
-  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, filterDate, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel, filterCheckin, scheduleMap, photosByStore]);
+  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, filterDate, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel, filterCheckin, scheduleMap, photosByStore, storeOccurrenceStatus, sortBy]);
 
   // Apply summary filter on top of filteredStores
   const displayedStores = useMemo(() => {
@@ -295,6 +330,40 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       }
     });
   }, [filteredStores, summaryFilter, scheduleMap, photosByStore, storeOccurrenceStatus]);
+
+  // Grouped stores for rendering with group headers
+  const groupedStores = useMemo(() => {
+    if (groupBy === "none") {
+      return [{ label: "", stores: displayedStores }];
+    }
+    const groupMap = new Map<string, ClientStore[]>();
+    displayedStores.forEach((s) => {
+      let key: string;
+      switch (groupBy) {
+        case "state":
+          key = s.state?.trim() || "Sem estado";
+          break;
+        case "team": {
+          const sch = scheduleMap[s.id];
+          const tm = sch?.team_id ? teamMap[sch.team_id] : null;
+          key = tm?.name || "Sem equipe";
+          break;
+        }
+        case "status": {
+          const sch2 = scheduleMap[s.id];
+          key = sch2?.completed_at ? "Concluídas" : "Pendentes";
+          break;
+        }
+        default:
+          key = "";
+      }
+      if (!groupMap.has(key)) groupMap.set(key, []);
+      groupMap.get(key)!.push(s);
+    });
+    return Array.from(groupMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([label, storesToGroup]) => ({ label, stores: storesToGroup }));
+  }, [displayedStores, groupBy, scheduleMap, teamMap]);
 
   const handleUploadPhoto = async (storeId: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -682,6 +751,41 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         </div>
       )}
 
+      {/* Grouping & Sorting Toolbar */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground font-medium">Agrupar:</span>
+          <ToggleGroup
+            type="single"
+            value={groupBy}
+            onValueChange={(v) => { if (v) setGroupBy(v as any); }}
+            size="sm"
+            className="gap-0.5"
+          >
+            <ToggleGroupItem value="none" className="text-xs h-7 px-2.5 rounded-full">Nenhum</ToggleGroupItem>
+            <ToggleGroupItem value="state" className="text-xs h-7 px-2.5 rounded-full">Estado</ToggleGroupItem>
+            <ToggleGroupItem value="team" className="text-xs h-7 px-2.5 rounded-full">Equipe</ToggleGroupItem>
+            <ToggleGroupItem value="status" className="text-xs h-7 px-2.5 rounded-full">Status</ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="h-7 w-[180px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name_az">Nome A→Z</SelectItem>
+              <SelectItem value="name_za">Nome Z→A</SelectItem>
+              <SelectItem value="date_asc">Data mais antiga</SelectItem>
+              <SelectItem value="date_desc">Data mais recente</SelectItem>
+              <SelectItem value="most_photos">Mais fotos</SelectItem>
+              <SelectItem value="occurrences_first">Com ocorrências primeiro</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       {/* Store Cards */}
       {displayedStores.length === 0 ? (
         <EmptyState
@@ -694,8 +798,17 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           }}
         />
       ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-        {displayedStores.map((store) => {
+      <div className="space-y-4">
+        {groupedStores.map((group) => (
+          <div key={group.label || "__all"}>
+            {group.label && (
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-sm font-semibold text-foreground">{group.label}</h3>
+                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{group.stores.length}</span>
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+        {group.stores.map((store) => {
           const colors = getStateColor(store.state);
           const schedule = scheduleMap[store.id];
           const assignedTeam = schedule?.team_id ? teamMap[schedule.team_id] : null;
@@ -1308,6 +1421,9 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             </div>
           );
         })}
+            </div>
+          </div>
+        ))}
       </div>
       )}
 
