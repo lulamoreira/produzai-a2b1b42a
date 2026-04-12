@@ -61,8 +61,10 @@ export default function InstallationsMapView({ stores, scheduleMap, storeOccurre
   useEffect(() => {
     const initial: Record<string, { lat: number; lng: number }> = {};
     stores.forEach((s) => {
-      if (s.latitude != null && s.longitude != null) {
-        initial[s.id] = { lat: s.latitude as number, lng: s.longitude as number };
+      const lat = (s as any).latitude;
+      const lng = (s as any).longitude;
+      if (lat != null && lng != null) {
+        initial[s.id] = { lat, lng };
       }
     });
     setLocalCoords(initial);
@@ -74,7 +76,7 @@ export default function InstallationsMapView({ stores, scheduleMap, storeOccurre
     geocodingRef.current = true;
 
     const needsGeocode = stores.filter(
-      (s) => s.latitude == null || s.longitude == null
+      (s) => (s as any).latitude == null || (s as any).longitude == null
     );
     if (needsGeocode.length === 0) return;
 
