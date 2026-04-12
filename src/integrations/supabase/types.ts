@@ -1639,6 +1639,108 @@ export type Database = {
           },
         ]
       }
+      notification_settings: {
+        Row: {
+          agency_id: string
+          created_at: string
+          enabled: boolean
+          id: string
+          notification_type: string
+          role_scope: Database["public"]["Enums"]["notification_role_scope"]
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          notification_type: string
+          role_scope: Database["public"]["Enums"]["notification_role_scope"]
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          notification_type?: string
+          role_scope?: Database["public"]["Enums"]["notification_role_scope"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_settings_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          action_url: string | null
+          campaign_id: string | null
+          client_id: string | null
+          created_at: string
+          id: string
+          message: string | null
+          metadata: Json | null
+          notification_type: string
+          read: boolean
+          store_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          action_url?: string | null
+          campaign_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          notification_type: string
+          read?: boolean
+          store_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          action_url?: string | null
+          campaign_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          metadata?: Json | null
+          notification_type?: string
+          read?: boolean
+          store_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       occurrence_comments: {
         Row: {
           content: string
@@ -2603,6 +2705,11 @@ export type Database = {
     Enums: {
       app_role: "admin" | "viewer" | "master"
       approval_status: "pending" | "approved" | "rejected"
+      notification_role_scope:
+        | "admin"
+        | "master_global"
+        | "master_cliente"
+        | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2732,6 +2839,12 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "viewer", "master"],
       approval_status: ["pending", "approved", "rejected"],
+      notification_role_scope: [
+        "admin",
+        "master_global",
+        "master_cliente",
+        "viewer",
+      ],
     },
   },
 } as const
