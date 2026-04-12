@@ -138,6 +138,15 @@ Deno.serve(async (req) => {
       .update({ used_by: user.id, used_at: new Date().toISOString() })
       .eq('id', invite.id);
 
+    // 5. Populate agency_id and client_id on the user's profile
+    await admin
+      .from('profiles')
+      .update({
+        agency_id: invite.agency_id,
+        client_id: invite.client_id ?? null,
+      })
+      .eq('user_id', user.id);
+
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

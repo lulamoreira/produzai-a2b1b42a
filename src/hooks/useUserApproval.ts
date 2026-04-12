@@ -10,6 +10,8 @@ export type UserApprovalInfo = {
   display_name: string | null;
   approval_status: ApprovalStatus;
   created_at: string;
+  agency_id: string | null;
+  client_id: string | null;
 };
 
 export function useUserApprovalStatus() {
