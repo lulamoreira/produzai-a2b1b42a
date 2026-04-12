@@ -315,6 +315,8 @@ export async function exportMatrixExcelJS(
   locations: CampaignPieceLocation[] = [],
   subLocations: CampaignPieceSubLocation[] = [],
   allPieces?: CampaignPiece[],
+  agencyName?: string,
+  clientName?: string,
 ) {
   const wb = new ExcelJS.Workbook();
   wb.creator = "ProduzAI";
