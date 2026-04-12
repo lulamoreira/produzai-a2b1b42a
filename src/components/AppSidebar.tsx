@@ -267,7 +267,7 @@ export default function AppSidebar() {
           <button
             onClick={() => handleNavigate(homePath)}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-            style={itemStyle(location.pathname === homePath && location.pathname !== "/" && location.pathname !== "/favorites" && location.pathname !== "/my-campaigns")}
+            style={itemStyle(location.pathname === homePath && !["/", "/favorites", "/my-campaigns"].includes(location.pathname))}
             {...hoverHandlers(location.pathname === homePath && location.pathname !== "/")}
             title={collapsed ? t("sidebar.agencies") : undefined}
           >
