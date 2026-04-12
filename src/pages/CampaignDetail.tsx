@@ -980,16 +980,26 @@ const CampaignDetail = () => {
         {!activeSection && !isLimitedMode && (
           <>
             {/* Inline KPI stats */}
-            <div className="flex items-baseline gap-3 mb-4 flex-wrap">
-              <button onClick={() => setActiveSection("stores")} className="inline-flex items-baseline gap-1.5 group cursor-pointer">
-                <span className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{stores.length}</span>
-                <span className="text-[13px] group-hover:underline" style={{ color: "var(--text-muted)" }}>{t("stores.registered")}</span>
-              </button>
-              <span style={{ color: "var(--border-default)", fontSize: "16px" }}>·</span>
-              <button onClick={() => setActiveSection("pieces")} className="inline-flex items-baseline gap-1.5 group cursor-pointer">
-                <span className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{visiblePieces.length + kits.length}</span>
-                <span className="text-[13px] group-hover:underline" style={{ color: "var(--text-muted)" }}>{t("pieces.registered")}</span>
-              </button>
+            <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <button onClick={() => setActiveSection("stores")} className="inline-flex items-baseline gap-1.5 group cursor-pointer">
+                  <span className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{stores.length}</span>
+                  <span className="text-[13px] group-hover:underline" style={{ color: "var(--text-muted)" }}>{t("stores.registered")}</span>
+                </button>
+                <span style={{ color: "var(--border-default)", fontSize: "16px" }}>·</span>
+                <button onClick={() => setActiveSection("pieces")} className="inline-flex items-baseline gap-1.5 group cursor-pointer">
+                  <span className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{visiblePieces.length + kits.length}</span>
+                  <span className="text-[13px] group-hover:underline" style={{ color: "var(--text-muted)" }}>{t("pieces.registered")}</span>
+                </button>
+              </div>
+              {(isAdmin || canEditCampaign) && (
+                <ExportReportDropdown
+                  campaignId={campaignId!}
+                  clientId={clientId!}
+                  campaignName={campaign?.name || ""}
+                  clientName={client?.name || ""}
+                />
+              )}
             </div>
 
             <CampaignStatusDashboard
