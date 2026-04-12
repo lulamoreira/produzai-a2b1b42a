@@ -62,6 +62,8 @@ interface OccurrenceListViewProps {
   onOpenLightbox: (photos: string[], index: number) => void;
   canLockCards?: boolean;
   scheduleMap: Record<string, Schedule>;
+  agencyId?: string;
+  clientId?: string;
 }
 
 export default function OccurrenceListView({
@@ -69,7 +71,7 @@ export default function OccurrenceListView({
   canEdit, canDelete, canEditReporter, motives, statuses, defaultStatus,
   photosMap, campaignName, agencyName, clientName, getReporterLabel,
   firstPieceKitLabels, whatsappLinkTemplate, whatsappContactTemplate,
-  onOpenLightbox, canLockCards, scheduleMap,
+  onOpenLightbox, canLockCards, scheduleMap, agencyId, clientId,
 }: OccurrenceListViewProps) {
   const [selectedOccId, setSelectedOccId] = useState<string | null>(null);
   const selectedOcc = useMemo(() => occurrences.find(o => o.id === selectedOccId), [occurrences, selectedOccId]);
