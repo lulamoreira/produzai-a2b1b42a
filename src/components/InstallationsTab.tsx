@@ -928,9 +928,35 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             </SelectContent>
           </Select>
         </div>
+        <div className="ml-auto flex items-center gap-1.5">
+          <ToggleGroup
+            type="single"
+            value={viewMode}
+            onValueChange={(v) => { if (v) setViewMode(v as "cards" | "map"); }}
+            size="sm"
+            className="gap-0.5"
+          >
+            <ToggleGroupItem value="cards" className="h-7 px-2.5 rounded-full text-xs gap-1">
+              <LayoutGrid className="w-3.5 h-3.5" /> Cards
+            </ToggleGroupItem>
+            <ToggleGroupItem value="map" className="h-7 px-2.5 rounded-full text-xs gap-1">
+              <MapPin className="w-3.5 h-3.5" /> Mapa
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
       </div>
 
-      {/* Store Cards */}
+      {/* Map View */}
+      {viewMode === "map" ? (
+        <InstallationsMapView
+          stores={displayedStores}
+          scheduleMap={scheduleMap}
+          storeOccurrenceStatus={storeOccurrenceStatus}
+          photosByStore={photosByStore}
+        />
+      ) : (
+
+      /* Store Cards */
       {displayedStores.length === 0 ? (
         <EmptyState
           icon={Camera}
