@@ -52,7 +52,7 @@ export function useAllUsersApproval() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("user_id, display_name, approval_status, created_at")
+        .select("user_id, display_name, approval_status, created_at, agency_id, client_id")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as UserApprovalInfo[];
