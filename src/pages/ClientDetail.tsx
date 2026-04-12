@@ -282,6 +282,8 @@ const ClientDetail = () => {
   useLanguage((client as any)?.language);
   const { t } = useTranslation();
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
+  const { data: favoriteIds } = useFavoriteIds();
+  const toggleFavorite = useToggleFavorite();
 
   const { data: agencyInfo } = useQuery({
     queryKey: ["agency_name", agencyId],
@@ -882,6 +884,8 @@ const ClientDetail = () => {
                         onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
                         onDelete={() => deleteCampaign.mutate(c.id)}
                         onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
+                        isFavorited={favoriteIds?.has(c.id) ?? false}
+                        onToggleFavorite={() => toggleFavorite.mutate({ campaignId: c.id, isFavorited: favoriteIds?.has(c.id) ?? false })}
                       />
                     ))}
                   </div>
