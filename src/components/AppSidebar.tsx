@@ -268,7 +268,7 @@ export default function AppSidebar() {
             onClick={() => handleNavigate(homePath)}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
             style={itemStyle(location.pathname === homePath && !["/", "/favorites", "/my-campaigns"].includes(location.pathname))}
-            {...hoverHandlers(location.pathname === homePath && location.pathname !== "/")}
+            {...hoverHandlers(location.pathname === homePath && !(["/"] as string[]).includes(location.pathname))}
             title={collapsed ? t("sidebar.agencies") : undefined}
           >
             <AquaIcon icon={Building2} size="sm" color="#8C6F4E" />
