@@ -954,10 +954,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           storeOccurrenceStatus={storeOccurrenceStatus}
           photosByStore={photosByStore}
         />
-      ) : (
-
-      /* Store Cards */
-      {displayedStores.length === 0 ? (
+      ) : displayedStores.length === 0 ? (
         <EmptyState
           icon={Camera}
           hasActiveFilters={!!(searchTerm || filterState || filterStatus || filterDate || filterCity || filterPeriod || filterTeam || filterLocked || filterReschedule || filterModel || filterCheckin || summaryFilter)}
