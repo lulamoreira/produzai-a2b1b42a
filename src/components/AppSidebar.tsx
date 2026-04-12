@@ -263,6 +263,20 @@ export default function AppSidebar() {
         </button>
 
 
+        {/* ── Agências (admin/master only) ── */}
+        {isAdminOrMaster && (
+          <button
+            onClick={() => handleNavigate("/agencies")}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+            style={itemStyle(location.pathname === "/agencies")}
+            {...hoverHandlers(location.pathname === "/agencies")}
+            title={collapsed ? t("sidebar.agencies", "Agências") : undefined}
+          >
+            <AquaIcon icon={Building2} size="sm" color="#8C6F4E" />
+            {!collapsed && <span className="truncate font-medium">{t("sidebar.agencies", "Agências")}</span>}
+          </button>
+        )}
+
         {/* ── Favoritos (admin/master only) ── */}
         {isAdminOrMaster && (
           <button
