@@ -2,16 +2,18 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import {
   Camera, Upload, CalendarIcon, Clock, MapPin, Phone, User,
   CheckCircle, KeyRound, Store, FileText, Building2, AlertTriangle,
   ArrowDown, MessageCircle, Send, ChevronDown, ChevronUp, HardHat,
+  WifiOff, Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
+import { enqueue, blobToBase64, queueCount } from "@/lib/offlineQueue";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
 
 interface PortalData {
   schedule: any;
@@ -31,6 +33,27 @@ const CATEGORY_OPTIONS = [
 ];
 
 const MINIMO_FOTOS = 10;
+const CACHE_KEY = "installer_portal_cache";
+const CACHE_TS_KEY = "installer_portal_cache_ts";
+
+function saveCache(code: string, data: PortalData) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ code, data }));
+    localStorage.setItem(CACHE_TS_KEY, new Date().toISOString());
+  } catch { /* quota exceeded — ignore */ }
+}
+
+function loadCache(): { code: string; data: PortalData; ts: string } | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    const ts = localStorage.getItem(CACHE_TS_KEY);
+    if (!raw || !ts) return null;
+    const parsed = JSON.parse(raw);
+    return { code: parsed.code, data: parsed.data, ts };
+  } catch {
+    return null;
+  }
+}
 
 export default function InstallerPortal() {
   const [code, setCode] = useState("");
@@ -52,6 +75,36 @@ export default function InstallerPortal() {
   const [chatInput, setChatInput] = useState("");
   const [chatSending, setChatSending] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [offlineLoaded, setOfflineLoaded] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
+  const [pendingPhotoCount, setPendingPhotoCount] = useState(0);
+
+  // Offline sync hook
+  const { isOnline, isSyncing, pendingCount, refreshCount } = useOfflineSync(() => {
+    // After sync completes, refresh data from server if online
+    if (code.length === 5) handleSubmit();
+  });
+
+  // Refresh pending photo count whenever pendingCount changes
+  useEffect(() => {
+    queueCount("photo").then(setPendingPhotoCount).catch(() => {});
+  }, [pendingCount]);
+
+  // Try loading from cache if offline on mount
+  useEffect(() => {
+    if (!navigator.onLine && !data) {
+      const cached = loadCache();
+      if (cached) {
+        setCode(cached.code);
+        setData(cached.data);
+        setLocalPhotos(cached.data.photos || []);
+        setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
+        setIsCompleted(!!cached.data.schedule?.completed_at);
+        setOfflineLoaded(true);
+        setCacheTimestamp(cached.ts);
+      }
+    }
+  }, []);
 
   // Auto-submit when 5 chars
   useEffect(() => {
@@ -62,7 +115,7 @@ export default function InstallerPortal() {
 
   // Chat: fetch messages via edge function
   const fetchChatMessages = useCallback(async () => {
-    if (!code || code.length !== 5) return;
+    if (!code || code.length !== 5 || !isOnline) return;
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const res = await fetch(
@@ -78,15 +131,15 @@ export default function InstallerPortal() {
         setChatMessages(result.messages);
       }
     } catch { /* silent */ }
-  }, [code]);
+  }, [code, isOnline]);
 
   // Poll chat every 10 seconds when chat is open and data exists
   useEffect(() => {
-    if (!data || !chatOpen) return;
+    if (!data || !chatOpen || !isOnline) return;
     fetchChatMessages();
     const interval = setInterval(fetchChatMessages, 10000);
     return () => clearInterval(interval);
-  }, [data, chatOpen, fetchChatMessages]);
+  }, [data, chatOpen, fetchChatMessages, isOnline]);
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -124,6 +177,23 @@ export default function InstallerPortal() {
 
   const handleSubmit = async () => {
     if (code.length !== 5) return;
+
+    // If offline, try cache
+    if (!navigator.onLine) {
+      const cached = loadCache();
+      if (cached && cached.code === code.toLowerCase()) {
+        setData(cached.data);
+        setLocalPhotos(cached.data.photos || []);
+        setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
+        setIsCompleted(!!cached.data.schedule?.completed_at);
+        setOfflineLoaded(true);
+        setCacheTimestamp(cached.ts);
+        return;
+      }
+      setError("Sem conexão. Não há dados em cache para este código.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -147,9 +217,25 @@ export default function InstallerPortal() {
         setLocalPhotos(result.photos || []);
         setCheckinDone(!!result.schedule?.checkin_timestamp);
         setIsCompleted(!!result.schedule?.completed_at);
+        setOfflineLoaded(false);
+        // Cache for offline use
+        saveCache(code.toLowerCase(), result);
+        setCacheTimestamp(new Date().toISOString());
       }
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      // Network error — try cache
+      const cached = loadCache();
+      if (cached && cached.code === code.toLowerCase()) {
+        setData(cached.data);
+        setLocalPhotos(cached.data.photos || []);
+        setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
+        setIsCompleted(!!cached.data.schedule?.completed_at);
+        setOfflineLoaded(true);
+        setCacheTimestamp(cached.ts);
+        toast.info("Carregado do cache offline.");
+      } else {
+        setError("Erro de conexão. Tente novamente.");
+      }
     } finally {
       setLoading(false);
     }
@@ -176,6 +262,30 @@ export default function InstallerPortal() {
       // Continue without GPS
     }
 
+    const checkinPayload = {
+      installCode: code.toLowerCase(),
+      lat,
+      lng,
+      accuracy,
+      timestamp: new Date().toISOString(),
+      deviceInfo: {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+      },
+      campaignId: data.campaign?.id || data.schedule?.campaign_id,
+      storeId: data.store?.id,
+      storeName: data.store?.name,
+    };
+
+    if (!isOnline) {
+      await enqueue({ type: "checkin", createdAt: new Date().toISOString(), payload: checkinPayload });
+      toast.success("Check-in salvo localmente. Será enviado quando a conexão voltar.");
+      setCheckinDone(true);
+      await refreshCount();
+      return;
+    }
+
     try {
       const { error: updateError } = await supabase
         .from("campaign_schedules")
@@ -183,18 +293,13 @@ export default function InstallerPortal() {
           checkin_lat: lat,
           checkin_lng: lng,
           checkin_accuracy: accuracy,
-          checkin_timestamp: new Date().toISOString(),
-          checkin_device_info: {
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-            language: navigator.language,
-          },
+          checkin_timestamp: checkinPayload.timestamp,
+          checkin_device_info: checkinPayload.deviceInfo,
         } as any)
         .eq("install_code", code.toLowerCase());
 
       if (updateError) throw updateError;
 
-      // Log the checkin
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       await fetch(
         `https://${projectId}.supabase.co/functions/v1/validate-install-code`,
@@ -205,7 +310,6 @@ export default function InstallerPortal() {
         }
       );
 
-      // Log campaign activity for checkin
       if (data) {
         try {
           await supabase.from("campaign_activity_log" as any).insert({
@@ -222,17 +326,39 @@ export default function InstallerPortal() {
       toast.success("Check-in registrado! Bom trabalho. 👍");
       setCheckinDone(true);
     } catch {
-      toast.error("Erro ao registrar check-in.");
+      // Fallback to offline queue
+      await enqueue({ type: "checkin", createdAt: new Date().toISOString(), payload: checkinPayload });
+      toast.success("Check-in salvo localmente. Será enviado quando a conexão voltar.");
+      setCheckinDone(true);
+      await refreshCount();
     }
   };
 
   const handleUpload = async (files: FileList | null, method: "upload" | "camera" = "upload") => {
     if (!files || !data) return;
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
     for (const file of Array.from(files)) {
       try {
         const compressed = await compressImage(file, 1200, 0.7);
+
+        if (!isOnline) {
+          // Queue for later
+          const base64 = await blobToBase64(compressed);
+          await enqueue({
+            type: "photo",
+            createdAt: new Date().toISOString(),
+            payload: {
+              base64,
+              installCode: code.toLowerCase(),
+              storeId: data.store.id,
+              category: uploadCategory,
+              uploadMethod: method,
+            },
+          });
+          await refreshCount();
+          continue;
+        }
+
         const formData = new FormData();
         formData.append("install_code", code.toLowerCase());
         formData.append("store_id", data.store.id);
@@ -240,6 +366,7 @@ export default function InstallerPortal() {
         formData.append("upload_method", method);
         formData.append("photo", new File([compressed], "photo.jpg", { type: "image/jpeg" }));
 
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
         const res = await fetch(
           `https://${projectId}.supabase.co/functions/v1/upload-installation-photo`,
           { method: "POST", body: formData }
@@ -249,20 +376,44 @@ export default function InstallerPortal() {
         if (!res.ok) throw new Error(result.error);
         if (result.photo) setLocalPhotos((prev) => [...prev, result.photo]);
       } catch (err: any) {
-        toast.error(err.message || "Erro ao enviar foto.");
+        // On network error, queue offline
+        if (!isOnline || err.message?.includes("fetch")) {
+          try {
+            const compressed = await compressImage(file, 1200, 0.7);
+            const base64 = await blobToBase64(compressed);
+            await enqueue({
+              type: "photo",
+              createdAt: new Date().toISOString(),
+              payload: {
+                base64,
+                installCode: code.toLowerCase(),
+                storeId: data.store.id,
+                category: uploadCategory,
+                uploadMethod: method,
+              },
+            });
+            await refreshCount();
+          } catch {
+            toast.error("Erro ao salvar foto offline.");
+          }
+        } else {
+          toast.error(err.message || "Erro ao enviar foto.");
+        }
       }
     }
-    toast.success(`${files.length} foto(s) enviada(s)!`);
-    // Clear validation error if now above minimum
+    if (isOnline) {
+      toast.success(`${files.length} foto(s) enviada(s)!`);
+    } else {
+      toast.success(`${files.length} foto(s) salva(s) offline. Serão enviadas quando a conexão voltar.`);
+    }
     setValidacaoError(null);
   };
 
   const handleComplete = async () => {
     if (!data) return;
 
-    const totalMidias = localPhotos.length;
+    const totalMidias = localPhotos.length + pendingPhotoCount;
 
-    // Validation: minimum 10 photos/videos for installer portal
     if (totalMidias < MINIMO_FOTOS) {
       setValidacaoError({
         ativa: true,
@@ -274,6 +425,19 @@ export default function InstallerPortal() {
 
     setValidacaoError(null);
     setTentandoConcluir(true);
+
+    if (!isOnline) {
+      await enqueue({
+        type: "completion",
+        createdAt: new Date().toISOString(),
+        payload: { scheduleId: data.schedule.id },
+      });
+      setIsCompleted(true);
+      toast.success("Conclusão salva localmente. Será enviada quando a conexão voltar.");
+      setTentandoConcluir(false);
+      await refreshCount();
+      return;
+    }
 
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -301,6 +465,13 @@ export default function InstallerPortal() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg-page, #F5F2ED)" }}>
         <div className="w-full max-w-sm">
+          {/* Offline banner on login */}
+          {!isOnline && (
+            <div className="mb-4 flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 rounded-lg px-3 py-2 text-xs font-medium">
+              <WifiOff className="w-4 h-4 flex-shrink-0" />
+              Sem conexão — modo offline
+            </div>
+          )}
           <div className="text-center mb-6">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
@@ -375,11 +546,32 @@ export default function InstallerPortal() {
   const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
   const preference = schedule?.installation_preference;
   const prefLabel = preference === "morning" ? "Manhã" : preference === "afternoon" ? "Tarde" : preference === "night" ? "Noite" : "";
-  const totalMidias = localPhotos.length;
+  const totalMidias = localPhotos.length + pendingPhotoCount;
   const atingiuMinimo = totalMidias >= MINIMO_FOTOS;
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-page, #F5F2ED)" }}>
+      {/* Offline banner */}
+      {!isOnline && (
+        <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-amber-500 text-white px-4 py-2 text-xs font-semibold">
+          <WifiOff className="w-4 h-4" />
+          Sem conexão — modo offline
+          {cacheTimestamp && (
+            <span className="font-normal ml-1 opacity-80">
+              (dados de {new Date(cacheTimestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })})
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Syncing indicator */}
+      {isSyncing && (
+        <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2 text-xs font-semibold">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Sincronizando {pendingCount} ação(ões)...
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-30 border-b px-4 py-3.5" style={{ background: "var(--brand-800, #3D2E1E)", borderColor: "var(--border-subtle)" }}>
         <div className="flex items-center justify-between max-w-2xl mx-auto">
@@ -389,10 +581,21 @@ export default function InstallerPortal() {
               {campaign?.name || "Campanha"}
             </p>
           </div>
+          {!isOnline && (
+            <WifiOff className="w-4 h-4 flex-shrink-0" style={{ color: "#FBBF24" }} />
+          )}
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto p-4 space-y-4">
+        {/* Pending sync info */}
+        {pendingCount > 0 && isOnline && !isSyncing && (
+          <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 rounded-lg px-3 py-2 text-xs font-medium">
+            <Loader2 className="w-3.5 h-3.5" />
+            {pendingCount} ação(ões) pendente(s) de sincronização
+          </div>
+        )}
+
         {/* Store info card */}
         <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="px-4 py-3 border-b border-border" style={{ background: "rgba(140,111,78,0.06)" }}>
@@ -477,7 +680,15 @@ export default function InstallerPortal() {
 
         {/* Photos */}
         <div className="bg-card border border-border rounded-xl p-4 space-y-3" id="secao-fotos">
-          <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Fotos da instalação</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Fotos da instalação</p>
+            {pendingPhotoCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full px-2 py-0.5">
+                <Upload className="w-3 h-3" />
+                {pendingPhotoCount} pendente{pendingPhotoCount > 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
 
           {/* Progress bar */}
           <div className="flex flex-col gap-1.5">
@@ -639,48 +850,58 @@ export default function InstallerPortal() {
 
           {chatOpen && (
             <div className="border-t border-border">
-              <div className="max-h-64 overflow-y-auto p-3 space-y-2">
-                {chatMessages.length === 0 && (
-                  <p className="text-xs text-muted-foreground text-center py-4">
-                    Nenhuma mensagem. Envie uma dúvida para a equipe!
-                  </p>
-                )}
-                {chatMessages.map((msg: any) => (
-                  <div key={msg.id} className={`flex flex-col ${msg.is_installer ? "items-end" : "items-start"}`}>
-                    <span className="text-[10px] text-muted-foreground mb-0.5 px-1 flex items-center gap-1">
-                      {msg.is_installer && <HardHat className="w-3 h-3" />}
-                      {msg.sender_name}
-                    </span>
-                    <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
-                      msg.is_installer
-                        ? "bg-amber-100 dark:bg-amber-900/30 text-foreground border border-amber-200 dark:border-amber-800"
-                        : "bg-muted text-foreground"
-                    }`}>
-                      {msg.image_url && (
-                        <img src={msg.image_url} alt="" className="max-w-full rounded-md mb-1 max-h-32 object-cover" />
-                      )}
-                      {msg.content && <span className="whitespace-pre-wrap break-words">{msg.content}</span>}
-                    </div>
-                    <span className="text-[10px] text-muted-foreground mt-0.5 px-1">
-                      {new Date(msg.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
-                    </span>
+              {!isOnline ? (
+                <div className="p-6 text-center text-muted-foreground">
+                  <WifiOff className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-sm font-medium">Indisponível offline</p>
+                  <p className="text-xs mt-1">O chat estará disponível quando a conexão voltar.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="max-h-64 overflow-y-auto p-3 space-y-2">
+                    {chatMessages.length === 0 && (
+                      <p className="text-xs text-muted-foreground text-center py-4">
+                        Nenhuma mensagem. Envie uma dúvida para a equipe!
+                      </p>
+                    )}
+                    {chatMessages.map((msg: any) => (
+                      <div key={msg.id} className={`flex flex-col ${msg.is_installer ? "items-end" : "items-start"}`}>
+                        <span className="text-[10px] text-muted-foreground mb-0.5 px-1 flex items-center gap-1">
+                          {msg.is_installer && <HardHat className="w-3 h-3" />}
+                          {msg.sender_name}
+                        </span>
+                        <div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+                          msg.is_installer
+                            ? "bg-amber-100 dark:bg-amber-900/30 text-foreground border border-amber-200 dark:border-amber-800"
+                            : "bg-muted text-foreground"
+                        }`}>
+                          {msg.image_url && (
+                            <img src={msg.image_url} alt="" className="max-w-full rounded-md mb-1 max-h-32 object-cover" />
+                          )}
+                          {msg.content && <span className="whitespace-pre-wrap break-words">{msg.content}</span>}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground mt-0.5 px-1">
+                          {new Date(msg.created_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
+                    ))}
+                    <div ref={chatEndRef} />
                   </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
 
-              <div className="border-t border-border p-3 flex gap-2">
-                <Input
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Envie uma dúvida..."
-                  className="text-sm"
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendChat(); } }}
-                />
-                <Button size="icon" onClick={handleSendChat} disabled={!chatInput.trim() || chatSending}>
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
+                  <div className="border-t border-border p-3 flex gap-2">
+                    <Input
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Envie uma dúvida..."
+                      className="text-sm"
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendChat(); } }}
+                    />
+                    <Button size="icon" onClick={handleSendChat} disabled={!chatInput.trim() || chatSending}>
+                      <Send className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -690,7 +911,7 @@ export default function InstallerPortal() {
           <Button
             className={`w-full h-12 text-sm gap-2 ${
               validacaoError?.ativa ? "opacity-40 cursor-not-allowed pointer-events-none" : ""
-            } ${!atingiuMinimo && !validacaoError?.ativa ? "" : ""}`}
+            }`}
             variant="default"
             onClick={handleComplete}
             disabled={tentandoConcluir || validacaoError?.ativa === true}
