@@ -95,9 +95,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatStoreId, setChatStoreId] = useState("");
-  const [chatStoreName, setChatStoreName] = useState("");
   const [filterApproval, setFilterApproval] = useState("");
   const [filterMessages, setFilterMessages] = useState("");
   const [filterDate, setFilterDate] = useState("");
@@ -134,9 +131,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     });
   };
 
-  // Unread message counts
-  const { data: chatCounts } = useScheduleChatUnreadCounts(campaignId);
-  const markAsRead = useMarkAsRead();
 
   // Fetch all contacts for the client
   const { data: allContacts = [] } = useStoreContactsByClient(clientId);
@@ -264,11 +258,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         if (filterPeriod === "night") return hour >= 18 && hour <= 23;
         return true;
       });
-    }
-    if (filterMessages === "unread") {
-      result = result.filter((s) => (chatCounts?.unreadPerStore[s.id] || 0) > 0);
-    } else if (filterMessages === "has_messages") {
-      result = result.filter((s) => (chatCounts?.totalPerStore[s.id] || 0) > 0);
     }
     if (filterTeam) {
       if (filterTeam === "no_team") {
@@ -734,11 +723,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 <option value="afternoon">{t("filters.periodAfternoon")}</option>
                 <option value="night">{t("filters.periodNight")}</option>
               </select>
-              <select value={filterMessages} onChange={(e) => setFilterMessages(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
-                <option value="">{t("filters.messages")}</option>
-                <option value="unread">{t("filters.newMessages")}</option>
-                <option value="has_messages">{t("filters.withMessages")}</option>
-              </select>
               <select value={filterTeam} onChange={(e) => setFilterTeam(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
                 <option value="">{t("filters.team")}</option>
                 <option value="no_team">{t("filters.noTeam")}</option>
@@ -1026,12 +1010,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     })()}
                     {isReschedule && <span className="badge-base badge-warning">REM</span>}
                     {isCardLocked && <span className="badge-base badge-neutral"><Lock className="w-3 h-3" /> BLOQ</span>}
-                    {/* Chat badge */}
-                    {(chatCounts?.unreadPerStore[store.id] || 0) > 0 && (
-                      <span className="badge-base badge-danger">
-                        <MessageCircle className="w-3 h-3" /> {chatCounts!.unreadPerStore[store.id]}
-                      </span>
-                    )}
                   </div>
                 </div>
 
@@ -1295,22 +1273,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-xs gap-1.5 min-h-[44px] relative"
-                      onClick={() => {
-                        setChatStoreId(store.id);
-                        setChatStoreName(store.name);
-                        setChatOpen(true);
-                        markAsRead.mutate({ contextType: "schedule_chat", contextId: `${campaignId}:${store.id}` });
-                      }}
-                    >
-                      <MessageCircle className="w-4 h-4" /> {t("modules.chat")}
-                      {(chatCounts?.unreadPerStore[store.id] || 0) > 0 && (
-                        <span className="badge-base badge-danger ml-1">{chatCounts!.unreadPerStore[store.id]}</span>
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
                       className="text-xs gap-1.5 min-h-[44px]"
                       onClick={() => {
                         setHistoryStoreId(store.id);
@@ -1385,14 +1347,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         canEdit={canEdit}
       />
 
-      {/* Per-card Chat */}
-      <ScheduleCardChat
-        open={chatOpen}
-        onOpenChange={setChatOpen}
-        campaignId={campaignId}
-        storeId={chatStoreId}
-        storeName={chatStoreName}
-      />
 
       {/* Per-card History */}
       <ScheduleHistorySheet
