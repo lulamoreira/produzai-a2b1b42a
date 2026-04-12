@@ -1029,7 +1029,6 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   className="bg-background shadow-sm"
                 />
               </div>
-            >
               {/* COLLAPSED STATE — always visible */}
               <div
                 className="px-4 py-3 cursor-pointer select-none"
