@@ -1838,6 +1838,36 @@ const CampaignDetail = () => {
                     <div className="border border-border rounded-lg overflow-x-auto">
                       <Table>
                         <TableHeader>
+                          {/* Category group header row */}
+                          {(() => {
+                            const groups: { label: string; span: number }[] = [];
+                            let currentCat: string | null = null;
+                            let currentSpan = 0;
+                            matrixColumns.forEach((col) => {
+                              const cat = col.type === "piece" ? (col.data.category || "Sem localização") : (col.data.category || "Sem localização");
+                              if (cat !== currentCat) {
+                                if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
+                                currentCat = cat;
+                                currentSpan = 1;
+                              } else {
+                                currentSpan++;
+                              }
+                            });
+                            if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
+                            // Only show if there's more than one group
+                            if (groups.length <= 1) return null;
+                            return (
+                              <TableRow className="bg-muted/30">
+                                <TableHead className="sticky left-0 bg-muted/30 z-[5]" />
+                                {groups.map((g, i) => (
+                                  <TableHead key={i} colSpan={g.span} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-l border-border py-1">
+                                    {g.label}
+                                  </TableHead>
+                                ))}
+                                <TableHead />
+                              </TableRow>
+                            );
+                          })()}
                           <TableRow>
                             <TableHead className="sticky left-0 bg-card z-[5] min-w-[180px]">{t("matrix.store")}</TableHead>
                             {matrixColumns.map((col) => {
@@ -1852,9 +1882,6 @@ const CampaignDetail = () => {
                                       <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
                                       <span className="text-xs font-bold">{p.code}</span>
                                       <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[100px] whitespace-normal break-words">{p.name}</span>
-                                      {p.store_category && (
-                                        <span className="text-[9px] bg-accent text-accent-foreground px-1 rounded">{p.store_category}</span>
-                                      )}
                                     </button>
                                   </TableHead>
                                 );
