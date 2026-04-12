@@ -1,75 +1,48 @@
 
 
-## Revised Plan: Create notifications and notification_settings tables
+# Plan: Edge Function for Kit Duplication
 
-### Change 1: Explicit columns on `notifications`
+## Problem
+Kit duplication currently makes many sequential/parallel HTTP requests from the client (shift display_orders one by one, create kit, create pieces one by one, link kit_pieces one by one). This is slow due to network round-trips.
 
-Added `campaign_id`, `store_id`, `client_id`, and `action_url` as first-class columns alongside the existing `metadata` JSONB.
+## Solution
+Create a single edge function `duplicate-kit` that performs all operations server-side using `service_role`, then update the client to call it in one request.
 
-### Change 2: Agency-scoped `notification_settings`
+## Technical Details
 
-Added `agency_id` column and changed the UNIQUE constraint to `(agency_id, notification_type, role_scope)` so each agency configures notifications independently.
+### 1. Create `supabase/functions/duplicate-kit/index.ts`
 
----
-
-### Enum
-
-```sql
-CREATE TYPE public.notification_role_scope AS ENUM (
-  'admin', 'master_global', 'master_cliente', 'viewer'
-);
+**Input** (POST body):
+```json
+{
+  "kit_id": "uuid",
+  "campaign_id": "uuid", 
+  "orig_order": 5,
+  "slots_needed": 4,
+  "max_kit_code": 12,
+  "max_piece_code": 45
+}
 ```
 
-### Table: `notification_settings`
+**Server-side logic** (using service_role Supabase client):
 
-| Column | Type | Constraints |
-|---|---|---|
-| id | uuid PK | default gen_random_uuid() |
-| agency_id | uuid NOT NULL | references agencies(id) on delete cascade |
-| notification_type | text NOT NULL | e.g. 'new_occurrence' |
-| role_scope | notification_role_scope NOT NULL | |
-| enabled | boolean NOT NULL | default true |
-| created_at | timestamptz NOT NULL | default now() |
-| UNIQUE | (agency_id, notification_type, role_scope) | |
+1. **Fetch original kit** — single SELECT on `campaign_kits` by `kit_id`
+2. **Fetch kit's pieces** — JOIN `campaign_kit_pieces` + `campaign_pieces` to get all piece data + quantities
+3. **Bulk shift display_orders** — two UPDATE queries (one for pieces, one for kits) using `WHERE campaign_id = $1 AND display_order > $orig_order`, incrementing by `slots_needed`. This replaces N individual updates with 2.
+4. **Insert new kit** — single INSERT with all metadata (name with " - Cópia", code = max_kit_code+1, display_order = orig_order+1, image_url, category, sub_location, is_mockup)
+5. **Batch insert cloned pieces** — single INSERT with array of all pieces (each with new code, " - Cópia" name, display_order offset). Returns all created piece IDs.
+6. **Batch insert kit_piece links** — single INSERT mapping new kit ID to new piece IDs with quantities.
 
-### Table: `notifications`
+**Return**: `{ kit, pieces, kit_pieces }` for client-side cache update.
 
-| Column | Type | Constraints |
-|---|---|---|
-| id | uuid PK | default gen_random_uuid() |
-| user_id | uuid NOT NULL | references auth.users(id) on delete cascade |
-| notification_type | text NOT NULL | |
-| title | text NOT NULL | |
-| message | text | |
-| read | boolean NOT NULL | default false |
-| campaign_id | uuid | references campaigns(id) on delete cascade |
-| store_id | uuid | references client_stores(id) on delete set null |
-| client_id | uuid | references clients(id) on delete set null |
-| action_url | text | |
-| metadata | jsonb | default '{}' |
-| created_at | timestamptz NOT NULL | default now() |
+### 2. Update `supabase/config.toml`
+Add `[functions.duplicate-kit]` with `verify_jwt = false` (will validate auth in code).
 
-### RLS Policies
+### 3. Update `src/pages/CampaignDetail.tsx`
+Replace the `onDuplicateKit` handler (lines 2374-2437) to:
+- Call `supabase.functions.invoke("duplicate-kit", { body: { kit_id, campaign_id, orig_order, slots_needed, max_kit_code, max_piece_code } })`
+- On success, invalidate queries and show toast
+- Remove usage of `addKit.mutateAsync`, `updateKit.mutateAsync`, `addPiece.mutateAsync`, `addKitPiece.mutateAsync` from this handler
 
-**notification_settings:**
-- SELECT: all authenticated
-- INSERT/UPDATE/DELETE: admin only via `has_role(auth.uid(), 'admin')` or `is_admin_or_master(auth.uid())`
-
-**notifications:**
-- SELECT: own records (`user_id = auth.uid()`)
-- UPDATE: own records (mark as read)
-- INSERT: service_role + authenticated
-- DELETE: admin only
-
-### Indexes
-
-- `idx_notifications_user_id` on `notifications(user_id)`
-- `idx_notifications_read` on `notifications(user_id, read)` for unread count queries
-- `idx_notification_settings_agency` on `notification_settings(agency_id)`
-
-### Steps
-
-1. Single migration: create enum, both tables, indexes, RLS policies
-2. No seed data (agency-specific settings will be created per agency)
-3. No frontend code changes in this migration
+This reduces ~(2N + 4) network calls to 1 single call.
 
