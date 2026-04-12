@@ -313,8 +313,8 @@ export default function AppSidebar() {
           <div className="my-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
         )}
 
-        {/* ── Clientes (when inside agency) ── */}
-        {isInsideAgency && (
+        {/* ── Clientes (when inside agency, hidden for limited users) ── */}
+        {isInsideAgency && !isLimited && (
           <button
             onClick={() => handleNavigate(`/agency/${agencyId}`)}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
