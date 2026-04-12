@@ -474,7 +474,7 @@ const ImportPiecesFromCampaignDialog = ({
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-foreground truncate flex items-center gap-1">
                                   <Package className="w-3.5 h-3.5 text-primary" />
-                                  {kit.name}
+                                  KIT {kit.name}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                   Cód. {kit.code} · {kitPieceCount} peça(s)

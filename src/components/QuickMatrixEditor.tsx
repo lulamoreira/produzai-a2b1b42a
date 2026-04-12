@@ -531,7 +531,7 @@ const QuickMatrixEditor = ({
                             </div>
                           )}
                           <span className="text-xs font-bold text-primary">{kit.code}</span>
-                          <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[120px] whitespace-normal break-words">{kit.name}</span>
+                          <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[120px] whitespace-normal break-words">{getKitDisplayName(kit)}</span>
                         </DraggableColHeader>
                       );
                     })}

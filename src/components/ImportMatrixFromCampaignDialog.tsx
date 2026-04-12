@@ -163,7 +163,7 @@ const ImportMatrixFromCampaignDialog = ({
       const storeQtys = Array.from(kitPieceStoreQtys.entries()).map(([storeId, quantity]) => ({ storeId, quantity }));
       items.push({
         item: {
-          id: `kit-${kit.id}`, name: kit.name, code: kit.code, size: "", image_url: kit.image_url,
+          id: `kit-${kit.id}`, name: `KIT ${kit.name}`, code: kit.code, size: "", image_url: kit.image_url,
           type: "kit", kitPieceCount: memberLinks.length,
         },
         storeQtys,
@@ -197,7 +197,7 @@ const ImportMatrixFromCampaignDialog = ({
   const currentTargetOptions = useMemo(() => {
     const options: { id: string; label: string; code: number; type: "piece" | "kit" }[] = [];
     currentPieces.forEach((p) => options.push({ id: p.id, label: p.name, code: p.code, type: "piece" }));
-    currentKits.forEach((k) => options.push({ id: k.id, label: k.name, code: k.code, type: "kit" }));
+    currentKits.forEach((k) => options.push({ id: k.id, label: `KIT ${k.name}`, code: k.code, type: "kit" }));
     return options.sort((a, b) => a.code - b.code);
   }, [currentPieces, currentKits]);
 
