@@ -106,7 +106,7 @@ const Favorites = () => {
           <Button
             variant="outline"
             className="gap-2"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/agencies")}
           >
             <Building2 className="w-4 h-4" />
             {t("favorites.viewAllAgencies", "Ver todas as agências")}
