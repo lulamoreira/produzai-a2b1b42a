@@ -16,7 +16,7 @@ import { LogOut, Shield, MessageSquare, ArrowLeft, UserCog, ChevronRight, Globe 
 import { WhatsNewButton } from "@/components/WhatsNewSheet";
 import { InviteButton } from "@/components/InviteButton";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import NotificationBell from "@/components/NotificationBell";
+
 import EditProfileDialog from "@/components/EditProfileDialog";
 
 export const getGreeting = (t?: (key: string) => string) => {

@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import AppSidebar from "@/components/AppSidebar";
+import NotificationBell from "@/components/NotificationBell";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSidebarState } from "@/hooks/useSidebarState";
