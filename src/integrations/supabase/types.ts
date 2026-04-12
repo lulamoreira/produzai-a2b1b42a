@@ -1144,6 +1144,8 @@ export type Database = {
           custom_field_5: string | null
           email: string | null
           id: string
+          latitude: number | null
+          longitude: number | null
           manager_name: string | null
           name: string
           neighborhood: string | null
@@ -1175,6 +1177,8 @@ export type Database = {
           custom_field_5?: string | null
           email?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           manager_name?: string | null
           name: string
           neighborhood?: string | null
@@ -1206,6 +1210,8 @@ export type Database = {
           custom_field_5?: string | null
           email?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           manager_name?: string | null
           name?: string
           neighborhood?: string | null

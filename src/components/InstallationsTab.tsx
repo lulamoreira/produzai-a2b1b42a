@@ -26,6 +26,7 @@ import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
 import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
 import InstallerPreviewDialog from "@/components/InstallerPreviewDialog";
+import InstallationsMapView from "@/components/InstallationsMapView";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,7 @@ import {
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
   Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList, Lock, LockOpen,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, SlidersHorizontal, Filter, MoreHorizontal,
-  ArrowUpDown,
+  ArrowUpDown, LayoutGrid, MapPin,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -105,6 +106,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [filterCheckin, setFilterCheckin] = useState("");
   const [groupBy, setGroupBy] = useState<"none" | "state" | "team" | "status">("none");
   const [sortBy, setSortBy] = useState<string>("name_az");
+  const [viewMode, setViewMode] = useState<"cards" | "map">("cards");
 
   // UI state
   const [showCodes, setShowCodes] = useState(false);
@@ -926,10 +928,33 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             </SelectContent>
           </Select>
         </div>
+        <div className="ml-auto flex items-center gap-1.5">
+          <ToggleGroup
+            type="single"
+            value={viewMode}
+            onValueChange={(v) => { if (v) setViewMode(v as "cards" | "map"); }}
+            size="sm"
+            className="gap-0.5"
+          >
+            <ToggleGroupItem value="cards" className="h-7 px-2.5 rounded-full text-xs gap-1">
+              <LayoutGrid className="w-3.5 h-3.5" /> Cards
+            </ToggleGroupItem>
+            <ToggleGroupItem value="map" className="h-7 px-2.5 rounded-full text-xs gap-1">
+              <MapPin className="w-3.5 h-3.5" /> Mapa
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
       </div>
 
-      {/* Store Cards */}
-      {displayedStores.length === 0 ? (
+      {/* Map View */}
+      {viewMode === "map" ? (
+        <InstallationsMapView
+          stores={displayedStores}
+          scheduleMap={scheduleMap}
+          storeOccurrenceStatus={storeOccurrenceStatus}
+          photosByStore={photosByStore}
+        />
+      ) : displayedStores.length === 0 ? (
         <EmptyState
           icon={Camera}
           hasActiveFilters={!!(searchTerm || filterState || filterStatus || filterDate || filterCity || filterPeriod || filterTeam || filterLocked || filterReschedule || filterModel || filterCheckin || summaryFilter)}
