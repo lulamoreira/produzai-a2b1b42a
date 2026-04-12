@@ -510,14 +510,18 @@ function OccurrenceDetailSheet({
 
               {/* Photos */}
               {(photosMap[occ.id]?.length ?? 0) > 0 && (
-                <div className="flex gap-1.5 mt-2">
-                  {photosMap[occ.id].map((url, i) => (
-                    <button key={i} type="button" className="w-16 h-16 rounded-lg border border-border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all"
-                      onClick={() => onOpenLightbox(photosMap[occ.id], i)}>
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
+                <>
+                  <Separator className="mt-1" />
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider block pt-1.5">Fotos enviadas pelo reclamante</span>
+                  <div className="flex gap-1.5 mt-1">
+                    {photosMap[occ.id].map((url, i) => (
+                      <button key={i} type="button" className="w-16 h-16 rounded-lg border border-border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all"
+                        onClick={() => onOpenLightbox(photosMap[occ.id], i)}>
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
 
