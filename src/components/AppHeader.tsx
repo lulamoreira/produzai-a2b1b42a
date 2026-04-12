@@ -135,7 +135,7 @@ export default function AppHeader({
           <div className="hidden sm:flex items-center gap-1 sm:gap-2 flex-shrink-0">
           {showNav && (
             <>
-              <NotificationBell />
+              
               <InviteButton />
               <WhatsNewButton />
               <ThemeToggle />
