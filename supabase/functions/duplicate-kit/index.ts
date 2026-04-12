@@ -80,33 +80,18 @@ Deno.serve(async (req) => {
       origPieces = data || [];
     }
 
-    // 3. Bulk shift display_orders — fetch items then update in parallel
-    const [{ data: piecesToShift }, { data: kitsToShift }] = await Promise.all([
-      supabase
-        .from("campaign_pieces")
-        .select("id, display_order")
-        .eq("campaign_id", campaign_id)
-        .gt("display_order", orig_order),
-      supabase
-        .from("campaign_kits")
-        .select("id, display_order")
-        .eq("campaign_id", campaign_id)
-        .gt("display_order", orig_order),
-    ]);
+    // 3. Bulk shift display_orders — single RPC call (2 UPDATEs server-side)
+    const { error: shiftErr } = await supabase.rpc("shift_display_orders", {
+      p_campaign_id: campaign_id,
+      p_after_order: orig_order,
+      p_slots: slots_needed,
+    });
 
-    const shiftPromises: Promise<any>[] = [];
-    for (const p of (piecesToShift || [])) {
-      shiftPromises.push(
-        supabase.from("campaign_pieces").update({ display_order: p.display_order + slots_needed }).eq("id", p.id)
-      );
-    }
-    for (const k of (kitsToShift || [])) {
-      shiftPromises.push(
-        supabase.from("campaign_kits").update({ display_order: k.display_order + slots_needed }).eq("id", k.id)
-      );
-    }
-    if (shiftPromises.length > 0) {
-      await Promise.all(shiftPromises);
+    if (shiftErr) {
+      return new Response(JSON.stringify({ error: "Failed to shift display orders", details: shiftErr.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // 4. Insert new kit with all metadata
