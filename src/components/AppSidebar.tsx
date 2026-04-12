@@ -15,6 +15,7 @@ import AquaIcon from "@/components/AquaIcon";
 // lucide icons imported below with CAMPAIGN_MODULE_KEYS
 import { useLanguage } from "@/hooks/useLanguage";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
+import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 
 import {
   Building2, MessageSquare, Shield, LogOut, Users,
@@ -49,6 +50,7 @@ export default function AppSidebar() {
   const location = useLocation();
   const { signOut } = useAuth();
   const { isAdminOrMaster, isAdmin, isMaster } = useUserRole();
+  const { isLimited, campaigns: limitedCampaigns } = useUserDirectAccess();
   const displayName = useDisplayName();
   const { collapsed, setCollapsed } = useSidebarState();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -235,17 +237,19 @@ export default function AppSidebar() {
       {/* Navigation */}
       <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-1">
 
-        {/* ── Agências (always visible) ── */}
-        <button
-          onClick={() => handleNavigate(homePath)}
-          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-          style={itemStyle(location.pathname === homePath || location.pathname === "/" || location.pathname === "/agency-select")}
-          {...hoverHandlers(location.pathname === homePath || location.pathname === "/")}
-          title={collapsed ? t("sidebar.agencies") : undefined}
-        >
-          <AquaIcon icon={Building2} size="sm" color="#8C6F4E" />
-          {!collapsed && <span className="truncate font-medium">{t("sidebar.agencies")}</span>}
-        </button>
+        {/* ── Agências (hidden for limited users) ── */}
+        {!isLimited && (
+          <button
+            onClick={() => handleNavigate(homePath)}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+            style={itemStyle(location.pathname === homePath || location.pathname === "/" || location.pathname === "/agency-select")}
+            {...hoverHandlers(location.pathname === homePath || location.pathname === "/")}
+            title={collapsed ? t("sidebar.agencies") : undefined}
+          >
+            <AquaIcon icon={Building2} size="sm" color="#8C6F4E" />
+            {!collapsed && <span className="truncate font-medium">{t("sidebar.agencies")}</span>}
+          </button>
+        )}
 
         {/* ── Admin (fixed, admin/master only) ── */}
         {isAdminOrMaster && (
@@ -309,8 +313,8 @@ export default function AppSidebar() {
           <div className="my-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
         )}
 
-        {/* ── Clientes (when inside agency) ── */}
-        {isInsideAgency && (
+        {/* ── Clientes (when inside agency, hidden for limited users) ── */}
+        {isInsideAgency && !isLimited && (
           <button
             onClick={() => handleNavigate(`/agency/${agencyId}`)}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
@@ -333,34 +337,44 @@ export default function AppSidebar() {
               </span>
             </div>
 
-            {/* Lojas do Cliente (master) */}
-            <button
-              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
-              style={itemStyle(location.search.includes("tab=stores") && !isInsideCampaign)}
-              {...hoverHandlers(location.search.includes("tab=stores") && !isInsideCampaign)}
-            >
-              <AquaIcon icon={Store} size="xs" color="#6B4F2E" />
-              <span className="truncate">{t("modules.stores")}</span>
-            </button>
+            {/* Lojas do Cliente (hidden for limited users) */}
+            {!isLimited && (
+              <button
+                onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
+                style={itemStyle(location.search.includes("tab=stores") && !isInsideCampaign)}
+                {...hoverHandlers(location.search.includes("tab=stores") && !isInsideCampaign)}
+              >
+                <AquaIcon icon={Store} size="xs" color="#6B4F2E" />
+                <span className="truncate">{t("modules.stores")}</span>
+              </button>
+            )}
 
-            {/* Campanhas header */}
-            <button
-              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}`)}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
-              style={itemStyle(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
-              {...hoverHandlers(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
-            >
-              <AquaIcon icon={Megaphone} size="xs" color="#8C6F4E" />
-              <span className="truncate">{t("sidebar.campaigns")}</span>
-            </button>
+            {/* Campanhas header (hidden for limited users) */}
+            {!isLimited && (
+              <button
+                onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}`)}
+                className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
+                style={itemStyle(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
+                {...hoverHandlers(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
+              >
+                <AquaIcon icon={Megaphone} size="xs" color="#8C6F4E" />
+                <span className="truncate">{t("sidebar.campaigns")}</span>
+              </button>
+            )}
 
-            {/* ── All campaigns listed with independent expansors ── */}
+            {/* ── Campaigns listed with independent expansors ── */}
             <div className="ml-6 space-y-0.5 mt-0.5">
-              {clientCampaigns.map((camp) => {
+              {(isLimited
+                ? clientCampaigns.filter(c => limitedCampaigns.some(lc => lc.campaignId === c.id))
+                : clientCampaigns
+              ).map((camp) => {
                 const isExpanded = campaignExpanded[camp.id] ?? (camp.id === campaignId);
                 const isActiveCampaign = campaignId === camp.id;
                 const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
+                const allowedModules = isLimited
+                  ? limitedCampaigns.find(lc => lc.campaignId === camp.id)?.modules ?? []
+                  : null;
 
                 return (
                   <div key={camp.id}>
@@ -384,7 +398,11 @@ export default function AppSidebar() {
                     {/* Campaign modules */}
                     {isExpanded && (
                       <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
-                        {CAMPAIGN_MODULE_KEYS.filter(mod => mod.key !== "budgets" || isAdmin).map((mod) => {
+                        {CAMPAIGN_MODULE_KEYS.filter(mod => {
+                          if (mod.key === "budgets" && !isAdmin) return false;
+                          if (isLimited && allowedModules && !allowedModules.includes(mod.key)) return false;
+                          return true;
+                        }).map((mod) => {
                           const modActive = isCampaignModuleActive(camp.id, mod.key);
                           return (
                             <button
