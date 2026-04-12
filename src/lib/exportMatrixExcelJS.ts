@@ -327,6 +327,7 @@ export async function exportMatrixExcelJS(
     ...pieces.map((p) => ({
       ...p,
       _type: "piece" as const,
+      store_category: p.category,
       specification: p.specification || "",
       installation_instructions: p.installation_instructions || "",
     })),
