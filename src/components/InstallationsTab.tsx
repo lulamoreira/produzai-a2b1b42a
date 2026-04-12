@@ -26,6 +26,7 @@ import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
 import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
 import InstallerPreviewDialog from "@/components/InstallerPreviewDialog";
+import InstallationsMapView from "@/components/InstallationsMapView";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
