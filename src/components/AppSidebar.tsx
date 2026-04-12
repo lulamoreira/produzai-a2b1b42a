@@ -190,7 +190,7 @@ export default function AppSidebar() {
   }, [navigate]);
 
   const roleBadge = isAdmin ? "Admin" : isMaster ? "Master" : "Usuário";
-  const homePath = isAdminOrMaster ? "/" : "/my-campaigns";
+  const homePath = isAdminOrMaster ? "/agencies" : "/my-campaigns";
 
   // Helper: is a campaign module active?
   const isCampaignModuleActive = (cId: string, modKey: string) => {
