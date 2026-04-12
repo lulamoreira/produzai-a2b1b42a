@@ -1741,7 +1741,7 @@ const CampaignDetail = () => {
                     setBudgetExportDialogOpen(false);
                     toast.loading("Gerando planilha com imagens...", { id: "matrix-excel" });
                     try {
-                      await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces, palette, pieceLocations, pieceSubLocations, pieces);
+                      await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces, palette, pieceLocations, pieceSubLocations, pieces, agency?.name, client?.name);
                       toast.success("Planilha exportada com sucesso!", { id: "matrix-excel" });
                     } catch (err) {
                       console.error(err);

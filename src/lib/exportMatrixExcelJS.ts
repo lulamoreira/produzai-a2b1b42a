@@ -315,11 +315,17 @@ export async function exportMatrixExcelJS(
   locations: CampaignPieceLocation[] = [],
   subLocations: CampaignPieceSubLocation[] = [],
   allPieces?: CampaignPiece[],
+  agencyName?: string,
+  clientName?: string,
 ) {
   const wb = new ExcelJS.Workbook();
   wb.creator = "ProduzAI";
   const colors = makeColors(palette);
   const locData: LocationData = { locations, subLocations };
+
+  // Build full hierarchy title
+  const titleParts = [agencyName, clientName, campaignName].filter(Boolean);
+  const fullTitle = titleParts.join(" / ");
 
   // Build unified column list
   type ColItem = MatrixItem & { _type: "piece" | "kit"; display_order: number };
@@ -373,7 +379,7 @@ export async function exportMatrixExcelJS(
 
   // ABA 1 – Main matrix
   const ws = wb.addWorksheet("Matriz Lojas x Peças");
-  await buildTransposedSheet(wb, ws, campaignName, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames);
+  await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames);
 
   // Kit tabs
   for (const kit of kits) {
