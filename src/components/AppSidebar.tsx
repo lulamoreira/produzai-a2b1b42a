@@ -15,6 +15,7 @@ import AquaIcon from "@/components/AquaIcon";
 // lucide icons imported below with CAMPAIGN_MODULE_KEYS
 import { useLanguage } from "@/hooks/useLanguage";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
+import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 
 import {
   Building2, MessageSquare, Shield, LogOut, Users,
