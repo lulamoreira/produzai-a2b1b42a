@@ -1421,6 +1421,9 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             </div>
           );
         })}
+            </div>
+          </div>
+        ))}
       </div>
       )}
 
