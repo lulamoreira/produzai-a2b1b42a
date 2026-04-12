@@ -98,6 +98,8 @@ interface OccurrenceCardProps {
   PRIORITY_OPTIONS: { value: string; label: string; color: string }[];
   canLockCards?: boolean;
   schedule?: Schedule;
+  agencyId?: string;
+  clientId?: string;
 }
 
 export default function OccurrenceCard({
@@ -106,6 +108,7 @@ export default function OccurrenceCard({
   photosMap, campaignName, agencyName, clientName, getReporterLabel,
   firstPieceKitLabels, whatsappLinkTemplate, whatsappContactTemplate,
   onOpenLightbox, motiveColor, PRIORITY_OPTIONS, canLockCards, schedule,
+  agencyId, clientId,
 }: OccurrenceCardProps) {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -261,6 +264,27 @@ export default function OccurrenceCard({
           action: "Campos alterados",
           details: changeLog,
         });
+      }
+
+      // Dispatch notification if status changed to a resolved value
+      if (draft.status && agencyId) {
+        const resolvedValues = ["resolvida", "concluida", "finalizada"];
+        if (resolvedValues.includes(String(draft.status).toLowerCase())) {
+          const storeName = stores.find(s => s.id === occ.store_id)?.name || "";
+          try {
+            const { criarNotificacao } = await import("@/lib/criarNotificacao");
+            await criarNotificacao({
+              agency_id: agencyId,
+              campaign_id: campaignId,
+              store_id: occ.store_id || undefined,
+              client_id: clientId,
+              type: "ocorrencia_resolvida",
+              title: "Ocorrência resolvida",
+              body: `A ocorrência em ${storeName} foi marcada como resolvida`,
+              action_url: `/campanhas/${campaignId}/ocorrencias`,
+            });
+          } catch { /* silent */ }
+        }
       }
 
       setDraft({});

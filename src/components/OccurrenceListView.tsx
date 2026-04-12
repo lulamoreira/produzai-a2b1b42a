@@ -62,6 +62,8 @@ interface OccurrenceListViewProps {
   onOpenLightbox: (photos: string[], index: number) => void;
   canLockCards?: boolean;
   scheduleMap: Record<string, Schedule>;
+  agencyId?: string;
+  clientId?: string;
 }
 
 export default function OccurrenceListView({
@@ -69,7 +71,7 @@ export default function OccurrenceListView({
   canEdit, canDelete, canEditReporter, motives, statuses, defaultStatus,
   photosMap, campaignName, agencyName, clientName, getReporterLabel,
   firstPieceKitLabels, whatsappLinkTemplate, whatsappContactTemplate,
-  onOpenLightbox, canLockCards, scheduleMap,
+  onOpenLightbox, canLockCards, scheduleMap, agencyId, clientId,
 }: OccurrenceListViewProps) {
   const [selectedOccId, setSelectedOccId] = useState<string | null>(null);
   const selectedOcc = useMemo(() => occurrences.find(o => o.id === selectedOccId), [occurrences, selectedOccId]);
@@ -195,6 +197,8 @@ export default function OccurrenceListView({
         whatsappContactTemplate={whatsappContactTemplate}
         onOpenLightbox={onOpenLightbox}
         canLockCards={canLockCards}
+        agencyId={agencyId}
+        clientId={clientId}
         getStoreName={(id) => {
           if (!id) return "—";
           const s = stores.find(s => s.id === id);
@@ -237,6 +241,8 @@ interface OccurrenceDetailSheetProps {
   whatsappContactTemplate?: string;
   onOpenLightbox: (photos: string[], index: number) => void;
   canLockCards?: boolean;
+  agencyId?: string;
+  clientId?: string;
   getStoreName: (id: string | null) => string;
   getStoreInfo: (id: string | null) => { code: string; state: string; city: string };
   getMotiveName: (id: string | null) => string;
@@ -248,7 +254,7 @@ function OccurrenceDetailSheet({
   canEdit: canEditProp, canDelete, canEditReporter: canEditReporterProp, motives, statuses, activeStatuses, defaultStatus,
   photosMap, campaignName, agencyName, clientName, getReporterLabel,
   firstPieceKitLabels, whatsappLinkTemplate, whatsappContactTemplate,
-  onOpenLightbox, canLockCards, getStoreName, getStoreInfo, getMotiveName, getPieceName,
+  onOpenLightbox, canLockCards, agencyId, clientId, getStoreName, getStoreInfo, getMotiveName, getPieceName,
 }: OccurrenceDetailSheetProps) {
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
@@ -330,6 +336,27 @@ function OccurrenceDetailSheet({
         action: "Campos alterados",
         details: "Alteração via lista",
       });
+
+      // Dispatch notification if status changed to a resolved value
+      if (draft.status && agencyId) {
+        const resolvedValues = ["resolvida", "concluida", "finalizada"];
+        if (resolvedValues.includes(String(draft.status).toLowerCase())) {
+          const storeName = stores.find(s => s.id === occ.store_id)?.name || "";
+          try {
+            const { criarNotificacao } = await import("@/lib/criarNotificacao");
+            await criarNotificacao({
+              agency_id: agencyId,
+              campaign_id: campaignId,
+              store_id: occ.store_id || undefined,
+              client_id: clientId,
+              type: "ocorrencia_resolvida",
+              title: "Ocorrência resolvida",
+              body: `A ocorrência em ${storeName} foi marcada como resolvida`,
+              action_url: `/campanhas/${campaignId}/ocorrencias`,
+            });
+          } catch { /* silent */ }
+        }
+      }
 
       setDraft({});
       qc.invalidateQueries({ queryKey: ["occurrences", campaignId] });

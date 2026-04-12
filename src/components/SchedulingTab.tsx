@@ -56,6 +56,7 @@ interface SchedulingTabProps {
   clientName: string;
   campaignName: string;
   clientId: string;
+  agencyId?: string;
 }
 
 function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string, storeName?: string) {
@@ -81,7 +82,7 @@ function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string
   return `https://wa.me/${fullNumber}?text=${encodeURIComponent(message)}`;
 }
 
-const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, campaignName, clientId }: SchedulingTabProps) => {
+const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, campaignName, clientId, agencyId }: SchedulingTabProps) => {
   const { t } = useTranslation();
   const PREFERENCE_OPTIONS = useMemo(() => [
     { value: "not_informed", label: t("scheduling.notInformed"), icon: HelpCircle },
@@ -375,6 +376,34 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           action: actionType,
           description: `${isStore ? "Aprovação lojista" : "Aprovação equipe"}: ${value === "approved" ? "aprovado" : "recusado"} — ${storeName}`,
         });
+
+        // Dispatch in-app notification
+        if (agencyId) {
+          const titleMap: Record<string, string> = {
+            aprovacao_lojista: "Lojista aprovou o agendamento",
+            recusa_lojista: "Lojista recusou o agendamento",
+            aprovacao_equipe: "Equipe aprovou o agendamento",
+            recusa_equipe: "Equipe recusou o agendamento",
+          };
+          const bodyMap: Record<string, string> = {
+            aprovacao_lojista: `${storeName} aprovou o agendamento`,
+            recusa_lojista: `${storeName} recusou o agendamento — verifique e remarque`,
+            aprovacao_equipe: `Equipe confirmou o agendamento de ${storeName}`,
+            recusa_equipe: `Equipe recusou o agendamento de ${storeName} — verifique`,
+          };
+          import("@/lib/criarNotificacao").then(({ criarNotificacao }) => {
+            criarNotificacao({
+              agency_id: agencyId,
+              campaign_id: campaignId,
+              store_id: storeId,
+              client_id: clientId,
+              type: actionType!,
+              title: titleMap[actionType!] || actionType!,
+              body: bodyMap[actionType!] || storeName,
+              action_url: `/campanhas/${campaignId}/agendamento`,
+            }).catch(() => {});
+          }).catch(() => {});
+        }
       }
     } else if (field === "scheduled_date" || field === "reschedule_date") {
       logCampaignActivity.mutate({

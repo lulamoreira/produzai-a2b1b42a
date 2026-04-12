@@ -119,6 +119,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     enabled: !!campaignId,
   });
   const agencyName = (campaignInfo as any)?.clients?.agencies?.name || "";
+  const agencyId = (campaignInfo as any)?.clients?.agency_id || "";
   const clientName = (campaignInfo as any)?.clients?.name || "";
 
   // Fetch WhatsApp message templates
@@ -816,6 +817,8 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           onOpenLightbox={(photos, index) => { setLightboxPhotos(photos); setLightboxIndex(index); setLightboxOpen(true); }}
           canLockCards={canLockCards}
           scheduleMap={scheduleMap}
+          agencyId={agencyId}
+          clientId={clientId}
         />
       ) : (
         <div className="grid gap-3 grid-cols-1 md:grid-cols-2 2xl:grid-cols-3">
@@ -862,6 +865,8 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                 PRIORITY_OPTIONS={PRIORITY_OPTIONS}
                 canLockCards={canLockCards}
                 schedule={occ.store_id ? scheduleMap[occ.store_id] : undefined}
+                agencyId={agencyId}
+                clientId={clientId}
               />
             );
           })}
