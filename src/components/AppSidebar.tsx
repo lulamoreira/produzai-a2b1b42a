@@ -237,17 +237,19 @@ export default function AppSidebar() {
       {/* Navigation */}
       <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-1">
 
-        {/* ── Agências (always visible) ── */}
-        <button
-          onClick={() => handleNavigate(homePath)}
-          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-          style={itemStyle(location.pathname === homePath || location.pathname === "/" || location.pathname === "/agency-select")}
-          {...hoverHandlers(location.pathname === homePath || location.pathname === "/")}
-          title={collapsed ? t("sidebar.agencies") : undefined}
-        >
-          <AquaIcon icon={Building2} size="sm" color="#8C6F4E" />
-          {!collapsed && <span className="truncate font-medium">{t("sidebar.agencies")}</span>}
-        </button>
+        {/* ── Agências (hidden for limited users) ── */}
+        {!isLimited && (
+          <button
+            onClick={() => handleNavigate(homePath)}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+            style={itemStyle(location.pathname === homePath || location.pathname === "/" || location.pathname === "/agency-select")}
+            {...hoverHandlers(location.pathname === homePath || location.pathname === "/")}
+            title={collapsed ? t("sidebar.agencies") : undefined}
+          >
+            <AquaIcon icon={Building2} size="sm" color="#8C6F4E" />
+            {!collapsed && <span className="truncate font-medium">{t("sidebar.agencies")}</span>}
+          </button>
+        )}
 
         {/* ── Admin (fixed, admin/master only) ── */}
         {isAdminOrMaster && (
