@@ -268,6 +268,27 @@ const PublicOccurrence = () => {
           await supabase.from("occurrence_photos").insert(photoRows);
         }
       }
+
+      // Dispatch notification for new occurrence (silent failure)
+      try {
+        const agencyId = (campaign as any)?.clients?.agency_id;
+        if (agencyId) {
+          const { criarNotificacao } = await import("@/lib/criarNotificacao");
+          const storeName = stores.find(s => s.id === storeId)?.name || stores.find(s => s.id === specialStoreId)?.name || "";
+          const motiveName = motives.find(m => m.id === entries[0]?.motiveId)?.description || "";
+          await criarNotificacao({
+            agency_id: agencyId,
+            campaign_id: campaignId!,
+            store_id: storeId || specialStoreId || undefined,
+            client_id: campaign.client_id,
+            type: "ocorrencia_aberta",
+            title: "Nova ocorrência registrada",
+            body: `${storeName}: ${motiveName}`,
+            action_url: `/campanhas/${campaignId}/ocorrencias`,
+          });
+        }
+      } catch { /* silent */ }
+
       setSubmitted(true);
     } catch {
       toast.error("Erro ao registrar ocorrência.");

@@ -333,6 +333,27 @@ function OccurrenceDetailSheet({
         details: "Alteração via lista",
       });
 
+      // Dispatch notification if status changed to a resolved value
+      if (draft.status && agencyId) {
+        const resolvedValues = ["resolvida", "concluida", "finalizada"];
+        if (resolvedValues.includes(String(draft.status).toLowerCase())) {
+          const storeName = stores.find(s => s.id === occ.store_id)?.name || "";
+          try {
+            const { criarNotificacao } = await import("@/lib/criarNotificacao");
+            await criarNotificacao({
+              agency_id: agencyId,
+              campaign_id: campaignId,
+              store_id: occ.store_id || undefined,
+              client_id: clientId,
+              type: "ocorrencia_resolvida",
+              title: "Ocorrência resolvida",
+              body: `A ocorrência em ${storeName} foi marcada como resolvida`,
+              action_url: `/campanhas/${campaignId}/ocorrencias`,
+            });
+          } catch { /* silent */ }
+        }
+      }
+
       setDraft({});
       qc.invalidateQueries({ queryKey: ["occurrences", campaignId] });
       toast.success("Alterações salvas!");
