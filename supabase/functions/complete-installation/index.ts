@@ -66,6 +66,29 @@ Deno.serve(async (req) => {
         action: "instalacao_concluida",
         description: `Instalação de ${store?.name || "loja"} marcada como concluída pelo instalador`,
       }).then(() => {}).catch(() => {});
+
+      // Dispatch in-app notification (silent)
+      supabase
+        .from("campaigns")
+        .select("client_id, clients(agency_id)")
+        .eq("id", scheduleInfo.campaign_id)
+        .single()
+        .then(({ data: campInfo }) => {
+          const agencyId = (campInfo as any)?.clients?.agency_id;
+          if (agencyId) {
+            supabase.rpc("criar_notificacao", {
+              _agency_id: agencyId,
+              _campaign_id: scheduleInfo.campaign_id,
+              _store_id: scheduleInfo.store_id,
+              _client_id: campInfo?.client_id ?? null,
+              _type: "instalacao_concluida",
+              _title: "Instalação concluída",
+              _body: `${store?.name || "Loja"} foi concluída pelo instalador`,
+              _action_url: `/campanhas/${scheduleInfo.campaign_id}/instalacoes`,
+            }).catch(() => {});
+          }
+        })
+        .catch(() => {});
     }
 
     return new Response(JSON.stringify(data), {

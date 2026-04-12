@@ -147,6 +147,19 @@ Deno.serve(async (req) => {
       })
       .eq('user_id', user.id);
 
+    // 6. Dispatch notification for new user (silent)
+    const displayName = user.user_metadata?.display_name || user.email?.split('@')[0] || 'Novo usuário';
+    admin.rpc('criar_notificacao', {
+      _agency_id: invite.agency_id,
+      _campaign_id: null,
+      _store_id: null,
+      _client_id: invite.client_id ?? null,
+      _type: 'novo_usuario_pendente',
+      _title: 'Novo usuário via convite',
+      _body: `${displayName} ingressou na plataforma via convite`,
+      _action_url: '/admin?tab=aprovacoes',
+    }).catch(() => {});
+
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
