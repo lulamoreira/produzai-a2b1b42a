@@ -51,6 +51,19 @@ export default function AppSidebar() {
   const { signOut } = useAuth();
   const { isAdminOrMaster, isAdmin, isMaster } = useUserRole();
   const { isLimited, campaigns: limitedCampaigns } = useUserDirectAccess();
+
+  // Group limitedCampaigns by clientId for multi-client sidebar rendering
+  const limitedClientGroups = useMemo(() => {
+    if (!isLimited || limitedCampaigns.length === 0) return [];
+    const map = new Map<string, { clientName: string; clientId: string; agencyId: string; campaigns: typeof limitedCampaigns }>();
+    for (const lc of limitedCampaigns) {
+      if (!map.has(lc.clientId)) {
+        map.set(lc.clientId, { clientName: lc.clientName, clientId: lc.clientId, agencyId: lc.agencyId, campaigns: [] });
+      }
+      map.get(lc.clientId)!.campaigns.push(lc);
+    }
+    return Array.from(map.values());
+  }, [isLimited, limitedCampaigns]);
   const displayName = useDisplayName();
   const { collapsed, setCollapsed } = useSidebarState();
   const [mobileOpen, setMobileOpen] = useState(false);
