@@ -70,11 +70,6 @@ export default function InstallerPortal() {
     faltam: number;
   } | null>(null);
   const [tentandoConcluir, setTentandoConcluir] = useState(false);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [chatSending, setChatSending] = useState(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
   const [offlineLoaded, setOfflineLoaded] = useState(false);
   const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
   const [pendingPhotoCount, setPendingPhotoCount] = useState(0);

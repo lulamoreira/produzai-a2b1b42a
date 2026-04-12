@@ -96,7 +96,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterCity, setFilterCity] = useState("");
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [filterApproval, setFilterApproval] = useState("");
-  const [filterMessages, setFilterMessages] = useState("");
+  
   const [filterDate, setFilterDate] = useState("");
   const [filterPeriod, setFilterPeriod] = useState("");
   const [filterTeam, setFilterTeam] = useState("");
