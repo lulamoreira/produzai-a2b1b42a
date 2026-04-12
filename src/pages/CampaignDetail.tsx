@@ -2494,8 +2494,15 @@ const CampaignDetail = () => {
         onDeletePiece={(id) => deletePiece.mutate(id)}
         onUpdateKitPiece={async (update) => { await updateKitPiece.mutateAsync(update); }}
         onDuplicatePiece={async (piece) => {
-          const maxOrder = pieces.length > 0 ? Math.max(...pieces.map(p => p.display_order)) : 0;
+          const origOrder = piece.display_order;
           const maxCode = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;
+          // Shift all pieces and kits after the original down by 1
+          for (const p of pieces.filter(p => p.display_order > origOrder)) {
+            await supabase.from("campaign_pieces").update({ display_order: p.display_order + 1 }).eq("id", p.id);
+          }
+          for (const k of kits.filter(k => k.display_order > origOrder)) {
+            await supabase.from("campaign_kits").update({ display_order: k.display_order + 1 }).eq("id", k.id);
+          }
           const newPiece = await addPiece.mutateAsync({
             campaign_id: campaignId,
             code: maxCode + 1,
@@ -2507,7 +2514,7 @@ const CampaignDetail = () => {
             installation_instructions: piece.installation_instructions,
             kit_only: piece.kit_only,
             is_mockup: piece.is_mockup,
-            display_order: maxOrder + 1,
+            display_order: origOrder + 1,
             image_url: piece.image_url || undefined,
           });
           // If the piece is in a kit, also add the duplicated piece to the same kit
@@ -2517,6 +2524,8 @@ const CampaignDetail = () => {
               await addKitPiece.mutateAsync({ kit_id: viewKitDetail.id, piece_id: newPiece.id, quantity: kitPieceEntry.quantity });
             }
           }
+          queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+          queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
           toast.success("Peça duplicada com sucesso!");
         }}
       />
