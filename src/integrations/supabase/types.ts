@@ -2023,8 +2023,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          agency_id: string | null
           approval_status: Database["public"]["Enums"]["approval_status"]
           avatar_url: string | null
+          client_id: string | null
           company: string | null
           created_at: string
           display_name: string | null
@@ -2040,8 +2042,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agency_id?: string | null
           approval_status?: Database["public"]["Enums"]["approval_status"]
           avatar_url?: string | null
+          client_id?: string | null
           company?: string | null
           created_at?: string
           display_name?: string | null
@@ -2057,8 +2061,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agency_id?: string | null
           approval_status?: Database["public"]["Enums"]["approval_status"]
           avatar_url?: string | null
+          client_id?: string | null
           company?: string | null
           created_at?: string
           display_name?: string | null
@@ -2073,7 +2079,22 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       schedule_chat_messages: {
         Row: {
