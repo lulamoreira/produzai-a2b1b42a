@@ -126,7 +126,7 @@ const HomeRedirect = () => {
     return <Navigate to="/favorites" replace />;
   }
 
-  return <AgencySelect />;
+  return <Navigate to="/agencies" replace />;
 };
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {

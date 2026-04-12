@@ -18,7 +18,7 @@ import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 
 import {
-  Building2, Shield, LogOut, Users, Star,
+  Building2, Shield, LogOut, Users, Star, Home,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
   CalendarDays, Camera, DollarSign, Database, Globe, Settings, History,
@@ -250,13 +250,25 @@ export default function AppSidebar() {
       {/* Navigation */}
       <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-1">
 
+        {/* ── Início (visible for all users) ── */}
+        <button
+          onClick={() => handleNavigate("/")}
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+          style={itemStyle(location.pathname === "/" || location.pathname === "/favorites" || location.pathname === "/agencies" || location.pathname === "/my-campaigns")}
+          {...hoverHandlers(location.pathname === "/" || location.pathname === "/favorites" || location.pathname === "/agencies" || location.pathname === "/my-campaigns")}
+          title={collapsed ? t("sidebar.home", "Início") : undefined}
+        >
+          <AquaIcon icon={Home} size="sm" color="#8C6F4E" />
+          {!collapsed && <span className="truncate font-medium">{t("sidebar.home", "Início")}</span>}
+        </button>
+
         {/* ── Agências (hidden for limited users) ── */}
         {!isLimited && (
           <button
             onClick={() => handleNavigate(homePath)}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-            style={itemStyle(location.pathname === homePath || location.pathname === "/" || location.pathname === "/agency-select")}
-            {...hoverHandlers(location.pathname === homePath || location.pathname === "/")}
+            style={itemStyle(location.pathname === homePath && !["/", "/favorites", "/my-campaigns"].includes(location.pathname))}
+            {...hoverHandlers(location.pathname === homePath && !(["/"] as string[]).includes(location.pathname))}
             title={collapsed ? t("sidebar.agencies") : undefined}
           >
             <AquaIcon icon={Building2} size="sm" color="#8C6F4E" />
