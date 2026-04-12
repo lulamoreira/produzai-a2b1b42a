@@ -1,19 +1,56 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useCampaignFavorites, useToggleFavorite } from "@/hooks/useCampaignFavorites";
+import { useAgencies } from "@/hooks/useAgencies";
+import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import AppLayout from "@/components/AppLayout";
 import { Star, ArrowRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Favorites = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const { data: favorites, isLoading } = useCampaignFavorites();
   const toggleFavorite = useToggleFavorite();
 
+  // Agency data — same hooks as AgencySelect
+  const { data: allAgencies = [], isLoading: loadingAgencies } = useAgencies();
+  const { data: agencyAccess = [] } = useUserAgencyAccess();
+
+  const { data: clientAccess = [] } = useQuery({
+    queryKey: ["user_client_access_agencies", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("user_client_access")
+        .select("client_id, suspended, clients(agency_id)")
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return data as { client_id: string; suspended: boolean; clients: { agency_id: string } | null }[];
+    },
+    enabled: !!user && !isAdmin,
+  });
+
+  const agencies = isAdmin
+    ? allAgencies
+    : allAgencies.filter((ag) => {
+        const hasAgencyAccess = agencyAccess.some((a) => a.agency_id === ag.id && !a.suspended);
+        const hasClientInAgency = clientAccess.some(
+          (ca) => ca.clients?.agency_id === ag.id && !ca.suspended
+        );
+        return hasAgencyAccess || hasClientInAgency;
+      });
+
   return (
     <AppLayout>
       <div className="p-4 md:p-8 max-w-6xl mx-auto">
+        {/* Favorites section */}
         <div className="flex items-center gap-3 mb-6">
           <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
           <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
@@ -26,7 +63,7 @@ const Favorites = () => {
             <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
           </div>
         ) : !favorites || favorites.length === 0 ? (
-          <div className="text-center py-20">
+          <div className="text-center py-12">
             <Star className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
             <p className="text-muted-foreground text-sm">
               {t("favorites.empty", "Nenhuma campanha favoritada ainda.")}
@@ -101,17 +138,63 @@ const Favorites = () => {
           </div>
         )}
 
-        {/* Link to all agencies */}
-        <div className="mt-8 pt-6 border-t" style={{ borderColor: "var(--border)" }}>
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={() => navigate("/agencies")}
-          >
-            <Building2 className="w-4 h-4" />
-            {t("favorites.viewAllAgencies", "Ver todas as agências")}
-            <ArrowRight className="w-4 h-4" />
-          </Button>
+        {/* Divider + All Agencies section */}
+        <div className="mt-10 pt-8 border-t" style={{ borderColor: "var(--border)" }}>
+          <div className="flex items-center gap-3 mb-6">
+            <Building2 className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
+              {t("favorites.allAgencies", "Todas as Agências")}
+            </h2>
+          </div>
+
+          {loadingAgencies ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : agencies.length === 0 ? (
+            <div className="text-center py-12">
+              <Building2 className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
+              <p className="text-muted-foreground text-sm">
+                {t("agencySelect.noAgencies", "Nenhuma agência disponível.")}
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-4">
+              {agencies.map((agency) => {
+                const agencyColor = agency.color || "#6366f1";
+                return (
+                  <div
+                    key={agency.id}
+                    className="group aqua-card p-6 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border border-border flex flex-col items-center text-center w-[260px]"
+                    style={{
+                      background: `linear-gradient(135deg, ${agencyColor}15, ${agencyColor}08)`,
+                      borderColor: `${agencyColor}30`,
+                    }}
+                    onClick={() => navigate(`/agency/${agency.id}`)}
+                  >
+                    <div
+                      className="w-16 h-16 aqua-icon flex items-center justify-center shadow-lg overflow-hidden mb-3"
+                      style={{ background: `linear-gradient(145deg, ${agencyColor}, ${agencyColor}cc)` }}
+                    >
+                      {agency.logo_url ? (
+                        <img src={agency.logo_url} alt={agency.name} className="w-full h-full object-cover relative z-10" />
+                      ) : (
+                        <Building2 className="w-7 h-7 text-white relative z-10 drop-shadow-sm" />
+                      )}
+                    </div>
+                    <h3 className="font-bold text-foreground text-base mb-0.5">{agency.name}</h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      {t("agencySelect.createdAt", "Criado em")} {new Date(agency.created_at).toLocaleDateString("pt-BR")}
+                    </p>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-3 group-hover:text-primary transition-colors">
+                      <span>{t("clientDashboard.access", "Acessar")}</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </AppLayout>
