@@ -69,6 +69,7 @@ import CampaignChatSection from "@/components/CampaignChatSection";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
+import ExportReportDropdown from "@/components/ExportReportDropdown";
 import BudgetExportColorDialog, { type ColorPalette } from "@/components/BudgetExportColorDialog";
 
 const CampaignDetail = () => {
