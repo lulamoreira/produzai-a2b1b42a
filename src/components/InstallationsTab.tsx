@@ -148,6 +148,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
   const hasAnySelected = selectedStores.size > 0;
 
+  // Shared hooks
+  const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
   const { storeOccurrenceStatus } = useOccurrenceStatusSync(campaignId);
 
   // Auto-generate install codes when dual approval is met
