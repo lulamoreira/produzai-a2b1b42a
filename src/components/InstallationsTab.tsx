@@ -860,6 +860,39 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         </div>
       )}
 
+      {/* Bulk Action Bar */}
+      {hasAnySelected && (
+        <div className="sticky top-0 z-20 flex items-center gap-2 flex-wrap rounded-lg px-4 py-2.5 border border-primary/30 bg-primary/5 backdrop-blur-sm shadow-sm">
+          <Checkbox
+            checked={selectedStores.size === displayedStores.length && displayedStores.length > 0}
+            onCheckedChange={handleSelectAll}
+          />
+          <span className="text-sm font-medium text-foreground">{selectedStores.size} selecionado(s)</span>
+          <div className="flex-1" />
+          {canEdit && (
+            <>
+              <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" disabled={bulkActionLoading} onClick={handleBulkApproveStore}>
+                <CheckCircle2 className="w-3.5 h-3.5" /> Aprovar Lojista
+              </Button>
+              <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" disabled={bulkActionLoading} onClick={handleBulkApproveTeam}>
+                <CheckCircle2 className="w-3.5 h-3.5" /> Aprovar Equipe
+              </Button>
+            </>
+          )}
+          {canLockCards && (
+            <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" disabled={bulkActionLoading} onClick={handleBulkUnlock}>
+              <LockOpen className="w-3.5 h-3.5" /> Desbloquear
+            </Button>
+          )}
+          <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8" disabled={bulkActionLoading} onClick={handleBulkDownloadPhotos}>
+            <Download className="w-3.5 h-3.5" /> Baixar fotos
+          </Button>
+          <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => setSelectedStores(new Set())}>
+            Limpar
+          </Button>
+        </div>
+      )}
+
       {/* Grouping & Sorting Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-1.5">
