@@ -87,7 +87,7 @@ export default function AppHeader({
   const { user, signOut } = useAuth();
   const { isAdmin, isMaster, isAdminOrMaster, role } = useUserRole();
   const navigate = useNavigate();
-  const displayName = useDisplayName();
+  const { displayName, avatarUrl } = useDisplayName();
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const { t } = useTranslation();
   const { currentLanguage, changeLanguage } = useLanguage();
