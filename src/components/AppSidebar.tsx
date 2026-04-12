@@ -50,6 +50,7 @@ export default function AppSidebar() {
   const location = useLocation();
   const { signOut } = useAuth();
   const { isAdminOrMaster, isAdmin, isMaster } = useUserRole();
+  const { isLimited, campaigns: limitedCampaigns } = useUserDirectAccess();
   const displayName = useDisplayName();
   const { collapsed, setCollapsed } = useSidebarState();
   const [mobileOpen, setMobileOpen] = useState(false);
