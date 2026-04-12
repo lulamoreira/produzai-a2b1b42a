@@ -5,7 +5,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Shield, UserCheck, UserX, Clock, Trash2 } from "lucide-react";
+import { UserCheck, UserX, Clock, Trash2 } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -17,10 +17,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useMemo } from "react";
 
 const statusConfig: Record<ApprovalStatus, { label: string; color: string; icon: React.ReactNode }> = {
   approved: {
@@ -40,6 +41,41 @@ const statusConfig: Record<ApprovalStatus, { label: string; color: string; icon:
   },
 };
 
+function useCurrentUserAccessScope() {
+  const { user } = useAuth();
+  const { isAdmin } = useUserRole();
+
+  const { data: agencyAccess } = useQuery({
+    queryKey: ["my_agency_access", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_agency_access")
+        .select("agency_id")
+        .eq("user_id", user!.id)
+        .eq("suspended", false);
+      if (error) throw error;
+      return data.map((r) => r.agency_id);
+    },
+    enabled: !!user && !isAdmin,
+  });
+
+  const { data: clientAccess } = useQuery({
+    queryKey: ["my_client_access", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_client_access")
+        .select("client_id")
+        .eq("user_id", user!.id)
+        .eq("suspended", false);
+      if (error) throw error;
+      return data.map((r) => r.client_id);
+    },
+    enabled: !!user && !isAdmin,
+  });
+
+  return { agencyIds: agencyAccess ?? [], clientIds: clientAccess ?? [] };
+}
+
 const UserApprovals = () => {
   const { user } = useAuth();
   const { isAdmin, isAdminOrMaster, isLoading: loadingRole } = useUserRole();
@@ -47,6 +83,7 @@ const UserApprovals = () => {
   const updateStatus = useUpdateApprovalStatus();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { agencyIds, clientIds } = useCurrentUserAccessScope();
 
   const deleteUser = useMutation({
     mutationFn: async (userId: string) => {
@@ -64,6 +101,15 @@ const UserApprovals = () => {
     onError: (e) => toast.error("Erro: " + e.message),
   });
 
+  const filteredUsers = useMemo(() => {
+    if (isAdmin) return users;
+    return users.filter((u) => {
+      if (u.agency_id && agencyIds.includes(u.agency_id)) return true;
+      if (u.client_id && clientIds.includes(u.client_id)) return true;
+      return false;
+    });
+  }, [users, isAdmin, agencyIds, clientIds]);
+
   if (loadingRole) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -74,9 +120,9 @@ const UserApprovals = () => {
 
   if (!isAdminOrMaster) return <Navigate to="/" replace />;
 
-  const pending = users.filter((u) => u.approval_status === "pending");
-  const approved = users.filter((u) => u.approval_status === "approved");
-  const rejected = users.filter((u) => u.approval_status === "rejected");
+  const pending = filteredUsers.filter((u) => u.approval_status === "pending");
+  const approved = filteredUsers.filter((u) => u.approval_status === "approved");
+  const rejected = filteredUsers.filter((u) => u.approval_status === "rejected");
   const sorted = [...pending, ...approved, ...rejected];
 
   return (
