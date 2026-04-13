@@ -102,7 +102,7 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left — Image carousel (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+      <div className="hidden xl:flex xl:w-1/2 relative overflow-hidden">
         {slides.map((slide, i) =>
         <div
           key={i}
