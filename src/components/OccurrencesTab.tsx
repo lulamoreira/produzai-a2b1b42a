@@ -47,6 +47,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 import PhotoLightbox from "./PhotoLightbox";
+import ExportOccurrencesButton from "./ExportOccurrencesButton";
+import type { OccurrenceReportData } from "@/lib/exportOccurrencesReport";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
@@ -113,7 +115,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const { data: campaignInfo, refetch: refetchCampaignInfo } = useQuery({
     queryKey: ["campaign_info", campaignId],
     queryFn: async () => {
-      const { data } = await supabase.from("campaigns").select("name, occurrence_start_date, occurrence_end_date, clients(agency_id, agencies(name))").eq("id", campaignId).maybeSingle();
+      const { data } = await supabase.from("campaigns").select("name, occurrence_start_date, occurrence_end_date, clients(name, agency_id, agencies(name))").eq("id", campaignId).maybeSingle();
       return data;
     },
     enabled: !!campaignId,
@@ -559,6 +561,46 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Export button */}
+        {canEdit && (
+          <ExportOccurrencesButton
+            data={{
+              campaignName: campaignInfo?.name || "",
+              clientName,
+              agencyName,
+              occurrences: occurrences.map((o) => ({
+                id: o.id,
+                store_id: o.store_id,
+                piece_id: o.piece_id,
+                kit_id: o.kit_id,
+                motive_id: o.motive_id,
+                description: o.description,
+                status: o.status,
+                priority: o.priority,
+                created_at: o.created_at,
+                resolved_date: o.resolved_date,
+                expected_resolution_date: o.expected_resolution_date,
+                agency_observation: o.agency_observation,
+                actions_taken: o.actions_taken,
+                needs_reinstallation: o.needs_reinstallation,
+                location_in_store: o.location_in_store,
+              })),
+              stores: stores.map((s) => ({
+                id: s.id,
+                name: s.name,
+                city: s.city ?? null,
+                state: s.state ?? null,
+                store_code: s.store_code ?? null,
+              })),
+              pieces: pieces.map((p) => ({ id: p.id, name: p.name, code: p.code })),
+              kits: kits.map((k) => ({ id: k.id, name: k.name, code: k.code })),
+              motives: motives.filter((m) => m.active !== false).map((m) => ({ id: m.id, description: m.description })),
+              statuses: statuses.map((s) => ({ value: s.value, label: s.label, color: s.color })),
+              scheduleMap,
+            }}
+          />
+        )}
 
         {/* Primary action */}
         <a href={publicLink} target="_blank" rel="noopener noreferrer" className="shrink-0">
