@@ -24,9 +24,9 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Puzzle, Calendar, MapPin, User, Pencil, Flag, Trash2,
+  Puzzle, Calendar, CalendarClock, MapPin, User, Pencil, Flag, Trash2,
   ExternalLink, Link2, MessageCircle, Phone, Save, ClipboardList, Loader2, Lock, LockOpen,
-  CheckCircle2, AlertCircle, Camera,
+  CheckCircle2, AlertCircle, Camera, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -457,12 +457,27 @@ export default function OccurrenceCard({
 
       <div className="p-4 flex flex-col flex-1">
       {/* Date */}
-      <div className="flex items-center gap-2 mb-2">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
           <Calendar className="w-3 h-3" />
           {occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}
+          {occ.created_at && (() => {
+            const days = Math.floor((Date.now() - new Date(occ.created_at).getTime()) / 86400000);
+            return <span className="ml-0.5">· {days} {days === 1 ? "dia" : "dias"}</span>;
+          })()}
         </span>
+        {(occ as any).expected_resolution_date && !["resolvida", "nao_procede"].includes(merged.status || "") && new Date((occ as any).expected_resolution_date) < new Date() && (
+          <Badge variant="destructive" className="text-[9px] px-1.5 py-0 h-4 font-semibold">Atrasada</Badge>
+        )}
       </div>
+      {(occ as any).expected_resolution_date && (
+        <div className="flex items-center gap-1 mb-2">
+          <CalendarClock className="w-3 h-3 text-muted-foreground" />
+          <span className="text-[10px] text-muted-foreground">
+            Prev: {format(new Date((occ as any).expected_resolution_date), "dd/MM/yyyy")}
+          </span>
+        </div>
+      )}
 
       {/* Priority */}
       <div className="flex items-center gap-2 mb-2">
@@ -583,10 +598,17 @@ export default function OccurrenceCard({
         <p className="text-[10px] text-muted-foreground italic mb-3 ml-5">Ocorrência geral — sem peça específica vinculada.</p>
       )}
 
-      {/* Motive badge */}
-      <Badge variant="secondary" className="text-[10px] font-medium mb-2 w-fit">
-        {getMotiveName(occ.motive_id)}
-      </Badge>
+      {/* Motive badge + reinstallation */}
+      <div className="flex items-center gap-1.5 flex-wrap mb-2">
+        <Badge variant="secondary" className="text-[10px] font-medium w-fit">
+          {getMotiveName(occ.motive_id)}
+        </Badge>
+        {(occ as any).needs_reinstallation && (
+          <Badge variant="destructive" className="text-[9px] px-1.5 py-0 h-4 font-semibold gap-1 w-fit">
+            <RotateCcw className="w-2.5 h-2.5" /> Reinstalação
+          </Badge>
+        )}
+      </div>
 
       {/* Description */}
       {occ.description && <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap break-words">{occ.description}</p>}
