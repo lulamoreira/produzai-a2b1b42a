@@ -113,7 +113,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const { data: campaignInfo, refetch: refetchCampaignInfo } = useQuery({
     queryKey: ["campaign_info", campaignId],
     queryFn: async () => {
-      const { data } = await supabase.from("campaigns").select("name, occurrence_start_date, occurrence_end_date, clients(agency_id, agencies(name))").eq("id", campaignId).maybeSingle();
+      const { data } = await supabase.from("campaigns").select("name, occurrence_start_date, occurrence_end_date, clients(name, agency_id, agencies(name))").eq("id", campaignId).maybeSingle();
       return data;
     },
     enabled: !!campaignId,
