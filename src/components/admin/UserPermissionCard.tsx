@@ -165,36 +165,40 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
     onChangeCategory: (val: string) => void; onToggleSuspend: () => void; onDelete: () => void;
     deleteTitle: string; deleteDesc: string;
   }) => (
-    <div className={`flex items-center gap-2 p-2 rounded-lg border ${suspended ? "opacity-50 bg-muted/30 border-border" : "bg-muted/10 border-border"}`}>
-      {icon}
-      <span className="text-sm text-foreground flex-1 min-w-0 truncate">{label}</span>
-      <Select value={categoryId || ""} onValueChange={onChangeCategory}>
-        <SelectTrigger className="w-[130px] h-7 text-xs"><SelectValue placeholder="Categoria" /></SelectTrigger>
-        <SelectContent>
-          {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
-        </SelectContent>
-      </Select>
-      <Badge variant="outline" className={`text-[10px] shrink-0 ${suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
-        {suspended ? "Suspenso" : "Ativo"}
-      </Badge>
-      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title={suspended ? "Reativar" : "Suspender"} onClick={onToggleSuspend}>
-        {suspended ? <PlayCircle className="w-3.5 h-3.5 text-green-600" /> : <PauseCircle className="w-3.5 h-3.5 text-yellow-600" />}
-      </Button>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{deleteTitle}</AlertDialogTitle>
-            <AlertDialogDescription>{deleteDesc}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remover</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+    <div className={`flex flex-col gap-2 p-2.5 rounded-lg border ${suspended ? "opacity-50 bg-muted/30 border-border" : "bg-muted/10 border-border"}`}>
+      <div className="flex items-center gap-2 min-w-0">
+        {icon}
+        <span className="text-sm text-foreground flex-1 min-w-0 truncate">{label}</span>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Select value={categoryId || ""} onValueChange={onChangeCategory}>
+          <SelectTrigger className="h-7 text-xs flex-1 min-w-[120px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
+          <SelectContent>
+            {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Badge variant="outline" className={`text-[10px] shrink-0 ${suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
+          {suspended ? "Suspenso" : "Ativo"}
+        </Badge>
+        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title={suspended ? "Reativar" : "Suspender"} onClick={onToggleSuspend}>
+          {suspended ? <PlayCircle className="w-3.5 h-3.5 text-green-600" /> : <PauseCircle className="w-3.5 h-3.5 text-yellow-600" />}
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{deleteTitle}</AlertDialogTitle>
+              <AlertDialogDescription>{deleteDesc}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remover</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 
@@ -285,9 +289,9 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                   </div>
                 )}
                 {addingAgency ? (
-                  <div className="flex items-center gap-2 p-2 rounded-lg border border-dashed border-primary/30 bg-primary/5">
+                  <div className="flex flex-col gap-2 p-2.5 rounded-lg border border-dashed border-primary/30 bg-primary/5">
                     <Select value={newAgencyId} onValueChange={setNewAgencyId}>
-                      <SelectTrigger className="flex-1 h-8 text-xs"><SelectValue placeholder="Agência" /></SelectTrigger>
+                      <SelectTrigger className="w-full h-8 text-xs"><SelectValue placeholder="Agência" /></SelectTrigger>
                       <SelectContent>
                         {agencies.filter(a => !userAgencyAccesses.some(ua => ua.agency_id === a.id)).map(a => (
                           <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
@@ -295,11 +299,13 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                       </SelectContent>
                     </Select>
                     <Select value={newAgencyCategoryId} onValueChange={setNewAgencyCategoryId}>
-                      <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue placeholder="Categoria" /></SelectTrigger>
+                      <SelectTrigger className="w-full h-8 text-xs"><SelectValue placeholder="Categoria" /></SelectTrigger>
                       <SelectContent>{categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}</SelectContent>
                     </Select>
-                    <Button size="sm" className="h-8 text-xs" onClick={handleAddAgencyAccess} disabled={!newAgencyId || !newAgencyCategoryId}>Adicionar</Button>
-                    <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setAddingAgency(false)}>Cancelar</Button>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" className="h-8 text-xs flex-1" onClick={handleAddAgencyAccess} disabled={!newAgencyId || !newAgencyCategoryId}>Adicionar</Button>
+                      <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setAddingAgency(false)}>Cancelar</Button>
+                    </div>
                   </div>
                 ) : (
                   <Button variant="ghost" size="sm" className="text-xs gap-1 text-primary" onClick={() => setAddingAgency(true)}>
@@ -331,9 +337,9 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                   </div>
                 )}
                 {addingClient ? (
-                  <div className="flex items-center gap-2 p-2 rounded-lg border border-dashed border-primary/30 bg-primary/5">
+                  <div className="flex flex-col gap-2 p-2.5 rounded-lg border border-dashed border-primary/30 bg-primary/5">
                     <Select value={newClientId} onValueChange={setNewClientId}>
-                      <SelectTrigger className="flex-1 h-8 text-xs"><SelectValue placeholder="Cliente" /></SelectTrigger>
+                      <SelectTrigger className="w-full h-8 text-xs"><SelectValue placeholder="Cliente" /></SelectTrigger>
                       <SelectContent>
                         {clients.filter(c => !userAccesses.some(a => a.client_id === c.id)).map(c => (
                           <SelectItem key={c.id} value={c.id}>{getClientLabel(c.id)}</SelectItem>
@@ -341,11 +347,13 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                       </SelectContent>
                     </Select>
                     <Select value={newClientCategoryId} onValueChange={setNewClientCategoryId}>
-                      <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue placeholder="Categoria" /></SelectTrigger>
+                      <SelectTrigger className="w-full h-8 text-xs"><SelectValue placeholder="Categoria" /></SelectTrigger>
                       <SelectContent>{categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}</SelectContent>
                     </Select>
-                    <Button size="sm" className="h-8 text-xs" onClick={handleAddClientAccess} disabled={!newClientId || !newClientCategoryId}>Adicionar</Button>
-                    <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setAddingClient(false)}>Cancelar</Button>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" className="h-8 text-xs flex-1" onClick={handleAddClientAccess} disabled={!newClientId || !newClientCategoryId}>Adicionar</Button>
+                      <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setAddingClient(false)}>Cancelar</Button>
+                    </div>
                   </div>
                 ) : (
                   <Button variant="ghost" size="sm" className="text-xs gap-1 text-primary" onClick={() => setAddingClient(true)}>
@@ -373,15 +381,15 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                   </div>
                 )}
                 {addingCampaign ? (
-                  <div className="flex flex-wrap items-center gap-2 p-2 rounded-lg border border-dashed border-primary/30 bg-primary/5">
+                  <div className="flex flex-col gap-2 p-2.5 rounded-lg border border-dashed border-primary/30 bg-primary/5">
                     <Select value={newCampaignClientId} onValueChange={val => { setNewCampaignClientId(val); setNewCampaignId(""); }}>
-                      <SelectTrigger className="w-[180px] h-8 text-xs"><SelectValue placeholder="Cliente" /></SelectTrigger>
+                      <SelectTrigger className="w-full h-8 text-xs"><SelectValue placeholder="Cliente" /></SelectTrigger>
                       <SelectContent>
                         {clients.map(c => <SelectItem key={c.id} value={c.id}>{getClientLabel(c.id)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                     <Select value={newCampaignId} onValueChange={setNewCampaignId} disabled={!newCampaignClientId}>
-                      <SelectTrigger className="w-[180px] h-8 text-xs"><SelectValue placeholder="Campanha" /></SelectTrigger>
+                      <SelectTrigger className="w-full h-8 text-xs"><SelectValue placeholder="Campanha" /></SelectTrigger>
                       <SelectContent>
                         {campaignsForClient.map(c => (
                           <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -389,11 +397,13 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                       </SelectContent>
                     </Select>
                     <Select value={newCampaignCategoryId} onValueChange={setNewCampaignCategoryId}>
-                      <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue placeholder="Categoria" /></SelectTrigger>
+                      <SelectTrigger className="w-full h-8 text-xs"><SelectValue placeholder="Categoria" /></SelectTrigger>
                       <SelectContent>{categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}</SelectContent>
                     </Select>
-                    <Button size="sm" className="h-8 text-xs" onClick={handleAddCampaignAccess} disabled={!newCampaignId || !newCampaignCategoryId}>Adicionar</Button>
-                    <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setAddingCampaign(false); setNewCampaignClientId(""); }}>Cancelar</Button>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" className="h-8 text-xs flex-1" onClick={handleAddCampaignAccess} disabled={!newCampaignId || !newCampaignCategoryId}>Adicionar</Button>
+                      <Button size="sm" variant="ghost" className="h-8 text-xs" onClick={() => { setAddingCampaign(false); setNewCampaignClientId(""); }}>Cancelar</Button>
+                    </div>
                   </div>
                 ) : (
                   <Button variant="ghost" size="sm" className="text-xs gap-1 text-primary" onClick={() => setAddingCampaign(true)}>
@@ -446,36 +456,40 @@ function CampaignAccessRow({ access, clients, agencies, categories, onChangeCate
   const label = campaign ? `${agency?.name || ""} / ${client?.name || ""} / ${campaign.name}` : access.campaign_id.slice(0, 8);
 
   return (
-    <div className={`flex items-center gap-2 p-2 rounded-lg border ${access.suspended ? "opacity-50 bg-muted/30 border-border" : "bg-muted/10 border-border"}`}>
-      <Megaphone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-      <span className="text-sm text-foreground flex-1 min-w-0 truncate">{label}</span>
-      <Select value={access.category_id || ""} onValueChange={onChangeCategory}>
-        <SelectTrigger className="w-[130px] h-7 text-xs"><SelectValue placeholder="Categoria" /></SelectTrigger>
-        <SelectContent>
-          {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
-        </SelectContent>
-      </Select>
-      <Badge variant="outline" className={`text-[10px] shrink-0 ${access.suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
-        {access.suspended ? "Suspenso" : "Ativo"}
-      </Badge>
-      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title={access.suspended ? "Reativar" : "Suspender"} onClick={onToggleSuspend}>
-        {access.suspended ? <PlayCircle className="w-3.5 h-3.5 text-green-600" /> : <PauseCircle className="w-3.5 h-3.5 text-yellow-600" />}
-      </Button>
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remover acesso à campanha "{campaign?.name}"?</AlertDialogTitle>
-            <AlertDialogDescription>O usuário perderá todas as permissões nesta campanha.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remover</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+    <div className={`flex flex-col gap-2 p-2.5 rounded-lg border ${access.suspended ? "opacity-50 bg-muted/30 border-border" : "bg-muted/10 border-border"}`}>
+      <div className="flex items-center gap-2 min-w-0">
+        <Megaphone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+        <span className="text-sm text-foreground flex-1 min-w-0 truncate">{label}</span>
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        <Select value={access.category_id || ""} onValueChange={onChangeCategory}>
+          <SelectTrigger className="h-7 text-xs flex-1 min-w-[120px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
+          <SelectContent>
+            {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Badge variant="outline" className={`text-[10px] shrink-0 ${access.suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
+          {access.suspended ? "Suspenso" : "Ativo"}
+        </Badge>
+        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title={access.suspended ? "Reativar" : "Suspender"} onClick={onToggleSuspend}>
+          {access.suspended ? <PlayCircle className="w-3.5 h-3.5 text-green-600" /> : <PauseCircle className="w-3.5 h-3.5 text-yellow-600" />}
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remover acesso à campanha "{campaign?.name}"?</AlertDialogTitle>
+              <AlertDialogDescription>O usuário perderá todas as permissões nesta campanha.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remover</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 }
