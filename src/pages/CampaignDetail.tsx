@@ -71,7 +71,7 @@ import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import BudgetExportColorDialog, { type ColorPalette } from "@/components/BudgetExportColorDialog";
-import TiposManager from "@/components/LojaALoja/TiposManager";
+import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -2452,8 +2452,8 @@ const CampaignDetail = () => {
           )}
 
           {/* ─── SECTION: LOJA A LOJA ─── */}
-          {activeSection === "loja_a_loja" && campaignId && (
-            <TiposManager campaignId={campaignId} isAdmin={isAdmin} />
+          {activeSection === "loja_a_loja" && campaignId && clientId && (
+            <LojaALojaTab campaignId={campaignId} clientId={clientId} isAdmin={isAdmin} />
           )}
           </>
         )}
