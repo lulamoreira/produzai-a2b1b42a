@@ -71,6 +71,7 @@ import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import BudgetExportColorDialog, { type ColorPalette } from "@/components/BudgetExportColorDialog";
+import TiposManager from "@/components/LojaALoja/TiposManager";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
