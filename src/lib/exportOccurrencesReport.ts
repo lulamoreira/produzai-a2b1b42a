@@ -83,7 +83,14 @@ function daysBetween(a: string | null | undefined, b: string | null | undefined)
 
 function fmtDate(v: string | null | undefined) {
   if (!v) return "";
-  return new Date(v).toLocaleDateString("pt-BR");
+  // For date-only strings (YYYY-MM-DD), use safe local parse
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    const r = formatDateBR(v);
+    return r === "—" ? "" : r;
+  }
+  // For full timestamps, parse and format in local timezone
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR");
 }
 
 function priorityLabel(p: string) {
