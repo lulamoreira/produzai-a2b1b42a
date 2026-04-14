@@ -10,6 +10,7 @@ const LIGHT_BG = "F5F0EB";
 const LIGHT_BG_RGB: [number, number, number] = [245, 240, 235];
 const WHITE = "FFFFFF";
 const RED = "DC2626";
+const RED_RGB: [number, number, number] = [220, 38, 38];
 const ORANGE = "F97316";
 const YELLOW = "EAB308";
 const GREEN = "22C55E";
@@ -96,6 +97,22 @@ function statusColorRGB(value: string | null, statuses: PendingOccurrenceData["s
 }
 function sanitize(name: string) { return name.replace(/[\\/*?[\]:]/g, "").slice(0, 31); }
 
+function isOverdue(occ: PendingOccurrenceData["occurrences"][0], todayStart: Date): boolean {
+  if (!occ.expected_resolution_date) return false;
+  return new Date(occ.expected_resolution_date + "T00:00:00") < todayStart;
+}
+
+function sortOverdueFirst(occs: PendingOccurrenceData["occurrences"], todayStart: Date) {
+  return [...occs].sort((a, b) => {
+    const aOv = isOverdue(a, todayStart) ? 0 : 1;
+    const bOv = isOverdue(b, todayStart) ? 0 : 1;
+    if (aOv !== bOv) return aOv - bOv;
+    const aD = a.expected_resolution_date || "";
+    const bD = b.expected_resolution_date || "";
+    return aD.localeCompare(bD);
+  });
+}
+
 /* ── Excel styles ── */
 function headerStyle(): Partial<ExcelJS.Style> {
   return {
@@ -106,6 +123,9 @@ function headerStyle(): Partial<ExcelJS.Style> {
   };
 }
 
+const RED_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + RED } };
+const RED_FONT: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: true, size: 10 };
+
 /* ══════════════════════════════════════════
    EXCEL EXPORT
    ══════════════════════════════════════════ */
@@ -115,14 +135,16 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
   wb.created = new Date();
   const sm = storeMap(data.stores);
   const mm = motiveMap(data.motives);
-  const today = new Date();
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+
+  const sorted = sortOverdueFirst(data.occurrences, todayStart);
 
   // KPI computation
-  const total = data.occurrences.length;
+  const total = sorted.length;
   const byPriority: Record<string, number> = {};
   const byMotive: Record<string, number> = {};
   let totalDaysOpen = 0; let countDaysOpen = 0;
-  data.occurrences.forEach((o) => {
+  sorted.forEach((o) => {
     byPriority[o.priority] = (byPriority[o.priority] || 0) + 1;
     if (o.motive_id) {
       const label = mm[o.motive_id] || "Outro";
@@ -132,7 +154,7 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
     if (d !== null) { totalDaysOpen += d; countDaysOpen++; }
   });
   const avgDaysOpen = countDaysOpen > 0 ? Math.round((totalDaysOpen / countDaysOpen) * 10) / 10 : 0;
-  const overdue = data.occurrences.filter((o) => o.expected_resolution_date && new Date(o.expected_resolution_date) < today);
+  const overdue = sorted.filter((o) => isOverdue(o, todayStart));
 
   // ─── Sheet 1: Resumo ───
   const wsR = wb.addWorksheet(sanitize("Resumo"));
@@ -144,7 +166,6 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
   titleCell.alignment = { horizontal: "left", vertical: "middle" };
   wsR.getRow(1).height = 30;
 
-  // KPI boxes
   const kpiDefs = [
     { label: "Total Em Andamento", value: total, color: BRAND },
     { label: "Atrasadas", value: overdue.length, color: RED },
@@ -166,7 +187,6 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
   wsR.getRow(4).height = 22;
   for (let c = 1; c <= 6; c++) wsR.getColumn(c).width = 22;
 
-  // Bar simulation: by priority (row 6+)
   wsR.getCell("A6").value = "Por Prioridade";
   wsR.getCell("A6").font = { bold: true, size: 11, color: { argb: "FF" + BRAND } };
   const priEntries: [string, number][] = [["critica", byPriority["critica"] || 0], ["alta", byPriority["alta"] || 0], ["media", byPriority["media"] || 0], ["baixa", byPriority["baixa"] || 0]];
@@ -180,7 +200,6 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
     row.getCell(3).value = count;
   });
 
-  // Bar simulation: by motive (row 12+)
   wsR.getCell("A12").value = "Por Motivo";
   wsR.getCell("A12").font = { bold: true, size: 11, color: { argb: "FF" + BRAND } };
   const motiveEntries = Object.entries(byMotive).sort((a, b) => b[1] - a[1]);
@@ -194,9 +213,9 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
     row.getCell(3).value = count;
   });
 
-  // ─── Sheet 2: Em Andamento ───
+  // ─── Sheet 2: Em Andamento (with Situação column) ───
   const wsP = wb.addWorksheet(sanitize("Em Andamento"));
-  const headers = ["Loja", "Aberta por", "Data Abertura", "Previsão", "Dias p/ Resolver", "Dias em Aberto", "Prioridade", "Motivo", "Status"];
+  const headers = ["Situação", "Loja", "Aberta por", "Data Abertura", "Previsão", "Dias p/ Resolver", "Dias em Aberto", "Prioridade", "Motivo", "Status"];
   const phr = wsP.getRow(1);
   headers.forEach((h, i) => {
     const c = phr.getCell(i + 1);
@@ -205,12 +224,15 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
   });
   wsP.views = [{ state: "frozen", ySplit: 1, xSplit: 0 }];
 
-  data.occurrences.forEach((occ, idx) => {
+  sorted.forEach((occ, idx) => {
     const store = occ.store_id ? sm[occ.store_id] : null;
     const dToResolve = daysBetween(occ.created_at, occ.expected_resolution_date);
     const dOpen = daysOpenSince(occ.created_at);
     const row = wsP.getRow(idx + 2);
+    const occIsOverdue = isOverdue(occ, todayStart);
+
     const vals = [
+      occIsOverdue ? "ATRASADA" : "",
       store?.name || "",
       occ.reporter_name || "",
       fmtDate(occ.created_at),
@@ -223,42 +245,60 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
     ];
     vals.forEach((v, ci) => { row.getCell(ci + 1).value = v; });
 
-    // Priority color (col 7)
-    row.getCell(7).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + priorityColor(occ.priority) } };
-    row.getCell(7).font = { color: { argb: "FFFFFFFF" }, bold: true, size: 10 };
-    // Status color (col 9)
-    const sc = statusColor(occ.status, data.statuses);
-    row.getCell(9).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + sc } };
-    row.getCell(9).font = { color: { argb: "FFFFFFFF" }, bold: true, size: 10 };
-    // Alternating
-    if (idx % 2 === 1) {
-      for (let c = 1; c <= 9; c++) {
-        if (c !== 7 && c !== 9) {
-          row.getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + LIGHT_BG } };
+    if (occIsOverdue) {
+      for (let c = 1; c <= 10; c++) {
+        row.getCell(c).fill = RED_FILL;
+        row.getCell(c).font = RED_FONT;
+      }
+    } else {
+      // Priority color (col 8)
+      row.getCell(8).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + priorityColor(occ.priority) } };
+      row.getCell(8).font = { color: { argb: "FFFFFFFF" }, bold: true, size: 10 };
+      // Status color (col 10)
+      const sc = statusColor(occ.status, data.statuses);
+      row.getCell(10).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + sc } };
+      row.getCell(10).font = { color: { argb: "FFFFFFFF" }, bold: true, size: 10 };
+      // Alternating
+      if (idx % 2 === 1) {
+        for (let c = 1; c <= 10; c++) {
+          if (c !== 8 && c !== 10) {
+            row.getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + LIGHT_BG } };
+          }
         }
       }
     }
   });
-  wsP.autoFilter = { from: "A1", to: `I${data.occurrences.length + 1}` };
-  const colWidths = [25, 20, 14, 14, 14, 14, 12, 22, 14];
+  wsP.autoFilter = { from: "A1", to: `J${sorted.length + 1}` };
+  const colWidths = [12, 25, 20, 14, 14, 14, 14, 12, 22, 14];
   colWidths.forEach((w, i) => { wsP.getColumn(i + 1).width = w; });
 
-  // ─── Sheet 3: Atrasadas ───
+  // ─── Sheet 3: Atrasadas (with red banner) ───
   const wsA = wb.addWorksheet(sanitize("Atrasadas"));
-  const aHeaders = ["Loja", "Aberta por", "Data Abertura", "Previsão", "Dias em Aberto", "Prioridade", "Motivo", "Status"];
-  const ahr = wsA.getRow(1);
+  const aColCount = 9;
+  // Red banner header row
+  wsA.mergeCells(1, 1, 1, aColCount);
+  const bannerCell = wsA.getCell("A1");
+  bannerCell.value = "⚠ OCORRÊNCIAS ATRASADAS";
+  bannerCell.fill = RED_FILL;
+  bannerCell.font = { bold: true, size: 14, color: { argb: "FFFFFFFF" } };
+  bannerCell.alignment = { horizontal: "center", vertical: "middle" };
+  wsA.getRow(1).height = 32;
+
+  const aHeaders = ["Situação", "Loja", "Aberta por", "Data Abertura", "Previsão", "Dias em Aberto", "Prioridade", "Motivo", "Status"];
+  const ahr = wsA.getRow(2);
   aHeaders.forEach((h, i) => {
     const c = ahr.getCell(i + 1);
     c.value = h;
     Object.assign(c, { style: headerStyle() });
   });
-  wsA.views = [{ state: "frozen", ySplit: 1, xSplit: 0 }];
+  wsA.views = [{ state: "frozen", ySplit: 2, xSplit: 0 }];
 
   overdue.forEach((occ, idx) => {
     const store = occ.store_id ? sm[occ.store_id] : null;
     const dOpen = daysOpenSince(occ.created_at);
-    const row = wsA.getRow(idx + 2);
+    const row = wsA.getRow(idx + 3);
     const vals = [
+      "ATRASADA",
       store?.name || "",
       occ.reporter_name || "",
       fmtDate(occ.created_at),
@@ -269,15 +309,12 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
       statusLabel(occ.status, data.statuses),
     ];
     vals.forEach((v, ci) => { row.getCell(ci + 1).value = v; });
-    // Red highlight
-    for (let c = 1; c <= 8; c++) {
-      row.getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFDE8E8" } };
-      row.getCell(c).font = { color: { argb: "FF" + RED } };
+    for (let c = 1; c <= aColCount; c++) {
+      row.getCell(c).fill = RED_FILL;
+      row.getCell(c).font = RED_FONT;
     }
-    row.getCell(6).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + priorityColor(occ.priority) } };
-    row.getCell(6).font = { color: { argb: "FFFFFFFF" }, bold: true };
   });
-  const aWidths = [25, 20, 14, 14, 14, 12, 22, 14];
+  const aWidths = [12, 25, 20, 14, 14, 14, 12, 22, 14];
   aWidths.forEach((w, i) => { wsA.getColumn(i + 1).width = w; });
 
   // ─── Save ───
@@ -306,13 +343,16 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
   const ph = doc.internal.pageSize.getHeight();
   const sm = storeMap(data.stores);
   const mm = motiveMap(data.motives);
-  const today = new Date();
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
-  const total = data.occurrences.length;
+  const sorted = sortOverdueFirst(data.occurrences, todayStart);
+  const overdue = sorted.filter((o) => isOverdue(o, todayStart));
+
+  const total = sorted.length;
   const byPriority: Record<string, number> = {};
   const byMotive: Record<string, number> = {};
   let totalDaysOpen = 0; let countDaysOpen = 0;
-  data.occurrences.forEach((o) => {
+  sorted.forEach((o) => {
     byPriority[o.priority] = (byPriority[o.priority] || 0) + 1;
     if (o.motive_id) {
       const label = mm[o.motive_id] || "Outro";
@@ -322,7 +362,6 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
     if (d !== null) { totalDaysOpen += d; countDaysOpen++; }
   });
   const avgDaysOpen = countDaysOpen > 0 ? Math.round((totalDaysOpen / countDaysOpen) * 10) / 10 : 0;
-  const overdueCount = data.occurrences.filter((o) => o.expected_resolution_date && new Date(o.expected_resolution_date) < today).length;
 
   // ── Page 1: Cover ──
   doc.setFillColor(...BRAND_RGB);
@@ -337,7 +376,7 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
   doc.setFontSize(12);
   doc.text(`${total} ocorrências em andamento`, pw / 2, ph / 2 + 28, { align: "center" });
   doc.setFontSize(11);
-  doc.text(today.toLocaleDateString("pt-BR"), pw / 2, ph / 2 + 40, { align: "center" });
+  doc.text(todayStart.toLocaleDateString("pt-BR"), pw / 2, ph / 2 + 40, { align: "center" });
   doc.setTextColor(0, 0, 0);
 
   // ── Page 2: KPIs ──
@@ -346,7 +385,7 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
 
   const kpiItems = [
     { label: "Total Em Andamento", value: String(total), color: BRAND_RGB },
-    { label: "Atrasadas", value: String(overdueCount), color: [220, 38, 38] as [number, number, number] },
+    { label: "Atrasadas", value: String(overdue.length), color: RED_RGB },
     { label: "Média dias em aberto", value: String(avgDaysOpen), color: [249, 115, 22] as [number, number, number] },
   ];
   const boxW = 60; const boxH = 24; const startX = 50; const startY = 30;
@@ -361,7 +400,6 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
     doc.text(kpi.label, x + boxW / 2, startY + 19, { align: "center" });
   });
 
-  // Bar chart: by priority
   const barY = startY + boxH + 20;
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
@@ -379,14 +417,13 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
     doc.text(String(count), startX + 30 + w + 3, y + 5.5);
   });
 
-  // Bar chart: by motive
   const motiveStartX = startX + 140;
   doc.setFontSize(11);
   doc.setTextColor(0, 0, 0);
   doc.text("Por Motivo", motiveStartX, barY);
-  const motiveEntries = Object.entries(byMotive).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  const maxMotVal = motiveEntries.length > 0 ? motiveEntries[0][1] : 1;
-  motiveEntries.forEach(([label, count], i) => {
+  const motiveEntriesPdf = Object.entries(byMotive).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const maxMotVal = motiveEntriesPdf.length > 0 ? motiveEntriesPdf[0][1] : 1;
+  motiveEntriesPdf.forEach(([label, count], i) => {
     const y = barY + 6 + i * 11;
     doc.setFontSize(7);
     doc.setTextColor(0, 0, 0);
@@ -398,13 +435,12 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
     doc.text(String(count), motiveStartX + 45 + w + 3, y + 5.5);
   });
 
-  // Pie chart simulation: colored rectangles as legend
   const pieY = barY + 60;
   doc.setFontSize(11);
   doc.setTextColor(0, 0, 0);
   doc.text("Distribuição por Status", startX, pieY);
   const byStatus: Record<string, number> = {};
-  data.occurrences.forEach((o) => { const k = o.status || "sem_status"; byStatus[k] = (byStatus[k] || 0) + 1; });
+  sorted.forEach((o) => { const k = o.status || "sem_status"; byStatus[k] = (byStatus[k] || 0) + 1; });
   Object.entries(byStatus).forEach(([key, count], i) => {
     const y = pieY + 6 + i * 10;
     const rgb = statusColorRGB(key, data.statuses);
@@ -415,11 +451,58 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
     doc.text(`${statusLabel(key, data.statuses) || key}: ${count}`, startX + 15, y + 5.5);
   });
 
-  // ── Page 3+: Detail table ──
+  // ── Page 3: Overdue-only section ──
+  if (overdue.length > 0) {
+    doc.addPage();
+    // Red banner header
+    doc.setFillColor(...RED_RGB);
+    doc.rect(0, 0, pw, 18, "F");
+    doc.setFontSize(12);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`⚠ OCORRÊNCIAS ATRASADAS (${overdue.length})`, 14, 12);
+    doc.setTextColor(0, 0, 0);
+
+    const overdueRows = overdue.map((occ) => {
+      const store = occ.store_id ? sm[occ.store_id] : null;
+      return [
+        store?.name || "",
+        occ.reporter_name || "",
+        fmtDate(occ.created_at),
+        fmtDate(occ.expected_resolution_date),
+        daysOpenSince(occ.created_at) ?? "",
+        priorityLabel(occ.priority),
+        occ.motive_id ? mm[occ.motive_id] || "" : "",
+        statusLabel(occ.status, data.statuses),
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 24,
+      head: [["Loja", "Aberta por", "Abertura", "Previsão", "Dias aberto", "Prioridade", "Motivo", "Status"]],
+      body: overdueRows,
+      headStyles: { fillColor: RED_RGB, fontSize: 8 },
+      styles: { fontSize: 7, cellPadding: 2, textColor: [255, 255, 255] },
+      bodyStyles: { fillColor: [180, 30, 30] },
+      margin: { left: 10, right: 10 },
+      columnStyles: { 0: { cellWidth: 35 }, 6: { cellWidth: 30 } },
+      didDrawPage: (hookData) => {
+        if (hookData.pageNumber > 1) {
+          doc.setFillColor(...RED_RGB);
+          doc.rect(0, 0, pw, 18, "F");
+          doc.setFontSize(12);
+          doc.setTextColor(255, 255, 255);
+          doc.text(`⚠ OCORRÊNCIAS ATRASADAS (${overdue.length})`, 14, 12);
+          doc.setTextColor(0, 0, 0);
+        }
+      },
+    });
+  }
+
+  // ── Full detail table (overdue-first sorted) ──
   doc.addPage();
   addPdfHeader(doc, `${data.campaignName} — Detalhamento de Em Andamento`);
 
-  const detailRows = data.occurrences.map((occ) => {
+  const detailRows = sorted.map((occ) => {
     const store = occ.store_id ? sm[occ.store_id] : null;
     return [
       store?.name || "",
@@ -433,6 +516,10 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
     ];
   });
 
+  // Build a set of overdue row indices for quick lookup
+  const overdueIndices = new Set<number>();
+  sorted.forEach((occ, i) => { if (isOverdue(occ, todayStart)) overdueIndices.add(i); });
+
   autoTable(doc, {
     startY: 24,
     head: [["Loja", "Aberta por", "Abertura", "Previsão", "Dias aberto", "Prioridade", "Motivo", "Status"]],
@@ -440,10 +527,14 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
     headStyles: { fillColor: BRAND_RGB, fontSize: 8 },
     styles: { fontSize: 7, cellPadding: 2 },
     alternateRowStyles: { fillColor: LIGHT_BG_RGB },
-    margin: { left: 10, right: 10 },
+    margin: { left: 12, right: 10 },
     columnStyles: { 0: { cellWidth: 35 }, 6: { cellWidth: 30 } },
     didParseCell: (hookData) => {
       if (hookData.section === "body") {
+        const rowIdx = hookData.row.index;
+        if (overdueIndices.has(rowIdx)) {
+          hookData.cell.styles.textColor = RED_RGB;
+        }
         if (hookData.column.index === 5) {
           const val = String(hookData.cell.raw).toLowerCase();
           const key = val === "crítica" ? "critica" : val === "alta" ? "alta" : val === "média" ? "media" : val === "baixa" ? "baixa" : "";
@@ -454,12 +545,21 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
           }
         }
         if (hookData.column.index === 7) {
-          const statusVal = data.occurrences[hookData.row.index]?.status;
+          const statusVal = sorted[rowIdx]?.status;
           if (statusVal) {
             hookData.cell.styles.fillColor = statusColorRGB(statusVal, data.statuses);
             hookData.cell.styles.textColor = [255, 255, 255];
             hookData.cell.styles.fontStyle = "bold";
           }
+        }
+      }
+    },
+    didDrawCell: (hookData) => {
+      if (hookData.section === "body" && hookData.column.index === 0) {
+        const rowIdx = hookData.row.index;
+        if (overdueIndices.has(rowIdx)) {
+          doc.setFillColor(...RED_RGB);
+          doc.rect(hookData.cell.x - 2, hookData.cell.y, 2, hookData.cell.height, "F");
         }
       }
     },
