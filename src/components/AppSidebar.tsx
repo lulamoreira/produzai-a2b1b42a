@@ -219,9 +219,7 @@ export default function AppSidebar() {
     <div className="flex h-full min-h-0 flex-col overflow-hidden">
       {/* Logo area */}
       <div className="flex items-center gap-2 px-3 h-14 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "var(--brand-500, #8C6F4E)" }}>
-          <span className="text-sm font-bold text-white">P</span>
-        </div>
+        <img src={produzaiIcon} alt="ProduzAI" className="w-7 h-7 rounded-lg flex-shrink-0" />
         {!collapsed && <span className="text-[15px] font-semibold tracking-tight truncate" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>ProduzAI</span>}
         <button
           onClick={() => setCollapsed(!collapsed)}
