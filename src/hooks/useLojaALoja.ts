@@ -294,7 +294,24 @@ export function useUpdatePecaImage() {
   });
 }
 
-/* ───── Mutations: Lojas (toggle assignment) ───── */
+/* ───── Mutations: Peca Nome ───── */
+
+export function useUpdatePecaNome() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { id: string; nome: string }) => {
+      const { id, nome } = params;
+      const { error } = await supabase.from("loja_a_loja_pecas").update({ nome }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-pecas"] });
+      toast.success("Nome atualizado");
+    },
+    onError: (e: any) => toast.error("Erro ao atualizar nome: " + e.message),
+  });
+}
+
 
 export function useToggleLojaAssignment() {
   const qc = useQueryClient();

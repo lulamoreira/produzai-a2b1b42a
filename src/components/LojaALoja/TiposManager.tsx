@@ -12,6 +12,7 @@ import {
   useAddPeca,
   useDeletePeca,
   useUpdatePecaImage,
+  useUpdatePecaNome,
   type LojaALojaTipo,
   type LojaALojaSubdivisao,
 } from "@/hooks/useLojaALoja";
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Plus, Pencil, Trash2, Image, ChevronRight, X, Upload, Check, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Image, ImagePlus, ChevronRight, X, Upload, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface TiposManagerProps {
@@ -34,22 +35,28 @@ interface TiposManagerProps {
   isAdmin: boolean;
 }
 
-/** Crop an image blob to a 1:1 square center crop at given size */
+/** Resize image proportionally (contain) into a square canvas with white background */
 function cropSquare(file: File, size = 400, quality = 0.7): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new window.Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const min = Math.min(img.width, img.height);
-      const sx = (img.width - min) / 2;
-      const sy = (img.height - min) / 2;
       const canvas = document.createElement("canvas");
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext("2d");
       if (!ctx) { reject(new Error("Canvas not supported")); return; }
-      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+      // White background
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, size, size);
+      // Scale proportionally so largest side = size (contain)
+      const scale = Math.min(size / img.width, size / img.height);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const x = Math.round((size - w) / 2);
+      const y = Math.round((size - h) / 2);
+      ctx.drawImage(img, 0, 0, img.width, img.height, x, y, w, h);
       canvas.toBlob(
         (blob) => blob ? resolve(blob) : reject(new Error("Crop failed")),
         "image/jpeg",
@@ -94,6 +101,11 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
   // Delete confirmation
   const [deletingTipo, setDeletingTipo] = useState<{ id: string; nome: string } | null>(null);
   const [deletingSub, setDeletingSub] = useState<{ id: string; nome: string } | null>(null);
+  const [deletingPeca, setDeletingPeca] = useState<{ id: string; nome: string } | null>(null);
+
+  // Inline edit peca name
+  const [editingPecaId, setEditingPecaId] = useState<string | null>(null);
+  const [editingPecaNome, setEditingPecaNome] = useState("");
 
   // Mutations
   const addTipo = useAddTipo();
@@ -105,6 +117,7 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
   const addPeca = useAddPeca();
   const deletePeca = useDeletePeca();
   const updatePecaImage = useUpdatePecaImage();
+  const updatePecaNome = useUpdatePecaNome();
 
   // Drag & drop / upload state
   const [uploadingPecaId, setUploadingPecaId] = useState<string | null>(null);
@@ -553,6 +566,7 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
                 {pecas.map((peca) => {
                   const isDragOver = dragOverPecaId === peca.id;
                   const isUploading = uploadingPecaId === peca.id;
+                  const isEditingName = editingPecaId === peca.id;
                   return (
                     <div
                       key={peca.id}
@@ -607,7 +621,7 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
 
                         {/* Image or empty placeholder */}
                         {peca.image_url ? (
-                          <img src={peca.image_url} alt={peca.nome} className="w-full h-full object-cover" />
+                          <img src={peca.image_url} alt={peca.nome} className="w-full h-full object-contain bg-white" />
                         ) : (
                           <div className="flex flex-col items-center gap-1 text-muted-foreground/40">
                             <Image className="w-6 h-6" />
@@ -628,17 +642,72 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
                             <Loader2 className="w-6 h-6 animate-spin text-primary" />
                           </div>
                         )}
+
+                        {/* Action menu on hover (top-right) */}
+                        {isAdmin && !isUploading && !isDragOver && (
+                          <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center transition-colors"
+                              title="Editar nome"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingPecaId(peca.id);
+                                setEditingPecaNome(peca.nome);
+                              }}
+                            >
+                              <Pencil className="w-3 h-3 text-white" />
+                            </button>
+                            <button
+                              type="button"
+                              className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center transition-colors"
+                              title="Trocar foto"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                fileInputRefs.current[peca.id]?.click();
+                              }}
+                            >
+                              <ImagePlus className="w-3 h-3 text-white" />
+                            </button>
+                            <button
+                              type="button"
+                              className="h-6 w-6 rounded bg-foreground/70 hover:bg-destructive flex items-center justify-center transition-colors"
+                              title="Apagar"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeletingPeca({ id: peca.id, nome: peca.nome });
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3 text-white" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-xs text-foreground mt-1 truncate">{peca.nome}</p>
-                      {isAdmin && (
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => { e.stopPropagation(); deletePeca.mutate({ id: peca.id }); }}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
+
+                      {/* Name: inline editable or static */}
+                      {isEditingName ? (
+                        <Input
+                          autoFocus
+                          className="h-6 text-xs mt-1 px-1"
+                          value={editingPecaNome}
+                          onChange={(e) => setEditingPecaNome(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.currentTarget.blur();
+                            } else if (e.key === "Escape") {
+                              setEditingPecaId(null);
+                            }
+                          }}
+                          onBlur={() => {
+                            const trimmed = editingPecaNome.trim();
+                            if (trimmed && trimmed !== peca.nome) {
+                              updatePecaNome.mutate({ id: peca.id, nome: trimmed });
+                            }
+                            setEditingPecaId(null);
+                          }}
+                        />
+                      ) : (
+                        <p className="text-xs text-foreground mt-1 truncate">{peca.nome}</p>
                       )}
                     </div>
                   );
@@ -739,6 +808,32 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmDeleteSub} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Delete Peca AlertDialog ── */}
+      <AlertDialog open={!!deletingPeca} onOpenChange={(open) => !open && setDeletingPeca(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apagar peça</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja apagar "{deletingPeca?.nome}"? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deletingPeca) {
+                  deletePeca.mutate({ id: deletingPeca.id });
+                  setDeletingPeca(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Confirmar
             </AlertDialogAction>
           </AlertDialogFooter>
