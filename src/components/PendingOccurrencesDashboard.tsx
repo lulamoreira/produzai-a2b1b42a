@@ -22,7 +22,7 @@ interface Props {
   statuses: OccurrenceStatus[];
 }
 
-const TERMINAL_STATUSES = ["resolvida", "nao_procede"];
+
 
 const PRIORITY_COLORS: Record<string, string> = {
   critica: "#dc2626", alta: "#f97316", media: "#eab308", baixa: "#22c55e",
@@ -77,7 +77,6 @@ export default function PendingOccurrencesDashboard({ open, onOpenChange, campai
 
   const today = new Date();
   const overdue = useMemo(() => pending.filter((o) => o.expected_resolution_date && new Date(o.expected_resolution_date) < today), [pending]);
-  const inProgress = useMemo(() => pending.filter((o) => o.status === "em_andamento"), [pending]);
   const avgDaysOpen = useMemo(() => {
     let sum = 0; let count = 0;
     pending.forEach((o) => { const d = daysOpenSince(o.created_at); if (d !== null) { sum += d; count++; } });
