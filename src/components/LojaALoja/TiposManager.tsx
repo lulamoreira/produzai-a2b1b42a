@@ -71,6 +71,7 @@ function cropSquare(file: File, size = 400, quality = 0.7): Promise<Blob> {
 }
 
 const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
+  const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: allPecas } = useAllLojaALojaPecas(campaignId);
 
   // Count pieces per tipo and subdivisao
