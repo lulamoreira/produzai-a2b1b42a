@@ -1747,7 +1747,7 @@ const CampaignDetail = () => {
                   }}
                 />
 
-                <BudgetExportColorDialog
+                <RateioExportColorDialog
                   open={budgetExportDialogOpen}
                   onOpenChange={setBudgetExportDialogOpen}
                   onExport={async (palette: ColorPalette) => {
