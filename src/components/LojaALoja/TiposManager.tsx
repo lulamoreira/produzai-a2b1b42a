@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   useLojaALojaTipos,
   useLojaALojaPecas,
+  useAllLojaALojaPecas,
   useAddTipo,
   useUpdateTipo,
   useDeleteTipo,
