@@ -9,7 +9,6 @@ import {
   useAllLojaALojaPecas,
   useLojaALojaLojas,
   type LojaALojaTipo,
-  type LojaALojaPeca,
   type LojaALojaLoja,
 } from "@/hooks/useLojaALoja";
 import { useClientStores } from "@/hooks/useMultiClientData";
@@ -21,6 +20,29 @@ interface Props {
 
 const BRAND = "#5B7B5E";
 
+/**
+ * For a given tipo and store, determine if the store is "active" for that tipo.
+ * - Vitrines (no subdivisão): active if explicit row with ativo=true exists
+ * - Internos (tem_subdivisao): active if at least one subdivision is active.
+ *   Default is TRUE when no row exists for a subdivision.
+ */
+function isStoreActiveForTipo(
+  storeId: string,
+  tipo: LojaALojaTipo,
+  lojasMap: Map<string, boolean>,
+): boolean {
+  if (tipo.tem_subdivisao && tipo.subdivisoes && tipo.subdivisoes.length > 0) {
+    // Interno: at least one sub active (default true if no row)
+    return tipo.subdivisoes.some((sub) => {
+      const key = `${storeId}-${tipo.id}-${sub.id}`;
+      return lojasMap.has(key) ? lojasMap.get(key)! : true; // default true
+    });
+  }
+  // Vitrine: explicit row with ativo=true required (default false)
+  const key = `${storeId}-${tipo.id}-`;
+  return lojasMap.has(key) ? lojasMap.get(key)! : false;
+}
+
 export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
   const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: allPecas, isLoading: loadingPecas } = useAllLojaALojaPecas(campaignId);
@@ -29,7 +51,15 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
 
   const isLoading = loadingTipos || loadingPecas || loadingLojas || loadingStores;
 
-  const activeLojas = useMemo(() => (lojas ?? []).filter((l) => l.ativo), [lojas]);
+  // Build lookup: `storeId-tipoId-subdivisaoId` → ativo
+  const lojasMap = useMemo(() => {
+    const map = new Map<string, boolean>();
+    for (const l of lojas ?? []) {
+      const key = `${l.store_id}-${l.tipo_id ?? ""}-${l.subdivisao_id ?? ""}`;
+      map.set(key, l.ativo ?? false);
+    }
+    return map;
+  }, [lojas]);
 
   const storeMap = useMemo(() => {
     const m = new Map<string, { name: string; state: string }>();
@@ -37,38 +67,63 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
     return m;
   }, [stores]);
 
+  const allStoreIds = useMemo(() => (stores ?? []).map((s: any) => s.id as string), [stores]);
+
+  /* Count unique stores active per tipo */
+  const activeStoresPerTipo = useMemo(() => {
+    if (!tipos?.length) return new Map<string, Set<string>>();
+    const result = new Map<string, Set<string>>();
+    for (const tipo of tipos) {
+      const activeSet = new Set<string>();
+      for (const storeId of allStoreIds) {
+        if (isStoreActiveForTipo(storeId, tipo, lojasMap)) {
+          activeSet.add(storeId);
+        }
+      }
+      result.set(tipo.id, activeSet);
+    }
+    return result;
+  }, [tipos, allStoreIds, lojasMap]);
+
   /* KPI values */
-  const totalActiveStores = useMemo(() => new Set(activeLojas.map((l) => l.store_id)).size, [activeLojas]);
+  const totalStoreCount = allStoreIds.length;
+
+  // Lojas que têm pelo menos um tipo ativo
+  const storesWithAnyTipo = useMemo(() => {
+    const all = new Set<string>();
+    activeStoresPerTipo.forEach((storeSet) => storeSet.forEach((sid) => all.add(sid)));
+    return all.size;
+  }, [activeStoresPerTipo]);
+
   const totalTipos = (tipos ?? []).length;
   const totalPecas = (allPecas ?? []).length;
+
   const topTipo = useMemo(() => {
-    if (!tipos?.length || !activeLojas.length) return "—";
-    const counts = new Map<string, number>();
-    activeLojas.forEach((l) => {
-      if (l.tipo_id) counts.set(l.tipo_id, (counts.get(l.tipo_id) ?? 0) + 1);
-    });
+    if (!tipos?.length) return "—";
     let maxId = "";
     let maxN = 0;
-    counts.forEach((n, id) => { if (n > maxN) { maxN = n; maxId = id; } });
+    activeStoresPerTipo.forEach((storeSet, tipoId) => {
+      if (storeSet.size > maxN) { maxN = storeSet.size; maxId = tipoId; }
+    });
     return tipos.find((t) => t.id === maxId)?.nome ?? "—";
-  }, [tipos, activeLojas]);
+  }, [tipos, activeStoresPerTipo]);
 
   /* Chart: por tipo */
   const tipoChartData = useMemo(() => {
     if (!tipos?.length) return [];
-    const counts = new Map<string, number>();
-    activeLojas.forEach((l) => {
-      if (l.tipo_id) counts.set(l.tipo_id, (counts.get(l.tipo_id) ?? 0) + 1);
+    const maxVal = Math.max(1, ...Array.from(activeStoresPerTipo.values()).map((s) => s.size));
+    return tipos.map((t) => {
+      const count = activeStoresPerTipo.get(t.id)?.size ?? 0;
+      return { letra: t.letra, nome: t.nome, count, pct: (count / maxVal) * 100 };
     });
-    const maxVal = Math.max(1, ...Array.from(counts.values()));
-    return tipos.map((t) => ({ letra: t.letra, nome: t.nome, count: counts.get(t.id) ?? 0, pct: ((counts.get(t.id) ?? 0) / maxVal) * 100 }));
-  }, [tipos, activeLojas]);
+  }, [tipos, activeStoresPerTipo]);
 
   /* Chart: por estado */
   const ufChartData = useMemo(() => {
-    const activeStoreIds = new Set(activeLojas.map((l) => l.store_id));
+    const storesWithAny = new Set<string>();
+    activeStoresPerTipo.forEach((storeSet) => storeSet.forEach((sid) => storesWithAny.add(sid)));
     const ufCounts = new Map<string, number>();
-    activeStoreIds.forEach((sid) => {
+    storesWithAny.forEach((sid) => {
       const uf = storeMap.get(sid)?.state ?? "Sem UF";
       ufCounts.set(uf, (ufCounts.get(uf) ?? 0) + 1);
     });
@@ -76,19 +131,18 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
     arr.sort((a, b) => b.count - a.count);
     const maxVal = Math.max(1, ...arr.map((a) => a.count));
     return arr.map((a) => ({ ...a, pct: (a.count / maxVal) * 100 }));
-  }, [activeLojas, storeMap]);
+  }, [activeStoresPerTipo, storeMap]);
 
   /* Table: cobertura */
-  const totalStoreCount = (stores ?? []).length;
   const coberturaData = useMemo(() => {
     if (!tipos?.length) return [];
     return tipos.map((t) => {
-      const ativas = new Set(activeLojas.filter((l) => l.tipo_id === t.id).map((l) => l.store_id)).size;
+      const ativas = activeStoresPerTipo.get(t.id)?.size ?? 0;
       const cob = totalStoreCount > 0 ? (ativas / totalStoreCount) * 100 : 0;
       const pecasCount = (allPecas ?? []).filter((p) => p.tipo_id === t.id).length;
       return { letra: t.letra, nome: t.nome, id: t.id, ativas, cobertura: cob, pecas: pecasCount };
     });
-  }, [tipos, activeLojas, totalStoreCount, allPecas]);
+  }, [tipos, activeStoresPerTipo, totalStoreCount, allPecas]);
 
   /* Pieces grouped */
   const pecasByTipo = useMemo(() => {
@@ -114,7 +168,7 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
     <div className="space-y-6">
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={Store} label="Lojas cadastradas" value={totalActiveStores} />
+        <KpiCard icon={Store} label="Lojas cadastradas" value={totalStoreCount} />
         <KpiCard icon={Layers} label="Tipos ativos" value={totalTipos} />
         <KpiCard icon={Package} label="Peças cadastradas" value={totalPecas} />
         <KpiCard icon={Trophy} label="Tipo mais utilizado" value={topTipo} />
