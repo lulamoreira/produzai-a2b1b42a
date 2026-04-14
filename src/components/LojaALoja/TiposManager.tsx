@@ -550,28 +550,99 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
               </div>
             ) : pecas && pecas.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {pecas.map((peca) => (
-                  <div key={peca.id} className="group relative">
-                    <div className="aspect-square rounded-lg border border-border bg-muted/30 overflow-hidden flex items-center justify-center">
-                      {peca.image_url ? (
-                        <img src={peca.image_url} alt={peca.nome} className="w-full h-full object-cover" />
-                      ) : (
-                        <Image className="w-8 h-8 text-muted-foreground/40" />
+                {pecas.map((peca) => {
+                  const isDragOver = dragOverPecaId === peca.id;
+                  const isUploading = uploadingPecaId === peca.id;
+                  return (
+                    <div
+                      key={peca.id}
+                      className="group relative"
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (isAdmin) setDragOverPecaId(peca.id);
+                      }}
+                      onDragEnter={(e) => {
+                        e.preventDefault();
+                        if (isAdmin) setDragOverPecaId(peca.id);
+                      }}
+                      onDragLeave={(e) => {
+                        e.preventDefault();
+                        if (dragOverPecaId === peca.id) setDragOverPecaId(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setDragOverPecaId(null);
+                        if (!isAdmin) return;
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) uploadPecaImage(file, peca.id);
+                      }}
+                    >
+                      <div
+                        className={cn(
+                          "aspect-square rounded-lg border overflow-hidden flex items-center justify-center relative cursor-pointer transition-all",
+                          isDragOver
+                            ? "border-2 border-dashed border-[#8C6F4E] bg-[#8C6F4E]/10"
+                            : peca.image_url
+                              ? "border-border bg-muted/30"
+                              : "border-dashed border-border bg-muted/20 hover:border-primary/40",
+                        )}
+                        onClick={() => {
+                          if (!isAdmin || isUploading) return;
+                          fileInputRefs.current[peca.id]?.click();
+                        }}
+                      >
+                        {/* Hidden file input */}
+                        <input
+                          ref={(el) => { fileInputRefs.current[peca.id] = el; }}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = "";
+                            if (file) uploadPecaImage(file, peca.id);
+                          }}
+                        />
+
+                        {/* Image or empty placeholder */}
+                        {peca.image_url ? (
+                          <img src={peca.image_url} alt={peca.nome} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="flex flex-col items-center gap-1 text-muted-foreground/40">
+                            <Image className="w-6 h-6" />
+                            {isAdmin && <span className="text-[9px]">Arraste ou clique</span>}
+                          </div>
+                        )}
+
+                        {/* Drag-over overlay */}
+                        {isDragOver && (
+                          <div className="absolute inset-0 bg-[#8C6F4E]/20 flex items-center justify-center rounded-lg">
+                            <span className="text-xs font-medium text-[#8C6F4E]">Solte a imagem aqui</span>
+                          </div>
+                        )}
+
+                        {/* Uploading overlay */}
+                        {isUploading && (
+                          <div className="absolute inset-0 bg-background/70 flex items-center justify-center rounded-lg">
+                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-foreground mt-1 truncate">{peca.nome}</p>
+                      {isAdmin && (
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => { e.stopPropagation(); deletePeca.mutate({ id: peca.id }); }}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
                       )}
                     </div>
-                    <p className="text-xs text-foreground mt-1 truncate">{peca.nome}</p>
-                    {isAdmin && (
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => deletePeca.mutate({ id: peca.id })}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center text-muted-foreground gap-2 py-12">
