@@ -326,7 +326,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         default: return true;
       }
     });
-  }, [filteredStores, summaryFilter, scheduleMap, storeOccurrenceStatus]);
+  }, [filteredStores, summaryFilter, scheduleMap, storeOccurrenceStatus, allMembersMap]);
 
   const fieldLabels: Record<string, string> = {
     scheduled_date: t("common.date"),
@@ -657,7 +657,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   };
 
   // Count active secondary filters
-  const secondaryFilterCount = [filterCity, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
+  const secondaryFilterCount = [filterCity, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, filterModel, filterTeamData].filter(Boolean).length;
 
   // Approval badge helper
   const approvalBadgeClass = (status: ApprovalStatusValue) => {
