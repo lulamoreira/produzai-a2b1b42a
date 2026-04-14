@@ -168,8 +168,8 @@ export function useAllTeamVehicles(campaignId: string) {
 export function isTeamIncomplete(members: TeamMember[]): boolean {
   if (members.length === 0) return true;
   return members.some((m) => {
-    if (m.is_unified_doc) return !m.cpf;
-    return !m.rg || !m.cpf;
+    if (m.is_unified_doc) return !m.cpf || !m.phone;
+    return !m.rg || !m.cpf || !m.phone;
   });
 }
 
@@ -181,6 +181,7 @@ export function getMemberMissingFields(member: TeamMember): string[] {
     if (!member.rg) missing.push("RG");
     if (!member.cpf) missing.push("CPF");
   }
+  if (!member.phone) missing.push("Telefone");
   return missing;
 }
 
