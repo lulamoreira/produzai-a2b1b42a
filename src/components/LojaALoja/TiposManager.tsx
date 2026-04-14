@@ -607,7 +607,7 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
 
                         {/* Image or empty placeholder */}
                         {peca.image_url ? (
-                          <img src={peca.image_url} alt={peca.nome} className="w-full h-full object-cover" />
+                          <img src={peca.image_url} alt={peca.nome} className="w-full h-full object-contain" />
                         ) : (
                           <div className="flex flex-col items-center gap-1 text-muted-foreground/40">
                             <Image className="w-6 h-6" />
