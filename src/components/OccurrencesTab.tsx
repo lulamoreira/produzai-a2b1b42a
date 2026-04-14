@@ -1158,6 +1158,17 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           </Tabs>
         </DialogContent>
       </Dialog>
+      <PendingOccurrencesDashboard
+        open={pendingDashOpen}
+        onOpenChange={setPendingDashOpen}
+        campaignId={campaignId}
+        campaignName={campaignInfo?.name}
+        clientName={clientName}
+        agencyName={agencyName}
+        stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null }))}
+        motives={motives}
+        statuses={statuses}
+      />
     </div>
   );
 };
