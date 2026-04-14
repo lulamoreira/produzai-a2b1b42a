@@ -28,16 +28,15 @@ import {
 } from "lucide-react";
 
 const CAMPAIGN_MODULE_KEYS = [
-  { key: "stores", tKey: "modules.stores", icon: Store, color: "#6B4F2E" },
-  { key: "matrix", tKey: "modules.matrix", icon: Grid3X3, color: "#8C6F4E" },
-  { key: "pieces", tKey: "modules.pieces", icon: LayoutList, color: "#A07850" },
-  { key: "occurrences", tKey: "modules.occurrences", icon: AlertTriangle, color: "#7A3B2E" },
   { key: "scheduling", tKey: "modules.scheduling", icon: CalendarDays, color: "#5C6B3F" },
-  { key: "installations", tKey: "modules.installations", icon: Camera, color: "#7B5E3A" },
-  { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#4A5568" },
-  
   { key: "history", tKey: "modules.history", icon: History, color: "#6B5B4E" },
+  { key: "installations", tKey: "modules.installations", icon: Camera, color: "#7B5E3A" },
   { key: "loja_a_loja", tKey: "modules.loja_a_loja", icon: LayoutGrid, color: "#5B7B5E" },
+  { key: "stores", tKey: "modules.stores", icon: Store, color: "#6B4F2E" },
+  { key: "occurrences", tKey: "modules.occurrences", icon: AlertTriangle, color: "#7A3B2E" },
+  { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#4A5568" },
+  { key: "pieces", tKey: "modules.pieces", icon: LayoutList, color: "#A07850" },
+  { key: "matrix", tKey: "modules.matrix", icon: Grid3X3, color: "#8C6F4E" },
 ];
 
 // localStorage helpers for expansion state
