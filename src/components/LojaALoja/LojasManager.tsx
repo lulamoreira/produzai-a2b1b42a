@@ -292,7 +292,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
             <p className="text-xs font-semibold mb-1.5">{tipo.nome}</p>
             <div className="space-y-1">
               {(tipo.subdivisoes ?? []).map((sub) => {
-                const active = isActive(store.id, tipo.id, sub.id);
+                const active = isActive(store.id, tipo.id, sub.id, tipo.tem_subdivisao);
                 return (
                   <label key={sub.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
                     <Checkbox
@@ -309,7 +309,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
         </Popover>
       );
     }
-    const active = isActive(store.id, tipo.id, null);
+    const active = isActive(store.id, tipo.id, null, tipo.tem_subdivisao);
     return (
       <button
         key={tipo.id}
@@ -380,7 +380,34 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
               ))}
               {internosTipos.map((t, i) => (
                 <th key={t.id} className={cn("h-9 px-1 text-center text-xs font-bold w-10", i === 0 && "border-l border-border")} title={t.nome}>
-                  {t.letra}
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span>{t.letra}</span>
+                    {isAdmin && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="text-[9px] text-muted-foreground hover:text-primary transition-colors" title="Ações em massa">
+                            <XCircle className="h-3 w-3" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-40 p-1.5" align="center">
+                          <button
+                            onClick={() => handleBulkSelectInterno(t)}
+                            disabled={bulkDeselecting}
+                            className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-muted/60 transition-colors"
+                          >
+                            ✅ Marcar todos
+                          </button>
+                          <button
+                            onClick={() => handleBulkDeselectInterno(t)}
+                            disabled={bulkDeselecting}
+                            className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-destructive/10 text-destructive transition-colors"
+                          >
+                            ❌ Desmarcar todos
+                          </button>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
                 </th>
               ))}
             </tr>
