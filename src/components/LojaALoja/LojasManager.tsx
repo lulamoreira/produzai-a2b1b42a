@@ -289,7 +289,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
           <thead className="sticky top-0 z-10 bg-muted">
             {/* Column group header row */}
             <tr className="border-b border-border">
-              <th colSpan={3} className="h-8 px-3 text-left text-xs font-medium text-muted-foreground" />
+              <th colSpan={4} className="h-8 px-3 text-left text-xs font-medium text-muted-foreground" />
               {vitrinesTipos.length > 0 && (
                 <th colSpan={vitrinesTipos.length} className="h-8 px-1 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-l border-border">
                   Vitrines
@@ -303,6 +303,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
             </tr>
             {/* Individual letra headers */}
             <tr className="border-b border-border">
+              <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground w-[80px]">Código</th>
               <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground min-w-[200px]">Loja</th>
               <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground min-w-[100px]">Cidade</th>
               <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground w-[60px]">UF</th>
@@ -319,9 +320,17 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
             </tr>
           </thead>
           <tbody>
-            {sortedStores.map((store, idx) => (
+            {filteredStores.map((store, idx) => (
               <tr key={store.id} className={cn("border-b border-border transition-colors hover:bg-muted/30", idx % 2 === 0 && "bg-muted/10")}>
-                <td className="px-3 py-1.5 text-sm font-medium truncate max-w-[260px]">{store.name}</td>
+                <td className="px-3 py-1.5 text-xs font-mono font-semibold text-primary whitespace-nowrap">{store.store_code || "—"}</td>
+                <td className="px-3 py-1.5">
+                  <div className="text-sm font-medium truncate max-w-[260px]">{store.name}</div>
+                  {(store.street || store.neighborhood) && (
+                    <div className="text-[10px] text-muted-foreground truncate max-w-[260px]">
+                      {[store.street, store.number, store.neighborhood].filter(Boolean).join(", ")}
+                    </div>
+                  )}
+                </td>
                 <td className="px-3 py-1.5 text-xs text-muted-foreground truncate">{store.city || "—"}</td>
                 <td className="px-3 py-1.5 text-xs text-muted-foreground">{store.state || "—"}</td>
                 {vitrinesTipos.map((tipo) => (
