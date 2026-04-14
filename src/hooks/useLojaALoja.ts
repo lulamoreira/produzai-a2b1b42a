@@ -276,6 +276,24 @@ export function useDeletePeca() {
   });
 }
 
+/* ───── Mutations: Peca Image ───── */
+
+export function useUpdatePecaImage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { id: string; image_url: string | null }) => {
+      const { id, image_url } = params;
+      const { error } = await supabase.from("loja_a_loja_pecas").update({ image_url }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-pecas"] });
+      toast.success("Imagem atualizada");
+    },
+    onError: (e: any) => toast.error("Erro ao atualizar imagem: " + e.message),
+  });
+}
+
 /* ───── Mutations: Lojas (toggle assignment) ───── */
 
 export function useToggleLojaAssignment() {

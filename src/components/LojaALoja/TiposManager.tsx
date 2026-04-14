@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   useLojaALojaTipos,
@@ -11,6 +11,7 @@ import {
   useDeleteSubdivisao,
   useAddPeca,
   useDeletePeca,
+  useUpdatePecaImage,
   type LojaALojaTipo,
   type LojaALojaSubdivisao,
 } from "@/hooks/useLojaALoja";
