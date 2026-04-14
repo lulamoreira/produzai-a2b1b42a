@@ -1,43 +1,12 @@
-import { useState, useMemo, useCallback, useRef, lazy, Suspense } from "react";
+import { useState, useMemo } from "react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useUserRole } from "@/hooks/useUserRole";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Occurrence } from "@/hooks/useOccurrences";
-import { useUpdateOccurrenceFields, useUpdateOccurrenceStatus, useDeleteOccurrence } from "@/hooks/useOccurrences";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
 import type { Schedule } from "@/types/schedule";
-import OccurrenceDetailFields from "./OccurrenceDetailFields";
-import ActivityLogPanel from "./ActivityLogPanel";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Flag, Trash2, ExternalLink, Link2, MessageCircle, Phone,
-  Save, ClipboardList, Loader2, Lock, LockOpen, ChevronRight,
-  MapPin, Puzzle, Calendar as CalendarIcon, User, Pencil, RotateCcw,
-  FileText, CalendarClock, Building2, Wrench, CalendarCheck,
-} from "lucide-react";
-import { toast } from "sonner";
+import { Lock, ChevronRight } from "lucide-react";
 import { PRIORITY_OPTIONS } from "@/types/occurrence";
-import { getStatusLabel, getStatusColor, getDefaultStatusValue } from "@/lib/occurrenceHelpers";
-import PhotoLightbox from "./PhotoLightbox";
-import DebouncedTextarea from "@/components/DebouncedTextarea";
-
-const GERAL_LOCATION = "GERAL - NA LOJA TODA";
-const NAO_SEI_LOCATION = "NÃO SEI O LOCAL";
+import { getStatusLabel, getStatusColor } from "@/lib/occurrenceHelpers";
+import { OccurrenceDetailSheet } from "./OccurrenceDetailSheet";
 
 interface OccurrenceListViewProps {
   occurrences: Occurrence[];
