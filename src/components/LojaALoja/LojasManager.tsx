@@ -95,28 +95,63 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
     if (!selectedCampaignId) return;
     setCopying(true);
     try {
-      const { data: sourceAssignments, error } = await supabase
-        .from("loja_a_loja_lojas")
-        .select("*")
-        .eq("campaign_id", selectedCampaignId);
-      if (error) throw error;
+      // Fetch source assignments, source tipos (with subdivisoes) in parallel
+      const [assignRes, srcTiposRes, srcSubsRes] = await Promise.all([
+        supabase.from("loja_a_loja_lojas").select("*").eq("campaign_id", selectedCampaignId),
+        supabase.from("loja_a_loja_tipos").select("*").eq("campaign_id", selectedCampaignId),
+        supabase.from("loja_a_loja_subdivisoes").select("*"),
+      ]);
+      if (assignRes.error) throw assignRes.error;
+      if (srcTiposRes.error) throw srcTiposRes.error;
+
+      const sourceAssignments = assignRes.data ?? [];
+      const srcTipos = srcTiposRes.data ?? [];
+      const allSubs = srcSubsRes.data ?? [];
+
+      // Build source tipo id → letra map
+      const srcTipoMap = new Map(srcTipos.map((t) => [t.id, t]));
+
+      // Build source sub id → { nome, tipo_id } map
+      const srcSubMap = new Map(allSubs.filter((s) => srcTipos.some((t) => t.id === s.tipo_id)).map((s) => [s.id, s]));
+
+      // Build dest tipo letra → tipo map
+      const destTipoByLetra = new Map(tipos.map((t) => [t.letra, t]));
 
       const storeIds = new Set(stores.map((s) => s.id));
-      const valid = (sourceAssignments ?? []).filter((a) => storeIds.has(a.store_id));
+      const rows: { campaign_id: string; store_id: string; tipo_id: string; subdivisao_id: string | null; ativo: boolean }[] = [];
 
-      if (valid.length === 0) {
+      for (const a of sourceAssignments) {
+        if (!storeIds.has(a.store_id) || !a.tipo_id) continue;
+
+        const srcTipo = srcTipoMap.get(a.tipo_id);
+        if (!srcTipo) continue;
+
+        const destTipo = destTipoByLetra.get(srcTipo.letra);
+        if (!destTipo) continue;
+
+        let destSubId: string | null = null;
+        if (a.subdivisao_id) {
+          const srcSub = srcSubMap.get(a.subdivisao_id);
+          if (!srcSub) continue;
+          const destSub = (destTipo.subdivisoes ?? []).find((ds) => ds.nome === srcSub.nome);
+          if (!destSub) continue;
+          destSubId = destSub.id;
+        }
+
+        rows.push({
+          campaign_id: campaignId,
+          store_id: a.store_id,
+          tipo_id: destTipo.id,
+          subdivisao_id: destSubId,
+          ativo: a.ativo ?? false,
+        });
+      }
+
+      if (rows.length === 0) {
         toast.info("Nenhuma atribuição compatível encontrada na campanha selecionada.");
         setCopying(false);
         return;
       }
-
-      const rows = valid.map((a) => ({
-        campaign_id: campaignId,
-        store_id: a.store_id,
-        tipo_id: a.tipo_id,
-        subdivisao_id: a.subdivisao_id,
-        ativo: a.ativo ?? false,
-      }));
 
       const { error: upsertErr } = await supabase
         .from("loja_a_loja_lojas")
@@ -124,7 +159,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
       if (upsertErr) throw upsertErr;
 
       qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
-      toast.success(`${valid.length} atribuições copiadas com sucesso!`);
+      toast.success(`${rows.length} atribuições copiadas com sucesso!`);
       setShowCopyDialog(false);
     } catch (err: any) {
       toast.error("Erro ao copiar: " + err.message);
