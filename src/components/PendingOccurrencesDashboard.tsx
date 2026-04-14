@@ -133,15 +133,15 @@ export default function PendingOccurrencesDashboard({
   }, [pending]);
 
   // Charts data
-  const statusChartData = useMemo(() => {
+  const stateChartData = useMemo(() => {
     const counts: Record<string, number> = {};
-    pending.forEach((o) => { const k = o.status || "sem_status"; counts[k] = (counts[k] || 0) + 1; });
-    return Object.entries(counts).map(([key, value]) => ({
-      name: statuses.find((s) => s.value === key)?.label || key,
-      value,
-      color: statuses.find((s) => s.value === key)?.color || "#6B7280",
-    }));
-  }, [pending, statuses]);
+    pending.forEach((o) => {
+      const store = o.store_id ? storeMap[o.store_id] : null;
+      const uf = store?.state || "N/I";
+      counts[uf] = (counts[uf] || 0) + 1;
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
+  }, [pending, storeMap]);
 
   const priorityChartData = useMemo(() => {
     const counts: Record<string, number> = {};
