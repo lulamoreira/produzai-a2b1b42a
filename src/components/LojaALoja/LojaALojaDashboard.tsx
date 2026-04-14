@@ -228,8 +228,7 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
                 <TableRow>
                   <TableHead className="w-12">Letra</TableHead>
                   <TableHead>Nome</TableHead>
-                  <TableHead className="text-right">Total Lojas</TableHead>
-                  <TableHead className="text-right">Ativas</TableHead>
+                  <TableHead className="text-right">Lojas Ativas</TableHead>
                   <TableHead className="text-right">Cobertura</TableHead>
                   <TableHead className="text-right">Peças</TableHead>
                 </TableRow>
