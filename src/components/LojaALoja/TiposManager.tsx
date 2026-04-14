@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   useLojaALojaTipos,
   useLojaALojaPecas,
+  useAllLojaALojaPecas,
   useAddTipo,
   useUpdateTipo,
   useDeleteTipo,
@@ -29,6 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Plus, Pencil, Trash2, Image, ImagePlus, ChevronRight, X, Upload, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useMemo } from "react";
 
 interface TiposManagerProps {
   campaignId: string;
@@ -70,6 +72,20 @@ function cropSquare(file: File, size = 400, quality = 0.7): Promise<Blob> {
 
 const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
   const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
+  const { data: allPecas } = useAllLojaALojaPecas(campaignId);
+
+  // Count pieces per tipo and subdivisao
+  const pecaCountByTipo = useMemo(() => {
+    const map: Record<string, number> = {};
+    (allPecas ?? []).forEach((p) => {
+      if (p.subdivisao_id) {
+        map[`sub:${p.subdivisao_id}`] = (map[`sub:${p.subdivisao_id}`] || 0) + 1;
+      } else if (p.tipo_id) {
+        map[`tipo:${p.tipo_id}`] = (map[`tipo:${p.tipo_id}`] || 0) + 1;
+      }
+    });
+    return map;
+  }, [allPecas]);
 
   // Selection state
   const [selectedTipoId, setSelectedTipoId] = useState<string | null>(null);
@@ -322,6 +338,15 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
         ) : (
           <>
             <span className="text-xs font-medium truncate flex-1">{tipo.nome}</span>
+            {(() => {
+              // For tipos with subdivisoes, sum all sub counts; otherwise use tipo count
+              const count = tipo.tem_subdivisao
+                ? (tipo.subdivisoes ?? []).reduce((sum, s) => sum + (pecaCountByTipo[`sub:${s.id}`] || 0), 0)
+                : (pecaCountByTipo[`tipo:${tipo.id}`] || 0);
+              return count > 0 ? (
+                <span className="text-[10px] text-muted-foreground font-normal">{count}</span>
+              ) : null;
+            })()}
             {tipo.tem_subdivisao && (
               <ChevronRight className={cn("w-3 h-3 transition-transform text-muted-foreground", expandedTipos.has(tipo.id) && "rotate-90")} />
             )}
@@ -389,6 +414,9 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
               ) : (
                 <>
                   <span className="truncate flex-1">{sub.nome}</span>
+                  {(pecaCountByTipo[`sub:${sub.id}`] || 0) > 0 && (
+                    <span className="text-[10px] text-muted-foreground font-normal">{pecaCountByTipo[`sub:${sub.id}`]}</span>
+                  )}
                   {isAdmin && (
                     <div className="flex items-center gap-0.5 opacity-0 group-hover/sub:opacity-100">
                       <Button
