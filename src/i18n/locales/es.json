@@ -154,7 +154,8 @@
     "installations": "Instalaciones",
     "budgets": "Presupuestos",
     "chat": "Chat",
-    "history": "Historial"
+    "history": "Historial",
+    "loja_a_loja": "Tienda a Tienda"
   },
   "dashboard": {
     "title": "Panel",

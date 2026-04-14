@@ -15,7 +15,9 @@ type PermissionKey =
   | "can_edit_reporter_data"
   | "can_manage_team_codes"
   | "can_lock_cards"
-  | "can_view_photo_checkin";
+  | "can_view_photo_checkin"
+  | "can_view_loja_a_loja"
+  | "can_edit_loja_a_loja";
 
 export function useClientPermission(clientId?: string, permission?: PermissionKey) {
   const { user } = useAuth();

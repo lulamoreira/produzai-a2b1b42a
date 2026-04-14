@@ -6,6 +6,7 @@ export interface ModuleItem {
   icon: React.ElementType;
   visible?: boolean;
   color?: string;
+  badge?: string;
 }
 
 interface ModuleGridProps {
@@ -21,7 +22,7 @@ const MODULE_COLORS: Record<string, string> = {
   scheduling: "#5C6B3F",
   installations: "#7B5E3A",
   budgets: "#4A5568",
-  
+  loja_a_loja: "#5B7B5E",
   history: "#6B5B4E",
 };
 
@@ -41,7 +42,7 @@ const ModuleGrid = ({ items, onSelect }: ModuleGridProps) => {
       }}
     >
       <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2">
-        {visibleItems.map(({ key, label, icon: Icon, color }) => (
+        {visibleItems.map(({ key, label, icon: Icon, color, badge }) => (
           <button
             key={key}
             onClick={() => onSelect(key)}
@@ -62,6 +63,11 @@ const ModuleGrid = ({ items, onSelect }: ModuleGridProps) => {
             >
               {label}
             </span>
+            {badge && (
+              <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium -mt-1">
+                {badge}
+              </span>
+            )}
           </button>
         ))}
       </div>

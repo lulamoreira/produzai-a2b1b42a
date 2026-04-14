@@ -21,7 +21,7 @@ import {
   Building2, Shield, LogOut, Users, Star, Home,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
-  CalendarDays, Camera, DollarSign, Database, Globe, Settings, History,
+  CalendarDays, Camera, DollarSign, Database, Globe, Settings, History, LayoutGrid,
 } from "lucide-react";
 
 const CAMPAIGN_MODULE_KEYS = [
@@ -34,6 +34,7 @@ const CAMPAIGN_MODULE_KEYS = [
   { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#4A5568" },
   
   { key: "history", tKey: "modules.history", icon: History, color: "#6B5B4E" },
+  { key: "loja_a_loja", tKey: "modules.loja_a_loja", icon: LayoutGrid, color: "#5B7B5E" },
 ];
 
 // localStorage helpers for expansion state
@@ -397,7 +398,7 @@ export default function AppSidebar() {
                         {isExpanded && (
                           <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
                             {CAMPAIGN_MODULE_KEYS.filter(mod => {
-                              if (mod.key === "budgets") return false;
+                              if (mod.key === "budgets" || mod.key === "loja_a_loja") return false;
                               return camp.modules.includes(mod.key);
                             }).map((mod) => {
                               const modActive = isCampaignModuleActive(camp.campaignId, mod.key);
@@ -474,7 +475,7 @@ export default function AppSidebar() {
                     {isExpanded && (
                       <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
                         {CAMPAIGN_MODULE_KEYS.filter(mod => {
-                          if (mod.key === "budgets" && !isAdmin) return false;
+                          if ((mod.key === "budgets" || mod.key === "loja_a_loja") && !isAdmin) return false;
                           return true;
                         }).map((mod) => {
                           const modActive = isCampaignModuleActive(camp.id, mod.key);
