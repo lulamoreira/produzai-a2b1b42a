@@ -1165,7 +1165,10 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
         campaignName={campaignInfo?.name}
         clientName={clientName}
         agencyName={agencyName}
-        stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null }))}
+        agencyId={campaignInfo?.clients?.agency_id}
+        clientId={clientId}
+        stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null, nickname: s.nickname ?? null, store_code: s.store_code ?? null }))}
+        pieces={pieces}
         motives={motives}
         statuses={statuses}
       />

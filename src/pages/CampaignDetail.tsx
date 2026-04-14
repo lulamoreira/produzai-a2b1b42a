@@ -2644,7 +2644,10 @@ const CampaignDetail = () => {
         campaignName={campaign?.name}
         clientName={client?.name}
         agencyName={agency?.name}
-        stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null }))}
+        agencyId={agencyId}
+        clientId={clientId}
+        stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null, nickname: s.nickname ?? null, store_code: s.store_code ?? null }))}
+        pieces={campaignPieces}
         motives={occMotives}
         statuses={occStatuses}
       />
