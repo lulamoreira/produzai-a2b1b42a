@@ -70,7 +70,7 @@ import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
-import BudgetExportColorDialog, { type ColorPalette } from "@/components/BudgetExportColorDialog";
+import RateioExportColorDialog, { type ColorPalette } from "@/components/RateioExportColorDialog";
 import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 import PendingOccurrencesDashboard from "@/components/PendingOccurrencesDashboard";
 import { useOccurrenceMotives, useOccurrenceStatuses } from "@/hooks/useOccurrences";
