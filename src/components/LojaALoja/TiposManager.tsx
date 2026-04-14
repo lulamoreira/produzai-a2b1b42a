@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Plus, Pencil, Trash2, Image, ChevronRight, X, Upload, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, Image, ChevronRight, X, Upload, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface TiposManagerProps {
