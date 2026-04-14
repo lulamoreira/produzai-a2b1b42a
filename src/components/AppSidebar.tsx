@@ -12,6 +12,7 @@ import { WhatsNewButton } from "@/components/WhatsNewSheet";
 import { InviteButton } from "@/components/InviteButton";
 import EditProfileDialog from "@/components/EditProfileDialog";
 import AquaIcon from "@/components/AquaIcon";
+import produzaiIcon from "@/assets/produzai-icon.svg";
 
 // lucide icons imported below with CAMPAIGN_MODULE_KEYS
 import { useLanguage } from "@/hooks/useLanguage";
