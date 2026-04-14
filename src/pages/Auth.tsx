@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Mail, Lock, User, Eye, EyeOff, Wand2, Layers } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Wand2 } from "lucide-react";
+import produzaiIcon from "@/assets/produzai-icon.svg";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
@@ -141,12 +142,11 @@ const Auth = () => {
         </div>
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <div
-              className="w-[72px] h-[72px] rounded-[18px] flex items-center justify-center mx-auto mb-4 shadow-xl"
-              style={{ background: "#8C6F4E" }}
-            >
-              <Layers className="w-9 h-9 text-white" />
-            </div>
+            <img
+              src={produzaiIcon}
+              alt="ProduzAI"
+              className="w-[72px] h-[72px] rounded-[18px] mx-auto mb-4 shadow-xl"
+            />
             <h1 className="text-3xl font-display font-bold text-foreground">
               ProduzAI
             </h1>
