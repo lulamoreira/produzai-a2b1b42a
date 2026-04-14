@@ -367,8 +367,8 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
                 </th>
               ))}
               {isAdmin && internosTipos.length > 0 && (
-                <th className="h-9 px-1 text-center text-[9px] font-medium text-muted-foreground w-8" title="Ações em massa nos internos">
-                  
+                <th className="h-9 px-1 text-center text-[9px] font-medium text-muted-foreground w-8" title="Todos internos">
+                  ✓
                 </th>
               )}
             </tr>
