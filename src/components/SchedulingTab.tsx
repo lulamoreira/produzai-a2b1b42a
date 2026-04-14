@@ -1083,7 +1083,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       <span className={cn("badge-base", approvalBadgeClass(effectiveStoreStatus))}>{approvalBadgeText(effectiveStoreStatus)}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">{t("scheduling.teamLabel")}</span>
+                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">{t("scheduling.teamLabel")}{teamIncomplete && <AlertTriangle className="w-3 h-3 inline ml-0.5 -mt-0.5 text-amber-500" />}</span>
                       <span className={cn("badge-base", approvalBadgeClass(effectiveTeamStatus))}>{approvalBadgeText(effectiveTeamStatus)}</span>
                     </div>
                   </div>
