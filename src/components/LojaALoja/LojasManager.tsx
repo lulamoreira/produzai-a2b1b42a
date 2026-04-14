@@ -399,33 +399,20 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
                 ))}
                 {isAdmin && internosTipos.length > 0 && (
                   <td className="px-0.5 py-1.5 text-center">
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button
-                          className="inline-flex items-center justify-center h-6 w-6 rounded text-muted-foreground hover:text-primary hover:bg-muted/60 transition-colors"
-                          title="Marcar/desmarcar todos os internos"
-                        >
-                          <XCircle className="h-3.5 w-3.5" />
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-44 p-1.5" align="end">
-                        <p className="text-[10px] text-muted-foreground px-2 py-1 font-medium">Internos desta loja</p>
-                        <button
-                          onClick={() => handleBulkToggleInternosForStore(store.id, true)}
-                          disabled={bulkBusy}
-                          className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-muted/60 transition-colors"
-                        >
-                          ✅ Marcar todos
-                        </button>
-                        <button
-                          onClick={() => handleBulkToggleInternosForStore(store.id, false)}
-                          disabled={bulkBusy}
-                          className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-destructive/10 text-destructive transition-colors"
-                        >
-                          ❌ Desmarcar todos
-                        </button>
-                      </PopoverContent>
-                    </Popover>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="inline-flex items-center justify-center">
+                          <Checkbox
+                            checked={allInternosActive(store.id)}
+                            disabled={bulkBusy}
+                            onCheckedChange={(checked) => handleBulkToggleInternosForStore(store.id, !!checked)}
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="left" className="text-xs">
+                        {allInternosActive(store.id) ? "Desmarcar todos internos" : "Marcar todos internos"}
+                      </TooltipContent>
+                    </Tooltip>
                   </td>
                 )}
               </tr>
