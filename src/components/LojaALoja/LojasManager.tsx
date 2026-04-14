@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Store, Copy, Search } from "lucide-react";
+import { Store, Copy, Search, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -75,11 +75,77 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
     return map;
   }, [lojas]);
 
-  const isActive = (storeId: string, tipoId: string, subId: string | null) =>
-    assignmentMap.get(`${storeId}-${tipoId}-${subId ?? ""}`) ?? false;
+  // For INTERNO tipos (tem_subdivisao), default is TRUE when no row exists
+  const isActive = (storeId: string, tipoId: string, subId: string | null, isInterno: boolean) => {
+    const key = `${storeId}-${tipoId}-${subId ?? ""}`;
+    if (assignmentMap.has(key)) return assignmentMap.get(key)!;
+    return isInterno; // default true for internos, false for vitrines
+  };
 
   const hasAnySub = (storeId: string, tipo: LojaALojaTipo) =>
-    (tipo.subdivisoes ?? []).some((s) => isActive(storeId, tipo.id, s.id));
+    (tipo.subdivisoes ?? []).some((s) => isActive(storeId, tipo.id, s.id, tipo.tem_subdivisao));
+
+  // Bulk deselect all stores for a given INTERNO tipo
+  const [bulkDeselecting, setBulkDeselecting] = useState(false);
+  const handleBulkDeselectInterno = async (tipo: LojaALojaTipo) => {
+    if (!isAdmin || bulkDeselecting) return;
+    setBulkDeselecting(true);
+    try {
+      // Build rows for ALL stores × all subdivisoes (or tipo itself) as ativo=false
+      const rows: { campaign_id: string; store_id: string; tipo_id: string; subdivisao_id: string | null; ativo: boolean }[] = [];
+      for (const store of stores) {
+        if (tipo.subdivisoes && tipo.subdivisoes.length > 0) {
+          for (const sub of tipo.subdivisoes) {
+            rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: sub.id, ativo: false });
+          }
+        } else {
+          rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: null, ativo: false });
+        }
+      }
+      if (rows.length > 0) {
+        const { error } = await supabase
+          .from("loja_a_loja_lojas")
+          .upsert(rows, { onConflict: "campaign_id,store_id,tipo_id,subdivisao_id", ignoreDuplicates: false });
+        if (error) throw error;
+      }
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
+      toast.success(`Todas as lojas desmarcadas de "${tipo.nome}"`);
+    } catch (err: any) {
+      toast.error("Erro: " + err.message);
+    } finally {
+      setBulkDeselecting(false);
+    }
+  };
+
+  // Bulk select all stores for a given INTERNO tipo (re-select all)
+  const handleBulkSelectInterno = async (tipo: LojaALojaTipo) => {
+    if (!isAdmin || bulkDeselecting) return;
+    setBulkDeselecting(true);
+    try {
+      const rows: { campaign_id: string; store_id: string; tipo_id: string; subdivisao_id: string | null; ativo: boolean }[] = [];
+      for (const store of stores) {
+        if (tipo.subdivisoes && tipo.subdivisoes.length > 0) {
+          for (const sub of tipo.subdivisoes) {
+            rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: sub.id, ativo: true });
+          }
+        } else {
+          rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: null, ativo: true });
+        }
+      }
+      if (rows.length > 0) {
+        const { error } = await supabase
+          .from("loja_a_loja_lojas")
+          .upsert(rows, { onConflict: "campaign_id,store_id,tipo_id,subdivisao_id", ignoreDuplicates: false });
+        if (error) throw error;
+      }
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
+      toast.success(`Todas as lojas marcadas em "${tipo.nome}"`);
+    } catch (err: any) {
+      toast.error("Erro: " + err.message);
+    } finally {
+      setBulkDeselecting(false);
+    }
+  };
 
   const handleToggle = (storeId: string, tipoId: string, subId: string | null, newAtivo: boolean) => {
     if (!isAdmin) return;
@@ -226,7 +292,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
             <p className="text-xs font-semibold mb-1.5">{tipo.nome}</p>
             <div className="space-y-1">
               {(tipo.subdivisoes ?? []).map((sub) => {
-                const active = isActive(store.id, tipo.id, sub.id);
+                const active = isActive(store.id, tipo.id, sub.id, tipo.tem_subdivisao);
                 return (
                   <label key={sub.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
                     <Checkbox
@@ -243,7 +309,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
         </Popover>
       );
     }
-    const active = isActive(store.id, tipo.id, null);
+    const active = isActive(store.id, tipo.id, null, tipo.tem_subdivisao);
     return (
       <button
         key={tipo.id}
@@ -314,7 +380,34 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
               ))}
               {internosTipos.map((t, i) => (
                 <th key={t.id} className={cn("h-9 px-1 text-center text-xs font-bold w-10", i === 0 && "border-l border-border")} title={t.nome}>
-                  {t.letra}
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span>{t.letra}</span>
+                    {isAdmin && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="text-[9px] text-muted-foreground hover:text-primary transition-colors" title="Ações em massa">
+                            <XCircle className="h-3 w-3" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-40 p-1.5" align="center">
+                          <button
+                            onClick={() => handleBulkSelectInterno(t)}
+                            disabled={bulkDeselecting}
+                            className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-muted/60 transition-colors"
+                          >
+                            ✅ Marcar todos
+                          </button>
+                          <button
+                            onClick={() => handleBulkDeselectInterno(t)}
+                            disabled={bulkDeselecting}
+                            className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-destructive/10 text-destructive transition-colors"
+                          >
+                            ❌ Desmarcar todos
+                          </button>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
                 </th>
               ))}
             </tr>
