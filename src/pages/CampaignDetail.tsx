@@ -1014,6 +1014,13 @@ const CampaignDetail = () => {
               onNavigate={(section) => setActiveSection(section)}
             />
 
+            {/* Pending occurrences dashboard button */}
+            {canViewOccurrences && (
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => setPendingDashOpen(true)}>
+                <AlertTriangle className="w-3.5 h-3.5" /> Pendências
+              </Button>
+            )}
+
             <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
 
             {/* Navigation Buttons */}
@@ -2630,6 +2637,17 @@ const CampaignDetail = () => {
           }}
         />
       )}
+      <PendingOccurrencesDashboard
+        open={pendingDashOpen}
+        onOpenChange={setPendingDashOpen}
+        campaignId={campaignId!}
+        campaignName={campaign?.name}
+        clientName={client?.name}
+        agencyName={agency?.name}
+        stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null }))}
+        motives={occMotives}
+        statuses={occStatuses}
+      />
     </AppLayout>
   );
 };
