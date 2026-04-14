@@ -378,7 +378,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
               <tr key={store.id} className={cn("border-b border-border transition-colors hover:bg-muted/30", idx % 2 === 0 && "bg-muted/10")}>
                 <td className="px-3 py-1.5 text-xs font-mono font-semibold text-primary whitespace-nowrap">{store.store_code || "—"}</td>
                 <td className="px-3 py-1.5">
-                  <div className="text-sm font-medium truncate max-w-[260px]">{store.name}</div>
+                  <div className="text-sm font-medium truncate max-w-[260px] text-foreground">{store.name}</div>
                   {(store.street || store.neighborhood) && (
                     <div className="text-[10px] text-muted-foreground truncate max-w-[260px]">
                       {[store.street, store.number, store.neighborhood].filter(Boolean).join(", ")}
