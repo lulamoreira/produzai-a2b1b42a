@@ -362,34 +362,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
               ))}
               {internosTipos.map((t, i) => (
                 <th key={t.id} className={cn("h-9 px-1 text-center text-xs font-bold w-10", i === 0 && "border-l border-border")} title={t.nome}>
-                  <div className="flex flex-col items-center gap-0.5">
-                    <span>{t.letra}</span>
-                    {isAdmin && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button className="text-[9px] text-muted-foreground hover:text-primary transition-colors" title="Ações em massa">
-                            <XCircle className="h-3 w-3" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-40 p-1.5" align="center">
-                          <button
-                            onClick={() => handleBulkSelectInterno(t)}
-                            disabled={bulkDeselecting}
-                            className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-muted/60 transition-colors"
-                          >
-                            ✅ Marcar todos
-                          </button>
-                          <button
-                            onClick={() => handleBulkDeselectInterno(t)}
-                            disabled={bulkDeselecting}
-                            className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-destructive/10 text-destructive transition-colors"
-                          >
-                            ❌ Desmarcar todos
-                          </button>
-                        </PopoverContent>
-                      </Popover>
-                    )}
-                  </div>
+                  {t.letra}
                 </th>
               ))}
             </tr>
