@@ -139,14 +139,14 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
   wsR.properties.defaultRowHeight = 20;
   wsR.mergeCells("A1:F1");
   const titleCell = wsR.getCell("A1");
-  titleCell.value = `${data.agencyName} / ${data.clientName} / ${data.campaignName} — Pendências`;
+  titleCell.value = `${data.agencyName} / ${data.clientName} / ${data.campaignName} — Em Andamento`;
   titleCell.font = { bold: true, size: 14, color: { argb: "FF" + BRAND } };
   titleCell.alignment = { horizontal: "left", vertical: "middle" };
   wsR.getRow(1).height = 30;
 
   // KPI boxes
   const kpiDefs = [
-    { label: "Total Pendentes", value: total, color: BRAND },
+    { label: "Total Em Andamento", value: total, color: BRAND },
     { label: "Atrasadas", value: overdue.length, color: RED },
     { label: "Média dias em aberto", value: avgDaysOpen, color: ORANGE },
   ];
@@ -194,8 +194,8 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
     row.getCell(3).value = count;
   });
 
-  // ─── Sheet 2: Pendências ───
-  const wsP = wb.addWorksheet(sanitize("Pendências"));
+  // ─── Sheet 2: Em Andamento ───
+  const wsP = wb.addWorksheet(sanitize("Em Andamento"));
   const headers = ["Loja", "Aberta por", "Data Abertura", "Previsão", "Dias p/ Resolver", "Dias em Aberto", "Prioridade", "Motivo", "Status"];
   const phr = wsP.getRow(1);
   headers.forEach((h, i) => {
@@ -283,7 +283,7 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
   // ─── Save ───
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const fileName = `Pendências_${data.campaignName.replace(/[^a-zA-Z0-9À-ú ]/g, "")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const fileName = `Em Andamento_${data.campaignName.replace(/[^a-zA-Z0-9À-ú ]/g, "")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
   saveAs(blob, fileName);
 }
 
@@ -329,23 +329,23 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
   doc.rect(0, 0, pw, ph, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(32);
-  doc.text("Dashboard de Pendências", pw / 2, ph / 2 - 25, { align: "center" });
+  doc.text("Dashboard de Em Andamento", pw / 2, ph / 2 - 25, { align: "center" });
   doc.setFontSize(18);
   doc.text(data.campaignName, pw / 2, ph / 2, { align: "center" });
   doc.setFontSize(14);
   doc.text(`${data.agencyName} / ${data.clientName}`, pw / 2, ph / 2 + 14, { align: "center" });
   doc.setFontSize(12);
-  doc.text(`${total} ocorrências pendentes`, pw / 2, ph / 2 + 28, { align: "center" });
+  doc.text(`${total} ocorrências em andamento`, pw / 2, ph / 2 + 28, { align: "center" });
   doc.setFontSize(11);
   doc.text(today.toLocaleDateString("pt-BR"), pw / 2, ph / 2 + 40, { align: "center" });
   doc.setTextColor(0, 0, 0);
 
   // ── Page 2: KPIs ──
   doc.addPage();
-  addPdfHeader(doc, `${data.campaignName} — Pendências`);
+  addPdfHeader(doc, `${data.campaignName} — Em Andamento`);
 
   const kpiItems = [
-    { label: "Total Pendentes", value: String(total), color: BRAND_RGB },
+    { label: "Total Em Andamento", value: String(total), color: BRAND_RGB },
     { label: "Atrasadas", value: String(overdueCount), color: [220, 38, 38] as [number, number, number] },
     { label: "Média dias em aberto", value: String(avgDaysOpen), color: [249, 115, 22] as [number, number, number] },
   ];
@@ -417,7 +417,7 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
 
   // ── Page 3+: Detail table ──
   doc.addPage();
-  addPdfHeader(doc, `${data.campaignName} — Detalhamento de Pendências`);
+  addPdfHeader(doc, `${data.campaignName} — Detalhamento de Em Andamento`);
 
   const detailRows = data.occurrences.map((occ) => {
     const store = occ.store_id ? sm[occ.store_id] : null;
@@ -465,11 +465,11 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
     },
     didDrawPage: (hookData) => {
       if (hookData.pageNumber > 1) {
-        addPdfHeader(doc, `${data.campaignName} — Detalhamento de Pendências`);
+        addPdfHeader(doc, `${data.campaignName} — Detalhamento de Em Andamento`);
       }
     },
   });
 
-  const fileName = `Pendências_${data.campaignName.replace(/[^a-zA-Z0-9À-ú ]/g, "")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const fileName = `Em Andamento_${data.campaignName.replace(/[^a-zA-Z0-9À-ú ]/g, "")}_${new Date().toISOString().slice(0, 10)}.pdf`;
   doc.save(fileName);
 }

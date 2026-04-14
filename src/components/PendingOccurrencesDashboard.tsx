@@ -61,7 +61,7 @@ export default function PendingOccurrencesDashboard({ open, onOpenChange, campai
     enabled: !!campaignId && open,
   });
 
-  const pending = useMemo(() => allOccurrences.filter((o) => !TERMINAL_STATUSES.includes(o.status || "")), [allOccurrences]);
+  const pending = useMemo(() => allOccurrences.filter((o) => o.status === "em_andamento"), [allOccurrences]);
 
   const storeMap = useMemo(() => {
     const m: Record<string, (typeof stores)[0]> = {};
@@ -181,14 +181,10 @@ export default function PendingOccurrencesDashboard({ open, onOpenChange, campai
         </div>
 
         {/* KPI cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-6">
           <Card className="p-3 text-center">
             <div className="text-2xl font-bold" style={{ color: "#8C6F4E" }}>{pending.length}</div>
-            <div className="text-xs text-muted-foreground">Total Pendentes</div>
-          </Card>
-          <Card className="p-3 text-center">
-            <div className="text-2xl font-bold text-blue-600">{inProgress.length}</div>
-            <div className="text-xs text-muted-foreground">Em Andamento</div>
+            <div className="text-xs text-muted-foreground">Total Em Andamento</div>
           </Card>
           <Card className="p-3 text-center">
             <div className="text-2xl font-bold text-destructive">{overdue.length}</div>
