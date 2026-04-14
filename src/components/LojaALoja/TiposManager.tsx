@@ -101,6 +101,11 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
   // Delete confirmation
   const [deletingTipo, setDeletingTipo] = useState<{ id: string; nome: string } | null>(null);
   const [deletingSub, setDeletingSub] = useState<{ id: string; nome: string } | null>(null);
+  const [deletingPeca, setDeletingPeca] = useState<{ id: string; nome: string } | null>(null);
+
+  // Inline edit peca name
+  const [editingPecaId, setEditingPecaId] = useState<string | null>(null);
+  const [editingPecaNome, setEditingPecaNome] = useState("");
 
   // Mutations
   const addTipo = useAddTipo();
@@ -112,6 +117,7 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
   const addPeca = useAddPeca();
   const deletePeca = useDeletePeca();
   const updatePecaImage = useUpdatePecaImage();
+  const updatePecaNome = useUpdatePecaNome();
 
   // Drag & drop / upload state
   const [uploadingPecaId, setUploadingPecaId] = useState<string | null>(null);
