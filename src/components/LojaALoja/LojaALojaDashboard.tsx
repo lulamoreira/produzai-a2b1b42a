@@ -228,8 +228,7 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
                 <TableRow>
                   <TableHead className="w-12">Letra</TableHead>
                   <TableHead>Nome</TableHead>
-                  <TableHead className="text-right">Total Lojas</TableHead>
-                  <TableHead className="text-right">Ativas</TableHead>
+                  <TableHead className="text-right">Lojas Ativas</TableHead>
                   <TableHead className="text-right">Cobertura</TableHead>
                   <TableHead className="text-right">Peças</TableHead>
                 </TableRow>
@@ -241,7 +240,6 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
                       <span className="w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{ backgroundColor: BRAND }}>{row.letra}</span>
                     </TableCell>
                     <TableCell className="font-medium">{row.nome}</TableCell>
-                    <TableCell className="text-right">{totalStoreCount}</TableCell>
                     <TableCell className="text-right">{row.ativas}</TableCell>
                     <TableCell className="text-right">
                       <span className={`font-semibold ${row.cobertura >= 80 ? "text-green-600" : row.cobertura >= 50 ? "text-yellow-600" : "text-red-600"}`}>
@@ -252,7 +250,7 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
                   </TableRow>
                 ))}
                 {coberturaData.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhum tipo cadastrado</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Nenhum tipo cadastrado</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
