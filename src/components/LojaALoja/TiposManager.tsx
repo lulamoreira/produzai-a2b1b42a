@@ -12,6 +12,7 @@ import {
   useAddPeca,
   useDeletePeca,
   useUpdatePecaImage,
+  useUpdatePecaNome,
   type LojaALojaTipo,
   type LojaALojaSubdivisao,
 } from "@/hooks/useLojaALoja";
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Plus, Pencil, Trash2, Image, ChevronRight, X, Upload, Check, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Image, ImagePlus, ChevronRight, X, Upload, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface TiposManagerProps {
@@ -34,22 +35,28 @@ interface TiposManagerProps {
   isAdmin: boolean;
 }
 
-/** Crop an image blob to a 1:1 square center crop at given size */
+/** Resize image proportionally (contain) into a square canvas with white background */
 function cropSquare(file: File, size = 400, quality = 0.7): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new window.Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
       URL.revokeObjectURL(url);
-      const min = Math.min(img.width, img.height);
-      const sx = (img.width - min) / 2;
-      const sy = (img.height - min) / 2;
       const canvas = document.createElement("canvas");
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext("2d");
       if (!ctx) { reject(new Error("Canvas not supported")); return; }
-      ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+      // White background
+      ctx.fillStyle = "#FFFFFF";
+      ctx.fillRect(0, 0, size, size);
+      // Scale proportionally so largest side = size (contain)
+      const scale = Math.min(size / img.width, size / img.height);
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const x = Math.round((size - w) / 2);
+      const y = Math.round((size - h) / 2);
+      ctx.drawImage(img, 0, 0, img.width, img.height, x, y, w, h);
       canvas.toBlob(
         (blob) => blob ? resolve(blob) : reject(new Error("Crop failed")),
         "image/jpeg",
