@@ -7,10 +7,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Store, Copy } from "lucide-react";
+import { Store, Copy, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -26,6 +27,9 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
   const { data: stores = [], isLoading: loadingStores } = useClientStores(clientId);
   const toggle = useToggleLojaAssignment();
   const qc = useQueryClient();
+
+  // Search state
+  const [search, setSearch] = useState("");
 
   // Copy dialog state
   const [showCopyDialog, setShowCopyDialog] = useState(false);
@@ -48,6 +52,18 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
     }),
     [stores],
   );
+
+  // Filter stores by search
+  const filteredStores = useMemo(() => {
+    if (!search.trim()) return sortedStores;
+    const q = search.trim().toLowerCase();
+    return sortedStores.filter((s) =>
+      (s.name || "").toLowerCase().includes(q) ||
+      (s.store_code || "").toLowerCase().includes(q) ||
+      (s.city || "").toLowerCase().includes(q) ||
+      (s.state || "").toLowerCase().includes(q)
+    );
+  }, [sortedStores, search]);
 
   // Build lookup: `storeId-tipoId-subdivisaoId` → ativo
   const assignmentMap = useMemo(() => {
@@ -249,14 +265,23 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
   return (
     <div className="space-y-2">
       {/* Top actions */}
-      {isAdmin && (
-        <div className="flex justify-end px-1">
-          <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={handleOpenCopy}>
+      <div className="flex items-center gap-2 px-1">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nome, código, cidade..."
+            className="h-8 text-xs pl-8"
+          />
+        </div>
+        {isAdmin && (
+          <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 shrink-0" onClick={handleOpenCopy}>
             <Copy className="h-3.5 w-3.5" />
             Copiar da campanha anterior
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Table container */}
       <div className="border border-border rounded-lg overflow-auto max-h-[70vh]">
@@ -264,7 +289,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
           <thead className="sticky top-0 z-10 bg-muted">
             {/* Column group header row */}
             <tr className="border-b border-border">
-              <th colSpan={3} className="h-8 px-3 text-left text-xs font-medium text-muted-foreground" />
+              <th colSpan={4} className="h-8 px-3 text-left text-xs font-medium text-muted-foreground" />
               {vitrinesTipos.length > 0 && (
                 <th colSpan={vitrinesTipos.length} className="h-8 px-1 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-l border-border">
                   Vitrines
@@ -278,6 +303,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
             </tr>
             {/* Individual letra headers */}
             <tr className="border-b border-border">
+              <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground w-[80px]">Código</th>
               <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground min-w-[200px]">Loja</th>
               <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground min-w-[100px]">Cidade</th>
               <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground w-[60px]">UF</th>
@@ -294,9 +320,17 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
             </tr>
           </thead>
           <tbody>
-            {sortedStores.map((store, idx) => (
+            {filteredStores.map((store, idx) => (
               <tr key={store.id} className={cn("border-b border-border transition-colors hover:bg-muted/30", idx % 2 === 0 && "bg-muted/10")}>
-                <td className="px-3 py-1.5 text-sm font-medium truncate max-w-[260px]">{store.name}</td>
+                <td className="px-3 py-1.5 text-xs font-mono font-semibold text-primary whitespace-nowrap">{store.store_code || "—"}</td>
+                <td className="px-3 py-1.5">
+                  <div className="text-sm font-medium truncate max-w-[260px]">{store.name}</div>
+                  {(store.street || store.neighborhood) && (
+                    <div className="text-[10px] text-muted-foreground truncate max-w-[260px]">
+                      {[store.street, store.number, store.neighborhood].filter(Boolean).join(", ")}
+                    </div>
+                  )}
+                </td>
                 <td className="px-3 py-1.5 text-xs text-muted-foreground truncate">{store.city || "—"}</td>
                 <td className="px-3 py-1.5 text-xs text-muted-foreground">{store.state || "—"}</td>
                 {vitrinesTipos.map((tipo) => (
