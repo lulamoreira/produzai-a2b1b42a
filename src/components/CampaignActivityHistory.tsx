@@ -103,7 +103,7 @@ export default function CampaignActivityHistory({ campaignId }: Props) {
             <SelectValue placeholder="Todas as ações" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas as ações</SelectItem>
+            <SelectItem value="__all__">Todas as ações</SelectItem>
             {Object.entries(ACTION_GROUPS).map(([group, actions]) => (
               actions.map(a => (
                 <SelectItem key={a} value={a}>
@@ -119,7 +119,7 @@ export default function CampaignActivityHistory({ campaignId }: Props) {
             <SelectValue placeholder="Todos os tipos" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os tipos</SelectItem>
+            <SelectItem value="__all__">Todos os tipos</SelectItem>
             <SelectItem value="user">Usuário</SelectItem>
             <SelectItem value="installer">Instalador</SelectItem>
             <SelectItem value="system">Sistema</SelectItem>
