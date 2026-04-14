@@ -3,6 +3,7 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { Schedule } from "@/types/schedule";
+import { isOccurrenceOverdue, formatDateBR, parseLocalDate } from "@/lib/occurrenceHelpers";
 
 /* ──────────────────────────────────────────
    Brand constants
@@ -82,7 +83,14 @@ function daysBetween(a: string | null | undefined, b: string | null | undefined)
 
 function fmtDate(v: string | null | undefined) {
   if (!v) return "";
-  return new Date(v).toLocaleDateString("pt-BR");
+  // For date-only strings (YYYY-MM-DD), use safe local parse
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    const r = formatDateBR(v);
+    return r === "—" ? "" : r;
+  }
+  // For full timestamps, parse and format in local timezone
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? "" : d.toLocaleDateString("pt-BR");
 }
 
 function priorityLabel(p: string) {
@@ -469,7 +477,7 @@ export async function exportOccurrencesExcel(data: OccurrenceReportData) {
   openOccs.forEach((occ, idx) => {
     const store = occ.store_id ? sm[occ.store_id] : null;
     const daysOpen = occ.created_at ? daysBetween(occ.created_at, today.toISOString()) : null;
-    const isOverdue = occ.expected_resolution_date && new Date(occ.expected_resolution_date) < today;
+    const isOverdue = isOccurrenceOverdue(occ.expected_resolution_date, occ.status);
 
     const row = wsO.getRow(idx + 2);
     const vals = [

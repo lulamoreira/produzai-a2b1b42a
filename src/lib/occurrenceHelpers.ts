@@ -1,3 +1,47 @@
+/**
+ * Parse a date-only string (YYYY-MM-DD) into a local-midnight Date,
+ * avoiding the UTC-parse pitfall of `new Date("YYYY-MM-DD")`.
+ */
+export function parseLocalDate(dateStr: string | null | undefined): Date | null {
+  if (!dateStr) return null;
+  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  return new Date(+m[1], +m[2] - 1, +m[3]);
+}
+
+/** Today at local midnight (00:00:00.000) */
+export function todayLocalMidnight(): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+/**
+ * Check if an occurrence is overdue:
+ * status is not resolved/nao_procede AND expected_resolution_date < today (strictly before).
+ */
+export function isOccurrenceOverdue(
+  expectedDate: string | null | undefined,
+  status?: string | null,
+): boolean {
+  if (!expectedDate) return false;
+  if (status && RESOLVED_STATUS_VALUES.has(status)) return false;
+  const parsed = parseLocalDate(expectedDate);
+  if (!parsed) return false;
+  return parsed < todayLocalMidnight();
+}
+
+/**
+ * Format a date-only string (YYYY-MM-DD) to dd/MM/yyyy for display,
+ * without timezone shift issues.
+ */
+export function formatDateBR(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return dateStr;
+  return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
 /** Minimal status shape needed by helper functions */
 type StatusLike = { value: string; label: string; color: string; is_default?: boolean };
 
