@@ -71,7 +71,20 @@ function cropSquare(file: File, size = 400, quality = 0.7): Promise<Blob> {
 }
 
 const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
-  const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
+  const { data: allPecas } = useAllLojaALojaPecas(campaignId);
+
+  // Count pieces per tipo and subdivisao
+  const pecaCountByTipo = useMemo(() => {
+    const map: Record<string, number> = {};
+    (allPecas ?? []).forEach((p) => {
+      if (p.subdivisao_id) {
+        map[`sub:${p.subdivisao_id}`] = (map[`sub:${p.subdivisao_id}`] || 0) + 1;
+      } else if (p.tipo_id) {
+        map[`tipo:${p.tipo_id}`] = (map[`tipo:${p.tipo_id}`] || 0) + 1;
+      }
+    });
+    return map;
+  }, [allPecas]);
 
   // Selection state
   const [selectedTipoId, setSelectedTipoId] = useState<string | null>(null);
