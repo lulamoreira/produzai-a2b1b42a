@@ -859,15 +859,21 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const occ = storeOccurrenceStatus[s.id];
           return occ?.hasOccurrence && !occ.allResolved;
         }).length;
+        const incompleteTeamCount = filteredStores.filter(s => {
+          const sch = scheduleMap[s.id];
+          if (!sch?.team_id) return false;
+          return isTeamIncomplete(allMembersMap[sch.team_id] || []);
+        }).length;
 
         const items = [
-          { key: "total" as const, value: total, label: t("common.total"), isTotal: true, dangerWhenPositive: false },
-          { key: "scheduled" as const, value: scheduled, label: t("scheduling.scheduled"), isTotal: false, dangerWhenPositive: false },
-          { key: "noDate" as const, value: noDate, label: t("scheduling.noDate"), isTotal: false, dangerWhenPositive: false },
-          { key: "approved" as const, value: approved, label: t("filters.approved"), isTotal: false, dangerWhenPositive: false },
-          { key: "withTeam" as const, value: withTeam, label: t("scheduling.withTeam"), isTotal: false, dangerWhenPositive: false },
-          { key: "withReschedule" as const, value: withReschedule, label: t("dashboard.withReschedule"), isTotal: false, dangerWhenPositive: false },
-          { key: "withOccurrence" as const, value: withOccurrence, label: t("scheduling.withOccurrence"), isTotal: false, dangerWhenPositive: true },
+          { key: "total" as const, value: total, label: t("common.total"), isTotal: true, dangerWhenPositive: false, warningWhenPositive: false },
+          { key: "scheduled" as const, value: scheduled, label: t("scheduling.scheduled"), isTotal: false, dangerWhenPositive: false, warningWhenPositive: false },
+          { key: "noDate" as const, value: noDate, label: t("scheduling.noDate"), isTotal: false, dangerWhenPositive: false, warningWhenPositive: false },
+          { key: "approved" as const, value: approved, label: t("filters.approved"), isTotal: false, dangerWhenPositive: false, warningWhenPositive: false },
+          { key: "withTeam" as const, value: withTeam, label: t("scheduling.withTeam"), isTotal: false, dangerWhenPositive: false, warningWhenPositive: false },
+          { key: "withReschedule" as const, value: withReschedule, label: t("dashboard.withReschedule"), isTotal: false, dangerWhenPositive: false, warningWhenPositive: false },
+          { key: "withOccurrence" as const, value: withOccurrence, label: t("scheduling.withOccurrence"), isTotal: false, dangerWhenPositive: true, warningWhenPositive: false },
+          { key: "incompleteTeam" as const, value: incompleteTeamCount, label: "Equipe incompleta", isTotal: false, dangerWhenPositive: false, warningWhenPositive: true },
         ];
         return (
           <>
