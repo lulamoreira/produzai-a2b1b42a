@@ -137,7 +137,7 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
   const mm = motiveMap(data.motives);
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
-  const sorted = sortOverdueFirst(data.occurrences, todayStart);
+  const sorted = sortOverdueFirst(data.occurrences);
 
   // KPI computation
   const total = sorted.length;
@@ -345,7 +345,7 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
   const mm = motiveMap(data.motives);
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
-  const sorted = sortOverdueFirst(data.occurrences, todayStart);
+  const sorted = sortOverdueFirst(data.occurrences);
   const overdue = sorted.filter((o) => isOverdue(o));
 
   const total = sorted.length;
