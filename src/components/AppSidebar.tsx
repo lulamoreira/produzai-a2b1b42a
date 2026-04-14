@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useTheme } from "next-themes";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +23,7 @@ import {
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
   CalendarDays, Camera, DollarSign, Database, Globe, Settings, History, LayoutGrid,
+  Sun, Moon,
 } from "lucide-react";
 
 const CAMPAIGN_MODULE_KEYS = [
@@ -72,6 +74,7 @@ export default function AppSidebar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const { currentLanguage, changeLanguage } = useLanguage();
+  const { theme, setTheme } = useTheme();
 
   // Admin menu expansion
   const [adminOpen, setAdminOpen] = useState(() => getStoredBool("produzai_admin_menu_open", false));
@@ -579,6 +582,19 @@ export default function AppSidebar() {
                 </>
               )}
             </div>
+            {/* Dark mode toggle */}
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-all"
+              style={{ color: "var(--sidebar-text, #A89880)" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }}
+              title={theme === "dark" ? "Light mode" : "Dark mode"}
+            >
+              {theme === "dark"
+                ? <Sun className="w-3.5 h-3.5 flex-shrink-0" />
+                : <Moon className="w-3.5 h-3.5 flex-shrink-0" />}
+            </button>
             <InviteButton />
           </div>
         </div>
