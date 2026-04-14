@@ -1,7 +1,7 @@
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import type { ClientStore, CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
-import type { ColorPalette } from "@/components/BudgetExportColorDialog";
+import type { ColorPalette } from "@/components/RateioExportColorDialog";
 
 // ─── Helpers ─────────────────────────────────────────────
 

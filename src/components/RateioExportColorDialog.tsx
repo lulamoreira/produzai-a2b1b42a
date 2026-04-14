@@ -29,14 +29,14 @@ interface Props {
   onExport: (palette: ColorPalette) => void;
 }
 
-export default function BudgetExportColorDialog({ open, onOpenChange, onExport }: Props) {
+export default function RateioExportColorDialog({ open, onOpenChange, onExport }: Props) {
   const [selected, setSelected] = useState<ColorPalette>(PRESETS[0]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Exportar Orçamento</DialogTitle>
+          <DialogTitle>Exportar Rateio</DialogTitle>
           <DialogDescription>
             Escolha a paleta de cores da planilha antes de exportar.
           </DialogDescription>
