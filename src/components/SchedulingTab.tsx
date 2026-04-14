@@ -289,8 +289,21 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     } else if (filterReschedule === "no") {
       result = result.filter((s) => !scheduleMap[s.id]?.reschedule_enabled);
     }
+    if (filterTeamData === "incomplete") {
+      result = result.filter((s) => {
+        const sch = scheduleMap[s.id];
+        if (!sch?.team_id) return false;
+        return isTeamIncomplete(allMembersMap[sch.team_id] || []);
+      });
+    } else if (filterTeamData === "complete") {
+      result = result.filter((s) => {
+        const sch = scheduleMap[s.id];
+        if (!sch?.team_id) return false;
+        return !isTeamIncomplete(allMembersMap[sch.team_id] || []);
+      });
+    }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap]);
+  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, filterTeamData, scheduleMap, allMembersMap]);
 
   // Apply summary filter on top of filteredStores
   const displayedStores = useMemo(() => {
@@ -306,6 +319,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         case "withTeam": return !!sch?.team_id;
         case "withReschedule": return !!sch?.reschedule_enabled;
         case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
+        case "incompleteTeam": {
+          if (!sch?.team_id) return false;
+          return isTeamIncomplete(allMembersMap[sch.team_id] || []);
+        }
         default: return true;
       }
     });
