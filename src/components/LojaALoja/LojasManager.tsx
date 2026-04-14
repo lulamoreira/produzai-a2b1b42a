@@ -184,7 +184,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-2">
         <Store className="h-10 w-10" />
-        <p className="text-sm">Cadastre os tipos primeiro na aba "Cadastro de Tipos".</p>
+        <p className="text-sm">Cadastre os tipos primeiro na aba "Tipos de Lojas".</p>
       </div>
     );
   }
