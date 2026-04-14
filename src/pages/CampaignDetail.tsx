@@ -166,6 +166,11 @@ const CampaignDetail = () => {
   // ─── Location management ──────────────────────────────
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
 
+  // ─── Pending occurrences dashboard ─────────────────────
+  const [pendingDashOpen, setPendingDashOpen] = useState(false);
+  const { data: occMotives = [] } = useOccurrenceMotives();
+  const { data: occStatuses = [] } = useOccurrenceStatuses();
+
   // ─── Kit dialogs ───────────────────────────────────────
   const [createKitDialogOpen, setCreateKitDialogOpen] = useState(false);
   const [importPiecesDialogOpen, setImportPiecesDialogOpen] = useState(false);
