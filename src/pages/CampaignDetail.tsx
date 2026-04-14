@@ -73,6 +73,7 @@ import ExportReportDropdown from "@/components/ExportReportDropdown";
 import RateioExportColorDialog, { type ColorPalette } from "@/components/RateioExportColorDialog";
 import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 import PendingOccurrencesDashboard from "@/components/PendingOccurrencesDashboard";
+import BudgetTab from "@/components/Budget/BudgetTab";
 import { useOccurrenceMotives, useOccurrenceStatuses } from "@/hooks/useOccurrences";
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -2453,9 +2454,16 @@ const CampaignDetail = () => {
 
           {/* ─── SECTION: ORÇAMENTOS ─── */}
           {activeSection === "budgets" && (
-            <div className="flex items-center justify-center py-20 text-muted-foreground">
-              Novo módulo de orçamentos em construção
-            </div>
+            <BudgetTab
+              campaignId={campaignId!}
+              campaignName={campaign?.name || ""}
+              agencyName={agency?.name || ""}
+              pieces={pieces}
+              kits={kits}
+              kitPieces={kitPieces}
+              qtyMap={qtyMap}
+              stores={stores}
+            />
           )}
 
 
