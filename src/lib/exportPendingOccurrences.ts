@@ -102,7 +102,7 @@ function isOverdue(occ: PendingOccurrenceData["occurrences"][0]): boolean {
   return isOccurrenceOverdue(occ.expected_resolution_date, occ.status);
 }
 
-function sortOverdueFirst(occs: PendingOccurrenceData["occurrences"], todayStart: Date) {
+function sortOverdueFirst(occs: PendingOccurrenceData["occurrences"]) {
   return [...occs].sort((a, b) => {
     const aOv = isOverdue(a) ? 0 : 1;
     const bOv = isOverdue(b) ? 0 : 1;
