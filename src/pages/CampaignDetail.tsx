@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, MoreHorizontal, History } from "lucide-react";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
-import BudgetsTab from "@/components/BudgetsTab";
+
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import AppLayout from "@/components/AppLayout";
@@ -2453,7 +2453,9 @@ const CampaignDetail = () => {
 
           {/* ─── SECTION: ORÇAMENTOS ─── */}
           {activeSection === "budgets" && (
-            <BudgetsTab campaignId={campaignId!} canEdit={canEditCampaign} currencyCode={client?.currency_code} />
+            <div className="flex items-center justify-center py-20 text-muted-foreground">
+              Novo módulo de orçamentos em construção
+            </div>
           )}
 
 
