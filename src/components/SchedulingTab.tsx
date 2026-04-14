@@ -920,7 +920,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             {summaryFilter && summaryFilter !== "total" && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>{t("filters.filteringBy")} <strong className="text-foreground">{
-                  { scheduled: t("scheduling.scheduled"), noDate: t("scheduling.noDate"), approved: t("filters.approved"), withTeam: t("scheduling.withTeam"), withReschedule: t("dashboard.withReschedule"), withOccurrence: t("scheduling.withOccurrence") }[summaryFilter]
+                  { scheduled: t("scheduling.scheduled"), noDate: t("scheduling.noDate"), approved: t("filters.approved"), withTeam: t("scheduling.withTeam"), withReschedule: t("dashboard.withReschedule"), withOccurrence: t("scheduling.withOccurrence"), incompleteTeam: "Equipe incompleta" }[summaryFilter]
                 }</strong> ({displayedStores.length})</span>
                 <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
               </div>
