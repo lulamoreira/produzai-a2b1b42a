@@ -22,7 +22,7 @@ interface Props {
   statuses: OccurrenceStatus[];
 }
 
-const TERMINAL_STATUSES = ["resolvida", "nao_procede"];
+
 
 const PRIORITY_COLORS: Record<string, string> = {
   critica: "#dc2626", alta: "#f97316", media: "#eab308", baixa: "#22c55e",
@@ -61,7 +61,7 @@ export default function PendingOccurrencesDashboard({ open, onOpenChange, campai
     enabled: !!campaignId && open,
   });
 
-  const pending = useMemo(() => allOccurrences.filter((o) => !TERMINAL_STATUSES.includes(o.status || "")), [allOccurrences]);
+  const pending = useMemo(() => allOccurrences.filter((o) => o.status === "em_andamento"), [allOccurrences]);
 
   const storeMap = useMemo(() => {
     const m: Record<string, (typeof stores)[0]> = {};
@@ -77,7 +77,6 @@ export default function PendingOccurrencesDashboard({ open, onOpenChange, campai
 
   const today = new Date();
   const overdue = useMemo(() => pending.filter((o) => o.expected_resolution_date && new Date(o.expected_resolution_date) < today), [pending]);
-  const inProgress = useMemo(() => pending.filter((o) => o.status === "em_andamento"), [pending]);
   const avgDaysOpen = useMemo(() => {
     let sum = 0; let count = 0;
     pending.forEach((o) => { const d = daysOpenSince(o.created_at); if (d !== null) { sum += d; count++; } });
@@ -181,14 +180,10 @@ export default function PendingOccurrencesDashboard({ open, onOpenChange, campai
         </div>
 
         {/* KPI cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-3 gap-3 mb-6">
           <Card className="p-3 text-center">
             <div className="text-2xl font-bold" style={{ color: "#8C6F4E" }}>{pending.length}</div>
-            <div className="text-xs text-muted-foreground">Total Pendentes</div>
-          </Card>
-          <Card className="p-3 text-center">
-            <div className="text-2xl font-bold text-blue-600">{inProgress.length}</div>
-            <div className="text-xs text-muted-foreground">Em Andamento</div>
+            <div className="text-xs text-muted-foreground">Total Em Andamento</div>
           </Card>
           <Card className="p-3 text-center">
             <div className="text-2xl font-bold text-destructive">{overdue.length}</div>
