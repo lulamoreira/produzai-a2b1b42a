@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, lazy, Suspense } from "react";
-import { getStatusLabel as _getStatusLabel, getStatusColor as _getStatusColor } from "@/lib/occurrenceHelpers";
+import { getStatusLabel as _getStatusLabel, getStatusColor as _getStatusColor, isOccurrenceOverdue, parseLocalDate } from "@/lib/occurrenceHelpers";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -466,7 +466,7 @@ export default function OccurrenceCard({
             return <span className="ml-0.5">· {days} {days === 1 ? "dia" : "dias"}</span>;
           })()}
         </span>
-        {(occ as any).expected_resolution_date && !["resolvida", "nao_procede"].includes(merged.status || "") && new Date((occ as any).expected_resolution_date) < new Date() && (
+        {isOccurrenceOverdue((occ as any).expected_resolution_date, merged.status) && (
           <Badge variant="destructive" className="text-[9px] px-1.5 py-0 h-4 font-semibold">Atrasada</Badge>
         )}
       </div>
@@ -474,7 +474,7 @@ export default function OccurrenceCard({
         <div className="flex items-center gap-1 mb-2">
           <CalendarClock className="w-3 h-3 text-muted-foreground" />
           <span className="text-[10px] text-muted-foreground">
-            Prev: {format(new Date((occ as any).expected_resolution_date), "dd/MM/yyyy")}
+            Prev: {(() => { const d = parseLocalDate((occ as any).expected_resolution_date); return d ? format(d, "dd/MM/yyyy") : ""; })()}
           </span>
         </div>
       )}
