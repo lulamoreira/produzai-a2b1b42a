@@ -133,15 +133,15 @@ export default function PendingOccurrencesDashboard({
   }, [pending]);
 
   // Charts data
-  const statusChartData = useMemo(() => {
+  const stateChartData = useMemo(() => {
     const counts: Record<string, number> = {};
-    pending.forEach((o) => { const k = o.status || "sem_status"; counts[k] = (counts[k] || 0) + 1; });
-    return Object.entries(counts).map(([key, value]) => ({
-      name: statuses.find((s) => s.value === key)?.label || key,
-      value,
-      color: statuses.find((s) => s.value === key)?.color || "#6B7280",
-    }));
-  }, [pending, statuses]);
+    pending.forEach((o) => {
+      const store = o.store_id ? storeMap[o.store_id] : null;
+      const uf = store?.state || "N/I";
+      counts[uf] = (counts[uf] || 0) + 1;
+    });
+    return Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
+  }, [pending, storeMap]);
 
   const priorityChartData = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -301,12 +301,12 @@ export default function PendingOccurrencesDashboard({
             <Card className="p-3">
               <h4 className="text-xs font-semibold mb-2 text-muted-foreground">Por Estado</h4>
               <ResponsiveContainer width="100%" height={160}>
-                <PieChart>
-                  <Pie data={statusChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={55} label={({ name, value }) => `${name}: ${value}`} labelLine={false} fontSize={9}>
-                    {statusChartData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                  </Pie>
+                <BarChart data={stateChartData} layout="vertical">
+                  <XAxis type="number" hide />
+                  <YAxis type="category" dataKey="name" width={35} tick={{ fontSize: 10 }} />
                   <Tooltip />
-                </PieChart>
+                  <Bar dataKey="value" fill="#8C6F4E" radius={[0, 4, 4, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </Card>
 
