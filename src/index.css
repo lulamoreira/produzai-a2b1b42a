@@ -130,6 +130,29 @@
     --success: 152 50% 38%;
     --warning: 38 85% 50%;
     --info: 210 70% 50%;
+
+    /* ── Surfaces (dark) ── */
+    --bg-page:      #1A1714;
+    --bg-surface:   #231F1B;
+    --bg-muted:     #2A2520;
+
+    /* ── Borders (dark) ── */
+    --border-subtle:  rgba(255,255,255,0.07);
+    --border-default: rgba(255,255,255,0.13);
+    --border-strong:  rgba(255,255,255,0.22);
+
+    /* ── Text (dark) ── */
+    --text-primary:   #EDE8E0;
+    --text-secondary: #A89E94;
+    --text-muted:     #7A7068;
+
+    /* ── Status backgrounds (dark) ── */
+    --s-success-bg: #0A2A14;
+    --s-warning-bg: #2A1F0A;
+    --s-danger-bg:  #2A0A0A;
+    --s-info-bg:    #0A1A2A;
+    --s-neutral-bg: #1E1E20;
+    --s-purple-bg:  #1A0F2A;
   }
 }
 
