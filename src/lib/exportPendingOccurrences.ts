@@ -481,8 +481,9 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
       head: [["Loja", "Aberta por", "Abertura", "Previsão", "Dias aberto", "Prioridade", "Motivo", "Status"]],
       body: overdueRows,
       headStyles: { fillColor: RED_RGB, fontSize: 8 },
-      styles: { fontSize: 7, cellPadding: 2, textColor: [255, 255, 255] },
-      bodyStyles: { fillColor: [180, 30, 30] },
+      styles: { fontSize: 7, cellPadding: 2, textColor: [0, 0, 0] },
+      bodyStyles: { fillColor: [255, 220, 220] },
+      alternateRowStyles: { fillColor: [255, 200, 200] },
       margin: { left: 10, right: 10 },
       columnStyles: { 0: { cellWidth: 35 }, 6: { cellWidth: 30 } },
       didDrawPage: (hookData) => {
