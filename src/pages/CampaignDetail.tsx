@@ -2451,12 +2451,8 @@ const CampaignDetail = () => {
           )}
 
           {/* ─── SECTION: LOJA A LOJA ─── */}
-          {activeSection === "loja_a_loja" && (
-            <div className="flex items-center gap-2 text-muted-foreground py-12 justify-center">
-              <LayoutGrid className="w-5 h-5" />
-              <span>{t("modules.loja_a_loja")} — Em desenvolvimento</span>
-              <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium">Beta</span>
-            </div>
+          {activeSection === "loja_a_loja" && campaignId && (
+            <TiposManager campaignId={campaignId} isAdmin={isAdmin} />
           )}
           </>
         )}
