@@ -104,8 +104,8 @@ function isOverdue(occ: PendingOccurrenceData["occurrences"][0]): boolean {
 
 function sortOverdueFirst(occs: PendingOccurrenceData["occurrences"], todayStart: Date) {
   return [...occs].sort((a, b) => {
-    const aOv = isOverdue(a, todayStart) ? 0 : 1;
-    const bOv = isOverdue(b, todayStart) ? 0 : 1;
+    const aOv = isOverdue(a) ? 0 : 1;
+    const bOv = isOverdue(b) ? 0 : 1;
     if (aOv !== bOv) return aOv - bOv;
     const aD = a.expected_resolution_date || "";
     const bD = b.expected_resolution_date || "";
@@ -154,7 +154,7 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
     if (d !== null) { totalDaysOpen += d; countDaysOpen++; }
   });
   const avgDaysOpen = countDaysOpen > 0 ? Math.round((totalDaysOpen / countDaysOpen) * 10) / 10 : 0;
-  const overdue = sorted.filter((o) => isOverdue(o, todayStart));
+  const overdue = sorted.filter((o) => isOverdue(o));
 
   // ─── Sheet 1: Resumo ───
   const wsR = wb.addWorksheet(sanitize("Resumo"));
@@ -229,7 +229,7 @@ export async function exportPendingExcel(data: PendingOccurrenceData) {
     const dToResolve = daysBetween(occ.created_at, occ.expected_resolution_date);
     const dOpen = daysOpenSince(occ.created_at);
     const row = wsP.getRow(idx + 2);
-    const occIsOverdue = isOverdue(occ, todayStart);
+    const occIsOverdue = isOverdue(occ);
 
     const vals = [
       occIsOverdue ? "ATRASADA" : "",
@@ -346,7 +346,7 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
   const sorted = sortOverdueFirst(data.occurrences, todayStart);
-  const overdue = sorted.filter((o) => isOverdue(o, todayStart));
+  const overdue = sorted.filter((o) => isOverdue(o));
 
   const total = sorted.length;
   const byPriority: Record<string, number> = {};
@@ -519,7 +519,7 @@ export function exportPendingPDF(data: PendingOccurrenceData) {
 
   // Build a set of overdue row indices for quick lookup
   const overdueIndices = new Set<number>();
-  sorted.forEach((occ, i) => { if (isOverdue(occ, todayStart)) overdueIndices.add(i); });
+  sorted.forEach((occ, i) => { if (isOverdue(occ)) overdueIndices.add(i); });
 
   autoTable(doc, {
     startY: 24,
