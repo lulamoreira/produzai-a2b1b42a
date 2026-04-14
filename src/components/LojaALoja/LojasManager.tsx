@@ -7,10 +7,11 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Store, Copy } from "lucide-react";
+import { Store, Copy, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
