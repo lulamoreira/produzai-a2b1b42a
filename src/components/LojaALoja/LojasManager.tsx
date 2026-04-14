@@ -85,21 +85,20 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
   const hasAnySub = (storeId: string, tipo: LojaALojaTipo) =>
     (tipo.subdivisoes ?? []).some((s) => isActive(storeId, tipo.id, s.id, tipo.tem_subdivisao));
 
-  // Bulk deselect all stores for a given INTERNO tipo
-  const [bulkDeselecting, setBulkDeselecting] = useState(false);
-  const handleBulkDeselectInterno = async (tipo: LojaALojaTipo) => {
-    if (!isAdmin || bulkDeselecting) return;
-    setBulkDeselecting(true);
+  // Bulk toggle all INTERNO tipos for a single store
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const handleBulkToggleInternosForStore = async (storeId: string, ativo: boolean) => {
+    if (!isAdmin || bulkBusy) return;
+    setBulkBusy(true);
     try {
-      // Build rows for ALL stores × all subdivisoes (or tipo itself) as ativo=false
       const rows: { campaign_id: string; store_id: string; tipo_id: string; subdivisao_id: string | null; ativo: boolean }[] = [];
-      for (const store of stores) {
+      for (const tipo of internosTipos) {
         if (tipo.subdivisoes && tipo.subdivisoes.length > 0) {
           for (const sub of tipo.subdivisoes) {
-            rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: sub.id, ativo: false });
+            rows.push({ campaign_id: campaignId, store_id: storeId, tipo_id: tipo.id, subdivisao_id: sub.id, ativo });
           }
         } else {
-          rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: null, ativo: false });
+          rows.push({ campaign_id: campaignId, store_id: storeId, tipo_id: tipo.id, subdivisao_id: null, ativo });
         }
       }
       if (rows.length > 0) {
@@ -109,42 +108,25 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
         if (error) throw error;
       }
       qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
-      toast.success(`Todas as lojas desmarcadas de "${tipo.nome}"`);
     } catch (err: any) {
       toast.error("Erro: " + err.message);
     } finally {
-      setBulkDeselecting(false);
+      setBulkBusy(false);
     }
   };
 
-  // Bulk select all stores for a given INTERNO tipo (re-select all)
-  const handleBulkSelectInterno = async (tipo: LojaALojaTipo) => {
-    if (!isAdmin || bulkDeselecting) return;
-    setBulkDeselecting(true);
-    try {
-      const rows: { campaign_id: string; store_id: string; tipo_id: string; subdivisao_id: string | null; ativo: boolean }[] = [];
-      for (const store of stores) {
-        if (tipo.subdivisoes && tipo.subdivisoes.length > 0) {
-          for (const sub of tipo.subdivisoes) {
-            rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: sub.id, ativo: true });
-          }
-        } else {
-          rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: null, ativo: true });
+  // Check if all internos are active for a store
+  const allInternosActive = (storeId: string) => {
+    for (const tipo of internosTipos) {
+      if (tipo.subdivisoes && tipo.subdivisoes.length > 0) {
+        for (const sub of tipo.subdivisoes) {
+          if (!isActive(storeId, tipo.id, sub.id, true)) return false;
         }
+      } else {
+        if (!isActive(storeId, tipo.id, null, true)) return false;
       }
-      if (rows.length > 0) {
-        const { error } = await supabase
-          .from("loja_a_loja_lojas")
-          .upsert(rows, { onConflict: "campaign_id,store_id,tipo_id,subdivisao_id", ignoreDuplicates: false });
-        if (error) throw error;
-      }
-      qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
-      toast.success(`Todas as lojas marcadas em "${tipo.nome}"`);
-    } catch (err: any) {
-      toast.error("Erro: " + err.message);
-    } finally {
-      setBulkDeselecting(false);
     }
+    return true;
   };
 
   const handleToggle = (storeId: string, tipoId: string, subId: string | null, newAtivo: boolean) => {
@@ -362,7 +344,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
                 </th>
               )}
               {internosTipos.length > 0 && (
-                <th colSpan={internosTipos.length} className="h-8 px-1 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-l border-border">
+                <th colSpan={internosTipos.length + (isAdmin ? 1 : 0)} className="h-8 px-1 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-l border-border">
                   Internos
                 </th>
               )}
@@ -380,36 +362,14 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
               ))}
               {internosTipos.map((t, i) => (
                 <th key={t.id} className={cn("h-9 px-1 text-center text-xs font-bold w-10", i === 0 && "border-l border-border")} title={t.nome}>
-                  <div className="flex flex-col items-center gap-0.5">
-                    <span>{t.letra}</span>
-                    {isAdmin && (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button className="text-[9px] text-muted-foreground hover:text-primary transition-colors" title="Ações em massa">
-                            <XCircle className="h-3 w-3" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-40 p-1.5" align="center">
-                          <button
-                            onClick={() => handleBulkSelectInterno(t)}
-                            disabled={bulkDeselecting}
-                            className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-muted/60 transition-colors"
-                          >
-                            ✅ Marcar todos
-                          </button>
-                          <button
-                            onClick={() => handleBulkDeselectInterno(t)}
-                            disabled={bulkDeselecting}
-                            className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-destructive/10 text-destructive transition-colors"
-                          >
-                            ❌ Desmarcar todos
-                          </button>
-                        </PopoverContent>
-                      </Popover>
-                    )}
-                  </div>
+                  {t.letra}
                 </th>
               ))}
+              {isAdmin && internosTipos.length > 0 && (
+                <th className="h-9 px-1 text-center text-[9px] font-medium text-muted-foreground w-8" title="Ações em massa nos internos">
+                  
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -436,6 +396,37 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
                     {renderLetraCell(store, tipo)}
                   </td>
                 ))}
+                {isAdmin && internosTipos.length > 0 && (
+                  <td className="px-0.5 py-1.5 text-center">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button
+                          className="inline-flex items-center justify-center h-6 w-6 rounded text-muted-foreground hover:text-primary hover:bg-muted/60 transition-colors"
+                          title="Marcar/desmarcar todos os internos"
+                        >
+                          <XCircle className="h-3.5 w-3.5" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-44 p-1.5" align="end">
+                        <p className="text-[10px] text-muted-foreground px-2 py-1 font-medium">Internos desta loja</p>
+                        <button
+                          onClick={() => handleBulkToggleInternosForStore(store.id, true)}
+                          disabled={bulkBusy}
+                          className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-muted/60 transition-colors"
+                        >
+                          ✅ Marcar todos
+                        </button>
+                        <button
+                          onClick={() => handleBulkToggleInternosForStore(store.id, false)}
+                          disabled={bulkBusy}
+                          className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-destructive/10 text-destructive transition-colors"
+                        >
+                          ❌ Desmarcar todos
+                        </button>
+                      </PopoverContent>
+                    </Popover>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
