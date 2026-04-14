@@ -414,6 +414,9 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
               ) : (
                 <>
                   <span className="truncate flex-1">{sub.nome}</span>
+                  {(pecaCountByTipo[`sub:${sub.id}`] || 0) > 0 && (
+                    <span className="text-[10px] text-muted-foreground font-normal">{pecaCountByTipo[`sub:${sub.id}`]}</span>
+                  )}
                   {isAdmin && (
                     <div className="flex items-center gap-0.5 opacity-0 group-hover/sub:opacity-100">
                       <Button
