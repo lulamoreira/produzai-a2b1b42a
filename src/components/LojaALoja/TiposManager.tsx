@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { compressImage } from "@/lib/compressImage";
 import {
   useLojaALojaTipos,
   useLojaALojaPecas,
@@ -20,6 +19,10 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Plus, Pencil, Trash2, Image, ChevronRight, X, Upload, Check } from "lucide-react";
@@ -71,8 +74,8 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
   const [editingSubNome, setEditingSubNome] = useState("");
 
-  // Add tipo form
-  const [showAddTipo, setShowAddTipo] = useState(false);
+  // Add tipo form — track which section
+  const [showAddTipoSection, setShowAddTipoSection] = useState<"vitrines" | "internos" | null>(null);
   const [newTipoLetra, setNewTipoLetra] = useState("");
   const [newTipoNome, setNewTipoNome] = useState("");
 
@@ -86,6 +89,10 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
   const [newPecaPreview, setNewPecaPreview] = useState<string | null>(null);
   const [newPecaBlob, setNewPecaBlob] = useState<Blob | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Delete confirmation
+  const [deletingTipo, setDeletingTipo] = useState<{ id: string; nome: string } | null>(null);
+  const [deletingSub, setDeletingSub] = useState<{ id: string; nome: string } | null>(null);
 
   // Mutations
   const addTipo = useAddTipo();
@@ -104,6 +111,10 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
   );
 
   const selectedTipo = tipos?.find((t) => t.id === selectedTipoId);
+
+  // Split into Vitrines / Internos
+  const vitrines = tipos?.filter((t) => !t.tem_subdivisao) ?? [];
+  const internos = tipos?.filter((t) => t.tem_subdivisao) ?? [];
 
   // ── Handlers ──
 
@@ -124,7 +135,7 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
     setSelectedSubId(sub.id);
   };
 
-  const handleAddTipo = async () => {
+  const handleAddTipo = async (temSubdivisao: boolean) => {
     if (!newTipoLetra.trim() || !newTipoNome.trim()) return;
     const maxOrder = tipos ? Math.max(0, ...tipos.map((t) => t.display_order)) : 0;
     await addTipo.mutateAsync({
@@ -132,16 +143,36 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
       letra: newTipoLetra.trim().toUpperCase(),
       nome: newTipoNome.trim(),
       display_order: maxOrder + 1,
+      tem_subdivisao: temSubdivisao,
     });
     setNewTipoLetra("");
     setNewTipoNome("");
-    setShowAddTipo(false);
+    setShowAddTipoSection(null);
   };
 
   const handleSaveEditTipo = async () => {
     if (!editingTipoId || !editingTipoNome.trim()) return;
     await updateTipo.mutateAsync({ id: editingTipoId, campaign_id: campaignId, nome: editingTipoNome.trim() });
     setEditingTipoId(null);
+  };
+
+  const handleConfirmDeleteTipo = async () => {
+    if (!deletingTipo) return;
+    await deleteTipo.mutateAsync({ id: deletingTipo.id, campaign_id: campaignId });
+    if (selectedTipoId === deletingTipo.id) {
+      setSelectedTipoId(null);
+      setSelectedSubId(null);
+    }
+    setDeletingTipo(null);
+  };
+
+  const handleConfirmDeleteSub = async () => {
+    if (!deletingSub) return;
+    await deleteSubdivisao.mutateAsync({ id: deletingSub.id, campaign_id: campaignId });
+    if (selectedSubId === deletingSub.id) {
+      setSelectedSubId(null);
+    }
+    setDeletingSub(null);
   };
 
   const handleAddSub = async (tipoId: string) => {
@@ -209,203 +240,250 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
     }
   };
 
+  // ── Render a tipo row ──
+  const renderTipoRow = (tipo: LojaALojaTipo) => (
+    <div key={tipo.id}>
+      <div
+        className={cn(
+          "flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors group",
+          selectedTipoId === tipo.id && !selectedSubId
+            ? "bg-primary/10 text-primary"
+            : "hover:bg-muted/60 text-foreground",
+        )}
+        onClick={() => handleSelectTipo(tipo)}
+      >
+        <span
+          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0"
+          style={{ backgroundColor: "hsl(var(--primary))" }}
+        >
+          {tipo.letra}
+        </span>
+
+        {editingTipoId === tipo.id ? (
+          <div className="flex items-center gap-1 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+            <Input
+              value={editingTipoNome}
+              onChange={(e) => setEditingTipoNome(e.target.value)}
+              className="h-7 text-xs flex-1"
+              autoFocus
+              onKeyDown={(e) => e.key === "Enter" && handleSaveEditTipo()}
+            />
+            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleSaveEditTipo}>
+              <Check className="w-3 h-3" />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingTipoId(null)}>
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        ) : (
+          <>
+            <span className="text-xs font-medium truncate flex-1">{tipo.nome}</span>
+            {tipo.tem_subdivisao && (
+              <ChevronRight className={cn("w-3 h-3 transition-transform text-muted-foreground", expandedTipos.has(tipo.id) && "rotate-90")} />
+            )}
+            {isAdmin && (
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-5 w-5"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingTipoId(tipo.id);
+                    setEditingTipoNome(tipo.nome);
+                  }}
+                >
+                  <Pencil className="w-3 h-3" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-5 w-5 text-destructive hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeletingTipo({ id: tipo.id, nome: tipo.nome });
+                  }}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Subdivisoes */}
+      {tipo.tem_subdivisao && expandedTipos.has(tipo.id) && (
+        <div className="ml-6 mt-0.5 space-y-0.5">
+          {tipo.subdivisoes?.map((sub) => (
+            <div
+              key={sub.id}
+              className={cn(
+                "flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer transition-colors group/sub text-xs",
+                selectedSubId === sub.id
+                  ? "bg-primary/10 text-primary"
+                  : "hover:bg-muted/60 text-muted-foreground",
+              )}
+              onClick={() => handleSelectSub(sub)}
+            >
+              {editingSubId === sub.id ? (
+                <div className="flex items-center gap-1 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+                  <Input
+                    value={editingSubNome}
+                    onChange={(e) => setEditingSubNome(e.target.value)}
+                    className="h-6 text-xs flex-1"
+                    autoFocus
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveEditSub()}
+                  />
+                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={handleSaveEditSub}>
+                    <Check className="w-3 h-3" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setEditingSubId(null)}>
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <span className="truncate flex-1">{sub.nome}</span>
+                  {isAdmin && (
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover/sub:opacity-100">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-5 w-5"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingSubId(sub.id);
+                          setEditingSubNome(sub.nome);
+                        }}
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-5 w-5 text-destructive hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingSub({ id: sub.id, nome: sub.nome });
+                        }}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+
+          {/* Add subdivisao */}
+          {isAdmin && (
+            addingSubForTipoId === tipo.id ? (
+              <div className="flex items-center gap-1 px-2">
+                <Input
+                  value={newSubNome}
+                  onChange={(e) => setNewSubNome(e.target.value)}
+                  placeholder="Nome da subdivisão"
+                  className="h-6 text-xs flex-1"
+                  autoFocus
+                  onKeyDown={(e) => e.key === "Enter" && handleAddSub(tipo.id)}
+                />
+                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => handleAddSub(tipo.id)}>
+                  <Check className="w-3 h-3" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setAddingSubForTipoId(null)}>
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            ) : (
+              <button
+                className="text-[10px] text-muted-foreground hover:text-primary px-2 py-0.5 flex items-center gap-1"
+                onClick={() => setAddingSubForTipoId(tipo.id)}
+              >
+                <Plus className="w-3 h-3" /> Subdivisão
+              </button>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // ── Render add tipo form ──
+  const renderAddTipoForm = (section: "vitrines" | "internos") => {
+    if (showAddTipoSection !== section) {
+      return (
+        <button
+          className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 px-2 pt-2 w-full"
+          onClick={() => setShowAddTipoSection(section)}
+        >
+          <Plus className="w-3 h-3" /> Novo Tipo
+        </button>
+      );
+    }
+    return (
+      <div className="space-y-1 pt-2">
+        <div className="flex gap-1">
+          <Input
+            value={newTipoLetra}
+            onChange={(e) => setNewTipoLetra(e.target.value)}
+            placeholder="Letra"
+            className="h-7 text-xs w-14"
+            maxLength={2}
+            autoFocus
+          />
+          <Input
+            value={newTipoNome}
+            onChange={(e) => setNewTipoNome(e.target.value)}
+            placeholder="Nome do tipo"
+            className="h-7 text-xs flex-1"
+            onKeyDown={(e) => e.key === "Enter" && handleAddTipo(section === "internos")}
+          />
+        </div>
+        <div className="flex gap-1">
+          <Button size="sm" className="h-7 text-xs flex-1" onClick={() => handleAddTipo(section === "internos")} disabled={addTipo.isPending}>
+            Salvar
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowAddTipoSection(null)}>
+            Cancelar
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   // ── Render ──
 
   return (
     <div className="flex flex-col md:flex-row gap-4 min-h-[400px]">
       {/* ── Left column: Tipos list ── */}
       <div className="w-full md:w-72 shrink-0 border border-border rounded-lg bg-card p-3 space-y-1 overflow-y-auto max-h-[70vh]">
-        <h3 className="text-sm font-semibold text-foreground mb-2">Tipos de Vitrine</h3>
-
         {loadingTipos ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-9 w-full rounded-md" />
           ))
         ) : (
           <>
-            {tipos?.map((tipo) => (
-              <div key={tipo.id}>
-                {/* Tipo row */}
-                <div
-                  className={cn(
-                    "flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors group",
-                    selectedTipoId === tipo.id && !selectedSubId
-                      ? "bg-primary/10 text-primary"
-                      : "hover:bg-muted/60 text-foreground",
-                  )}
-                  onClick={() => handleSelectTipo(tipo)}
-                >
-                  <span
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0"
-                    style={{ backgroundColor: "#5B7B5E" }}
-                  >
-                    {tipo.letra}
-                  </span>
+            {/* Vitrines section */}
+            <div className="space-y-1">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 pt-1">Vitrines</h4>
+              {vitrines.length === 0 && (
+                <p className="text-xs text-muted-foreground/60 px-2">Nenhum tipo cadastrado</p>
+              )}
+              {vitrines.map(renderTipoRow)}
+              {isAdmin && renderAddTipoForm("vitrines")}
+            </div>
 
-                  {editingTipoId === tipo.id ? (
-                    <div className="flex items-center gap-1 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
-                      <Input
-                        value={editingTipoNome}
-                        onChange={(e) => setEditingTipoNome(e.target.value)}
-                        className="h-7 text-xs flex-1"
-                        autoFocus
-                        onKeyDown={(e) => e.key === "Enter" && handleSaveEditTipo()}
-                      />
-                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleSaveEditTipo}>
-                        <Check className="w-3 h-3" />
-                      </Button>
-                      <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingTipoId(null)}>
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <span className="text-xs font-medium truncate flex-1">{tipo.nome}</span>
-                      {tipo.tem_subdivisao && (
-                        <ChevronRight className={cn("w-3 h-3 transition-transform text-muted-foreground", expandedTipos.has(tipo.id) && "rotate-90")} />
-                      )}
-                      {isAdmin && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-5 w-5 opacity-0 group-hover:opacity-100"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingTipoId(tipo.id);
-                            setEditingTipoNome(tipo.nome);
-                          }}
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                {/* Subdivisoes */}
-                {tipo.tem_subdivisao && expandedTipos.has(tipo.id) && (
-                  <div className="ml-6 mt-0.5 space-y-0.5">
-                    {tipo.subdivisoes?.map((sub) => (
-                      <div
-                        key={sub.id}
-                        className={cn(
-                          "flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer transition-colors group text-xs",
-                          selectedSubId === sub.id
-                            ? "bg-primary/10 text-primary"
-                            : "hover:bg-muted/60 text-muted-foreground",
-                        )}
-                        onClick={() => handleSelectSub(sub)}
-                      >
-                        {editingSubId === sub.id ? (
-                          <div className="flex items-center gap-1 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
-                            <Input
-                              value={editingSubNome}
-                              onChange={(e) => setEditingSubNome(e.target.value)}
-                              className="h-6 text-xs flex-1"
-                              autoFocus
-                              onKeyDown={(e) => e.key === "Enter" && handleSaveEditSub()}
-                            />
-                            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={handleSaveEditSub}>
-                              <Check className="w-3 h-3" />
-                            </Button>
-                            <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setEditingSubId(null)}>
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <>
-                            <span className="truncate flex-1">{sub.nome}</span>
-                            {isAdmin && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-5 w-5 opacity-0 group-hover:opacity-100"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingSubId(sub.id);
-                                  setEditingSubNome(sub.nome);
-                                }}
-                              >
-                                <Pencil className="w-3 h-3" />
-                              </Button>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    ))}
-
-                    {/* Add subdivisao */}
-                    {isAdmin && (
-                      addingSubForTipoId === tipo.id ? (
-                        <div className="flex items-center gap-1 px-2">
-                          <Input
-                            value={newSubNome}
-                            onChange={(e) => setNewSubNome(e.target.value)}
-                            placeholder="Nome da subdivisão"
-                            className="h-6 text-xs flex-1"
-                            autoFocus
-                            onKeyDown={(e) => e.key === "Enter" && handleAddSub(tipo.id)}
-                          />
-                          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => handleAddSub(tipo.id)}>
-                            <Check className="w-3 h-3" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setAddingSubForTipoId(null)}>
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <button
-                          className="text-[10px] text-muted-foreground hover:text-primary px-2 py-0.5 flex items-center gap-1"
-                          onClick={() => setAddingSubForTipoId(tipo.id)}
-                        >
-                          <Plus className="w-3 h-3" /> Subdivisão
-                        </button>
-                      )
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {/* Add tipo */}
-            {isAdmin && (
-              showAddTipo ? (
-                <div className="space-y-1 pt-2 border-t border-border mt-2">
-                  <div className="flex gap-1">
-                    <Input
-                      value={newTipoLetra}
-                      onChange={(e) => setNewTipoLetra(e.target.value)}
-                      placeholder="Letra"
-                      className="h-7 text-xs w-14"
-                      maxLength={2}
-                      autoFocus
-                    />
-                    <Input
-                      value={newTipoNome}
-                      onChange={(e) => setNewTipoNome(e.target.value)}
-                      placeholder="Nome do tipo"
-                      className="h-7 text-xs flex-1"
-                      onKeyDown={(e) => e.key === "Enter" && handleAddTipo()}
-                    />
-                  </div>
-                  <div className="flex gap-1">
-                    <Button size="sm" className="h-7 text-xs flex-1" onClick={handleAddTipo} disabled={addTipo.isPending}>
-                      Salvar
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setShowAddTipo(false)}>
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 px-2 pt-2 border-t border-border mt-2 w-full"
-                  onClick={() => setShowAddTipo(true)}
-                >
-                  <Plus className="w-3 h-3" /> Novo Tipo
-                </button>
-              )
-            )}
+            {/* Internos section */}
+            <div className="space-y-1 pt-3 mt-3 border-t border-border">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 pt-1">Internos</h4>
+              {internos.length === 0 && (
+                <p className="text-xs text-muted-foreground/60 px-2">Nenhum tipo cadastrado</p>
+              )}
+              {internos.map(renderTipoRow)}
+              {isAdmin && renderAddTipoForm("internos")}
+            </div>
           </>
         )}
       </div>
@@ -528,6 +606,42 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Delete Tipo AlertDialog ── */}
+      <AlertDialog open={!!deletingTipo} onOpenChange={(open) => !open && setDeletingTipo(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apagar tipo</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja apagar "{deletingTipo?.nome}"? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDeleteTipo} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Delete Subdivisao AlertDialog ── */}
+      <AlertDialog open={!!deletingSub} onOpenChange={(open) => !open && setDeletingSub(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apagar subdivisão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja apagar "{deletingSub?.nome}"? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDeleteSub} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
