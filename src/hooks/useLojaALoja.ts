@@ -112,6 +112,22 @@ export function useLojaALojaLojas(campaignId: string | undefined) {
   });
 }
 
+export function useAllLojaALojaPecas(campaignId: string | undefined) {
+  return useQuery({
+    queryKey: ["loja-a-loja-pecas-all", campaignId],
+    enabled: !!campaignId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("loja_a_loja_pecas")
+        .select("*")
+        .eq("campaign_id", campaignId!)
+        .order("display_order");
+      if (error) throw error;
+      return (data ?? []) as LojaALojaPeca[];
+    },
+  });
+}
+
 /* ───── Mutations: Tipos ───── */
 
 export function useAddTipo() {
