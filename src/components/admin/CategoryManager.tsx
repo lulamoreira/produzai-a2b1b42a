@@ -53,6 +53,8 @@ const defaultForm = (): Omit<PermissionCategory, "id" | "created_at"> => ({
   can_manage_team_codes: false,
   can_lock_cards: false,
   can_view_photo_checkin: false,
+  can_view_loja_a_loja: false,
+  can_edit_loja_a_loja: false,
 });
 
 export default function CategoryManager() {
