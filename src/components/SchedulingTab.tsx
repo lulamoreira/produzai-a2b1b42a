@@ -746,6 +746,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 <option value="no_team">{t("filters.noTeam")}</option>
                 {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
+              <select value={filterTeamData} onChange={(e) => { setFilterTeamData(e.target.value); setSummaryFilter(""); }} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
+                <option value="">Dados da Equipe</option>
+                <option value="incomplete">Equipe com dados incompletos</option>
+                <option value="complete">Equipe com dados completos</option>
+              </select>
               <select value={filterPreference} onChange={(e) => setFilterPreference(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
                 <option value="">{t("filters.preference")}</option>
                 {PREFERENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -773,7 +778,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               )}
               {secondaryFilterCount > 0 && (
                 <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => {
-                  setFilterCity(""); setFilterPeriod(""); setFilterTeam("");
+                  setFilterCity(""); setFilterPeriod(""); setFilterTeam(""); setFilterTeamData("");
                   setFilterPreference(""); setFilterResponsibility(""); setFilterLocked(""); setFilterReschedule(""); setFilterModel("");
                 }}>
                   Limpar filtros avançados
