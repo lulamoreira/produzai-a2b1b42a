@@ -3,6 +3,7 @@ import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import type { Schedule } from "@/types/schedule";
+import { isOccurrenceOverdue, formatDateBR, parseLocalDate } from "@/lib/occurrenceHelpers";
 
 /* ──────────────────────────────────────────
    Brand constants
