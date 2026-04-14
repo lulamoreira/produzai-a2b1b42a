@@ -16,6 +16,7 @@ const EVENTOS = [
   { type: "recusa_equipe", label: "Recusa da equipe" },
   { type: "ocorrencia_resolvida", label: "Ocorrência resolvida" },
   { type: "novo_usuario_pendente", label: "Novo usuário aguardando" },
+  { type: "orcamento_enviado", label: "Orçamento enviado por fornecedor" },
 ];
 
 const ROLE_COLUNAS = [
