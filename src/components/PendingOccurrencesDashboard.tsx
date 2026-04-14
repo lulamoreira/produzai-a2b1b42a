@@ -125,8 +125,10 @@ export default function PendingOccurrencesDashboard({
     return m;
   }, [motives]);
 
-  const today = new Date();
-  const overdue = useMemo(() => pending.filter((o) => o.expected_resolution_date && new Date(o.expected_resolution_date) < today), [pending]);
+  const todayStart = useMemo(() => {
+    const d = new Date(); d.setHours(0, 0, 0, 0); return d;
+  }, []);
+  const overdue = useMemo(() => pending.filter((o) => o.expected_resolution_date && new Date(o.expected_resolution_date + "T00:00:00") < todayStart), [pending, todayStart]);
   const avgDaysOpen = useMemo(() => {
     let sum = 0; let count = 0;
     pending.forEach((o) => { const d = daysOpenSince(o.created_at); if (d !== null) { sum += d; count++; } });
@@ -172,8 +174,8 @@ export default function PendingOccurrencesDashboard({
     const dir = sortAsc ? 1 : -1;
     arr.sort((a, b) => {
       // Always partition overdue first
-      const aOverdue = a.expected_resolution_date && new Date(a.expected_resolution_date) < today ? 1 : 0;
-      const bOverdue = b.expected_resolution_date && new Date(b.expected_resolution_date) < today ? 1 : 0;
+      const aOverdue = a.expected_resolution_date && new Date(a.expected_resolution_date + "T00:00:00") < todayStart ? 1 : 0;
+      const bOverdue = b.expected_resolution_date && new Date(b.expected_resolution_date + "T00:00:00") < todayStart ? 1 : 0;
       if (aOverdue !== bOverdue) return bOverdue - aOverdue; // overdue first
 
       let va: string | number = 0; let vb: string | number = 0;
@@ -362,7 +364,7 @@ export default function PendingOccurrencesDashboard({
                   const store = storeMap[occ.store_id || ""];
                   const dToResolve = daysBetween(occ.created_at, occ.expected_resolution_date);
                   const dOpen = daysOpenSince(occ.created_at);
-                  const isOverdue = occ.expected_resolution_date && new Date(occ.expected_resolution_date) < today;
+                  const isOverdue = occ.expected_resolution_date && new Date(occ.expected_resolution_date + "T00:00:00") < todayStart;
                   const statusInfo = statuses.find((s) => s.value === occ.status);
                   return (
                     <TableRow
