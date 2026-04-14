@@ -338,6 +338,15 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
         ) : (
           <>
             <span className="text-xs font-medium truncate flex-1">{tipo.nome}</span>
+            {(() => {
+              // For tipos with subdivisoes, sum all sub counts; otherwise use tipo count
+              const count = tipo.tem_subdivisao
+                ? (tipo.subdivisoes ?? []).reduce((sum, s) => sum + (pecaCountByTipo[`sub:${s.id}`] || 0), 0)
+                : (pecaCountByTipo[`tipo:${tipo.id}`] || 0);
+              return count > 0 ? (
+                <span className="text-[10px] text-muted-foreground font-normal">{count}</span>
+              ) : null;
+            })()}
             {tipo.tem_subdivisao && (
               <ChevronRight className={cn("w-3 h-3 transition-transform text-muted-foreground", expandedTipos.has(tipo.id) && "rotate-90")} />
             )}
