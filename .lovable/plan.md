@@ -1,44 +1,57 @@
 
 
-# Plan: Drag & Drop + Tap Image Upload on Piece Cards
+# Phase 2 — Module Registration & Routing
 
-## Overview
-Add drag & drop (desktop) and tap-to-upload (mobile) directly on piece cards in the TiposManager pieces grid, reusing the existing `cropSquare` function and upload logic.
+## Changes (6 files + 1 component update)
 
-## Changes — `src/components/LojaALoja/TiposManager.tsx`
+### 1. i18n — 3 files
+Add `"loja_a_loja"` key to `modules` object:
+- **pt-BR.json** line 157: add `"loja_a_loja": "Loja a Loja"` before closing brace
+- **en.json** line 157: add `"loja_a_loja": "Store by Store"`
+- **es.json** line 157: add `"loja_a_loja": "Tienda a Tienda"`
 
-### 1. Extract shared upload helper
-Create an internal `uploadPecaImage` async function that takes a `File` and a `pecaId`, runs `cropSquare(file, 400, 0.7)`, uploads to `piece-images` bucket with path `loja-a-loja-{pecaId}-{timestamp}.jpg`, gets public URL, and updates the piece via a new mutation. This same function will be called from drag & drop, tap/click, and the existing add-piece dialog flow.
+### 2. ModuleGrid.tsx — Add `badge` support
+The `ModuleItem` interface currently has no `badge` field. Add optional `badge?: string` to the interface and render it as a small pill below the label when present. Also add `loja_a_loja` to `MODULE_COLORS`.
 
-### 2. Add `useUpdatePecaImage` mutation
-In `useLojaALoja.ts`, add a mutation that updates `loja_a_loja_pecas.image_url` by piece ID (simple `.update({ image_url }).eq('id', id)`), invalidating the pecas query.
+### 3. AppSidebar.tsx
+- Add `LayoutGrid` to lucide imports (line 24)
+- Add entry after `history` in `CAMPAIGN_MODULE_KEYS` (line 36):
+  ```ts
+  { key: "loja_a_loja", tKey: "modules.loja_a_loja", icon: LayoutGrid, color: "#5B7B5E" }
+  ```
+- Line 400: also exclude `loja_a_loja` for limited users (`mod.key === "loja_a_loja"`)
+- Line 477: hide `loja_a_loja` when `!isAdmin` (same as budgets)
 
-### 3. New state: `uploadingPecaId`
-Track which piece card is currently uploading (`string | null`) to show a spinner overlay.
+### 4. CampaignDetail.tsx
+- Add `LayoutGrid` to lucide imports (line 43)
+- Add to ModuleGrid items after `history` (line 1023):
+  ```ts
+  { key: "loja_a_loja", label: t("modules.loja_a_loja"), icon: LayoutGrid, visible: isAdmin, color: "#5B7B5E", badge: "Beta" }
+  ```
+- Add placeholder section after history section (after line 2450):
+  ```tsx
+  {activeSection === "loja_a_loja" && (
+    <div className="flex items-center gap-2 text-muted-foreground py-12 justify-center">
+      <LayoutGrid className="w-5 h-5" />
+      <span>{t("modules.loja_a_loja")} — Em desenvolvimento</span>
+      <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium">Beta</span>
+    </div>
+  )}
+  ```
 
-### 4. New state: `dragOverPecaId`
-Track which piece card has a file being dragged over it (`string | null`) for visual feedback.
+### 5. usePermissionCategories.ts
+Add two fields before `created_at` (line 35):
+```ts
+can_view_loja_a_loja: boolean;
+can_edit_loja_a_loja: boolean;
+```
 
-### 5. Replace piece card rendering (lines 522-543)
-Each card becomes a drop target + click-to-upload zone:
+### 6. useClientPermission.ts
+Add to PermissionKey union (line 18):
+```ts
+| "can_view_loja_a_loja" | "can_edit_loja_a_loja"
+```
 
-- **Drag events**: `onDragOver`, `onDragEnter`, `onDragLeave`, `onDrop` on the card wrapper. On drop, extract the first image file and call `uploadPecaImage(file, peca.id)`.
-- **Click/tap**: A hidden `<input type="file" accept="image/*">` per card, triggered on card click. After selection, call `uploadPecaImage(file, peca.id)`.
-- **Drag-over visual**: When `dragOverPecaId === peca.id`, show dashed border with brand color (`border-[#8C6F4E]`), semi-transparent overlay with "Solte a imagem aqui" text.
-- **Uploading visual**: When `uploadingPecaId === peca.id`, show spinner overlay.
-- **Empty card**: Dashed border + Image icon + "Arraste ou clique" text.
-- **Existing image**: Show image normally; drag & drop or click replaces it.
-- **File validation**: Only accept `image/png`, `image/jpeg`, `image/webp`.
-
-### 6. Keep existing flows intact
-- The "+ Peça" button and add-piece dialog remain unchanged.
-- The delete button on cards remains unchanged.
-- The `cropSquare` function stays as-is (already isolated at module level).
-
-## Files Changed
-
-| File | Change |
-|------|--------|
-| `src/hooks/useLojaALoja.ts` | Add `useUpdateLojaPeca` mutation for updating `image_url` |
-| `src/components/LojaALoja/TiposManager.tsx` | Extract `uploadPecaImage` helper, add drag & drop + tap handlers on piece cards, add visual states |
+### Build verification
+Confirm zero TypeScript errors after all changes.
 
