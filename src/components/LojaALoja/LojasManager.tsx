@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Store, Copy, Search } from "lucide-react";
+import { Store, Copy, Search, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -75,11 +75,77 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
     return map;
   }, [lojas]);
 
-  const isActive = (storeId: string, tipoId: string, subId: string | null) =>
-    assignmentMap.get(`${storeId}-${tipoId}-${subId ?? ""}`) ?? false;
+  // For INTERNO tipos (tem_subdivisao), default is TRUE when no row exists
+  const isActive = (storeId: string, tipoId: string, subId: string | null, isInterno: boolean) => {
+    const key = `${storeId}-${tipoId}-${subId ?? ""}`;
+    if (assignmentMap.has(key)) return assignmentMap.get(key)!;
+    return isInterno; // default true for internos, false for vitrines
+  };
 
   const hasAnySub = (storeId: string, tipo: LojaALojaTipo) =>
-    (tipo.subdivisoes ?? []).some((s) => isActive(storeId, tipo.id, s.id));
+    (tipo.subdivisoes ?? []).some((s) => isActive(storeId, tipo.id, s.id, tipo.tem_subdivisao));
+
+  // Bulk deselect all stores for a given INTERNO tipo
+  const [bulkDeselecting, setBulkDeselecting] = useState(false);
+  const handleBulkDeselectInterno = async (tipo: LojaALojaTipo) => {
+    if (!isAdmin || bulkDeselecting) return;
+    setBulkDeselecting(true);
+    try {
+      // Build rows for ALL stores × all subdivisoes (or tipo itself) as ativo=false
+      const rows: { campaign_id: string; store_id: string; tipo_id: string; subdivisao_id: string | null; ativo: boolean }[] = [];
+      for (const store of stores) {
+        if (tipo.subdivisoes && tipo.subdivisoes.length > 0) {
+          for (const sub of tipo.subdivisoes) {
+            rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: sub.id, ativo: false });
+          }
+        } else {
+          rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: null, ativo: false });
+        }
+      }
+      if (rows.length > 0) {
+        const { error } = await supabase
+          .from("loja_a_loja_lojas")
+          .upsert(rows, { onConflict: "campaign_id,store_id,tipo_id,subdivisao_id", ignoreDuplicates: false });
+        if (error) throw error;
+      }
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
+      toast.success(`Todas as lojas desmarcadas de "${tipo.nome}"`);
+    } catch (err: any) {
+      toast.error("Erro: " + err.message);
+    } finally {
+      setBulkDeselecting(false);
+    }
+  };
+
+  // Bulk select all stores for a given INTERNO tipo (re-select all)
+  const handleBulkSelectInterno = async (tipo: LojaALojaTipo) => {
+    if (!isAdmin || bulkDeselecting) return;
+    setBulkDeselecting(true);
+    try {
+      const rows: { campaign_id: string; store_id: string; tipo_id: string; subdivisao_id: string | null; ativo: boolean }[] = [];
+      for (const store of stores) {
+        if (tipo.subdivisoes && tipo.subdivisoes.length > 0) {
+          for (const sub of tipo.subdivisoes) {
+            rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: sub.id, ativo: true });
+          }
+        } else {
+          rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: null, ativo: true });
+        }
+      }
+      if (rows.length > 0) {
+        const { error } = await supabase
+          .from("loja_a_loja_lojas")
+          .upsert(rows, { onConflict: "campaign_id,store_id,tipo_id,subdivisao_id", ignoreDuplicates: false });
+        if (error) throw error;
+      }
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
+      toast.success(`Todas as lojas marcadas em "${tipo.nome}"`);
+    } catch (err: any) {
+      toast.error("Erro: " + err.message);
+    } finally {
+      setBulkDeselecting(false);
+    }
+  };
 
   const handleToggle = (storeId: string, tipoId: string, subId: string | null, newAtivo: boolean) => {
     if (!isAdmin) return;
