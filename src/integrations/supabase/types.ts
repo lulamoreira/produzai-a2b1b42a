@@ -189,6 +189,185 @@ export type Database = {
           },
         ]
       }
+      budget_extra_costs: {
+        Row: {
+          created_at: string | null
+          freight_value: number | null
+          id: string
+          installation_value: number | null
+          supplier_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          freight_value?: number | null
+          id?: string
+          installation_value?: number | null
+          supplier_id: string
+        }
+        Update: {
+          created_at?: string | null
+          freight_value?: number | null
+          id?: string
+          installation_value?: number | null
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_extra_costs_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: true
+            referencedRelation: "budget_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_prices: {
+        Row: {
+          campaign_id: string
+          created_at: string | null
+          id: string
+          kit_id: string | null
+          piece_id: string | null
+          supplier_id: string
+          unit_price: number | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string | null
+          id?: string
+          kit_id?: string | null
+          piece_id?: string | null
+          supplier_id: string
+          unit_price?: number | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string | null
+          id?: string
+          kit_id?: string | null
+          piece_id?: string | null
+          supplier_id?: string
+          unit_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_prices_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_prices_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_prices_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_pieces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_prices_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "budget_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_settings: {
+        Row: {
+          budget_amount: number | null
+          campaign_id: string
+          created_at: string | null
+          deadline: string | null
+          id: string
+          notify_user_ids: string[] | null
+        }
+        Insert: {
+          budget_amount?: number | null
+          campaign_id: string
+          created_at?: string | null
+          deadline?: string | null
+          id?: string
+          notify_user_ids?: string[] | null
+        }
+        Update: {
+          budget_amount?: number | null
+          campaign_id?: string
+          created_at?: string | null
+          deadline?: string | null
+          id?: string
+          notify_user_ids?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_settings_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: true
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      budget_suppliers: {
+        Row: {
+          access_token: string
+          campaign_id: string
+          company_name: string
+          contact_name: string
+          created_at: string | null
+          email: string
+          id: string
+          invited_at: string | null
+          locked: boolean | null
+          phone: string
+          status: string
+          submitted_at: string | null
+        }
+        Insert: {
+          access_token?: string
+          campaign_id: string
+          company_name: string
+          contact_name: string
+          created_at?: string | null
+          email: string
+          id?: string
+          invited_at?: string | null
+          locked?: boolean | null
+          phone: string
+          status?: string
+          submitted_at?: string | null
+        }
+        Update: {
+          access_token?: string
+          campaign_id?: string
+          company_name?: string
+          contact_name?: string
+          created_at?: string | null
+          email?: string
+          id?: string
+          invited_at?: string | null
+          locked?: boolean | null
+          phone?: string
+          status?: string
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_suppliers_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_activity_log: {
         Row: {
           action: string
