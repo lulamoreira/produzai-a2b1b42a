@@ -28,6 +28,9 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
   const toggle = useToggleLojaAssignment();
   const qc = useQueryClient();
 
+  // Search state
+  const [search, setSearch] = useState("");
+
   // Copy dialog state
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [campaigns, setCampaigns] = useState<{ id: string; name: string; created_at: string }[]>([]);
@@ -49,6 +52,18 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
     }),
     [stores],
   );
+
+  // Filter stores by search
+  const filteredStores = useMemo(() => {
+    if (!search.trim()) return sortedStores;
+    const q = search.trim().toLowerCase();
+    return sortedStores.filter((s) =>
+      (s.name || "").toLowerCase().includes(q) ||
+      (s.store_code || "").toLowerCase().includes(q) ||
+      (s.city || "").toLowerCase().includes(q) ||
+      (s.state || "").toLowerCase().includes(q)
+    );
+  }, [sortedStores, search]);
 
   // Build lookup: `storeId-tipoId-subdivisaoId` → ativo
   const assignmentMap = useMemo(() => {
