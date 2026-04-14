@@ -566,6 +566,7 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
                 {pecas.map((peca) => {
                   const isDragOver = dragOverPecaId === peca.id;
                   const isUploading = uploadingPecaId === peca.id;
+                  const isEditingName = editingPecaId === peca.id;
                   return (
                     <div
                       key={peca.id}
@@ -620,7 +621,7 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
 
                         {/* Image or empty placeholder */}
                         {peca.image_url ? (
-                          <img src={peca.image_url} alt={peca.nome} className="w-full h-full object-cover" />
+                          <img src={peca.image_url} alt={peca.nome} className="w-full h-full object-contain bg-white" />
                         ) : (
                           <div className="flex flex-col items-center gap-1 text-muted-foreground/40">
                             <Image className="w-6 h-6" />
@@ -641,17 +642,72 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
                             <Loader2 className="w-6 h-6 animate-spin text-primary" />
                           </div>
                         )}
+
+                        {/* Action menu on hover (top-right) */}
+                        {isAdmin && !isUploading && !isDragOver && (
+                          <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button"
+                              className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center transition-colors"
+                              title="Editar nome"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingPecaId(peca.id);
+                                setEditingPecaNome(peca.nome);
+                              }}
+                            >
+                              <Pencil className="w-3 h-3 text-white" />
+                            </button>
+                            <button
+                              type="button"
+                              className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center transition-colors"
+                              title="Trocar foto"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                fileInputRefs.current[peca.id]?.click();
+                              }}
+                            >
+                              <ImagePlus className="w-3 h-3 text-white" />
+                            </button>
+                            <button
+                              type="button"
+                              className="h-6 w-6 rounded bg-foreground/70 hover:bg-destructive flex items-center justify-center transition-colors"
+                              title="Apagar"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeletingPeca({ id: peca.id, nome: peca.nome });
+                              }}
+                            >
+                              <Trash2 className="w-3 h-3 text-white" />
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-xs text-foreground mt-1 truncate">{peca.nome}</p>
-                      {isAdmin && (
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => { e.stopPropagation(); deletePeca.mutate({ id: peca.id }); }}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
+
+                      {/* Name: inline editable or static */}
+                      {isEditingName ? (
+                        <Input
+                          autoFocus
+                          className="h-6 text-xs mt-1 px-1"
+                          value={editingPecaNome}
+                          onChange={(e) => setEditingPecaNome(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.currentTarget.blur();
+                            } else if (e.key === "Escape") {
+                              setEditingPecaId(null);
+                            }
+                          }}
+                          onBlur={() => {
+                            const trimmed = editingPecaNome.trim();
+                            if (trimmed && trimmed !== peca.nome) {
+                              updatePecaNome.mutate({ id: peca.id, nome: trimmed });
+                            }
+                            setEditingPecaId(null);
+                          }}
+                        />
+                      ) : (
+                        <p className="text-xs text-foreground mt-1 truncate">{peca.nome}</p>
                       )}
                     </div>
                   );
