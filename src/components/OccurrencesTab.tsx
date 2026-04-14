@@ -48,6 +48,7 @@ import { format } from "date-fns";
 
 import PhotoLightbox from "./PhotoLightbox";
 import ExportOccurrencesButton from "./ExportOccurrencesButton";
+import PendingOccurrencesDashboard from "./PendingOccurrencesDashboard";
 import type { OccurrenceReportData } from "@/lib/exportOccurrencesReport";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
@@ -230,6 +231,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [pendingDashOpen, setPendingDashOpen] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newMotive, setNewMotive] = useState("");
   const [newStatusLabel, setNewStatusLabel] = useState("");
@@ -561,6 +563,11 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Pending dashboard button */}
+        <Button size="sm" variant="outline" className="h-8 text-xs gap-1 shrink-0" onClick={() => setPendingDashOpen(true)}>
+          <AlertTriangle className="w-3.5 h-3.5" /> Pendências
+        </Button>
 
         {/* Export button */}
         {canEdit && (
@@ -1151,6 +1158,17 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           </Tabs>
         </DialogContent>
       </Dialog>
+      <PendingOccurrencesDashboard
+        open={pendingDashOpen}
+        onOpenChange={setPendingDashOpen}
+        campaignId={campaignId}
+        campaignName={campaignInfo?.name}
+        clientName={clientName}
+        agencyName={agencyName}
+        stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null }))}
+        motives={motives}
+        statuses={statuses}
+      />
     </div>
   );
 };

@@ -72,7 +72,8 @@ import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import BudgetExportColorDialog, { type ColorPalette } from "@/components/BudgetExportColorDialog";
 import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
-
+import PendingOccurrencesDashboard from "@/components/PendingOccurrencesDashboard";
+import { useOccurrenceMotives, useOccurrenceStatuses } from "@/hooks/useOccurrences";
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
   const navigate = useNavigate();
@@ -164,6 +165,11 @@ const CampaignDetail = () => {
 
   // ─── Location management ──────────────────────────────
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+
+  // ─── Pending occurrences dashboard ─────────────────────
+  const [pendingDashOpen, setPendingDashOpen] = useState(false);
+  const { data: occMotives = [] } = useOccurrenceMotives();
+  const { data: occStatuses = [] } = useOccurrenceStatuses();
 
   // ─── Kit dialogs ───────────────────────────────────────
   const [createKitDialogOpen, setCreateKitDialogOpen] = useState(false);
@@ -1007,6 +1013,13 @@ const CampaignDetail = () => {
               campaignId={campaignId!}
               onNavigate={(section) => setActiveSection(section)}
             />
+
+            {/* Pending occurrences dashboard button */}
+            {canViewOccurrences && (
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => setPendingDashOpen(true)}>
+                <AlertTriangle className="w-3.5 h-3.5" /> Pendências
+              </Button>
+            )}
 
             <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
 
@@ -2624,6 +2637,17 @@ const CampaignDetail = () => {
           }}
         />
       )}
+      <PendingOccurrencesDashboard
+        open={pendingDashOpen}
+        onOpenChange={setPendingDashOpen}
+        campaignId={campaignId!}
+        campaignName={campaign?.name}
+        clientName={client?.name}
+        agencyName={agency?.name}
+        stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null }))}
+        motives={occMotives}
+        statuses={occStatuses}
+      />
     </AppLayout>
   );
 };

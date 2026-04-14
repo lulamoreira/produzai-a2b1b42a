@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import AppSidebar from "@/components/AppSidebar";
 import NotificationBell from "@/components/NotificationBell";
 import CampaignChatPanel from "@/components/CampaignChatPanel";
-import { ChevronLeft, ChevronRight, MessageSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageSquare, History } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useCampaignUnreadCount } from "@/hooks/useCampaignChat";
@@ -90,8 +90,18 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
         </button>
       )}
 
-      {/* Fixed notification bell + chat for mobile */}
+      {/* Fixed notification bell + chat + history for mobile */}
       <div className="lg:hidden fixed top-3 right-3 z-40 flex items-center gap-1.5">
+        {campaignId && (
+          <Button
+            size="icon"
+            variant="outline"
+            className="relative h-8 w-8 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]"
+            onClick={() => navigate(`${location.pathname.split("?")[0]}?section=history`)}
+          >
+            <History className="w-3.5 h-3.5" />
+          </Button>
+        )}
         {campaignId && (
           <Button
             size="icon"
@@ -149,6 +159,18 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
               ) : null}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
+              {campaignId && (
+                <div className="hidden lg:block">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="relative h-8 w-8 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]"
+                    onClick={() => navigate(`${location.pathname.split("?")[0]}?section=history`)}
+                  >
+                    <History className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              )}
               {campaignId && (
                 <div className="hidden lg:block">
                   <Button
