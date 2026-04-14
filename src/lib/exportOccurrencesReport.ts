@@ -470,7 +470,7 @@ export async function exportOccurrencesExcel(data: OccurrenceReportData) {
   openOccs.forEach((occ, idx) => {
     const store = occ.store_id ? sm[occ.store_id] : null;
     const daysOpen = occ.created_at ? daysBetween(occ.created_at, today.toISOString()) : null;
-    const isOverdue = occ.expected_resolution_date && new Date(occ.expected_resolution_date) < today;
+    const isOverdue = isOccurrenceOverdue(occ.expected_resolution_date, occ.status);
 
     const row = wsO.getRow(idx + 2);
     const vals = [
