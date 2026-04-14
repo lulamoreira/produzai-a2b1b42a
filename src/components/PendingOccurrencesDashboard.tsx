@@ -61,7 +61,7 @@ export default function PendingOccurrencesDashboard({ open, onOpenChange, campai
     enabled: !!campaignId && open,
   });
 
-  const pending = useMemo(() => allOccurrences.filter((o) => o.status === "em_andamento"), [allOccurrences]);
+  const pending = useMemo(() => allOccurrences.filter((o) => o.status === "andamento"), [allOccurrences]);
 
   const storeMap = useMemo(() => {
     const m: Record<string, (typeof stores)[0]> = {};
