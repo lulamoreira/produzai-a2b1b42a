@@ -105,8 +105,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterLocked, setFilterLocked] = useState("");
   const [filterReschedule, setFilterReschedule] = useState("");
   const [filterModel, setFilterModel] = useState("");
-  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "scheduled" | "noDate" | "approved" | "withTeam" | "withReschedule" | "withOccurrence" | "incompleteTeam">("");
-  const [filterTeamData, setFilterTeamData] = useState("");
+  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "scheduled" | "noDate" | "approved" | "withTeam" | "withReschedule" | "withOccurrence">("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyStoreId, setHistoryStoreId] = useState("");
   const [historyStoreName, setHistoryStoreName] = useState("");
@@ -289,21 +288,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     } else if (filterReschedule === "no") {
       result = result.filter((s) => !scheduleMap[s.id]?.reschedule_enabled);
     }
-    if (filterTeamData === "incomplete") {
-      result = result.filter((s) => {
-        const sch = scheduleMap[s.id];
-        if (!sch?.team_id) return false;
-        return isTeamIncomplete(allMembersMap[sch.team_id] || []);
-      });
-    } else if (filterTeamData === "complete") {
-      result = result.filter((s) => {
-        const sch = scheduleMap[s.id];
-        if (!sch?.team_id) return false;
-        return !isTeamIncomplete(allMembersMap[sch.team_id] || []);
-      });
-    }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, filterTeamData, scheduleMap, allMembersMap]);
+  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap]);
 
   // Apply summary filter on top of filteredStores
   const displayedStores = useMemo(() => {
@@ -319,14 +305,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         case "withTeam": return !!sch?.team_id;
         case "withReschedule": return !!sch?.reschedule_enabled;
         case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
-        case "incompleteTeam": {
-          if (!sch?.team_id) return false;
-          return isTeamIncomplete(allMembersMap[sch.team_id] || []);
-        }
         default: return true;
       }
     });
-  }, [filteredStores, summaryFilter, scheduleMap, storeOccurrenceStatus, allMembersMap]);
+  }, [filteredStores, summaryFilter, scheduleMap, storeOccurrenceStatus]);
 
   const fieldLabels: Record<string, string> = {
     scheduled_date: t("common.date"),
@@ -657,7 +639,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   };
 
   // Count active secondary filters
-  const secondaryFilterCount = [filterCity, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, filterModel, filterTeamData].filter(Boolean).length;
+  const secondaryFilterCount = [filterCity, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
 
   // Approval badge helper
   const approvalBadgeClass = (status: ApprovalStatusValue) => {
@@ -746,11 +728,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 <option value="no_team">{t("filters.noTeam")}</option>
                 {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
-              <select value={filterTeamData} onChange={(e) => { setFilterTeamData(e.target.value); setSummaryFilter(""); }} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
-                <option value="">Dados da Equipe</option>
-                <option value="incomplete">Equipe com dados incompletos</option>
-                <option value="complete">Equipe com dados completos</option>
-              </select>
               <select value={filterPreference} onChange={(e) => setFilterPreference(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
                 <option value="">{t("filters.preference")}</option>
                 {PREFERENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -778,7 +755,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               )}
               {secondaryFilterCount > 0 && (
                 <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => {
-                  setFilterCity(""); setFilterPeriod(""); setFilterTeam(""); setFilterTeamData("");
+                  setFilterCity(""); setFilterPeriod(""); setFilterTeam("");
                   setFilterPreference(""); setFilterResponsibility(""); setFilterLocked(""); setFilterReschedule(""); setFilterModel("");
                 }}>
                   Limpar filtros avançados
@@ -864,21 +841,15 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const occ = storeOccurrenceStatus[s.id];
           return occ?.hasOccurrence && !occ.allResolved;
         }).length;
-        const incompleteTeamCount = filteredStores.filter(s => {
-          const sch = scheduleMap[s.id];
-          if (!sch?.team_id) return false;
-          return isTeamIncomplete(allMembersMap[sch.team_id] || []);
-        }).length;
 
         const items = [
-          { key: "total" as const, value: total, label: t("common.total"), isTotal: true, dangerWhenPositive: false, warningWhenPositive: false },
-          { key: "scheduled" as const, value: scheduled, label: t("scheduling.scheduled"), isTotal: false, dangerWhenPositive: false, warningWhenPositive: false },
-          { key: "noDate" as const, value: noDate, label: t("scheduling.noDate"), isTotal: false, dangerWhenPositive: false, warningWhenPositive: false },
-          { key: "approved" as const, value: approved, label: t("filters.approved"), isTotal: false, dangerWhenPositive: false, warningWhenPositive: false },
-          { key: "withTeam" as const, value: withTeam, label: t("scheduling.withTeam"), isTotal: false, dangerWhenPositive: false, warningWhenPositive: false },
-          { key: "withReschedule" as const, value: withReschedule, label: t("dashboard.withReschedule"), isTotal: false, dangerWhenPositive: false, warningWhenPositive: false },
-          { key: "withOccurrence" as const, value: withOccurrence, label: t("scheduling.withOccurrence"), isTotal: false, dangerWhenPositive: true, warningWhenPositive: false },
-          { key: "incompleteTeam" as const, value: incompleteTeamCount, label: "Equipe incompleta", isTotal: false, dangerWhenPositive: false, warningWhenPositive: true },
+          { key: "total" as const, value: total, label: t("common.total"), isTotal: true, dangerWhenPositive: false },
+          { key: "scheduled" as const, value: scheduled, label: t("scheduling.scheduled"), isTotal: false, dangerWhenPositive: false },
+          { key: "noDate" as const, value: noDate, label: t("scheduling.noDate"), isTotal: false, dangerWhenPositive: false },
+          { key: "approved" as const, value: approved, label: t("filters.approved"), isTotal: false, dangerWhenPositive: false },
+          { key: "withTeam" as const, value: withTeam, label: t("scheduling.withTeam"), isTotal: false, dangerWhenPositive: false },
+          { key: "withReschedule" as const, value: withReschedule, label: t("dashboard.withReschedule"), isTotal: false, dangerWhenPositive: false },
+          { key: "withOccurrence" as const, value: withOccurrence, label: t("scheduling.withOccurrence"), isTotal: false, dangerWhenPositive: true },
         ];
         return (
           <>
@@ -897,7 +868,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 <button
                   key={m.key}
                   type="button"
-                  onClick={() => { setSummaryFilter(prev => prev === m.key ? "" : m.key); setFilterTeamData(""); }}
+                  onClick={() => setSummaryFilter(prev => prev === m.key ? "" : m.key)}
                   className="inline-flex items-baseline gap-1 transition-colors rounded-md hover:bg-[var(--bg-muted)]"
                   style={{
                     padding: "2px 14px",
@@ -910,22 +881,19 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     className="font-bold leading-none"
                     style={{
                       fontSize: m.isTotal ? 24 : 20,
-                      color: m.dangerWhenPositive && m.value > 0 ? "var(--s-danger)" : m.warningWhenPositive && m.value > 0 ? "#d97706" : m.isTotal ? "var(--text-primary)" : "var(--text-secondary)",
+                      color: m.dangerWhenPositive && m.value > 0 ? "var(--s-danger)" : m.isTotal ? "var(--text-primary)" : "var(--text-secondary)",
                     }}
                   >
                     {m.value}
                   </span>
-                  <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>
-                    {m.warningWhenPositive && m.value > 0 && <AlertTriangle className="w-3 h-3 inline mr-0.5 -mt-0.5" style={{ color: "#d97706" }} />}
-                    {m.label}
-                  </span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{m.label}</span>
                 </button>
               ))}
             </div>
             {summaryFilter && summaryFilter !== "total" && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>{t("filters.filteringBy")} <strong className="text-foreground">{
-                  { scheduled: t("scheduling.scheduled"), noDate: t("scheduling.noDate"), approved: t("filters.approved"), withTeam: t("scheduling.withTeam"), withReschedule: t("dashboard.withReschedule"), withOccurrence: t("scheduling.withOccurrence"), incompleteTeam: "Equipe incompleta" }[summaryFilter]
+                  { scheduled: t("scheduling.scheduled"), noDate: t("scheduling.noDate"), approved: t("filters.approved"), withTeam: t("scheduling.withTeam"), withReschedule: t("dashboard.withReschedule"), withOccurrence: t("scheduling.withOccurrence") }[summaryFilter]
                 }</strong> ({displayedStores.length})</span>
                 <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
               </div>
@@ -1083,7 +1051,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       <span className={cn("badge-base", approvalBadgeClass(effectiveStoreStatus))}>{approvalBadgeText(effectiveStoreStatus)}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">{t("scheduling.teamLabel")}{teamIncomplete && <AlertTriangle className="w-3 h-3 inline ml-0.5 -mt-0.5 text-amber-500" />}</span>
+                      <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">{t("scheduling.teamLabel")}</span>
                       <span className={cn("badge-base", approvalBadgeClass(effectiveTeamStatus))}>{approvalBadgeText(effectiveTeamStatus)}</span>
                     </div>
                   </div>
