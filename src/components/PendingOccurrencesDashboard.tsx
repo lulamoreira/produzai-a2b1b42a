@@ -297,9 +297,9 @@ export default function PendingOccurrencesDashboard({
           </div>
 
           {/* Charts */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <Card className="p-3">
-              <h4 className="text-xs font-semibold mb-2 text-muted-foreground">Por Status</h4>
+              <h4 className="text-xs font-semibold mb-2 text-muted-foreground">Por Estado</h4>
               <ResponsiveContainer width="100%" height={160}>
                 <PieChart>
                   <Pie data={statusChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={55} label={({ name, value }) => `${name}: ${value}`} labelLine={false} fontSize={9}>
@@ -307,20 +307,6 @@ export default function PendingOccurrencesDashboard({
                   </Pie>
                   <Tooltip />
                 </PieChart>
-              </ResponsiveContainer>
-            </Card>
-
-            <Card className="p-3">
-              <h4 className="text-xs font-semibold mb-2 text-muted-foreground">Por Prioridade</h4>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={priorityChartData} layout="vertical">
-                  <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="name" width={55} tick={{ fontSize: 10 }} />
-                  <Tooltip />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                    {priorityChartData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-                  </Bar>
-                </BarChart>
               </ResponsiveContainer>
             </Card>
 
