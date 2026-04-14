@@ -279,7 +279,7 @@ export async function exportOccurrencesExcel(data: OccurrenceReportData) {
   // KPI boxes row 3-4
   const kpiDefs: { label: string; value: string | number; color: string }[] = [
     { label: "Total", value: kpis.total, color: BRAND },
-    { label: "Em andamento", value: kpis.byStatus["em_andamento"] || 0, color: BLUE },
+    { label: "Em andamento", value: kpis.byStatus["andamento"] || 0, color: BLUE },
     { label: "Pendentes", value: kpis.byStatus["pendente"] || 0, color: YELLOW },
     { label: "Resolvidas", value: kpis.byStatus["resolvida"] || 0, color: GREEN },
     { label: "Não procede", value: kpis.byStatus["nao_procede"] || 0, color: GRAY },
@@ -339,7 +339,7 @@ export async function exportOccurrencesExcel(data: OccurrenceReportData) {
     const row = wsR.getRow(stateHeaderRow + 1 + i);
     row.getCell(1).value = s.uf;
     row.getCell(2).value = s.total;
-    row.getCell(3).value = s.byStatus["em_andamento"] || 0;
+    row.getCell(3).value = s.byStatus["andamento"] || 0;
     row.getCell(4).value = s.byStatus["resolvida"] || 0;
     row.getCell(5).value = s.byStatus["critica"] || 0;
     row.getCell(6).value = s.avgDays ?? "N/D";
@@ -606,7 +606,7 @@ export function exportOccurrencesPDF(data: OccurrenceReportData) {
   // KPI boxes 3x3
   const kpiItems = [
     { label: "Total", value: String(kpis.total), color: BRAND_RGB },
-    { label: "Em andamento", value: String(kpis.byStatus["em_andamento"] || 0), color: [59, 130, 246] as [number, number, number] },
+    { label: "Em andamento", value: String(kpis.byStatus["andamento"] || 0), color: [59, 130, 246] as [number, number, number] },
     { label: "Pendentes", value: String(kpis.byStatus["pendente"] || 0), color: [234, 179, 8] as [number, number, number] },
     { label: "Resolvidas", value: String(kpis.byStatus["resolvida"] || 0), color: [34, 197, 94] as [number, number, number] },
     { label: "Não procede", value: String(kpis.byStatus["nao_procede"] || 0), color: [107, 114, 128] as [number, number, number] },
