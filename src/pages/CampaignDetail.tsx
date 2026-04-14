@@ -72,7 +72,8 @@ import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import BudgetExportColorDialog, { type ColorPalette } from "@/components/BudgetExportColorDialog";
 import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
-
+import PendingOccurrencesDashboard from "@/components/PendingOccurrencesDashboard";
+import { useOccurrenceMotives, useOccurrenceStatuses } from "@/hooks/useOccurrences";
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
   const navigate = useNavigate();
