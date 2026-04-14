@@ -892,7 +892,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 <button
                   key={m.key}
                   type="button"
-                  onClick={() => setSummaryFilter(prev => prev === m.key ? "" : m.key)}
+                  onClick={() => { setSummaryFilter(prev => prev === m.key ? "" : m.key); setFilterTeamData(""); }}
                   className="inline-flex items-baseline gap-1 transition-colors rounded-md hover:bg-[var(--bg-muted)]"
                   style={{
                     padding: "2px 14px",
@@ -905,12 +905,15 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     className="font-bold leading-none"
                     style={{
                       fontSize: m.isTotal ? 24 : 20,
-                      color: m.dangerWhenPositive && m.value > 0 ? "var(--s-danger)" : m.isTotal ? "var(--text-primary)" : "var(--text-secondary)",
+                      color: m.dangerWhenPositive && m.value > 0 ? "var(--s-danger)" : m.warningWhenPositive && m.value > 0 ? "#d97706" : m.isTotal ? "var(--text-primary)" : "var(--text-secondary)",
                     }}
                   >
                     {m.value}
                   </span>
-                  <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{m.label}</span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>
+                    {m.warningWhenPositive && m.value > 0 && <AlertTriangle className="w-3 h-3 inline mr-0.5 -mt-0.5" style={{ color: "#d97706" }} />}
+                    {m.label}
+                  </span>
                 </button>
               ))}
             </div>
