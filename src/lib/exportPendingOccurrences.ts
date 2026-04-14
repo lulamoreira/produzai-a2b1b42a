@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { isOccurrenceOverdue, formatDateBR } from "@/lib/occurrenceHelpers";
 
 /* ── Brand / Color constants ── */
 const BRAND = "8C6F4E";
@@ -97,9 +98,8 @@ function statusColorRGB(value: string | null, statuses: PendingOccurrenceData["s
 }
 function sanitize(name: string) { return name.replace(/[\\/*?[\]:]/g, "").slice(0, 31); }
 
-function isOverdue(occ: PendingOccurrenceData["occurrences"][0], todayStart: Date): boolean {
-  if (!occ.expected_resolution_date) return false;
-  return new Date(occ.expected_resolution_date + "T00:00:00") < todayStart;
+function isOverdue(occ: PendingOccurrenceData["occurrences"][0]): boolean {
+  return isOccurrenceOverdue(occ.expected_resolution_date, occ.status);
 }
 
 function sortOverdueFirst(occs: PendingOccurrenceData["occurrences"], todayStart: Date) {
