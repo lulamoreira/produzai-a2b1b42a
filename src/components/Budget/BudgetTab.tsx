@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,10 +28,11 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 import {
   useBudgetSettings, useSaveBudgetSettings,
-  useBudgetSuppliers, useAddSupplier, useDeleteSupplier,
+  useBudgetSuppliers, useAddSupplier, useDeleteSupplier, useUpdateSupplier,
   useBudgetPrices, useBudgetExtraCosts,
 } from "@/hooks/useBudget";
 
@@ -69,6 +70,7 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
   const { data: suppliers = [] } = useBudgetSuppliers(campaignId);
   const addSupplier = useAddSupplier();
   const deleteSupplier = useDeleteSupplier();
+  const updateSupplier = useUpdateSupplier();
   const { data: prices = [] } = useBudgetPrices(campaignId);
   const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
 
@@ -79,6 +81,7 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detailSupplier, setDetailSupplier] = useState<string | null>(null);
   const [newSupplier, setNewSupplier] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
+  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
 
   // ─── Piece total quantities (sum across all stores) ────
   const pieceTotals = useMemo(() => {
@@ -97,14 +100,11 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
     suppliers.forEach((sup) => {
       if (sup.status !== "enviado") return;
       let total = 0;
-      // Piece prices
       prices.filter((pr) => pr.supplier_id === sup.id && pr.piece_id).forEach((pr) => {
         const qty = pieceTotals[pr.piece_id!] || 0;
         total += (Number(pr.unit_price) || 0) * qty;
       });
-      // Kit prices
       prices.filter((pr) => pr.supplier_id === sup.id && pr.kit_id).forEach((pr) => {
-        // Kit qty = min of component piece qtys / kit piece qty
         const kpList = kitPieces.filter((kp) => kp.kit_id === pr.kit_id);
         if (kpList.length === 0) return;
         const kitQty = Math.min(...kpList.map((kp) => {
@@ -113,7 +113,6 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
         }));
         total += (Number(pr.unit_price) || 0) * kitQty;
       });
-      // Extra costs
       const ec = extraCosts.find((e) => e.supplier_id === sup.id);
       total += Number(ec?.installation_value) || 0;
       total += Number(ec?.freight_value) || 0;
@@ -175,6 +174,39 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
     );
   };
 
+  // ─── Send email invite ─────────────────────────────────
+  const handleSendEmail = async (sup: typeof suppliers[0]) => {
+    setSendingEmailId(sup.id);
+    try {
+      const portalUrl = `${window.location.origin}/orcamento/${sup.access_token}`;
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "supplier-invite",
+          recipientEmail: sup.email,
+          idempotencyKey: `supplier-invite-${sup.id}-${Date.now()}`,
+          templateData: {
+            contactName: sup.contact_name,
+            companyName: sup.company_name,
+            agencyName,
+            campaignName,
+            portalUrl,
+            deadline: settings?.deadline || null,
+          },
+        },
+      });
+      if (error) throw error;
+      toast.success(`Email enviado para ${sup.email}`);
+      if (!sup.invited_at) {
+        updateSupplier.mutate({ id: sup.id, campaign_id: campaignId, updates: { invited_at: new Date().toISOString() } });
+      }
+    } catch (err: any) {
+      toast.error("Erro ao enviar email.");
+      console.error("Email send error:", err);
+    } finally {
+      setSendingEmailId(null);
+    }
+  };
+
   // ─── WhatsApp message builder ──────────────────────────
   const buildWhatsAppUrl = (sup: typeof suppliers[0]) => {
     const portalUrl = `${window.location.origin}/orcamento/${sup.access_token}`;
@@ -182,6 +214,12 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
     const msg = `Olá ${sup.contact_name}! A ${agencyName} convidou ${sup.company_name} para participar do processo de cotação da campanha ${campaignName}.\n\nPara acessar a planilha e preencher seus preços, acesse o link abaixo:\n${portalUrl}\n\nPrazo para envio: ${deadlineStr}\n\nInstruções:\n1) Acesse o link acima\n2) Preencha o preço unitário de cada peça\n3) Informe os valores de instalação e frete\n4) Clique em ENVIAR quando concluir\n\nDúvidas? Entre em contato conosco.`;
     const phone = sup.phone.replace(/\D/g, "");
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  };
+
+  const handleWhatsAppClick = (sup: typeof suppliers[0]) => {
+    if (!sup.invited_at) {
+      updateSupplier.mutate({ id: sup.id, campaign_id: campaignId, updates: { invited_at: new Date().toISOString() } });
+    }
   };
 
   // ─── Detail supplier data ──────────────────────────────
@@ -306,6 +344,7 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {suppliers.map((sup) => {
               const st = STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
+              const isSendingEmail = sendingEmailId === sup.id;
               return (
                 <Card key={sup.id} className="relative">
                   <CardContent className="pt-4 pb-3 space-y-2">
@@ -324,16 +363,34 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                           Enviado em {format(new Date(sup.submitted_at), "dd/MM/yyyy HH:mm")}
                         </p>
                       )}
+                      {sup.invited_at && (
+                        <p className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Convidado em {format(new Date(sup.invited_at), "dd/MM/yyyy")}
+                        </p>
+                      )}
                     </div>
                     {/* Actions */}
                     <div className="flex items-center gap-1 pt-1">
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" asChild>
+                      <Button
+                        size="sm" variant="ghost" className="h-7 w-7 p-0"
+                        onClick={() => handleWhatsAppClick(sup)}
+                        asChild
+                      >
                         <a href={buildWhatsAppUrl(sup)} target="_blank" rel="noopener noreferrer" title="WhatsApp">
                           <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
                         </a>
                       </Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Email" disabled>
-                        <Mail className="w-3.5 h-3.5" />
+                      <Button
+                        size="sm" variant="ghost" className="h-7 w-7 p-0"
+                        title="Email"
+                        disabled={isSendingEmail}
+                        onClick={() => handleSendEmail(sup)}
+                      >
+                        {isSendingEmail
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <Mail className="w-3.5 h-3.5" />
+                        }
                       </Button>
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setDetailSupplier(sup.id)} title="Ver detalhes">
                         <Eye className="w-3.5 h-3.5" />
