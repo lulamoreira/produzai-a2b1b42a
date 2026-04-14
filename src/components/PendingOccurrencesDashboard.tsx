@@ -301,12 +301,12 @@ export default function PendingOccurrencesDashboard({
             <Card className="p-3">
               <h4 className="text-xs font-semibold mb-2 text-muted-foreground">Por Estado</h4>
               <ResponsiveContainer width="100%" height={160}>
-                <PieChart>
-                  <Pie data={statusChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={55} label={({ name, value }) => `${name}: ${value}`} labelLine={false} fontSize={9}>
-                    {statusChartData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                  </Pie>
+                <BarChart data={stateChartData} layout="vertical">
+                  <XAxis type="number" hide />
+                  <YAxis type="category" dataKey="name" width={35} tick={{ fontSize: 10 }} />
                   <Tooltip />
-                </PieChart>
+                  <Bar dataKey="value" fill="#8C6F4E" radius={[0, 4, 4, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </Card>
 
