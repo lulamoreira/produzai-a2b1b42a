@@ -427,6 +427,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
                     </Popover>
                   </td>
                 )}
+              </tr>
             ))}
           </tbody>
         </table>
