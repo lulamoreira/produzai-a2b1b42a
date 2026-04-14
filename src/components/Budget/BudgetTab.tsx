@@ -1,0 +1,509 @@
+import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon,
+} from "lucide-react";
+import { toast } from "sonner";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+
+import {
+  useBudgetSettings, useSaveBudgetSettings,
+  useBudgetSuppliers, useAddSupplier, useDeleteSupplier,
+  useBudgetPrices, useBudgetExtraCosts,
+} from "@/hooks/useBudget";
+
+import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
+
+interface BudgetTabProps {
+  campaignId: string;
+  campaignName: string;
+  agencyName: string;
+  pieces: CampaignPiece[];
+  kits: CampaignKit[];
+  kitPieces: { id: string; kit_id: string; piece_id: string; quantity: number }[];
+  qtyMap: Record<string, number>;
+  stores: { id: string; name: string }[];
+}
+
+// ─── Status helpers ──────────────────────────────────────
+const STATUS_MAP: Record<string, { label: string; color: string }> = {
+  aguardando: { label: "Aguardando", color: "bg-muted text-muted-foreground" },
+  preenchendo: { label: "Preenchendo", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  enviado: { label: "Enviado", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  prazo_encerrado: { label: "Prazo encerrado", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
+};
+
+const fmtCurrency = (v: number | null | undefined) =>
+  v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+// ─── Main Component ──────────────────────────────────────
+export default function BudgetTab({ campaignId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores }: BudgetTabProps) {
+  const { t } = useTranslation();
+
+  // Data hooks
+  const { data: settings } = useBudgetSettings(campaignId);
+  const saveSettings = useSaveBudgetSettings();
+  const { data: suppliers = [] } = useBudgetSuppliers(campaignId);
+  const addSupplier = useAddSupplier();
+  const deleteSupplier = useDeleteSupplier();
+  const { data: prices = [] } = useBudgetPrices(campaignId);
+  const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
+
+  // Local state
+  const [editingBudget, setEditingBudget] = useState(false);
+  const [budgetDraft, setBudgetDraft] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [detailSupplier, setDetailSupplier] = useState<string | null>(null);
+  const [newSupplier, setNewSupplier] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
+
+  // ─── Piece total quantities (sum across all stores) ────
+  const pieceTotals = useMemo(() => {
+    const map: Record<string, number> = {};
+    pieces.forEach((p) => {
+      let total = 0;
+      stores.forEach((s) => { total += qtyMap[`${s.id}-${p.id}`] || 0; });
+      map[p.id] = total;
+    });
+    return map;
+  }, [pieces, stores, qtyMap]);
+
+  // ─── Compute supplier grand totals ─────────────────────
+  const supplierTotals = useMemo(() => {
+    const result: Record<string, number> = {};
+    suppliers.forEach((sup) => {
+      if (sup.status !== "enviado") return;
+      let total = 0;
+      // Piece prices
+      prices.filter((pr) => pr.supplier_id === sup.id && pr.piece_id).forEach((pr) => {
+        const qty = pieceTotals[pr.piece_id!] || 0;
+        total += (Number(pr.unit_price) || 0) * qty;
+      });
+      // Kit prices
+      prices.filter((pr) => pr.supplier_id === sup.id && pr.kit_id).forEach((pr) => {
+        // Kit qty = min of component piece qtys / kit piece qty
+        const kpList = kitPieces.filter((kp) => kp.kit_id === pr.kit_id);
+        if (kpList.length === 0) return;
+        const kitQty = Math.min(...kpList.map((kp) => {
+          const pieceTotal = pieceTotals[kp.piece_id] || 0;
+          return Math.floor(pieceTotal / (kp.quantity || 1));
+        }));
+        total += (Number(pr.unit_price) || 0) * kitQty;
+      });
+      // Extra costs
+      const ec = extraCosts.find((e) => e.supplier_id === sup.id);
+      total += Number(ec?.installation_value) || 0;
+      total += Number(ec?.freight_value) || 0;
+      result[sup.id] = total;
+    });
+    return result;
+  }, [suppliers, prices, extraCosts, pieceTotals, kitPieces]);
+
+  const bestSupplier = useMemo(() => {
+    let best: { id: string; total: number; name: string } | null = null;
+    Object.entries(supplierTotals).forEach(([id, total]) => {
+      if (!best || total < best.total) {
+        const sup = suppliers.find((s) => s.id === id);
+        best = { id, total, name: sup?.company_name || "" };
+      }
+    });
+    return best;
+  }, [supplierTotals, suppliers]);
+
+  const budgetAmount = settings?.budget_amount != null ? Number(settings.budget_amount) : null;
+  const difference = bestSupplier && budgetAmount != null ? bestSupplier.total - budgetAmount : null;
+
+  // ─── Deadline state ────────────────────────────────────
+  const deadlineDate = settings?.deadline ? new Date(settings.deadline) : undefined;
+
+  const handleSaveDeadline = (date: Date | undefined) => {
+    saveSettings.mutate({
+      campaign_id: campaignId,
+      budget_amount: budgetAmount,
+      deadline: date ? date.toISOString() : null,
+    });
+  };
+
+  const handleSaveBudget = () => {
+    const val = parseFloat(budgetDraft.replace(/[^\d.,]/g, "").replace(",", "."));
+    saveSettings.mutate({
+      campaign_id: campaignId,
+      budget_amount: isNaN(val) ? null : val,
+      deadline: settings?.deadline ?? null,
+    });
+    setEditingBudget(false);
+  };
+
+  const handleAddSupplier = () => {
+    if (!newSupplier.company_name || !newSupplier.email) {
+      toast.error("Preencha empresa e email.");
+      return;
+    }
+    addSupplier.mutate(
+      { campaign_id: campaignId, ...newSupplier },
+      {
+        onSuccess: () => {
+          toast.success("Fornecedor adicionado!");
+          setAddOpen(false);
+          setNewSupplier({ company_name: "", contact_name: "", phone: "", email: "" });
+        },
+        onError: (e: any) => toast.error(e.message?.includes("duplicate") ? "Este email já foi cadastrado." : "Erro ao adicionar."),
+      }
+    );
+  };
+
+  // ─── WhatsApp message builder ──────────────────────────
+  const buildWhatsAppUrl = (sup: typeof suppliers[0]) => {
+    const portalUrl = `${window.location.origin}/orcamento/${sup.access_token}`;
+    const deadlineStr = deadlineDate ? format(deadlineDate, "dd/MM/yyyy 'às' HH:mm") : "não definido";
+    const msg = `Olá ${sup.contact_name}! A ${agencyName} convidou ${sup.company_name} para participar do processo de cotação da campanha ${campaignName}.\n\nPara acessar a planilha e preencher seus preços, acesse o link abaixo:\n${portalUrl}\n\nPrazo para envio: ${deadlineStr}\n\nInstruções:\n1) Acesse o link acima\n2) Preencha o preço unitário de cada peça\n3) Informe os valores de instalação e frete\n4) Clique em ENVIAR quando concluir\n\nDúvidas? Entre em contato conosco.`;
+    const phone = sup.phone.replace(/\D/g, "");
+    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  };
+
+  // ─── Detail supplier data ──────────────────────────────
+  const detailSup = detailSupplier ? suppliers.find((s) => s.id === detailSupplier) : null;
+  const detailPrices = detailSupplier ? prices.filter((p) => p.supplier_id === detailSupplier) : [];
+  const detailCosts = detailSupplier ? extraCosts.find((e) => e.supplier_id === detailSupplier) : null;
+
+  const detailGrandTotal = useMemo(() => {
+    if (!detailSupplier) return 0;
+    let total = 0;
+    detailPrices.forEach((pr) => {
+      if (pr.piece_id) {
+        total += (Number(pr.unit_price) || 0) * (pieceTotals[pr.piece_id] || 0);
+      }
+      if (pr.kit_id) {
+        const kpList = kitPieces.filter((kp) => kp.kit_id === pr.kit_id);
+        if (kpList.length === 0) return;
+        const kitQty = Math.min(...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1))));
+        total += (Number(pr.unit_price) || 0) * kitQty;
+      }
+    });
+    total += Number(detailCosts?.installation_value) || 0;
+    total += Number(detailCosts?.freight_value) || 0;
+    return total;
+  }, [detailSupplier, detailPrices, detailCosts, pieceTotals, kitPieces]);
+
+  return (
+    <div className="space-y-6">
+
+      {/* ═══ KPI CARDS ═══ */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Budget da Campanha */}
+        <Card>
+          <CardContent className="pt-4 pb-4 space-y-3">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Budget da Campanha</p>
+            {editingBudget ? (
+              <div className="flex items-center gap-2">
+                <Input
+                  autoFocus
+                  value={budgetDraft}
+                  onChange={(e) => setBudgetDraft(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveBudget()}
+                  placeholder="0,00"
+                  className="h-8 text-sm"
+                />
+                <Button size="sm" variant="ghost" onClick={handleSaveBudget}><Check className="w-4 h-4" /></Button>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setBudgetDraft(budgetAmount?.toString() ?? ""); setEditingBudget(true); }}
+                className="text-2xl font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2"
+              >
+                {budgetAmount != null ? fmtCurrency(budgetAmount) : "Definir"}
+                <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            )}
+            {/* Deadline */}
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("h-7 text-xs gap-1", !deadlineDate && "text-muted-foreground")}>
+                    <CalendarIcon className="w-3 h-3" />
+                    {deadlineDate ? format(deadlineDate, "dd/MM/yyyy") : "Prazo"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={deadlineDate}
+                    onSelect={(d) => handleSaveDeadline(d)}
+                    locale={ptBR}
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Melhor Proposta */}
+        <Card className={bestSupplier ? "border-emerald-200 dark:border-emerald-800" : ""}>
+          <CardContent className="pt-4 pb-4 space-y-1">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Melhor Proposta</p>
+            {bestSupplier ? (
+              <>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(bestSupplier.total)}</p>
+                <p className="text-xs text-muted-foreground">{bestSupplier.name}</p>
+              </>
+            ) : (
+              <p className="text-lg text-muted-foreground">Sem propostas</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Diferença */}
+        <Card>
+          <CardContent className="pt-4 pb-4 space-y-1">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Diferença</p>
+            {difference != null ? (
+              <p className={cn("text-2xl font-bold", difference <= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+                {difference <= 0 ? "" : "+"}{fmtCurrency(difference)}
+              </p>
+            ) : (
+              <p className="text-lg text-muted-foreground">—</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ═══ SUPPLIERS SECTION ═══ */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-foreground">Fornecedores</h3>
+          <Button size="sm" variant="outline" className="gap-1" onClick={() => setAddOpen(true)}>
+            <Plus className="w-3.5 h-3.5" /> Adicionar Fornecedor
+          </Button>
+        </div>
+
+        {suppliers.length === 0 ? (
+          <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Nenhum fornecedor cadastrado.</CardContent></Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {suppliers.map((sup) => {
+              const st = STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
+              return (
+                <Card key={sup.id} className="relative">
+                  <CardContent className="pt-4 pb-3 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm text-foreground truncate">{sup.company_name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{sup.contact_name}</p>
+                      </div>
+                      <Badge className={cn("text-[10px] shrink-0", st.color)}>{st.label}</Badge>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                      <p>{sup.email}</p>
+                      <p>{sup.phone}</p>
+                      {sup.submitted_at && (
+                        <p className="text-emerald-600 dark:text-emerald-400">
+                          Enviado em {format(new Date(sup.submitted_at), "dd/MM/yyyy HH:mm")}
+                        </p>
+                      )}
+                    </div>
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 pt-1">
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" asChild>
+                        <a href={buildWhatsAppUrl(sup)} target="_blank" rel="noopener noreferrer" title="WhatsApp">
+                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        </a>
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Email" disabled>
+                        <Mail className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setDetailSupplier(sup.id)} title="Ver detalhes">
+                        <Eye className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive ml-auto"
+                        onClick={() => setDeleteId(sup.id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ═══ ADD SUPPLIER DIALOG ═══ */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adicionar Fornecedor</DialogTitle>
+            <DialogDescription>Cadastre um fornecedor para participar da cotação.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Empresa</Label>
+              <Input value={newSupplier.company_name} onChange={(e) => setNewSupplier((p) => ({ ...p, company_name: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs">Contato</Label>
+              <Input value={newSupplier.contact_name} onChange={(e) => setNewSupplier((p) => ({ ...p, contact_name: e.target.value }))} />
+            </div>
+            <div>
+              <Label className="text-xs">Telefone</Label>
+              <Input value={newSupplier.phone} onChange={(e) => setNewSupplier((p) => ({ ...p, phone: e.target.value }))} placeholder="+5511999999999" />
+            </div>
+            <div>
+              <Label className="text-xs">Email</Label>
+              <Input type="email" value={newSupplier.email} onChange={(e) => setNewSupplier((p) => ({ ...p, email: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancelar</Button>
+            <Button onClick={handleAddSupplier} disabled={addSupplier.isPending}>
+              {addSupplier.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ DELETE CONFIRMATION ═══ */}
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir fornecedor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Todos os preços e dados enviados por este fornecedor serão removidos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteId) {
+                  deleteSupplier.mutate(
+                    { id: deleteId, campaign_id: campaignId },
+                    { onSuccess: () => { toast.success("Fornecedor removido."); setDeleteId(null); } }
+                  );
+                }
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ═══ SUPPLIER DETAIL SHEET ═══ */}
+      <Sheet open={!!detailSupplier} onOpenChange={(o) => !o && setDetailSupplier(null)}>
+        <SheetContent className="sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              {detailSup?.company_name}
+              {detailSup?.locked && <Lock className="w-4 h-4 text-muted-foreground" />}
+              {detailSup?.status === "enviado" && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px]">Enviado</Badge>}
+            </SheetTitle>
+            <SheetDescription>
+              {detailSup?.contact_name} · {detailSup?.email} · {detailSup?.phone}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="mt-6 space-y-4">
+            {/* Pieces table */}
+            <div className="border rounded-md overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">Peça</TableHead>
+                    <TableHead className="text-xs text-right">Qtd Total</TableHead>
+                    <TableHead className="text-xs text-right">Preço Unit.</TableHead>
+                    <TableHead className="text-xs text-right">Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pieces.filter((p) => !p.kit_only).map((piece) => {
+                    const qty = pieceTotals[piece.id] || 0;
+                    const priceRow = detailPrices.find((pr) => pr.piece_id === piece.id);
+                    const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
+                    const lineTotal = unitPrice * qty;
+                    return (
+                      <TableRow key={piece.id}>
+                        <TableCell className="text-xs font-medium">{piece.code} - {piece.name}</TableCell>
+                        <TableCell className="text-xs text-right">{qty}</TableCell>
+                        <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(unitPrice) : "—"}</TableCell>
+                        <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {/* Kits */}
+                  {kits.map((kit) => {
+                    const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
+                    const kitQty = kpList.length > 0
+                      ? Math.min(...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1))))
+                      : 0;
+                    const priceRow = detailPrices.find((pr) => pr.kit_id === kit.id);
+                    const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
+                    const lineTotal = unitPrice * kitQty;
+                    return (
+                      <TableRow key={kit.id} className="bg-muted/30">
+                        <TableCell className="text-xs font-medium">🧩 {kit.code} - {kit.name}</TableCell>
+                        <TableCell className="text-xs text-right">{kitQty}</TableCell>
+                        <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(unitPrice) : "—"}</TableCell>
+                        <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Extra costs */}
+            <div className="grid grid-cols-2 gap-3">
+              <Card>
+                <CardContent className="pt-3 pb-3">
+                  <p className="text-xs text-muted-foreground">Instalação</p>
+                  <p className="text-sm font-semibold">{fmtCurrency(Number(detailCosts?.installation_value) || 0)}</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-3 pb-3">
+                  <p className="text-xs text-muted-foreground">Frete</p>
+                  <p className="text-sm font-semibold">{fmtCurrency(Number(detailCosts?.freight_value) || 0)}</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Grand Total */}
+            <Card className="border-primary/30">
+              <CardContent className="pt-3 pb-3 flex items-center justify-between">
+                <p className="text-sm font-semibold">Total Geral</p>
+                <p className="text-xl font-bold text-primary">{fmtCurrency(detailGrandTotal)}</p>
+              </CardContent>
+            </Card>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}
