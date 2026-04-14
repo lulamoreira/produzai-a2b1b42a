@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PRIORITY_OPTIONS } from "@/types/occurrence";
-import { getStatusLabel, getStatusColor } from "@/lib/occurrenceHelpers";
+import { getStatusLabel, getStatusColor, parseLocalDate } from "@/lib/occurrenceHelpers";
 import DebouncedTextarea from "@/components/DebouncedTextarea";
 
 export interface OccurrenceDetailSheetProps {
@@ -355,14 +355,14 @@ export function OccurrenceDetailSheet({
                       <Button variant="outline" className="h-7 text-xs w-full justify-start">
                         <CalendarIcon className="w-3 h-3 mr-1.5" />
                         {merged.expected_resolution_date
-                          ? format(new Date(merged.expected_resolution_date), "dd/MM/yyyy", { locale: ptBR })
+                          ? format(parseLocalDate(merged.expected_resolution_date) || new Date(), "dd/MM/yyyy", { locale: ptBR })
                           : "Selecione uma data"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={merged.expected_resolution_date ? new Date(merged.expected_resolution_date) : undefined}
+                        selected={merged.expected_resolution_date ? parseLocalDate(merged.expected_resolution_date) || undefined : undefined}
                         onSelect={(date) => {
                           const val = date ? format(date, "yyyy-MM-dd") : null;
                           setDraftField("expected_resolution_date", val);
@@ -376,7 +376,7 @@ export function OccurrenceDetailSheet({
                   </Popover>
                 ) : (
                   <span className="text-xs font-semibold">
-                    {merged.expected_resolution_date ? format(new Date(merged.expected_resolution_date), "dd/MM/yyyy", { locale: ptBR }) : "—"}
+                    {merged.expected_resolution_date ? format(parseLocalDate(merged.expected_resolution_date) || new Date(), "dd/MM/yyyy", { locale: ptBR }) : "—"}
                   </span>
                 )}
               </div>
