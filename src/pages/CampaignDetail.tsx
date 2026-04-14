@@ -1034,7 +1034,7 @@ const CampaignDetail = () => {
                 { key: "installations", label: t("modules.installations"), icon: Camera, visible: canViewInstallations, color: "#7B5E3A" },
                 { key: "budgets", label: t("modules.budgets"), icon: DollarSign, visible: isAdmin, color: "#4A5568" },
                 
-                { key: "history", label: t("modules.history"), icon: History, visible: canViewCampaigns, color: "#6B5B4E" },
+                
                 { key: "loja_a_loja", label: t("modules.loja_a_loja"), icon: LayoutGrid, visible: isAdmin, color: "#5B7B5E", badge: "Beta" },
               ]}
               onSelect={(key) => setActiveSection(key)}
