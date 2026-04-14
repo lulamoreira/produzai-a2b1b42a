@@ -1615,6 +1615,190 @@ export type Database = {
           },
         ]
       }
+      loja_a_loja_lojas: {
+        Row: {
+          ativo: boolean | null
+          campaign_id: string
+          created_at: string | null
+          id: string
+          store_id: string
+          subdivisao_id: string | null
+          tipo_id: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          campaign_id: string
+          created_at?: string | null
+          id?: string
+          store_id: string
+          subdivisao_id?: string | null
+          tipo_id?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          campaign_id?: string
+          created_at?: string | null
+          id?: string
+          store_id?: string
+          subdivisao_id?: string | null
+          tipo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loja_a_loja_lojas_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loja_a_loja_lojas_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loja_a_loja_lojas_subdivisao_id_fkey"
+            columns: ["subdivisao_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_subdivisoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loja_a_loja_lojas_tipo_id_fkey"
+            columns: ["tipo_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_tipos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loja_a_loja_pecas: {
+        Row: {
+          campaign_id: string
+          created_at: string | null
+          display_order: number | null
+          id: string
+          image_url: string | null
+          nome: string
+          subdivisao_id: string | null
+          tipo_id: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          nome: string
+          subdivisao_id?: string | null
+          tipo_id?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          nome?: string
+          subdivisao_id?: string | null
+          tipo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loja_a_loja_pecas_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loja_a_loja_pecas_subdivisao_id_fkey"
+            columns: ["subdivisao_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_subdivisoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loja_a_loja_pecas_tipo_id_fkey"
+            columns: ["tipo_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_tipos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loja_a_loja_subdivisoes: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          nome: string
+          tipo_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          nome: string
+          tipo_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          nome?: string
+          tipo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loja_a_loja_subdivisoes_tipo_id_fkey"
+            columns: ["tipo_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_tipos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loja_a_loja_tipos: {
+        Row: {
+          campaign_id: string
+          created_at: string | null
+          display_order: number | null
+          id: string
+          letra: string
+          nome: string
+          tem_subdivisao: boolean | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          letra: string
+          nome: string
+          tem_subdivisao?: boolean | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          letra?: string
+          nome?: string
+          tem_subdivisao?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loja_a_loja_tipos_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_settings: {
         Row: {
           agency_id: string
@@ -1991,6 +2175,7 @@ export type Database = {
           can_edit_campaigns: boolean
           can_edit_clients: boolean
           can_edit_installations: boolean
+          can_edit_loja_a_loja: boolean | null
           can_edit_occurrences: boolean
           can_edit_pieces: boolean
           can_edit_reporter_data: boolean
@@ -2002,6 +2187,7 @@ export type Database = {
           can_view_campaigns: boolean
           can_view_clients: boolean
           can_view_installations: boolean
+          can_view_loja_a_loja: boolean | null
           can_view_occurrences: boolean
           can_view_photo_checkin: boolean
           can_view_pieces: boolean
@@ -2024,6 +2210,7 @@ export type Database = {
           can_edit_campaigns?: boolean
           can_edit_clients?: boolean
           can_edit_installations?: boolean
+          can_edit_loja_a_loja?: boolean | null
           can_edit_occurrences?: boolean
           can_edit_pieces?: boolean
           can_edit_reporter_data?: boolean
@@ -2035,6 +2222,7 @@ export type Database = {
           can_view_campaigns?: boolean
           can_view_clients?: boolean
           can_view_installations?: boolean
+          can_view_loja_a_loja?: boolean | null
           can_view_occurrences?: boolean
           can_view_photo_checkin?: boolean
           can_view_pieces?: boolean
@@ -2057,6 +2245,7 @@ export type Database = {
           can_edit_campaigns?: boolean
           can_edit_clients?: boolean
           can_edit_installations?: boolean
+          can_edit_loja_a_loja?: boolean | null
           can_edit_occurrences?: boolean
           can_edit_pieces?: boolean
           can_edit_reporter_data?: boolean
@@ -2068,6 +2257,7 @@ export type Database = {
           can_view_campaigns?: boolean
           can_view_clients?: boolean
           can_view_installations?: boolean
+          can_view_loja_a_loja?: boolean | null
           can_view_occurrences?: boolean
           can_view_photo_checkin?: boolean
           can_view_pieces?: boolean
