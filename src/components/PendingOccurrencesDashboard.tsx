@@ -174,8 +174,8 @@ export default function PendingOccurrencesDashboard({
     const dir = sortAsc ? 1 : -1;
     arr.sort((a, b) => {
       // Always partition overdue first
-      const aOverdue = a.expected_resolution_date && new Date(a.expected_resolution_date) < today ? 1 : 0;
-      const bOverdue = b.expected_resolution_date && new Date(b.expected_resolution_date) < today ? 1 : 0;
+      const aOverdue = a.expected_resolution_date && new Date(a.expected_resolution_date + "T00:00:00") < todayStart ? 1 : 0;
+      const bOverdue = b.expected_resolution_date && new Date(b.expected_resolution_date + "T00:00:00") < todayStart ? 1 : 0;
       if (aOverdue !== bOverdue) return bOverdue - aOverdue; // overdue first
 
       let va: string | number = 0; let vb: string | number = 0;
