@@ -72,15 +72,15 @@ interface Props {
 }
 
 export default function CampaignActivityHistory({ campaignId }: Props) {
-  const [actionFilter, setActionFilter] = useState<string>("");
-  const [actorTypeFilter, setActorTypeFilter] = useState<string>("");
+  const [actionFilter, setActionFilter] = useState<string>("__all__");
+  const [actorTypeFilter, setActorTypeFilter] = useState<string>("__all__");
   const [storeSearch, setStoreSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
   const filters = useMemo(() => ({
-    action: actionFilter || undefined,
-    actorType: actorTypeFilter || undefined,
+    action: actionFilter !== "__all__" ? actionFilter : undefined,
+    actorType: actorTypeFilter !== "__all__" ? actorTypeFilter : undefined,
     storeSearch: storeSearch || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
@@ -151,14 +151,14 @@ export default function CampaignActivityHistory({ campaignId }: Props) {
           placeholder="Data até"
         />
 
-        {(actionFilter || actorTypeFilter || storeSearch || dateFrom || dateTo) && (
+        {(actionFilter !== "__all__" || actorTypeFilter !== "__all__" || storeSearch || dateFrom || dateTo) && (
           <Button
             variant="ghost"
             size="sm"
             className="h-8 text-xs"
             onClick={() => {
-              setActionFilter("");
-              setActorTypeFilter("");
+               setActionFilter("__all__");
+               setActorTypeFilter("__all__");
               setStoreSearch("");
               setDateFrom("");
               setDateTo("");
