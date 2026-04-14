@@ -85,21 +85,20 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
   const hasAnySub = (storeId: string, tipo: LojaALojaTipo) =>
     (tipo.subdivisoes ?? []).some((s) => isActive(storeId, tipo.id, s.id, tipo.tem_subdivisao));
 
-  // Bulk deselect all stores for a given INTERNO tipo
-  const [bulkDeselecting, setBulkDeselecting] = useState(false);
-  const handleBulkDeselectInterno = async (tipo: LojaALojaTipo) => {
-    if (!isAdmin || bulkDeselecting) return;
-    setBulkDeselecting(true);
+  // Bulk toggle all INTERNO tipos for a single store
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const handleBulkToggleInternosForStore = async (storeId: string, ativo: boolean) => {
+    if (!isAdmin || bulkBusy) return;
+    setBulkBusy(true);
     try {
-      // Build rows for ALL stores × all subdivisoes (or tipo itself) as ativo=false
       const rows: { campaign_id: string; store_id: string; tipo_id: string; subdivisao_id: string | null; ativo: boolean }[] = [];
-      for (const store of stores) {
+      for (const tipo of internosTipos) {
         if (tipo.subdivisoes && tipo.subdivisoes.length > 0) {
           for (const sub of tipo.subdivisoes) {
-            rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: sub.id, ativo: false });
+            rows.push({ campaign_id: campaignId, store_id: storeId, tipo_id: tipo.id, subdivisao_id: sub.id, ativo });
           }
         } else {
-          rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: null, ativo: false });
+          rows.push({ campaign_id: campaignId, store_id: storeId, tipo_id: tipo.id, subdivisao_id: null, ativo });
         }
       }
       if (rows.length > 0) {
@@ -109,42 +108,25 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
         if (error) throw error;
       }
       qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
-      toast.success(`Todas as lojas desmarcadas de "${tipo.nome}"`);
     } catch (err: any) {
       toast.error("Erro: " + err.message);
     } finally {
-      setBulkDeselecting(false);
+      setBulkBusy(false);
     }
   };
 
-  // Bulk select all stores for a given INTERNO tipo (re-select all)
-  const handleBulkSelectInterno = async (tipo: LojaALojaTipo) => {
-    if (!isAdmin || bulkDeselecting) return;
-    setBulkDeselecting(true);
-    try {
-      const rows: { campaign_id: string; store_id: string; tipo_id: string; subdivisao_id: string | null; ativo: boolean }[] = [];
-      for (const store of stores) {
-        if (tipo.subdivisoes && tipo.subdivisoes.length > 0) {
-          for (const sub of tipo.subdivisoes) {
-            rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: sub.id, ativo: true });
-          }
-        } else {
-          rows.push({ campaign_id: campaignId, store_id: store.id, tipo_id: tipo.id, subdivisao_id: null, ativo: true });
+  // Check if all internos are active for a store
+  const allInternosActive = (storeId: string) => {
+    for (const tipo of internosTipos) {
+      if (tipo.subdivisoes && tipo.subdivisoes.length > 0) {
+        for (const sub of tipo.subdivisoes) {
+          if (!isActive(storeId, tipo.id, sub.id, true)) return false;
         }
+      } else {
+        if (!isActive(storeId, tipo.id, null, true)) return false;
       }
-      if (rows.length > 0) {
-        const { error } = await supabase
-          .from("loja_a_loja_lojas")
-          .upsert(rows, { onConflict: "campaign_id,store_id,tipo_id,subdivisao_id", ignoreDuplicates: false });
-        if (error) throw error;
-      }
-      qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
-      toast.success(`Todas as lojas marcadas em "${tipo.nome}"`);
-    } catch (err: any) {
-      toast.error("Erro: " + err.message);
-    } finally {
-      setBulkDeselecting(false);
     }
+    return true;
   };
 
   const handleToggle = (storeId: string, tipoId: string, subId: string | null, newAtivo: boolean) => {
