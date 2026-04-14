@@ -250,7 +250,7 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
                   </TableRow>
                 ))}
                 {coberturaData.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhum tipo cadastrado</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Nenhum tipo cadastrado</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
