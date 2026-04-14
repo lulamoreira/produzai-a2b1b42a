@@ -30,6 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Plus, Pencil, Trash2, Image, ImagePlus, ChevronRight, X, Upload, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useMemo } from "react";
 
 interface TiposManagerProps {
   campaignId: string;
