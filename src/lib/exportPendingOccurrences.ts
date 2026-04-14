@@ -65,8 +65,7 @@ function daysOpenSince(created: string | null | undefined): number | null {
 }
 
 function fmtDate(v: string | null | undefined) {
-  if (!v) return "";
-  return new Date(v).toLocaleDateString("pt-BR");
+  return formatDateBR(v) === "—" ? "" : formatDateBR(v);
 }
 
 function priorityLabel(p: string) {
