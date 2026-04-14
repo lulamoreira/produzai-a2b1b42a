@@ -265,14 +265,23 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
   return (
     <div className="space-y-2">
       {/* Top actions */}
-      {isAdmin && (
-        <div className="flex justify-end px-1">
-          <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={handleOpenCopy}>
+      <div className="flex items-center gap-2 px-1">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nome, código, cidade..."
+            className="h-8 text-xs pl-8"
+          />
+        </div>
+        {isAdmin && (
+          <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 shrink-0" onClick={handleOpenCopy}>
             <Copy className="h-3.5 w-3.5" />
             Copiar da campanha anterior
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Table container */}
       <div className="border border-border rounded-lg overflow-auto max-h-[70vh]">
