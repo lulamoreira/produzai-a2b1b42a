@@ -104,7 +104,37 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
   const deleteSubdivisao = useDeleteSubdivisao();
   const addPeca = useAddPeca();
   const deletePeca = useDeletePeca();
+  const updatePecaImage = useUpdatePecaImage();
 
+  // Drag & drop / upload state
+  const [uploadingPecaId, setUploadingPecaId] = useState<string | null>(null);
+  const [dragOverPecaId, setDragOverPecaId] = useState<string | null>(null);
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
+
+  /** Shared upload helper — reuses cropSquare, same bucket/path pattern */
+  const uploadPecaImage = useCallback(async (file: File, pecaId: string) => {
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      toast.error("Formato não suportado. Use PNG, JPEG ou WebP.");
+      return;
+    }
+    setUploadingPecaId(pecaId);
+    try {
+      const cropped = await cropSquare(file, 400, 0.7);
+      const path = `loja-a-loja-${pecaId}-${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage
+        .from("piece-images")
+        .upload(path, cropped, { upsert: true, contentType: "image/jpeg" });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
+      await updatePecaImage.mutateAsync({ id: pecaId, image_url: urlData.publicUrl });
+    } catch (err: any) {
+      toast.error("Erro ao enviar imagem: " + err.message);
+    } finally {
+      setUploadingPecaId(null);
+    }
+  }, [updatePecaImage]);
   // Pieces query
   const { data: pecas, isLoading: loadingPecas } = useLojaALojaPecas(
     selectedSubId ? null : selectedTipoId,
