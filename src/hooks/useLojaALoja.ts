@@ -259,3 +259,91 @@ export function useDeletePeca() {
     onError: (e: any) => toast.error("Erro: " + e.message),
   });
 }
+
+/* ───── Mutations: Lojas (toggle assignment) ───── */
+
+export function useToggleLojaAssignment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      campaign_id: string;
+      store_id: string;
+      tipo_id: string;
+      subdivisao_id: string | null;
+      ativo: boolean;
+    }) => {
+      const { campaign_id, store_id, tipo_id, subdivisao_id, ativo } = params;
+
+      // Try to find existing row
+      let query = supabase
+        .from("loja_a_loja_lojas")
+        .select("id, ativo")
+        .eq("campaign_id", campaign_id)
+        .eq("store_id", store_id)
+        .eq("tipo_id", tipo_id);
+
+      if (subdivisao_id) {
+        query = query.eq("subdivisao_id", subdivisao_id);
+      } else {
+        query = query.is("subdivisao_id", null);
+      }
+
+      const { data: existing } = await query.maybeSingle();
+
+      if (existing) {
+        const { error } = await supabase
+          .from("loja_a_loja_lojas")
+          .update({ ativo })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const row: any = { campaign_id, store_id, tipo_id, ativo };
+        if (subdivisao_id) row.subdivisao_id = subdivisao_id;
+        const { error } = await supabase.from("loja_a_loja_lojas").insert(row);
+        if (error) throw error;
+      }
+    },
+    onMutate: async (params) => {
+      const key = ["loja-a-loja-lojas", params.campaign_id];
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<LojaALojaLoja[]>(key);
+
+      qc.setQueryData<LojaALojaLoja[]>(key, (old = []) => {
+        const idx = old.findIndex(
+          (r) =>
+            r.store_id === params.store_id &&
+            r.tipo_id === params.tipo_id &&
+            (r.subdivisao_id ?? null) === (params.subdivisao_id ?? null)
+        );
+        if (idx >= 0) {
+          const updated = [...old];
+          updated[idx] = { ...updated[idx], ativo: params.ativo };
+          return updated;
+        }
+        return [
+          ...old,
+          {
+            id: crypto.randomUUID(),
+            campaign_id: params.campaign_id,
+            store_id: params.store_id,
+            tipo_id: params.tipo_id,
+            subdivisao_id: params.subdivisao_id,
+            ativo: params.ativo,
+            created_at: new Date().toISOString(),
+          },
+        ];
+      });
+
+      return { previous, key };
+    },
+    onError: (err: any, _vars, context) => {
+      if (context?.previous !== undefined) {
+        qc.setQueryData(context.key, context.previous);
+      }
+      toast.error("Erro ao atualizar: " + err.message);
+    },
+    onSettled: (_d, _e, params) => {
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", params.campaign_id] });
+    },
+  });
+}
