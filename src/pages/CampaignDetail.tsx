@@ -40,7 +40,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, MoreHorizontal, History } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, MoreHorizontal, History } from "lucide-react";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 import BudgetsTab from "@/components/BudgetsTab";
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -1021,6 +1021,7 @@ const CampaignDetail = () => {
                 { key: "budgets", label: t("modules.budgets"), icon: DollarSign, visible: isAdmin, color: "#4A5568" },
                 
                 { key: "history", label: t("modules.history"), icon: History, visible: canViewCampaigns, color: "#6B5B4E" },
+                { key: "loja_a_loja", label: t("modules.loja_a_loja"), icon: LayoutGrid, visible: isAdmin, color: "#5B7B5E", badge: "Beta" },
               ]}
               onSelect={(key) => setActiveSection(key)}
             />
@@ -2447,6 +2448,15 @@ const CampaignDetail = () => {
           {/* ─── SECTION: HISTORY ─── */}
           {activeSection === "history" && campaignId && (
             <CampaignActivityHistory campaignId={campaignId} />
+          )}
+
+          {/* ─── SECTION: LOJA A LOJA ─── */}
+          {activeSection === "loja_a_loja" && (
+            <div className="flex items-center gap-2 text-muted-foreground py-12 justify-center">
+              <LayoutGrid className="w-5 h-5" />
+              <span>{t("modules.loja_a_loja")} — Em desenvolvimento</span>
+              <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium">Beta</span>
+            </div>
           )}
           </>
         )}

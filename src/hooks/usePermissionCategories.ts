@@ -33,6 +33,8 @@ export type PermissionCategory = {
   can_manage_team_codes: boolean;
   can_lock_cards: boolean;
   can_view_photo_checkin: boolean;
+  can_view_loja_a_loja: boolean;
+  can_edit_loja_a_loja: boolean;
   created_at: string;
 };
 
