@@ -364,7 +364,7 @@ export default function PendingOccurrencesDashboard({
                   const store = storeMap[occ.store_id || ""];
                   const dToResolve = daysBetween(occ.created_at, occ.expected_resolution_date);
                   const dOpen = daysOpenSince(occ.created_at);
-                  const isOverdue = occ.expected_resolution_date && new Date(occ.expected_resolution_date) < today;
+                  const isOverdue = occ.expected_resolution_date && new Date(occ.expected_resolution_date + "T00:00:00") < todayStart;
                   const statusInfo = statuses.find((s) => s.value === occ.status);
                   return (
                     <TableRow
