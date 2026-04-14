@@ -1,12 +1,18 @@
 import { useState, useMemo } from "react";
-import { useLojaALojaTipos, useLojaALojaLojas, useToggleLojaAssignment, type LojaALojaTipo, type LojaALojaLoja } from "@/hooks/useLojaALoja";
+import { useLojaALojaTipos, useLojaALojaLojas, useToggleLojaAssignment, type LojaALojaTipo } from "@/hooks/useLojaALoja";
 import { useClientStores } from "@/hooks/useMultiClientData";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight, Store } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { Store, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Props {
   campaignId: string;
@@ -19,19 +25,29 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
   const { data: lojas = [], isLoading: loadingLojas } = useLojaALojaLojas(campaignId);
   const { data: stores = [], isLoading: loadingStores } = useClientStores(clientId);
   const toggle = useToggleLojaAssignment();
+  const qc = useQueryClient();
 
-  const [openUFs, setOpenUFs] = useState<Record<string, boolean>>({});
+  // Copy dialog state
+  const [showCopyDialog, setShowCopyDialog] = useState(false);
+  const [campaigns, setCampaigns] = useState<{ id: string; name: string; created_at: string }[]>([]);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(false);
+  const [copying, setCopying] = useState(false);
 
-  // Group stores by state
-  const grouped = useMemo(() => {
-    const groups: Record<string, typeof stores> = {};
-    for (const s of stores) {
-      const uf = s.state || "Sem UF";
-      (groups[uf] ??= []).push(s);
-    }
-    // Sort UFs alphabetically
-    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
-  }, [stores]);
+  // Split tipos
+  const vitrinesTipos = useMemo(() => tipos.filter((t) => !t.tem_subdivisao), [tipos]);
+  const internosTipos = useMemo(() => tipos.filter((t) => t.tem_subdivisao), [tipos]);
+
+  // Sort stores by UF then name
+  const sortedStores = useMemo(
+    () => [...stores].sort((a, b) => {
+      const ufA = a.state || "ZZZ";
+      const ufB = b.state || "ZZZ";
+      if (ufA !== ufB) return ufA.localeCompare(ufB);
+      return (a.name || "").localeCompare(b.name || "");
+    }),
+    [stores],
+  );
 
   // Build lookup: `storeId-tipoId-subdivisaoId` → ativo
   const assignmentMap = useMemo(() => {
@@ -46,13 +62,75 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
   const isActive = (storeId: string, tipoId: string, subId: string | null) =>
     assignmentMap.get(`${storeId}-${tipoId}-${subId ?? ""}`) ?? false;
 
-  // Check if ANY sub of a tipo is active for a store
   const hasAnySub = (storeId: string, tipo: LojaALojaTipo) =>
     (tipo.subdivisoes ?? []).some((s) => isActive(storeId, tipo.id, s.id));
 
   const handleToggle = (storeId: string, tipoId: string, subId: string | null, newAtivo: boolean) => {
     if (!isAdmin) return;
     toggle.mutate({ campaign_id: campaignId, store_id: storeId, tipo_id: tipoId, subdivisao_id: subId, ativo: newAtivo });
+  };
+
+  // Copy from previous campaign
+  const handleOpenCopy = async () => {
+    setShowCopyDialog(true);
+    setLoadingCampaigns(true);
+    setSelectedCampaignId(null);
+    try {
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("id, name, created_at")
+        .eq("client_id", clientId)
+        .neq("id", campaignId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setCampaigns(data ?? []);
+    } catch (err: any) {
+      toast.error("Erro ao buscar campanhas: " + err.message);
+    } finally {
+      setLoadingCampaigns(false);
+    }
+  };
+
+  const handleConfirmCopy = async () => {
+    if (!selectedCampaignId) return;
+    setCopying(true);
+    try {
+      const { data: sourceAssignments, error } = await supabase
+        .from("loja_a_loja_lojas")
+        .select("*")
+        .eq("campaign_id", selectedCampaignId);
+      if (error) throw error;
+
+      const storeIds = new Set(stores.map((s) => s.id));
+      const valid = (sourceAssignments ?? []).filter((a) => storeIds.has(a.store_id));
+
+      if (valid.length === 0) {
+        toast.info("Nenhuma atribuição compatível encontrada na campanha selecionada.");
+        setCopying(false);
+        return;
+      }
+
+      const rows = valid.map((a) => ({
+        campaign_id: campaignId,
+        store_id: a.store_id,
+        tipo_id: a.tipo_id,
+        subdivisao_id: a.subdivisao_id,
+        ativo: a.ativo ?? false,
+      }));
+
+      const { error: upsertErr } = await supabase
+        .from("loja_a_loja_lojas")
+        .upsert(rows, { onConflict: "campaign_id,store_id,tipo_id,subdivisao_id", ignoreDuplicates: false });
+      if (upsertErr) throw upsertErr;
+
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
+      toast.success(`${valid.length} atribuições copiadas com sucesso!`);
+      setShowCopyDialog(false);
+    } catch (err: any) {
+      toast.error("Erro ao copiar: " + err.message);
+    } finally {
+      setCopying(false);
+    }
   };
 
   const isLoading = loadingTipos || loadingLojas || loadingStores;
@@ -76,119 +154,171 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
     );
   }
 
+  const renderLetraCell = (store: { id: string }, tipo: LojaALojaTipo) => {
+    if (tipo.tem_subdivisao && (tipo.subdivisoes ?? []).length > 0) {
+      const anyActive = hasAnySub(store.id, tipo);
+      return (
+        <Popover key={tipo.id}>
+          <PopoverTrigger asChild>
+            <button
+              className={cn(
+                "inline-flex items-center justify-center h-7 w-7 rounded-full text-[11px] font-bold border transition-colors",
+                anyActive
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-muted-foreground border-border hover:border-primary/50"
+              )}
+            >
+              {tipo.letra}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48 p-2" align="start">
+            <p className="text-xs font-semibold mb-1.5">{tipo.nome}</p>
+            <div className="space-y-1">
+              {(tipo.subdivisoes ?? []).map((sub) => {
+                const active = isActive(store.id, tipo.id, sub.id);
+                return (
+                  <label key={sub.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
+                    <Checkbox
+                      checked={active}
+                      disabled={!isAdmin}
+                      onCheckedChange={(checked) => handleToggle(store.id, tipo.id, sub.id, !!checked)}
+                    />
+                    {sub.nome}
+                  </label>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
+      );
+    }
+    const active = isActive(store.id, tipo.id, null);
+    return (
+      <button
+        key={tipo.id}
+        disabled={!isAdmin}
+        onClick={() => handleToggle(store.id, tipo.id, null, !active)}
+        className={cn(
+          "inline-flex items-center justify-center h-7 w-7 rounded-full text-[11px] font-bold border transition-colors",
+          active
+            ? "bg-primary text-primary-foreground border-primary"
+            : "bg-background text-muted-foreground border-border hover:border-primary/50",
+          !isAdmin && "opacity-50 cursor-not-allowed"
+        )}
+      >
+        {tipo.letra}
+      </button>
+    );
+  };
+
   return (
-    <div className="space-y-0">
-      {/* Sticky legend */}
-      <div className="sticky top-0 z-20 bg-background border-b px-4 py-2.5 flex flex-wrap items-center gap-2">
-        <span className="text-xs font-medium text-muted-foreground mr-1">Legenda:</span>
-        {tipos.map((t) => (
-          <span key={t.id} className="inline-flex items-center gap-1 text-xs">
-            <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
-              {t.letra}
-            </span>
-            <span className="text-muted-foreground">{t.nome}</span>
-          </span>
-        ))}
+    <div className="space-y-2">
+      {/* Top actions */}
+      {isAdmin && (
+        <div className="flex justify-end px-1">
+          <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={handleOpenCopy}>
+            <Copy className="h-3.5 w-3.5" />
+            Copiar da campanha anterior
+          </Button>
+        </div>
+      )}
+
+      {/* Table container */}
+      <div className="border border-border rounded-lg overflow-auto max-h-[70vh]">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 z-10 bg-muted">
+            {/* Column group header row */}
+            <tr className="border-b border-border">
+              <th colSpan={3} className="h-8 px-3 text-left text-xs font-medium text-muted-foreground" />
+              {vitrinesTipos.length > 0 && (
+                <th colSpan={vitrinesTipos.length} className="h-8 px-1 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-l border-border">
+                  Vitrines
+                </th>
+              )}
+              {internosTipos.length > 0 && (
+                <th colSpan={internosTipos.length} className="h-8 px-1 text-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-l border-border">
+                  Internos
+                </th>
+              )}
+            </tr>
+            {/* Individual letra headers */}
+            <tr className="border-b border-border">
+              <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground min-w-[200px]">Loja</th>
+              <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground min-w-[100px]">Cidade</th>
+              <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground w-[60px]">UF</th>
+              {vitrinesTipos.map((t) => (
+                <th key={t.id} className="h-9 px-1 text-center text-xs font-bold w-10 border-l border-border" title={t.nome}>
+                  {t.letra}
+                </th>
+              ))}
+              {internosTipos.map((t, i) => (
+                <th key={t.id} className={cn("h-9 px-1 text-center text-xs font-bold w-10", i === 0 && "border-l border-border")} title={t.nome}>
+                  {t.letra}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sortedStores.map((store, idx) => (
+              <tr key={store.id} className={cn("border-b border-border transition-colors hover:bg-muted/30", idx % 2 === 0 && "bg-muted/10")}>
+                <td className="px-3 py-1.5 text-sm font-medium truncate max-w-[260px]">{store.name}</td>
+                <td className="px-3 py-1.5 text-xs text-muted-foreground truncate">{store.city || "—"}</td>
+                <td className="px-3 py-1.5 text-xs text-muted-foreground">{store.state || "—"}</td>
+                {vitrinesTipos.map((tipo) => (
+                  <td key={tipo.id} className="px-1 py-1.5 text-center border-l border-border">
+                    {renderLetraCell(store, tipo)}
+                  </td>
+                ))}
+                {internosTipos.map((tipo, i) => (
+                  <td key={tipo.id} className={cn("px-1 py-1.5 text-center", i === 0 && "border-l border-border")}>
+                    {renderLetraCell(store, tipo)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* Store groups by UF */}
-      <div className="divide-y">
-        {grouped.map(([uf, ufStores]) => {
-          const isOpen = openUFs[uf] !== false; // default open
-          return (
-            <Collapsible
-              key={uf}
-              open={isOpen}
-              onOpenChange={(o) => setOpenUFs((p) => ({ ...p, [uf]: o }))}
-            >
-              <CollapsibleTrigger className="sticky top-[41px] z-10 w-full flex items-center gap-2 px-4 py-2 bg-muted/60 hover:bg-muted transition-colors cursor-pointer">
-                <ChevronRight className={cn("h-4 w-4 transition-transform", isOpen && "rotate-90")} />
-                <span className="font-semibold text-sm">{uf}</span>
-                <span className="text-xs text-muted-foreground">({ufStores.length})</span>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="divide-y">
-                  {ufStores.map((store) => (
-                    <div key={store.id} className="flex flex-col md:flex-row md:items-center gap-2 px-4 py-2 hover:bg-muted/30 transition-colors">
-                      {/* Store info */}
-                      <div className="flex items-center gap-2 min-w-0 md:w-[340px] shrink-0">
-                        {store.store_code && (
-                          <span className="text-xs font-mono text-muted-foreground w-14 shrink-0">{store.store_code}</span>
-                        )}
-                        <span className="text-sm font-medium truncate">{store.name}</span>
-                        {store.city && (
-                          <span className="text-xs text-muted-foreground truncate hidden sm:inline">· {store.city}</span>
-                        )}
-                      </div>
-                      {/* Letra toggle buttons */}
-                      <div className="flex flex-wrap gap-1.5">
-                        {tipos.map((tipo) => {
-                          if (tipo.tem_subdivisao && (tipo.subdivisoes ?? []).length > 0) {
-                            // Popover for subdivisoes
-                            const anyActive = hasAnySub(store.id, tipo);
-                            return (
-                              <Popover key={tipo.id}>
-                                <PopoverTrigger asChild>
-                                  <button
-                                    className={cn(
-                                      "inline-flex items-center justify-center h-7 w-7 rounded-full text-[11px] font-bold border transition-colors",
-                                      anyActive
-                                        ? "bg-primary text-primary-foreground border-primary"
-                                        : "bg-background text-muted-foreground border-border hover:border-primary/50"
-                                    )}
-                                  >
-                                    {tipo.letra}
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-48 p-2" align="start">
-                                  <p className="text-xs font-semibold mb-1.5">{tipo.nome}</p>
-                                  <div className="space-y-1">
-                                    {(tipo.subdivisoes ?? []).map((sub) => {
-                                      const active = isActive(store.id, tipo.id, sub.id);
-                                      return (
-                                        <label key={sub.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
-                                          <Checkbox
-                                            checked={active}
-                                            disabled={!isAdmin}
-                                            onCheckedChange={(checked) => handleToggle(store.id, tipo.id, sub.id, !!checked)}
-                                          />
-                                          {sub.nome}
-                                        </label>
-                                      );
-                                    })}
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
-                            );
-                          }
-                          // Simple toggle
-                          const active = isActive(store.id, tipo.id, null);
-                          return (
-                            <button
-                              key={tipo.id}
-                              disabled={!isAdmin}
-                              onClick={() => handleToggle(store.id, tipo.id, null, !active)}
-                              className={cn(
-                                "inline-flex items-center justify-center h-7 w-7 rounded-full text-[11px] font-bold border transition-colors",
-                                active
-                                  ? "bg-primary text-primary-foreground border-primary"
-                                  : "bg-background text-muted-foreground border-border hover:border-primary/50",
-                                !isAdmin && "opacity-50 cursor-not-allowed"
-                              )}
-                            >
-                              {tipo.letra}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          );
-        })}
-      </div>
+      {/* Copy Dialog */}
+      <Dialog open={showCopyDialog} onOpenChange={setShowCopyDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Copiar da campanha anterior</DialogTitle>
+          </DialogHeader>
+          {loadingCampaigns ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+            </div>
+          ) : campaigns.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma campanha anterior encontrada.</p>
+          ) : (
+            <div className="space-y-1 max-h-60 overflow-y-auto">
+              {campaigns.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCampaignId(c.id)}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+                    selectedCampaignId === c.id ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/60"
+                  )}
+                >
+                  {c.name}
+                  <span className="text-xs text-muted-foreground ml-2">
+                    {new Date(c.created_at).toLocaleDateString("pt-BR")}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowCopyDialog(false)}>Cancelar</Button>
+            <Button onClick={handleConfirmCopy} disabled={!selectedCampaignId || copying}>
+              {copying ? "Copiando..." : "Confirmar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

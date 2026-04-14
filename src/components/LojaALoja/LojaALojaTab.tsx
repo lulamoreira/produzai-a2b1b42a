@@ -12,7 +12,7 @@ interface Props {
 
 export default function LojaALojaTab({ campaignId, clientId, isAdmin }: Props) {
   return (
-    <Tabs defaultValue="tipos" className="w-full">
+    <Tabs defaultValue="dashboard" className="w-full">
       <TabsList className="mb-4">
         <TabsTrigger value="tipos" className="gap-1.5">
           <LayoutGrid className="h-3.5 w-3.5" />
