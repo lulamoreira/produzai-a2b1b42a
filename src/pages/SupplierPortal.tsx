@@ -332,7 +332,8 @@ const SupplierPortal = () => {
   // ─── Build display rows ────────────────────────────────
   const displayRows = useMemo(() => {
     const rows: DisplayRow[] = [];
-    const standalonePieces = allPieces.filter((p) => !p.kit_only);
+    const standalonePieces = allPieces.filter((p) => !p.kit_only)
+      .sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? '')));
     const kitPieceIds = new Set(kitPiecesData.map((kp) => kp.piece_id));
 
     // Standalone pieces (not kit_only AND not exclusively in a kit — show all non-kit_only)
@@ -352,7 +353,7 @@ const SupplierPortal = () => {
     });
 
     // Kits expanded into pieces
-    kitsData.forEach((kit) => {
+    [...kitsData].sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? ''))).forEach((kit) => {
       const kpList = kitPiecesData.filter((kp) => kp.kit_id === kit.id);
       if (kpList.length === 0) return;
 
