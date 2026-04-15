@@ -94,24 +94,47 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
     return map;
   }, [pieces, stores, qtyMap]);
 
-  // ─── Compute supplier grand totals ─────────────────────
+  // ─── Build per-piece quantities including kit expansion ─
+  const kitPieceTotals = useMemo(() => {
+    // For each kit, compute per-piece qty = kitTotalQty × kitPieceQuantity
+    const map: Record<string, { kitId: string; pieceId: string; qty: number }[]> = {};
+    kits.forEach((kit) => {
+      const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
+      if (kpList.length === 0) return;
+      const kitQty = Math.min(...kpList.map((kp) => {
+        const pieceTotal = pieceTotals[kp.piece_id] || 0;
+        return Math.floor(pieceTotal / (kp.quantity || 1));
+      }));
+      map[kit.id] = kpList.map((kp) => ({
+        kitId: kit.id,
+        pieceId: kp.piece_id,
+        qty: kitQty * kp.quantity,
+      }));
+    });
+    return map;
+  }, [kits, kitPieces, pieceTotals]);
+
+  // ─── Compute supplier grand totals (per-piece pricing) ─
   const supplierTotals = useMemo(() => {
     const result: Record<string, number> = {};
     suppliers.forEach((sup) => {
       if (sup.status !== "enviado") return;
       let total = 0;
+      // Standalone pieces
       prices.filter((pr) => pr.supplier_id === sup.id && pr.piece_id).forEach((pr) => {
-        const qty = pieceTotals[pr.piece_id!] || 0;
-        total += (Number(pr.unit_price) || 0) * qty;
-      });
-      prices.filter((pr) => pr.supplier_id === sup.id && pr.kit_id).forEach((pr) => {
-        const kpList = kitPieces.filter((kp) => kp.kit_id === pr.kit_id);
-        if (kpList.length === 0) return;
-        const kitQty = Math.min(...kpList.map((kp) => {
-          const pieceTotal = pieceTotals[kp.piece_id] || 0;
-          return Math.floor(pieceTotal / (kp.quantity || 1));
-        }));
-        total += (Number(pr.unit_price) || 0) * kitQty;
+        // Check if this piece is standalone or part of a kit
+        const piece = pieces.find((p) => p.id === pr.piece_id);
+        if (piece && !piece.kit_only) {
+          const qty = pieceTotals[pr.piece_id!] || 0;
+          total += (Number(pr.unit_price) || 0) * qty;
+        }
+        // Kit pieces: find in kitPieceTotals
+        Object.values(kitPieceTotals).forEach((kpItems) => {
+          const match = kpItems.find((kpi) => kpi.pieceId === pr.piece_id);
+          if (match) {
+            total += (Number(pr.unit_price) || 0) * match.qty;
+          }
+        });
       });
       const ec = extraCosts.find((e) => e.supplier_id === sup.id);
       total += Number(ec?.installation_value) || 0;
@@ -119,7 +142,7 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
       result[sup.id] = total;
     });
     return result;
-  }, [suppliers, prices, extraCosts, pieceTotals, kitPieces]);
+  }, [suppliers, prices, extraCosts, pieceTotals, kitPieceTotals, pieces]);
 
   const bestSupplier = useMemo(() => {
     let best: { id: string; total: number; name: string } | null = null;
