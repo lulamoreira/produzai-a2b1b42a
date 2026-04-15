@@ -484,7 +484,7 @@ export default function AppSidebar() {
                     {isExpanded && (
                       <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
                         {CAMPAIGN_MODULE_KEYS.filter(mod => {
-                          if ((mod.key === "budgets" || mod.key === "loja_a_loja") && !isAdmin) return false;
+                          if ((mod.key === "budgets" || mod.key === "loja_a_loja") && !isAdminOrMaster) return false;
                           return true;
                         }).map((mod) => {
                           const modActive = isCampaignModuleActive(camp.id, mod.key);
