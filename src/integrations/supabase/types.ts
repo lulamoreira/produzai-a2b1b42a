@@ -2601,6 +2601,125 @@ export type Database = {
           },
         ]
       }
+      store_compliance_checks: {
+        Row: {
+          campaign_id: string
+          checked_at: string | null
+          checked_by_token: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          overall_status: string
+          store_id: string
+        }
+        Insert: {
+          campaign_id: string
+          checked_at?: string | null
+          checked_by_token?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          overall_status?: string
+          store_id: string
+        }
+        Update: {
+          campaign_id?: string
+          checked_at?: string | null
+          checked_by_token?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          overall_status?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_compliance_checks_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_compliance_checks_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_compliance_items: {
+        Row: {
+          check_id: string
+          created_at: string | null
+          creates_occurrence: boolean | null
+          creates_replacement: boolean | null
+          id: string
+          loja_a_loja_peca_id: string | null
+          notes: string | null
+          photo_urls: string[] | null
+          status: string
+          subdivisao_id: string | null
+          tipo_id: string | null
+        }
+        Insert: {
+          check_id: string
+          created_at?: string | null
+          creates_occurrence?: boolean | null
+          creates_replacement?: boolean | null
+          id?: string
+          loja_a_loja_peca_id?: string | null
+          notes?: string | null
+          photo_urls?: string[] | null
+          status?: string
+          subdivisao_id?: string | null
+          tipo_id?: string | null
+        }
+        Update: {
+          check_id?: string
+          created_at?: string | null
+          creates_occurrence?: boolean | null
+          creates_replacement?: boolean | null
+          id?: string
+          loja_a_loja_peca_id?: string | null
+          notes?: string | null
+          photo_urls?: string[] | null
+          status?: string
+          subdivisao_id?: string | null
+          tipo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_compliance_items_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "store_compliance_checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_compliance_items_loja_a_loja_peca_id_fkey"
+            columns: ["loja_a_loja_peca_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_pecas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_compliance_items_subdivisao_id_fkey"
+            columns: ["subdivisao_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_subdivisoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_compliance_items_tipo_id_fkey"
+            columns: ["tipo_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_tipos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_contact_roles: {
         Row: {
           client_id: string
