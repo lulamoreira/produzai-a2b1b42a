@@ -2937,6 +2937,106 @@ export type Database = {
           },
         ]
       }
+      store_replacement_requests: {
+        Row: {
+          agency_notes: string | null
+          campaign_id: string
+          id: string
+          loja_a_loja_peca_id: string | null
+          photo_urls: string[] | null
+          quantity_requested: number
+          reason: string
+          requested_at: string | null
+          reviewed_at: string | null
+          reviewed_by_user_id: string | null
+          status: string
+          store_id: string
+          subdivisao_id: string | null
+          supplier_notes: string | null
+          tipo_id: string | null
+          token_id: string | null
+        }
+        Insert: {
+          agency_notes?: string | null
+          campaign_id: string
+          id?: string
+          loja_a_loja_peca_id?: string | null
+          photo_urls?: string[] | null
+          quantity_requested?: number
+          reason: string
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          status?: string
+          store_id: string
+          subdivisao_id?: string | null
+          supplier_notes?: string | null
+          tipo_id?: string | null
+          token_id?: string | null
+        }
+        Update: {
+          agency_notes?: string | null
+          campaign_id?: string
+          id?: string
+          loja_a_loja_peca_id?: string | null
+          photo_urls?: string[] | null
+          quantity_requested?: number
+          reason?: string
+          requested_at?: string | null
+          reviewed_at?: string | null
+          reviewed_by_user_id?: string | null
+          status?: string
+          store_id?: string
+          subdivisao_id?: string | null
+          supplier_notes?: string | null
+          tipo_id?: string | null
+          token_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_replacement_requests_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_replacement_requests_loja_a_loja_peca_id_fkey"
+            columns: ["loja_a_loja_peca_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_pecas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_replacement_requests_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_replacement_requests_subdivisao_id_fkey"
+            columns: ["subdivisao_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_subdivisoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_replacement_requests_tipo_id_fkey"
+            columns: ["tipo_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_tipos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_replacement_requests_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "store_portal_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           created_at: string
