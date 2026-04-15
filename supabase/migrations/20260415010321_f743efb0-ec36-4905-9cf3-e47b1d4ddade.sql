@@ -1,0 +1,1 @@
+GRANT SELECT, INSERT, UPDATE ON TABLE public.supplier_spec_suggestions TO anon;
