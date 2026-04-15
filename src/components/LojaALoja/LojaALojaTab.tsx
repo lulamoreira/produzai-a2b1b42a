@@ -2,7 +2,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TiposManager from "@/components/LojaALoja/TiposManager";
 import LojasManager from "@/components/LojaALoja/LojasManager";
 import LojaALojaDashboard from "@/components/LojaALoja/LojaALojaDashboard";
-import { LayoutGrid, Store, BarChart3 } from "lucide-react";
+import PortaisManager from "@/components/LojaALoja/PortaisManager";
+import { LayoutGrid, Store, BarChart3, Settings2 } from "lucide-react";
 
 interface Props {
   campaignId: string;
@@ -26,6 +27,10 @@ export default function LojaALojaTab({ campaignId, clientId, isAdmin }: Props) {
           <Store className="h-3.5 w-3.5" />
           Lojas
         </TabsTrigger>
+        <TabsTrigger value="portais" className="gap-1.5">
+          <Settings2 className="h-3.5 w-3.5" />
+          Portais
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="tipos">
         <TiposManager campaignId={campaignId} isAdmin={isAdmin} />
@@ -35,6 +40,9 @@ export default function LojaALojaTab({ campaignId, clientId, isAdmin }: Props) {
       </TabsContent>
       <TabsContent value="lojas">
         <LojasManager campaignId={campaignId} clientId={clientId} isAdmin={isAdmin} />
+      </TabsContent>
+      <TabsContent value="portais">
+        <PortaisManager campaignId={campaignId} clientId={clientId} isAdmin={isAdmin} />
       </TabsContent>
     </Tabs>
   );
