@@ -14,8 +14,12 @@ import {
   useDeletePeca,
   useUpdatePecaImage,
   useUpdatePecaNome,
+  useReorderTipos,
+  useReorderSubdivisoes,
+  useReorderPecas,
   type LojaALojaTipo,
   type LojaALojaSubdivisao,
+  type LojaALojaPeca,
 } from "@/hooks/useLojaALoja";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,9 +32,28 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Plus, Pencil, Trash2, Image, ImagePlus, ChevronRight, X, Upload, Check, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Image, ImagePlus, ChevronRight, X, Upload, Check, Loader2, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { useMemo } from "react";
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface TiposManagerProps {
   campaignId: string;
@@ -49,10 +72,8 @@ function cropSquare(file: File, size = 400, quality = 0.7): Promise<Blob> {
       canvas.height = size;
       const ctx = canvas.getContext("2d");
       if (!ctx) { reject(new Error("Canvas not supported")); return; }
-      // White background
       ctx.fillStyle = "#FFFFFF";
       ctx.fillRect(0, 0, size, size);
-      // Scale proportionally so largest side = size (contain)
       const scale = Math.min(size / img.width, size / img.height);
       const w = Math.round(img.width * scale);
       const h = Math.round(img.height * scale);
@@ -68,6 +89,330 @@ function cropSquare(file: File, size = 400, quality = 0.7): Promise<Blob> {
     img.onerror = () => reject(new Error("Failed to load image"));
     img.src = url;
   });
+}
+
+/* ── Sortable Tipo Row ── */
+function SortableTipoRow({
+  tipo,
+  isSelected,
+  isExpanded,
+  isEditing,
+  editingNome,
+  pecaCount,
+  isAdmin,
+  onSelect,
+  onStartEdit,
+  onSaveEdit,
+  onCancelEdit,
+  onChangeEditNome,
+  onDelete,
+  children,
+}: {
+  tipo: LojaALojaTipo;
+  isSelected: boolean;
+  isExpanded: boolean;
+  isEditing: boolean;
+  editingNome: string;
+  pecaCount: number;
+  isAdmin: boolean;
+  onSelect: () => void;
+  onStartEdit: () => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onChangeEditNome: (v: string) => void;
+  onDelete: () => void;
+  children?: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: tipo.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <div
+        className={cn(
+          "flex items-center gap-1 px-1 py-1.5 rounded-md cursor-pointer transition-colors group",
+          isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted/60 text-foreground",
+        )}
+        onClick={onSelect}
+      >
+        <button
+          type="button"
+          className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/50 hover:text-muted-foreground"
+          {...attributes}
+          {...listeners}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="w-3.5 h-3.5" />
+        </button>
+
+        <span
+          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0"
+          style={{ backgroundColor: "hsl(var(--primary))" }}
+        >
+          {tipo.letra}
+        </span>
+
+        {isEditing ? (
+          <div className="flex items-center gap-1 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+            <Input
+              value={editingNome}
+              onChange={(e) => onChangeEditNome(e.target.value)}
+              className="h-7 text-xs flex-1"
+              autoFocus
+              onKeyDown={(e) => e.key === "Enter" && onSaveEdit()}
+            />
+            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={onSaveEdit}><Check className="w-3 h-3" /></Button>
+            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={onCancelEdit}><X className="w-3 h-3" /></Button>
+          </div>
+        ) : (
+          <>
+            <span className="text-xs font-medium truncate flex-1">{tipo.nome}</span>
+            {pecaCount > 0 && <span className="text-[10px] text-muted-foreground font-normal">{pecaCount}</span>}
+            {tipo.tem_subdivisao && (
+              <ChevronRight className={cn("w-3 h-3 transition-transform text-muted-foreground", isExpanded && "rotate-90")} />
+            )}
+            {isAdmin && (
+              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
+                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); onStartEdit(); }}>
+                  <Pencil className="w-3 h-3" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ── Sortable Subdivisao Row ── */
+function SortableSubRow({
+  sub,
+  isSelected,
+  isEditing,
+  editingNome,
+  pecaCount,
+  isAdmin,
+  onSelect,
+  onStartEdit,
+  onSaveEdit,
+  onCancelEdit,
+  onChangeEditNome,
+  onDelete,
+}: {
+  sub: LojaALojaSubdivisao;
+  isSelected: boolean;
+  isEditing: boolean;
+  editingNome: string;
+  pecaCount: number;
+  isAdmin: boolean;
+  onSelect: () => void;
+  onStartEdit: () => void;
+  onSaveEdit: () => void;
+  onCancelEdit: () => void;
+  onChangeEditNome: (v: string) => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: sub.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-1 px-1 py-1 rounded-md cursor-pointer transition-colors group/sub text-xs",
+        isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted/60 text-muted-foreground",
+      )}
+      onClick={onSelect}
+    >
+      <button
+        type="button"
+        className="shrink-0 cursor-grab active:cursor-grabbing touch-none text-muted-foreground/50 hover:text-muted-foreground"
+        {...attributes}
+        {...listeners}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <GripVertical className="w-3 h-3" />
+      </button>
+
+      {isEditing ? (
+        <div className="flex items-center gap-1 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+          <Input value={editingNome} onChange={(e) => onChangeEditNome(e.target.value)} className="h-6 text-xs flex-1" autoFocus onKeyDown={(e) => e.key === "Enter" && onSaveEdit()} />
+          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={onSaveEdit}><Check className="w-3 h-3" /></Button>
+          <Button size="icon" variant="ghost" className="h-5 w-5" onClick={onCancelEdit}><X className="w-3 h-3" /></Button>
+        </div>
+      ) : (
+        <>
+          <span className="truncate flex-1">{sub.nome}</span>
+          {pecaCount > 0 && <span className="text-[10px] text-muted-foreground font-normal">{pecaCount}</span>}
+          {isAdmin && (
+            <div className="flex items-center gap-0.5 opacity-0 group-hover/sub:opacity-100">
+              <Button size="icon" variant="ghost" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); onStartEdit(); }}>
+                <Pencil className="w-3 h-3" />
+              </Button>
+              <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                <Trash2 className="w-3 h-3" />
+              </Button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ── Sortable Piece Card ── */
+function SortablePieceCard({
+  peca,
+  isAdmin,
+  isDragOverImage,
+  isUploading,
+  isEditingName,
+  editingNome,
+  onDragOverImage,
+  onDragLeaveImage,
+  onDropImage,
+  onClickImage,
+  fileInputRef,
+  onFileChange,
+  onStartEditName,
+  onChangeEditName,
+  onBlurEditName,
+  onKeyDownEditName,
+  onDelete,
+}: {
+  peca: LojaALojaPeca;
+  isAdmin: boolean;
+  isDragOverImage: boolean;
+  isUploading: boolean;
+  isEditingName: boolean;
+  editingNome: string;
+  onDragOverImage: () => void;
+  onDragLeaveImage: () => void;
+  onDropImage: (file: File) => void;
+  onClickImage: () => void;
+  fileInputRef: (el: HTMLInputElement | null) => void;
+  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onStartEditName: () => void;
+  onChangeEditName: (v: string) => void;
+  onBlurEditName: () => void;
+  onKeyDownEditName: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: peca.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group relative"
+      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); onDragOverImage(); }}
+      onDragEnter={(e) => { e.preventDefault(); onDragOverImage(); }}
+      onDragLeave={(e) => { e.preventDefault(); onDragLeaveImage(); }}
+      onDrop={(e) => { e.preventDefault(); onDragLeaveImage(); const file = e.dataTransfer.files?.[0]; if (file) onDropImage(file); }}
+    >
+      {/* Drag handle */}
+      <div className="absolute top-1 left-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          type="button"
+          className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-3 h-3 text-white" />
+        </button>
+      </div>
+
+      <div
+        className={cn(
+          "aspect-square rounded-lg border overflow-hidden flex items-center justify-center relative cursor-pointer transition-all",
+          isDragOverImage
+            ? "border-2 border-dashed border-[#8C6F4E] bg-[#8C6F4E]/10"
+            : peca.image_url
+              ? "border-border bg-muted/30"
+              : "border-dashed border-border bg-muted/20 hover:border-primary/40",
+        )}
+        onClick={() => { if (!isUploading) onClickImage(); }}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={onFileChange}
+        />
+
+        {peca.image_url ? (
+          <img src={peca.image_url} alt={peca.nome} className="w-full h-full object-contain bg-white" />
+        ) : (
+          <div className="flex flex-col items-center gap-1 text-muted-foreground/40">
+            <Image className="w-6 h-6" />
+            {isAdmin && <span className="text-[9px]">Arraste ou clique</span>}
+          </div>
+        )}
+
+        {isDragOverImage && (
+          <div className="absolute inset-0 bg-[#8C6F4E]/20 flex items-center justify-center rounded-lg">
+            <span className="text-xs font-medium text-[#8C6F4E]">Solte a imagem aqui</span>
+          </div>
+        )}
+
+        {isUploading && (
+          <div className="absolute inset-0 bg-background/70 flex items-center justify-center rounded-lg">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        )}
+
+        {isAdmin && !isUploading && !isDragOverImage && (
+          <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button type="button" className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center transition-colors" title="Editar nome"
+              onClick={(e) => { e.stopPropagation(); onStartEditName(); }}>
+              <Pencil className="w-3 h-3 text-white" />
+            </button>
+            <button type="button" className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center transition-colors" title="Trocar foto"
+              onClick={(e) => { e.stopPropagation(); onClickImage(); }}>
+              <ImagePlus className="w-3 h-3 text-white" />
+            </button>
+            <button type="button" className="h-6 w-6 rounded bg-foreground/70 hover:bg-destructive flex items-center justify-center transition-colors" title="Apagar"
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+              <Trash2 className="w-3 h-3 text-white" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {isEditingName ? (
+        <Input
+          autoFocus
+          className="h-6 text-xs mt-1 px-1"
+          value={editingNome}
+          onChange={(e) => onChangeEditName(e.target.value)}
+          onKeyDown={onKeyDownEditName}
+          onBlur={onBlurEditName}
+        />
+      ) : (
+        <p className="text-xs text-foreground mt-1 truncate">{peca.nome}</p>
+      )}
+    </div>
+  );
 }
 
 const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
@@ -134,6 +479,9 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
   const deletePeca = useDeletePeca();
   const updatePecaImage = useUpdatePecaImage();
   const updatePecaNome = useUpdatePecaNome();
+  const reorderTipos = useReorderTipos();
+  const reorderSubdivisoes = useReorderSubdivisoes();
+  const reorderPecas = useReorderPecas();
 
   // Drag & drop / upload state
   const [uploadingPecaId, setUploadingPecaId] = useState<string | null>(null);
@@ -164,6 +512,7 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
       setUploadingPecaId(null);
     }
   }, [updatePecaImage]);
+
   // Pieces query
   const { data: pecas, isLoading: loadingPecas } = useLojaALojaPecas(
     selectedSubId ? null : selectedTipoId,
@@ -173,8 +522,14 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
   const selectedTipo = tipos?.find((t) => t.id === selectedTipoId);
 
   // Split into Vitrines / Internos
-  const vitrines = tipos?.filter((t) => !t.tem_subdivisao) ?? [];
-  const internos = tipos?.filter((t) => t.tem_subdivisao) ?? [];
+  const vitrines = useMemo(() => tipos?.filter((t) => !t.tem_subdivisao) ?? [], [tipos]);
+  const internos = useMemo(() => tipos?.filter((t) => t.tem_subdivisao) ?? [], [tipos]);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   // ── Handlers ──
 
@@ -300,187 +655,57 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
     }
   };
 
-  // ── Render a tipo row ──
-  const renderTipoRow = (tipo: LojaALojaTipo) => (
-    <div key={tipo.id}>
-      <div
-        className={cn(
-          "flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors group",
-          selectedTipoId === tipo.id && !selectedSubId
-            ? "bg-primary/10 text-primary"
-            : "hover:bg-muted/60 text-foreground",
-        )}
-        onClick={() => handleSelectTipo(tipo)}
-      >
-        <span
-          className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0"
-          style={{ backgroundColor: "hsl(var(--primary))" }}
-        >
-          {tipo.letra}
-        </span>
+  // ── Drag end handlers ──
 
-        {editingTipoId === tipo.id ? (
-          <div className="flex items-center gap-1 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
-            <Input
-              value={editingTipoNome}
-              onChange={(e) => setEditingTipoNome(e.target.value)}
-              className="h-7 text-xs flex-1"
-              autoFocus
-              onKeyDown={(e) => e.key === "Enter" && handleSaveEditTipo()}
-            />
-            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={handleSaveEditTipo}>
-              <Check className="w-3 h-3" />
-            </Button>
-            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setEditingTipoId(null)}>
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-        ) : (
-          <>
-            <span className="text-xs font-medium truncate flex-1">{tipo.nome}</span>
-            {(() => {
-              // For tipos with subdivisoes, sum all sub counts; otherwise use tipo count
-              const count = tipo.tem_subdivisao
-                ? (tipo.subdivisoes ?? []).reduce((sum, s) => sum + (pecaCountByTipo[`sub:${s.id}`] || 0), 0)
-                : (pecaCountByTipo[`tipo:${tipo.id}`] || 0);
-              return count > 0 ? (
-                <span className="text-[10px] text-muted-foreground font-normal">{count}</span>
-              ) : null;
-            })()}
-            {tipo.tem_subdivisao && (
-              <ChevronRight className={cn("w-3 h-3 transition-transform text-muted-foreground", expandedTipos.has(tipo.id) && "rotate-90")} />
-            )}
-            {isAdmin && (
-              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-5 w-5"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingTipoId(tipo.id);
-                    setEditingTipoNome(tipo.nome);
-                  }}
-                >
-                  <Pencil className="w-3 h-3" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-5 w-5 text-destructive hover:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeletingTipo({ id: tipo.id, nome: tipo.nome });
-                  }}
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+  const handleDragEndVitrines = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = vitrines.findIndex((t) => t.id === active.id);
+    const newIndex = vitrines.findIndex((t) => t.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(vitrines, oldIndex, newIndex);
+    const items = reordered.map((t, i) => ({ id: t.id, display_order: i + 1 }));
+    // Keep internos order offset after vitrines
+    const internosItems = internos.map((t, i) => ({ id: t.id, display_order: reordered.length + i + 1 }));
+    reorderTipos.mutate({ campaign_id: campaignId, items: [...items, ...internosItems] });
+  };
 
-      {/* Subdivisoes */}
-      {tipo.tem_subdivisao && expandedTipos.has(tipo.id) && (
-        <div className="ml-6 mt-0.5 space-y-0.5">
-          {tipo.subdivisoes?.map((sub) => (
-            <div
-              key={sub.id}
-              className={cn(
-                "flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer transition-colors group/sub text-xs",
-                selectedSubId === sub.id
-                  ? "bg-primary/10 text-primary"
-                  : "hover:bg-muted/60 text-muted-foreground",
-              )}
-              onClick={() => handleSelectSub(sub)}
-            >
-              {editingSubId === sub.id ? (
-                <div className="flex items-center gap-1 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
-                  <Input
-                    value={editingSubNome}
-                    onChange={(e) => setEditingSubNome(e.target.value)}
-                    className="h-6 text-xs flex-1"
-                    autoFocus
-                    onKeyDown={(e) => e.key === "Enter" && handleSaveEditSub()}
-                  />
-                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={handleSaveEditSub}>
-                    <Check className="w-3 h-3" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setEditingSubId(null)}>
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  <span className="truncate flex-1">{sub.nome}</span>
-                  {(pecaCountByTipo[`sub:${sub.id}`] || 0) > 0 && (
-                    <span className="text-[10px] text-muted-foreground font-normal">{pecaCountByTipo[`sub:${sub.id}`]}</span>
-                  )}
-                  {isAdmin && (
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover/sub:opacity-100">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-5 w-5"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingSubId(sub.id);
-                          setEditingSubNome(sub.nome);
-                        }}
-                      >
-                        <Pencil className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-5 w-5 text-destructive hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletingSub({ id: sub.id, nome: sub.nome });
-                        }}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          ))}
+  const handleDragEndInternos = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = internos.findIndex((t) => t.id === active.id);
+    const newIndex = internos.findIndex((t) => t.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(internos, oldIndex, newIndex);
+    // Keep vitrines order, offset internos after
+    const vitrinesItems = vitrines.map((t, i) => ({ id: t.id, display_order: i + 1 }));
+    const items = reordered.map((t, i) => ({ id: t.id, display_order: vitrines.length + i + 1 }));
+    reorderTipos.mutate({ campaign_id: campaignId, items: [...vitrinesItems, ...items] });
+  };
 
-          {/* Add subdivisao */}
-          {isAdmin && (
-            addingSubForTipoId === tipo.id ? (
-              <div className="flex items-center gap-1 px-2">
-                <Input
-                  value={newSubNome}
-                  onChange={(e) => setNewSubNome(e.target.value)}
-                  placeholder="Nome da subdivisão"
-                  className="h-6 text-xs flex-1"
-                  autoFocus
-                  onKeyDown={(e) => e.key === "Enter" && handleAddSub(tipo.id)}
-                />
-                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => handleAddSub(tipo.id)}>
-                  <Check className="w-3 h-3" />
-                </Button>
-                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setAddingSubForTipoId(null)}>
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            ) : (
-              <button
-                className="text-[10px] text-muted-foreground hover:text-primary px-2 py-0.5 flex items-center gap-1"
-                onClick={() => setAddingSubForTipoId(tipo.id)}
-              >
-                <Plus className="w-3 h-3" /> Subdivisão
-              </button>
-            )
-          )}
-        </div>
-      )}
-    </div>
-  );
+  const handleDragEndSubs = (tipoId: string) => (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const tipo = tipos?.find((t) => t.id === tipoId);
+    const subs = tipo?.subdivisoes ?? [];
+    const oldIndex = subs.findIndex((s) => s.id === active.id);
+    const newIndex = subs.findIndex((s) => s.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(subs, oldIndex, newIndex);
+    const items = reordered.map((s, i) => ({ id: s.id, display_order: i + 1 }));
+    reorderSubdivisoes.mutate({ campaign_id: campaignId, items });
+  };
+
+  const handleDragEndPecas = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !pecas) return;
+    const oldIndex = pecas.findIndex((p) => p.id === active.id);
+    const newIndex = pecas.findIndex((p) => p.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(pecas, oldIndex, newIndex);
+    const items = reordered.map((p, i) => ({ id: p.id, display_order: i + 1 }));
+    reorderPecas.mutate({ items });
+  };
 
   // ── Render add tipo form ──
   const renderAddTipoForm = (section: "vitrines" | "internos") => {
@@ -525,6 +750,12 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
     );
   };
 
+  // Helper to get peca count for a tipo
+  const getTipoCount = (tipo: LojaALojaTipo) =>
+    tipo.tem_subdivisao
+      ? (tipo.subdivisoes ?? []).reduce((sum, s) => sum + (pecaCountByTipo[`sub:${s.id}`] || 0), 0)
+      : (pecaCountByTipo[`tipo:${tipo.id}`] || 0);
+
   // ── Render ──
 
   return (
@@ -543,7 +774,28 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
               {vitrines.length === 0 && (
                 <p className="text-xs text-muted-foreground/60 px-2">Nenhum tipo cadastrado</p>
               )}
-              {vitrines.map(renderTipoRow)}
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndVitrines}>
+                <SortableContext items={vitrines.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+                  {vitrines.map((tipo) => (
+                    <SortableTipoRow
+                      key={tipo.id}
+                      tipo={tipo}
+                      isSelected={selectedTipoId === tipo.id && !selectedSubId}
+                      isExpanded={expandedTipos.has(tipo.id)}
+                      isEditing={editingTipoId === tipo.id}
+                      editingNome={editingTipoNome}
+                      pecaCount={getTipoCount(tipo)}
+                      isAdmin={isAdmin}
+                      onSelect={() => handleSelectTipo(tipo)}
+                      onStartEdit={() => { setEditingTipoId(tipo.id); setEditingTipoNome(tipo.nome); }}
+                      onSaveEdit={handleSaveEditTipo}
+                      onCancelEdit={() => setEditingTipoId(null)}
+                      onChangeEditNome={setEditingTipoNome}
+                      onDelete={() => setDeletingTipo({ id: tipo.id, nome: tipo.nome })}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
               {isAdmin && renderAddTipoForm("vitrines")}
             </div>
 
@@ -553,7 +805,83 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
               {internos.length === 0 && (
                 <p className="text-xs text-muted-foreground/60 px-2">Nenhum tipo cadastrado</p>
               )}
-              {internos.map(renderTipoRow)}
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndInternos}>
+                <SortableContext items={internos.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+                  {internos.map((tipo) => (
+                    <SortableTipoRow
+                      key={tipo.id}
+                      tipo={tipo}
+                      isSelected={selectedTipoId === tipo.id && !selectedSubId}
+                      isExpanded={expandedTipos.has(tipo.id)}
+                      isEditing={editingTipoId === tipo.id}
+                      editingNome={editingTipoNome}
+                      pecaCount={getTipoCount(tipo)}
+                      isAdmin={isAdmin}
+                      onSelect={() => handleSelectTipo(tipo)}
+                      onStartEdit={() => { setEditingTipoId(tipo.id); setEditingTipoNome(tipo.nome); }}
+                      onSaveEdit={handleSaveEditTipo}
+                      onCancelEdit={() => setEditingTipoId(null)}
+                      onChangeEditNome={setEditingTipoNome}
+                      onDelete={() => setDeletingTipo({ id: tipo.id, nome: tipo.nome })}
+                    >
+                      {/* Subdivisoes */}
+                      {tipo.tem_subdivisao && expandedTipos.has(tipo.id) && (
+                        <div className="ml-6 mt-0.5 space-y-0.5">
+                          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndSubs(tipo.id)}>
+                            <SortableContext items={(tipo.subdivisoes ?? []).map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                              {tipo.subdivisoes?.map((sub) => (
+                                <SortableSubRow
+                                  key={sub.id}
+                                  sub={sub}
+                                  isSelected={selectedSubId === sub.id}
+                                  isEditing={editingSubId === sub.id}
+                                  editingNome={editingSubNome}
+                                  pecaCount={pecaCountByTipo[`sub:${sub.id}`] || 0}
+                                  isAdmin={isAdmin}
+                                  onSelect={() => handleSelectSub(sub)}
+                                  onStartEdit={() => { setEditingSubId(sub.id); setEditingSubNome(sub.nome); }}
+                                  onSaveEdit={handleSaveEditSub}
+                                  onCancelEdit={() => setEditingSubId(null)}
+                                  onChangeEditNome={setEditingSubNome}
+                                  onDelete={() => setDeletingSub({ id: sub.id, nome: sub.nome })}
+                                />
+                              ))}
+                            </SortableContext>
+                          </DndContext>
+
+                          {isAdmin && (
+                            addingSubForTipoId === tipo.id ? (
+                              <div className="flex items-center gap-1 px-2">
+                                <Input
+                                  value={newSubNome}
+                                  onChange={(e) => setNewSubNome(e.target.value)}
+                                  placeholder="Nome da subdivisão"
+                                  className="h-6 text-xs flex-1"
+                                  autoFocus
+                                  onKeyDown={(e) => e.key === "Enter" && handleAddSub(tipo.id)}
+                                />
+                                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => handleAddSub(tipo.id)}>
+                                  <Check className="w-3 h-3" />
+                                </Button>
+                                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => setAddingSubForTipoId(null)}>
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <button
+                                className="text-[10px] text-muted-foreground hover:text-primary px-2 py-0.5 flex items-center gap-1"
+                                onClick={() => setAddingSubForTipoId(tipo.id)}
+                              >
+                                <Plus className="w-3 h-3" /> Subdivisão
+                              </button>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </SortableTipoRow>
+                  ))}
+                </SortableContext>
+              </DndContext>
               {isAdmin && renderAddTipoForm("internos")}
             </div>
           </>
@@ -590,157 +918,48 @@ const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
                 ))}
               </div>
             ) : pecas && pecas.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {pecas.map((peca) => {
-                  const isDragOver = dragOverPecaId === peca.id;
-                  const isUploading = uploadingPecaId === peca.id;
-                  const isEditingName = editingPecaId === peca.id;
-                  return (
-                    <div
-                      key={peca.id}
-                      className="group relative"
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (isAdmin) setDragOverPecaId(peca.id);
-                      }}
-                      onDragEnter={(e) => {
-                        e.preventDefault();
-                        if (isAdmin) setDragOverPecaId(peca.id);
-                      }}
-                      onDragLeave={(e) => {
-                        e.preventDefault();
-                        if (dragOverPecaId === peca.id) setDragOverPecaId(null);
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        setDragOverPecaId(null);
-                        if (!isAdmin) return;
-                        const file = e.dataTransfer.files?.[0];
-                        if (file) uploadPecaImage(file, peca.id);
-                      }}
-                    >
-                      <div
-                        className={cn(
-                          "aspect-square rounded-lg border overflow-hidden flex items-center justify-center relative cursor-pointer transition-all",
-                          isDragOver
-                            ? "border-2 border-dashed border-[#8C6F4E] bg-[#8C6F4E]/10"
-                            : peca.image_url
-                              ? "border-border bg-muted/30"
-                              : "border-dashed border-border bg-muted/20 hover:border-primary/40",
-                        )}
-                        onClick={() => {
-                          if (!isAdmin || isUploading) return;
-                          fileInputRefs.current[peca.id]?.click();
-                        }}
-                      >
-                        {/* Hidden file input */}
-                        <input
-                          ref={(el) => { fileInputRefs.current[peca.id] = el; }}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            e.target.value = "";
-                            if (file) uploadPecaImage(file, peca.id);
-                          }}
-                        />
-
-                        {/* Image or empty placeholder */}
-                        {peca.image_url ? (
-                          <img src={peca.image_url} alt={peca.nome} className="w-full h-full object-contain bg-white" />
-                        ) : (
-                          <div className="flex flex-col items-center gap-1 text-muted-foreground/40">
-                            <Image className="w-6 h-6" />
-                            {isAdmin && <span className="text-[9px]">Arraste ou clique</span>}
-                          </div>
-                        )}
-
-                        {/* Drag-over overlay */}
-                        {isDragOver && (
-                          <div className="absolute inset-0 bg-[#8C6F4E]/20 flex items-center justify-center rounded-lg">
-                            <span className="text-xs font-medium text-[#8C6F4E]">Solte a imagem aqui</span>
-                          </div>
-                        )}
-
-                        {/* Uploading overlay */}
-                        {isUploading && (
-                          <div className="absolute inset-0 bg-background/70 flex items-center justify-center rounded-lg">
-                            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                          </div>
-                        )}
-
-                        {/* Action menu on hover (top-right) */}
-                        {isAdmin && !isUploading && !isDragOver && (
-                          <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              type="button"
-                              className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center transition-colors"
-                              title="Editar nome"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingPecaId(peca.id);
-                                setEditingPecaNome(peca.nome);
-                              }}
-                            >
-                              <Pencil className="w-3 h-3 text-white" />
-                            </button>
-                            <button
-                              type="button"
-                              className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center transition-colors"
-                              title="Trocar foto"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                fileInputRefs.current[peca.id]?.click();
-                              }}
-                            >
-                              <ImagePlus className="w-3 h-3 text-white" />
-                            </button>
-                            <button
-                              type="button"
-                              className="h-6 w-6 rounded bg-foreground/70 hover:bg-destructive flex items-center justify-center transition-colors"
-                              title="Apagar"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeletingPeca({ id: peca.id, nome: peca.nome });
-                              }}
-                            >
-                              <Trash2 className="w-3 h-3 text-white" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Name: inline editable or static */}
-                      {isEditingName ? (
-                        <Input
-                          autoFocus
-                          className="h-6 text-xs mt-1 px-1"
-                          value={editingPecaNome}
-                          onChange={(e) => setEditingPecaNome(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.currentTarget.blur();
-                            } else if (e.key === "Escape") {
-                              setEditingPecaId(null);
-                            }
-                          }}
-                          onBlur={() => {
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEndPecas}>
+                <SortableContext items={pecas.map((p) => p.id)} strategy={rectSortingStrategy}>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {pecas.map((peca) => {
+                      const isDragOver = dragOverPecaId === peca.id;
+                      const isUploading = uploadingPecaId === peca.id;
+                      const isEditingName = editingPecaId === peca.id;
+                      return (
+                        <SortablePieceCard
+                          key={peca.id}
+                          peca={peca}
+                          isAdmin={isAdmin}
+                          isDragOverImage={isDragOver}
+                          isUploading={isUploading}
+                          isEditingName={isEditingName}
+                          editingNome={editingPecaNome}
+                          onDragOverImage={() => setDragOverPecaId(peca.id)}
+                          onDragLeaveImage={() => { if (dragOverPecaId === peca.id) setDragOverPecaId(null); }}
+                          onDropImage={(file) => uploadPecaImage(file, peca.id)}
+                          onClickImage={() => { if (isAdmin) fileInputRefs.current[peca.id]?.click(); }}
+                          fileInputRef={(el) => { fileInputRefs.current[peca.id] = el; }}
+                          onFileChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) uploadPecaImage(file, peca.id); }}
+                          onStartEditName={() => { setEditingPecaId(peca.id); setEditingPecaNome(peca.nome); }}
+                          onChangeEditName={setEditingPecaNome}
+                          onBlurEditName={() => {
                             const trimmed = editingPecaNome.trim();
                             if (trimmed && trimmed !== peca.nome) {
                               updatePecaNome.mutate({ id: peca.id, nome: trimmed });
                             }
                             setEditingPecaId(null);
                           }}
+                          onKeyDownEditName={(e) => {
+                            if (e.key === "Enter") e.currentTarget.blur();
+                            else if (e.key === "Escape") setEditingPecaId(null);
+                          }}
+                          onDelete={() => setDeletingPeca({ id: peca.id, nome: peca.nome })}
                         />
-                      ) : (
-                        <p className="text-xs text-foreground mt-1 truncate">{peca.nome}</p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                      );
+                    })}
+                  </div>
+                </SortableContext>
+              </DndContext>
             ) : (
               <div className="flex flex-col items-center justify-center text-muted-foreground gap-2 py-12">
                 <Image className="w-8 h-8" />
