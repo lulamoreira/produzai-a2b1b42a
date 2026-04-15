@@ -616,7 +616,19 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                               <TableRow className="bg-muted/10">
                                 <TableCell className="text-xs pl-6">
                              {piece ? `${piece.code} - ${piece.name}` : kp.piece_id}
-                                  {piece?.specification && <div className="text-muted-foreground text-xs break-words whitespace-normal mt-0.5">{piece.specification}</div>}
+                                  {piece && sug && sug.orcado_por === "sugerida" ? (
+                                    <>
+                                      <div className="text-amber-700 text-xs break-words whitespace-normal mt-0.5">
+                                        {sug.suggested_spec}
+                                        <span className="text-amber-500 italic ml-1">(especificação modificada pelo fornecedor)</span>
+                                      </div>
+                                      {piece.specification && (
+                                        <div className="text-muted-foreground text-[10px] break-words whitespace-normal mt-0.5 line-through">{piece.specification}</div>
+                                      )}
+                                    </>
+                                  ) : (
+                                    piece?.specification && <div className="text-muted-foreground text-xs break-words whitespace-normal mt-0.5">{piece.specification}</div>
+                                  )}
                                   {sug && (
                                     <button onClick={() => setExpandedSuggestionPieceId(isSugExpanded ? null : kp.piece_id)} className="ml-1 inline-flex items-center">
                                       <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[9px] cursor-pointer gap-0.5">
