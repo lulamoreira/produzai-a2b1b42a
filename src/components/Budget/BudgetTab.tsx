@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, Loader2,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, Loader2, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -33,7 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   useBudgetSettings, useSaveBudgetSettings,
   useBudgetSuppliers, useAddSupplier, useDeleteSupplier, useUpdateSupplier,
-  useBudgetPrices, useBudgetExtraCosts,
+  useBudgetPrices, useBudgetExtraCosts, useSupplierSpecSuggestions,
 } from "@/hooks/useBudget";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
