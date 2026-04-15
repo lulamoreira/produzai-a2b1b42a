@@ -381,6 +381,22 @@ const SupplierPortal = () => {
       });
     });
 
+    // Standalone pieces after all kits
+    standalonePieces.forEach((p) => {
+      rows.push({
+        key: `piece-${p.id}`,
+        type: "standalone_piece",
+        pieceId: p.id,
+        name: p.name,
+        code: p.code,
+        image_url: p.image_url,
+        specification: p.specification,
+        size: p.size,
+        totalQty: storePieceQtyMap[p.id] || 0,
+        editable: true,
+      });
+    });
+
     return rows;
   }, [allPieces, kitsData, kitPiecesData, storePieceQtyMap]);
 
