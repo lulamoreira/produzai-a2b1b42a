@@ -2675,6 +2675,99 @@ export type Database = {
           },
         ]
       }
+      store_maintenance_requests: {
+        Row: {
+          agency_notes: string | null
+          campaign_id: string
+          completed_at: string | null
+          created_at: string | null
+          description: string
+          id: string
+          loja_a_loja_peca_id: string | null
+          opened_by: string
+          opened_by_user_id: string | null
+          photo_urls: string[] | null
+          priority: string
+          scheduled_date: string | null
+          status: string
+          store_id: string
+          subdivisao_id: string | null
+          tipo_id: string | null
+        }
+        Insert: {
+          agency_notes?: string | null
+          campaign_id: string
+          completed_at?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          loja_a_loja_peca_id?: string | null
+          opened_by?: string
+          opened_by_user_id?: string | null
+          photo_urls?: string[] | null
+          priority?: string
+          scheduled_date?: string | null
+          status?: string
+          store_id: string
+          subdivisao_id?: string | null
+          tipo_id?: string | null
+        }
+        Update: {
+          agency_notes?: string | null
+          campaign_id?: string
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          loja_a_loja_peca_id?: string | null
+          opened_by?: string
+          opened_by_user_id?: string | null
+          photo_urls?: string[] | null
+          priority?: string
+          scheduled_date?: string | null
+          status?: string
+          store_id?: string
+          subdivisao_id?: string | null
+          tipo_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_maintenance_requests_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_maintenance_requests_loja_a_loja_peca_id_fkey"
+            columns: ["loja_a_loja_peca_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_pecas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_maintenance_requests_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_maintenance_requests_subdivisao_id_fkey"
+            columns: ["subdivisao_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_subdivisoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_maintenance_requests_tipo_id_fkey"
+            columns: ["tipo_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_tipos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_occurrence_reports: {
         Row: {
           agency_notes: string | null
