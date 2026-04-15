@@ -3097,6 +3097,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_master: { Args: { _user_id: string }; Returns: boolean }
+      is_supplier_unlocked: {
+        Args: { p_supplier_id: string }
+        Returns: boolean
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
