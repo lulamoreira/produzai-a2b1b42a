@@ -2675,6 +2675,100 @@ export type Database = {
           },
         ]
       }
+      store_occurrence_reports: {
+        Row: {
+          agency_notes: string | null
+          campaign_id: string
+          created_at: string | null
+          description: string
+          id: string
+          loja_a_loja_peca_id: string | null
+          photo_urls: string[] | null
+          priority: string
+          resolved_at: string | null
+          status: string
+          store_id: string
+          subdivisao_id: string | null
+          tipo_id: string | null
+          token_id: string
+        }
+        Insert: {
+          agency_notes?: string | null
+          campaign_id: string
+          created_at?: string | null
+          description: string
+          id?: string
+          loja_a_loja_peca_id?: string | null
+          photo_urls?: string[] | null
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          store_id: string
+          subdivisao_id?: string | null
+          tipo_id?: string | null
+          token_id: string
+        }
+        Update: {
+          agency_notes?: string | null
+          campaign_id?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          loja_a_loja_peca_id?: string | null
+          photo_urls?: string[] | null
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          store_id?: string
+          subdivisao_id?: string | null
+          tipo_id?: string | null
+          token_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_occurrence_reports_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_occurrence_reports_loja_a_loja_peca_id_fkey"
+            columns: ["loja_a_loja_peca_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_pecas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_occurrence_reports_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_occurrence_reports_subdivisao_id_fkey"
+            columns: ["subdivisao_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_subdivisoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_occurrence_reports_tipo_id_fkey"
+            columns: ["tipo_id"]
+            isOneToOne: false
+            referencedRelation: "loja_a_loja_tipos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_occurrence_reports_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "store_portal_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_pieces: {
         Row: {
           id: number
