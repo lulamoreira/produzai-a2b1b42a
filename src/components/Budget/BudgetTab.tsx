@@ -534,7 +534,7 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                 </TableHeader>
                 <TableBody>
                   {/* Standalone pieces */}
-                  {pieces.filter((p) => !p.kit_only).map((piece) => {
+                  {pieces.filter((p) => !p.kit_only).sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? ''))).map((piece) => {
                     const qty = pieceTotals[piece.id] || 0;
                     const priceRow = detailPrices.find((pr) => pr.piece_id === piece.id);
                     const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
@@ -573,7 +573,7 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                     );
                   })}
                   {/* Kits expanded into pieces */}
-                  {kits.map((kit) => {
+                  {[...kits].sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? ''))).map((kit) => {
                     const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
                     if (kpList.length === 0) return null;
                     const kitQty = Math.min(...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1))));
