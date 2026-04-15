@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { toast } from "sonner";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Package, Lock, Clock, CheckCircle2, AlertTriangle, Send, ImageIcon, Download, Edit2, Save } from "lucide-react";
@@ -453,7 +454,7 @@ const SupplierPortal = () => {
       setSavingSuggestion(true);
       try {
         const piece = allPieces.find((p) => p.id === pieceId);
-        const { data, error: err } = await supabase
+        const { error: err } = await supabase
           .from("supplier_spec_suggestions")
           .upsert(
             {
@@ -465,18 +466,18 @@ const SupplierPortal = () => {
               orcado_por: suggestionOrcadoPor,
             } as never,
             { onConflict: "supplier_id,piece_id" }
-          )
-          .select()
-          .single();
+          );
 
         if (err) throw err;
         setSuggestions((prev) => ({
           ...prev,
-          [pieceId]: { id: (data as any).id, suggested_spec: suggestionDraft.trim(), orcado_por: suggestionOrcadoPor },
+          [pieceId]: { id: prev[pieceId]?.id || "temp", suggested_spec: suggestionDraft.trim(), orcado_por: suggestionOrcadoPor },
         }));
         setExpandedSuggestion(null);
+        toast.success("Sugestão salva!");
       } catch (e) {
         console.error("Save suggestion error:", e);
+        toast.error("Erro ao salvar sugestão. Tente novamente.");
       } finally {
         setSavingSuggestion(false);
       }
@@ -890,7 +891,7 @@ const SupplierPortal = () => {
                                 </div>
                                 <div className="flex items-center gap-1 mt-0.5">
                                   {row.specification && (
-                                    <p className="text-xs text-muted-foreground truncate max-w-[180px]">{row.specification}</p>
+                                    <p className="text-xs text-muted-foreground break-words whitespace-normal">{row.specification}</p>
                                   )}
                                   {row.pieceId && !isLocked && (
                                     <button
