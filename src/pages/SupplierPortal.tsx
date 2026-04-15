@@ -306,6 +306,19 @@ const SupplierPortal = () => {
           freight_value: ecData?.freight_value ?? null,
         });
 
+
+        // 10) Existing spec suggestions
+        const { data: suggestionsData } = await supabase
+          .from("supplier_spec_suggestions")
+          .select("*")
+          .eq("supplier_id", sup.id);
+
+        const sugMap: Record<string, { id: string; suggested_spec: string; orcado_por: string }> = {};
+        (suggestionsData ?? []).forEach((s: any) => {
+          sugMap[s.piece_id] = { id: s.id, suggested_spec: s.suggested_spec, orcado_por: s.orcado_por };
+        });
+        setSuggestions(sugMap);
+
         if (sup.locked) setSubmitted(true);
       } catch (e: unknown) {
         console.error(e);
