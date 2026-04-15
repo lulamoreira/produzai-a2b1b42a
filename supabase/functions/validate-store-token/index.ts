@@ -1,0 +1,111 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { token } = await req.json();
+
+    if (!token || typeof token !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Token inválido" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Look up token
+    const { data: tokenRow, error: tokenErr } = await supabase
+      .from("store_portal_tokens")
+      .select("id, campaign_id, store_id")
+      .eq("token", token)
+      .maybeSingle();
+
+    if (tokenErr || !tokenRow) {
+      return new Response(
+        JSON.stringify({ error: "Token inválido" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { campaign_id, store_id } = tokenRow;
+
+    // Fetch campaign with client and agency
+    const { data: campaign } = await supabase
+      .from("campaigns")
+      .select("id, name, client_id, clients(name, agency_id, agencies(name))")
+      .eq("id", campaign_id)
+      .single();
+
+    // Fetch store data
+    const { data: store } = await supabase
+      .from("client_stores")
+      .select("id, name, city, state, store_code, nickname")
+      .eq("id", store_id)
+      .single();
+
+    // Fetch loja_a_loja_tipos for this campaign
+    const { data: tipos } = await supabase
+      .from("loja_a_loja_tipos")
+      .select("*")
+      .eq("campaign_id", campaign_id)
+      .order("display_order");
+
+    // Fetch subdivisoes for all tipos
+    const tipoIds = (tipos || []).map((t: any) => t.id);
+    let subdivisoes: any[] = [];
+    if (tipoIds.length > 0) {
+      const { data: subs } = await supabase
+        .from("loja_a_loja_subdivisoes")
+        .select("*")
+        .in("tipo_id", tipoIds)
+        .order("display_order");
+      subdivisoes = subs || [];
+    }
+
+    // Fetch all pecas for this campaign
+    const { data: pecas } = await supabase
+      .from("loja_a_loja_pecas")
+      .select("*")
+      .eq("campaign_id", campaign_id)
+      .order("display_order");
+
+    // Fetch store assignments (ativo = true)
+    const { data: lojas } = await supabase
+      .from("loja_a_loja_lojas")
+      .select("*")
+      .eq("campaign_id", campaign_id)
+      .eq("store_id", store_id)
+      .eq("ativo", true);
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        token_id: tokenRow.id,
+        campaign,
+        store,
+        tipos: tipos || [],
+        subdivisoes,
+        pecas: pecas || [],
+        lojas: lojas || [],
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: "Erro interno do servidor." }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});

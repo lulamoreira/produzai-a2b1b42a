@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.duplicate-kit]
 verify_jwt = false
+
+[functions.validate-store-token]
+verify_jwt = false
