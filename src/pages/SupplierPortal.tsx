@@ -475,9 +475,13 @@ const SupplierPortal = () => {
         }));
         setExpandedSuggestion(null);
         toast.success("Sugestão salva!");
-      } catch (e) {
-        console.error("Save suggestion error:", e);
-        toast.error("Erro ao salvar sugestão. Tente novamente.");
+      } catch (e: any) {
+        console.error('SUGGESTION ERROR:', e);
+        console.error('SUGGESTION ERROR MESSAGE:', e?.message);
+        console.error('SUGGESTION ERROR CODE:', e?.code);
+        console.error('SUGGESTION ERROR DETAILS:', e?.details);
+        console.error('SUGGESTION ERROR HINT:', e?.hint);
+        toast.error(`Erro: ${e?.message || e?.code || JSON.stringify(e)}`);
       } finally {
         setSavingSuggestion(false);
       }
