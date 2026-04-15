@@ -336,24 +336,8 @@ const SupplierPortal = () => {
       .sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? '')));
     const kitPieceIds = new Set(kitPiecesData.map((kp) => kp.piece_id));
 
-    // Standalone pieces (not kit_only AND not exclusively in a kit — show all non-kit_only)
-    standalonePieces.forEach((p) => {
-      rows.push({
-        key: `piece-${p.id}`,
-        type: "standalone_piece",
-        pieceId: p.id,
-        name: p.name,
-        code: p.code,
-        image_url: p.image_url,
-        specification: p.specification,
-        size: p.size,
-        totalQty: storePieceQtyMap[p.id] || 0,
-        editable: true,
-      });
-    });
-
-    // Kits expanded into pieces
-    [...kitsData].sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? ''))).forEach((kit) => {
+    // Kits first, expanded into pieces
+    [...kitsData].sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0)).forEach((kit) => {
       const kpList = kitPiecesData.filter((kp) => kp.kit_id === kit.id);
       if (kpList.length === 0) return;
 
@@ -394,6 +378,22 @@ const SupplierPortal = () => {
           totalQty: kitTotalQty * kp.quantity,
           editable: true,
         });
+      });
+    });
+
+    // Standalone pieces after all kits
+    standalonePieces.forEach((p) => {
+      rows.push({
+        key: `piece-${p.id}`,
+        type: "standalone_piece",
+        pieceId: p.id,
+        name: p.name,
+        code: p.code,
+        image_url: p.image_url,
+        specification: p.specification,
+        size: p.size,
+        totalQty: storePieceQtyMap[p.id] || 0,
+        editable: true,
       });
     });
 
