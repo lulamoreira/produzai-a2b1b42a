@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -47,6 +47,197 @@ const splitMk = (key: string): [string, string] => {
 };
 // Parent qtyMap key (uses dash)
 const parentKey = (storeId: string, pieceId: string) => `${storeId}-${pieceId}`;
+
+// ─── Memoized piece cell ──────────────────────────────────
+const MatrixPieceCell = React.memo(({
+  gridKey,
+  draftKey,
+  current,
+  changed,
+  isEmptyStore,
+  onSetDraft,
+  onKeyDown,
+  inputRefs,
+}: {
+  gridKey: string;
+  draftKey: string;
+  current: string;
+  changed: boolean;
+  isEmptyStore: boolean;
+  onSetDraft: (key: string, value: string) => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, key: string) => void;
+  inputRefs: React.MutableRefObject<Record<string, HTMLInputElement | null>>;
+}) => {
+  return (
+    <TableCell className="p-0.5 text-center">
+      <input
+        ref={(el) => { inputRefs.current[gridKey] = el; }}
+        type="number"
+        min={0}
+        value={current}
+        onChange={(e) => onSetDraft(draftKey, e.target.value)}
+        onFocus={(e) => e.target.select()}
+        onKeyDown={(e) => onKeyDown(e, gridKey)}
+        className={`w-14 h-7 text-center text-sm rounded border outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+          changed
+            ? "border-primary bg-primary/10 font-bold text-primary"
+            : isEmptyStore && parseInt(current) === 0
+            ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20 text-amber-600"
+            : "border-border bg-background text-foreground"
+        } focus:ring-2 focus:ring-primary/40 focus:border-primary`}
+      />
+    </TableCell>
+  );
+}, (prev, next) =>
+  prev.current === next.current &&
+  prev.changed === next.changed &&
+  prev.isEmptyStore === next.isEmptyStore
+);
+
+MatrixPieceCell.displayName = "MatrixPieceCell";
+
+// ─── Memoized kit cell ────────────────────────────────────
+const MatrixKitCell = React.memo(({
+  gridKey,
+  storeId,
+  kitId,
+  kitQtyVal,
+  kitChanged,
+  onSetKitDraft,
+  onKeyDown,
+  inputRefs,
+}: {
+  gridKey: string;
+  storeId: string;
+  kitId: string;
+  kitQtyVal: number;
+  kitChanged: boolean;
+  onSetKitDraft: (storeId: string, kitId: string, val: number) => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, key: string) => void;
+  inputRefs: React.MutableRefObject<Record<string, HTMLInputElement | null>>;
+}) => {
+  return (
+    <TableCell className="p-0.5 text-center bg-primary/5">
+      <input
+        ref={(el) => { inputRefs.current[gridKey] = el; }}
+        type="number"
+        min={0}
+        value={String(kitQtyVal)}
+        onChange={(e) => {
+          const val = Math.max(0, parseInt(e.target.value) || 0);
+          onSetKitDraft(storeId, kitId, val);
+        }}
+        onFocus={(e) => e.target.select()}
+        onKeyDown={(e) => onKeyDown(e, gridKey)}
+        className={`w-14 h-7 text-center text-sm rounded border outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+          kitChanged
+            ? "border-primary bg-primary/10 font-bold text-primary"
+            : "border-border bg-background text-foreground"
+        } focus:ring-2 focus:ring-primary/40 focus:border-primary`}
+      />
+    </TableCell>
+  );
+}, (prev, next) =>
+  prev.kitQtyVal === next.kitQtyVal &&
+  prev.kitChanged === next.kitChanged
+);
+
+MatrixKitCell.displayName = "MatrixKitCell";
+
+// ─── Memoized row ─────────────────────────────────────────
+const MatrixRow = React.memo(({
+  store,
+  matrixColumns,
+  draft,
+  getQty,
+  getKitDraftQty,
+  getKitOriginalQty,
+  isEmptyStore,
+  rowTotal,
+  onSetDraft,
+  onSetKitDraft,
+  onKeyDown,
+  inputRefs,
+}: {
+  store: ClientStore;
+  matrixColumns: MatrixCol[];
+  draft: Record<string, string>;
+  getQty: (storeId: string, pieceId: string) => number;
+  getKitDraftQty: (storeId: string, kitId: string) => number;
+  getKitOriginalQty: (storeId: string, kitId: string) => number;
+  isEmptyStore: boolean;
+  rowTotal: number;
+  onSetDraft: (key: string, value: string) => void;
+  onSetKitDraft: (storeId: string, kitId: string, val: number) => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, key: string) => void;
+  inputRefs: React.MutableRefObject<Record<string, HTMLInputElement | null>>;
+}) => {
+  const getColId = (col: MatrixCol) => col.type === "piece" ? col.data.id : `kit${SEP}${col.data.id}`;
+
+  return (
+    <TableRow className={isEmptyStore ? "bg-amber-50/50 dark:bg-amber-950/10" : ""}>
+      <TableCell className={`sticky left-0 z-[5] font-medium ${isEmptyStore ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-card"}`}>
+        <span className="text-sm">{store.name}</span>
+        {store.nickname && store.nickname !== store.name && (
+          <span className="text-[10px] text-muted-foreground ml-1">({store.nickname})</span>
+        )}
+        {isEmptyStore && (
+          <span className="text-amber-500 ml-1 text-[10px]" title="Loja sem quantidades — preencha manualmente">⚠</span>
+        )}
+      </TableCell>
+      {matrixColumns.map((col) => {
+        const colId = getColId(col);
+        const gridKey = mk(store.id, colId);
+
+        if (col.type === "piece") {
+          const p = col.data;
+          const draftKey = mk(store.id, p.id);
+          const original = getQty(store.id, p.id);
+          const current = draft[draftKey] ?? String(original);
+          const changed = parseInt(current) !== original;
+          return (
+            <MatrixPieceCell
+              key={p.id}
+              gridKey={gridKey}
+              draftKey={draftKey}
+              current={current}
+              changed={changed}
+              isEmptyStore={isEmptyStore}
+              onSetDraft={onSetDraft}
+              onKeyDown={onKeyDown}
+              inputRefs={inputRefs}
+            />
+          );
+        }
+
+        const kit = col.data;
+        const kitQtyVal = getKitDraftQty(store.id, kit.id);
+        const originalKitQty = getKitOriginalQty(store.id, kit.id);
+        const kitChanged = kitQtyVal !== originalKitQty;
+        return (
+          <MatrixKitCell
+            key={`kit-${kit.id}`}
+            gridKey={gridKey}
+            storeId={store.id}
+            kitId={kit.id}
+            kitQtyVal={kitQtyVal}
+            kitChanged={kitChanged}
+            onSetKitDraft={onSetKitDraft}
+            onKeyDown={onKeyDown}
+            inputRefs={inputRefs}
+          />
+        );
+      })}
+      <TableCell className="text-center font-bold text-sm">{rowTotal}</TableCell>
+    </TableRow>
+  );
+}, (prev, next) =>
+  prev.isEmptyStore === next.isEmptyStore &&
+  prev.rowTotal === next.rowTotal &&
+  prev.draft === next.draft
+);
+
+MatrixRow.displayName = "MatrixRow";
 
 // ─── Draggable column header ──────────────────────────────
 function DraggableColHeader({ id, children }: { id: string; children: React.ReactNode }) {
@@ -155,10 +346,10 @@ const QuickMatrixEditor = ({
     setEditing(true);
   }, [stores, matrixColumns, getQty]);
 
-  const cancelEditing = () => {
+  const cancelEditing = useCallback(() => {
     setDraft({});
     setEditing(false);
-  };
+  }, []);
 
   // Get piece qty from draft with fallback to current matrix qty
   const getPieceDraftQty = useCallback((storeId: string, pieceId: string) => {
@@ -201,6 +392,15 @@ const QuickMatrixEditor = ({
       return next;
     });
   }, [kitPieces]);
+
+  // Stable callbacks for memoized cells
+  const handleSetDraft = useCallback((key: string, value: string) => {
+    setDraft(d => ({ ...d, [key]: value }));
+  }, []);
+
+  const handleSetKitDraft = useCallback((storeId: string, kitId: string, val: number) => {
+    setKitDraftQty(storeId, kitId, val);
+  }, [setKitDraftQty]);
 
   const changedCount = useMemo(() => {
     if (!editing) return 0;
@@ -335,7 +535,7 @@ const QuickMatrixEditor = ({
     }
   };
 
-  const focusCell = (key: string) => {
+  const focusCell = useCallback((key: string) => {
     requestAnimationFrame(() => {
       const el = inputRefs.current[key];
       if (el) {
@@ -343,9 +543,9 @@ const QuickMatrixEditor = ({
         el.select();
       }
     });
-  };
+  }, []);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, key: string) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>, key: string) => {
     const idx = gridKeys.indexOf(key);
     if (idx === -1) return;
     const cols = matrixColumns.length;
@@ -375,7 +575,7 @@ const QuickMatrixEditor = ({
     if (nextIdx >= 0 && nextIdx < gridKeys.length) {
       focusCell(gridKeys[nextIdx]);
     }
-  };
+  }, [gridKeys, matrixColumns.length, focusCell, cancelEditing]);
 
   // DnD column reorder handler
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
@@ -412,7 +612,41 @@ const QuickMatrixEditor = ({
     if (editing && gridKeys.length > 0) {
       requestAnimationFrame(() => focusCell(gridKeys[0]));
     }
-  }, [editing]);
+  }, [editing, gridKeys, focusCell]);
+
+  // Per-store draft slices for memoized rows
+  const storeDraftSlices = useMemo(() => {
+    const slices: Record<string, Record<string, string>> = {};
+    for (const store of stores) {
+      const slice: Record<string, string> = {};
+      for (const col of matrixColumns) {
+        if (col.type === "piece") {
+          const key = mk(store.id, col.data.id);
+          if (draft[key] !== undefined) {
+            slice[key] = draft[key];
+          }
+        }
+      }
+      slices[store.id] = slice;
+    }
+    return slices;
+  }, [stores, matrixColumns, draft]);
+
+  // Pre-compute row data for memoization
+  const rowData = useMemo(() => {
+    return stores.map(store => {
+      const storeSlice = storeDraftSlices[store.id] || {};
+      const rowTotal = pieces.reduce((s, p) => {
+        const key = mk(store.id, p.id);
+        return s + (parseInt(draft[key]) || 0);
+      }, 0);
+      const hasAnyStoreWithQty = stores.some(
+        (st) => st.id !== store.id && pieces.some((p) => getQty(st.id, p.id) > 0)
+      );
+      const isEmptyStore = rowTotal === 0 && hasAnyStoreWithQty;
+      return { store, storeSlice, rowTotal, isEmptyStore };
+    });
+  }, [stores, pieces, draft, storeDraftSlices, getQty]);
 
   if (!isAdmin) return null;
 
@@ -543,89 +777,23 @@ const QuickMatrixEditor = ({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {stores.map((store) => {
-                  const rowTotal = pieces.reduce((s, p) => {
-                    const key = mk(store.id, p.id);
-                    return s + (parseInt(draft[key]) || 0);
-                  }, 0);
-                  const hasAnyStoreWithQty = stores.some(
-                    (st) => st.id !== store.id && pieces.some((p) => getQty(st.id, p.id) > 0)
-                  );
-                  const isEmptyStore = rowTotal === 0 && hasAnyStoreWithQty;
-                  return (
-                    <TableRow key={store.id} className={isEmptyStore ? "bg-amber-50/50 dark:bg-amber-950/10" : ""}>
-                      <TableCell className={`sticky left-0 z-[5] font-medium ${isEmptyStore ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-card"}`}>
-                        <span className="text-sm">{store.name}</span>
-                        {store.nickname && store.nickname !== store.name && (
-                          <span className="text-[10px] text-muted-foreground ml-1">({store.nickname})</span>
-                        )}
-                        {isEmptyStore && (
-                          <span className="text-amber-500 ml-1 text-[10px]" title="Loja sem quantidades — preencha manualmente">⚠</span>
-                        )}
-                      </TableCell>
-                      {matrixColumns.map((col) => {
-                        const colId = getColId(col);
-                        const gridKey = mk(store.id, colId);
-
-                        if (col.type === "piece") {
-                          const p = col.data;
-                          const key = mk(store.id, p.id);
-                          const original = getQty(store.id, p.id);
-                          const current = draft[key] ?? String(original);
-                          const changed = parseInt(current) !== original;
-                          return (
-                            <TableCell key={p.id} className="p-0.5 text-center">
-                              <input
-                                ref={(el) => { inputRefs.current[gridKey] = el; }}
-                                type="number"
-                                min={0}
-                                value={current}
-                                onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}
-                                onFocus={(e) => e.target.select()}
-                                onKeyDown={(e) => handleKeyDown(e, gridKey)}
-                                className={`w-14 h-7 text-center text-sm rounded border outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
-                                  changed
-                                    ? "border-primary bg-primary/10 font-bold text-primary"
-                                    : isEmptyStore && parseInt(current) === 0
-                                    ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20 text-amber-600"
-                                    : "border-border bg-background text-foreground"
-                                } focus:ring-2 focus:ring-primary/40 focus:border-primary`}
-                              />
-                            </TableCell>
-                          );
-                        }
-
-                        // Kit column
-                        const kit = col.data;
-                        const kitQtyVal = getKitDraftQty(store.id, kit.id);
-                        const originalKitQty = getKitOriginalQty(store.id, kit.id);
-                        const kitChanged = kitQtyVal !== originalKitQty;
-                        return (
-                          <TableCell key={`kit-${kit.id}`} className="p-0.5 text-center bg-primary/5">
-                            <input
-                              ref={(el) => { inputRefs.current[gridKey] = el; }}
-                              type="number"
-                              min={0}
-                              value={String(kitQtyVal)}
-                              onChange={(e) => {
-                                const val = Math.max(0, parseInt(e.target.value) || 0);
-                                setKitDraftQty(store.id, kit.id, val);
-                              }}
-                              onFocus={(e) => e.target.select()}
-                              onKeyDown={(e) => handleKeyDown(e, gridKey)}
-                              className={`w-14 h-7 text-center text-sm rounded border outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
-                                kitChanged
-                                  ? "border-primary bg-primary/10 font-bold text-primary"
-                                  : "border-border bg-background text-foreground"
-                              } focus:ring-2 focus:ring-primary/40 focus:border-primary`}
-                            />
-                          </TableCell>
-                        );
-                      })}
-                      <TableCell className="text-center font-bold text-sm">{rowTotal}</TableCell>
-                    </TableRow>
-                  );
-                })}
+                {rowData.map(({ store, storeSlice, rowTotal, isEmptyStore }) => (
+                  <MatrixRow
+                    key={store.id}
+                    store={store}
+                    matrixColumns={matrixColumns}
+                    draft={storeSlice}
+                    getQty={getQty}
+                    getKitDraftQty={getKitDraftQty}
+                    getKitOriginalQty={getKitOriginalQty}
+                    isEmptyStore={isEmptyStore}
+                    rowTotal={rowTotal}
+                    onSetDraft={handleSetDraft}
+                    onSetKitDraft={handleSetKitDraft}
+                    onKeyDown={handleKeyDown}
+                    inputRefs={inputRefs}
+                  />
+                ))}
                 {/* Totals */}
                 <TableRow className="bg-muted/50 font-bold">
                   <TableCell className="sticky left-0 bg-muted/50 z-[5]">Total</TableCell>
