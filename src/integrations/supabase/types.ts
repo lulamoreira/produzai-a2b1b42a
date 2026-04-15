@@ -2747,6 +2747,54 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_spec_suggestions: {
+        Row: {
+          campaign_id: string
+          created_at: string | null
+          id: string
+          orcado_por: string
+          original_spec: string | null
+          piece_id: string
+          suggested_spec: string
+          supplier_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string | null
+          id?: string
+          orcado_por?: string
+          original_spec?: string | null
+          piece_id: string
+          suggested_spec: string
+          supplier_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string | null
+          id?: string
+          orcado_por?: string
+          original_spec?: string | null
+          piece_id?: string
+          suggested_spec?: string
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_spec_suggestions_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_pieces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_spec_suggestions_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "budget_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppressed_emails: {
         Row: {
           created_at: string
