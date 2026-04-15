@@ -332,69 +332,71 @@ const SupplierPortal = () => {
   // ─── Build display rows ────────────────────────────────
   const displayRows = useMemo(() => {
     const rows: DisplayRow[] = [];
-    const standalonePieces = allPieces.filter((p) => !p.kit_only)
-      .sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? '')));
-    const kitPieceIds = new Set(kitPiecesData.map((kp) => kp.piece_id));
 
-    // Kits first, expanded into pieces
-    [...kitsData].sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0)).forEach((kit) => {
-      const kpList = kitPiecesData.filter((kp) => kp.kit_id === kit.id);
-      if (kpList.length === 0) return;
+    // Merge pieces (non-kit_only) and kits into a single list sorted by display_order
+    type MergedItem = { type: "piece"; data: typeof allPieces[number] } | { type: "kit"; data: typeof kitsData[number] };
+    const merged: MergedItem[] = [
+      ...allPieces.filter((p) => !p.kit_only).map((p) => ({ type: "piece" as const, data: p })),
+      ...kitsData.map((k) => ({ type: "kit" as const, data: k })),
+    ];
+    merged.sort((a, b) => (a.data.display_order ?? 0) - (b.data.display_order ?? 0));
 
-      // Kit total qty = min across pieces of floor(pieceQty / kitPieceQty)
-      const kitTotalQty = Math.min(
-        ...kpList.map((kp) => {
-          const pieceTotal = storePieceQtyMap[kp.piece_id] || 0;
-          return Math.floor(pieceTotal / (kp.quantity || 1));
-        })
-      );
+    merged.forEach((item) => {
+      if (item.type === "kit") {
+        const kit = item.data;
+        const kpList = kitPiecesData.filter((kp) => kp.kit_id === kit.id);
+        if (kpList.length === 0) return;
 
-      // Kit header row
-      rows.push({
-        key: `kit-header-${kit.id}`,
-        type: "kit_header",
-        kitId: kit.id,
-        name: kit.name,
-        code: kit.code,
-        image_url: kit.image_url,
-        totalQty: kitTotalQty,
-        editable: false,
-      });
+        const kitTotalQty = Math.min(
+          ...kpList.map((kp) => {
+            const pieceTotal = storePieceQtyMap[kp.piece_id] || 0;
+            return Math.floor(pieceTotal / (kp.quantity || 1));
+          })
+        );
 
-      // Kit piece rows
-      kpList.forEach((kp) => {
-        const piece = allPieces.find((p) => p.id === kp.piece_id);
-        if (!piece) return;
         rows.push({
-          key: `kit-piece-${kit.id}-${kp.piece_id}`,
-          type: "kit_piece",
-          pieceId: kp.piece_id,
+          key: `kit-header-${kit.id}`,
+          type: "kit_header",
           kitId: kit.id,
-          name: piece.name,
-          code: piece.code,
-          image_url: piece.image_url,
-          specification: piece.specification,
-          size: piece.size,
-          totalQty: kitTotalQty * kp.quantity,
+          name: kit.name,
+          code: kit.code,
+          image_url: kit.image_url,
+          totalQty: kitTotalQty,
+          editable: false,
+        });
+
+        kpList.forEach((kp) => {
+          const piece = allPieces.find((p) => p.id === kp.piece_id);
+          if (!piece) return;
+          rows.push({
+            key: `kit-piece-${kit.id}-${kp.piece_id}`,
+            type: "kit_piece",
+            pieceId: kp.piece_id,
+            kitId: kit.id,
+            name: piece.name,
+            code: piece.code,
+            image_url: piece.image_url,
+            specification: piece.specification,
+            size: piece.size,
+            totalQty: kitTotalQty * kp.quantity,
+            editable: true,
+          });
+        });
+      } else {
+        const p = item.data;
+        rows.push({
+          key: `piece-${p.id}`,
+          type: "standalone_piece",
+          pieceId: p.id,
+          name: p.name,
+          code: p.code,
+          image_url: p.image_url,
+          specification: p.specification,
+          size: p.size,
+          totalQty: storePieceQtyMap[p.id] || 0,
           editable: true,
         });
-      });
-    });
-
-    // Standalone pieces after all kits
-    standalonePieces.forEach((p) => {
-      rows.push({
-        key: `piece-${p.id}`,
-        type: "standalone_piece",
-        pieceId: p.id,
-        name: p.name,
-        code: p.code,
-        image_url: p.image_url,
-        specification: p.specification,
-        size: p.size,
-        totalQty: storePieceQtyMap[p.id] || 0,
-        editable: true,
-      });
+      }
     });
 
     return rows;
