@@ -581,7 +581,7 @@ const QuickMatrixEditor = ({
                                 onChange={(e) => setDraft((d) => ({ ...d, [key]: e.target.value }))}
                                 onFocus={(e) => e.target.select()}
                                 onKeyDown={(e) => handleKeyDown(e, gridKey)}
-                                className={`w-14 h-7 text-center text-sm rounded border outline-none transition-colors ${
+                                className={`w-14 h-7 text-center text-sm rounded border outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                                   changed
                                     ? "border-primary bg-primary/10 font-bold text-primary"
                                     : isEmptyStore && parseInt(current) === 0
@@ -611,7 +611,7 @@ const QuickMatrixEditor = ({
                               }}
                               onFocus={(e) => e.target.select()}
                               onKeyDown={(e) => handleKeyDown(e, gridKey)}
-                              className={`w-14 h-7 text-center text-sm rounded border outline-none transition-colors ${
+                              className={`w-14 h-7 text-center text-sm rounded border outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
                                 kitChanged
                                   ? "border-primary bg-primary/10 font-bold text-primary"
                                   : "border-border bg-background text-foreground"
