@@ -890,7 +890,7 @@ const SupplierPortal = () => {
                                 </div>
                                 <div className="flex items-center gap-1 mt-0.5">
                                   {row.specification && (
-                                    <p className="text-xs text-muted-foreground truncate max-w-[180px]">{row.specification}</p>
+                                    <p className="text-xs text-muted-foreground break-words whitespace-normal">{row.specification}</p>
                                   )}
                                   {row.pieceId && !isLocked && (
                                     <button

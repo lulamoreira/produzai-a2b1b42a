@@ -602,8 +602,8 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                             <React.Fragment key={kp.id}>
                               <TableRow className="bg-muted/10">
                                 <TableCell className="text-xs pl-6">
-                                  {piece ? `${piece.code} - ${piece.name}` : kp.piece_id}
-                                  {piece?.specification && <span className="text-muted-foreground ml-1">· {piece.specification}</span>}
+                             {piece ? `${piece.code} - ${piece.name}` : kp.piece_id}
+                                  {piece?.specification && <div className="text-muted-foreground text-xs break-words whitespace-normal mt-0.5">{piece.specification}</div>}
                                   {sug && (
                                     <button onClick={() => setExpandedSuggestionPieceId(isSugExpanded ? null : kp.piece_id)} className="ml-1 inline-flex items-center">
                                       <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[9px] cursor-pointer gap-0.5">
