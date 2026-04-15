@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -94,24 +94,47 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
     return map;
   }, [pieces, stores, qtyMap]);
 
-  // ─── Compute supplier grand totals ─────────────────────
+  // ─── Build per-piece quantities including kit expansion ─
+  const kitPieceTotals = useMemo(() => {
+    // For each kit, compute per-piece qty = kitTotalQty × kitPieceQuantity
+    const map: Record<string, { kitId: string; pieceId: string; qty: number }[]> = {};
+    kits.forEach((kit) => {
+      const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
+      if (kpList.length === 0) return;
+      const kitQty = Math.min(...kpList.map((kp) => {
+        const pieceTotal = pieceTotals[kp.piece_id] || 0;
+        return Math.floor(pieceTotal / (kp.quantity || 1));
+      }));
+      map[kit.id] = kpList.map((kp) => ({
+        kitId: kit.id,
+        pieceId: kp.piece_id,
+        qty: kitQty * kp.quantity,
+      }));
+    });
+    return map;
+  }, [kits, kitPieces, pieceTotals]);
+
+  // ─── Compute supplier grand totals (per-piece pricing) ─
   const supplierTotals = useMemo(() => {
     const result: Record<string, number> = {};
     suppliers.forEach((sup) => {
       if (sup.status !== "enviado") return;
       let total = 0;
+      // Standalone pieces
       prices.filter((pr) => pr.supplier_id === sup.id && pr.piece_id).forEach((pr) => {
-        const qty = pieceTotals[pr.piece_id!] || 0;
-        total += (Number(pr.unit_price) || 0) * qty;
-      });
-      prices.filter((pr) => pr.supplier_id === sup.id && pr.kit_id).forEach((pr) => {
-        const kpList = kitPieces.filter((kp) => kp.kit_id === pr.kit_id);
-        if (kpList.length === 0) return;
-        const kitQty = Math.min(...kpList.map((kp) => {
-          const pieceTotal = pieceTotals[kp.piece_id] || 0;
-          return Math.floor(pieceTotal / (kp.quantity || 1));
-        }));
-        total += (Number(pr.unit_price) || 0) * kitQty;
+        // Check if this piece is standalone or part of a kit
+        const piece = pieces.find((p) => p.id === pr.piece_id);
+        if (piece && !piece.kit_only) {
+          const qty = pieceTotals[pr.piece_id!] || 0;
+          total += (Number(pr.unit_price) || 0) * qty;
+        }
+        // Kit pieces: find in kitPieceTotals
+        Object.values(kitPieceTotals).forEach((kpItems) => {
+          const match = kpItems.find((kpi) => kpi.pieceId === pr.piece_id);
+          if (match) {
+            total += (Number(pr.unit_price) || 0) * match.qty;
+          }
+        });
       });
       const ec = extraCosts.find((e) => e.supplier_id === sup.id);
       total += Number(ec?.installation_value) || 0;
@@ -119,7 +142,7 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
       result[sup.id] = total;
     });
     return result;
-  }, [suppliers, prices, extraCosts, pieceTotals, kitPieces]);
+  }, [suppliers, prices, extraCosts, pieceTotals, kitPieceTotals, pieces]);
 
   const bestSupplier = useMemo(() => {
     let best: { id: string; total: number; name: string } | null = null;
@@ -230,21 +253,25 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
   const detailGrandTotal = useMemo(() => {
     if (!detailSupplier) return 0;
     let total = 0;
+    // Per-piece pricing for standalone pieces
     detailPrices.forEach((pr) => {
-      if (pr.piece_id) {
+      if (!pr.piece_id) return;
+      const piece = pieces.find((p) => p.id === pr.piece_id);
+      if (piece && !piece.kit_only) {
         total += (Number(pr.unit_price) || 0) * (pieceTotals[pr.piece_id] || 0);
       }
-      if (pr.kit_id) {
-        const kpList = kitPieces.filter((kp) => kp.kit_id === pr.kit_id);
-        if (kpList.length === 0) return;
-        const kitQty = Math.min(...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1))));
-        total += (Number(pr.unit_price) || 0) * kitQty;
-      }
+      // Kit pieces
+      Object.values(kitPieceTotals).forEach((kpItems) => {
+        const match = kpItems.find((kpi) => kpi.pieceId === pr.piece_id);
+        if (match) {
+          total += (Number(pr.unit_price) || 0) * match.qty;
+        }
+      });
     });
     total += Number(detailCosts?.installation_value) || 0;
     total += Number(detailCosts?.freight_value) || 0;
     return total;
-  }, [detailSupplier, detailPrices, detailCosts, pieceTotals, kitPieces]);
+  }, [detailSupplier, detailPrices, detailCosts, pieceTotals, kitPieceTotals, pieces]);
 
   return (
     <div className="space-y-6">
@@ -499,6 +526,7 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {/* Standalone pieces */}
                   {pieces.filter((p) => !p.kit_only).map((piece) => {
                     const qty = pieceTotals[piece.id] || 0;
                     const priceRow = detailPrices.find((pr) => pr.piece_id === piece.id);
@@ -513,22 +541,41 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                       </TableRow>
                     );
                   })}
-                  {/* Kits */}
+                  {/* Kits expanded into pieces */}
                   {kits.map((kit) => {
                     const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
-                    const kitQty = kpList.length > 0
-                      ? Math.min(...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1))))
-                      : 0;
-                    const priceRow = detailPrices.find((pr) => pr.kit_id === kit.id);
-                    const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
-                    const lineTotal = unitPrice * kitQty;
+                    if (kpList.length === 0) return null;
+                    const kitQty = Math.min(...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1))));
+                    let kitTotal = 0;
+                    const pieceRows = kpList.map((kp) => {
+                      const piece = pieces.find((p) => p.id === kp.piece_id) || (null as any);
+                      const priceRow = detailPrices.find((pr) => pr.piece_id === kp.piece_id);
+                      const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
+                      const qty = kitQty * kp.quantity;
+                      const lineTotal = unitPrice * qty;
+                      kitTotal += lineTotal;
+                      return { kp, piece, priceRow, unitPrice, qty, lineTotal };
+                    });
                     return (
-                      <TableRow key={kit.id} className="bg-muted/30">
-                        <TableCell className="text-xs font-medium">🧩 {kit.code} - {kit.name}</TableCell>
-                        <TableCell className="text-xs text-right">{kitQty}</TableCell>
-                        <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(unitPrice) : "—"}</TableCell>
-                        <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
-                      </TableRow>
+                      <React.Fragment key={kit.id}>
+                        <TableRow className="bg-muted/40 border-t-2">
+                          <TableCell colSpan={3} className="text-xs font-semibold">
+                            🧩 Kit {kit.code} - {kit.name} <span className="font-normal text-muted-foreground">(Qtd kit: {kitQty})</span>
+                          </TableCell>
+                          <TableCell className="text-xs text-right font-semibold">{fmtCurrency(kitTotal)}</TableCell>
+                        </TableRow>
+                        {pieceRows.map(({ kp, piece, priceRow, unitPrice, qty, lineTotal }) => (
+                          <TableRow key={kp.id} className="bg-muted/10">
+                            <TableCell className="text-xs pl-6">
+                              {piece ? `${piece.code} - ${piece.name}` : kp.piece_id}
+                              {piece?.specification && <span className="text-muted-foreground ml-1">· {piece.specification}</span>}
+                            </TableCell>
+                            <TableCell className="text-xs text-right">{qty}</TableCell>
+                            <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(unitPrice) : "—"}</TableCell>
+                            <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </React.Fragment>
                     );
                   })}
                 </TableBody>

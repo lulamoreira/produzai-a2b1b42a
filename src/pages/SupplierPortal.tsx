@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, Lock, Clock, CheckCircle2, AlertTriangle, Send } from "lucide-react";
+import { Package, Lock, Clock, CheckCircle2, AlertTriangle, Send, ImageIcon, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +17,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
+import type { CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
 
 /* ─── Types ──────────────────────────────────────────────── */
 interface Supplier {
@@ -30,13 +32,36 @@ interface Supplier {
   access_token: string;
 }
 
-interface PriceRow {
+interface PieceData {
   id: string;
-  piece_id: string | null;
-  kit_id: string | null;
-  unit_price: number | null;
-  supplier_id: string;
-  campaign_id: string;
+  name: string;
+  code: number;
+  kit_only: boolean;
+  image_url: string | null;
+  specification: string;
+  size: string;
+  installation_instructions: string;
+  display_order: number;
+  category: string;
+  store_category: string | null;
+  sub_location: string | null;
+}
+
+interface KitData {
+  id: string;
+  name: string;
+  code: number;
+  image_url: string | null;
+  display_order: number;
+  category: string | null;
+  sub_location: string | null;
+}
+
+interface KitPieceData {
+  id: string;
+  kit_id: string;
+  piece_id: string;
+  quantity: number;
 }
 
 interface ExtraCosts {
@@ -46,12 +71,19 @@ interface ExtraCosts {
   freight_value: number | null;
 }
 
-interface LineItem {
-  id: string;
+// A display row in the matrix
+interface DisplayRow {
+  key: string; // unique key for React
+  type: "standalone_piece" | "kit_header" | "kit_piece";
+  pieceId?: string; // piece_id for pricing (standalone or kit piece)
+  kitId?: string;
   name: string;
   code: number;
-  type: "piece" | "kit";
+  image_url?: string | null;
+  specification?: string;
+  size?: string;
   totalQty: number;
+  editable: boolean;
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -62,11 +94,10 @@ const fmt = (v: number | null | undefined) =>
 
 const daysUntil = (d: string | null) => {
   if (!d) return null;
-  const diff = Math.ceil((new Date(d).getTime() - Date.now()) / 86400000);
-  return diff;
+  return Math.ceil((new Date(d).getTime() - Date.now()) / 86400000);
 };
 
-/* ─── CSS confetti keyframes (injected once) ─────────────── */
+/* ─── CSS confetti keyframes ─────────────────────────────── */
 const confettiCSS = `
 @keyframes confetti-fall {
   0%   { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
@@ -95,14 +126,24 @@ const SupplierPortal = () => {
   const [clientName, setClientName] = useState("");
   const [agencyName, setAgencyName] = useState("");
   const [deadline, setDeadline] = useState<string | null>(null);
-  const [lineItems, setLineItems] = useState<LineItem[]>([]);
-  const [prices, setPrices] = useState<Record<string, number | null>>({});
+
+  const [allPieces, setAllPieces] = useState<PieceData[]>([]);
+  const [kitsData, setKitsData] = useState<KitData[]>([]);
+  const [kitPiecesData, setKitPiecesData] = useState<KitPieceData[]>([]);
+  const [storePieceQtyMap, setStorePieceQtyMap] = useState<Record<string, number>>({});
+
+  const [prices, setPrices] = useState<Record<string, number | null>>({}); // keyed by piece_id
   const [extraCosts, setExtraCosts] = useState<ExtraCosts>({ supplier_id: "", installation_value: null, freight_value: null });
   const [submitted, setSubmitted] = useState(false);
   const [showConfirm1, setShowConfirm1] = useState(false);
   const [showConfirm2, setShowConfirm2] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
+
+  // Store data for Excel export
+  const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; showcase_count?: number }[]>([]);
+  const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
 
   // ─── Data fetching ─────────────────────────────────────
   useEffect(() => {
@@ -120,7 +161,7 @@ const SupplierPortal = () => {
         if (supErr) throw supErr;
         if (!sup) { setError("Link inválido ou expirado."); setLoading(false); return; }
 
-        // 2) Get budget settings for deadline
+        // 2) Budget settings
         const { data: settings } = await supabase
           .from("budget_settings")
           .select("deadline")
@@ -130,12 +171,8 @@ const SupplierPortal = () => {
         const dl = settings?.deadline ?? null;
         setDeadline(dl);
 
-        // Check deadline expiry
         if (dl && new Date(dl) < new Date() && sup.status !== "enviado") {
-          await supabase
-            .from("budget_suppliers")
-            .update({ status: "prazo_encerrado" })
-            .eq("id", sup.id);
+          await supabase.from("budget_suppliers").update({ status: "prazo_encerrado" }).eq("id", sup.id);
           sup.status = "prazo_encerrado";
         }
 
@@ -155,6 +192,9 @@ const SupplierPortal = () => {
           .single();
 
         setCampaignName(campaign?.name ?? "");
+        let resolvedClientName = "";
+        let resolvedAgencyName = "";
+        let resolvedClientId = campaign?.client_id ?? null;
 
         if (campaign?.client_id) {
           const { data: client } = await supabase
@@ -162,7 +202,8 @@ const SupplierPortal = () => {
             .select("name, agency_id")
             .eq("id", campaign.client_id)
             .single();
-          setClientName(client?.name ?? "");
+          resolvedClientName = client?.name ?? "";
+          setClientName(resolvedClientName);
 
           if (client?.agency_id) {
             const { data: agency } = await supabase
@@ -170,89 +211,82 @@ const SupplierPortal = () => {
               .select("name")
               .eq("id", client.agency_id)
               .single();
-            setAgencyName(agency?.name ?? "");
+            resolvedAgencyName = agency?.name ?? "";
+            setAgencyName(resolvedAgencyName);
           }
         }
 
-        // 4) Pieces (non kit_only)
-        const { data: piecesData } = await supabase
+        // 4) ALL pieces (including kit_only)
+        const { data: piecesRaw } = await supabase
           .from("campaign_pieces")
-          .select("id, name, code, kit_only")
+          .select("id, name, code, kit_only, image_url, specification, size, installation_instructions, display_order, category, store_category, sub_location")
           .eq("campaign_id", sup.campaign_id)
-          .eq("kit_only", false)
           .order("display_order");
+
+        const pcs = (piecesRaw ?? []) as PieceData[];
+        setAllPieces(pcs);
 
         // 5) Kits
-        const { data: kitsData } = await supabase
+        const { data: kitsRaw } = await supabase
           .from("campaign_kits")
-          .select("id, name, code")
+          .select("id, name, code, image_url, display_order, category, sub_location")
           .eq("campaign_id", sup.campaign_id)
           .order("display_order");
 
-        // 6) Store pieces for qty totals
+        const kts = (kitsRaw ?? []) as KitData[];
+        setKitsData(kts);
+
+        // 6) Kit pieces
+        const kitIds = kts.map((k) => k.id);
+        let kpData: KitPieceData[] = [];
+        if (kitIds.length > 0) {
+          const { data: kpRaw } = await supabase
+            .from("campaign_kit_pieces")
+            .select("id, kit_id, piece_id, quantity")
+            .in("kit_id", kitIds);
+          kpData = (kpRaw ?? []) as KitPieceData[];
+        }
+        setKitPiecesData(kpData);
+
+        // 7) Store pieces for qty totals + store data for Excel
         const { data: storePieces } = await supabase
           .from("campaign_store_pieces")
-          .select("piece_id, quantity")
+          .select("piece_id, quantity, store_id")
           .eq("campaign_id", sup.campaign_id);
 
-        // Build qty map: piece_id -> total
-        const qtyMap: Record<string, number> = {};
+        const spQtyMap: Record<string, number> = {};
+        const fullQMap: Record<string, number> = {};
+        const storeIds = new Set<string>();
         (storePieces ?? []).forEach((sp) => {
-          qtyMap[sp.piece_id] = (qtyMap[sp.piece_id] || 0) + sp.quantity;
+          spQtyMap[sp.piece_id] = (spQtyMap[sp.piece_id] || 0) + sp.quantity;
+          fullQMap[`${sp.store_id}-${sp.piece_id}`] = sp.quantity;
+          storeIds.add(sp.store_id);
         });
+        setStorePieceQtyMap(spQtyMap);
+        setFullQtyMap(fullQMap);
 
-        // 7) Kit pieces for kit qty calculation
-        const { data: kitPiecesData } = await supabase
-          .from("campaign_kit_pieces")
-          .select("kit_id, piece_id, quantity")
-          .in("kit_id", (kitsData ?? []).map((k) => k.id));
+        // Fetch store details for Excel
+        if (storeIds.size > 0) {
+          const { data: storesRaw } = await supabase
+            .from("client_stores")
+            .select("id, name, city, state, showcase_count")
+            .in("id", Array.from(storeIds));
+          setStoreData((storesRaw ?? []) as any);
+        }
 
-        // Kit total qty = for each store, min(floor(pieceQty / kitPieceQty)) across all kit pieces, then sum stores
-        // Simplified: use total piece qty / kit_piece_qty across all pieces and take min
-        const kitQtyMap: Record<string, number> = {};
-        (kitsData ?? []).forEach((kit) => {
-          const kpList = (kitPiecesData ?? []).filter((kp) => kp.kit_id === kit.id);
-          if (kpList.length === 0) { kitQtyMap[kit.id] = 0; return; }
-          const ratios = kpList.map((kp) => {
-            const totalPieceQty = qtyMap[kp.piece_id] || 0;
-            return Math.floor(totalPieceQty / kp.quantity);
-          });
-          kitQtyMap[kit.id] = Math.min(...ratios);
-        });
-
-        // Build line items
-        const items: LineItem[] = [
-          ...(piecesData ?? []).map((p) => ({
-            id: p.id,
-            name: p.name,
-            code: p.code,
-            type: "piece" as const,
-            totalQty: qtyMap[p.id] || 0,
-          })),
-          ...(kitsData ?? []).map((k) => ({
-            id: k.id,
-            name: k.name,
-            code: k.code,
-            type: "kit" as const,
-            totalQty: kitQtyMap[k.id] || 0,
-          })),
-        ];
-        setLineItems(items);
-
-        // 8) Existing prices
+        // 8) Existing prices (keyed by piece_id now)
         const { data: pricesData } = await supabase
           .from("budget_prices")
           .select("*")
           .eq("supplier_id", sup.id);
 
         const priceMap: Record<string, number | null> = {};
-        (pricesData ?? []).forEach((p: PriceRow) => {
-          const key = p.piece_id || p.kit_id || "";
-          priceMap[key] = p.unit_price;
+        (pricesData ?? []).forEach((p: any) => {
+          if (p.piece_id) priceMap[p.piece_id] = p.unit_price;
         });
         setPrices(priceMap);
 
-        // 9) Existing extra costs
+        // 9) Extra costs
         const { data: ecData } = await supabase
           .from("budget_extra_costs")
           .select("*")
@@ -276,36 +310,96 @@ const SupplierPortal = () => {
     })();
   }, [token]);
 
+  // ─── Build display rows ────────────────────────────────
+  const displayRows = useMemo(() => {
+    const rows: DisplayRow[] = [];
+    const standalonePieces = allPieces.filter((p) => !p.kit_only);
+    const kitPieceIds = new Set(kitPiecesData.map((kp) => kp.piece_id));
+
+    // Standalone pieces (not kit_only AND not exclusively in a kit — show all non-kit_only)
+    standalonePieces.forEach((p) => {
+      rows.push({
+        key: `piece-${p.id}`,
+        type: "standalone_piece",
+        pieceId: p.id,
+        name: p.name,
+        code: p.code,
+        image_url: p.image_url,
+        specification: p.specification,
+        size: p.size,
+        totalQty: storePieceQtyMap[p.id] || 0,
+        editable: true,
+      });
+    });
+
+    // Kits expanded into pieces
+    kitsData.forEach((kit) => {
+      const kpList = kitPiecesData.filter((kp) => kp.kit_id === kit.id);
+      if (kpList.length === 0) return;
+
+      // Kit total qty = min across pieces of floor(pieceQty / kitPieceQty)
+      const kitTotalQty = Math.min(
+        ...kpList.map((kp) => {
+          const pieceTotal = storePieceQtyMap[kp.piece_id] || 0;
+          return Math.floor(pieceTotal / (kp.quantity || 1));
+        })
+      );
+
+      // Kit header row
+      rows.push({
+        key: `kit-header-${kit.id}`,
+        type: "kit_header",
+        kitId: kit.id,
+        name: kit.name,
+        code: kit.code,
+        image_url: kit.image_url,
+        totalQty: kitTotalQty,
+        editable: false,
+      });
+
+      // Kit piece rows
+      kpList.forEach((kp) => {
+        const piece = allPieces.find((p) => p.id === kp.piece_id);
+        if (!piece) return;
+        rows.push({
+          key: `kit-piece-${kit.id}-${kp.piece_id}`,
+          type: "kit_piece",
+          pieceId: kp.piece_id,
+          kitId: kit.id,
+          name: piece.name,
+          code: piece.code,
+          image_url: piece.image_url,
+          specification: piece.specification,
+          size: piece.size,
+          totalQty: kitTotalQty * kp.quantity,
+          editable: true,
+        });
+      });
+    });
+
+    return rows;
+  }, [allPieces, kitsData, kitPiecesData, storePieceQtyMap]);
+
   // ─── Mark as preenchendo on first interaction ──────────
   const markFilling = useCallback(async () => {
     if (!supplier || supplier.status !== "aguardando") return;
-    await supabase
-      .from("budget_suppliers")
-      .update({ status: "preenchendo" })
-      .eq("id", supplier.id);
+    await supabase.from("budget_suppliers").update({ status: "preenchendo" }).eq("id", supplier.id);
     setSupplier((s) => s ? { ...s, status: "preenchendo" } : s);
   }, [supplier]);
 
-  // ─── Save price on blur ────────────────────────────────
+  // ─── Save price on blur (always piece_id) ──────────────
   const savePrice = useCallback(
-    async (itemId: string, itemType: "piece" | "kit", value: number | null) => {
+    async (pieceId: string, value: number | null) => {
       if (!supplier) return;
-      const payload: Record<string, unknown> = {
-        supplier_id: supplier.id,
-        campaign_id: supplier.campaign_id,
-        unit_price: value,
-      };
-      if (itemType === "piece") {
-        payload.piece_id = itemId;
-        payload.kit_id = null;
-      } else {
-        payload.kit_id = itemId;
-        payload.piece_id = null;
-      }
-
-      await supabase.from("budget_prices").upsert(payload as never, {
-        onConflict: "supplier_id,piece_id,kit_id",
-      });
+      await supabase.from("budget_prices").upsert(
+        {
+          supplier_id: supplier.id,
+          campaign_id: supplier.campaign_id,
+          piece_id: pieceId,
+          unit_price: value,
+        } as never,
+        { onConflict: "supplier_id,piece_id" }
+      );
     },
     [supplier]
   );
@@ -321,16 +415,9 @@ const SupplierPortal = () => {
       };
 
       if (extraCosts.id) {
-        await supabase
-          .from("budget_extra_costs")
-          .update({ [field]: value })
-          .eq("id", extraCosts.id);
+        await supabase.from("budget_extra_costs").update({ [field]: value }).eq("id", extraCosts.id);
       } else {
-        const { data } = await supabase
-          .from("budget_extra_costs")
-          .insert(payload)
-          .select()
-          .single();
+        const { data } = await supabase.from("budget_extra_costs").insert(payload).select().single();
         if (data) setExtraCosts((ec) => ({ ...ec, id: data.id }));
       }
     },
@@ -340,34 +427,94 @@ const SupplierPortal = () => {
   // ─── Computed totals ───────────────────────────────────
   const lineTotals = useMemo(() => {
     const map: Record<string, number> = {};
-    lineItems.forEach((item) => {
-      const up = prices[item.id];
-      map[item.id] = up != null ? up * item.totalQty : 0;
+    displayRows.forEach((row) => {
+      if (!row.editable || !row.pieceId) return;
+      const up = prices[row.pieceId];
+      map[row.key] = up != null ? up * row.totalQty : 0;
     });
     return map;
-  }, [lineItems, prices]);
+  }, [displayRows, prices]);
+
+  // Kit section totals
+  const kitSectionTotals = useMemo(() => {
+    const map: Record<string, number> = {};
+    kitsData.forEach((kit) => {
+      let total = 0;
+      displayRows
+        .filter((r) => r.type === "kit_piece" && r.kitId === kit.id)
+        .forEach((r) => { total += lineTotals[r.key] || 0; });
+      map[kit.id] = total;
+    });
+    return map;
+  }, [kitsData, displayRows, lineTotals]);
 
   const grandTotal = useMemo(() => {
-    const piecesTotal = Object.values(lineTotals).reduce((s, v) => s + v, 0);
-    return piecesTotal + (extraCosts.installation_value || 0) + (extraCosts.freight_value || 0);
+    const itemsTotal = Object.values(lineTotals).reduce((s, v) => s + v, 0);
+    return itemsTotal + (extraCosts.installation_value || 0) + (extraCosts.freight_value || 0);
   }, [lineTotals, extraCosts]);
+
+  // ─── Excel download ────────────────────────────────────
+  const handleDownloadExcel = useCallback(async () => {
+    if (!supplier) return;
+    setDownloadingExcel(true);
+    try {
+      const piecesForExport = allPieces.map((p) => ({
+        ...p,
+        campaign_id: supplier.campaign_id,
+        is_mockup: false,
+      })) as unknown as CampaignPiece[];
+
+      const kitsForExport = kitsData.map((k) => ({
+        ...k,
+        campaign_id: supplier.campaign_id,
+        is_mockup: false,
+      })) as unknown as CampaignKit[];
+
+      const kitPiecesForExport = kitPiecesData.map((kp) => ({
+        ...kp,
+        created_at: "",
+      })) as CampaignKitPiece[];
+
+      const storesForExport = storeData.map((s) => ({
+        ...s,
+        client_id: "",
+        created_at: "",
+        auto_distribute: false,
+        show_in_scheduling: true,
+        showcase_count: s.showcase_count ?? 0,
+      })) as any;
+
+      await exportMatrixExcelJS(
+        storesForExport,
+        piecesForExport.filter((p) => !p.kit_only),
+        fullQtyMap,
+        campaignName,
+        kitsForExport,
+        kitPiecesForExport,
+        { name: "ProduzAI", primary: "#8C6F4E", secondary: "#A0845C", light: "#E8D5C0" },
+        [] as CampaignPieceLocation[],
+        [] as CampaignPieceSubLocation[],
+        piecesForExport,
+        agencyName,
+        clientName,
+      );
+    } catch (e) {
+      console.error("Excel export error:", e);
+    } finally {
+      setDownloadingExcel(false);
+    }
+  }, [supplier, allPieces, kitsData, kitPiecesData, storeData, fullQtyMap, campaignName, agencyName, clientName]);
 
   // ─── Submit ────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!supplier) return;
     setSubmitting(true);
     try {
-      // Lock supplier
       await supabase
         .from("budget_suppliers")
-        .update({
-          status: "enviado",
-          locked: true,
-          submitted_at: new Date().toISOString(),
-        })
+        .update({ status: "enviado", locked: true, submitted_at: new Date().toISOString() })
         .eq("id", supplier.id);
 
-      // Get campaign -> client -> agency for notification
       const { data: campaign } = await supabase
         .from("campaigns")
         .select("client_id")
@@ -386,7 +533,6 @@ const SupplierPortal = () => {
         agencyId = client?.agency_id ?? null;
       }
 
-      // Fire notification via RPC (SECURITY DEFINER, works from anon)
       if (agencyId) {
         await supabase.rpc("criar_notificacao", {
           _agency_id: agencyId,
@@ -423,7 +569,7 @@ const SupplierPortal = () => {
     );
   }
 
-  // ─── Error / Deadline expired ──────────────────────────
+  // ─── Error ─────────────────────────────────────────────
   if (error || !supplier) {
     return (
       <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
@@ -431,9 +577,7 @@ const SupplierPortal = () => {
           <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="w-8 h-8 text-red-500" />
           </div>
-          <h1 className="text-xl font-bold text-foreground mb-2">
-            {error || "Link inválido ou expirado"}
-          </h1>
+          <h1 className="text-xl font-bold text-foreground mb-2">{error || "Link inválido ou expirado"}</h1>
           <p className="text-muted-foreground text-sm">
             Caso acredite ser um erro, entre em contato com a agência responsável.
           </p>
@@ -445,6 +589,7 @@ const SupplierPortal = () => {
   // ─── Success screen ────────────────────────────────────
   if (submitted) {
     const confettiColors = ["#8C6F4E", "#D4A574", "#E8D5C0", "#4CAF50", "#FF9800", "#2196F3"];
+    const pricedPieces = displayRows.filter((r) => r.editable && r.pieceId && prices[r.pieceId] != null);
     return (
       <>
         <style>{confettiCSS}</style>
@@ -479,7 +624,7 @@ const SupplierPortal = () => {
               <CardContent className="p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Itens cotados</span>
-                  <span className="font-medium">{lineItems.filter((li) => prices[li.id] != null).length} de {lineItems.length}</span>
+                  <span className="font-medium">{pricedPieces.length} peça(s)</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Instalação</span>
@@ -504,6 +649,17 @@ const SupplierPortal = () => {
       </>
     );
   }
+
+  // ─── Piece thumbnail component ─────────────────────────
+  const PieceThumbnail = ({ url }: { url?: string | null }) => (
+    url ? (
+      <img src={url} alt="" className="w-10 h-10 rounded object-cover border shrink-0" />
+    ) : (
+      <div className="w-10 h-10 rounded border bg-muted flex items-center justify-center shrink-0">
+        <ImageIcon className="w-5 h-5 text-muted-foreground" />
+      </div>
+    )
+  );
 
   // ─── Main portal ───────────────────────────────────────
   return (
@@ -549,10 +705,8 @@ const SupplierPortal = () => {
             <Lock className="w-4 h-4 shrink-0" />
             <span>
               Orçamento enviado em{" "}
-              {supplier.submitted_at
-                ? new Date(supplier.submitted_at).toLocaleDateString("pt-BR")
-                : "—"}
-              . Os valores estão bloqueados.
+              {supplier.submitted_at ? new Date(supplier.submitted_at).toLocaleDateString("pt-BR") : "—"}.
+              Os valores estão bloqueados.
             </span>
           </div>
         </div>
@@ -572,7 +726,7 @@ const SupplierPortal = () => {
                 {clientName ? ` do cliente ${clientName}` : ""}.
               </p>
               <p>
-                Preencha o <strong>preço unitário</strong> de cada item abaixo. O total por item será
+                Preencha o <strong>preço unitário</strong> de cada peça abaixo. O total por peça será
                 calculado automaticamente (preço unitário × quantidade total).
               </p>
               <p>
@@ -597,39 +751,87 @@ const SupplierPortal = () => {
         {/* Matrix */}
         <Card>
           <CardContent className="p-0">
-            <div className="p-4 border-b">
-              <h3 className="font-semibold text-foreground">Itens da Campanha</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Preencha o preço unitário. O total será calculado automaticamente.
-              </p>
+            <div className="p-4 border-b flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-foreground">Itens da Campanha</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Preencha o preço unitário por peça. Kits são expandidos em suas peças componentes.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 shrink-0"
+                disabled={downloadingExcel}
+                onClick={handleDownloadExcel}
+              >
+                <Download className="w-4 h-4" />
+                {downloadingExcel ? "Gerando..." : "Baixar Planilha (Excel)"}
+              </Button>
             </div>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[200px]">Item</TableHead>
+                    <TableHead className="min-w-[280px]">Item</TableHead>
                     <TableHead className="text-center w-[100px]">Qtd Total</TableHead>
                     <TableHead className="text-center w-[160px]">Preço Unitário</TableHead>
                     <TableHead className="text-right w-[140px]">Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {lineItems.map((item) => {
-                    const unitPrice = prices[item.id] ?? null;
-                    const lineTotal = lineTotals[item.id] || 0;
+                  {displayRows.map((row) => {
+                    if (row.type === "kit_header") {
+                      return (
+                        <TableRow key={row.key} className="bg-muted/50 border-t-2">
+                          <TableCell colSpan={4}>
+                            <div className="flex items-center gap-3 py-1">
+                              <PieceThumbnail url={row.image_url} />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <Badge className="bg-[#8C6F4E]/10 text-[#8C6F4E] border-[#8C6F4E]/20 text-[10px]">Kit</Badge>
+                                  <span className="font-semibold text-sm">{row.name}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                  {kitPiecesData.filter((kp) => kp.kit_id === row.kitId).length} peça(s) · Qtd kit: {row.totalQty}
+                                </p>
+                              </div>
+                              <div className="ml-auto text-right">
+                                <span className="text-sm font-semibold text-[#8C6F4E]">
+                                  {fmt(kitSectionTotals[row.kitId!] || 0)}
+                                </span>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+
+                    const unitPrice = row.pieceId ? prices[row.pieceId] ?? null : null;
+                    const lineTotal = lineTotals[row.key] || 0;
+                    const isKitPiece = row.type === "kit_piece";
+
                     return (
-                      <TableRow key={item.id}>
+                      <TableRow key={row.key} className={isKitPiece ? "bg-muted/20" : ""}>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-[10px] shrink-0">
-                              {item.type === "kit" ? "Kit" : `#${item.code}`}
-                            </Badge>
-                            <span className="font-medium text-sm">{item.name}</span>
+                          <div className="flex items-center gap-3">
+                            {isKitPiece && <div className="w-4 border-l-2 border-b-2 border-muted-foreground/30 h-5 shrink-0 ml-2" />}
+                            <PieceThumbnail url={row.image_url} />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-[10px] shrink-0">#{row.code}</Badge>
+                                <span className="font-medium text-sm truncate">{row.name}</span>
+                              </div>
+                              {row.specification && (
+                                <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[220px]">{row.specification}</p>
+                              )}
+                              {row.size && (
+                                <Badge variant="secondary" className="text-[9px] mt-1">{row.size}</Badge>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center font-mono text-sm">
-                          {item.totalQty}
-                        </TableCell>
+                        <TableCell className="text-center font-mono text-sm">{row.totalQty}</TableCell>
                         <TableCell className="text-center">
                           <Input
                             type="number"
@@ -641,10 +843,13 @@ const SupplierPortal = () => {
                             value={unitPrice ?? ""}
                             onFocus={markFilling}
                             onChange={(e) => {
+                              if (!row.pieceId) return;
                               const val = e.target.value === "" ? null : parseFloat(e.target.value);
-                              setPrices((prev) => ({ ...prev, [item.id]: val }));
+                              setPrices((prev) => ({ ...prev, [row.pieceId!]: val }));
                             }}
-                            onBlur={() => savePrice(item.id, item.type, prices[item.id] ?? null)}
+                            onBlur={() => {
+                              if (row.pieceId) savePrice(row.pieceId, prices[row.pieceId] ?? null);
+                            }}
                           />
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm font-medium">
@@ -653,7 +858,7 @@ const SupplierPortal = () => {
                       </TableRow>
                     );
                   })}
-                  {lineItems.length === 0 && (
+                  {displayRows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                         Nenhum item cadastrado nesta campanha.
@@ -674,11 +879,7 @@ const SupplierPortal = () => {
               <div>
                 <label className="text-sm text-muted-foreground mb-1 block">Instalação (R$)</label>
                 <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0,00"
-                  disabled={isLocked}
+                  type="number" step="0.01" min="0" placeholder="0,00" disabled={isLocked}
                   value={extraCosts.installation_value ?? ""}
                   onFocus={markFilling}
                   onChange={(e) => {
@@ -689,15 +890,9 @@ const SupplierPortal = () => {
                 />
               </div>
               <div>
-                <label className="text-sm text-muted-foreground mb-1 block">
-                  Frete / Despacho (R$)
-                </label>
+                <label className="text-sm text-muted-foreground mb-1 block">Frete / Despacho (R$)</label>
                 <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0,00"
-                  disabled={isLocked}
+                  type="number" step="0.01" min="0" placeholder="0,00" disabled={isLocked}
                   value={extraCosts.freight_value ?? ""}
                   onFocus={markFilling}
                   onChange={(e) => {
@@ -717,9 +912,7 @@ const SupplierPortal = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Geral do Orçamento</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  (Itens + Instalação + Frete)
-                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">(Itens + Instalação + Frete)</p>
               </div>
               <span className="text-2xl font-bold text-[#8C6F4E]">{fmt(grandTotal)}</span>
             </div>
@@ -753,12 +946,7 @@ const SupplierPortal = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setShowConfirm1(false);
-                setShowConfirm2(true);
-              }}
-            >
+            <AlertDialogAction onClick={() => { setShowConfirm1(false); setShowConfirm2(true); }}>
               Sim, revisei
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -771,8 +959,7 @@ const SupplierPortal = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmação definitiva</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem absoluta certeza? Após o envio, os valores ficam bloqueados e não poderão ser
-              alterados.
+              Tem absoluta certeza? Após o envio, os valores ficam bloqueados e não poderão ser alterados.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
