@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Package, Lock, Clock, CheckCircle2, AlertTriangle, Send, ImageIcon, Download, Edit2, Save } from "lucide-react";
+import { Package, Lock, Clock, CheckCircle2, AlertTriangle, Send, ImageIcon, Download, Edit2, Save, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -991,6 +991,37 @@ const SupplierPortal = () => {
                                     <Save className="w-3.5 h-3.5" />
                                     {savingSuggestion ? "Salvando..." : "Salvar"}
                                   </Button>
+                                  {suggestions[row.pieceId!] && (
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      className="gap-1"
+                                      disabled={isLocked}
+                                      onClick={async () => {
+                                        const pieceId = row.pieceId!;
+                                        try {
+                                          const { error } = await supabase
+                                            .from("supplier_spec_suggestions")
+                                            .delete()
+                                            .eq("supplier_id", supplier!.id)
+                                            .eq("piece_id", pieceId);
+                                          if (error) throw error;
+                                          setSuggestions((prev) => {
+                                            const next = { ...prev };
+                                            delete next[pieceId];
+                                            return next;
+                                          });
+                                          setExpandedSuggestion(null);
+                                          toast.success("Sugestão removida. Especificação original restaurada.");
+                                        } catch (e: any) {
+                                          toast.error(`Erro: ${e?.message || JSON.stringify(e)}`);
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                      Apagar sugestão
+                                    </Button>
+                                  )}
                                   <Button size="sm" variant="ghost" onClick={() => setExpandedSuggestion(null)}>
                                     Cancelar
                                   </Button>
