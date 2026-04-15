@@ -141,6 +141,11 @@ const SupplierPortal = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [downloadingExcel, setDownloadingExcel] = useState(false);
+  const [suggestions, setSuggestions] = useState<Record<string, { id: string; suggested_spec: string; orcado_por: string }>>({});
+  const [expandedSuggestion, setExpandedSuggestion] = useState<string | null>(null); // pieceId being edited
+  const [suggestionDraft, setSuggestionDraft] = useState("");
+  const [suggestionOrcadoPor, setSuggestionOrcadoPor] = useState<"original" | "sugerida">("original");
+  const [savingSuggestion, setSavingSuggestion] = useState(false);
 
   // Store data for Excel export
   const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; showcase_count?: number }[]>([]);
