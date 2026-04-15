@@ -336,11 +336,13 @@ const QuickMatrixEditor = ({
   };
 
   const focusCell = (key: string) => {
-    const el = inputRefs.current[key];
-    if (el) {
-      el.focus();
-      el.select();
-    }
+    requestAnimationFrame(() => {
+      const el = inputRefs.current[key];
+      if (el) {
+        el.focus();
+        el.select();
+      }
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, key: string) => {
@@ -408,7 +410,7 @@ const QuickMatrixEditor = ({
   // Auto-focus first cell when entering edit mode
   useEffect(() => {
     if (editing && gridKeys.length > 0) {
-      setTimeout(() => focusCell(gridKeys[0]), 50);
+      requestAnimationFrame(() => focusCell(gridKeys[0]));
     }
   }, [editing]);
 
