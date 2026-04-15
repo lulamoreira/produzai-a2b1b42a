@@ -2474,7 +2474,7 @@ const CampaignDetail = () => {
 
           {/* ─── SECTION: LOJA A LOJA ─── */}
           {activeSection === "loja_a_loja" && campaignId && clientId && (
-            <LojaALojaTab campaignId={campaignId} clientId={clientId} isAdmin={isAdmin} />
+            <LojaALojaTab campaignId={campaignId} clientId={clientId} isAdmin={isAdminOrMaster} />
           )}
           </>
         )}
