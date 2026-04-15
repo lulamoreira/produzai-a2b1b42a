@@ -867,52 +867,131 @@ const SupplierPortal = () => {
                     const unitPrice = row.pieceId ? prices[row.pieceId] ?? null : null;
                     const lineTotal = lineTotals[row.key] || 0;
                     const isKitPiece = row.type === "kit_piece";
+                    const hasSuggestion = row.pieceId ? !!suggestions[row.pieceId] : false;
+                    const isExpanded = expandedSuggestion === row.pieceId;
 
                     return (
-                      <TableRow key={row.key} className={isKitPiece ? "bg-muted/20" : ""}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            {isKitPiece && <div className="w-4 border-l-2 border-b-2 border-muted-foreground/30 h-5 shrink-0 ml-2" />}
-                            <PieceThumbnail url={row.image_url} />
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-[10px] shrink-0">#{row.code}</Badge>
-                                <span className="font-medium text-sm truncate">{row.name}</span>
+                      <React.Fragment key={row.key}>
+                        <TableRow className={isKitPiece ? "bg-muted/20" : ""}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              {isKitPiece && <div className="w-4 border-l-2 border-b-2 border-muted-foreground/30 h-5 shrink-0 ml-2" />}
+                              <PieceThumbnail url={row.image_url} />
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-[10px] shrink-0">#{row.code}</Badge>
+                                  <span className="font-medium text-sm truncate">{row.name}</span>
+                                  {hasSuggestion && (
+                                    <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[9px]">Modificação sugerida</Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  {row.specification && (
+                                    <p className="text-xs text-muted-foreground truncate max-w-[180px]">{row.specification}</p>
+                                  )}
+                                  {row.pieceId && !isLocked && (
+                                    <button
+                                      onClick={() => {
+                                        if (isExpanded) {
+                                          setExpandedSuggestion(null);
+                                        } else {
+                                          const existing = suggestions[row.pieceId!];
+                                          setSuggestionDraft(existing?.suggested_spec || row.specification || "");
+                                          setSuggestionOrcadoPor((existing?.orcado_por as "original" | "sugerida") || "original");
+                                          setExpandedSuggestion(row.pieceId!);
+                                        }
+                                      }}
+                                      className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                                      title="Sugerir modificação"
+                                    >
+                                      <Edit2 className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
+                                {row.size && (
+                                  <Badge variant="secondary" className="text-[9px] mt-1">{row.size}</Badge>
+                                )}
                               </div>
-                              {row.specification && (
-                                <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[220px]">{row.specification}</p>
-                              )}
-                              {row.size && (
-                                <Badge variant="secondary" className="text-[9px] mt-1">{row.size}</Badge>
-                              )}
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center font-mono text-sm">{row.totalQty}</TableCell>
-                        <TableCell className="text-center">
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            placeholder="0,00"
-                            className="w-[130px] mx-auto text-right"
-                            disabled={isLocked}
-                            value={unitPrice ?? ""}
-                            onFocus={markFilling}
-                            onChange={(e) => {
-                              if (!row.pieceId) return;
-                              const val = e.target.value === "" ? null : parseFloat(e.target.value);
-                              setPrices((prev) => ({ ...prev, [row.pieceId!]: val }));
-                            }}
-                            onBlur={() => {
-                              if (row.pieceId) savePrice(row.pieceId, prices[row.pieceId] ?? null);
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm font-medium">
-                          {unitPrice != null ? fmt(lineTotal) : "—"}
-                        </TableCell>
-                      </TableRow>
+                          </TableCell>
+                          <TableCell className="text-center font-mono text-sm">{row.totalQty}</TableCell>
+                          <TableCell className="text-center">
+                            <Input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              placeholder="0,00"
+                              className="w-[130px] mx-auto text-right"
+                              disabled={isLocked}
+                              value={unitPrice ?? ""}
+                              onFocus={markFilling}
+                              onChange={(e) => {
+                                if (!row.pieceId) return;
+                                const val = e.target.value === "" ? null : parseFloat(e.target.value);
+                                setPrices((prev) => ({ ...prev, [row.pieceId!]: val }));
+                              }}
+                              onBlur={() => {
+                                if (row.pieceId) savePrice(row.pieceId, prices[row.pieceId] ?? null);
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-sm font-medium">
+                            {unitPrice != null ? fmt(lineTotal) : "—"}
+                          </TableCell>
+                        </TableRow>
+                        {/* Inline suggestion form */}
+                        {isExpanded && row.pieceId && (
+                          <TableRow className="bg-amber-50/50">
+                            <TableCell colSpan={4}>
+                              <div className="p-3 space-y-3">
+                                <Textarea
+                                  value={suggestionDraft}
+                                  onChange={(e) => setSuggestionDraft(e.target.value)}
+                                  placeholder="Sua sugestão de modificação na especificação..."
+                                  className="text-sm min-h-[60px]"
+                                />
+                                <div className="flex items-center gap-4">
+                                  <span className="text-xs font-medium text-muted-foreground">Orçando pela:</span>
+                                  <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                                    <input
+                                      type="radio"
+                                      name={`orcado-${row.pieceId}`}
+                                      checked={suggestionOrcadoPor === "original"}
+                                      onChange={() => setSuggestionOrcadoPor("original")}
+                                      className="accent-[#8C6F4E]"
+                                    />
+                                    Especificação original
+                                  </label>
+                                  <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+                                    <input
+                                      type="radio"
+                                      name={`orcado-${row.pieceId}`}
+                                      checked={suggestionOrcadoPor === "sugerida"}
+                                      onChange={() => setSuggestionOrcadoPor("sugerida")}
+                                      className="accent-[#8C6F4E]"
+                                    />
+                                    Minha sugestão
+                                  </label>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    className="bg-[#8C6F4E] hover:bg-[#7A5F3E] text-white gap-1"
+                                    disabled={savingSuggestion || !suggestionDraft.trim()}
+                                    onClick={() => handleSaveSuggestion(row.pieceId!)}
+                                  >
+                                    <Save className="w-3.5 h-3.5" />
+                                    {savingSuggestion ? "Salvando..." : "Salvar"}
+                                  </Button>
+                                  <Button size="sm" variant="ghost" onClick={() => setExpandedSuggestion(null)}>
+                                    Cancelar
+                                  </Button>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                   {displayRows.length === 0 && (
