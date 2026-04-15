@@ -443,6 +443,44 @@ const SupplierPortal = () => {
     [supplier, extraCosts]
   );
 
+  // ─── Save spec suggestion ─────────────────────────────
+  const handleSaveSuggestion = useCallback(
+    async (pieceId: string) => {
+      if (!supplier || !suggestionDraft.trim()) return;
+      setSavingSuggestion(true);
+      try {
+        const piece = allPieces.find((p) => p.id === pieceId);
+        const { data, error: err } = await supabase
+          .from("supplier_spec_suggestions")
+          .upsert(
+            {
+              supplier_id: supplier.id,
+              piece_id: pieceId,
+              campaign_id: supplier.campaign_id,
+              original_spec: piece?.specification || "",
+              suggested_spec: suggestionDraft.trim(),
+              orcado_por: suggestionOrcadoPor,
+            } as never,
+            { onConflict: "supplier_id,piece_id" }
+          )
+          .select()
+          .single();
+
+        if (err) throw err;
+        setSuggestions((prev) => ({
+          ...prev,
+          [pieceId]: { id: (data as any).id, suggested_spec: suggestionDraft.trim(), orcado_por: suggestionOrcadoPor },
+        }));
+        setExpandedSuggestion(null);
+      } catch (e) {
+        console.error("Save suggestion error:", e);
+      } finally {
+        setSavingSuggestion(false);
+      }
+    },
+    [supplier, suggestionDraft, suggestionOrcadoPor, allPieces]
+  );
+
   // ─── Computed totals ───────────────────────────────────
   const lineTotals = useMemo(() => {
     const map: Record<string, number> = {};
