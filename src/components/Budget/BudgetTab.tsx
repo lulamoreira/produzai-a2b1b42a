@@ -539,13 +539,37 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                     const priceRow = detailPrices.find((pr) => pr.piece_id === piece.id);
                     const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
                     const lineTotal = unitPrice * qty;
+                    const sug = suggestionsMap[piece.id];
+                    const isSugExpanded = expandedSuggestionPieceId === piece.id;
                     return (
-                      <TableRow key={piece.id}>
-                        <TableCell className="text-xs font-medium">{piece.code} - {piece.name}</TableCell>
-                        <TableCell className="text-xs text-right">{qty}</TableCell>
-                        <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(unitPrice) : "—"}</TableCell>
-                        <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
-                      </TableRow>
+                      <React.Fragment key={piece.id}>
+                        <TableRow>
+                          <TableCell className="text-xs font-medium">
+                            {piece.code} - {piece.name}
+                            {sug && (
+                              <button onClick={() => setExpandedSuggestionPieceId(isSugExpanded ? null : piece.id)} className="ml-1 inline-flex items-center">
+                                <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[9px] cursor-pointer gap-0.5">
+                                  Sugestão {isSugExpanded ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
+                                </Badge>
+                              </button>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-xs text-right">{qty}</TableCell>
+                          <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(unitPrice) : "—"}</TableCell>
+                          <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
+                        </TableRow>
+                        {sug && isSugExpanded && (
+                          <TableRow className="bg-amber-50/80">
+                            <TableCell colSpan={4} className="text-xs p-3">
+                              <p className="text-amber-800 font-medium mb-1">Sugestão do fornecedor:</p>
+                              <p className="text-amber-700 italic">"{sug.suggested_spec}"</p>
+                              <Badge className={cn("mt-1 text-[9px]", sug.orcado_por === "sugerida" ? "bg-amber-200 text-amber-800" : "bg-muted text-muted-foreground")}>
+                                Orçou pela: {sug.orcado_por === "sugerida" ? "Minha sugestão" : "Especificação original"}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                   {/* Kits expanded into pieces */}
@@ -571,17 +595,41 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                           </TableCell>
                           <TableCell className="text-xs text-right font-semibold">{fmtCurrency(kitTotal)}</TableCell>
                         </TableRow>
-                        {pieceRows.map(({ kp, piece, priceRow, unitPrice, qty, lineTotal }) => (
-                          <TableRow key={kp.id} className="bg-muted/10">
-                            <TableCell className="text-xs pl-6">
-                              {piece ? `${piece.code} - ${piece.name}` : kp.piece_id}
-                              {piece?.specification && <span className="text-muted-foreground ml-1">· {piece.specification}</span>}
-                            </TableCell>
-                            <TableCell className="text-xs text-right">{qty}</TableCell>
-                            <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(unitPrice) : "—"}</TableCell>
-                            <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
-                          </TableRow>
-                        ))}
+                        {pieceRows.map(({ kp, piece, priceRow, unitPrice, qty, lineTotal }) => {
+                          const sug = piece ? suggestionsMap[piece.id] : null;
+                          const isSugExpanded = expandedSuggestionPieceId === kp.piece_id;
+                          return (
+                            <React.Fragment key={kp.id}>
+                              <TableRow className="bg-muted/10">
+                                <TableCell className="text-xs pl-6">
+                                  {piece ? `${piece.code} - ${piece.name}` : kp.piece_id}
+                                  {piece?.specification && <span className="text-muted-foreground ml-1">· {piece.specification}</span>}
+                                  {sug && (
+                                    <button onClick={() => setExpandedSuggestionPieceId(isSugExpanded ? null : kp.piece_id)} className="ml-1 inline-flex items-center">
+                                      <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[9px] cursor-pointer gap-0.5">
+                                        Sugestão {isSugExpanded ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
+                                      </Badge>
+                                    </button>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-xs text-right">{qty}</TableCell>
+                                <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(unitPrice) : "—"}</TableCell>
+                                <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
+                              </TableRow>
+                              {sug && isSugExpanded && (
+                                <TableRow className="bg-amber-50/80">
+                                  <TableCell colSpan={4} className="text-xs p-3">
+                                    <p className="text-amber-800 font-medium mb-1">Sugestão do fornecedor:</p>
+                                    <p className="text-amber-700 italic">"{sug.suggested_spec}"</p>
+                                    <Badge className={cn("mt-1 text-[9px]", sug.orcado_por === "sugerida" ? "bg-amber-200 text-amber-800" : "bg-muted text-muted-foreground")}>
+                                      Orçou pela: {sug.orcado_por === "sugerida" ? "Minha sugestão" : "Especificação original"}
+                                    </Badge>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
                       </React.Fragment>
                     );
                   })}
