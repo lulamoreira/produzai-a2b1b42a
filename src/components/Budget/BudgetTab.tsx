@@ -82,6 +82,7 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
   const [detailSupplier, setDetailSupplier] = useState<string | null>(null);
   const [newSupplier, setNewSupplier] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
+  const [expandedSuggestionPieceId, setExpandedSuggestionPieceId] = useState<string | null>(null);
 
   // ─── Piece total quantities (sum across all stores) ────
   const pieceTotals = useMemo(() => {
@@ -249,6 +250,12 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
   const detailSup = detailSupplier ? suppliers.find((s) => s.id === detailSupplier) : null;
   const detailPrices = detailSupplier ? prices.filter((p) => p.supplier_id === detailSupplier) : [];
   const detailCosts = detailSupplier ? extraCosts.find((e) => e.supplier_id === detailSupplier) : null;
+  const { data: detailSuggestions = [] } = useSupplierSpecSuggestions(detailSupplier);
+  const suggestionsMap = useMemo(() => {
+    const map: Record<string, { suggested_spec: string; orcado_por: string }> = {};
+    detailSuggestions.forEach((s: any) => { map[s.piece_id] = { suggested_spec: s.suggested_spec, orcado_por: s.orcado_por }; });
+    return map;
+  }, [detailSuggestions]);
 
   const detailGrandTotal = useMemo(() => {
     if (!detailSupplier) return 0;
