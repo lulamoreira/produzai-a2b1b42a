@@ -312,6 +312,61 @@ export function useUpdatePecaNome() {
   });
 }
 
+/* ───── Mutations: Reorder ───── */
+
+export function useReorderTipos() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { campaign_id: string; items: { id: string; display_order: number }[] }) => {
+      const promises = params.items.map((item) =>
+        supabase.from("loja_a_loja_tipos").update({ display_order: item.display_order }).eq("id", item.id)
+      );
+      const results = await Promise.all(promises);
+      const err = results.find((r) => r.error);
+      if (err?.error) throw err.error;
+    },
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-tipos", v.campaign_id] });
+    },
+    onError: (e: any) => toast.error("Erro ao reordenar: " + e.message),
+  });
+}
+
+export function useReorderSubdivisoes() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { campaign_id: string; items: { id: string; display_order: number }[] }) => {
+      const promises = params.items.map((item) =>
+        supabase.from("loja_a_loja_subdivisoes").update({ display_order: item.display_order }).eq("id", item.id)
+      );
+      const results = await Promise.all(promises);
+      const err = results.find((r) => r.error);
+      if (err?.error) throw err.error;
+    },
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-tipos", v.campaign_id] });
+    },
+    onError: (e: any) => toast.error("Erro ao reordenar: " + e.message),
+  });
+}
+
+export function useReorderPecas() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { items: { id: string; display_order: number }[] }) => {
+      const promises = params.items.map((item) =>
+        supabase.from("loja_a_loja_pecas").update({ display_order: item.display_order }).eq("id", item.id)
+      );
+      const results = await Promise.all(promises);
+      const err = results.find((r) => r.error);
+      if (err?.error) throw err.error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-pecas"] });
+    },
+    onError: (e: any) => toast.error("Erro ao reordenar: " + e.message),
+  });
+}
 
 export function useToggleLojaAssignment() {
   const qc = useQueryClient();
