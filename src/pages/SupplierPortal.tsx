@@ -453,7 +453,7 @@ const SupplierPortal = () => {
       setSavingSuggestion(true);
       try {
         const piece = allPieces.find((p) => p.id === pieceId);
-        const { data, error: err } = await supabase
+        const { error: err } = await supabase
           .from("supplier_spec_suggestions")
           .upsert(
             {
@@ -465,18 +465,18 @@ const SupplierPortal = () => {
               orcado_por: suggestionOrcadoPor,
             } as never,
             { onConflict: "supplier_id,piece_id" }
-          )
-          .select()
-          .single();
+          );
 
         if (err) throw err;
         setSuggestions((prev) => ({
           ...prev,
-          [pieceId]: { id: (data as any).id, suggested_spec: suggestionDraft.trim(), orcado_por: suggestionOrcadoPor },
+          [pieceId]: { id: prev[pieceId]?.id || "temp", suggested_spec: suggestionDraft.trim(), orcado_por: suggestionOrcadoPor },
         }));
         setExpandedSuggestion(null);
+        toast.success("Sugestão salva!");
       } catch (e) {
         console.error("Save suggestion error:", e);
+        toast.error("Erro ao salvar sugestão. Tente novamente.");
       } finally {
         setSavingSuggestion(false);
       }
