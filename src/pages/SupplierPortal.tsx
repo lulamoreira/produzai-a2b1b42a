@@ -491,7 +491,7 @@ const SupplierPortal = () => {
         campaignName,
         kitsForExport,
         kitPiecesForExport,
-        { primary: "#8C6F4E", secondary: "#A0845C", light: "#E8D5C0" },
+        { name: "ProduzAI", primary: "#8C6F4E", secondary: "#A0845C", light: "#E8D5C0" },
         [] as CampaignPieceLocation[],
         [] as CampaignPieceSubLocation[],
         piecesForExport,
