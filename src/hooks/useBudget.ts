@@ -130,3 +130,19 @@ export function useBudgetExtraCosts(campaignId: string | undefined) {
     enabled: !!campaignId,
   });
 }
+
+// ─── Supplier Spec Suggestions ───────────────────────────
+export function useSupplierSpecSuggestions(supplierId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["supplier_spec_suggestions", supplierId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("supplier_spec_suggestions")
+        .select("*")
+        .eq("supplier_id", supplierId!);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!supplierId,
+  });
+}
