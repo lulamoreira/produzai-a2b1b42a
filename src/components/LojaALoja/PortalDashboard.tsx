@@ -58,7 +58,7 @@ interface Props {
 
 function usePortalOccurrences(campaignId: string) {
   return useQuery({
-    queryKey: ["portal-occurrences", campaignId],
+    queryKey: ["portal-occurrences-v2", campaignId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_occurrence_reports")
