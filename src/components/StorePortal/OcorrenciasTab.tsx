@@ -246,6 +246,33 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Blocked piece dialog */}
+      <Dialog open={!!blockedPeca} onOpenChange={(open) => { if (!open) setBlockedPeca(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Peça bloqueada</DialogTitle>
+          </DialogHeader>
+          {blockedPeca && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-16 h-16 rounded-md bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                  {blockedPeca.image_url ? (
+                    <img src={blockedPeca.image_url} alt="" className="w-full h-full object-cover grayscale" />
+                  ) : (
+                    <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
+                  )}
+                </div>
+                <p className="font-medium text-sm">{blockedPeca.nome}</p>
+              </div>
+              <p className="text-sm text-muted-foreground whitespace-pre-line">{blockedMessage}</p>
+              <Button onClick={() => setBlockedPeca(null)} variant="outline" className="w-full">
+                Fechar
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
