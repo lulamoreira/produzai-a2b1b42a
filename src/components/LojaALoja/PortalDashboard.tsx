@@ -407,6 +407,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Foto</TableHead>
                   <TableHead>Loja</TableHead>
                   <TableHead>Descrição</TableHead>
                   <TableHead>Prioridade</TableHead>
@@ -416,17 +417,27 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
               </TableHeader>
               <TableBody>
                 {(occurrences ?? []).slice(0, 10).length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Nenhuma ocorrência</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhuma ocorrência</TableCell></TableRow>
                 )}
-                {(occurrences ?? []).slice(0, 10).map((o: any) => (
+                {(occurrences ?? []).slice(0, 10).map((o: any) => {
+                  const photos: string[] = Array.isArray(o.photo_urls) ? o.photo_urls : [];
+                  return (
                   <TableRow key={o.id}>
+                    <TableCell>
+                      {photos.length > 0 ? (
+                        <img src={photos[0]} alt="" className="w-8 h-8 rounded object-cover" />
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium">{(o.client_stores as any)?.name ?? "—"}</TableCell>
                     <TableCell><span className="line-clamp-1 max-w-[250px]">{o.description}</span></TableCell>
                     <TableCell><Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge></TableCell>
                     <TableCell><Badge className={statusColor[o.status] ?? "bg-muted"}>{o.status}</Badge></TableCell>
                     <TableCell>{formatDate(o.created_at)}</TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
