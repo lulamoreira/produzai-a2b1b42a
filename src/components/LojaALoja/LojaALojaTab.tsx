@@ -4,7 +4,8 @@ import LojasManager from "@/components/LojaALoja/LojasManager";
 import LojaALojaDashboard from "@/components/LojaALoja/LojaALojaDashboard";
 import PortaisManager from "@/components/LojaALoja/PortaisManager";
 import PortalDashboard from "@/components/LojaALoja/PortalDashboard";
-import { LayoutGrid, Store, BarChart3, Settings2, LayoutDashboard } from "lucide-react";
+import PortalConfigTab from "@/components/LojaALoja/PortalConfigTab";
+import { LayoutGrid, Store, BarChart3, Settings2, LayoutDashboard, Settings } from "lucide-react";
 
 interface Props {
   campaignId: string;
@@ -36,6 +37,10 @@ export default function LojaALojaTab({ campaignId, clientId, isAdmin }: Props) {
           <Settings2 className="h-3.5 w-3.5" />
           Portais
         </TabsTrigger>
+        <TabsTrigger value="config" className="gap-1.5">
+          <Settings className="h-3.5 w-3.5" />
+          Config
+        </TabsTrigger>
       </TabsList>
       <TabsContent value="dashboard">
         <LojaALojaDashboard campaignId={campaignId} clientId={clientId} />
@@ -51,6 +56,9 @@ export default function LojaALojaTab({ campaignId, clientId, isAdmin }: Props) {
       </TabsContent>
       <TabsContent value="portais">
         <PortaisManager campaignId={campaignId} clientId={clientId} isAdmin={isAdmin} />
+      </TabsContent>
+      <TabsContent value="config">
+        <PortalConfigTab campaignId={campaignId} clientId={clientId} isAdmin={isAdmin} />
       </TabsContent>
     </Tabs>
   );

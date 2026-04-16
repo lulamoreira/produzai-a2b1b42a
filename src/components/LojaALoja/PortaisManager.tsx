@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Link2, Copy, MessageCircle, Trash2, Plus, LinkIcon } from "lucide-react";
+import { Link2, Copy, MessageCircle, Trash2, Plus, LinkIcon, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -123,7 +123,10 @@ export default function PortaisManager({ campaignId, clientId, isAdmin }: Props)
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       {tk ? (
-                        <>
+                         <>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => window.open(portalUrl(tk.token), "_blank")} title="Abrir portal">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyLink(tk.token)} title="Copiar link">
                             <Copy className="h-3.5 w-3.5" />
                           </Button>
