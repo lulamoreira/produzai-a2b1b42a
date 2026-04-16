@@ -82,12 +82,40 @@ Deno.serve(async (req) => {
       .order("display_order");
 
     // Fetch store assignments (ativo = true)
-    const { data: lojas } = await supabase
+    const { data: activeLojas } = await supabase
       .from("loja_a_loja_lojas")
       .select("*")
       .eq("campaign_id", campaign_id)
       .eq("store_id", store_id)
       .eq("ativo", true);
+
+    // Fetch ALL rows (including ativo=false) to know explicit states
+    const { data: allLojas } = await supabase
+      .from("loja_a_loja_lojas")
+      .select("subdivisao_id")
+      .eq("campaign_id", campaign_id)
+      .eq("store_id", store_id);
+
+    const finalLojas: any[] = [...(activeLojas || [])];
+
+    // For Internos tipos, add virtual assignments for subdivisoes with no explicit row
+    const explicitSubIds = new Set((allLojas || []).filter((l: any) => l.subdivisao_id).map((l: any) => l.subdivisao_id));
+    for (const tipo of (tipos || [])) {
+      if (!(tipo as any).tem_subdivisao) continue;
+      const tipoSubs = subdivisoes.filter((s: any) => s.tipo_id === (tipo as any).id);
+      for (const sub of tipoSubs) {
+        if (!explicitSubIds.has(sub.id)) {
+          finalLojas.push({
+            id: "virtual-" + sub.id,
+            campaign_id,
+            store_id,
+            tipo_id: (tipo as any).id,
+            subdivisao_id: sub.id,
+            ativo: true,
+          });
+        }
+      }
+    }
 
     return new Response(
       JSON.stringify({
@@ -98,7 +126,7 @@ Deno.serve(async (req) => {
         tipos: tipos || [],
         subdivisoes,
         pecas: pecas || [],
-        lojas: lojas || [],
+        lojas: finalLojas,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
