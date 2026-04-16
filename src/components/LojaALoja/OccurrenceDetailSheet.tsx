@@ -174,14 +174,14 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
               <Field label="Reportado por" value={reporterLabel} />
               <Field label="Data de abertura" value={formatDateTime(occurrence.created_at)} />
 
-              {occurrence.needs_reinstallation && (
+              {needsReinst && (
                 <div className="flex items-center gap-2 text-orange-600 text-xs font-medium">
                   <RotateCw className="w-3.5 h-3.5" />
                   Reinstalação necessária
-                  {occurrence.reinstallation_scheduled_at && (
+                  {reinstallationDate && (
                     <span className="text-muted-foreground font-normal">
-                      — {new Date(occurrence.reinstallation_scheduled_at).toLocaleString('pt-BR')}
-                      {occurrence.reinstallation_os && ` | OS: ${occurrence.reinstallation_os}`}
+                      — {new Date(reinstallationDate).toLocaleString('pt-BR')}
+                      {reinstallationOs && ` | OS: ${reinstallationOs}`}
                     </span>
                   )}
                 </div>
