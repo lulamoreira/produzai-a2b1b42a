@@ -2893,48 +2893,72 @@ export type Database = {
           campaign_id: string
           created_at: string | null
           description: string
+          expected_resolution_date: string | null
           id: string
           loja_a_loja_peca_id: string | null
+          motive_id: string | null
+          needs_reinstallation: boolean
           photo_urls: string[] | null
           priority: string
+          reporter_type: string
+          resolution_photo_urls: string[] | null
           resolved_at: string | null
+          resolved_by_user_id: string | null
           status: string
           store_id: string
           subdivisao_id: string | null
           tipo_id: string | null
           token_id: string
+          tratativa_notes: string | null
+          tratativa_status: string
         }
         Insert: {
           agency_notes?: string | null
           campaign_id: string
           created_at?: string | null
           description: string
+          expected_resolution_date?: string | null
           id?: string
           loja_a_loja_peca_id?: string | null
+          motive_id?: string | null
+          needs_reinstallation?: boolean
           photo_urls?: string[] | null
           priority?: string
+          reporter_type?: string
+          resolution_photo_urls?: string[] | null
           resolved_at?: string | null
+          resolved_by_user_id?: string | null
           status?: string
           store_id: string
           subdivisao_id?: string | null
           tipo_id?: string | null
           token_id: string
+          tratativa_notes?: string | null
+          tratativa_status?: string
         }
         Update: {
           agency_notes?: string | null
           campaign_id?: string
           created_at?: string | null
           description?: string
+          expected_resolution_date?: string | null
           id?: string
           loja_a_loja_peca_id?: string | null
+          motive_id?: string | null
+          needs_reinstallation?: boolean
           photo_urls?: string[] | null
           priority?: string
+          reporter_type?: string
+          resolution_photo_urls?: string[] | null
           resolved_at?: string | null
+          resolved_by_user_id?: string | null
           status?: string
           store_id?: string
           subdivisao_id?: string | null
           tipo_id?: string | null
           token_id?: string
+          tratativa_notes?: string | null
+          tratativa_status?: string
         }
         Relationships: [
           {
@@ -2949,6 +2973,13 @@ export type Database = {
             columns: ["loja_a_loja_peca_id"]
             isOneToOne: false
             referencedRelation: "loja_a_loja_pecas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_occurrence_reports_motive_id_fkey"
+            columns: ["motive_id"]
+            isOneToOne: false
+            referencedRelation: "store_portal_motivos"
             referencedColumns: ["id"]
           },
           {
@@ -3072,6 +3103,38 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: true
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_portal_motivos: {
+        Row: {
+          ativo: boolean
+          client_id: string
+          created_at: string | null
+          descricao: string
+          id: string
+        }
+        Insert: {
+          ativo?: boolean
+          client_id: string
+          created_at?: string | null
+          descricao: string
+          id?: string
+        }
+        Update: {
+          ativo?: boolean
+          client_id?: string
+          created_at?: string | null
+          descricao?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_portal_motivos_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
