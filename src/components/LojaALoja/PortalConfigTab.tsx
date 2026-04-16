@@ -28,6 +28,8 @@ import { CheckCircle2, XCircle, Minus, Copy, ExternalLink, GripVertical, Chevron
 import { format } from "date-fns";
 import { toast } from "sonner";
 import MotivosManager from "./MotivosManager";
+import { useTableSort } from "@/hooks/useTableSort";
+import SortableHeader from "./SortableHeader";
 import {
   DndContext,
   closestCenter,
@@ -181,6 +183,14 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
         .in("id", storeIds);
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+  const storesSort = useTableSort(stores as any[], {
+    getValue: {
+      name: (s: any) => (s.store_code ? `${s.store_code} ${s.name}` : s.name).toLowerCase(),
+      city: (s: any) => (s.city ?? "").toLowerCase(),
+      state: (s: any) => (s.state ?? "").toLowerCase(),
     },
   });
 
@@ -437,9 +447,9 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Loja</TableHead>
-                      <TableHead>Cidade</TableHead>
-                      <TableHead>UF</TableHead>
+                      <SortableHeader label="Loja" field="name" sortField={storesSort.sortField} sortDir={storesSort.sortDir} onSort={storesSort.handleSort} />
+                      <SortableHeader label="Cidade" field="city" sortField={storesSort.sortField} sortDir={storesSort.sortDir} onSort={storesSort.handleSort} />
+                      <SortableHeader label="UF" field="state" sortField={storesSort.sortField} sortDir={storesSort.sortDir} onSort={storesSort.handleSort} />
                       {MODULES.map((m) => (
                         <TableHead key={m.key} className="text-center text-xs">{m.label}</TableHead>
                       ))}
@@ -447,7 +457,7 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {stores.map((store) => {
+                    {storesSort.sortedItems.map((store: any) => {
                       const ov = overrideMap.get(store.id);
                       return (
                         <TableRow key={store.id}>

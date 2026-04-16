@@ -20,7 +20,7 @@ interface Props {
   isAdmin: boolean;
 }
 
-type SortField = "name" | "city" | "state";
+type SortField = "name" | "city" | "state" | "status";
 type SortDir = "asc" | "desc" | null;
 
 export default function PortaisManager({ campaignId, clientId, isAdmin }: Props) {
@@ -57,22 +57,29 @@ export default function PortaisManager({ campaignId, clientId, isAdmin }: Props)
   const sortedStores = useMemo(() => {
     if (!sortField || !sortDir) return stores;
     return [...stores].sort((a, b) => {
-      let va = "";
-      let vb = "";
+      let va: string | number = "";
+      let vb: string | number = "";
       if (sortField === "name") {
         va = (a.store_code ? `${a.store_code} ${a.name}` : a.name).toLowerCase();
         vb = (b.store_code ? `${b.store_code} ${b.name}` : b.name).toLowerCase();
       } else if (sortField === "city") {
         va = (a.city || "").toLowerCase();
         vb = (b.city || "").toLowerCase();
-      } else {
+      } else if (sortField === "state") {
         va = (a.state || "").toLowerCase();
         vb = (b.state || "").toLowerCase();
+      } else if (sortField === "status") {
+        // generated (true) sorts before pending (false) in asc
+        va = tokenMap.has(a.id) ? 0 : 1;
+        vb = tokenMap.has(b.id) ? 0 : 1;
       }
-      const cmp = va.localeCompare(vb, "pt-BR");
+      const cmp =
+        typeof va === "number" && typeof vb === "number"
+          ? va - vb
+          : String(va).localeCompare(String(vb), "pt-BR");
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [stores, sortField, sortDir]);
+  }, [stores, sortField, sortDir, tokenMap]);
 
   const handleSort = (field: SortField) => {
     if (sortField !== field) {
@@ -152,7 +159,11 @@ export default function PortaisManager({ campaignId, clientId, isAdmin }: Props)
                   UF <SortIcon field="state" />
                 </button>
               </TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>
+                <button className="flex items-center hover:text-foreground transition-colors" onClick={() => handleSort("status")}>
+                  Status <SortIcon field="status" />
+                </button>
+              </TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
