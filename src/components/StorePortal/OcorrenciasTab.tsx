@@ -18,6 +18,7 @@ interface Props {
 
 export default function OcorrenciasTab({ data, agencyId }: Props) {
   const [selectedPeca, setSelectedPeca] = useState<PortalData["pecas"][number] | null>(null);
+  const [blockedPeca, setBlockedPeca] = useState<PortalData["pecas"][number] | null>(null);
   const [reporterType, setReporterType] = useState("lojista");
   const [motiveId, setMotiveId] = useState<string>("");
   const [description, setDescription] = useState("");
@@ -26,6 +27,17 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reports, setReports] = useState<any[]>([]);
+
+  const handlePieceClick = (peca: PortalData["pecas"][number]) => {
+    if (peca.nome.includes("*")) {
+      setBlockedPeca(peca);
+    } else {
+      setSelectedPeca(peca);
+    }
+  };
+
+  const blockedMessage = data.portal_config?.blocked_piece_message
+    || "Esta peça está bloqueada para reporte de ocorrências no momento.";
 
   const motivos = data.motivos ?? [];
   const sortedMotivos = useMemo(
@@ -120,7 +132,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
     <div className="space-y-4 mt-4">
       <p className="text-sm text-muted-foreground">Toque em uma peça para reportar uma ocorrência.</p>
 
-      <StorePortalPieceGrid data={data} onPieceClick={setSelectedPeca} badgeCounts={badgeCounts} />
+      <StorePortalPieceGrid data={data} onPieceClick={handlePieceClick} badgeCounts={badgeCounts} />
 
       {/* Existing reports */}
       {reports.length > 0 && (
