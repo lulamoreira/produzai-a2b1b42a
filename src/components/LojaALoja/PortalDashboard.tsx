@@ -469,9 +469,8 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
       {/* Charts */}
       <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base">Reposições por Status</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
+        <CollapsibleCard title="Reposições por Status">
+          <div className="space-y-2">
             {replacementsByStatus.map((d) => {
               const maxVal = Math.max(1, ...replacementsByStatus.map((x) => x.count));
               const colors: Record<string, string> = { pendente: "bg-warning", aprovada: "bg-green-500", enviada: "bg-blue-500", rejeitada: "bg-destructive" };
@@ -485,8 +484,8 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                 </div>
               );
             })}
-          </CardContent>
-        </Card>
+          </div>
+        </CollapsibleCard>
 
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-base">Manutenções por Status</CardTitle></CardHeader>
