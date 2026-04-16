@@ -1,3 +1,4 @@
+import { useMemo, useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TiposManager from "@/components/LojaALoja/TiposManager";
 import LojasManager from "@/components/LojaALoja/LojasManager";
@@ -5,7 +6,37 @@ import LojaALojaDashboard from "@/components/LojaALoja/LojaALojaDashboard";
 import PortaisManager from "@/components/LojaALoja/PortaisManager";
 import PortalDashboard from "@/components/LojaALoja/PortalDashboard";
 import PortalConfigTab from "@/components/LojaALoja/PortalConfigTab";
-import { LayoutGrid, Store, BarChart3, Settings2, LayoutDashboard, Settings } from "lucide-react";
+import {
+  LayoutGrid,
+  Store,
+  BarChart3,
+  Settings2,
+  LayoutDashboard,
+  Settings,
+  GripVertical,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  horizontalListSortingStrategy,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  useLojaALojaTabOrder,
+  DEFAULT_LOJA_A_LOJA_TABS,
+} from "@/hooks/useLojaALojaTabOrder";
 
 interface Props {
   campaignId: string;
@@ -13,35 +44,105 @@ interface Props {
   isAdmin: boolean;
 }
 
-export default function LojaALojaTab({ campaignId, clientId, isAdmin }: Props) {
+const TAB_META: Record<
+  string,
+  { label: string; icon: React.ComponentType<{ className?: string }> }
+> = {
+  dashboard: { label: "Dashboard", icon: BarChart3 },
+  "portal-dashboard": { label: "Ocorrências", icon: LayoutDashboard },
+  tipos: { label: "Tipos de Lojas", icon: LayoutGrid },
+  lojas: { label: "Lojas", icon: Store },
+  portais: { label: "Portais", icon: Settings2 },
+  config: { label: "Config", icon: Settings },
+};
+
+function SortableTab({ id }: { id: string }) {
+  const meta = TAB_META[id];
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  if (!meta) return null;
+  const Icon = meta.icon;
+
   return (
-    <Tabs defaultValue="dashboard" className="w-full">
-      <TabsList className="mb-4 flex-wrap h-auto gap-1">
-        <TabsTrigger value="dashboard" className="gap-1.5">
-          <BarChart3 className="h-3.5 w-3.5" />
-          Dashboard
-        </TabsTrigger>
-        <TabsTrigger value="portal-dashboard" className="gap-1.5">
-          <LayoutDashboard className="h-3.5 w-3.5" />
-          Ocorrências
-        </TabsTrigger>
-        <TabsTrigger value="tipos" className="gap-1.5">
-          <LayoutGrid className="h-3.5 w-3.5" />
-          Tipos de Lojas
-        </TabsTrigger>
-        <TabsTrigger value="lojas" className="gap-1.5">
-          <Store className="h-3.5 w-3.5" />
-          Lojas
-        </TabsTrigger>
-        <TabsTrigger value="portais" className="gap-1.5">
-          <Settings2 className="h-3.5 w-3.5" />
-          Portais
-        </TabsTrigger>
-        <TabsTrigger value="config" className="gap-1.5">
-          <Settings className="h-3.5 w-3.5" />
-          Config
-        </TabsTrigger>
-      </TabsList>
+    <div ref={setNodeRef} style={style} className="flex items-center">
+      <TabsTrigger value={id} className="gap-1.5 pl-1.5">
+        <span
+          {...attributes}
+          {...listeners}
+          className={cn(
+            "flex h-5 w-4 items-center justify-center rounded text-muted-foreground/60 hover:text-muted-foreground cursor-grab active:cursor-grabbing",
+            isDragging && "cursor-grabbing"
+          )}
+          onClick={(e) => e.stopPropagation()}
+          aria-label="Arrastar para reordenar"
+        >
+          <GripVertical className="h-3 w-3" />
+        </span>
+        <Icon className="h-3.5 w-3.5" />
+        {meta.label}
+      </TabsTrigger>
+    </div>
+  );
+}
+
+export default function LojaALojaTab({ campaignId, clientId, isAdmin }: Props) {
+  const { order, saveOrder, loaded } = useLojaALojaTabOrder();
+  const [active, setActive] = useState<string>(DEFAULT_LOJA_A_LOJA_TABS[0]);
+
+  // Quando a ordem carrega/muda, garante que a aba ativa exista; default = primeira
+  useEffect(() => {
+    if (!loaded) return;
+    if (!order.includes(active)) {
+      setActive(order[0] ?? DEFAULT_LOJA_A_LOJA_TABS[0]);
+    }
+  }, [loaded, order, active]);
+
+  // Define a primeira aba da ordem salva como padrão na montagem
+  useEffect(() => {
+    if (loaded && order[0]) setActive(order[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active: a, over } = event;
+    if (!over || a.id === over.id) return;
+    const oldIndex = order.indexOf(String(a.id));
+    const newIndex = order.indexOf(String(over.id));
+    if (oldIndex < 0 || newIndex < 0) return;
+    const next = arrayMove(order, oldIndex, newIndex);
+    saveOrder(next);
+  };
+
+  const renderedOrder = useMemo(() => order, [order]);
+
+  return (
+    <Tabs value={active} onValueChange={setActive} className="w-full">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={renderedOrder} strategy={horizontalListSortingStrategy}>
+          <TabsList className="mb-4 flex-wrap h-auto gap-1">
+            {renderedOrder.map((id) => (
+              <SortableTab key={id} id={id} />
+            ))}
+          </TabsList>
+        </SortableContext>
+      </DndContext>
+
       <TabsContent value="dashboard">
         <LojaALojaDashboard campaignId={campaignId} clientId={clientId} />
       </TabsContent>
