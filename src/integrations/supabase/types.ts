@@ -3017,6 +3017,113 @@ export type Database = {
           },
         ]
       }
+      store_portal_config: {
+        Row: {
+          campaign_id: string
+          created_at: string | null
+          deadline_conformidade: string | null
+          deadline_manutencao: string | null
+          deadline_ocorrencias: string | null
+          deadline_reposicoes: string | null
+          id: string
+          module_conformidade: boolean
+          module_manutencao: boolean
+          module_ocorrencias: boolean
+          module_reposicoes: boolean
+          portal_title: string | null
+          portal_welcome_message: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string | null
+          deadline_conformidade?: string | null
+          deadline_manutencao?: string | null
+          deadline_ocorrencias?: string | null
+          deadline_reposicoes?: string | null
+          id?: string
+          module_conformidade?: boolean
+          module_manutencao?: boolean
+          module_ocorrencias?: boolean
+          module_reposicoes?: boolean
+          portal_title?: string | null
+          portal_welcome_message?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string | null
+          deadline_conformidade?: string | null
+          deadline_manutencao?: string | null
+          deadline_ocorrencias?: string | null
+          deadline_reposicoes?: string | null
+          id?: string
+          module_conformidade?: boolean
+          module_manutencao?: boolean
+          module_ocorrencias?: boolean
+          module_reposicoes?: boolean
+          portal_title?: string | null
+          portal_welcome_message?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_portal_config_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: true
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_portal_store_overrides: {
+        Row: {
+          campaign_id: string
+          created_at: string | null
+          id: string
+          module_conformidade: boolean | null
+          module_manutencao: boolean | null
+          module_ocorrencias: boolean | null
+          module_reposicoes: boolean | null
+          store_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string | null
+          id?: string
+          module_conformidade?: boolean | null
+          module_manutencao?: boolean | null
+          module_ocorrencias?: boolean | null
+          module_reposicoes?: boolean | null
+          store_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string | null
+          id?: string
+          module_conformidade?: boolean | null
+          module_manutencao?: boolean | null
+          module_ocorrencias?: boolean | null
+          module_reposicoes?: boolean | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_portal_store_overrides_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_portal_store_overrides_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_portal_tokens: {
         Row: {
           campaign_id: string
