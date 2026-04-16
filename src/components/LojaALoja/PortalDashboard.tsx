@@ -24,6 +24,7 @@ import { criarNotificacao } from "@/lib/criarNotificacao";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
 import { useTableSort } from "@/hooks/useTableSort";
 import SortableHeader from "./SortableHeader";
+import { useStorePortalConfig } from "@/hooks/useStorePortalConfig";
 
 interface CollapsibleCardProps {
   title: string;
@@ -182,6 +183,8 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
   const { data: maintenance, isLoading: l2 } = usePortalMaintenance(campaignId);
   const { data: replacements, isLoading: l3 } = usePortalReplacements(campaignId);
   const { data: compliance, isLoading: l4 } = usePortalCompliance(campaignId);
+  const { data: portalConfig } = useStorePortalConfig(campaignId);
+  const showPriority = (portalConfig as any)?.show_priority !== false;
   const qc = useQueryClient();
 
   const [confirmAction, setConfirmAction] = useState<{ id: string; status: "aprovada" | "rejeitada"; storeId: string } | null>(null);
@@ -452,16 +455,18 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                 <SelectItem value="resolvida">Resolvida</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={filterPriority} onValueChange={setFilterPriority}>
-              <SelectTrigger className="h-8 w-[160px]"><SelectValue placeholder="Prioridade" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as prioridades</SelectItem>
-                <SelectItem value="critica">Crítica</SelectItem>
-                <SelectItem value="alta">Alta</SelectItem>
-                <SelectItem value="media">Média</SelectItem>
-                <SelectItem value="baixa">Baixa</SelectItem>
-              </SelectContent>
-            </Select>
+            {showPriority && (
+              <Select value={filterPriority} onValueChange={setFilterPriority}>
+                <SelectTrigger className="h-8 w-[160px]"><SelectValue placeholder="Prioridade" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as prioridades</SelectItem>
+                  <SelectItem value="critica">Crítica</SelectItem>
+                  <SelectItem value="alta">Alta</SelectItem>
+                  <SelectItem value="media">Média</SelectItem>
+                  <SelectItem value="baixa">Baixa</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <Select value={filterStore} onValueChange={setFilterStore}>
               <SelectTrigger className="h-8 w-[200px]"><SelectValue placeholder="Loja" /></SelectTrigger>
               <SelectContent>
@@ -483,7 +488,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                     <SortableHeader label="Peça" field="piece" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
                     <SortableHeader label="Motivo" field="motive" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
                     <SortableHeader label="Reportado por" field="reporter" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
-                    <SortableHeader label="Prioridade" field="priority" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
+                    {showPriority && <SortableHeader label="Prioridade" field="priority" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />}
                     <SortableHeader label="Status" field="tratativa_status" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
                     <SortableHeader label="Abertura" field="created_at" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
                     <SortableHeader label="Previsão" field="expected_resolution_date" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
@@ -494,7 +499,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                 <TableBody>
                   {occSort.sortedItems.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={isAdmin ? 10 : 9} className="text-center text-muted-foreground py-6">Nenhuma ocorrência encontrada.</TableCell>
+                      <TableCell colSpan={(isAdmin ? 10 : 9) - (showPriority ? 0 : 1)} className="text-center text-muted-foreground py-6">Nenhuma ocorrência encontrada.</TableCell>
                     </TableRow>
                   )}
                   {occSort.sortedItems.map((o: any) => {
@@ -506,7 +511,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                         <TableCell>{(o.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
                         <TableCell><span className="line-clamp-1 max-w-[160px]">{(o.store_portal_motivos as any)?.descricao ?? "—"}</span></TableCell>
                         <TableCell className="text-xs">{reporterLabel(o.reporter_type)}</TableCell>
-                        <TableCell><Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge></TableCell>
+                        {showPriority && <TableCell><Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge></TableCell>}
                         <TableCell><Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge></TableCell>
                         <TableCell className="text-xs">{formatDate(o.created_at)}</TableCell>
                         <TableCell className={`text-xs ${overdue ? "text-destructive font-medium" : ""}`}>{formatDate(o.expected_resolution_date)}</TableCell>
@@ -565,7 +570,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
                     {/* Badges */}
                     <div className="flex flex-wrap gap-1.5">
-                      <Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge>
+                      {showPriority && <Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge>}
                       <Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge>
                       {o.needs_reinstallation && (
                         <Badge variant="outline" className="text-xs">Reinstalação</Badge>
@@ -795,7 +800,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                <TableRow>
                  <SortableHeader label="Loja" field="store" sortField={maintSort.sortField} sortDir={maintSort.sortDir} onSort={maintSort.handleSort} />
                  <SortableHeader label="Descrição" field="description" sortField={maintSort.sortField} sortDir={maintSort.sortDir} onSort={maintSort.handleSort} />
-                 <SortableHeader label="Prioridade" field="priority" sortField={maintSort.sortField} sortDir={maintSort.sortDir} onSort={maintSort.handleSort} />
+                 {showPriority && <SortableHeader label="Prioridade" field="priority" sortField={maintSort.sortField} sortDir={maintSort.sortDir} onSort={maintSort.handleSort} />}
                  <SortableHeader label="Status" field="status" sortField={maintSort.sortField} sortDir={maintSort.sortDir} onSort={maintSort.handleSort} />
                  <SortableHeader label="Data" field="created_at" sortField={maintSort.sortField} sortDir={maintSort.sortDir} onSort={maintSort.handleSort} />
                  {isAdmin && <TableHead className="w-10" />}
@@ -803,13 +808,13 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
              </TableHeader>
              <TableBody>
                {maintSort.sortedItems.slice(0, 10).length === 0 && (
-                 <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
+                 <TableRow><TableCell colSpan={(isAdmin ? 6 : 5) - (showPriority ? 0 : 1)} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
                )}
                {maintSort.sortedItems.slice(0, 10).map((m: any) => (
                  <TableRow key={m.id}>
                    <TableCell className="font-medium">{(m.client_stores as any)?.name ?? "—"}</TableCell>
                    <TableCell><span className="line-clamp-1 max-w-[250px]">{m.description}</span></TableCell>
-                   <TableCell><Badge className={priorityColor[m.priority] ?? "bg-muted"}>{m.priority}</Badge></TableCell>
+                   {showPriority && <TableCell><Badge className={priorityColor[m.priority] ?? "bg-muted"}>{m.priority}</Badge></TableCell>}
                    <TableCell><Badge className={statusColor[m.status] ?? "bg-muted"}>{m.status}</Badge></TableCell>
                    <TableCell>{formatDate(m.created_at)}</TableCell>
                    {isAdmin && (

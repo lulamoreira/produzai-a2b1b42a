@@ -15,6 +15,7 @@ export interface PortalConfig {
   deadline_reposicoes: string | null;
   portal_title: string | null;
   portal_welcome_message: string | null;
+  show_priority: boolean;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -45,6 +46,7 @@ const DEFAULT_CONFIG: Omit<PortalConfig, "id" | "campaign_id" | "created_at" | "
   deadline_reposicoes: null,
   portal_title: null,
   portal_welcome_message: null,
+  show_priority: true,
 };
 
 export function useStorePortalConfig(campaignId: string | undefined) {
