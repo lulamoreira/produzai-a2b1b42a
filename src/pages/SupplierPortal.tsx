@@ -640,7 +640,7 @@ const SupplierPortal = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="max-w-md text-center px-6 py-8">
           <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-500" />
+            <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
           <h1 className="text-xl font-bold text-foreground mb-2">{error || "Link inválido ou expirado"}</h1>
           <p className="text-muted-foreground text-sm">
@@ -765,8 +765,8 @@ const SupplierPortal = () => {
 
       {/* Locked banner */}
       {isLocked && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
-          <div className="max-w-4xl mx-auto flex items-center gap-2 text-amber-800 text-sm">
+        <div className="bg-warning/10 border-b border-warning/30 px-4 py-3">
+          <div className="max-w-4xl mx-auto flex items-center gap-2 text-warning text-sm">
             <Lock className="w-4 h-4 shrink-0" />
             <span>
               Orçamento enviado em{" "}
