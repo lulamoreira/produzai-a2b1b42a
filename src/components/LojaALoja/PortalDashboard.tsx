@@ -58,7 +58,7 @@ interface Props {
 
 function usePortalOccurrences(campaignId: string) {
   return useQuery({
-    queryKey: ["portal-occurrences", campaignId],
+    queryKey: ["portal-occurrences-v2", campaignId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_occurrence_reports")
@@ -471,7 +471,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                         <TableCell className="text-center text-xs">{daysOpen(o.created_at, o.resolved_at)}</TableCell>
                         {isAdmin && (
                           <TableCell onClick={(e) => e.stopPropagation()}>
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: o.id, table: "store_occurrence_reports", queryKey: "portal-occurrences" })}>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: o.id, table: "store_occurrence_reports", queryKey: "portal-occurrences-v2" })}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </TableCell>
@@ -514,7 +514,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                           size="icon"
                           variant="ghost"
                           className="h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0"
-                          onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: o.id, table: "store_occurrence_reports", queryKey: "portal-occurrences" }); }}
+                          onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: o.id, table: "store_occurrence_reports", queryKey: "portal-occurrences-v2" }); }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
