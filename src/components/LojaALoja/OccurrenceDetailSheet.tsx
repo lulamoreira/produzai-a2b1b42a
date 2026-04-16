@@ -174,6 +174,19 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
               <Field label="Reportado por" value={reporterLabel} />
               <Field label="Data de abertura" value={formatDateTime(occurrence.created_at)} />
 
+              {occurrence.needs_reinstallation && (
+                <div className="flex items-center gap-2 text-orange-600 text-xs font-medium">
+                  <RotateCw className="w-3.5 h-3.5" />
+                  Reinstalação necessária
+                  {occurrence.reinstallation_scheduled_at && (
+                    <span className="text-muted-foreground font-normal">
+                      — {new Date(occurrence.reinstallation_scheduled_at).toLocaleString('pt-BR')}
+                      {occurrence.reinstallation_os && ` | OS: ${occurrence.reinstallation_os}`}
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Descrição</label>
                 <p className="text-sm whitespace-pre-wrap p-2 rounded-md bg-muted/40 border border-border">{occurrence.description || "—"}</p>
@@ -239,6 +252,36 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                 <Checkbox id="reinst" checked={needsReinst} onCheckedChange={(v) => setNeedsReinst(!!v)} disabled={!isAdmin} />
                 <label htmlFor="reinst" className="text-sm cursor-pointer">Precisa reinstalação</label>
               </div>
+
+              {needsReinst && (
+                <div className="grid grid-cols-2 gap-3 pl-4 border-l-2 border-orange-400 mt-2">
+                  <div>
+                    <label className="text-xs font-medium text-foreground mb-1 block">
+                      Data e horário da reinstalação
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={reinstallationDate}
+                      onChange={(e) => setReinstallationDate(e.target.value)}
+                      disabled={!isAdmin}
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-foreground mb-1 block">
+                      Número da OS
+                    </label>
+                    <input
+                      type="text"
+                      value={reinstallationOs}
+                      onChange={(e) => setReinstallationOs(e.target.value)}
+                      disabled={!isAdmin}
+                      placeholder="Ex: OS-2024-001"
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Notas da tratativa</label>
