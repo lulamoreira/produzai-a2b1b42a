@@ -499,7 +499,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                 <TableBody>
                   {occSort.sortedItems.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={isAdmin ? 10 : 9} className="text-center text-muted-foreground py-6">Nenhuma ocorrência encontrada.</TableCell>
+                      <TableCell colSpan={(isAdmin ? 10 : 9) - (showPriority ? 0 : 1)} className="text-center text-muted-foreground py-6">Nenhuma ocorrência encontrada.</TableCell>
                     </TableRow>
                   )}
                   {occSort.sortedItems.map((o: any) => {
@@ -808,7 +808,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
              </TableHeader>
              <TableBody>
                {maintSort.sortedItems.slice(0, 10).length === 0 && (
-                 <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
+                 <TableRow><TableCell colSpan={(isAdmin ? 6 : 5) - (showPriority ? 0 : 1)} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
                )}
                {maintSort.sortedItems.slice(0, 10).map((m: any) => (
                  <TableRow key={m.id}>
