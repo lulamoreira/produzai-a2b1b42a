@@ -628,8 +628,8 @@ const SupplierPortal = () => {
   // ─── Loading ───────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
-        <div className="animate-pulse text-[#8C6F4E] font-medium">Carregando...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-primary font-medium">Carregando...</div>
       </div>
     );
   }
@@ -637,9 +637,9 @@ const SupplierPortal = () => {
   // ─── Error ─────────────────────────────────────────────
   if (error || !supplier) {
     return (
-      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="max-w-md text-center px-6 py-8">
-          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="w-8 h-8 text-red-500" />
           </div>
           <h1 className="text-xl font-bold text-foreground mb-2">{error || "Link inválido ou expirado"}</h1>
@@ -854,7 +854,7 @@ const SupplierPortal = () => {
                               <PieceThumbnail url={row.image_url} />
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <Badge className="bg-[#8C6F4E]/10 text-[#8C6F4E] border-[#8C6F4E]/20 text-[10px]">Kit</Badge>
+                                  <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">Kit</Badge>
                                   <span className="font-semibold text-sm">{row.name}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -862,7 +862,7 @@ const SupplierPortal = () => {
                                 </p>
                               </div>
                               <div className="ml-auto text-right">
-                                <span className="text-sm font-semibold text-[#8C6F4E]">
+                                <span className="text-sm font-semibold text-primary">
                                   {fmt(kitSectionTotals[row.kitId!] || 0)}
                                 </span>
                               </div>
@@ -1082,14 +1082,14 @@ const SupplierPortal = () => {
         </Card>
 
         {/* Grand total */}
-        <Card className="border-[#8C6F4E]/30 bg-[#8C6F4E]/5">
+        <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Geral do Orçamento</p>
                 <p className="text-xs text-muted-foreground mt-0.5">(Itens + Instalação + Frete)</p>
               </div>
-              <span className="text-2xl font-bold text-[#8C6F4E]">{fmt(grandTotal)}</span>
+              <span className="text-2xl font-bold text-primary">{fmt(grandTotal)}</span>
             </div>
           </CardContent>
         </Card>
