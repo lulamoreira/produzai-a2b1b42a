@@ -479,25 +479,25 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Loja</TableHead>
-                    <TableHead>Peça</TableHead>
-                    <TableHead>Motivo</TableHead>
-                    <TableHead>Reportado por</TableHead>
-                    <TableHead>Prioridade</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Abertura</TableHead>
-                    <TableHead>Previsão</TableHead>
-                    <TableHead className="text-center">Dias</TableHead>
+                    <SortableHeader label="Loja" field="store" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
+                    <SortableHeader label="Peça" field="piece" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
+                    <SortableHeader label="Motivo" field="motive" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
+                    <SortableHeader label="Reportado por" field="reporter" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
+                    <SortableHeader label="Prioridade" field="priority" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
+                    <SortableHeader label="Status" field="tratativa_status" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
+                    <SortableHeader label="Abertura" field="created_at" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
+                    <SortableHeader label="Previsão" field="expected_resolution_date" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
+                    <SortableHeader label="Dias" field="days_open" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} align="center" />
                     {isAdmin && <TableHead className="w-10" />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredOccurrences.length === 0 && (
+                  {occSort.sortedItems.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={isAdmin ? 10 : 9} className="text-center text-muted-foreground py-6">Nenhuma ocorrência encontrada.</TableCell>
                     </TableRow>
                   )}
-                  {filteredOccurrences.map((o: any) => {
+                  {occSort.sortedItems.map((o: any) => {
                     const ts = o.tratativa_status ?? "aberta";
                     const overdue = o.expected_resolution_date && new Date(o.expected_resolution_date).getTime() < Date.now() && ts !== "resolvida";
                     return (
@@ -745,19 +745,19 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Loja</TableHead>
-                  <TableHead>Peça</TableHead>
-                  <TableHead className="text-center">Qtd</TableHead>
-                  <TableHead>Motivo</TableHead>
-                  <TableHead>Data</TableHead>
+                  <SortableHeader label="Loja" field="store" sortField={replSort.sortField} sortDir={replSort.sortDir} onSort={replSort.handleSort} />
+                  <SortableHeader label="Peça" field="piece" sortField={replSort.sortField} sortDir={replSort.sortDir} onSort={replSort.handleSort} />
+                  <SortableHeader label="Qtd" field="quantity_requested" sortField={replSort.sortField} sortDir={replSort.sortDir} onSort={replSort.handleSort} align="center" />
+                  <SortableHeader label="Motivo" field="reason" sortField={replSort.sortField} sortDir={replSort.sortDir} onSort={replSort.handleSort} />
+                  <SortableHeader label="Data" field="requested_at" sortField={replSort.sortField} sortDir={replSort.sortDir} onSort={replSort.handleSort} />
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pendingList.length === 0 && (
+                {replSort.sortedItems.length === 0 && (
                   <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhuma reposição pendente</TableCell></TableRow>
                 )}
-                {pendingList.map((r: any) => (
+                {replSort.sortedItems.map((r: any) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{(r.client_stores as any)?.name ?? "—"}</TableCell>
                     <TableCell>{(r.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
@@ -793,19 +793,19 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
           <Table>
             <TableHeader>
                <TableRow>
-                 <TableHead>Loja</TableHead>
-                 <TableHead>Descrição</TableHead>
-                 <TableHead>Prioridade</TableHead>
-                 <TableHead>Status</TableHead>
-                 <TableHead>Data</TableHead>
+                 <SortableHeader label="Loja" field="store" sortField={maintSort.sortField} sortDir={maintSort.sortDir} onSort={maintSort.handleSort} />
+                 <SortableHeader label="Descrição" field="description" sortField={maintSort.sortField} sortDir={maintSort.sortDir} onSort={maintSort.handleSort} />
+                 <SortableHeader label="Prioridade" field="priority" sortField={maintSort.sortField} sortDir={maintSort.sortDir} onSort={maintSort.handleSort} />
+                 <SortableHeader label="Status" field="status" sortField={maintSort.sortField} sortDir={maintSort.sortDir} onSort={maintSort.handleSort} />
+                 <SortableHeader label="Data" field="created_at" sortField={maintSort.sortField} sortDir={maintSort.sortDir} onSort={maintSort.handleSort} />
                  {isAdmin && <TableHead className="w-10" />}
                </TableRow>
              </TableHeader>
              <TableBody>
-               {(maintenance ?? []).slice(0, 10).length === 0 && (
+               {maintSort.sortedItems.slice(0, 10).length === 0 && (
                  <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
                )}
-               {(maintenance ?? []).slice(0, 10).map((m: any) => (
+               {maintSort.sortedItems.slice(0, 10).map((m: any) => (
                  <TableRow key={m.id}>
                    <TableCell className="font-medium">{(m.client_stores as any)?.name ?? "—"}</TableCell>
                    <TableCell><span className="line-clamp-1 max-w-[250px]">{m.description}</span></TableCell>
