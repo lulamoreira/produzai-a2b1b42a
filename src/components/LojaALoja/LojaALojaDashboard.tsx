@@ -12,6 +12,8 @@ import {
   type LojaALojaLoja,
 } from "@/hooks/useLojaALoja";
 import { useClientStores } from "@/hooks/useMultiClientData";
+import { useTableSort } from "@/hooks/useTableSort";
+import SortableHeader from "./SortableHeader";
 
 interface Props {
   campaignId: string;
@@ -150,6 +152,9 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
     });
   }, [tipos, activeStoresPerTipo, totalStoreCount, allPecas]);
 
+  const { sortedItems: sortedCobertura, sortField: cobSortField, sortDir: cobSortDir, handleSort: handleCobSort } =
+    useTableSort(coberturaData);
+
   /* Pieces grouped */
   const pecasByTipo = useMemo(() => {
     if (!tipos?.length || !allPecas?.length) return [];
@@ -235,15 +240,15 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12">Letra</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="text-right">Lojas Ativas</TableHead>
-                  <TableHead className="text-right">Cobertura</TableHead>
-                  <TableHead className="text-right">Peças</TableHead>
+                  <SortableHeader label="Letra" field="letra" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} className="w-12" />
+                  <SortableHeader label="Nome" field="nome" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} />
+                  <SortableHeader label="Lojas Ativas" field="ativas" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} align="right" />
+                  <SortableHeader label="Cobertura" field="cobertura" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} align="right" />
+                  <SortableHeader label="Peças" field="pecas" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} align="right" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {coberturaData.map((row) => (
+                {sortedCobertura.map((row) => (
                   <TableRow key={row.id}>
                     <TableCell>
                       <span className="w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{ backgroundColor: BRAND }}>{row.letra}</span>
@@ -258,7 +263,7 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
                     <TableCell className="text-right">{row.pecas}</TableCell>
                   </TableRow>
                 ))}
-                {coberturaData.length === 0 && (
+                {sortedCobertura.length === 0 && (
                   <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Nenhum tipo cadastrado</TableCell></TableRow>
                 )}
               </TableBody>
