@@ -22,6 +22,8 @@ import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clo
 import { toast } from "sonner";
 import { criarNotificacao } from "@/lib/criarNotificacao";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
+import { useTableSort } from "@/hooks/useTableSort";
+import SortableHeader from "./SortableHeader";
 
 interface CollapsibleCardProps {
   title: string;
