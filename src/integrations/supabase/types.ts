@@ -2519,6 +2519,7 @@ export type Database = {
           display_name: string | null
           id: string
           job_title: string | null
+          loja_a_loja_tab_order: string[] | null
           name_confirmed: boolean
           nickname: string | null
           phone: string | null
@@ -2538,6 +2539,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           job_title?: string | null
+          loja_a_loja_tab_order?: string[] | null
           name_confirmed?: boolean
           nickname?: string | null
           phone?: string | null
@@ -2557,6 +2559,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           job_title?: string | null
+          loja_a_loja_tab_order?: string[] | null
           name_confirmed?: boolean
           nickname?: string | null
           phone?: string | null
