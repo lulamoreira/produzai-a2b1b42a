@@ -674,10 +674,10 @@ const SupplierPortal = () => {
               }}
             />
           ))}
-        <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="max-w-lg text-center px-6 py-8">
-            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="w-10 h-10 text-green-600" />
+            <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 className="w-10 h-10 text-success" />
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-3">Orçamento Enviado!</h1>
             <p className="text-muted-foreground mb-6">
