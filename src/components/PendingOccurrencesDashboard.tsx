@@ -281,9 +281,9 @@ export default function PendingOccurrencesDashboard({
           </div>
 
           {/* KPI cards */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
             <Card className="p-3 text-center">
-              <div className="text-2xl font-bold" style={{ color: "#8C6F4E" }}>{pending.length}</div>
+              <div className="text-2xl font-bold text-primary">{pending.length}</div>
               <div className="text-xs text-muted-foreground">Total Em Andamento</div>
             </Card>
             <Card className="p-3 text-center">
@@ -291,7 +291,7 @@ export default function PendingOccurrencesDashboard({
               <div className="text-xs text-muted-foreground">Atrasadas</div>
             </Card>
             <Card className="p-3 text-center">
-              <div className="text-2xl font-bold" style={{ color: "#f97316" }}>{avgDaysOpen}</div>
+              <div className="text-2xl font-bold text-warning">{avgDaysOpen}</div>
               <div className="text-xs text-muted-foreground">Média dias aberto</div>
             </Card>
           </div>
@@ -305,7 +305,7 @@ export default function PendingOccurrencesDashboard({
                   <XAxis type="number" hide />
                   <YAxis type="category" dataKey="name" width={35} tick={{ fontSize: 10 }} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="#8C6F4E" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>
@@ -317,7 +317,7 @@ export default function PendingOccurrencesDashboard({
                   <XAxis type="number" hide />
                   <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 9 }} />
                   <Tooltip />
-                  <Bar dataKey="value" fill="#8C6F4E" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Card>

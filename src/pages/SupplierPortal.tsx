@@ -628,8 +628,8 @@ const SupplierPortal = () => {
   // ─── Loading ───────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
-        <div className="animate-pulse text-[#8C6F4E] font-medium">Carregando...</div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse text-primary font-medium">Carregando...</div>
       </div>
     );
   }
@@ -637,10 +637,10 @@ const SupplierPortal = () => {
   // ─── Error ─────────────────────────────────────────────
   if (error || !supplier) {
     return (
-      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="max-w-md text-center px-6 py-8">
-          <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle className="w-8 h-8 text-red-500" />
+          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
           <h1 className="text-xl font-bold text-foreground mb-2">{error || "Link inválido ou expirado"}</h1>
           <p className="text-muted-foreground text-sm">
@@ -674,10 +674,10 @@ const SupplierPortal = () => {
               }}
             />
           ))}
-        <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center">
           <div className="max-w-lg text-center px-6 py-8">
-            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-              <CheckCircle2 className="w-10 h-10 text-green-600" />
+            <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
+              <CheckCircle2 className="w-10 h-10 text-success" />
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-3">Orçamento Enviado!</h1>
             <p className="text-muted-foreground mb-6">
@@ -701,7 +701,7 @@ const SupplierPortal = () => {
                 </div>
                 <div className="border-t pt-2 flex justify-between font-bold">
                   <span>Total Geral</span>
-                  <span className="text-[#8C6F4E]">{fmt(grandTotal)}</span>
+                  <span className="text-primary">{fmt(grandTotal)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -765,8 +765,8 @@ const SupplierPortal = () => {
 
       {/* Locked banner */}
       {isLocked && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
-          <div className="max-w-4xl mx-auto flex items-center gap-2 text-amber-800 text-sm">
+        <div className="bg-warning/10 border-b border-warning/30 px-4 py-3">
+          <div className="max-w-4xl mx-auto flex items-center gap-2 text-warning text-sm">
             <Lock className="w-4 h-4 shrink-0" />
             <span>
               Orçamento enviado em{" "}
@@ -800,7 +800,7 @@ const SupplierPortal = () => {
               </p>
               <p>
                 Quando tudo estiver pronto, clique em{" "}
-                <strong className="text-[#8C6F4E]">ENVIAR ORÇAMENTO</strong>. Atenção: após o envio,
+                <strong className="text-primary">ENVIAR ORÇAMENTO</strong>. Atenção: após o envio,
                 os valores ficam <strong>bloqueados</strong> e não poderão ser alterados.
               </p>
               {deadline && (
@@ -838,7 +838,7 @@ const SupplierPortal = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[280px]">Item</TableHead>
+                    <TableHead className="min-w-[280px] sticky left-0 z-[5] bg-card">Item</TableHead>
                     <TableHead className="text-center w-[100px]">Qtd Total</TableHead>
                     <TableHead className="text-center w-[160px]">Preço Unitário</TableHead>
                     <TableHead className="text-right w-[140px]">Total</TableHead>
@@ -854,7 +854,7 @@ const SupplierPortal = () => {
                               <PieceThumbnail url={row.image_url} />
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <Badge className="bg-[#8C6F4E]/10 text-[#8C6F4E] border-[#8C6F4E]/20 text-[10px]">Kit</Badge>
+                                  <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">Kit</Badge>
                                   <span className="font-semibold text-sm">{row.name}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -862,7 +862,7 @@ const SupplierPortal = () => {
                                 </p>
                               </div>
                               <div className="ml-auto text-right">
-                                <span className="text-sm font-semibold text-[#8C6F4E]">
+                                <span className="text-sm font-semibold text-primary">
                                   {fmt(kitSectionTotals[row.kitId!] || 0)}
                                 </span>
                               </div>
@@ -890,7 +890,7 @@ const SupplierPortal = () => {
                                   <Badge variant="outline" className="text-[10px] shrink-0">#{row.code}</Badge>
                                   <span className="font-medium text-sm truncate">{row.name}</span>
                                   {hasSuggestion && (
-                                    <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[9px]">Modificação sugerida</Badge>
+                                    <Badge className="bg-warning/15 text-warning border-warning/30 text-[9px]">Modificação sugerida</Badge>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1 mt-0.5">
@@ -949,7 +949,7 @@ const SupplierPortal = () => {
                         </TableRow>
                         {/* Inline suggestion form */}
                         {isExpanded && row.pieceId && (
-                          <TableRow className="bg-amber-50/50">
+                          <TableRow className="bg-warning/5">
                             <TableCell colSpan={4}>
                               <div className="p-3 space-y-3">
                                 <Textarea
@@ -1082,14 +1082,14 @@ const SupplierPortal = () => {
         </Card>
 
         {/* Grand total */}
-        <Card className="border-[#8C6F4E]/30 bg-[#8C6F4E]/5">
+        <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Geral do Orçamento</p>
                 <p className="text-xs text-muted-foreground mt-0.5">(Itens + Instalação + Frete)</p>
               </div>
-              <span className="text-2xl font-bold text-[#8C6F4E]">{fmt(grandTotal)}</span>
+              <span className="text-2xl font-bold text-primary">{fmt(grandTotal)}</span>
             </div>
           </CardContent>
         </Card>

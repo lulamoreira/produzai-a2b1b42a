@@ -191,7 +191,7 @@ export default function ConformidadeTab({ data, agencyId }: Props) {
             type="button"
             onClick={() => setStatus(peca.id, "na")}
             className={`w-8 h-8 rounded-md flex items-center justify-center text-xs font-bold transition-all ${
-              current === "na" ? "bg-gray-500 text-white ring-2 ring-gray-300" : "bg-muted text-muted-foreground hover:bg-gray-100"
+              current === "na" ? "bg-gray-500 text-white ring-2 ring-gray-300" : "bg-muted text-muted-foreground hover:bg-accent"
             }`}
           >
             <Minus className="w-4 h-4" />
@@ -231,7 +231,7 @@ export default function ConformidadeTab({ data, agencyId }: Props) {
         <div className="space-y-3 border-t border-border pt-4">
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span>{Object.keys(statusMap).length}/{filteredPecas.length} marcadas</span>
-            {naoOkCount > 0 && <span className="text-red-500 font-medium">{naoOkCount} não conforme(s)</span>}
+            {naoOkCount > 0 && <span className="text-destructive font-medium">{naoOkCount} não conforme(s)</span>}
           </div>
 
           <div>

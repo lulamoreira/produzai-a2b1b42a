@@ -35,7 +35,7 @@ export default function NotificationBell() {
         <Button
           size="icon"
           variant="outline"
-          className="relative h-8 w-8 sm:h-9 sm:w-9 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]"
+          className="relative h-8 w-8 sm:h-9 sm:w-9 bg-card text-foreground border-border shadow-lg hover:bg-accent"
         >
           <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           {unreadCount > 0 && (

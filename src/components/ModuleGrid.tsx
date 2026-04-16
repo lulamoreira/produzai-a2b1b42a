@@ -64,7 +64,7 @@ const ModuleGrid = ({ items, onSelect }: ModuleGridProps) => {
               {label}
             </span>
             {badge && (
-              <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-medium -mt-1">
+              <span className="text-[10px] bg-warning/15 text-warning px-1.5 py-0.5 rounded font-medium -mt-1">
                 {badge}
               </span>
             )}

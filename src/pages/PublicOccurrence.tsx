@@ -568,7 +568,7 @@ const PublicOccurrence = () => {
                                   {item.kit.image_url ? (
                                     <img src={item.kit.image_url} alt={item.kit.name} className="w-5 h-5 rounded object-cover" />
                                   ) : (
-                                    <Boxes className="w-4 h-4 text-[#1e3a5f]" />
+                                    <Boxes className="w-4 h-4 text-primary" />
                                   )}
                                   Kit {item.kit.code} - {item.kit.name}
                                 </SelectLabel>

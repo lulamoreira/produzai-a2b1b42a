@@ -57,7 +57,7 @@ export function InviteButton() {
         <Button
           size="icon"
           variant="outline"
-          className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 bg-white text-[#1e3a5f] border-white/80 shadow-lg shadow-black/20 hover:bg-white/90 hover:text-[#1e3a5f]"
+          className="h-8 w-8 sm:h-9 sm:w-auto sm:px-3 sm:gap-1 bg-card text-foreground border-border shadow-lg hover:bg-accent"
           onClick={handleInvite}
           disabled={loading}
         >
