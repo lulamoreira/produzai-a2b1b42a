@@ -1,10 +1,11 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 async function fetchCep(cep: string) {
-  // Try multiple CEP APIs as fallback
   const apis = [
     `https://viacep.com.br/ws/${cep}/json/`,
     `https://brasilapi.com.br/api/cep/v1/${cep}`,
@@ -12,15 +13,12 @@ async function fetchCep(cep: string) {
 
   for (const apiUrl of apis) {
     try {
-      console.log(`Trying: ${apiUrl}`);
       const res = await fetch(apiUrl);
       if (!res.ok) continue;
       const data = await res.json();
       if (data.erro) continue;
 
-      // Normalize response format
       if (data.logradouro !== undefined) {
-        // ViaCEP format
         return {
           street: data.logradouro || "",
           neighborhood: data.bairro || "",
@@ -29,7 +27,6 @@ async function fetchCep(cep: string) {
           complement: data.complemento || "",
         };
       } else if (data.street !== undefined) {
-        // BrasilAPI format
         return {
           street: data.street || "",
           neighborhood: data.neighborhood || "",
@@ -38,8 +35,7 @@ async function fetchCep(cep: string) {
           complement: "",
         };
       }
-    } catch (e) {
-      console.error(`Error with ${apiUrl}:`, e);
+    } catch {
       continue;
     }
   }
@@ -52,6 +48,29 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Authenticate the request
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(authHeader.replace('Bearer ', ''));
+    if (claimsError || !claimsData?.claims) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     let cep: string | null = null;
 
     const url = new URL(req.url);
@@ -88,7 +107,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error:', error);
+    console.error('CEP lookup error:', error);
     return new Response(JSON.stringify({ error: 'Erro ao buscar CEP' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
