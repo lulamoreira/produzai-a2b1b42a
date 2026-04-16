@@ -481,27 +481,35 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Loja</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(maintenance ?? []).slice(0, 10).length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
-                )}
-                {(maintenance ?? []).slice(0, 10).map((m: any) => (
-                  <TableRow key={m.id}>
-                    <TableCell className="font-medium">{(m.client_stores as any)?.name ?? "—"}</TableCell>
-                    <TableCell><span className="line-clamp-1 max-w-[250px]">{m.description}</span></TableCell>
-                    <TableCell><Badge className={priorityColor[m.priority] ?? "bg-muted"}>{m.priority}</Badge></TableCell>
-                    <TableCell><Badge className={statusColor[m.status] ?? "bg-muted"}>{m.status}</Badge></TableCell>
-                    <TableCell>{formatDate(m.created_at)}</TableCell>
-                  </TableRow>
-                ))}
+                 <TableRow>
+                   <TableHead>Loja</TableHead>
+                   <TableHead>Descrição</TableHead>
+                   <TableHead>Prioridade</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Data</TableHead>
+                   {isAdmin && <TableHead className="w-10" />}
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+                 {(maintenance ?? []).slice(0, 10).length === 0 && (
+                   <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
+                 )}
+                 {(maintenance ?? []).slice(0, 10).map((m: any) => (
+                   <TableRow key={m.id}>
+                     <TableCell className="font-medium">{(m.client_stores as any)?.name ?? "—"}</TableCell>
+                     <TableCell><span className="line-clamp-1 max-w-[250px]">{m.description}</span></TableCell>
+                     <TableCell><Badge className={priorityColor[m.priority] ?? "bg-muted"}>{m.priority}</Badge></TableCell>
+                     <TableCell><Badge className={statusColor[m.status] ?? "bg-muted"}>{m.status}</Badge></TableCell>
+                     <TableCell>{formatDate(m.created_at)}</TableCell>
+                     {isAdmin && (
+                       <TableCell>
+                         <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: m.id, table: "store_maintenance_requests", queryKey: "portal-maintenance" })}>
+                           <Trash2 className="h-4 w-4" />
+                         </Button>
+                       </TableCell>
+                     )}
+                   </TableRow>
+                 ))}
               </TableBody>
             </Table>
           </div>
