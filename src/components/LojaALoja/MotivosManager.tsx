@@ -11,9 +11,10 @@ import { toast } from "sonner";
 interface Props {
   clientId: string;
   isAdmin: boolean;
+  embedded?: boolean;
 }
 
-export default function MotivosManager({ clientId, isAdmin }: Props) {
+export default function MotivosManager({ clientId, isAdmin, embedded = false }: Props) {
   const { data: motivos = [], isLoading } = useStorePortalMotivos(clientId);
   const addMutation = useAddMotivo();
   const updateMutation = useUpdateMotivo();
