@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import DebouncedInput from "@/components/DebouncedInput";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -171,21 +172,21 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
           <div className="space-y-3 pt-2">
             <div>
               <Label className="text-sm">Título do Portal</Label>
-              <Input
+              <DebouncedInput
                 className="mt-1"
                 placeholder="Título personalizado (opcional)"
                 value={(localConfig as any)?.portal_title ?? ""}
-                onChange={(e) => saveConfig({ portal_title: e.target.value || null })}
+                onValueCommit={(v) => saveConfig({ portal_title: v || null })}
                 disabled={!isAdmin}
               />
             </div>
             <div>
               <Label className="text-sm">Mensagem de Boas-vindas</Label>
-              <Input
+              <DebouncedInput
                 className="mt-1"
                 placeholder="Mensagem opcional exibida no portal"
                 value={(localConfig as any)?.portal_welcome_message ?? ""}
-                onChange={(e) => saveConfig({ portal_welcome_message: e.target.value || null })}
+                onValueCommit={(v) => saveConfig({ portal_welcome_message: v || null })}
                 disabled={!isAdmin}
               />
             </div>
