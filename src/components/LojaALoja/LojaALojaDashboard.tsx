@@ -139,7 +139,13 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
     return tipos.map((t) => {
       const ativas = activeStoresPerTipo.get(t.id)?.size ?? 0;
       const cob = totalStoreCount > 0 ? (ativas / totalStoreCount) * 100 : 0;
-      const pecasCount = (allPecas ?? []).filter((p) => p.tipo_id === t.id).length;
+      let pecasCount: number;
+      if (t.tem_subdivisao && t.subdivisoes?.length) {
+        const subIds = new Set(t.subdivisoes.map((s) => s.id));
+        pecasCount = (allPecas ?? []).filter((p) => p.subdivisao_id && subIds.has(p.subdivisao_id)).length;
+      } else {
+        pecasCount = (allPecas ?? []).filter((p) => p.tipo_id === t.id).length;
+      }
       return { letra: t.letra, nome: t.nome, id: t.id, ativas, cobertura: cob, pecas: pecasCount };
     });
   }, [tipos, activeStoresPerTipo, totalStoreCount, allPecas]);
@@ -148,8 +154,10 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
   const pecasByTipo = useMemo(() => {
     if (!tipos?.length || !allPecas?.length) return [];
     return tipos.map((t) => {
-      const tipoPecas = (allPecas ?? []).filter((p) => p.tipo_id === t.id);
+      let tipoPecas: typeof allPecas;
       if (t.tem_subdivisao && t.subdivisoes?.length) {
+        const subIds = new Set(t.subdivisoes.map((s) => s.id));
+        tipoPecas = (allPecas ?? []).filter((p) => p.subdivisao_id && subIds.has(p.subdivisao_id));
         const groups = t.subdivisoes.map((sub) => ({
           label: sub.nome,
           pecas: tipoPecas.filter((p) => p.subdivisao_id === sub.id),
@@ -158,6 +166,7 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
         if (ungrouped.length) groups.push({ label: "Sem subdivisão", pecas: ungrouped });
         return { tipo: t, groups, total: tipoPecas.length };
       }
+      tipoPecas = (allPecas ?? []).filter((p) => p.tipo_id === t.id);
       return { tipo: t, groups: [{ label: null as string | null, pecas: tipoPecas }], total: tipoPecas.length };
     });
   }, [tipos, allPecas]);
