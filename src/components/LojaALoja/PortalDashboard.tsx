@@ -487,31 +487,28 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
           </div>
         </CollapsibleCard>
 
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base">Manutenções por Status</CardTitle></CardHeader>
-          <CardContent>
-            <div className="flex gap-1 h-6 rounded-full overflow-hidden mb-3">
-              {maintenanceByStatus.map((d) => {
-                const colors: Record<string, string> = { aberto: "bg-destructive", em_andamento: "bg-warning", resolvido: "bg-green-500" };
-                return d.pct > 0 ? (
-                  <div key={d.status} className={`${colors[d.status] ?? "bg-muted"} transition-all`} style={{ width: `${d.pct}%` }} title={`${d.status}: ${d.count}`} />
-                ) : null;
-              })}
-            </div>
-            <div className="flex gap-4 flex-wrap">
-              {maintenanceByStatus.map((d) => {
-                const colors: Record<string, string> = { aberto: "bg-destructive", em_andamento: "bg-warning", resolvido: "bg-green-500" };
-                return (
-                  <div key={d.status} className="flex items-center gap-1.5">
-                    <div className={`w-3 h-3 rounded-sm ${colors[d.status]}`} />
-                    <span className="text-xs text-muted-foreground capitalize">{d.status.replace("_", " ")}</span>
-                    <span className="text-xs font-medium">{d.count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        <CollapsibleCard title="Manutenções por Status">
+          <div className="flex gap-1 h-6 rounded-full overflow-hidden mb-3">
+            {maintenanceByStatus.map((d) => {
+              const colors: Record<string, string> = { aberto: "bg-destructive", em_andamento: "bg-warning", resolvido: "bg-green-500" };
+              return d.pct > 0 ? (
+                <div key={d.status} className={`${colors[d.status] ?? "bg-muted"} transition-all`} style={{ width: `${d.pct}%` }} title={`${d.status}: ${d.count}`} />
+              ) : null;
+            })}
+          </div>
+          <div className="flex gap-4 flex-wrap">
+            {maintenanceByStatus.map((d) => {
+              const colors: Record<string, string> = { aberto: "bg-destructive", em_andamento: "bg-warning", resolvido: "bg-green-500" };
+              return (
+                <div key={d.status} className="flex items-center gap-1.5">
+                  <div className={`w-3 h-3 rounded-sm ${colors[d.status]}`} />
+                  <span className="text-xs text-muted-foreground capitalize">{d.status.replace("_", " ")}</span>
+                  <span className="text-xs font-medium">{d.count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </CollapsibleCard>
 
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-base">Conformidade por Loja</CardTitle></CardHeader>
