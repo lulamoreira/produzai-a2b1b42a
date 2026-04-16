@@ -22,10 +22,16 @@ export default function ConformidadeTab({ data, agencyId }: Props) {
 
   const { tipos, subdivisoes, pecas, lojas } = data;
 
-  // Filter pieces to store's assignments
-  const assignedTipoIds = new Set(lojas.map(l => l.tipo_id).filter(Boolean));
-  const filteredPecas = assignedTipoIds.size > 0
-    ? pecas.filter(p => p.tipo_id && assignedTipoIds.has(p.tipo_id))
+  // Build two assignment sets: tipo-level and subdivisao-level
+  const assignedTipoIds = new Set(lojas.filter(l => l.tipo_id && !l.subdivisao_id).map(l => l.tipo_id!));
+  const assignedSubIds = new Set(lojas.filter(l => l.subdivisao_id).map(l => l.subdivisao_id!));
+  const hasAssignments = assignedTipoIds.size > 0 || assignedSubIds.size > 0;
+
+  const filteredPecas = hasAssignments
+    ? pecas.filter(p =>
+        (p.tipo_id && assignedTipoIds.has(p.tipo_id) && !p.subdivisao_id) ||
+        (p.subdivisao_id && assignedSubIds.has(p.subdivisao_id))
+      )
     : pecas;
 
   const loadHistory = useCallback(async () => {
@@ -143,8 +149,13 @@ export default function ConformidadeTab({ data, agencyId }: Props) {
   };
 
   // Group pieces for display
+  const relevantTipoIds = new Set([
+    ...assignedTipoIds,
+    ...subdivisoes.filter(s => assignedSubIds.has(s.id)).map(s => s.tipo_id),
+  ]);
+
   const grouped = tipos
-    .filter(t => assignedTipoIds.size === 0 || assignedTipoIds.has(t.id))
+    .filter(t => !hasAssignments || relevantTipoIds.has(t.id))
     .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
     .map(tipo => {
       const tipoSubs = subdivisoes.filter(s => s.tipo_id === tipo.id).sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
