@@ -890,7 +890,7 @@ const SupplierPortal = () => {
                                   <Badge variant="outline" className="text-[10px] shrink-0">#{row.code}</Badge>
                                   <span className="font-medium text-sm truncate">{row.name}</span>
                                   {hasSuggestion && (
-                                    <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[9px]">Modificação sugerida</Badge>
+                                    <Badge className="bg-warning/15 text-warning border-warning/30 text-[9px]">Modificação sugerida</Badge>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1 mt-0.5">
@@ -949,7 +949,7 @@ const SupplierPortal = () => {
                         </TableRow>
                         {/* Inline suggestion form */}
                         {isExpanded && row.pieceId && (
-                          <TableRow className="bg-amber-50/50">
+                          <TableRow className="bg-warning/5">
                             <TableCell colSpan={4}>
                               <div className="p-3 space-y-3">
                                 <Textarea
