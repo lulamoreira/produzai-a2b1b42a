@@ -72,7 +72,7 @@ function usePortalOccurrences(campaignId: string) {
           reinstallation_scheduled_at, reinstallation_os,
           tratativa_status, tratativa_notes,
           client_stores(name, city, state),
-          loja_a_loja_pecas(nome, image_url),
+          loja_a_loja_pecas(nome, image_url, loja_a_loja_tipos(letra, nome), loja_a_loja_subdivisoes(nome)),
           store_portal_motivos(descricao)
         ` as any)
         .eq("campaign_id", campaignId)
@@ -612,6 +612,19 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                         )}
                         <span className="text-foreground truncate">{(o.loja_a_loja_pecas as any)?.nome ?? "—"}</span>
                       </div>
+                      {(() => {
+                        const peca = (o.loja_a_loja_pecas as any) ?? {};
+                        const tipo = peca.loja_a_loja_tipos;
+                        const sub = peca.loja_a_loja_subdivisoes;
+                        if (!tipo) return null;
+                        const local = `${tipo.letra} - ${tipo.nome}${sub?.nome ? ` / ${sub.nome}` : ''}`;
+                        return (
+                          <div className="flex gap-1">
+                            <span className="text-muted-foreground shrink-0">Local:</span>
+                            <span className="text-foreground font-medium">{local}</span>
+                          </div>
+                        );
+                      })()}
                       <div className="flex gap-1">
                         <span className="text-muted-foreground shrink-0">Motivo:</span>
                         <span className="text-foreground">{(o.store_portal_motivos as any)?.descricao ?? "—"}</span>
