@@ -66,18 +66,30 @@ export default function StorePortalPieceGrid({ data, onPieceClick, badgeCounts, 
   const renderCard = (peca: PortalData["pecas"][number]) => {
     const count = badgeCounts?.[peca.id] ?? 0;
     const status = statusMap?.[peca.id];
+    const isBlocked = peca.nome.includes("*");
 
     return (
       <button
         key={peca.id}
         onClick={() => onPieceClick(peca)}
-        className="relative rounded-lg border border-border bg-card overflow-hidden text-left hover:ring-2 hover:ring-[#8C6F4E]/50 transition-all group"
+        className={`relative rounded-lg border border-border bg-card overflow-hidden text-left transition-all group ${
+          isBlocked
+            ? "opacity-60 cursor-not-allowed hover:ring-2 hover:ring-muted-foreground/30"
+            : "hover:ring-2 hover:ring-[#8C6F4E]/50"
+        }`}
       >
-        <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
+        <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
           {peca.image_url ? (
-            <img src={peca.image_url} alt={peca.nome} className="w-full h-full object-cover" />
+            <img src={peca.image_url} alt={peca.nome} className={`w-full h-full object-cover ${isBlocked ? "grayscale" : ""}`} />
           ) : (
             <ImageIcon className="w-10 h-10 text-muted-foreground/30" />
+          )}
+          {isBlocked && (
+            <div className="absolute inset-0 bg-background/40 flex items-center justify-center">
+              <span className="text-[10px] font-bold uppercase tracking-wide bg-foreground/80 text-background px-2 py-0.5 rounded">
+                Bloqueada
+              </span>
+            </div>
           )}
         </div>
         <div className="p-2">

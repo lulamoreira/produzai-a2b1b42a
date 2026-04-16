@@ -191,6 +191,19 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
                 disabled={!isAdmin}
               />
             </div>
+            <div>
+              <Label className="text-sm">Mensagem para peças bloqueadas (com *)</Label>
+              <p className="text-xs text-muted-foreground mb-1">
+                Peças cujo nome contém um asterisco (*) ficam bloqueadas para reporte. Esta mensagem aparece quando a loja clicar em uma delas.
+              </p>
+              <DebouncedInput
+                className="mt-1"
+                placeholder="Ex: Esta peça está sob análise da agência. Aguarde novas instruções."
+                value={(localConfig as any)?.blocked_piece_message ?? ""}
+                onValueCommit={(v) => saveConfig({ blocked_piece_message: v || null })}
+                disabled={!isAdmin}
+              />
+            </div>
           </div>
 
           {(localConfig as any)?.updated_at && (

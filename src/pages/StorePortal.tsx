@@ -40,6 +40,7 @@ export interface PortalData {
     deadline_reposicoes: string | null;
     portal_title: string | null;
     portal_welcome_message: string | null;
+    blocked_piece_message: string | null;
   } | null;
   store_override?: {
     module_conformidade: boolean | null;

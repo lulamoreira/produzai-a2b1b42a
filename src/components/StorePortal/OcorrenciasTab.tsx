@@ -18,6 +18,7 @@ interface Props {
 
 export default function OcorrenciasTab({ data, agencyId }: Props) {
   const [selectedPeca, setSelectedPeca] = useState<PortalData["pecas"][number] | null>(null);
+  const [blockedPeca, setBlockedPeca] = useState<PortalData["pecas"][number] | null>(null);
   const [reporterType, setReporterType] = useState("lojista");
   const [motiveId, setMotiveId] = useState<string>("");
   const [description, setDescription] = useState("");
@@ -26,6 +27,17 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reports, setReports] = useState<any[]>([]);
+
+  const handlePieceClick = (peca: PortalData["pecas"][number]) => {
+    if (peca.nome.includes("*")) {
+      setBlockedPeca(peca);
+    } else {
+      setSelectedPeca(peca);
+    }
+  };
+
+  const blockedMessage = data.portal_config?.blocked_piece_message
+    || "Esta peça está bloqueada para reporte de ocorrências no momento.";
 
   const motivos = data.motivos ?? [];
   const sortedMotivos = useMemo(
@@ -120,7 +132,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
     <div className="space-y-4 mt-4">
       <p className="text-sm text-muted-foreground">Toque em uma peça para reportar uma ocorrência.</p>
 
-      <StorePortalPieceGrid data={data} onPieceClick={setSelectedPeca} badgeCounts={badgeCounts} />
+      <StorePortalPieceGrid data={data} onPieceClick={handlePieceClick} badgeCounts={badgeCounts} />
 
       {/* Existing reports */}
       {reports.length > 0 && (
@@ -229,6 +241,33 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
 
               <Button onClick={handleSubmit} disabled={submitting || uploading || !description.trim() || !motiveId} className="w-full bg-[#8C6F4E] hover:bg-[#7a6043]">
                 {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Enviando...</> : "Enviar Ocorrência"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Blocked piece dialog */}
+      <Dialog open={!!blockedPeca} onOpenChange={(open) => { if (!open) setBlockedPeca(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Peça bloqueada</DialogTitle>
+          </DialogHeader>
+          {blockedPeca && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-16 h-16 rounded-md bg-muted overflow-hidden shrink-0 flex items-center justify-center">
+                  {blockedPeca.image_url ? (
+                    <img src={blockedPeca.image_url} alt="" className="w-full h-full object-cover grayscale" />
+                  ) : (
+                    <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
+                  )}
+                </div>
+                <p className="font-medium text-sm">{blockedPeca.nome}</p>
+              </div>
+              <p className="text-sm text-muted-foreground whitespace-pre-line">{blockedMessage}</p>
+              <Button onClick={() => setBlockedPeca(null)} variant="outline" className="w-full">
+                Fechar
               </Button>
             </div>
           )}
