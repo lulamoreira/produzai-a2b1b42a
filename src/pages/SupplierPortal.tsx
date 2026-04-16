@@ -701,7 +701,7 @@ const SupplierPortal = () => {
                 </div>
                 <div className="border-t pt-2 flex justify-between font-bold">
                   <span>Total Geral</span>
-                  <span className="text-[#8C6F4E]">{fmt(grandTotal)}</span>
+                  <span className="text-primary">{fmt(grandTotal)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -800,7 +800,7 @@ const SupplierPortal = () => {
               </p>
               <p>
                 Quando tudo estiver pronto, clique em{" "}
-                <strong className="text-[#8C6F4E]">ENVIAR ORÇAMENTO</strong>. Atenção: após o envio,
+                <strong className="text-primary">ENVIAR ORÇAMENTO</strong>. Atenção: após o envio,
                 os valores ficam <strong>bloqueados</strong> e não poderão ser alterados.
               </p>
               {deadline && (
