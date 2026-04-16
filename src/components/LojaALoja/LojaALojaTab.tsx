@@ -71,22 +71,28 @@ function SortableTab({ id }: { id: string }) {
   const Icon = meta.icon;
 
   return (
-    <div ref={setNodeRef} style={style} className="flex items-center">
-      <TabsTrigger value={id} className="gap-1.5 pl-1">
-        <span
-          {...attributes}
-          {...listeners}
-          className={cn(
-            "flex h-6 w-5 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted cursor-grab active:cursor-grabbing",
-            isDragging && "cursor-grabbing"
-          )}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-          aria-label="Arrastar para reordenar"
-          title="Arrastar para reordenar"
-        >
-          <GripVertical className="h-4 w-4" />
-        </span>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "relative inline-flex items-center rounded-sm",
+        isDragging && "z-10"
+      )}
+    >
+      <span
+        {...attributes}
+        {...listeners}
+        role="button"
+        aria-label="Arrastar para reordenar"
+        title="Arrastar para reordenar"
+        className={cn(
+          "flex h-7 w-5 items-center justify-center rounded-l-sm text-muted-foreground hover:text-foreground hover:bg-muted/70 cursor-grab active:cursor-grabbing touch-none select-none",
+          isDragging && "cursor-grabbing"
+        )}
+      >
+        <GripVertical className="h-4 w-4" />
+      </span>
+      <TabsTrigger value={id} className="gap-1.5 pl-2">
         <Icon className="h-3.5 w-3.5" />
         {meta.label}
       </TabsTrigger>
