@@ -2,7 +2,8 @@ import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Store, Layers, Package, Trophy } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Store, Layers, Package, Trophy, ChevronDown } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import {
   useLojaALojaTipos,
@@ -191,11 +192,8 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
       {/* Charts row */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Dist. por Tipo */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Distribuição por Tipo</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+        <CollapsibleCard title="Distribuição por Tipo">
+          <div className="space-y-2">
             {tipoChartData.map((d) => (
               <div key={d.letra} className="flex items-center gap-2">
                 <span className="w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center shrink-0" style={{ backgroundColor: BRAND }}>{d.letra}</span>
@@ -207,15 +205,12 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
               </div>
             ))}
             {tipoChartData.length === 0 && <p className="text-sm text-muted-foreground">Nenhum tipo cadastrado</p>}
-          </CardContent>
-        </Card>
+          </div>
+        </CollapsibleCard>
 
         {/* Dist. por Estado */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Distribuição por Estado</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
+        <CollapsibleCard title="Distribuição por Estado">
+          <div className="space-y-2">
             {ufChartData.map((d) => (
               <div key={d.uf} className="flex items-center gap-2">
                 <span className="w-10 text-sm font-medium text-muted-foreground">{d.uf}</span>
@@ -226,51 +221,46 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
               </div>
             ))}
             {ufChartData.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma loja atribuída</p>}
-          </CardContent>
-        </Card>
+          </div>
+        </CollapsibleCard>
       </div>
 
       {/* Tipos x Lojas Table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Tipos × Lojas</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <SortableHeader label="Letra" field="letra" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} className="w-12" />
-                  <SortableHeader label="Nome" field="nome" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} />
-                  <SortableHeader label="Lojas Ativas" field="ativas" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} align="right" />
-                  <SortableHeader label="Cobertura" field="cobertura" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} align="right" />
-                  <SortableHeader label="Peças" field="pecas" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} align="right" />
+      <CollapsibleCard title="Tipos × Lojas">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <SortableHeader label="Letra" field="letra" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} className="w-12" />
+                <SortableHeader label="Nome" field="nome" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} />
+                <SortableHeader label="Lojas Ativas" field="ativas" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} align="right" />
+                <SortableHeader label="Cobertura" field="cobertura" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} align="right" />
+                <SortableHeader label="Peças" field="pecas" sortField={cobSortField} sortDir={cobSortDir} onSort={handleCobSort} align="right" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedCobertura.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell>
+                    <span className="w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{ backgroundColor: BRAND }}>{row.letra}</span>
+                  </TableCell>
+                  <TableCell className="font-medium">{row.nome}</TableCell>
+                  <TableCell className="text-right">{row.ativas}</TableCell>
+                  <TableCell className="text-right">
+                    <span className={`font-semibold ${row.cobertura >= 80 ? "text-green-600" : row.cobertura >= 50 ? "text-yellow-600" : "text-red-600"}`}>
+                      {row.cobertura.toFixed(0)}%
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">{row.pecas}</TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedCobertura.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell>
-                      <span className="w-7 h-7 rounded-full text-white text-xs font-bold flex items-center justify-center" style={{ backgroundColor: BRAND }}>{row.letra}</span>
-                    </TableCell>
-                    <TableCell className="font-medium">{row.nome}</TableCell>
-                    <TableCell className="text-right">{row.ativas}</TableCell>
-                    <TableCell className="text-right">
-                      <span className={`font-semibold ${row.cobertura >= 80 ? "text-green-600" : row.cobertura >= 50 ? "text-yellow-600" : "text-red-600"}`}>
-                        {row.cobertura.toFixed(0)}%
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">{row.pecas}</TableCell>
-                  </TableRow>
-                ))}
-                {sortedCobertura.length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Nenhum tipo cadastrado</TableCell></TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+              {sortedCobertura.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Nenhum tipo cadastrado</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </CollapsibleCard>
 
       {/* Peças por Tipo */}
       <Card>
@@ -302,6 +292,25 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/* ── Collapsible Card (recolhido por padrão) ── */
+function CollapsibleCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <Card>
+      <Collapsible defaultOpen={false}>
+        <CollapsibleTrigger className="w-full group">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base">{title}</CardTitle>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent>{children}</CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
   );
 }
 
