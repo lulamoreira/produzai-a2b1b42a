@@ -20,7 +20,7 @@ interface Props {
   isAdmin: boolean;
 }
 
-type SortField = "name" | "city" | "state";
+type SortField = "name" | "city" | "state" | "status";
 type SortDir = "asc" | "desc" | null;
 
 export default function PortaisManager({ campaignId, clientId, isAdmin }: Props) {
