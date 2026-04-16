@@ -681,70 +681,77 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
         </CardContent>
       </Card>
 
-      {/* Charts */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <CollapsibleCard title="Reposições por Status">
-          <div className="space-y-2">
-            {replacementsByStatus.map((d) => {
-              const maxVal = Math.max(1, ...replacementsByStatus.map((x) => x.count));
-              const colors: Record<string, string> = { pendente: "bg-warning", aprovada: "bg-green-500", enviada: "bg-blue-500", rejeitada: "bg-destructive" };
-              return (
-                <div key={d.status} className="flex items-center gap-2">
-                  <span className="w-20 text-sm capitalize text-muted-foreground">{d.status}</span>
-                  <div className="flex-1 bg-muted rounded-full h-5 overflow-hidden">
-                    <div className={`h-full rounded-full transition-all ${colors[d.status] ?? "bg-primary"}`} style={{ width: `${(d.count / maxVal) * 100}%` }} />
-                  </div>
-                  <span className="text-sm font-medium w-8 text-right">{d.count}</span>
-                </div>
-              );
-            })}
-          </div>
-        </CollapsibleCard>
+      {/* Charts — só renderiza os que tiverem dados */}
+      {((replacements?.length ?? 0) > 0 || (maintenance?.length ?? 0) > 0 || complianceByStore.length > 0) && (
+        <div className="grid md:grid-cols-2 gap-6">
+          {(replacements?.length ?? 0) > 0 && (
+            <CollapsibleCard title="Reposições por Status">
+              <div className="space-y-2">
+                {replacementsByStatus.map((d) => {
+                  const maxVal = Math.max(1, ...replacementsByStatus.map((x) => x.count));
+                  const colors: Record<string, string> = { pendente: "bg-warning", aprovada: "bg-green-500", enviada: "bg-blue-500", rejeitada: "bg-destructive" };
+                  return (
+                    <div key={d.status} className="flex items-center gap-2">
+                      <span className="w-20 text-sm capitalize text-muted-foreground">{d.status}</span>
+                      <div className="flex-1 bg-muted rounded-full h-5 overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${colors[d.status] ?? "bg-primary"}`} style={{ width: `${(d.count / maxVal) * 100}%` }} />
+                      </div>
+                      <span className="text-sm font-medium w-8 text-right">{d.count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CollapsibleCard>
+          )}
 
-        <CollapsibleCard title="Manutenções por Status">
-          <div className="flex gap-1 h-6 rounded-full overflow-hidden mb-3">
-            {maintenanceByStatus.map((d) => {
-              const colors: Record<string, string> = { aberto: "bg-destructive", em_andamento: "bg-warning", resolvido: "bg-green-500" };
-              return d.pct > 0 ? (
-                <div key={d.status} className={`${colors[d.status] ?? "bg-muted"} transition-all`} style={{ width: `${d.pct}%` }} title={`${d.status}: ${d.count}`} />
-              ) : null;
-            })}
-          </div>
-          <div className="flex gap-4 flex-wrap">
-            {maintenanceByStatus.map((d) => {
-              const colors: Record<string, string> = { aberto: "bg-destructive", em_andamento: "bg-warning", resolvido: "bg-green-500" };
-              return (
-                <div key={d.status} className="flex items-center gap-1.5">
-                  <div className={`w-3 h-3 rounded-sm ${colors[d.status]}`} />
-                  <span className="text-xs text-muted-foreground capitalize">{d.status.replace("_", " ")}</span>
-                  <span className="text-xs font-medium">{d.count}</span>
-                </div>
-              );
-            })}
-          </div>
-        </CollapsibleCard>
+          {(maintenance?.length ?? 0) > 0 && (
+            <CollapsibleCard title="Manutenções por Status">
+              <div className="flex gap-1 h-6 rounded-full overflow-hidden mb-3">
+                {maintenanceByStatus.map((d) => {
+                  const colors: Record<string, string> = { aberto: "bg-destructive", em_andamento: "bg-warning", resolvido: "bg-green-500" };
+                  return d.pct > 0 ? (
+                    <div key={d.status} className={`${colors[d.status] ?? "bg-muted"} transition-all`} style={{ width: `${d.pct}%` }} title={`${d.status}: ${d.count}`} />
+                  ) : null;
+                })}
+              </div>
+              <div className="flex gap-4 flex-wrap">
+                {maintenanceByStatus.map((d) => {
+                  const colors: Record<string, string> = { aberto: "bg-destructive", em_andamento: "bg-warning", resolvido: "bg-green-500" };
+                  return (
+                    <div key={d.status} className="flex items-center gap-1.5">
+                      <div className={`w-3 h-3 rounded-sm ${colors[d.status]}`} />
+                      <span className="text-xs text-muted-foreground capitalize">{d.status.replace("_", " ")}</span>
+                      <span className="text-xs font-medium">{d.count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CollapsibleCard>
+          )}
 
-        <CollapsibleCard title="Conformidade por Loja">
-          <div className="space-y-2">
-            {complianceByStore.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma verificação registrada</p>}
-            {complianceByStore.map((d) => {
-              const barColor = d.pct >= 80 ? "bg-green-500" : d.pct >= 50 ? "bg-warning" : "bg-destructive";
-              return (
-                <div key={d.name} className="flex items-center gap-2">
-                  <span className="w-28 text-sm truncate text-muted-foreground" title={d.name}>{d.name}</span>
-                  <div className="flex-1 bg-muted rounded-full h-5 overflow-hidden">
-                    <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${d.pct}%` }} />
-                  </div>
-                  <span className="text-sm font-medium w-10 text-right">{d.pct}%</span>
-                </div>
-              );
-            })}
-          </div>
-        </CollapsibleCard>
-      </div>
+          {complianceByStore.length > 0 && (
+            <CollapsibleCard title="Conformidade por Loja">
+              <div className="space-y-2">
+                {complianceByStore.map((d) => {
+                  const barColor = d.pct >= 80 ? "bg-green-500" : d.pct >= 50 ? "bg-warning" : "bg-destructive";
+                  return (
+                    <div key={d.name} className="flex items-center gap-2">
+                      <span className="w-28 text-sm truncate text-muted-foreground" title={d.name}>{d.name}</span>
+                      <div className="flex-1 bg-muted rounded-full h-5 overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${d.pct}%` }} />
+                      </div>
+                      <span className="text-sm font-medium w-10 text-right">{d.pct}%</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CollapsibleCard>
+          )}
+        </div>
+      )}
 
       {/* Pending Replacements Table */}
-      {isAdmin && (
+      {isAdmin && pendingList.length > 0 && (
         <CollapsibleCard title="Reposições Pendentes de Aprovação">
           <div className="overflow-x-auto">
             <Table>
@@ -793,6 +800,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
       )}
 
       {/* Recent Maintenance */}
+      {(maintenance?.length ?? 0) > 0 && (
       <CollapsibleCard title="Manutenções Recentes">
         <div className="overflow-x-auto">
           <Table>
@@ -830,6 +838,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
           </Table>
         </div>
       </CollapsibleCard>
+      )}
 
       {/* Confirm Dialogs */}
       <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
