@@ -186,6 +186,14 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
     },
   });
 
+  const storesSort = useTableSort(stores as any[], {
+    getValue: {
+      name: (s: any) => (s.store_code ? `${s.store_code} ${s.name}` : s.name).toLowerCase(),
+      city: (s: any) => (s.city ?? "").toLowerCase(),
+      state: (s: any) => (s.state ?? "").toLowerCase(),
+    },
+  });
+
   const overrideMap = useMemo(() => {
     const m = new Map<string, (typeof overrides)[0]>();
     overrides.forEach((o) => m.set(o.store_id, o));
