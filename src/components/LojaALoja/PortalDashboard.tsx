@@ -532,9 +532,16 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
                     {/* Core fields */}
                     <div className="text-xs space-y-1">
-                      <div className="flex gap-1">
+                      <div className="flex gap-1.5 items-center">
                         <span className="text-muted-foreground shrink-0">Peça:</span>
-                        <span className="text-foreground">{(o.loja_a_loja_pecas as any)?.nome ?? "—"}</span>
+                        {(o.loja_a_loja_pecas as any)?.image_url && (
+                          <img
+                            src={(o.loja_a_loja_pecas as any).image_url}
+                            alt=""
+                            className="h-8 w-8 object-cover rounded border shrink-0"
+                          />
+                        )}
+                        <span className="text-foreground truncate">{(o.loja_a_loja_pecas as any)?.nome ?? "—"}</span>
                       </div>
                       <div className="flex gap-1">
                         <span className="text-muted-foreground shrink-0">Motivo:</span>
