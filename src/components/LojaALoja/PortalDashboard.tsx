@@ -275,6 +275,46 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
   const pendingList = useMemo(() => (replacements ?? []).filter((r: any) => r.status === "pendente"), [replacements]);
 
+  /* ── Sorting hooks for tables ── */
+  const priorityWeight: Record<string, number> = { critica: 4, alta: 3, media: 2, baixa: 1 };
+  const tratativaWeight: Record<string, number> = { aberta: 1, em_andamento: 2, resolvida: 3 };
+  const statusWeight: Record<string, number> = { aberto: 1, em_andamento: 2, resolvido: 3 };
+
+  const occSort = useTableSort(filteredOccurrences as any[], {
+    getValue: {
+      store: (o: any) => (o.client_stores as any)?.name?.toLowerCase() ?? "",
+      piece: (o: any) => (o.loja_a_loja_pecas as any)?.nome?.toLowerCase() ?? "",
+      motive: (o: any) => (o.store_portal_motivos as any)?.descricao?.toLowerCase() ?? "",
+      reporter: (o: any) => reporterLabel(o.reporter_type).toLowerCase(),
+      priority: (o: any) => priorityWeight[o.priority] ?? 0,
+      tratativa_status: (o: any) => tratativaWeight[o.tratativa_status ?? "aberta"] ?? 0,
+      created_at: (o: any) => new Date(o.created_at).getTime(),
+      expected_resolution_date: (o: any) =>
+        o.expected_resolution_date ? new Date(o.expected_resolution_date).getTime() : null,
+      days_open: (o: any) => daysOpen(o.created_at, o.resolved_at),
+    },
+  });
+
+  const replSort = useTableSort(pendingList as any[], {
+    getValue: {
+      store: (r: any) => (r.client_stores as any)?.name?.toLowerCase() ?? "",
+      piece: (r: any) => (r.loja_a_loja_pecas as any)?.nome?.toLowerCase() ?? "",
+      quantity_requested: (r: any) => Number(r.quantity_requested ?? 0),
+      reason: (r: any) => (r.reason ?? "").toLowerCase(),
+      requested_at: (r: any) => new Date(r.requested_at).getTime(),
+    },
+  });
+
+  const maintSort = useTableSort((maintenance ?? []) as any[], {
+    getValue: {
+      store: (m: any) => (m.client_stores as any)?.name?.toLowerCase() ?? "",
+      description: (m: any) => (m.description ?? "").toLowerCase(),
+      priority: (m: any) => priorityWeight[m.priority] ?? 0,
+      status: (m: any) => statusWeight[m.status] ?? 0,
+      created_at: (m: any) => new Date(m.created_at).getTime(),
+    },
+  });
+
   /* Actions */
   async function handleReplacementAction() {
     if (!confirmAction) return;
