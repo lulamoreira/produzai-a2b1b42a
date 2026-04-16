@@ -69,6 +69,7 @@ function usePortalOccurrences(campaignId: string) {
           id, store_id, loja_a_loja_peca_id, motive_id, reporter_type,
           description, priority, status, photo_urls, created_at, resolved_at,
           expected_resolution_date, needs_reinstallation, resolution_photo_urls,
+          reinstallation_scheduled_at, reinstallation_os,
           tratativa_status, tratativa_notes,
           client_stores(name, city, state),
           loja_a_loja_pecas(nome, image_url),
@@ -512,7 +513,21 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                         <TableCell><span className="line-clamp-1 max-w-[160px]">{(o.store_portal_motivos as any)?.descricao ?? "—"}</span></TableCell>
                         <TableCell className="text-xs">{reporterLabel(o.reporter_type)}</TableCell>
                         {showPriority && <TableCell><Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge></TableCell>}
-                        <TableCell><Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge></TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge>
+                            {o.needs_reinstallation && (
+                              <span
+                                title={o.reinstallation_scheduled_at
+                                  ? `Reinstalação: ${new Date(o.reinstallation_scheduled_at).toLocaleString('pt-BR')}${o.reinstallation_os ? ` | OS: ${o.reinstallation_os}` : ''}`
+                                  : 'Reinstalação necessária — sem data agendada'}
+                                className="ml-1 inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold cursor-help shrink-0"
+                              >
+                                R
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-xs">{formatDate(o.created_at)}</TableCell>
                         <TableCell className={`text-xs ${overdue ? "text-destructive font-medium" : ""}`}>{formatDate(o.expected_resolution_date)}</TableCell>
                         <TableCell className="text-center text-xs">{daysOpen(o.created_at, o.resolved_at)}</TableCell>
@@ -573,7 +588,14 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                       {showPriority && <Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge>}
                       <Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge>
                       {o.needs_reinstallation && (
-                        <Badge variant="outline" className="text-xs">Reinstalação</Badge>
+                        <span
+                          title={o.reinstallation_scheduled_at
+                            ? `Reinstalação: ${new Date(o.reinstallation_scheduled_at).toLocaleString('pt-BR')}${o.reinstallation_os ? ` | OS: ${o.reinstallation_os}` : ''}`
+                            : 'Reinstalação necessária — sem data agendada'}
+                          className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold cursor-help shrink-0"
+                        >
+                          R
+                        </span>
                       )}
                     </div>
 

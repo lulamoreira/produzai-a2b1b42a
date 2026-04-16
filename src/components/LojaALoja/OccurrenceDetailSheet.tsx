@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Camera, X, Loader2, ExternalLink } from "lucide-react";
+import { Camera, X, Loader2, ExternalLink, RotateCw } from "lucide-react";
 import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
 
@@ -57,6 +57,8 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const [needsReinst, setNeedsReinst] = useState(false);
   const [tratativaNotes, setTratativaNotes] = useState("");
   const [resolutionPhotos, setResolutionPhotos] = useState<string[]>([]);
+  const [reinstallationDate, setReinstallationDate] = useState<string>("");
+  const [reinstallationOs, setReinstallationOs] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -71,6 +73,8 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       setNeedsReinst(!!occurrence.needs_reinstallation);
       setTratativaNotes(occurrence.tratativa_notes ?? "");
       setResolutionPhotos(Array.isArray(occurrence.resolution_photo_urls) ? occurrence.resolution_photo_urls : []);
+      setReinstallationDate(toLocalInput(occurrence.reinstallation_scheduled_at));
+      setReinstallationOs(occurrence.reinstallation_os ?? "");
       setInitialized(occurrence.id);
     }
   }, [occurrence, initialized]);
@@ -133,6 +137,8 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
           needs_reinstallation: needsReinst,
           tratativa_notes: tratativaNotes || null,
           resolution_photo_urls: resolutionPhotos,
+          reinstallation_scheduled_at: needsReinst && reinstallationDate ? new Date(reinstallationDate).toISOString() : null,
+          reinstallation_os: needsReinst && reinstallationOs.trim() ? reinstallationOs.trim() : null,
           resolved_by_user_id: tratativaStatus === "resolvida" ? userId : null,
         } as any)
         .eq("id", occurrence.id);
