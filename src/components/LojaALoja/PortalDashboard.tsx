@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,10 +18,35 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clock, RotateCw, AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clock, RotateCw, AlertCircle, CheckCircle2, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { criarNotificacao } from "@/lib/criarNotificacao";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
+
+interface CollapsibleCardProps {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}
+
+function CollapsibleCard({ title, defaultOpen = false, children }: CollapsibleCardProps) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Card>
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <CollapsibleTrigger asChild>
+          <button type="button" className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-muted/30 transition-colors">
+            <CardTitle className="text-base">{title}</CardTitle>
+            {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="pt-0">{children}</CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
+}
 
 interface Props {
   campaignId: string;
@@ -326,12 +352,18 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
   return (
     <div className="space-y-6">
-      {/* Top KPI Row (overview) */}
+      {/* Top KPI Row (overview) — Ocorrências sempre, demais só se > 0 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard icon={AlertTriangle} label="Ocorrências (total)" value={total} color="hsl(var(--destructive))" />
-        <KpiCard icon={Wrench} label="Manutenções abertas" value={openMaintenance} color="hsl(var(--warning, 38 92% 50%))" />
-        <KpiCard icon={RefreshCw} label="Reposições pendentes" value={pendingReplacements} color="hsl(var(--warning, 38 92% 50%))" />
-        <KpiCard icon={ClipboardCheck} label="Conformidade média" value={`${complianceAvg}%`} color={BRAND} />
+        {openMaintenance > 0 && (
+          <KpiCard icon={Wrench} label="Manutenções abertas" value={openMaintenance} color="hsl(var(--warning, 38 92% 50%))" />
+        )}
+        {pendingReplacements > 0 && (
+          <KpiCard icon={RefreshCw} label="Reposições pendentes" value={pendingReplacements} color="hsl(var(--warning, 38 92% 50%))" />
+        )}
+        {complianceAvg > 0 && (
+          <KpiCard icon={ClipboardCheck} label="Conformidade média" value={`${complianceAvg}%`} color={BRAND} />
+        )}
       </div>
 
       {/* OCCURRENCE MANAGEMENT */}
@@ -437,9 +469,8 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
       {/* Charts */}
       <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base">Reposições por Status</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
+        <CollapsibleCard title="Reposições por Status">
+          <div className="space-y-2">
             {replacementsByStatus.map((d) => {
               const maxVal = Math.max(1, ...replacementsByStatus.map((x) => x.count));
               const colors: Record<string, string> = { pendente: "bg-warning", aprovada: "bg-green-500", enviada: "bg-blue-500", rejeitada: "bg-destructive" };
@@ -453,38 +484,34 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                 </div>
               );
             })}
-          </CardContent>
-        </Card>
+          </div>
+        </CollapsibleCard>
 
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base">Manutenções por Status</CardTitle></CardHeader>
-          <CardContent>
-            <div className="flex gap-1 h-6 rounded-full overflow-hidden mb-3">
-              {maintenanceByStatus.map((d) => {
-                const colors: Record<string, string> = { aberto: "bg-destructive", em_andamento: "bg-warning", resolvido: "bg-green-500" };
-                return d.pct > 0 ? (
-                  <div key={d.status} className={`${colors[d.status] ?? "bg-muted"} transition-all`} style={{ width: `${d.pct}%` }} title={`${d.status}: ${d.count}`} />
-                ) : null;
-              })}
-            </div>
-            <div className="flex gap-4 flex-wrap">
-              {maintenanceByStatus.map((d) => {
-                const colors: Record<string, string> = { aberto: "bg-destructive", em_andamento: "bg-warning", resolvido: "bg-green-500" };
-                return (
-                  <div key={d.status} className="flex items-center gap-1.5">
-                    <div className={`w-3 h-3 rounded-sm ${colors[d.status]}`} />
-                    <span className="text-xs text-muted-foreground capitalize">{d.status.replace("_", " ")}</span>
-                    <span className="text-xs font-medium">{d.count}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        <CollapsibleCard title="Manutenções por Status">
+          <div className="flex gap-1 h-6 rounded-full overflow-hidden mb-3">
+            {maintenanceByStatus.map((d) => {
+              const colors: Record<string, string> = { aberto: "bg-destructive", em_andamento: "bg-warning", resolvido: "bg-green-500" };
+              return d.pct > 0 ? (
+                <div key={d.status} className={`${colors[d.status] ?? "bg-muted"} transition-all`} style={{ width: `${d.pct}%` }} title={`${d.status}: ${d.count}`} />
+              ) : null;
+            })}
+          </div>
+          <div className="flex gap-4 flex-wrap">
+            {maintenanceByStatus.map((d) => {
+              const colors: Record<string, string> = { aberto: "bg-destructive", em_andamento: "bg-warning", resolvido: "bg-green-500" };
+              return (
+                <div key={d.status} className="flex items-center gap-1.5">
+                  <div className={`w-3 h-3 rounded-sm ${colors[d.status]}`} />
+                  <span className="text-xs text-muted-foreground capitalize">{d.status.replace("_", " ")}</span>
+                  <span className="text-xs font-medium">{d.count}</span>
+                </div>
+              );
+            })}
+          </div>
+        </CollapsibleCard>
 
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base">Conformidade por Loja</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
+        <CollapsibleCard title="Conformidade por Loja">
+          <div className="space-y-2">
             {complianceByStore.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma verificação registrada</p>}
             {complianceByStore.map((d) => {
               const barColor = d.pct >= 80 ? "bg-green-500" : d.pct >= 50 ? "bg-warning" : "bg-destructive";
@@ -498,105 +525,97 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                 </div>
               );
             })}
-          </CardContent>
-        </Card>
+          </div>
+        </CollapsibleCard>
       </div>
 
       {/* Pending Replacements Table */}
       {isAdmin && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Reposições Pendentes de Aprovação</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Loja</TableHead>
-                    <TableHead>Peça</TableHead>
-                    <TableHead className="text-center">Qtd</TableHead>
-                    <TableHead>Motivo</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingList.length === 0 && (
-                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhuma reposição pendente</TableCell></TableRow>
-                  )}
-                  {pendingList.map((r: any) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-medium">{(r.client_stores as any)?.name ?? "—"}</TableCell>
-                      <TableCell>{(r.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
-                      <TableCell className="text-center">{r.quantity_requested}</TableCell>
-                      <TableCell>
-                        <span className="line-clamp-1 max-w-[200px]" title={r.reason}>{r.reason}</span>
-                      </TableCell>
-                      <TableCell>{formatDate(r.requested_at)}</TableCell>
-                      <TableCell className="text-right">
-                         <div className="flex gap-1 justify-end">
-                           <Button size="sm" variant="ghost" className="h-7 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => setConfirmAction({ id: r.id, status: "aprovada", storeId: r.store_id })}>
-                             <Check className="h-4 w-4" />
-                           </Button>
-                           <Button size="sm" variant="ghost" className="h-7 text-destructive hover:bg-destructive/10" onClick={() => setConfirmAction({ id: r.id, status: "rejeitada", storeId: r.store_id })}>
-                             <X className="h-4 w-4" />
-                           </Button>
-                           <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: r.id, table: "store_replacement_requests", queryKey: "portal-replacements" })}>
-                             <Trash2 className="h-4 w-4" />
-                           </Button>
-                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recent Maintenance */}
-      <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base">Manutenções Recentes</CardTitle></CardHeader>
-        <CardContent>
+        <CollapsibleCard title="Reposições Pendentes de Aprovação">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                 <TableRow>
-                   <TableHead>Loja</TableHead>
-                   <TableHead>Descrição</TableHead>
-                   <TableHead>Prioridade</TableHead>
-                   <TableHead>Status</TableHead>
-                   <TableHead>Data</TableHead>
-                   {isAdmin && <TableHead className="w-10" />}
-                 </TableRow>
-               </TableHeader>
-               <TableBody>
-                 {(maintenance ?? []).slice(0, 10).length === 0 && (
-                   <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
-                 )}
-                 {(maintenance ?? []).slice(0, 10).map((m: any) => (
-                   <TableRow key={m.id}>
-                     <TableCell className="font-medium">{(m.client_stores as any)?.name ?? "—"}</TableCell>
-                     <TableCell><span className="line-clamp-1 max-w-[250px]">{m.description}</span></TableCell>
-                     <TableCell><Badge className={priorityColor[m.priority] ?? "bg-muted"}>{m.priority}</Badge></TableCell>
-                     <TableCell><Badge className={statusColor[m.status] ?? "bg-muted"}>{m.status}</Badge></TableCell>
-                     <TableCell>{formatDate(m.created_at)}</TableCell>
-                     {isAdmin && (
-                       <TableCell>
-                         <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: m.id, table: "store_maintenance_requests", queryKey: "portal-maintenance" })}>
+                <TableRow>
+                  <TableHead>Loja</TableHead>
+                  <TableHead>Peça</TableHead>
+                  <TableHead className="text-center">Qtd</TableHead>
+                  <TableHead>Motivo</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingList.length === 0 && (
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhuma reposição pendente</TableCell></TableRow>
+                )}
+                {pendingList.map((r: any) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">{(r.client_stores as any)?.name ?? "—"}</TableCell>
+                    <TableCell>{(r.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
+                    <TableCell className="text-center">{r.quantity_requested}</TableCell>
+                    <TableCell>
+                      <span className="line-clamp-1 max-w-[200px]" title={r.reason}>{r.reason}</span>
+                    </TableCell>
+                    <TableCell>{formatDate(r.requested_at)}</TableCell>
+                    <TableCell className="text-right">
+                       <div className="flex gap-1 justify-end">
+                         <Button size="sm" variant="ghost" className="h-7 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => setConfirmAction({ id: r.id, status: "aprovada", storeId: r.store_id })}>
+                           <Check className="h-4 w-4" />
+                         </Button>
+                         <Button size="sm" variant="ghost" className="h-7 text-destructive hover:bg-destructive/10" onClick={() => setConfirmAction({ id: r.id, status: "rejeitada", storeId: r.store_id })}>
+                           <X className="h-4 w-4" />
+                         </Button>
+                         <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: r.id, table: "store_replacement_requests", queryKey: "portal-replacements" })}>
                            <Trash2 className="h-4 w-4" />
                          </Button>
-                       </TableCell>
-                     )}
-                   </TableRow>
-                 ))}
+                       </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
-        </CardContent>
-      </Card>
+        </CollapsibleCard>
+      )}
+
+      {/* Recent Maintenance */}
+      <CollapsibleCard title="Manutenções Recentes">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+               <TableRow>
+                 <TableHead>Loja</TableHead>
+                 <TableHead>Descrição</TableHead>
+                 <TableHead>Prioridade</TableHead>
+                 <TableHead>Status</TableHead>
+                 <TableHead>Data</TableHead>
+                 {isAdmin && <TableHead className="w-10" />}
+               </TableRow>
+             </TableHeader>
+             <TableBody>
+               {(maintenance ?? []).slice(0, 10).length === 0 && (
+                 <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
+               )}
+               {(maintenance ?? []).slice(0, 10).map((m: any) => (
+                 <TableRow key={m.id}>
+                   <TableCell className="font-medium">{(m.client_stores as any)?.name ?? "—"}</TableCell>
+                   <TableCell><span className="line-clamp-1 max-w-[250px]">{m.description}</span></TableCell>
+                   <TableCell><Badge className={priorityColor[m.priority] ?? "bg-muted"}>{m.priority}</Badge></TableCell>
+                   <TableCell><Badge className={statusColor[m.status] ?? "bg-muted"}>{m.status}</Badge></TableCell>
+                   <TableCell>{formatDate(m.created_at)}</TableCell>
+                   {isAdmin && (
+                     <TableCell>
+                       <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: m.id, table: "store_maintenance_requests", queryKey: "portal-maintenance" })}>
+                         <Trash2 className="h-4 w-4" />
+                       </Button>
+                     </TableCell>
+                   )}
+                 </TableRow>
+               ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CollapsibleCard>
 
       {/* Confirm Dialogs */}
       <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
