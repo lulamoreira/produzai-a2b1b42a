@@ -436,8 +436,8 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                  </TableRow>
               </TableHeader>
               <TableBody>
-                {(occurrences ?? []).slice(0, 10).length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhuma ocorrência</TableCell></TableRow>
+                 {(occurrences ?? []).slice(0, 10).length === 0 && (
+                   <TableRow><TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground">Nenhuma ocorrência</TableCell></TableRow>
                 )}
                 {(occurrences ?? []).slice(0, 10).map((o: any) => {
                   const photos: string[] = Array.isArray(o.photo_urls) ? o.photo_urls : [];
