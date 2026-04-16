@@ -76,15 +76,9 @@ export default function MotivosManager({ clientId, isAdmin, embedded = false }: 
     }
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Motivos de Ocorrência</CardTitle>
-        <CardDescription>
-          Liste os motivos disponíveis no portal da loja para esse cliente.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+  const body = (
+    <div className="space-y-3">
+      {/* original CardContent body below; rendered conditionally with or without Card wrapper */}
         {isAdmin && (
           <div className="flex gap-2">
             <Input
