@@ -510,9 +510,8 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
           </div>
         </CollapsibleCard>
 
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base">Conformidade por Loja</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
+        <CollapsibleCard title="Conformidade por Loja">
+          <div className="space-y-2">
             {complianceByStore.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma verificação registrada</p>}
             {complianceByStore.map((d) => {
               const barColor = d.pct >= 80 ? "bg-green-500" : d.pct >= 50 ? "bg-warning" : "bg-destructive";
@@ -526,8 +525,8 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                 </div>
               );
             })}
-          </CardContent>
-        </Card>
+          </div>
+        </CollapsibleCard>
       </div>
 
       {/* Pending Replacements Table */}
