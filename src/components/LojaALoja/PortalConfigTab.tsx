@@ -447,9 +447,9 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Loja</TableHead>
-                      <TableHead>Cidade</TableHead>
-                      <TableHead>UF</TableHead>
+                      <SortableHeader label="Loja" field="name" sortField={storesSort.sortField} sortDir={storesSort.sortDir} onSort={storesSort.handleSort} />
+                      <SortableHeader label="Cidade" field="city" sortField={storesSort.sortField} sortDir={storesSort.sortDir} onSort={storesSort.handleSort} />
+                      <SortableHeader label="UF" field="state" sortField={storesSort.sortField} sortDir={storesSort.sortDir} onSort={storesSort.handleSort} />
                       {MODULES.map((m) => (
                         <TableHead key={m.key} className="text-center text-xs">{m.label}</TableHead>
                       ))}
@@ -457,7 +457,7 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {stores.map((store) => {
+                    {storesSort.sortedItems.map((store: any) => {
                       const ov = overrideMap.get(store.id);
                       return (
                         <TableRow key={store.id}>
