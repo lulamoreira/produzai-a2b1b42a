@@ -493,6 +493,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                 const ts = o.tratativa_status ?? "aberta";
                 const overdue = o.expected_resolution_date && new Date(o.expected_resolution_date).getTime() < Date.now() && ts !== "resolvida";
                 const photos: string[] = Array.isArray(o.photo_urls) ? o.photo_urls : [];
+                const resolutionPhotos: string[] = Array.isArray(o.resolution_photo_urls) ? o.resolution_photo_urls : [];
                 const store = (o.client_stores as any) ?? {};
                 return (
                   <div
