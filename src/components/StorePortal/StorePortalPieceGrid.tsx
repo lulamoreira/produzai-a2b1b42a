@@ -85,11 +85,7 @@ export default function StorePortalPieceGrid({ data, onPieceClick, badgeCounts, 
             <ImageIcon className="w-10 h-10 text-muted-foreground/30" />
           )}
           {isBlocked && (
-            <div className="absolute inset-0 bg-background/40 flex items-center justify-center">
-              <span className="text-[10px] font-bold uppercase tracking-wide bg-foreground/80 text-background px-2 py-0.5 rounded">
-                Bloqueada
-              </span>
-            </div>
+            <div className="absolute inset-0 bg-background/20" />
           )}
         </div>
         <div className="p-2">
