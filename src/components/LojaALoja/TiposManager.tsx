@@ -370,8 +370,8 @@ function SortablePieceCard({
         )}
 
         {isDragOverImage && (
-          <div className="absolute inset-0 bg-[#8C6F4E]/20 flex items-center justify-center rounded-lg">
-            <span className="text-xs font-medium text-[#8C6F4E]">Solte a imagem aqui</span>
+          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center rounded-lg">
+            <span className="text-xs font-medium text-primary">Solte a imagem aqui</span>
           </div>
         )}
 
