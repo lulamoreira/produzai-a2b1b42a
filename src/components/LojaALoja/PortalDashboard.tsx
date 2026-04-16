@@ -254,6 +254,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
   }
 
 
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
