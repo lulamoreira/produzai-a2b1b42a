@@ -231,7 +231,7 @@ export default function ConformidadeTab({ data, agencyId }: Props) {
         <div className="space-y-3 border-t border-border pt-4">
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span>{Object.keys(statusMap).length}/{filteredPecas.length} marcadas</span>
-            {naoOkCount > 0 && <span className="text-red-500 font-medium">{naoOkCount} não conforme(s)</span>}
+            {naoOkCount > 0 && <span className="text-destructive font-medium">{naoOkCount} não conforme(s)</span>}
           </div>
 
           <div>
