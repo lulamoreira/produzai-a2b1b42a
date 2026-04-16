@@ -531,56 +531,51 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
       {/* Pending Replacements Table */}
       {isAdmin && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Reposições Pendentes de Aprovação</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Loja</TableHead>
-                    <TableHead>Peça</TableHead>
-                    <TableHead className="text-center">Qtd</TableHead>
-                    <TableHead>Motivo</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+        <CollapsibleCard title="Reposições Pendentes de Aprovação">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Loja</TableHead>
+                  <TableHead>Peça</TableHead>
+                  <TableHead className="text-center">Qtd</TableHead>
+                  <TableHead>Motivo</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingList.length === 0 && (
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhuma reposição pendente</TableCell></TableRow>
+                )}
+                {pendingList.map((r: any) => (
+                  <TableRow key={r.id}>
+                    <TableCell className="font-medium">{(r.client_stores as any)?.name ?? "—"}</TableCell>
+                    <TableCell>{(r.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
+                    <TableCell className="text-center">{r.quantity_requested}</TableCell>
+                    <TableCell>
+                      <span className="line-clamp-1 max-w-[200px]" title={r.reason}>{r.reason}</span>
+                    </TableCell>
+                    <TableCell>{formatDate(r.requested_at)}</TableCell>
+                    <TableCell className="text-right">
+                       <div className="flex gap-1 justify-end">
+                         <Button size="sm" variant="ghost" className="h-7 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => setConfirmAction({ id: r.id, status: "aprovada", storeId: r.store_id })}>
+                           <Check className="h-4 w-4" />
+                         </Button>
+                         <Button size="sm" variant="ghost" className="h-7 text-destructive hover:bg-destructive/10" onClick={() => setConfirmAction({ id: r.id, status: "rejeitada", storeId: r.store_id })}>
+                           <X className="h-4 w-4" />
+                         </Button>
+                         <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: r.id, table: "store_replacement_requests", queryKey: "portal-replacements" })}>
+                           <Trash2 className="h-4 w-4" />
+                         </Button>
+                       </div>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingList.length === 0 && (
-                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhuma reposição pendente</TableCell></TableRow>
-                  )}
-                  {pendingList.map((r: any) => (
-                    <TableRow key={r.id}>
-                      <TableCell className="font-medium">{(r.client_stores as any)?.name ?? "—"}</TableCell>
-                      <TableCell>{(r.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
-                      <TableCell className="text-center">{r.quantity_requested}</TableCell>
-                      <TableCell>
-                        <span className="line-clamp-1 max-w-[200px]" title={r.reason}>{r.reason}</span>
-                      </TableCell>
-                      <TableCell>{formatDate(r.requested_at)}</TableCell>
-                      <TableCell className="text-right">
-                         <div className="flex gap-1 justify-end">
-                           <Button size="sm" variant="ghost" className="h-7 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => setConfirmAction({ id: r.id, status: "aprovada", storeId: r.store_id })}>
-                             <Check className="h-4 w-4" />
-                           </Button>
-                           <Button size="sm" variant="ghost" className="h-7 text-destructive hover:bg-destructive/10" onClick={() => setConfirmAction({ id: r.id, status: "rejeitada", storeId: r.store_id })}>
-                             <X className="h-4 w-4" />
-                           </Button>
-                           <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: r.id, table: "store_replacement_requests", queryKey: "portal-replacements" })}>
-                             <Trash2 className="h-4 w-4" />
-                           </Button>
-                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CollapsibleCard>
       )}
 
       {/* Recent Maintenance */}
