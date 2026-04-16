@@ -2,7 +2,8 @@ import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Store, Layers, Package, Trophy } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Store, Layers, Package, Trophy, ChevronDown } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import {
   useLojaALojaTipos,
