@@ -493,13 +493,15 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                 const ts = o.tratativa_status ?? "aberta";
                 const overdue = o.expected_resolution_date && new Date(o.expected_resolution_date).getTime() < Date.now() && ts !== "resolvida";
                 const photos: string[] = Array.isArray(o.photo_urls) ? o.photo_urls : [];
+                const resolutionPhotos: string[] = Array.isArray(o.resolution_photo_urls) ? o.resolution_photo_urls : [];
                 const store = (o.client_stores as any) ?? {};
                 return (
                   <div
                     key={o.id}
                     onClick={() => setSelectedOccurrence(o)}
-                    className="border rounded-lg p-3 bg-card hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-2"
+                    className="border rounded-lg p-3 bg-card hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-2.5"
                   >
+                    {/* Header: store + delete */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="font-medium text-sm text-foreground truncate">{store.name ?? "—"}</div>
@@ -519,6 +521,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                       )}
                     </div>
 
+                    {/* Badges */}
                     <div className="flex flex-wrap gap-1.5">
                       <Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge>
                       <Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge>
@@ -527,39 +530,94 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                       )}
                     </div>
 
-                    <div className="text-xs text-muted-foreground space-y-0.5">
-                      <div><span className="font-medium text-foreground">Peça:</span> {(o.loja_a_loja_pecas as any)?.nome ?? "—"}</div>
-                      <div><span className="font-medium text-foreground">Motivo:</span> {(o.store_portal_motivos as any)?.descricao ?? "—"}</div>
-                      <div><span className="font-medium text-foreground">Reportado por:</span> {reporterLabel(o.reporter_type)}</div>
+                    {/* Core fields */}
+                    <div className="text-xs space-y-1">
+                      <div className="flex gap-1">
+                        <span className="text-muted-foreground shrink-0">Peça:</span>
+                        <span className="text-foreground">{(o.loja_a_loja_pecas as any)?.nome ?? "—"}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <span className="text-muted-foreground shrink-0">Motivo:</span>
+                        <span className="text-foreground">{(o.store_portal_motivos as any)?.descricao ?? "—"}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <span className="text-muted-foreground shrink-0">Aberta por:</span>
+                        <span className="text-foreground font-medium">{reporterLabel(o.reporter_type)}</span>
+                      </div>
                     </div>
 
+                    {/* Description */}
                     {o.description && (
-                      <p className="text-xs text-foreground line-clamp-2">{o.description}</p>
-                    )}
-
-                    {photos.length > 0 && (
-                      <div className="flex gap-1.5 overflow-x-auto">
-                        {photos.slice(0, 3).map((url, i) => (
-                          <img
-                            key={i}
-                            src={url}
-                            alt=""
-                            className="h-14 w-14 object-cover rounded border shrink-0"
-                          />
-                        ))}
-                        {photos.length > 3 && (
-                          <div className="h-14 w-14 rounded border bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground shrink-0">
-                            +{photos.length - 3}
-                          </div>
-                        )}
+                      <div className="text-xs">
+                        <div className="text-muted-foreground mb-0.5">Descrição:</div>
+                        <p className="text-foreground line-clamp-3">{o.description}</p>
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t">
-                      <span>Aberta: {formatDate(o.created_at)}</span>
-                      <span className={overdue ? "text-destructive font-medium" : ""}>
-                        Prev: {formatDate(o.expected_resolution_date)}
-                      </span>
+                    {/* Original photos */}
+                    {photos.length > 0 && (
+                      <div>
+                        <div className="text-[11px] text-muted-foreground mb-1">Fotos da ocorrência</div>
+                        <div className="flex gap-1.5 overflow-x-auto">
+                          {photos.slice(0, 4).map((url, i) => (
+                            <img
+                              key={i}
+                              src={url}
+                              alt=""
+                              className="h-14 w-14 object-cover rounded border shrink-0"
+                            />
+                          ))}
+                          {photos.length > 4 && (
+                            <div className="h-14 w-14 rounded border bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground shrink-0">
+                              +{photos.length - 4}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Tratativa notes */}
+                    {o.tratativa_notes && (
+                      <div className="text-xs bg-muted/40 rounded p-2">
+                        <div className="text-muted-foreground mb-0.5">Observações da tratativa:</div>
+                        <p className="text-foreground line-clamp-3">{o.tratativa_notes}</p>
+                      </div>
+                    )}
+
+                    {/* Resolution photos */}
+                    {resolutionPhotos.length > 0 && (
+                      <div>
+                        <div className="text-[11px] text-muted-foreground mb-1">Fotos da resolução</div>
+                        <div className="flex gap-1.5 overflow-x-auto">
+                          {resolutionPhotos.slice(0, 4).map((url: string, i: number) => (
+                            <img
+                              key={i}
+                              src={url}
+                              alt=""
+                              className="h-14 w-14 object-cover rounded border shrink-0"
+                            />
+                          ))}
+                          {resolutionPhotos.length > 4 && (
+                            <div className="h-14 w-14 rounded border bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground shrink-0">
+                              +{resolutionPhotos.length - 4}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Footer: dates */}
+                    <div className="text-[11px] text-muted-foreground pt-1.5 border-t space-y-0.5">
+                      <div className="flex items-center justify-between">
+                        <span>Aberta: {formatDate(o.created_at)}</span>
+                        <span>{daysOpen(o.created_at, o.resolved_at)} dias</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className={overdue ? "text-destructive font-medium" : ""}>
+                          Previsão: {formatDate(o.expected_resolution_date)}
+                        </span>
+                        {o.resolved_at && <span className="text-green-600">Resolvida: {formatDate(o.resolved_at)}</span>}
+                      </div>
                     </div>
                   </div>
                 );
