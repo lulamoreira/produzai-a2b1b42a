@@ -123,6 +123,8 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
   const [confirmAction, setConfirmAction] = useState<{ id: string; status: "aprovada" | "rejeitada"; storeId: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; table: "store_occurrence_reports" | "store_maintenance_requests" | "store_replacement_requests"; queryKey: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const isLoading = l1 || l2 || l3 || l4;
 
