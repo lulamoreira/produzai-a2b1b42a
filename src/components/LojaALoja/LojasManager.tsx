@@ -12,9 +12,10 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Store, Copy, Search } from "lucide-react";
+import { Store, Copy, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useTableSort } from "@/hooks/useTableSort";
 
 interface Props {
   campaignId: string;
@@ -65,6 +66,33 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
       (s.state || "").toLowerCase().includes(q)
     );
   }, [sortedStores, search]);
+
+  // Click-to-sort over the filtered stores (3-state cycle)
+  const {
+    sortedItems: sortedFilteredStores,
+    sortField: storeSortField,
+    sortDir: storeSortDir,
+    handleSort: handleStoreSort,
+  } = useTableSort(filteredStores);
+
+  const renderSortTh = (label: string, field: string, className?: string) => {
+    const Icon = storeSortField !== field ? ArrowUpDown : storeSortDir === "asc" ? ArrowUp : ArrowDown;
+    const active = storeSortField === field && storeSortDir != null;
+    return (
+      <th
+        onClick={() => handleStoreSort(field)}
+        className={cn(
+          "h-9 px-3 text-left text-xs font-medium text-muted-foreground cursor-pointer select-none hover:bg-muted/70 transition-colors",
+          className
+        )}
+      >
+        <span className="inline-flex items-center gap-1">
+          {label}
+          <Icon className={cn("w-3 h-3", active ? "opacity-100 text-foreground" : "opacity-40")} />
+        </span>
+      </th>
+    );
+  };
 
   // Build lookup: `storeId-tipoId-subdivisaoId` → ativo
   const assignmentMap = useMemo(() => {
@@ -352,10 +380,10 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
             </tr>
             {/* Individual letra headers */}
             <tr className="border-b border-border">
-              <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground w-[80px]">Código</th>
-              <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground min-w-[200px]">Loja</th>
-              <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground min-w-[100px]">Cidade</th>
-              <th className="h-9 px-3 text-left text-xs font-medium text-muted-foreground w-[60px]">UF</th>
+              {renderSortTh("Código", "store_code", "w-[80px]")}
+              {renderSortTh("Loja", "name", "min-w-[200px]")}
+              {renderSortTh("Cidade", "city", "min-w-[100px]")}
+              {renderSortTh("UF", "state", "w-[60px]")}
               {vitrinesTipos.map((t) => (
                 <th key={t.id} className="h-9 px-1 text-center text-xs font-bold w-10 border-l border-border" title={t.nome}>
                   {t.letra}
@@ -374,7 +402,7 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
             </tr>
           </thead>
           <tbody>
-            {filteredStores.map((store, idx) => (
+            {sortedFilteredStores.map((store, idx) => (
               <tr key={store.id} className={cn("border-b border-border transition-colors hover:bg-muted/30", idx % 2 === 0 && "bg-muted/10")}>
                 <td className="px-3 py-1.5 text-xs font-mono font-semibold text-primary whitespace-nowrap">{store.store_code || "—"}</td>
                 <td className="px-3 py-1.5">
