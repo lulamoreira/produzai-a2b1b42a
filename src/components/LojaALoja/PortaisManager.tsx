@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLojaALojaLojas } from "@/hooks/useLojaALoja";
 import {
   useStorePortalTokens,
@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Link2, Copy, MessageCircle, Trash2, Plus, LinkIcon, ExternalLink } from "lucide-react";
+import { Link2, Copy, MessageCircle, Trash2, Plus, LinkIcon, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
@@ -20,6 +20,9 @@ interface Props {
   isAdmin: boolean;
 }
 
+type SortField = "name" | "city" | "state";
+type SortDir = "asc" | "desc" | null;
+
 export default function PortaisManager({ campaignId, clientId, isAdmin }: Props) {
   const { data: lojas = [] } = useLojaALojaLojas(campaignId);
   const { data: tokens = [], isLoading } = useStorePortalTokens(campaignId);
@@ -27,10 +30,11 @@ export default function PortaisManager({ campaignId, clientId, isAdmin }: Props)
   const deleteToken = useDeleteStoreToken();
   const generateAll = useGenerateAllStoreTokens();
 
-  // Get unique store IDs from loja assignments
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>(null);
+
   const storeIds = useMemo(() => [...new Set(lojas.filter((l) => l.ativo).map((l) => l.store_id))], [lojas]);
 
-  // Fetch store details
   const { data: stores = [] } = useQuery({
     queryKey: ["portal-stores", clientId, storeIds],
     enabled: storeIds.length > 0,
@@ -49,6 +53,44 @@ export default function PortaisManager({ campaignId, clientId, isAdmin }: Props)
     tokens.forEach((t) => map.set(t.store_id, t));
     return map;
   }, [tokens]);
+
+  const sortedStores = useMemo(() => {
+    if (!sortField || !sortDir) return stores;
+    return [...stores].sort((a, b) => {
+      let va = "";
+      let vb = "";
+      if (sortField === "name") {
+        va = (a.store_code ? `${a.store_code} ${a.name}` : a.name).toLowerCase();
+        vb = (b.store_code ? `${b.store_code} ${b.name}` : b.name).toLowerCase();
+      } else if (sortField === "city") {
+        va = (a.city || "").toLowerCase();
+        vb = (b.city || "").toLowerCase();
+      } else {
+        va = (a.state || "").toLowerCase();
+        vb = (b.state || "").toLowerCase();
+      }
+      const cmp = va.localeCompare(vb, "pt-BR");
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [stores, sortField, sortDir]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField !== field) {
+      setSortField(field);
+      setSortDir("asc");
+    } else if (sortDir === "asc") {
+      setSortDir("desc");
+    } else {
+      setSortField(null);
+      setSortDir(null);
+    }
+  };
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-40" />;
+    if (sortDir === "asc") return <ArrowUp className="h-3 w-3 ml-1" />;
+    return <ArrowDown className="h-3 w-3 ml-1" />;
+  };
 
   const portalUrl = (token: string) => `${window.location.origin}/loja/${token}`;
 
@@ -95,15 +137,27 @@ export default function PortaisManager({ campaignId, clientId, isAdmin }: Props)
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Loja</TableHead>
-              <TableHead>Cidade</TableHead>
-              <TableHead>UF</TableHead>
+              <TableHead>
+                <button className="flex items-center hover:text-foreground transition-colors" onClick={() => handleSort("name")}>
+                  Loja <SortIcon field="name" />
+                </button>
+              </TableHead>
+              <TableHead>
+                <button className="flex items-center hover:text-foreground transition-colors" onClick={() => handleSort("city")}>
+                  Cidade <SortIcon field="city" />
+                </button>
+              </TableHead>
+              <TableHead>
+                <button className="flex items-center hover:text-foreground transition-colors" onClick={() => handleSort("state")}>
+                  UF <SortIcon field="state" />
+                </button>
+              </TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {stores.map((store) => {
+            {sortedStores.map((store) => {
               const tk = tokenMap.get(store.id);
               return (
                 <TableRow key={store.id}>
