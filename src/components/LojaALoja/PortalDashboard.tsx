@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,10 +18,35 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clock, RotateCw, AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clock, RotateCw, AlertCircle, CheckCircle2, ChevronDown, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { criarNotificacao } from "@/lib/criarNotificacao";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
+
+interface CollapsibleCardProps {
+  title: string;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}
+
+function CollapsibleCard({ title, defaultOpen = false, children }: CollapsibleCardProps) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Card>
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <CollapsibleTrigger asChild>
+          <button type="button" className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-muted/30 transition-colors">
+            <CardTitle className="text-base">{title}</CardTitle>
+            {open ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent className="pt-0">{children}</CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
+}
 
 interface Props {
   campaignId: string;
