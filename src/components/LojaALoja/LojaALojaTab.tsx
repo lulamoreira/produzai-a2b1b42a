@@ -23,7 +23,7 @@ export default function LojaALojaTab({ campaignId, clientId, isAdmin }: Props) {
         </TabsTrigger>
         <TabsTrigger value="portal-dashboard" className="gap-1.5">
           <LayoutDashboard className="h-3.5 w-3.5" />
-          Dashboard Portal
+          Ocorrências
         </TabsTrigger>
         <TabsTrigger value="tipos" className="gap-1.5">
           <LayoutGrid className="h-3.5 w-3.5" />
