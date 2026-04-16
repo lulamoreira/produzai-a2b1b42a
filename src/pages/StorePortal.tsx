@@ -41,6 +41,7 @@ export interface PortalData {
     portal_title: string | null;
     portal_welcome_message: string | null;
     blocked_piece_message: string | null;
+    show_priority?: boolean;
   } | null;
   store_override?: {
     module_conformidade: boolean | null;
