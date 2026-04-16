@@ -146,7 +146,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       if (error) throw error;
 
       toast.success("Ocorrência atualizada.");
-      qc.invalidateQueries({ queryKey: ["portal-occurrences", campaignId] });
+      qc.invalidateQueries({ queryKey: ["portal-occurrences-v2", campaignId] });
       setInitialized(null);
       onOpenChange(false);
     } catch (e: any) {
