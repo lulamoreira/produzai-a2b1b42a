@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Camera, X, Loader2, ExternalLink } from "lucide-react";
+import { Camera, X, Loader2, ExternalLink, RotateCw } from "lucide-react";
 import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
 
@@ -57,6 +57,8 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const [needsReinst, setNeedsReinst] = useState(false);
   const [tratativaNotes, setTratativaNotes] = useState("");
   const [resolutionPhotos, setResolutionPhotos] = useState<string[]>([]);
+  const [reinstallationDate, setReinstallationDate] = useState<string>("");
+  const [reinstallationOs, setReinstallationOs] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -71,6 +73,8 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       setNeedsReinst(!!occurrence.needs_reinstallation);
       setTratativaNotes(occurrence.tratativa_notes ?? "");
       setResolutionPhotos(Array.isArray(occurrence.resolution_photo_urls) ? occurrence.resolution_photo_urls : []);
+      setReinstallationDate(toLocalInput(occurrence.reinstallation_scheduled_at));
+      setReinstallationOs(occurrence.reinstallation_os ?? "");
       setInitialized(occurrence.id);
     }
   }, [occurrence, initialized]);
@@ -133,6 +137,8 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
           needs_reinstallation: needsReinst,
           tratativa_notes: tratativaNotes || null,
           resolution_photo_urls: resolutionPhotos,
+          reinstallation_scheduled_at: needsReinst && reinstallationDate ? new Date(reinstallationDate).toISOString() : null,
+          reinstallation_os: needsReinst && reinstallationOs.trim() ? reinstallationOs.trim() : null,
           resolved_by_user_id: tratativaStatus === "resolvida" ? userId : null,
         } as any)
         .eq("id", occurrence.id);
@@ -167,6 +173,19 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
               <Field label="Motivo" value={motivoDesc} />
               <Field label="Reportado por" value={reporterLabel} />
               <Field label="Data de abertura" value={formatDateTime(occurrence.created_at)} />
+
+              {occurrence.needs_reinstallation && (
+                <div className="flex items-center gap-2 text-orange-600 text-xs font-medium">
+                  <RotateCw className="w-3.5 h-3.5" />
+                  Reinstalação necessária
+                  {occurrence.reinstallation_scheduled_at && (
+                    <span className="text-muted-foreground font-normal">
+                      — {new Date(occurrence.reinstallation_scheduled_at).toLocaleString('pt-BR')}
+                      {occurrence.reinstallation_os && ` | OS: ${occurrence.reinstallation_os}`}
+                    </span>
+                  )}
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Descrição</label>
@@ -233,6 +252,36 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                 <Checkbox id="reinst" checked={needsReinst} onCheckedChange={(v) => setNeedsReinst(!!v)} disabled={!isAdmin} />
                 <label htmlFor="reinst" className="text-sm cursor-pointer">Precisa reinstalação</label>
               </div>
+
+              {needsReinst && (
+                <div className="grid grid-cols-2 gap-3 pl-4 border-l-2 border-orange-400 mt-2">
+                  <div>
+                    <label className="text-xs font-medium text-foreground mb-1 block">
+                      Data e horário da reinstalação
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={reinstallationDate}
+                      onChange={(e) => setReinstallationDate(e.target.value)}
+                      disabled={!isAdmin}
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-foreground mb-1 block">
+                      Número da OS
+                    </label>
+                    <input
+                      type="text"
+                      value={reinstallationOs}
+                      onChange={(e) => setReinstallationOs(e.target.value)}
+                      disabled={!isAdmin}
+                      placeholder="Ex: OS-2024-001"
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Notas da tratativa</label>
