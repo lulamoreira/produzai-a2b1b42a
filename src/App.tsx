@@ -33,6 +33,7 @@ import InstallerPortal from "./pages/InstallerPortal";
 import Unsubscribe from "./pages/Unsubscribe";
 import SupplierPortal from "./pages/SupplierPortal";
 import StorePortal from "./pages/StorePortal";
+import OccurrencesPortal from "./pages/OccurrencesPortal";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -176,6 +177,7 @@ const App = () => (
               <Route path="/instalador" element={<InstallerPortal />} />
               <Route path="/orcamento/:token" element={<SupplierPortal />} />
               <Route path="/loja/:token" element={<StorePortal />} />
+              <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
               <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
               <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
               <Route path="/unsubscribe" element={<Unsubscribe />} />

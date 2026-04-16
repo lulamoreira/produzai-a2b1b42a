@@ -18,8 +18,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
-import { CheckCircle2, XCircle, Minus } from "lucide-react";
+import { CheckCircle2, XCircle, Minus, Copy, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import MotivosManager from "./MotivosManager";
 
 interface Props {
@@ -131,8 +132,67 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
     return <div className="flex items-center justify-center py-12"><div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" /></div>;
   }
 
+  const portalUrl = `${window.location.origin}/ocorrencias-portal/${campaignId}`;
+
   return (
     <div className="space-y-6">
+      {/* Section 0 — Portal de Ocorrências (público) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Portal de Ocorrências</CardTitle>
+          <CardDescription>
+            Página pública que lista todas as lojas vinculadas para acesso rápido ao portal de cada uma.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label className="text-sm">Título</Label>
+            <DebouncedInput
+              className="mt-1"
+              placeholder="Portal de Ocorrências"
+              value={(localConfig as any)?.occurrences_portal_title ?? ""}
+              onValueCommit={(v) => saveConfig({ occurrences_portal_title: v || null })}
+              disabled={!isAdmin}
+            />
+          </div>
+          <div>
+            <Label className="text-sm">Subtítulo</Label>
+            <DebouncedInput
+              className="mt-1"
+              placeholder="Selecione sua loja para registrar uma ocorrência"
+              value={(localConfig as any)?.occurrences_portal_subtitle ?? ""}
+              onValueCommit={(v) => saveConfig({ occurrences_portal_subtitle: v || null })}
+              disabled={!isAdmin}
+            />
+          </div>
+          <div>
+            <Label className="text-sm">URL pública</Label>
+            <div className="flex items-center gap-2 mt-1">
+              <Input value={portalUrl} readOnly className="font-mono text-xs" />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  navigator.clipboard.writeText(portalUrl);
+                  toast.success("Link copiado");
+                }}
+                title="Copiar"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => window.open(portalUrl, "_blank")}
+                title="Abrir"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Section A — Global Config */}
       <Card>
         <CardHeader>
