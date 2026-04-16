@@ -3090,6 +3090,7 @@ export type Database = {
           occurrences_portal_title: string | null
           portal_title: string | null
           portal_welcome_message: string | null
+          show_priority: boolean
           updated_at: string | null
         }
         Insert: {
@@ -3109,6 +3110,7 @@ export type Database = {
           occurrences_portal_title?: string | null
           portal_title?: string | null
           portal_welcome_message?: string | null
+          show_priority?: boolean
           updated_at?: string | null
         }
         Update: {
@@ -3128,6 +3130,7 @@ export type Database = {
           occurrences_portal_title?: string | null
           portal_title?: string | null
           portal_welcome_message?: string | null
+          show_priority?: boolean
           updated_at?: string | null
         }
         Relationships: [
