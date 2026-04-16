@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Link2, Copy, MessageCircle, Trash2, Plus, LinkIcon } from "lucide-react";
+import { Link2, Copy, MessageCircle, Trash2, Plus, LinkIcon, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
