@@ -117,6 +117,21 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Fetch portal config for this campaign
+    const { data: portalConfig } = await supabase
+      .from("store_portal_config")
+      .select("*")
+      .eq("campaign_id", campaign_id)
+      .maybeSingle();
+
+    // Fetch store-specific override
+    const { data: storeOverride } = await supabase
+      .from("store_portal_store_overrides")
+      .select("*")
+      .eq("campaign_id", campaign_id)
+      .eq("store_id", store_id)
+      .maybeSingle();
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -127,6 +142,8 @@ Deno.serve(async (req) => {
         subdivisoes,
         pecas: pecas || [],
         lojas: finalLojas,
+        portal_config: portalConfig || null,
+        store_override: storeOverride || null,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

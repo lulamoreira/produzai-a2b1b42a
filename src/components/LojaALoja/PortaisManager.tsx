@@ -123,7 +123,10 @@ export default function PortaisManager({ campaignId, clientId, isAdmin }: Props)
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       {tk ? (
-                        <>
+                         <>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => window.open(portalUrl(tk.token), "_blank")} title="Abrir portal">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyLink(tk.token)} title="Copiar link">
                             <Copy className="h-3.5 w-3.5" />
                           </Button>
