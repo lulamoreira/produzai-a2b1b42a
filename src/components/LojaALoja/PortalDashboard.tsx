@@ -191,6 +191,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterStore, setFilterStore] = useState<string>("all");
+  const [occViewMode, setOccViewMode] = useState<"list" | "cards">("list");
   const [selectedOccurrence, setSelectedOccurrence] = useState<any | null>(null);
 
   const isLoading = l1 || l2 || l3 || l4;
