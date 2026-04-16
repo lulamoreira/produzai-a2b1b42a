@@ -295,6 +295,25 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
   );
 }
 
+/* ── Collapsible Card (recolhido por padrão) ── */
+function CollapsibleCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <Card>
+      <Collapsible defaultOpen={false}>
+        <CollapsibleTrigger className="w-full group">
+          <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base">{title}</CardTitle>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent>{children}</CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
+}
+
 /* ── KPI Card ── */
 function KpiCard({ icon: Icon, label, value }: { icon: any; label: string; value: string | number }) {
   return (
