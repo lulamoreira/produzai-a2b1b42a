@@ -838,6 +838,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
           </Table>
         </div>
       </CollapsibleCard>
+      )}
 
       {/* Confirm Dialogs */}
       <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
