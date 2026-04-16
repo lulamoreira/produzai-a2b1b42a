@@ -88,7 +88,6 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
   const handleSubmit = async () => {
     if (!selectedPeca) return;
     if (!motiveId) { toast.error("Selecione o motivo."); return; }
-    if (!description.trim()) { toast.error("Preencha a descrição."); return; }
     setSubmitting(true);
 
     const peca = selectedPeca;
@@ -99,7 +98,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
       loja_a_loja_peca_id: peca.id,
       tipo_id: peca.tipo_id,
       subdivisao_id: peca.subdivisao_id,
-      description: description.trim(),
+      description: description.trim() || null,
       priority,
       photo_urls: photos.length > 0 ? photos : null,
       reporter_type: reporterType,
@@ -209,7 +208,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-foreground mb-1 block">Descrição *</label>
+                <label className="text-xs font-medium text-foreground mb-1 block">Descrição (não obrigatório)</label>
                 <Textarea
                   value={description}
                   onChange={e => setDescription(e.target.value)}
@@ -218,18 +217,20 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-medium text-foreground mb-1 block">Prioridade</label>
-                <Select value={priority} onValueChange={setPriority}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="critica">Crítica</SelectItem>
-                    <SelectItem value="alta">Alta</SelectItem>
-                    <SelectItem value="media">Média</SelectItem>
-                    <SelectItem value="baixa">Baixa</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {data.portal_config?.show_priority !== false && (
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1 block">Prioridade</label>
+                  <Select value={priority} onValueChange={setPriority}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="critica">Crítica</SelectItem>
+                      <SelectItem value="alta">Alta</SelectItem>
+                      <SelectItem value="media">Média</SelectItem>
+                      <SelectItem value="baixa">Baixa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
               <StorePortalPhotoUpload
                 photos={photos}
@@ -239,7 +240,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
                 bucketPath={`store-portal/${data.token_id}`}
               />
 
-              <Button onClick={handleSubmit} disabled={submitting || uploading || !description.trim() || !motiveId} className="w-full bg-[#8C6F4E] hover:bg-[#7a6043]">
+              <Button onClick={handleSubmit} disabled={submitting || uploading || !motiveId} className="w-full bg-[#8C6F4E] hover:bg-[#7a6043]">
                 {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Enviando...</> : "Enviar Ocorrência"}
               </Button>
             </div>

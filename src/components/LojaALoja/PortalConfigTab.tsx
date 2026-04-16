@@ -350,6 +350,22 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
               );
             })}
 
+            <div className="flex items-center justify-between py-3">
+              <div>
+                <Label className="text-sm font-medium">Campo Prioridade</Label>
+                <p className="text-xs text-muted-foreground">Exibe o campo de prioridade no portal da loja e no dashboard</p>
+              </div>
+              <Switch
+                checked={(localConfig as any)?.show_priority !== false}
+                onCheckedChange={(v) => {
+                  if (!isAdmin) return;
+                  saveConfig({ show_priority: v });
+                }}
+                disabled={!isAdmin}
+              />
+            </div>
+            <Separator />
+
             <div className="space-y-3 pt-2">
               <div>
                 <Label className="text-sm">Título do Portal</Label>
