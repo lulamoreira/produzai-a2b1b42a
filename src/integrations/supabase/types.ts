@@ -3050,6 +3050,7 @@ export type Database = {
       }
       store_portal_config: {
         Row: {
+          blocked_piece_message: string | null
           campaign_id: string
           created_at: string | null
           deadline_conformidade: string | null
@@ -3066,6 +3067,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          blocked_piece_message?: string | null
           campaign_id: string
           created_at?: string | null
           deadline_conformidade?: string | null
@@ -3082,6 +3084,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          blocked_piece_message?: string | null
           campaign_id?: string
           created_at?: string | null
           deadline_conformidade?: string | null
