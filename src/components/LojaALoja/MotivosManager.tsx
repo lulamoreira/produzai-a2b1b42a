@@ -155,7 +155,20 @@ export default function MotivosManager({ clientId, isAdmin, embedded = false }: 
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </CardContent>
+    </div>
+  );
+
+  if (embedded) return body;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Motivos de Ocorrência</CardTitle>
+        <CardDescription>
+          Liste os motivos disponíveis no portal da loja para esse cliente.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>{body}</CardContent>
     </Card>
   );
 }
