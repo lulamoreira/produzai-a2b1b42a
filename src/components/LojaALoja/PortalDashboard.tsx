@@ -352,12 +352,18 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
   return (
     <div className="space-y-6">
-      {/* Top KPI Row (overview) */}
+      {/* Top KPI Row (overview) — Ocorrências sempre, demais só se > 0 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard icon={AlertTriangle} label="Ocorrências (total)" value={total} color="hsl(var(--destructive))" />
-        <KpiCard icon={Wrench} label="Manutenções abertas" value={openMaintenance} color="hsl(var(--warning, 38 92% 50%))" />
-        <KpiCard icon={RefreshCw} label="Reposições pendentes" value={pendingReplacements} color="hsl(var(--warning, 38 92% 50%))" />
-        <KpiCard icon={ClipboardCheck} label="Conformidade média" value={`${complianceAvg}%`} color={BRAND} />
+        {openMaintenance > 0 && (
+          <KpiCard icon={Wrench} label="Manutenções abertas" value={openMaintenance} color="hsl(var(--warning, 38 92% 50%))" />
+        )}
+        {pendingReplacements > 0 && (
+          <KpiCard icon={RefreshCw} label="Reposições pendentes" value={pendingReplacements} color="hsl(var(--warning, 38 92% 50%))" />
+        )}
+        {complianceAvg > 0 && (
+          <KpiCard icon={ClipboardCheck} label="Conformidade média" value={`${complianceAvg}%`} color={BRAND} />
+        )}
       </div>
 
       {/* OCCURRENCE MANAGEMENT */}
