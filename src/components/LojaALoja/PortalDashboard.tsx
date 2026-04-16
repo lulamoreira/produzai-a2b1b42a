@@ -425,14 +425,15 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Foto</TableHead>
-                  <TableHead>Loja</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data</TableHead>
-                </TableRow>
+                 <TableRow>
+                   <TableHead>Foto</TableHead>
+                   <TableHead>Loja</TableHead>
+                   <TableHead>Descrição</TableHead>
+                   <TableHead>Prioridade</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Data</TableHead>
+                   {isAdmin && <TableHead className="w-10" />}
+                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(occurrences ?? []).slice(0, 10).length === 0 && (
