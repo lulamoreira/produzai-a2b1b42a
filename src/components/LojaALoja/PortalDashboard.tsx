@@ -454,10 +454,17 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                     <TableCell><span className="line-clamp-1 max-w-[250px]">{o.description}</span></TableCell>
                     <TableCell><Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge></TableCell>
                     <TableCell><Badge className={statusColor[o.status] ?? "bg-muted"}>{o.status}</Badge></TableCell>
-                    <TableCell>{formatDate(o.created_at)}</TableCell>
-                  </TableRow>
-                  );
-                })}
+                     <TableCell>{formatDate(o.created_at)}</TableCell>
+                     {isAdmin && (
+                       <TableCell>
+                         <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: o.id, table: "store_occurrence_reports", queryKey: "portal-occurrences" })}>
+                           <Trash2 className="h-4 w-4" />
+                         </Button>
+                       </TableCell>
+                     )}
+                   </TableRow>
+                   );
+                 })}
               </TableBody>
             </Table>
           </div>
