@@ -191,6 +191,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterStore, setFilterStore] = useState<string>("all");
+  const [occViewMode, setOccViewMode] = useState<"list" | "cards">("list");
   const [selectedOccurrence, setSelectedOccurrence] = useState<any | null>(null);
 
   const isLoading = l1 || l2 || l3 || l4;
@@ -368,8 +369,24 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
       {/* OCCURRENCE MANAGEMENT */}
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2 space-y-0">
           <CardTitle className="text-base">Gestão de Ocorrências</CardTitle>
+          <div className="inline-flex rounded-md border bg-muted/30 p-0.5">
+            <button
+              type="button"
+              onClick={() => setOccViewMode("list")}
+              className={`px-3 py-1 text-xs rounded transition-colors ${occViewMode === "list" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Lista
+            </button>
+            <button
+              type="button"
+              onClick={() => setOccViewMode("cards")}
+              className={`px-3 py-1 text-xs rounded transition-colors ${occViewMode === "cards" ? "bg-background shadow-sm font-medium" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Cards
+            </button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Occurrence sub-KPIs */}
@@ -414,56 +431,141 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
             </Select>
           </div>
 
-          {/* Occurrences table */}
-          <div className="overflow-x-auto border rounded-lg">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Loja</TableHead>
-                  <TableHead>Peça</TableHead>
-                  <TableHead>Motivo</TableHead>
-                  <TableHead>Reportado por</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Abertura</TableHead>
-                  <TableHead>Previsão</TableHead>
-                  <TableHead className="text-center">Dias</TableHead>
-                  {isAdmin && <TableHead className="w-10" />}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredOccurrences.length === 0 && (
+          {/* Occurrences — Lista ou Cards */}
+          {occViewMode === "list" ? (
+            <div className="overflow-x-auto border rounded-lg">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={isAdmin ? 10 : 9} className="text-center text-muted-foreground py-6">Nenhuma ocorrência encontrada.</TableCell>
+                    <TableHead>Loja</TableHead>
+                    <TableHead>Peça</TableHead>
+                    <TableHead>Motivo</TableHead>
+                    <TableHead>Reportado por</TableHead>
+                    <TableHead>Prioridade</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Abertura</TableHead>
+                    <TableHead>Previsão</TableHead>
+                    <TableHead className="text-center">Dias</TableHead>
+                    {isAdmin && <TableHead className="w-10" />}
                   </TableRow>
-                )}
-                {filteredOccurrences.map((o: any) => {
-                  const ts = o.tratativa_status ?? "aberta";
-                  const overdue = o.expected_resolution_date && new Date(o.expected_resolution_date).getTime() < Date.now() && ts !== "resolvida";
-                  return (
-                    <TableRow key={o.id} className="cursor-pointer hover:bg-muted/40" onClick={() => setSelectedOccurrence(o)}>
-                      <TableCell className="font-medium">{(o.client_stores as any)?.name ?? "—"}</TableCell>
-                      <TableCell>{(o.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
-                      <TableCell><span className="line-clamp-1 max-w-[160px]">{(o.store_portal_motivos as any)?.descricao ?? "—"}</span></TableCell>
-                      <TableCell className="text-xs">{reporterLabel(o.reporter_type)}</TableCell>
-                      <TableCell><Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge></TableCell>
-                      <TableCell><Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge></TableCell>
-                      <TableCell className="text-xs">{formatDate(o.created_at)}</TableCell>
-                      <TableCell className={`text-xs ${overdue ? "text-destructive font-medium" : ""}`}>{formatDate(o.expected_resolution_date)}</TableCell>
-                      <TableCell className="text-center text-xs">{daysOpen(o.created_at, o.resolved_at)}</TableCell>
-                      {isAdmin && (
-                        <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: o.id, table: "store_occurrence_reports", queryKey: "portal-occurrences" })}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      )}
+                </TableHeader>
+                <TableBody>
+                  {filteredOccurrences.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={isAdmin ? 10 : 9} className="text-center text-muted-foreground py-6">Nenhuma ocorrência encontrada.</TableCell>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                  )}
+                  {filteredOccurrences.map((o: any) => {
+                    const ts = o.tratativa_status ?? "aberta";
+                    const overdue = o.expected_resolution_date && new Date(o.expected_resolution_date).getTime() < Date.now() && ts !== "resolvida";
+                    return (
+                      <TableRow key={o.id} className="cursor-pointer hover:bg-muted/40" onClick={() => setSelectedOccurrence(o)}>
+                        <TableCell className="font-medium">{(o.client_stores as any)?.name ?? "—"}</TableCell>
+                        <TableCell>{(o.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
+                        <TableCell><span className="line-clamp-1 max-w-[160px]">{(o.store_portal_motivos as any)?.descricao ?? "—"}</span></TableCell>
+                        <TableCell className="text-xs">{reporterLabel(o.reporter_type)}</TableCell>
+                        <TableCell><Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge></TableCell>
+                        <TableCell><Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge></TableCell>
+                        <TableCell className="text-xs">{formatDate(o.created_at)}</TableCell>
+                        <TableCell className={`text-xs ${overdue ? "text-destructive font-medium" : ""}`}>{formatDate(o.expected_resolution_date)}</TableCell>
+                        <TableCell className="text-center text-xs">{daysOpen(o.created_at, o.resolved_at)}</TableCell>
+                        {isAdmin && (
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: o.id, table: "store_occurrence_reports", queryKey: "portal-occurrences" })}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredOccurrences.length === 0 && (
+                <div className="col-span-full text-center text-muted-foreground py-8 border rounded-lg">
+                  Nenhuma ocorrência encontrada.
+                </div>
+              )}
+              {filteredOccurrences.map((o: any) => {
+                const ts = o.tratativa_status ?? "aberta";
+                const overdue = o.expected_resolution_date && new Date(o.expected_resolution_date).getTime() < Date.now() && ts !== "resolvida";
+                const photos: string[] = Array.isArray(o.photo_urls) ? o.photo_urls : [];
+                const store = (o.client_stores as any) ?? {};
+                return (
+                  <div
+                    key={o.id}
+                    onClick={() => setSelectedOccurrence(o)}
+                    className="border rounded-lg p-3 bg-card hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-2"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm text-foreground truncate">{store.name ?? "—"}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {[store.state, store.city].filter(Boolean).join(" · ") || "—"}
+                        </div>
+                      </div>
+                      {isAdmin && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive hover:bg-destructive/10 shrink-0"
+                          onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: o.id, table: "store_occurrence_reports", queryKey: "portal-occurrences" }); }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge>
+                      <Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge>
+                      {o.needs_reinstallation && (
+                        <Badge variant="outline" className="text-xs">Reinstalação</Badge>
+                      )}
+                    </div>
+
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                      <div><span className="font-medium text-foreground">Peça:</span> {(o.loja_a_loja_pecas as any)?.nome ?? "—"}</div>
+                      <div><span className="font-medium text-foreground">Motivo:</span> {(o.store_portal_motivos as any)?.descricao ?? "—"}</div>
+                      <div><span className="font-medium text-foreground">Reportado por:</span> {reporterLabel(o.reporter_type)}</div>
+                    </div>
+
+                    {o.description && (
+                      <p className="text-xs text-foreground line-clamp-2">{o.description}</p>
+                    )}
+
+                    {photos.length > 0 && (
+                      <div className="flex gap-1.5 overflow-x-auto">
+                        {photos.slice(0, 3).map((url, i) => (
+                          <img
+                            key={i}
+                            src={url}
+                            alt=""
+                            className="h-14 w-14 object-cover rounded border shrink-0"
+                          />
+                        ))}
+                        {photos.length > 3 && (
+                          <div className="h-14 w-14 rounded border bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground shrink-0">
+                            +{photos.length - 3}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t">
+                      <span>Aberta: {formatDate(o.created_at)}</span>
+                      <span className={overdue ? "text-destructive font-medium" : ""}>
+                        Prev: {formatDate(o.expected_resolution_date)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </CardContent>
       </Card>
 
