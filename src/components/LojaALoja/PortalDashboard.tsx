@@ -237,7 +237,23 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
     }
   }
 
-  if (isLoading) {
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      const { error } = await supabase.from(deleteTarget.table).delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+      toast.success("Registro excluído com sucesso");
+      qc.invalidateQueries({ queryKey: [deleteTarget.queryKey, campaignId] });
+    } catch (e: any) {
+      toast.error("Erro ao excluir: " + e.message);
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
+    }
+  }
+
+
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
