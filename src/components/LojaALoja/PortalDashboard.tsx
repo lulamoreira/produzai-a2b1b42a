@@ -800,6 +800,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
       )}
 
       {/* Recent Maintenance */}
+      {(maintenance?.length ?? 0) > 0 && (
       <CollapsibleCard title="Manutenções Recentes">
         <div className="overflow-x-auto">
           <Table>
