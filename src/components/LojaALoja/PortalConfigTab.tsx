@@ -28,6 +28,8 @@ import { CheckCircle2, XCircle, Minus, Copy, ExternalLink, GripVertical, Chevron
 import { format } from "date-fns";
 import { toast } from "sonner";
 import MotivosManager from "./MotivosManager";
+import { useTableSort } from "@/hooks/useTableSort";
+import SortableHeader from "./SortableHeader";
 import {
   DndContext,
   closestCenter,
