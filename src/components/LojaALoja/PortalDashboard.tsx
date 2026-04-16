@@ -751,7 +751,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
       )}
 
       {/* Pending Replacements Table */}
-      {isAdmin && (
+      {isAdmin && pendingList.length > 0 && (
         <CollapsibleCard title="Reposições Pendentes de Aprovação">
           <div className="overflow-x-auto">
             <Table>
