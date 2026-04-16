@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X } from "lucide-react";
+import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { criarNotificacao } from "@/lib/criarNotificacao";
 
@@ -123,6 +123,8 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
   const [confirmAction, setConfirmAction] = useState<{ id: string; status: "aprovada" | "rejeitada"; storeId: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; table: "store_occurrence_reports" | "store_maintenance_requests" | "store_replacement_requests"; queryKey: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const isLoading = l1 || l2 || l3 || l4;
 
@@ -234,6 +236,23 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
       setConfirmAction(null);
     }
   }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      const { error } = await supabase.from(deleteTarget.table).delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+      toast.success("Registro excluído com sucesso");
+      qc.invalidateQueries({ queryKey: [deleteTarget.queryKey, campaignId] });
+    } catch (e: any) {
+      toast.error("Erro ao excluir: " + e.message);
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
+    }
+  }
+
 
   if (isLoading) {
     return (
@@ -381,14 +400,17 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                       </TableCell>
                       <TableCell>{formatDate(r.requested_at)}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex gap-1 justify-end">
-                          <Button size="sm" variant="ghost" className="h-7 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => setConfirmAction({ id: r.id, status: "aprovada", storeId: r.store_id })}>
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" className="h-7 text-destructive hover:bg-destructive/10" onClick={() => setConfirmAction({ id: r.id, status: "rejeitada", storeId: r.store_id })}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
+                         <div className="flex gap-1 justify-end">
+                           <Button size="sm" variant="ghost" className="h-7 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => setConfirmAction({ id: r.id, status: "aprovada", storeId: r.store_id })}>
+                             <Check className="h-4 w-4" />
+                           </Button>
+                           <Button size="sm" variant="ghost" className="h-7 text-destructive hover:bg-destructive/10" onClick={() => setConfirmAction({ id: r.id, status: "rejeitada", storeId: r.store_id })}>
+                             <X className="h-4 w-4" />
+                           </Button>
+                           <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: r.id, table: "store_replacement_requests", queryKey: "portal-replacements" })}>
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
+                         </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -406,18 +428,19 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Foto</TableHead>
-                  <TableHead>Loja</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data</TableHead>
-                </TableRow>
+                 <TableRow>
+                   <TableHead>Foto</TableHead>
+                   <TableHead>Loja</TableHead>
+                   <TableHead>Descrição</TableHead>
+                   <TableHead>Prioridade</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Data</TableHead>
+                   {isAdmin && <TableHead className="w-10" />}
+                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(occurrences ?? []).slice(0, 10).length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhuma ocorrência</TableCell></TableRow>
+                 {(occurrences ?? []).slice(0, 10).length === 0 && (
+                   <TableRow><TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground">Nenhuma ocorrência</TableCell></TableRow>
                 )}
                 {(occurrences ?? []).slice(0, 10).map((o: any) => {
                   const photos: string[] = Array.isArray(o.photo_urls) ? o.photo_urls : [];
@@ -434,10 +457,17 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                     <TableCell><span className="line-clamp-1 max-w-[250px]">{o.description}</span></TableCell>
                     <TableCell><Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge></TableCell>
                     <TableCell><Badge className={statusColor[o.status] ?? "bg-muted"}>{o.status}</Badge></TableCell>
-                    <TableCell>{formatDate(o.created_at)}</TableCell>
-                  </TableRow>
-                  );
-                })}
+                     <TableCell>{formatDate(o.created_at)}</TableCell>
+                     {isAdmin && (
+                       <TableCell>
+                         <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: o.id, table: "store_occurrence_reports", queryKey: "portal-occurrences" })}>
+                           <Trash2 className="h-4 w-4" />
+                         </Button>
+                       </TableCell>
+                     )}
+                   </TableRow>
+                   );
+                 })}
               </TableBody>
             </Table>
           </div>
@@ -451,27 +481,35 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Loja</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Prioridade</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Data</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(maintenance ?? []).slice(0, 10).length === 0 && (
-                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
-                )}
-                {(maintenance ?? []).slice(0, 10).map((m: any) => (
-                  <TableRow key={m.id}>
-                    <TableCell className="font-medium">{(m.client_stores as any)?.name ?? "—"}</TableCell>
-                    <TableCell><span className="line-clamp-1 max-w-[250px]">{m.description}</span></TableCell>
-                    <TableCell><Badge className={priorityColor[m.priority] ?? "bg-muted"}>{m.priority}</Badge></TableCell>
-                    <TableCell><Badge className={statusColor[m.status] ?? "bg-muted"}>{m.status}</Badge></TableCell>
-                    <TableCell>{formatDate(m.created_at)}</TableCell>
-                  </TableRow>
-                ))}
+                 <TableRow>
+                   <TableHead>Loja</TableHead>
+                   <TableHead>Descrição</TableHead>
+                   <TableHead>Prioridade</TableHead>
+                   <TableHead>Status</TableHead>
+                   <TableHead>Data</TableHead>
+                   {isAdmin && <TableHead className="w-10" />}
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+                 {(maintenance ?? []).slice(0, 10).length === 0 && (
+                   <TableRow><TableCell colSpan={isAdmin ? 6 : 5} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
+                 )}
+                 {(maintenance ?? []).slice(0, 10).map((m: any) => (
+                   <TableRow key={m.id}>
+                     <TableCell className="font-medium">{(m.client_stores as any)?.name ?? "—"}</TableCell>
+                     <TableCell><span className="line-clamp-1 max-w-[250px]">{m.description}</span></TableCell>
+                     <TableCell><Badge className={priorityColor[m.priority] ?? "bg-muted"}>{m.priority}</Badge></TableCell>
+                     <TableCell><Badge className={statusColor[m.status] ?? "bg-muted"}>{m.status}</Badge></TableCell>
+                     <TableCell>{formatDate(m.created_at)}</TableCell>
+                     {isAdmin && (
+                       <TableCell>
+                         <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: m.id, table: "store_maintenance_requests", queryKey: "portal-maintenance" })}>
+                           <Trash2 className="h-4 w-4" />
+                         </Button>
+                       </TableCell>
+                     )}
+                   </TableRow>
+                 ))}
               </TableBody>
             </Table>
           </div>
@@ -495,6 +533,24 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
             <AlertDialogCancel disabled={actionLoading}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleReplacementAction} disabled={actionLoading}>
               {actionLoading ? "Processando..." : "Confirmar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirm Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir registro</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleteLoading} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleteLoading ? "Excluindo..." : "Confirmar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
