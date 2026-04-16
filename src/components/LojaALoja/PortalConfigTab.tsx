@@ -78,11 +78,11 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
     if (config) setLocalConfig(config);
   }, [config]);
 
-  const saveConfig = useCallback(
+    const saveConfig = useCallback(
     (patch: Record<string, any>) => {
       const next = { ...localConfig, ...patch, campaign_id: campaignId };
       setLocalConfig(next);
-      const { id, created_at, updated_at, ...rest } = next;
+      const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = next as any;
       upsertConfig.mutate(rest as any);
     },
     [localConfig, campaignId, upsertConfig]
