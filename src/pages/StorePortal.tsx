@@ -47,6 +47,7 @@ export interface PortalData {
     module_manutencao: boolean | null;
     module_reposicoes: boolean | null;
   } | null;
+  motivos?: Array<{ id: string; descricao: string }>;
 }
 
 type ModuleKey = "module_ocorrencias" | "module_manutencao" | "module_reposicoes" | "module_conformidade";
