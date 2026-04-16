@@ -3062,6 +3062,8 @@ export type Database = {
           module_manutencao: boolean
           module_ocorrencias: boolean
           module_reposicoes: boolean
+          occurrences_portal_subtitle: string | null
+          occurrences_portal_title: string | null
           portal_title: string | null
           portal_welcome_message: string | null
           updated_at: string | null
@@ -3079,6 +3081,8 @@ export type Database = {
           module_manutencao?: boolean
           module_ocorrencias?: boolean
           module_reposicoes?: boolean
+          occurrences_portal_subtitle?: string | null
+          occurrences_portal_title?: string | null
           portal_title?: string | null
           portal_welcome_message?: string | null
           updated_at?: string | null
@@ -3096,6 +3100,8 @@ export type Database = {
           module_manutencao?: boolean
           module_ocorrencias?: boolean
           module_reposicoes?: boolean
+          occurrences_portal_subtitle?: string | null
+          occurrences_portal_title?: string | null
           portal_title?: string | null
           portal_welcome_message?: string | null
           updated_at?: string | null
