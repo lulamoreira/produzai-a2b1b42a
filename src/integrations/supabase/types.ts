@@ -2484,6 +2484,30 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_config_layout: {
+        Row: {
+          card_order: string[]
+          collapsed_cards: string[]
+          id: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          card_order?: string[]
+          collapsed_cards?: string[]
+          id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          card_order?: string[]
+          collapsed_cards?: string[]
+          id?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           agency_id: string | null
