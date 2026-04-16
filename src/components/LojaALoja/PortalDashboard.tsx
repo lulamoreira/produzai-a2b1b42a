@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,9 +17,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2 } from "lucide-react";
+import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clock, RotateCw, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { criarNotificacao } from "@/lib/criarNotificacao";
+import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
 
 interface Props {
   campaignId: string;
@@ -34,7 +36,15 @@ function usePortalOccurrences(campaignId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_occurrence_reports")
-        .select("*, client_stores(name, city, state)")
+        .select(`
+          id, store_id, loja_a_loja_peca_id, motive_id, reporter_type,
+          description, priority, status, photo_urls, created_at, resolved_at,
+          expected_resolution_date, needs_reinstallation, resolution_photo_urls,
+          tratativa_status, tratativa_notes,
+          client_stores(name, city, state),
+          loja_a_loja_pecas(nome),
+          store_portal_motivos(descricao)
+        ` as any)
         .eq("campaign_id", campaignId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -88,19 +98,31 @@ function usePortalCompliance(campaignId: string) {
   });
 }
 
-/* ── Helper ── */
 const BRAND = "#5B7B5E";
 
 const priorityColor: Record<string, string> = {
-  alta: "bg-destructive/15 text-destructive",
-  media: "bg-warning/15 text-warning",
-  baixa: "bg-muted text-muted-foreground",
+  critica: "bg-red-600 text-white",
+  alta: "bg-orange-500 text-white",
+  media: "bg-yellow-500 text-white",
+  baixa: "bg-blue-400 text-white",
+};
+
+const tratativaColor: Record<string, string> = {
+  aberta: "bg-destructive/15 text-destructive",
+  em_andamento: "bg-warning/15 text-warning",
+  resolvida: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+};
+
+const tratativaLabel: Record<string, string> = {
+  aberta: "Aberta",
+  em_andamento: "Em andamento",
+  resolvida: "Resolvida",
 };
 
 const statusColor: Record<string, string> = {
   aberto: "bg-destructive/15 text-destructive",
   em_andamento: "bg-warning/15 text-warning",
-  resolvido: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  resolvido: "bg-green-100 text-green-700",
   pendente: "bg-warning/15 text-warning",
   aprovada: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   enviada: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
@@ -112,7 +134,20 @@ function formatDate(d: string | null) {
   return new Date(d).toLocaleDateString("pt-BR");
 }
 
-/* ── Main Component ── */
+function reporterLabel(r: string | null | undefined) {
+  if (!r) return "—";
+  if (r.startsWith("agencia:")) return r.slice(8);
+  if (r.startsWith("cliente:")) return r.slice(8);
+  if (r === "lojista") return "Lojista";
+  if (r === "fornecedor") return "Fornecedor";
+  return r;
+}
+
+function daysOpen(createdAt: string, resolvedAt: string | null) {
+  const start = new Date(createdAt).getTime();
+  const end = resolvedAt ? new Date(resolvedAt).getTime() : Date.now();
+  return Math.max(0, Math.floor((end - start) / (1000 * 60 * 60 * 24)));
+}
 
 export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props) {
   const { data: occurrences, isLoading: l1 } = usePortalOccurrences(campaignId);
@@ -126,10 +161,46 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; table: "store_occurrence_reports" | "store_maintenance_requests" | "store_replacement_requests"; queryKey: string } | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Occurrence filters & detail sheet
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterPriority, setFilterPriority] = useState<string>("all");
+  const [filterStore, setFilterStore] = useState<string>("all");
+  const [selectedOccurrence, setSelectedOccurrence] = useState<any | null>(null);
+
   const isLoading = l1 || l2 || l3 || l4;
 
-  /* KPIs */
-  const openOccurrences = useMemo(() => (occurrences ?? []).filter((o: any) => o.status !== "resolvido").length, [occurrences]);
+  /* Occurrence KPIs */
+  const occList = (occurrences ?? []) as any[];
+  const total = occList.length;
+  const abertas = occList.filter((o) => (o.tratativa_status ?? "aberta") === "aberta").length;
+  const emAndamento = occList.filter((o) => o.tratativa_status === "em_andamento").length;
+  const resolvidas = occList.filter((o) => o.tratativa_status === "resolvida").length;
+  const atrasadas = occList.filter((o) =>
+    o.expected_resolution_date &&
+    new Date(o.expected_resolution_date).getTime() < Date.now() &&
+    o.tratativa_status !== "resolvida"
+  ).length;
+  const reinst = occList.filter((o) => o.needs_reinstallation).length;
+
+  const storeOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    occList.forEach((o) => {
+      const name = (o.client_stores as any)?.name ?? "—";
+      m.set(o.store_id, name);
+    });
+    return Array.from(m.entries()).sort((a, b) => a[1].localeCompare(b[1], "pt-BR"));
+  }, [occList]);
+
+  const filteredOccurrences = useMemo(() => {
+    return occList.filter((o) => {
+      if (filterStatus !== "all" && (o.tratativa_status ?? "aberta") !== filterStatus) return false;
+      if (filterPriority !== "all" && o.priority !== filterPriority) return false;
+      if (filterStore !== "all" && o.store_id !== filterStore) return false;
+      return true;
+    });
+  }, [occList, filterStatus, filterPriority, filterStore]);
+
+  /* Other KPIs */
   const openMaintenance = useMemo(() => (maintenance ?? []).filter((m: any) => ["aberto", "em_andamento"].includes(m.status)).length, [maintenance]);
   const pendingReplacements = useMemo(() => (replacements ?? []).filter((r: any) => r.status === "pendente").length, [replacements]);
   const complianceAvg = useMemo(() => {
@@ -138,17 +209,6 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
     const conforme = checks.filter((c: any) => c.overall_status === "conforme").length;
     return Math.round((conforme / checks.length) * 100);
   }, [compliance]);
-
-  /* Charts data */
-  const occByStore = useMemo(() => {
-    const map = new Map<string, { name: string; count: number }>();
-    (occurrences ?? []).filter((o: any) => o.status !== "resolvido").forEach((o: any) => {
-      const name = (o.client_stores as any)?.name ?? "Desconhecida";
-      const prev = map.get(o.store_id) ?? { name, count: 0 };
-      map.set(o.store_id, { name: prev.name, count: prev.count + 1 });
-    });
-    return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, 10);
-  }, [occurrences]);
 
   const replacementsByStatus = useMemo(() => {
     const counts: Record<string, number> = { pendente: 0, aprovada: 0, enviada: 0, rejeitada: 0 };
@@ -184,10 +244,9 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
       .slice(0, 10);
   }, [compliance]);
 
-  /* Pending replacements table */
   const pendingList = useMemo(() => (replacements ?? []).filter((r: any) => r.status === "pendente"), [replacements]);
 
-  /* Action handlers */
+  /* Actions */
   async function handleReplacementAction() {
     if (!confirmAction) return;
     setActionLoading(true);
@@ -207,7 +266,6 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
       toast.success(confirmAction.status === "aprovada" ? "Reposição aprovada" : "Reposição rejeitada");
 
-      // Fire notification (silent)
       try {
         const { data: campaignData } = await supabase
           .from("campaigns")
@@ -253,7 +311,6 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
     }
   }
 
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -269,37 +326,117 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
 
   return (
     <div className="space-y-6">
-      {/* KPI Row */}
+      {/* Top KPI Row (overview) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={AlertTriangle} label="Ocorrências abertas" value={openOccurrences} color="hsl(var(--destructive))" />
+        <KpiCard icon={AlertTriangle} label="Ocorrências (total)" value={total} color="hsl(var(--destructive))" />
         <KpiCard icon={Wrench} label="Manutenções abertas" value={openMaintenance} color="hsl(var(--warning, 38 92% 50%))" />
         <KpiCard icon={RefreshCw} label="Reposições pendentes" value={pendingReplacements} color="hsl(var(--warning, 38 92% 50%))" />
         <KpiCard icon={ClipboardCheck} label="Conformidade média" value={`${complianceAvg}%`} color={BRAND} />
       </div>
 
+      {/* OCCURRENCE MANAGEMENT */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Gestão de Ocorrências</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Occurrence sub-KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+            <MiniKpi label="Total" value={total} icon={AlertCircle} color="text-muted-foreground" />
+            <MiniKpi label="Abertas" value={abertas} icon={AlertTriangle} color="text-destructive" />
+            <MiniKpi label="Em andamento" value={emAndamento} icon={Clock} color="text-yellow-600" />
+            <MiniKpi label="Resolvidas" value={resolvidas} icon={CheckCircle2} color="text-green-600" />
+            <MiniKpi label="Atrasadas" value={atrasadas} icon={Clock} color="text-red-600" />
+            <MiniKpi label="Precisam reinst." value={reinst} icon={RotateCw} color="text-orange-600" />
+          </div>
+
+          {/* Filter bar */}
+          <div className="flex flex-wrap gap-2">
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="h-8 w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                <SelectItem value="aberta">Aberta</SelectItem>
+                <SelectItem value="em_andamento">Em andamento</SelectItem>
+                <SelectItem value="resolvida">Resolvida</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterPriority} onValueChange={setFilterPriority}>
+              <SelectTrigger className="h-8 w-[160px]"><SelectValue placeholder="Prioridade" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as prioridades</SelectItem>
+                <SelectItem value="critica">Crítica</SelectItem>
+                <SelectItem value="alta">Alta</SelectItem>
+                <SelectItem value="media">Média</SelectItem>
+                <SelectItem value="baixa">Baixa</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterStore} onValueChange={setFilterStore}>
+              <SelectTrigger className="h-8 w-[200px]"><SelectValue placeholder="Loja" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as lojas</SelectItem>
+                {storeOptions.map(([id, name]) => (
+                  <SelectItem key={id} value={id}>{name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Occurrences table */}
+          <div className="overflow-x-auto border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Loja</TableHead>
+                  <TableHead>Peça</TableHead>
+                  <TableHead>Motivo</TableHead>
+                  <TableHead>Reportado por</TableHead>
+                  <TableHead>Prioridade</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Abertura</TableHead>
+                  <TableHead>Previsão</TableHead>
+                  <TableHead className="text-center">Dias</TableHead>
+                  {isAdmin && <TableHead className="w-10" />}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredOccurrences.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={isAdmin ? 10 : 9} className="text-center text-muted-foreground py-6">Nenhuma ocorrência encontrada.</TableCell>
+                  </TableRow>
+                )}
+                {filteredOccurrences.map((o: any) => {
+                  const ts = o.tratativa_status ?? "aberta";
+                  const overdue = o.expected_resolution_date && new Date(o.expected_resolution_date).getTime() < Date.now() && ts !== "resolvida";
+                  return (
+                    <TableRow key={o.id} className="cursor-pointer hover:bg-muted/40" onClick={() => setSelectedOccurrence(o)}>
+                      <TableCell className="font-medium">{(o.client_stores as any)?.name ?? "—"}</TableCell>
+                      <TableCell>{(o.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
+                      <TableCell><span className="line-clamp-1 max-w-[160px]">{(o.store_portal_motivos as any)?.descricao ?? "—"}</span></TableCell>
+                      <TableCell className="text-xs">{reporterLabel(o.reporter_type)}</TableCell>
+                      <TableCell><Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge></TableCell>
+                      <TableCell><Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge></TableCell>
+                      <TableCell className="text-xs">{formatDate(o.created_at)}</TableCell>
+                      <TableCell className={`text-xs ${overdue ? "text-destructive font-medium" : ""}`}>{formatDate(o.expected_resolution_date)}</TableCell>
+                      <TableCell className="text-center text-xs">{daysOpen(o.created_at, o.resolved_at)}</TableCell>
+                      {isAdmin && (
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: o.id, table: "store_occurrence_reports", queryKey: "portal-occurrences" })}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Charts */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Occurrences by store */}
-        <Card>
-          <CardHeader className="pb-3"><CardTitle className="text-base">Ocorrências por Loja (top 10)</CardTitle></CardHeader>
-          <CardContent className="space-y-2">
-            {occByStore.length === 0 && <p className="text-sm text-muted-foreground">Nenhuma ocorrência aberta</p>}
-            {occByStore.map((d) => {
-              const maxVal = Math.max(1, ...occByStore.map((x) => x.count));
-              return (
-                <div key={d.name} className="flex items-center gap-2">
-                  <span className="w-28 text-sm truncate text-muted-foreground" title={d.name}>{d.name}</span>
-                  <div className="flex-1 bg-muted rounded-full h-5 overflow-hidden">
-                    <div className="h-full rounded-full bg-destructive/70 transition-all" style={{ width: `${(d.count / maxVal) * 100}%` }} />
-                  </div>
-                  <span className="text-sm font-medium w-8 text-right">{d.count}</span>
-                </div>
-              );
-            })}
-          </CardContent>
-        </Card>
-
-        {/* Replacements by status */}
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-base">Reposições por Status</CardTitle></CardHeader>
           <CardContent className="space-y-2">
@@ -319,7 +456,6 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
           </CardContent>
         </Card>
 
-        {/* Maintenance by status */}
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-base">Manutenções por Status</CardTitle></CardHeader>
           <CardContent>
@@ -346,7 +482,6 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
           </CardContent>
         </Card>
 
-        {/* Compliance by store */}
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-base">Conformidade por Loja</CardTitle></CardHeader>
           <CardContent className="space-y-2">
@@ -421,59 +556,6 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
         </Card>
       )}
 
-      {/* Recent Occurrences */}
-      <Card>
-        <CardHeader className="pb-3"><CardTitle className="text-base">Ocorrências Recentes</CardTitle></CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                 <TableRow>
-                   <TableHead>Foto</TableHead>
-                   <TableHead>Loja</TableHead>
-                   <TableHead>Descrição</TableHead>
-                   <TableHead>Prioridade</TableHead>
-                   <TableHead>Status</TableHead>
-                   <TableHead>Data</TableHead>
-                   {isAdmin && <TableHead className="w-10" />}
-                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                 {(occurrences ?? []).slice(0, 10).length === 0 && (
-                   <TableRow><TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground">Nenhuma ocorrência</TableCell></TableRow>
-                )}
-                {(occurrences ?? []).slice(0, 10).map((o: any) => {
-                  const photos: string[] = Array.isArray(o.photo_urls) ? o.photo_urls : [];
-                  return (
-                  <TableRow key={o.id}>
-                    <TableCell>
-                      {photos.length > 0 ? (
-                        <img src={photos[0]} alt="" className="w-8 h-8 rounded object-cover" />
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium">{(o.client_stores as any)?.name ?? "—"}</TableCell>
-                    <TableCell><span className="line-clamp-1 max-w-[250px]">{o.description}</span></TableCell>
-                    <TableCell><Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge></TableCell>
-                    <TableCell><Badge className={statusColor[o.status] ?? "bg-muted"}>{o.status}</Badge></TableCell>
-                     <TableCell>{formatDate(o.created_at)}</TableCell>
-                     {isAdmin && (
-                       <TableCell>
-                         <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: o.id, table: "store_occurrence_reports", queryKey: "portal-occurrences" })}>
-                           <Trash2 className="h-4 w-4" />
-                         </Button>
-                       </TableCell>
-                     )}
-                   </TableRow>
-                   );
-                 })}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Recent Maintenance */}
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">Manutenções Recentes</CardTitle></CardHeader>
@@ -516,7 +598,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
         </CardContent>
       </Card>
 
-      {/* Confirm Dialog */}
+      {/* Confirm Dialogs */}
       <AlertDialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -538,7 +620,6 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete Confirm Dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -555,11 +636,19 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Occurrence Detail Sheet */}
+      <OccurrenceDetailSheet
+        open={!!selectedOccurrence}
+        onOpenChange={(o) => !o && setSelectedOccurrence(null)}
+        occurrence={selectedOccurrence}
+        isAdmin={isAdmin}
+        campaignId={campaignId}
+      />
     </div>
   );
 }
 
-/* ── KPI Card ── */
 function KpiCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color: string }) {
   return (
     <Card>
@@ -573,5 +662,17 @@ function KpiCard({ icon: Icon, label, value, color }: { icon: any; label: string
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function MiniKpi({ icon: Icon, label, value, color }: { icon: any; label: string; value: number; color: string }) {
+  return (
+    <div className="border rounded-md p-2.5 flex items-center gap-2 bg-card">
+      <Icon className={`w-4 h-4 shrink-0 ${color}`} />
+      <div className="min-w-0">
+        <p className="text-[10px] text-muted-foreground truncate uppercase tracking-wide">{label}</p>
+        <p className="text-base font-bold leading-none">{value}</p>
+      </div>
+    </div>
   );
 }

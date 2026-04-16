@@ -132,6 +132,19 @@ Deno.serve(async (req) => {
       .eq("store_id", store_id)
       .maybeSingle();
 
+    // Fetch active motivos for this client
+    const clientId = (campaign as any)?.client_id;
+    let motivos: any[] = [];
+    if (clientId) {
+      const { data: motivosData } = await supabase
+        .from("store_portal_motivos")
+        .select("id, descricao")
+        .eq("client_id", clientId)
+        .eq("ativo", true)
+        .order("descricao", { ascending: true });
+      motivos = motivosData || [];
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -144,6 +157,7 @@ Deno.serve(async (req) => {
         lojas: finalLojas,
         portal_config: portalConfig || null,
         store_override: storeOverride || null,
+        motivos,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -20,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Separator } from "@/components/ui/separator";
 import { CheckCircle2, XCircle, Minus } from "lucide-react";
 import { format } from "date-fns";
+import MotivosManager from "./MotivosManager";
 
 interface Props {
   campaignId: string;
@@ -344,6 +345,9 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
           )}
         </CardContent>
       </Card>
+
+      {/* Section C — Motivos de Ocorrência */}
+      <MotivosManager clientId={clientId} isAdmin={isAdmin} />
     </div>
   );
 }

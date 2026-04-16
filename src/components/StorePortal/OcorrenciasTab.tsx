@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { criarNotificacao } from "@/lib/criarNotificacao";
 import { toast } from "sonner";
@@ -18,12 +18,32 @@ interface Props {
 
 export default function OcorrenciasTab({ data, agencyId }: Props) {
   const [selectedPeca, setSelectedPeca] = useState<PortalData["pecas"][number] | null>(null);
+  const [reporterType, setReporterType] = useState("lojista");
+  const [motiveId, setMotiveId] = useState<string>("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("media");
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reports, setReports] = useState<any[]>([]);
+
+  const motivos = data.motivos ?? [];
+  const sortedMotivos = useMemo(
+    () => [...motivos].sort((a, b) => a.descricao.localeCompare(b.descricao, "pt-BR")),
+    [motivos]
+  );
+
+  const reporterOptions = useMemo(() => {
+    const opts: Array<{ value: string; label: string }> = [
+      { value: "lojista", label: "Lojista" },
+      { value: "fornecedor", label: "Fornecedor" },
+    ];
+    const agencyName = data.campaign?.clients?.agencies?.name;
+    const clientName = data.campaign?.clients?.name;
+    if (agencyName) opts.push({ value: `agencia:${agencyName}`, label: agencyName });
+    if (clientName) opts.push({ value: `cliente:${clientName}`, label: clientName });
+    return opts;
+  }, [data]);
 
   const loadReports = useCallback(async () => {
     const { data: rows } = await supabase
@@ -44,8 +64,19 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
     }
   });
 
+  const resetForm = () => {
+    setSelectedPeca(null);
+    setReporterType("lojista");
+    setMotiveId("");
+    setDescription("");
+    setPriority("media");
+    setPhotos([]);
+  };
+
   const handleSubmit = async () => {
-    if (!selectedPeca || !description.trim()) { toast.error("Preencha a descrição."); return; }
+    if (!selectedPeca) return;
+    if (!motiveId) { toast.error("Selecione o motivo."); return; }
+    if (!description.trim()) { toast.error("Preencha a descrição."); return; }
     setSubmitting(true);
 
     const peca = selectedPeca;
@@ -59,7 +90,9 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
       description: description.trim(),
       priority,
       photo_urls: photos.length > 0 ? photos : null,
-    });
+      reporter_type: reporterType,
+      motive_id: motiveId,
+    } as any);
 
     if (error) {
       toast.error("Erro ao salvar ocorrência.");
@@ -71,15 +104,13 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
           agency_id: agencyId,
           campaign_id: data.campaign.id,
           store_id: data.store.id,
+          client_id: data.campaign.client_id,
           type: "store_occurrence_report",
           title: "Nova ocorrência da loja",
           body: `${data.store.name} reportou uma ocorrência na peça "${peca.nome}".`,
         });
       } catch {}
-      setSelectedPeca(null);
-      setDescription("");
-      setPriority("media");
-      setPhotos([]);
+      resetForm();
       loadReports();
     }
     setSubmitting(false);
@@ -120,7 +151,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
       )}
 
       {/* Dialog */}
-      <Dialog open={!!selectedPeca} onOpenChange={open => { if (!open) setSelectedPeca(null); }}>
+      <Dialog open={!!selectedPeca} onOpenChange={open => { if (!open) resetForm(); }}>
         <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base">Reportar Ocorrência</DialogTitle>
@@ -137,6 +168,32 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
                   )}
                 </div>
                 <p className="font-medium text-sm">{selectedPeca.nome}</p>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-foreground mb-1 block">Reportado por *</label>
+                <Select value={reporterType} onValueChange={setReporterType}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {reporterOptions.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-foreground mb-1 block">Motivo *</label>
+                <Select value={motiveId} onValueChange={setMotiveId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={sortedMotivos.length === 0 ? "Nenhum motivo cadastrado" : "Selecione o motivo"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sortedMotivos.map(m => (
+                      <SelectItem key={m.id} value={m.id}>{m.descricao}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -170,7 +227,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
                 bucketPath={`store-portal/${data.token_id}`}
               />
 
-              <Button onClick={handleSubmit} disabled={submitting || uploading || !description.trim()} className="w-full bg-[#8C6F4E] hover:bg-[#7a6043]">
+              <Button onClick={handleSubmit} disabled={submitting || uploading || !description.trim() || !motiveId} className="w-full bg-[#8C6F4E] hover:bg-[#7a6043]">
                 {submitting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Enviando...</> : "Enviar Ocorrência"}
               </Button>
             </div>
