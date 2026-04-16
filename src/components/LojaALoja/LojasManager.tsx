@@ -44,14 +44,11 @@ export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
   const vitrinesTipos = useMemo(() => tipos.filter((t) => !t.tem_subdivisao), [tipos]);
   const internosTipos = useMemo(() => tipos.filter((t) => t.tem_subdivisao), [tipos]);
 
-  // Sort stores by UF then name
+  // Sort stores alphabetically by name (default)
   const sortedStores = useMemo(
-    () => [...stores].sort((a, b) => {
-      const ufA = a.state || "ZZZ";
-      const ufB = b.state || "ZZZ";
-      if (ufA !== ufB) return ufA.localeCompare(ufB);
-      return (a.name || "").localeCompare(b.name || "");
-    }),
+    () => [...stores].sort((a, b) =>
+      (a.name || "").localeCompare(b.name || "", "pt-BR")
+    ),
     [stores],
   );
 
