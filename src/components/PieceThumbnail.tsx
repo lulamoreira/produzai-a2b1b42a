@@ -27,7 +27,10 @@ const PieceThumbnail = ({ imageUrl, name, size = "sm" }: Props) => {
 
   if (!imageUrl) {
     return (
-      <div className={`${sizeClasses} rounded border border-border bg-muted/30 flex items-center justify-center shrink-0`}>
+      <div
+        className={`${sizeClasses} rounded border border-border bg-muted/30 flex items-center justify-center shrink-0`}
+        title={name}
+      >
         <Image className={`${iconSizeMap[size]} text-muted-foreground/40`} />
       </div>
     );
@@ -38,6 +41,7 @@ const PieceThumbnail = ({ imageUrl, name, size = "sm" }: Props) => {
       <button
         onClick={() => setLightboxOpen(true)}
         className={`${sizeClasses} rounded border border-border overflow-hidden shrink-0 hover:ring-2 hover:ring-primary/40 transition-all cursor-pointer`}
+        title={name}
       >
         <img src={imageUrl} alt={name} className="w-full h-full object-cover" loading="lazy" />
       </button>
