@@ -496,7 +496,7 @@ export default function StoresMatrixTable({
 
                   if (isNameCol) {
                     return (
-                      <TableCell key={col.key} className="font-medium">
+                      <TableCell key={col.key} className="font-medium sticky left-0 z-[5] bg-card">
                         <button
                           type="button"
                           className="text-left hover:underline underline-offset-2 transition-colors cursor-pointer px-2 py-0.5 rounded-md text-xs"

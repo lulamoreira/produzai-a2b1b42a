@@ -838,7 +838,7 @@ const SupplierPortal = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[280px]">Item</TableHead>
+                    <TableHead className="min-w-[280px] sticky left-0 z-[5] bg-card">Item</TableHead>
                     <TableHead className="text-center w-[100px]">Qtd Total</TableHead>
                     <TableHead className="text-center w-[160px]">Preço Unitário</TableHead>
                     <TableHead className="text-right w-[140px]">Total</TableHead>
