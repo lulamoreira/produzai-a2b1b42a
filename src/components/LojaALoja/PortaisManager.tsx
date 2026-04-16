@@ -30,8 +30,8 @@ export default function PortaisManager({ campaignId, clientId, isAdmin }: Props)
   const deleteToken = useDeleteStoreToken();
   const generateAll = useGenerateAllStoreTokens();
 
-  const [sortField, setSortField] = useState<SortField | null>(null);
-  const [sortDir, setSortDir] = useState<SortDir>(null);
+  const [sortField, setSortField] = useState<SortField | null>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const storeIds = useMemo(() => [...new Set(lojas.filter((l) => l.ativo).map((l) => l.store_id))], [lojas]);
 
