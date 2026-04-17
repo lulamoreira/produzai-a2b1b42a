@@ -48,7 +48,7 @@ const LAL_SUBAREAS: ReadonlyArray<{ key: string; label: string; isMaster?: boole
   { key: "lal_ocorrencias", label: "Ocorrências" },
 ];
 
-type LalKey = typeof LAL_SUBAREAS[number]["key"];
+type LalKey = string;
 const LAL_SUB_KEYS: LalKey[] = ["lal_estrutura", "lal_classificacao", "lal_acessos", "lal_config", "lal_ocorrencias"];
 const LAL_ALL_KEYS: string[] = LAL_SUBAREAS.flatMap(s =>
   PERMISSIONS.map(p => `can_${p.key}_${s.key}`)
