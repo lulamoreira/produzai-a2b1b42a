@@ -882,6 +882,7 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
 
                           {canEdit && (
                             addingSubForTipoId === tipo.id ? (
+                              <div className="flex items-center gap-1 px-2">
                                 <Input
                                   value={newSubNome}
                                   onChange={(e) => setNewSubNome(e.target.value)}
