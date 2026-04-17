@@ -679,4 +679,169 @@ const PublicOccurrence = () => {
   );
 };
 
+type StoreOption = { id: string; name: string; nickname?: string | null; phone?: string | null; email?: string | null };
+
+const StoreCombobox = ({
+  value,
+  stores,
+  onChange,
+  placeholder = "Selecione a loja",
+}: {
+  value: string;
+  stores: StoreOption[];
+  onChange: (id: string) => void;
+  placeholder?: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  const selected = stores.find((s) => s.id === value);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className={cn("truncate", !selected && "text-muted-foreground")}>
+            {selected ? selected.nickname || selected.name : placeholder}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command
+          filter={(itemValue, search) => {
+            const s = search.toLowerCase();
+            return itemValue.toLowerCase().includes(s) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Buscar loja..." />
+          <CommandList>
+            <CommandEmpty>Nenhuma loja encontrada.</CommandEmpty>
+            <CommandGroup>
+              {stores.map((s) => {
+                const label = s.nickname || s.name;
+                const searchValue = `${s.nickname || ""} ${s.name}`.trim();
+                return (
+                  <CommandItem
+                    key={s.id}
+                    value={searchValue}
+                    onSelect={() => {
+                      onChange(s.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", value === s.id ? "opacity-100" : "opacity-0")} />
+                    <span className="truncate">{label}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+const ReporterCombobox = ({
+  value,
+  stores,
+  agencyName,
+  clientName,
+  onChange,
+}: {
+  value: string;
+  stores: StoreOption[];
+  agencyName: string;
+  clientName: string;
+  onChange: (val: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const specialLabel =
+    value === SPECIAL_AGENCY
+      ? agencyName
+      : value === SPECIAL_CLIENTE
+      ? clientName
+      : value === SPECIAL_FORNECEDOR
+      ? "Fornecedor"
+      : null;
+  const selectedStore = stores.find((s) => s.id === value);
+  const display = specialLabel ?? (selectedStore ? selectedStore.nickname || selectedStore.name : null);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className={cn("truncate", !display && "text-muted-foreground")}>
+            {display || "Selecione quem está reportando"}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command
+          filter={(itemValue, search) => {
+            const s = search.toLowerCase();
+            return itemValue.toLowerCase().includes(s) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Buscar..." />
+          <CommandList>
+            <CommandEmpty>Nada encontrado.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                value={agencyName}
+                onSelect={() => { onChange(SPECIAL_AGENCY); setOpen(false); }}
+              >
+                <Check className={cn("mr-2 h-4 w-4", value === SPECIAL_AGENCY ? "opacity-100" : "opacity-0")} />
+                {agencyName}
+              </CommandItem>
+              <CommandItem
+                value={clientName}
+                onSelect={() => { onChange(SPECIAL_CLIENTE); setOpen(false); }}
+              >
+                <Check className={cn("mr-2 h-4 w-4", value === SPECIAL_CLIENTE ? "opacity-100" : "opacity-0")} />
+                {clientName}
+              </CommandItem>
+              <CommandItem
+                value="Fornecedor"
+                onSelect={() => { onChange(SPECIAL_FORNECEDOR); setOpen(false); }}
+              >
+                <Check className={cn("mr-2 h-4 w-4", value === SPECIAL_FORNECEDOR ? "opacity-100" : "opacity-0")} />
+                Fornecedor
+              </CommandItem>
+            </CommandGroup>
+            <CommandSeparator />
+            <CommandGroup heading="Lojas">
+              {stores.map((s) => {
+                const label = s.nickname || s.name;
+                const searchValue = `${s.nickname || ""} ${s.name}`.trim();
+                return (
+                  <CommandItem
+                    key={s.id}
+                    value={searchValue}
+                    onSelect={() => { onChange(s.id); setOpen(false); }}
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", value === s.id ? "opacity-100" : "opacity-0")} />
+                    <span className="truncate">{label}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 export default PublicOccurrence;
