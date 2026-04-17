@@ -23,7 +23,7 @@ import {
   Building2, Shield, LogOut, Users, Star, Home,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
-  CalendarDays, Camera, DollarSign, Database, Globe, Settings, History, LayoutGrid,
+  CalendarDays, Camera, DollarSign, Database, Globe, Settings, LayoutGrid,
   Sun, Moon,
 } from "lucide-react";
 
