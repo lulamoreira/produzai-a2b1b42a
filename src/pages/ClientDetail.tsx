@@ -166,16 +166,16 @@ function SortableCampaignCard({
     <div
       ref={setNodeRef}
       style={style}
-      className="group card-base cursor-pointer hover:shadow-md transition-shadow duration-150 relative"
+      className="group card-base cursor-pointer hover:shadow-md transition-shadow duration-150 relative w-full max-w-full overflow-hidden"
       onClick={onNavigate}
     >
       {/* Left color accent border */}
       <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-[var(--radius-card)]" style={{ backgroundColor: color }} />
 
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2 sm:gap-3 min-w-0">
         {canEdit && (
           <button
-            className="cursor-grab active:cursor-grabbing touch-none p-0.5 mt-1"
+            className="cursor-grab active:cursor-grabbing touch-none p-0.5 mt-1 hidden sm:block"
             style={{ color: 'var(--text-muted)' }}
             {...attributes}
             {...listeners}
@@ -194,18 +194,18 @@ function SortableCampaignCard({
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-base truncate" style={{ color: 'var(--text-primary)' }}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-semibold text-base truncate min-w-0" style={{ color: 'var(--text-primary)' }}>
               {campaign.name}
             </h3>
             <span className="badge-base badge-success flex-shrink-0">● {t("clientDashboard.active") || "Ativa"}</span>
           </div>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
             {t("clientDashboard.createdAt") || "Criada em"} {new Date(campaign.created_at).toLocaleDateString()}
           </p>
         </div>
 
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5 flex-shrink-0">
           {showFavorite && (
             <Button
               variant="ghost"
@@ -219,7 +219,7 @@ function SortableCampaignCard({
           {canEdit && (
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-100 sm:opacity-0 sm:group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
                   <Palette className="w-3.5 h-3.5" />
                 </Button>
               </PopoverTrigger>
@@ -241,7 +241,7 @@ function SortableCampaignCard({
           {canDelete && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </AlertDialogTrigger>
