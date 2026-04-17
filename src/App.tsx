@@ -183,7 +183,7 @@ const App = () => (
               <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
               
               <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
-              <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+              <Route path="/favorites" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
               <Route path="/meu-acesso" element={<ProtectedRoute><MeuAcesso /></ProtectedRoute>} />
               <Route path="/installer" element={<InstallerPortal />} />
               <Route path="/instalador" element={<InstallerPortal />} />
