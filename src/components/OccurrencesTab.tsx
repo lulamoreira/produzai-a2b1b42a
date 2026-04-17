@@ -461,7 +461,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           </button>
         </div>
 
-        <span className="text-base sm:text-lg font-semibold sm:flex-1 sm:text-center order-first sm:order-none w-full sm:w-auto" style={{ color: "var(--text-primary)" }}>Ocorrências</span>
+        <span className="hidden sm:inline text-lg font-semibold flex-1 text-center" style={{ color: "var(--text-primary)" }}>Ocorrências</span>
 
         {/* Period button */}
         <Popover>
@@ -657,44 +657,82 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           })),
         ];
 
-        return (
-          <div
-            className="flex items-baseline overflow-x-auto max-w-full"
+        // Mobile: show Total + top 2 status with most counts + "Ver mais"
+        const mobileTopStatuses = [...activeStatuses]
+          .map(s => ({ s, count: byStatus[s.value] || 0 }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 2)
+          .map(x => x.s);
+        const mobileItems = kpiItems.filter(item =>
+          item.key === "total" || mobileTopStatuses.some(s => s.id === item.key)
+        );
+
+        const renderKpiButton = (item: typeof kpiItems[number], idx: number, total: number) => (
+          <button
+            key={item.key}
+            type="button"
+            onClick={item.onClick}
+            className="inline-flex items-baseline gap-1 transition-colors rounded-md hover:bg-[var(--bg-muted)] shrink-0"
             style={{
-              padding: "10px 12px",
-              background: "var(--bg-surface)",
-              borderBottom: "1px solid var(--border-subtle)",
-              whiteSpace: "nowrap",
-              WebkitOverflowScrolling: "touch",
-              gap: 0,
+              padding: "2px 12px",
+              borderRight: idx < total - 1 ? "1px solid var(--border-subtle)" : "none",
+              cursor: "pointer",
+              ...(item.isActive ? { backgroundColor: "var(--bg-muted)" } : {}),
             }}
           >
-            {kpiItems.map((item, idx) => (
+            <span
+              className="font-bold leading-none"
+              style={{
+                fontSize: item.key === "total" ? 22 : 18,
+                color: item.key === "total" ? "var(--text-primary)" : item.colorStyle,
+              }}
+            >
+              {item.number}
+            </span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{item.label}</span>
+          </button>
+        );
+
+        return (
+          <>
+            {/* Desktop: full strip */}
+            <div
+              className="hidden sm:flex items-baseline overflow-x-auto max-w-full"
+              style={{
+                padding: "10px 12px",
+                background: "var(--bg-surface)",
+                borderBottom: "1px solid var(--border-subtle)",
+                whiteSpace: "nowrap",
+                WebkitOverflowScrolling: "touch",
+                gap: 0,
+              }}
+            >
+              {kpiItems.map((item, idx) => renderKpiButton(item, idx, kpiItems.length))}
+            </div>
+
+            {/* Mobile: compact summary + Ver mais */}
+            <div
+              className="flex sm:hidden items-baseline w-full"
+              style={{
+                padding: "10px 12px",
+                background: "var(--bg-surface)",
+                borderBottom: "1px solid var(--border-subtle)",
+                gap: 0,
+              }}
+            >
+              <div className="flex items-baseline flex-1 min-w-0 overflow-hidden">
+                {mobileItems.map((item, idx) => renderKpiButton(item, idx, mobileItems.length))}
+              </div>
               <button
-                key={item.key}
                 type="button"
-                onClick={item.onClick}
-                className="inline-flex items-baseline gap-1 transition-colors rounded-md hover:bg-[var(--bg-muted)]"
-                style={{
-                  padding: "2px 14px",
-                  borderRight: idx < kpiItems.length - 1 ? "1px solid var(--border-subtle)" : "none",
-                  cursor: "pointer",
-                  ...(item.isActive ? { backgroundColor: "var(--bg-muted)" } : {}),
-                }}
+                onClick={() => setPendingDashOpen(true)}
+                className="shrink-0 ml-2 text-[11px] font-medium underline whitespace-nowrap"
+                style={{ color: "var(--brand-600, var(--primary))" }}
               >
-                <span
-                  className="font-bold leading-none"
-                  style={{
-                    fontSize: item.key === "total" ? 24 : 20,
-                    color: item.key === "total" ? "var(--text-primary)" : item.colorStyle,
-                  }}
-                >
-                  {item.number}
-                </span>
-                <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{item.label}</span>
+                Ver mais
               </button>
-            ))}
-          </div>
+            </div>
+          </>
         );
       })()}
 
