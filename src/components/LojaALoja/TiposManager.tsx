@@ -849,6 +849,7 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                       pecaCount={getTipoCount(tipo)}
                       canEdit={canEdit}
                       canDelete={canDelete}
+                      onSelect={() => handleSelectTipo(tipo)}
                       onStartEdit={() => { setEditingTipoId(tipo.id); setEditingTipoNome(tipo.nome); }}
                       onSaveEdit={handleSaveEditTipo}
                       onCancelEdit={() => setEditingTipoId(null)}
@@ -870,6 +871,7 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                                   pecaCount={pecaCountByTipo[`sub:${sub.id}`] || 0}
                                   canEdit={canEdit}
                                   canDelete={canDelete}
+                                  onSelect={() => handleSelectSub(sub)}
                                   onStartEdit={() => { setEditingSubId(sub.id); setEditingSubNome(sub.nome); }}
                                   onSaveEdit={handleSaveEditSub}
                                   onCancelEdit={() => setEditingSubId(null)}
