@@ -461,7 +461,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           </button>
         </div>
 
-        <span className="text-lg font-semibold flex-1 text-center" style={{ color: "var(--text-primary)" }}>Ocorrências</span>
+        <span className="text-base sm:text-lg font-semibold sm:flex-1 sm:text-center order-first sm:order-none w-full sm:w-auto" style={{ color: "var(--text-primary)" }}>Ocorrências</span>
 
         {/* Period button */}
         <Popover>
