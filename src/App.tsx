@@ -28,6 +28,7 @@ import PublicOccurrenceDetail from "./pages/PublicOccurrenceDetail";
 
 import MyCampaigns from "./pages/MyCampaigns";
 import Favorites from "./pages/Favorites";
+import MeuAcesso from "./pages/MeuAcesso";
 import PhotoCheckin from "./pages/PhotoCheckin";
 import InstallerPortal from "./pages/InstallerPortal";
 import Unsubscribe from "./pages/Unsubscribe";
@@ -136,11 +137,7 @@ const HomeRedirect = () => {
   }
 
   if (isLimited) {
-    const agencyIds = Array.from(new Set(campaigns.map((c) => c.agencyId).filter(Boolean)));
-    if (agencyIds.length === 1) {
-      return <Navigate to={`/agency/${agencyIds[0]}`} replace />;
-    }
-    return <Navigate to="/agencies" replace />;
+    return <Navigate to="/meu-acesso" replace />;
   }
 
   return <Navigate to="/agencies" replace />;
@@ -187,6 +184,7 @@ const App = () => (
               
               <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
               <Route path="/favorites" element={<ProtectedRoute><Favorites /></ProtectedRoute>} />
+              <Route path="/meu-acesso" element={<ProtectedRoute><MeuAcesso /></ProtectedRoute>} />
               <Route path="/installer" element={<InstallerPortal />} />
               <Route path="/instalador" element={<InstallerPortal />} />
               <Route path="/orcamento/:token" element={<SupplierPortal />} />
