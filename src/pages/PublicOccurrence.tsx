@@ -11,7 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator,
 } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle2, Send, Package, X, ImagePlus, Plus, Trash2, Boxes } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
+import { AlertTriangle, CheckCircle2, Send, Package, X, ImagePlus, Plus, Trash2, Boxes, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 
