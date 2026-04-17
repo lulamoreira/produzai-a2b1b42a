@@ -440,7 +440,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   return (
     <div className="space-y-0">
       {/* LAYER 1 — Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b" style={{ borderColor: "var(--border-subtle)", minHeight: 44 }}>
+      <div className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-2 border-b" style={{ borderColor: "var(--border-subtle)", minHeight: 44 }}>
         {/* View toggle */}
         <div className="flex rounded-md border overflow-hidden shrink-0" style={{ borderColor: "var(--border-default)" }}>
           <button
@@ -461,7 +461,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           </button>
         </div>
 
-        <span className="text-lg font-semibold flex-1 text-center" style={{ color: "var(--text-primary)" }}>Ocorrências</span>
+        <span className="text-base sm:text-lg font-semibold sm:flex-1 sm:text-center order-first sm:order-none w-full sm:w-auto" style={{ color: "var(--text-primary)" }}>Ocorrências</span>
 
         {/* Period button */}
         <Popover>
@@ -659,9 +659,9 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
 
         return (
           <div
-            className="flex items-baseline overflow-x-auto"
+            className="flex items-baseline overflow-x-auto max-w-full"
             style={{
-              padding: "10px 16px",
+              padding: "10px 12px",
               background: "var(--bg-surface)",
               borderBottom: "1px solid var(--border-subtle)",
               whiteSpace: "nowrap",
@@ -784,19 +784,19 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           </DropdownMenu>
 
           {/* Store search */}
-          <div className="relative flex-1 min-w-[160px] sm:max-w-[240px]">
+          <div className="relative w-full sm:flex-1 sm:min-w-[160px] sm:max-w-[240px]">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: "var(--text-muted)" }} />
             <Input
               placeholder="Nome, apelido ou código"
               value={searchStore}
               onChange={(e) => setSearchStore(e.target.value)}
-              className="h-8 text-xs pl-7"
+              className="h-8 text-xs pl-7 w-full"
             />
           </div>
 
           {/* State select */}
           <Select value={filterState || "__all__"} onValueChange={(v) => setFilterState(v === "__all__" ? "" : v)}>
-            <SelectTrigger className="h-8 text-xs w-20 sm:w-24 shrink-0"><SelectValue placeholder="UF" /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs flex-1 sm:flex-none sm:w-24 min-w-0"><SelectValue placeholder="UF" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">UF</SelectItem>
               {stateOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -805,7 +805,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
 
           {/* City select */}
           <Select value={filterCity || "__all__"} onValueChange={(v) => setFilterCity(v === "__all__" ? "" : v)}>
-            <SelectTrigger className="h-8 text-xs flex-1 min-w-[110px] sm:flex-none sm:w-32 shrink-0"><SelectValue placeholder="Cidade" /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs flex-1 sm:flex-none sm:w-32 min-w-0"><SelectValue placeholder="Cidade" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Cidade</SelectItem>
               {cityOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -813,7 +813,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           </Select>
 
           {/* Date range */}
-          <div className="flex items-center gap-1 flex-1 sm:flex-none min-w-[200px] sm:min-w-0">
+          <div className="flex items-center gap-1 w-full sm:w-auto sm:flex-none">
             <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="h-8 text-xs flex-1 sm:w-32 min-w-0" />
             <span className="text-[11px] shrink-0" style={{ color: "var(--text-muted)" }}>→</span>
             <Input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="h-8 text-xs flex-1 sm:w-32 min-w-0" />
