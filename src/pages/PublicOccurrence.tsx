@@ -11,7 +11,10 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel, SelectSeparator,
 } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle2, Send, Package, X, ImagePlus, Plus, Trash2, Boxes } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
+import { AlertTriangle, CheckCircle2, Send, Package, X, ImagePlus, Plus, Trash2, Boxes, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 
@@ -379,54 +382,42 @@ const PublicOccurrence = () => {
 
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">Identifique-se *</label>
-              <Select value={reporterType || storeId} onValueChange={(val) => {
-                if (val === SPECIAL_AGENCY || val === SPECIAL_FORNECEDOR || val === SPECIAL_CLIENTE) {
-                  setReporterType(val);
-                  setStoreId("");
-                  setSpecialStoreId("");
-                  setReporterName("");
-                  setPhoneDDD("");
-                  setPhoneNumber("");
-                  setReporterEmail("");
-                } else {
-                  setReporterType("");
-                  setStoreId(val);
-                  setSpecialStoreId("");
-                  const selected = stores.find((s) => s.id === val);
-                  if (selected) {
-                    if (selected.phone) {
-                      const digits = selected.phone.replace(/\D/g, "");
-                      setPhoneDDD(digits.slice(0, 2));
-                      setPhoneNumber(digits.slice(2));
+              <ReporterCombobox
+                value={reporterType || storeId}
+                stores={stores}
+                agencyName={agencyName}
+                clientName={clientName2}
+                onChange={(val) => {
+                  if (val === SPECIAL_AGENCY || val === SPECIAL_FORNECEDOR || val === SPECIAL_CLIENTE) {
+                    setReporterType(val);
+                    setStoreId("");
+                    setSpecialStoreId("");
+                    setReporterName("");
+                    setPhoneDDD("");
+                    setPhoneNumber("");
+                    setReporterEmail("");
+                  } else {
+                    setReporterType("");
+                    setStoreId(val);
+                    setSpecialStoreId("");
+                    const selected = stores.find((s) => s.id === val);
+                    if (selected) {
+                      if (selected.phone) {
+                        const digits = selected.phone.replace(/\D/g, "");
+                        setPhoneDDD(digits.slice(0, 2));
+                        setPhoneNumber(digits.slice(2));
+                      }
+                      if (selected.email) setReporterEmail(selected.email);
                     }
-                    if (selected.email) setReporterEmail(selected.email);
                   }
-                }
-              }}>
-                <SelectTrigger><SelectValue placeholder="Selecione quem está reportando" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={SPECIAL_AGENCY}>{agencyName}</SelectItem>
-                  <SelectItem value={SPECIAL_CLIENTE}>{clientName2}</SelectItem>
-                  <SelectItem value={SPECIAL_FORNECEDOR}>Fornecedor</SelectItem>
-                  <SelectSeparator />
-                  {stores.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.nickname || s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                }}
+              />
             </div>
 
             {isSpecialReporter && (
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">Loja relacionada *</label>
-                <Select value={specialStoreId} onValueChange={setSpecialStoreId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione a loja" /></SelectTrigger>
-                  <SelectContent>
-                    {stores.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.nickname || s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <StoreCombobox value={specialStoreId} stores={stores} onChange={setSpecialStoreId} />
               </div>
             )}
 
@@ -685,6 +676,171 @@ const PublicOccurrence = () => {
         </form>
       </main>
     </div>
+  );
+};
+
+type StoreOption = { id: string; name: string; nickname?: string | null; phone?: string | null; email?: string | null };
+
+const StoreCombobox = ({
+  value,
+  stores,
+  onChange,
+  placeholder = "Selecione a loja",
+}: {
+  value: string;
+  stores: StoreOption[];
+  onChange: (id: string) => void;
+  placeholder?: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  const selected = stores.find((s) => s.id === value);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className={cn("truncate", !selected && "text-muted-foreground")}>
+            {selected ? selected.nickname || selected.name : placeholder}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command
+          filter={(itemValue, search) => {
+            const s = search.toLowerCase();
+            return itemValue.toLowerCase().includes(s) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Buscar loja..." />
+          <CommandList>
+            <CommandEmpty>Nenhuma loja encontrada.</CommandEmpty>
+            <CommandGroup>
+              {stores.map((s) => {
+                const label = s.nickname || s.name;
+                const searchValue = `${s.nickname || ""} ${s.name}`.trim();
+                return (
+                  <CommandItem
+                    key={s.id}
+                    value={searchValue}
+                    onSelect={() => {
+                      onChange(s.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", value === s.id ? "opacity-100" : "opacity-0")} />
+                    <span className="truncate">{label}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
+const ReporterCombobox = ({
+  value,
+  stores,
+  agencyName,
+  clientName,
+  onChange,
+}: {
+  value: string;
+  stores: StoreOption[];
+  agencyName: string;
+  clientName: string;
+  onChange: (val: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const specialLabel =
+    value === SPECIAL_AGENCY
+      ? agencyName
+      : value === SPECIAL_CLIENTE
+      ? clientName
+      : value === SPECIAL_FORNECEDOR
+      ? "Fornecedor"
+      : null;
+  const selectedStore = stores.find((s) => s.id === value);
+  const display = specialLabel ?? (selectedStore ? selectedStore.nickname || selectedStore.name : null);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className={cn("truncate", !display && "text-muted-foreground")}>
+            {display || "Selecione quem está reportando"}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command
+          filter={(itemValue, search) => {
+            const s = search.toLowerCase();
+            return itemValue.toLowerCase().includes(s) ? 1 : 0;
+          }}
+        >
+          <CommandInput placeholder="Buscar..." />
+          <CommandList>
+            <CommandEmpty>Nada encontrado.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                value={agencyName}
+                onSelect={() => { onChange(SPECIAL_AGENCY); setOpen(false); }}
+              >
+                <Check className={cn("mr-2 h-4 w-4", value === SPECIAL_AGENCY ? "opacity-100" : "opacity-0")} />
+                {agencyName}
+              </CommandItem>
+              <CommandItem
+                value={clientName}
+                onSelect={() => { onChange(SPECIAL_CLIENTE); setOpen(false); }}
+              >
+                <Check className={cn("mr-2 h-4 w-4", value === SPECIAL_CLIENTE ? "opacity-100" : "opacity-0")} />
+                {clientName}
+              </CommandItem>
+              <CommandItem
+                value="Fornecedor"
+                onSelect={() => { onChange(SPECIAL_FORNECEDOR); setOpen(false); }}
+              >
+                <Check className={cn("mr-2 h-4 w-4", value === SPECIAL_FORNECEDOR ? "opacity-100" : "opacity-0")} />
+                Fornecedor
+              </CommandItem>
+            </CommandGroup>
+            <CommandSeparator />
+            <CommandGroup heading="Lojas">
+              {stores.map((s) => {
+                const label = s.nickname || s.name;
+                const searchValue = `${s.nickname || ""} ${s.name}`.trim();
+                return (
+                  <CommandItem
+                    key={s.id}
+                    value={searchValue}
+                    onSelect={() => { onChange(s.id); setOpen(false); }}
+                  >
+                    <Check className={cn("mr-2 h-4 w-4", value === s.id ? "opacity-100" : "opacity-0")} />
+                    <span className="truncate">{label}</span>
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 };
 
