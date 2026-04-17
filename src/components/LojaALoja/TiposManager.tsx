@@ -815,18 +815,8 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                       isEditing={editingTipoId === tipo.id}
                       editingNome={editingTipoNome}
                       pecaCount={getTipoCount(tipo)}
-                      isAdmin={isAdmin}
-                      onSelect={() => handleSelectTipo(tipo)}
-                      onStartEdit={() => { setEditingTipoId(tipo.id); setEditingTipoNome(tipo.nome); }}
-                      onSaveEdit={handleSaveEditTipo}
-                      onCancelEdit={() => setEditingTipoId(null)}
-                      onChangeEditNome={setEditingTipoNome}
-                      onDelete={() => setDeletingTipo({ id: tipo.id, nome: tipo.nome })}
-                    />
-                  ))}
-                </SortableContext>
-              </DndContext>
-              {isAdmin && renderAddTipoForm("vitrines")}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
             </div>
 
             {/* Internos section */}
@@ -846,8 +836,8 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                       isEditing={editingTipoId === tipo.id}
                       editingNome={editingTipoNome}
                       pecaCount={getTipoCount(tipo)}
-                      isAdmin={isAdmin}
-                      onSelect={() => handleSelectTipo(tipo)}
+                      canEdit={canEdit}
+                      canDelete={canDelete}
                       onStartEdit={() => { setEditingTipoId(tipo.id); setEditingTipoNome(tipo.nome); }}
                       onSaveEdit={handleSaveEditTipo}
                       onCancelEdit={() => setEditingTipoId(null)}
@@ -867,8 +857,8 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                                   isEditing={editingSubId === sub.id}
                                   editingNome={editingSubNome}
                                   pecaCount={pecaCountByTipo[`sub:${sub.id}`] || 0}
-                                  isAdmin={isAdmin}
-                                  onSelect={() => handleSelectSub(sub)}
+                                  canEdit={canEdit}
+                                  canDelete={canDelete}
                                   onStartEdit={() => { setEditingSubId(sub.id); setEditingSubNome(sub.nome); }}
                                   onSaveEdit={handleSaveEditSub}
                                   onCancelEdit={() => setEditingSubId(null)}
@@ -879,8 +869,7 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                             </SortableContext>
                           </DndContext>
 
-                          {isAdmin && (
-                            addingSubForTipoId === tipo.id ? (
+                          {canEdit && (
                               <div className="flex items-center gap-1 px-2">
                                 <Input
                                   value={newSubNome}
@@ -912,7 +901,7 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                   ))}
                 </SortableContext>
               </DndContext>
-              {isAdmin && renderAddTipoForm("internos")}
+              {canEdit && renderAddTipoForm("internos")}
             </div>
           </>
         )}
@@ -931,8 +920,7 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
               <h3 className="text-sm font-semibold text-foreground">
                 Peças {selectedTipo ? `— ${selectedTipo.letra} ${selectedTipo.nome}` : ""}
               </h3>
-              {isAdmin && (
-                <Button size="sm" className="h-7 text-xs" onClick={() => setShowAddPeca(true)}>
+              {canEdit && (
                   <Plus className="w-3 h-3 mr-1" /> Peça
                 </Button>
               )}
@@ -959,15 +947,15 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                         <SortablePieceCard
                           key={peca.id}
                           peca={peca}
-                          isAdmin={isAdmin}
-                          isDragOverImage={isDragOver}
+                          canEdit={canEdit}
+                          canDelete={canDelete}
                           isUploading={isUploading}
                           isEditingName={isEditingName}
                           editingNome={editingPecaNome}
                           onDragOverImage={() => setDragOverPecaId(peca.id)}
                           onDragLeaveImage={() => { if (dragOverPecaId === peca.id) setDragOverPecaId(null); }}
                           onDropImage={(file) => uploadPecaImage(file, peca.id)}
-                          onClickImage={() => { if (isAdmin) fileInputRefs.current[peca.id]?.click(); }}
+                          onClickImage={() => { if (canEdit) fileInputRefs.current[peca.id]?.click(); }}
                           fileInputRef={(el) => { fileInputRefs.current[peca.id] = el; }}
                           onFileChange={(e) => { const file = e.target.files?.[0]; e.target.value = ""; if (file) uploadPecaImage(file, peca.id); }}
                           onStartEditName={() => { setEditingPecaId(peca.id); setEditingPecaNome(peca.nome); }}
