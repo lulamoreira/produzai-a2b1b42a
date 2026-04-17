@@ -131,12 +131,12 @@ const HomeRedirect = () => {
     );
   }
 
-  if (hasFavorites) {
-    return <Navigate to="/favorites" replace />;
-  }
-
   if (isLimited) {
     return <Navigate to="/meu-acesso" replace />;
+  }
+
+  if (hasFavorites) {
+    return <Navigate to="/favorites" replace />;
   }
 
   return <Navigate to="/agencies" replace />;
