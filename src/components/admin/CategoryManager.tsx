@@ -335,20 +335,52 @@ export default function CategoryManager() {
               <label className="text-sm font-medium">✅ Ver Check-in de Fotos para Ocorrências</label>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={!!form.can_view_loja_a_loja}
-                onCheckedChange={checked => setForm(f => ({ ...f, can_view_loja_a_loja: !!checked }))}
-              />
-              <label className="text-sm font-medium">🏪 Ver Loja a Loja</label>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={!!form.can_edit_loja_a_loja}
-                onCheckedChange={checked => setForm(f => ({ ...f, can_edit_loja_a_loja: !!checked }))}
-              />
-              <label className="text-sm font-medium">🏪 Editar Loja a Loja</label>
+            {/* Loja a Loja sub-matrix */}
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="bg-muted/30 px-3 py-2 flex items-center justify-between">
+                <span className="text-sm font-semibold">🏪 Loja a Loja</span>
+                <span className="text-[10px] text-muted-foreground">Clique no cabeçalho da coluna para alternar tudo</span>
+              </div>
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-muted/20">
+                    <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Sub-área</th>
+                    {PERMISSIONS.map(p => (
+                      <th key={p.key} className="text-center text-xs font-medium text-muted-foreground px-2 py-2 w-20">
+                        <button
+                          type="button"
+                          onClick={() => setLalColumn(p.key, !isLalColumnAllOn(p.key))}
+                          className="flex items-center justify-center gap-1 mx-auto hover:text-foreground transition-colors"
+                          title={`Alternar todos: ${p.label}`}
+                        >
+                          {p.icon} {p.label}
+                        </button>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {LAL_SUBAREAS.map((s, i) => (
+                    <tr key={s.key} className={i % 2 === 0 ? "bg-card" : "bg-muted/10"}>
+                      <td className="text-sm font-medium px-3 py-2.5">
+                        {s.label}
+                        {s.isMaster && <span className="ml-1 text-[10px] text-muted-foreground">(controla todas)</span>}
+                      </td>
+                      {PERMISSIONS.map(p => (
+                        <td key={p.key} className="text-center px-2 py-2.5">
+                          <Checkbox
+                            checked={isLalCellChecked(p.key, s.key)}
+                            onCheckedChange={checked => {
+                              if (s.isMaster) setLalGeneral(p.key, !!checked);
+                              else setLalCell(p.key, s.key, !!checked);
+                            }}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
             <Button onClick={handleSave} className="w-full" disabled={addCategory.isPending || updateCategory.isPending}>
