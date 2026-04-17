@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 const MeuAcesso = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isLimited, campaigns: directCampaigns, isLoading: directLoading } = useUserDirectAccess();
+  const { isLimited, campaigns: directCampaigns, clients: directClients, isLoading: directLoading } = useUserDirectAccess();
   const { data: favorites, isLoading: favLoading } = useCampaignFavorites();
   const toggleFavorite = useToggleFavorite();
 
