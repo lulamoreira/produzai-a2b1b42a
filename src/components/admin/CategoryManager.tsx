@@ -39,6 +39,21 @@ type PermKey = typeof PERMISSIONS[number]["key"];
 const getField = (form: any, perm: PermKey, mod: ModuleKey): boolean => form[`can_${perm}_${mod}`] ?? false;
 const setField = (form: any, perm: PermKey, mod: ModuleKey, val: boolean) => ({ ...form, [`can_${perm}_${mod}`]: val });
 
+const LAL_SUBAREAS = [
+  { key: "loja_a_loja", label: "Geral (Master)", isMaster: true },
+  { key: "lal_estrutura", label: "Estrutura" },
+  { key: "lal_classificacao", label: "Classificação" },
+  { key: "lal_acessos", label: "Acessos" },
+  { key: "lal_config", label: "Configuração" },
+  { key: "lal_ocorrencias", label: "Ocorrências" },
+] as const;
+
+type LalKey = typeof LAL_SUBAREAS[number]["key"];
+const LAL_SUB_KEYS: LalKey[] = ["lal_estrutura", "lal_classificacao", "lal_acessos", "lal_config", "lal_ocorrencias"];
+const LAL_ALL_KEYS: string[] = LAL_SUBAREAS.flatMap(s =>
+  PERMISSIONS.map(p => `can_${p.key}_${s.key}`)
+);
+
 const defaultForm = (): Omit<PermissionCategory, "id" | "created_at"> => ({
   name: "",
   can_view_clients: true, can_edit_clients: false, can_delete_clients: false,
@@ -55,6 +70,12 @@ const defaultForm = (): Omit<PermissionCategory, "id" | "created_at"> => ({
   can_view_photo_checkin: false,
   can_view_loja_a_loja: false,
   can_edit_loja_a_loja: false,
+  can_delete_loja_a_loja: false,
+  can_view_lal_estrutura: false, can_edit_lal_estrutura: false, can_delete_lal_estrutura: false,
+  can_view_lal_classificacao: false, can_edit_lal_classificacao: false, can_delete_lal_classificacao: false,
+  can_view_lal_acessos: false, can_edit_lal_acessos: false, can_delete_lal_acessos: false,
+  can_view_lal_config: false, can_edit_lal_config: false, can_delete_lal_config: false,
+  can_view_lal_ocorrencias: false, can_edit_lal_ocorrencias: false, can_delete_lal_ocorrencias: false,
 });
 
 export default function CategoryManager() {
