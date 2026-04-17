@@ -54,7 +54,7 @@ export function useUserDirectAccess() {
           permission_categories (
             can_view_stores, can_view_campaign_stores, can_view_pieces,
             can_view_occurrences, can_view_schedules, can_view_campaigns,
-            can_view_installations
+            can_view_installations, can_view_loja_a_loja
           )
         `)
         .eq("user_id", user.id)
