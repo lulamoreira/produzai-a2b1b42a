@@ -39,8 +39,17 @@ const MeuAcesso = () => {
     a[1].clientName.localeCompare(b[1].clientName, "pt-BR")
   );
 
+  // Derive unique clients with campaign counts
+  const uniqueClients = clientGroups.map(([clientId, group]) => ({
+    clientId,
+    clientName: group.clientName,
+    agencyId: group.agencyId,
+    campaignCount: group.campaigns.length,
+  }));
+
   const hasFavorites = favorites && favorites.length > 0;
   const hasCampaigns = directCampaigns.length > 0;
+  const hasClients = uniqueClients.length > 0;
 
   return (
     <AppLayout>
