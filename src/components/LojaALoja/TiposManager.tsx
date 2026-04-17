@@ -212,7 +212,8 @@ function SortableSubRow({
   isEditing,
   editingNome,
   pecaCount,
-  isAdmin,
+  canEdit,
+  canDelete,
   onSelect,
   onStartEdit,
   onSaveEdit,
@@ -225,7 +226,8 @@ function SortableSubRow({
   isEditing: boolean;
   editingNome: string;
   pecaCount: number;
-  isAdmin: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   onSelect: () => void;
   onStartEdit: () => void;
   onSaveEdit: () => void;
@@ -270,14 +272,18 @@ function SortableSubRow({
         <>
           <span className="truncate flex-1">{sub.nome}</span>
           {pecaCount > 0 && <span className="text-[10px] text-muted-foreground font-normal">{pecaCount}</span>}
-          {isAdmin && (
+          {(canEdit || canDelete) && (
             <div className="flex items-center gap-0.5 opacity-0 group-hover/sub:opacity-100">
-              <Button size="icon" variant="ghost" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); onStartEdit(); }}>
-                <Pencil className="w-3 h-3" />
-              </Button>
-              <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
-                <Trash2 className="w-3 h-3" />
-              </Button>
+              {canEdit && (
+                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); onStartEdit(); }}>
+                  <Pencil className="w-3 h-3" />
+                </Button>
+              )}
+              {canDelete && (
+                <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              )}
             </div>
           )}
         </>
@@ -289,7 +295,8 @@ function SortableSubRow({
 /* ── Sortable Piece Card ── */
 function SortablePieceCard({
   peca,
-  isAdmin,
+  canEdit,
+  canDelete,
   isDragOverImage,
   isUploading,
   isEditingName,
@@ -307,7 +314,8 @@ function SortablePieceCard({
   onDelete,
 }: {
   peca: LojaALojaPeca;
-  isAdmin: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   isDragOverImage: boolean;
   isUploading: boolean;
   isEditingName: boolean;
@@ -342,16 +350,18 @@ function SortablePieceCard({
       onDrop={(e) => { e.preventDefault(); onDragLeaveImage(); const file = e.dataTransfer.files?.[0]; if (file) onDropImage(file); }}
     >
       {/* Drag handle */}
-      <div className="absolute top-1 left-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button
-          type="button"
-          className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="w-3 h-3 text-white" />
-        </button>
-      </div>
+      {canEdit && (
+        <div className="absolute top-1 left-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="w-3 h-3 text-white" />
+          </button>
+        </div>
+      )}
 
       <div
         className={cn(
@@ -362,7 +372,7 @@ function SortablePieceCard({
               ? "border-border bg-muted/30"
               : "border-dashed border-border bg-muted/20 hover:border-primary/40",
         )}
-        onClick={() => { if (!isUploading) onClickImage(); }}
+        onClick={() => { if (!isUploading && canEdit) onClickImage(); }}
       >
         <input
           ref={fileInputRef}
@@ -377,7 +387,7 @@ function SortablePieceCard({
         ) : (
           <div className="flex flex-col items-center gap-1 text-muted-foreground/40">
             <Image className="w-6 h-6" />
-            {isAdmin && <span className="text-[9px]">Arraste ou clique</span>}
+            {canEdit && <span className="text-[9px]">Arraste ou clique</span>}
           </div>
         )}
 
@@ -393,20 +403,26 @@ function SortablePieceCard({
           </div>
         )}
 
-        {isAdmin && !isUploading && !isDragOverImage && (
+        {(canEdit || canDelete) && !isUploading && !isDragOverImage && (
           <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button type="button" className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center transition-colors" title="Editar nome"
-              onClick={(e) => { e.stopPropagation(); onStartEditName(); }}>
-              <Pencil className="w-3 h-3 text-white" />
-            </button>
-            <button type="button" className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center transition-colors" title="Trocar foto"
-              onClick={(e) => { e.stopPropagation(); onClickImage(); }}>
-              <ImagePlus className="w-3 h-3 text-white" />
-            </button>
-            <button type="button" className="h-6 w-6 rounded bg-foreground/70 hover:bg-destructive flex items-center justify-center transition-colors" title="Apagar"
-              onClick={(e) => { e.stopPropagation(); onDelete(); }}>
-              <Trash2 className="w-3 h-3 text-white" />
-            </button>
+            {canEdit && (
+              <>
+                <button type="button" className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center transition-colors" title="Editar nome"
+                  onClick={(e) => { e.stopPropagation(); onStartEditName(); }}>
+                  <Pencil className="w-3 h-3 text-white" />
+                </button>
+                <button type="button" className="h-6 w-6 rounded bg-foreground/70 hover:bg-[#8C6F4E] flex items-center justify-center transition-colors" title="Trocar foto"
+                  onClick={(e) => { e.stopPropagation(); onClickImage(); }}>
+                  <ImagePlus className="w-3 h-3 text-white" />
+                </button>
+              </>
+            )}
+            {canDelete && (
+              <button type="button" className="h-6 w-6 rounded bg-foreground/70 hover:bg-destructive flex items-center justify-center transition-colors" title="Apagar"
+                onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                <Trash2 className="w-3 h-3 text-white" />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -427,7 +443,9 @@ function SortablePieceCard({
   );
 }
 
-const TiposManager = ({ campaignId, isAdmin }: TiposManagerProps) => {
+const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
+  const canEdit = permissions.canEdit;
+  const canDelete = permissions.canDelete;
   const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: allPecas } = useAllLojaALojaPecas(campaignId);
 
