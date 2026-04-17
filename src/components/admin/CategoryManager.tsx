@@ -4,13 +4,19 @@ import {
   useUpdatePermissionCategory, useDeletePermissionCategory,
   type PermissionCategory,
 } from "@/hooks/usePermissionCategories";
-import { Plus, Edit3, Trash2, Eye, Pencil, X } from "lucide-react";
+import { Plus, Edit3, Trash2, Eye, Pencil, X, CheckSquare, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Accordion, AccordionContent, AccordionItem, AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -120,6 +126,16 @@ export default function CategoryManager() {
     return count;
   };
 
+  // Module column toggle helpers
+  const isModuleColumnAllOn = (perm: PermKey) =>
+    MODULES.every(m => getField(form, perm, m.key));
+  const setModuleColumn = (perm: PermKey, val: boolean) =>
+    setForm(f => {
+      const next = { ...f } as Record<string, unknown>;
+      for (const m of MODULES) next[`can_${perm}_${m.key}`] = val;
+      return next as typeof f;
+    });
+
   // LAL helpers for the sub-matrix
   const isLalCellChecked = (perm: PermKey, sub: LalKey) =>
     !!(form as Record<string, unknown>)[`can_${perm}_${sub}`];
@@ -161,13 +177,13 @@ export default function CategoryManager() {
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-foreground text-base">{cat.name}</h3>
                 <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(cat)}>
-                    <Edit3 className="w-3.5 h-3.5" />
+                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => openEdit(cat)}>
+                    <Edit3 className="w-4 h-4" />
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
-                        <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                      <Button variant="ghost" size="icon" className="h-9 w-9">
+                        <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -195,9 +211,9 @@ export default function CategoryManager() {
                     <div key={m.key} className="flex items-center gap-2">
                       <span className="text-xs w-28 truncate text-muted-foreground">{m.icon} {m.label}</span>
                       <div className="flex gap-1">
-                        {hasView && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--bg-muted)", color: "var(--text-secondary)" }}>Ver</span>}
-                        {hasEdit && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--bg-muted)", color: "var(--text-secondary)" }}>Editar</span>}
-                        {hasDelete && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: "var(--s-danger-bg)", color: "var(--s-danger)" }}>Apagar</span>}
+                        {hasView && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Ver</span>}
+                        {hasEdit && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Editar</span>}
+                        {hasDelete && <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">Apagar</span>}
                       </div>
                     </div>
                   );
@@ -259,131 +275,258 @@ export default function CategoryManager() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editing ? "Editar Categoria" : "Nova Categoria"}</DialogTitle>
+        <DialogContent className="max-w-3xl w-[95vw] p-0 gap-0 max-h-[90vh] flex flex-col overflow-hidden">
+          {/* Sticky Header */}
+          <DialogHeader className="px-5 py-4 border-b border-border bg-card shrink-0">
+            <DialogTitle className="text-base">
+              {editing ? `Editar Categoria${form.name ? ` — ${form.name}` : ""}` : "Nova Categoria"}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-foreground mb-1 block">Nome</label>
-              <Input
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="Ex: Editor, Visualizador, Equipe de Campo"
-              />
-            </div>
 
-            <div className="border border-border rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-muted/30">
-                    <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Módulo</th>
-                    {PERMISSIONS.map(p => (
-                      <th key={p.key} className="text-center text-xs font-medium text-muted-foreground px-2 py-2 w-20">
-                        <div className="flex items-center justify-center gap-1">{p.icon} {p.label}</div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {MODULES.map((m, i) => (
-                    <tr key={m.key} className={i % 2 === 0 ? "bg-card" : "bg-muted/10"}>
-                      <td className="text-sm font-medium px-3 py-2.5">{m.icon} {m.label}</td>
-                      {PERMISSIONS.map(p => (
-                        <td key={p.key} className="text-center px-2 py-2.5">
-                          <Checkbox
-                            checked={getField(form, p.key, m.key)}
-                            onCheckedChange={checked => setForm(f => setField(f, p.key, m.key, !!checked))}
-                          />
-                        </td>
+          {/* Scrollable Body */}
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            <TooltipProvider delayDuration={200}>
+              <Accordion type="multiple" defaultValue={["info", "modules", "advanced", "lal"]} className="space-y-3">
+                {/* 1. Information */}
+                <AccordionItem value="info" className="border border-border rounded-lg px-3 [&[data-state=open]]:bg-muted/10">
+                  <AccordionTrigger className="text-sm font-medium hover:no-underline py-3">
+                    Informações
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4">
+                    <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nome da categoria</label>
+                    <Input
+                      value={form.name}
+                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                      placeholder="Ex: Editor, Visualizador, Equipe de Campo"
+                      className="h-10"
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* 2. Main modules */}
+                <AccordionItem value="modules" className="border border-border rounded-lg px-3 [&[data-state=open]]:bg-muted/10">
+                  <AccordionTrigger className="text-sm font-medium hover:no-underline py-3">
+                    Módulos principais
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4">
+                    {/* Desktop table */}
+                    <div className="hidden md:block border border-border rounded-lg overflow-hidden bg-card">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-muted/40">
+                            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Módulo</th>
+                            {PERMISSIONS.map(p => {
+                              const allOn = isModuleColumnAllOn(p.key);
+                              return (
+                                <th key={p.key} className="text-center text-xs font-medium text-muted-foreground px-2 py-2 w-24">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button
+                                        type="button"
+                                        onClick={() => setModuleColumn(p.key, !allOn)}
+                                        className="inline-flex items-center justify-center gap-1 mx-auto px-2 py-1 rounded hover:bg-background hover:text-foreground transition-colors"
+                                      >
+                                        {allOn ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+                                        {p.icon} {p.label}
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Marcar/desmarcar tudo: {p.label}</TooltipContent>
+                                  </Tooltip>
+                                </th>
+                              );
+                            })}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {MODULES.map((m, i) => (
+                            <tr key={m.key} className={i % 2 === 0 ? "bg-card" : "bg-muted/10"}>
+                              <td className="text-sm font-medium px-3 py-2.5">{m.icon} {m.label}</td>
+                              {PERMISSIONS.map(p => (
+                                <td key={p.key} className="text-center px-2 py-2.5">
+                                  <Checkbox
+                                    className="h-5 w-5"
+                                    checked={getField(form, p.key, m.key)}
+                                    onCheckedChange={checked => setForm(f => setField(f, p.key, m.key, !!checked))}
+                                  />
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Mobile list */}
+                    <div className="md:hidden space-y-2">
+                      {MODULES.map(m => (
+                        <div key={m.key} className="border border-border rounded-lg p-3 bg-card">
+                          <div className="text-sm font-medium text-foreground mb-2">{m.icon} {m.label}</div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {PERMISSIONS.map(p => {
+                              const checked = getField(form, p.key, m.key);
+                              return (
+                                <label
+                                  key={p.key}
+                                  className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-md border cursor-pointer transition-colors min-h-[40px] ${
+                                    checked ? "bg-primary/10 border-primary/40 text-primary" : "bg-muted/20 border-border text-muted-foreground"
+                                  }`}
+                                >
+                                  <Checkbox
+                                    className="h-4 w-4"
+                                    checked={checked}
+                                    onCheckedChange={c => setForm(f => setField(f, p.key, m.key, !!c))}
+                                  />
+                                  <span className="text-xs font-medium">{p.label}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
                       ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
 
-            <div className="flex items-center gap-3 pt-2 border-t border-border">
-              <Checkbox
-                checked={!!form.can_edit_reporter_data}
-                onCheckedChange={checked => setForm(f => ({ ...f, can_edit_reporter_data: !!checked }))}
-              />
-              <label className="text-sm font-medium">📝 Editar Dados do Lojista (Ocorrências)</label>
-            </div>
+                {/* 3. Advanced permissions */}
+                <AccordionItem value="advanced" className="border border-border rounded-lg px-3 [&[data-state=open]]:bg-muted/10">
+                  <AccordionTrigger className="text-sm font-medium hover:no-underline py-3">
+                    Permissões avançadas
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4">
+                    <div className="grid gap-2 md:grid-cols-2">
+                      {[
+                        { k: "can_edit_reporter_data" as const, label: "📝 Editar Dados do Lojista (Ocorrências)" },
+                        { k: "can_manage_team_codes" as const, label: "🔑 Gerenciar Códigos de Acesso Temporário" },
+                        { k: "can_lock_cards" as const, label: "🔒 Bloquear/Desbloquear Cards" },
+                        { k: "can_view_photo_checkin" as const, label: "✅ Ver Check-in de Fotos" },
+                      ].map(item => {
+                        const checked = !!(form as Record<string, unknown>)[item.k];
+                        return (
+                          <label
+                            key={item.k}
+                            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors min-h-[48px] ${
+                              checked ? "bg-primary/5 border-primary/30" : "bg-card border-border hover:bg-muted/20"
+                            }`}
+                          >
+                            <Checkbox
+                              className="h-5 w-5"
+                              checked={checked}
+                              onCheckedChange={c => setForm(f => ({ ...f, [item.k]: !!c }))}
+                            />
+                            <span className="text-sm font-medium leading-tight">{item.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
 
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={!!form.can_manage_team_codes}
-                onCheckedChange={checked => setForm(f => ({ ...f, can_manage_team_codes: !!checked }))}
-              />
-              <label className="text-sm font-medium">🔑 Gerenciar Códigos de Acesso Temporário</label>
-            </div>
+                {/* 4. Loja a Loja */}
+                <AccordionItem value="lal" className="border border-border rounded-lg px-3 [&[data-state=open]]:bg-muted/10">
+                  <AccordionTrigger className="text-sm font-medium hover:no-underline py-3">
+                    🏪 Loja a Loja
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4">
+                    {/* Desktop table */}
+                    <div className="hidden md:block border border-border rounded-lg overflow-hidden bg-card">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-muted/40">
+                            <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Sub-área</th>
+                            {PERMISSIONS.map(p => {
+                              const allOn = isLalColumnAllOn(p.key);
+                              return (
+                                <th key={p.key} className="text-center text-xs font-medium text-muted-foreground px-2 py-2 w-24">
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button
+                                        type="button"
+                                        onClick={() => setLalColumn(p.key, !allOn)}
+                                        className="inline-flex items-center justify-center gap-1 mx-auto px-2 py-1 rounded hover:bg-background hover:text-foreground transition-colors"
+                                      >
+                                        {allOn ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+                                        {p.icon} {p.label}
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Marcar/desmarcar tudo: {p.label}</TooltipContent>
+                                  </Tooltip>
+                                </th>
+                              );
+                            })}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {LAL_SUBAREAS.map((s, i) => (
+                            <tr key={s.key} className={i % 2 === 0 ? "bg-card" : "bg-muted/10"}>
+                              <td className="text-sm font-medium px-3 py-2.5">
+                                {s.label}
+                                {s.isMaster && <span className="ml-1 text-[10px] text-muted-foreground">(controla todas)</span>}
+                              </td>
+                              {PERMISSIONS.map(p => (
+                                <td key={p.key} className="text-center px-2 py-2.5">
+                                  <Checkbox
+                                    className="h-5 w-5"
+                                    checked={isLalCellChecked(p.key, s.key)}
+                                    onCheckedChange={checked => {
+                                      if (s.isMaster) setLalGeneral(p.key, !!checked);
+                                      else setLalCell(p.key, s.key, !!checked);
+                                    }}
+                                  />
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
 
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={!!form.can_lock_cards}
-                onCheckedChange={checked => setForm(f => ({ ...f, can_lock_cards: !!checked }))}
-              />
-              <label className="text-sm font-medium">🔒 Bloquear/Desbloquear Cards (Ocorrências, Agendamento, Instalações)</label>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={!!form.can_view_photo_checkin}
-                onCheckedChange={checked => setForm(f => ({ ...f, can_view_photo_checkin: !!checked }))}
-              />
-              <label className="text-sm font-medium">✅ Ver Check-in de Fotos para Ocorrências</label>
-            </div>
-
-            {/* Loja a Loja sub-matrix */}
-            <div className="border border-border rounded-lg overflow-hidden">
-              <div className="bg-muted/30 px-3 py-2 flex items-center justify-between">
-                <span className="text-sm font-semibold">🏪 Loja a Loja</span>
-                <span className="text-[10px] text-muted-foreground">Clique no cabeçalho da coluna para alternar tudo</span>
-              </div>
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-muted/20">
-                    <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Sub-área</th>
-                    {PERMISSIONS.map(p => (
-                      <th key={p.key} className="text-center text-xs font-medium text-muted-foreground px-2 py-2 w-20">
-                        <button
-                          type="button"
-                          onClick={() => setLalColumn(p.key, !isLalColumnAllOn(p.key))}
-                          className="flex items-center justify-center gap-1 mx-auto hover:text-foreground transition-colors"
-                          title={`Alternar todos: ${p.label}`}
-                        >
-                          {p.icon} {p.label}
-                        </button>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {LAL_SUBAREAS.map((s, i) => (
-                    <tr key={s.key} className={i % 2 === 0 ? "bg-card" : "bg-muted/10"}>
-                      <td className="text-sm font-medium px-3 py-2.5">
-                        {s.label}
-                        {s.isMaster && <span className="ml-1 text-[10px] text-muted-foreground">(controla todas)</span>}
-                      </td>
-                      {PERMISSIONS.map(p => (
-                        <td key={p.key} className="text-center px-2 py-2.5">
-                          <Checkbox
-                            checked={isLalCellChecked(p.key, s.key)}
-                            onCheckedChange={checked => {
-                              if (s.isMaster) setLalGeneral(p.key, !!checked);
-                              else setLalCell(p.key, s.key, !!checked);
-                            }}
-                          />
-                        </td>
+                    {/* Mobile list */}
+                    <div className="md:hidden space-y-2">
+                      {LAL_SUBAREAS.map(s => (
+                        <div key={s.key} className={`border rounded-lg p-3 ${s.isMaster ? "border-primary/30 bg-primary/5" : "border-border bg-card"}`}>
+                          <div className="text-sm font-medium text-foreground mb-2">
+                            {s.label}
+                            {s.isMaster && <span className="ml-1 text-[10px] text-muted-foreground font-normal">(controla todas)</span>}
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            {PERMISSIONS.map(p => {
+                              const checked = isLalCellChecked(p.key, s.key);
+                              return (
+                                <label
+                                  key={p.key}
+                                  className={`flex items-center justify-center gap-1.5 px-2 py-2 rounded-md border cursor-pointer transition-colors min-h-[40px] ${
+                                    checked ? "bg-primary/10 border-primary/40 text-primary" : "bg-muted/20 border-border text-muted-foreground"
+                                  }`}
+                                >
+                                  <Checkbox
+                                    className="h-4 w-4"
+                                    checked={checked}
+                                    onCheckedChange={c => {
+                                      if (s.isMaster) setLalGeneral(p.key, !!c);
+                                      else setLalCell(p.key, s.key, !!c);
+                                    }}
+                                  />
+                                  <span className="text-xs font-medium">{p.label}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
                       ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </TooltipProvider>
+          </div>
 
-            <Button onClick={handleSave} className="w-full" disabled={addCategory.isPending || updateCategory.isPending}>
+          {/* Sticky Footer */}
+          <div className="px-5 py-3 border-t border-border bg-card shrink-0 flex items-center justify-end gap-2">
+            <Button variant="ghost" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={handleSave}
+              disabled={!form.name.trim() || addCategory.isPending || updateCategory.isPending}
+            >
               {editing ? "Salvar Alterações" : "Criar Categoria"}
             </Button>
           </div>
