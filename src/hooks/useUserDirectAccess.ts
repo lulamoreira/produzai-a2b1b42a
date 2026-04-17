@@ -106,7 +106,14 @@ export function useUserDirectAccess() {
             if (pc.can_view_schedules) entry.modules.add("scheduling");
             if (pc.can_view_installations) entry.modules.add("installations");
             if (pc.can_view_campaigns) entry.modules.add("budgets");
-            if (pc.can_view_loja_a_loja) entry.modules.add("loja_a_loja");
+            const lalView =
+              pc.can_view_loja_a_loja ||
+              pc.can_view_lal_estrutura ||
+              pc.can_view_lal_classificacao ||
+              pc.can_view_lal_acessos ||
+              pc.can_view_lal_config ||
+              pc.can_view_lal_ocorrencias;
+            if (lalView) entry.modules.add("loja_a_loja");
           }
         }
 

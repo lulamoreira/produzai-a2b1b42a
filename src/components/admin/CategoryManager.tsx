@@ -104,8 +104,35 @@ export default function CategoryManager() {
 
   const handleSave = () => {
     if (!form.name.trim()) return;
-    if (editing) updateCategory.mutate({ id: editing.id, ...form });
-    else addCategory.mutate(form);
+    // Auto-promote master LAL flags when any sub-area flag is set, so legacy
+    // visibility checks don't silently hide the module from users that have
+    // been granted granular access.
+    const anyLalView =
+      form.can_view_lal_estrutura ||
+      form.can_view_lal_classificacao ||
+      form.can_view_lal_acessos ||
+      form.can_view_lal_config ||
+      form.can_view_lal_ocorrencias;
+    const anyLalEdit =
+      form.can_edit_lal_estrutura ||
+      form.can_edit_lal_classificacao ||
+      form.can_edit_lal_acessos ||
+      form.can_edit_lal_config ||
+      form.can_edit_lal_ocorrencias;
+    const anyLalDelete =
+      form.can_delete_lal_estrutura ||
+      form.can_delete_lal_classificacao ||
+      form.can_delete_lal_acessos ||
+      form.can_delete_lal_config ||
+      form.can_delete_lal_ocorrencias;
+    const payload = {
+      ...form,
+      can_view_loja_a_loja: form.can_view_loja_a_loja || anyLalView,
+      can_edit_loja_a_loja: form.can_edit_loja_a_loja || anyLalEdit,
+      can_delete_loja_a_loja: form.can_delete_loja_a_loja || anyLalDelete,
+    };
+    if (editing) updateCategory.mutate({ id: editing.id, ...payload });
+    else addCategory.mutate(payload);
     setDialogOpen(false);
   };
 
