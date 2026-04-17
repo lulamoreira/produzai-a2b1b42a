@@ -285,6 +285,8 @@ const Favorites = () => {
               })}
             </div>
           )}
+            </>
+          )}
         </div>
       </div>
     </AppLayout>
