@@ -1,88 +1,60 @@
 
 
-## Plano: adicionar cards de clientes na tela "Meu Acesso"
+## Diagnóstico
+A tela é o **diálogo de Categorias de Permissão** (`CategoryManager.tsx`), aberto via Admin → Categorias → Editar.
 
-### Objetivo
-Para usuários restritos (acesso só a campanhas), mostrar **uma seção de clientes acessíveis** acima da seção atual de campanhas. Cada card de cliente leva à página do cliente (`/agency/:agencyId/clients/:clientId`), onde o usuário verá apenas as campanhas permitidas pela RLS.
+Problemas confirmados no código:
+1. `DialogContent className="max-w-lg"` (≈512px) — estreito demais para 2 tabelas (Módulo×Permissão e Loja a Loja×Permissão).
+2. Sem scroll interno: o `DialogContent` cresce até ultrapassar a viewport e oculta o botão "Salvar" + última linha (visível no print).
+3. Header e footer (botão Salvar) **não são sticky** — somem ao rolar.
+4. Tabelas usam larguras fixas (`w-20`) sem responsividade — em mobile estouram horizontal.
+5. Checkboxes minúsculas, alvos de toque < 44px (viola padrão V2 mobile).
+6. Toggles "Ver/Editar/Apagar" na coluna são botões escondidos (cabeçalho clicável sem affordance visual clara).
 
-### Validação técnica (concluída)
-- `ClientDetail` não bloqueia usuário restrito — apenas exige login.
-- `useCampaigns(clientId)` lê de `campaigns` filtrando por `client_id`. A RLS via `has_campaign_access` garante que usuário restrito só veja as campanhas a que tem acesso direto.
-- `useUserDirectAccess` já retorna `clientId`, `clientName` e `agencyId` em cada `CampaignAccess` — podemos derivar a lista de clientes únicos sem fetch adicional.
+## Redesenho proposto
 
-### Nova estrutura da tela `MeuAcesso.tsx`
+### Layout do diálogo
+- Trocar `max-w-lg` por `max-w-3xl` (desktop) com `w-[95vw]` (mobile).
+- Estrutura interna em 3 zonas com **flex-col + altura máxima**:
+  - **Header sticky** (título + nome da categoria sempre visível)
+  - **Body scrollable** (`overflow-y-auto`, `max-h-[calc(90vh-200px)]`)
+  - **Footer sticky** com botões "Cancelar" + "Salvar" sempre acessíveis
 
-```text
-┌─ Header: "Meu Acesso" ─────────────────────────┐
-│                                                │
-├─ ⭐ Favoritos (se houver) ────────────────────┤
-│   [card campanha] [card campanha] ...          │
-│                                                │
-├─ ─────────── divisor ─────────                │
-│                                                │
-├─ 🏢 Meus Clientes (NOVO) ─────────────────────┤
-│   [card cliente] [card cliente] ...            │
-│   → onClick: /agency/:a/clients/:c             │
-│                                                │
-├─ ─────────── divisor ─────────                │
-│                                                │
-├─ 💼 Minhas Campanhas (existente) ─────────────┤
-│   Cliente A                                    │
-│     [card camp] [card camp]                    │
-│   Cliente B                                    │
-│     [card camp]                                │
-└────────────────────────────────────────────────┘
-```
+### Conteúdo reorganizado em seções colapsáveis
+Dividir em **Accordion** (Radix) com 4 seções, todas abertas por padrão no desktop, fechadas no mobile:
+1. **Informações** — campo Nome
+2. **Módulos principais** — matriz Módulo × (Ver/Editar/Apagar)
+3. **Permissões avançadas** — 4 toggles (Lojista, Códigos, Cards, Check-in) em grid 2 colunas no desktop, 1 no mobile
+4. **Loja a Loja** — sub-matriz dedicada
 
-### Implementação (arquivo único: `src/pages/MeuAcesso.tsx`)
+### Matriz responsiva
+- **Desktop (≥768px)**: tabela tradicional, mas com toggle no header da coluna mostrando "Marcar todos" como botão visível com ícone, não link disfarçado.
+- **Mobile (<768px)**: vira **lista vertical** — cada módulo é um card com 3 toggles em linha (label "Ver / Editar / Apagar"), eliminando scroll horizontal.
 
-1. **Derivar lista única de clientes** a partir de `directCampaigns`:
-   ```ts
-   const uniqueClients = Array.from(
-     new Map(directCampaigns.map(c => [c.clientId, {
-       clientId: c.clientId,
-       clientName: c.clientName,
-       agencyId: c.agencyId,
-       campaignCount: 0,
-     }])).values()
-   );
-   // contar campanhas por cliente
-   directCampaigns.forEach(c => {
-     const entry = uniqueClients.find(u => u.clientId === c.clientId);
-     if (entry) entry.campaignCount++;
-   });
-   uniqueClients.sort((a, b) => a.clientName.localeCompare(b.clientName, "pt-BR"));
-   ```
+### Cards do `UserPermissionCard`
+Redesenho leve para coerência (mesma tela, problemas relacionados):
+- Botões de ação (suspender/remover) em alvo mínimo de 36×36px.
+- Em mobile: empilhar `Select Categoria` + `Badge` + ações em duas linhas para evitar quebra ruim.
+- Linha de adicionar acesso (cliente/agência/campanha): inputs em `flex-col` no mobile, `flex-row` no desktop.
 
-2. **Adicionar nova seção "Meus Clientes"** entre Favoritos e Minhas Campanhas:
-   - Ícone `Building2` + título `t("meuAcesso.myClients", "Meus Clientes")`
-   - Grid `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4`
-   - Cada card:
-     - Mesmo estilo dos cards existentes (`card-base`, borda lateral colorida `#6366f1`)
-     - Avatar inicial do nome do cliente
-     - Nome do cliente (h3)
-     - Subtexto: `"{campaignCount} campanha(s)"`
-     - "Acessar →" no canto inferior
-   - `onClick`: `navigate(/agency/${agencyId}/clients/${clientId})`
+### Acessibilidade & UX
+- Foco visível em todos os controles.
+- Checkboxes com `min-h-[28px] min-w-[28px]` (alvo touch).
+- Cabeçalho de coluna com tooltip "Clique para marcar/desmarcar tudo" + ícone visual.
+- Salvar desabilitado quando nome vazio.
 
-3. **Divisores condicionais**:
-   - Entre Favoritos e Clientes: se ambos existirem
-   - Entre Clientes e Campanhas: se ambos existirem
-   - Manter o atual entre Favoritos e Campanhas só se Clientes não aparecer
+## Arquivos a editar
+- `src/components/admin/CategoryManager.tsx` — redesenho completo do diálogo (estrutura sticky + accordion + responsividade mobile).
+- `src/components/admin/UserPermissionCard.tsx` — pequenos ajustes responsivos no `AccessRow` e formulários de adicionar acesso.
 
-4. **Empty state** atualizado: texto se mantém quando nem favoritos nem campanhas existem (clientes derivam de campanhas, então mesma condição).
+## Não tocar
+- Lógica de `defaultForm`, helpers `setLalCell/setLalGeneral`, hooks de mutação — **zero alteração lógica** (regra V2).
+- Estrutura de tabs em `Admin.tsx`.
+- Permissões e categorias no banco.
 
-5. **Imports**: adicionar `Building2` ao import do lucide-react.
-
-### Sem mudanças em
-- `useUserDirectAccess.ts` (já fornece tudo)
-- `ClientDetail.tsx` (RLS já filtra campanhas)
-- Rotas, RLS, banco
-- `Favorites.tsx`, `App.tsx`, `AppSidebar.tsx`
-
-### Teste pós-implementação
-- Login restrito com 2 campanhas em clientes diferentes → ver 2 cards de cliente + 2 cards de campanha agrupados
-- Clicar em card de cliente → entrar em ClientDetail e ver só as campanhas permitidas
-- Login restrito com 1 favorito + 1 campanha → ver favorito, 1 card de cliente, 1 card de campanha
-- Login restrito sem nada → empty state inalterado
+## Teste pós-implementação
+- Desktop 1332px: abrir "Editar Categoria" → todas as seções visíveis, footer "Salvar" sempre fixo.
+- Mobile 390px: abrir mesmo diálogo → matriz vira lista vertical, sem scroll horizontal, botão Salvar acessível.
+- Cards de usuário: adicionar agência/cliente/campanha em mobile sem quebra de layout.
+- Salvar nova categoria e editar existente — comportamento idêntico ao atual.
 
