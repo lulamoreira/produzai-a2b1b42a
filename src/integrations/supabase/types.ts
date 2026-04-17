@@ -2346,6 +2346,12 @@ export type Database = {
           can_delete_campaigns: boolean
           can_delete_clients: boolean
           can_delete_installations: boolean
+          can_delete_lal_acessos: boolean
+          can_delete_lal_classificacao: boolean
+          can_delete_lal_config: boolean
+          can_delete_lal_estrutura: boolean
+          can_delete_lal_ocorrencias: boolean
+          can_delete_loja_a_loja: boolean
           can_delete_occurrences: boolean
           can_delete_pieces: boolean
           can_delete_schedules: boolean
@@ -2354,6 +2360,11 @@ export type Database = {
           can_edit_campaigns: boolean
           can_edit_clients: boolean
           can_edit_installations: boolean
+          can_edit_lal_acessos: boolean
+          can_edit_lal_classificacao: boolean
+          can_edit_lal_config: boolean
+          can_edit_lal_estrutura: boolean
+          can_edit_lal_ocorrencias: boolean
           can_edit_loja_a_loja: boolean | null
           can_edit_occurrences: boolean
           can_edit_pieces: boolean
@@ -2366,6 +2377,11 @@ export type Database = {
           can_view_campaigns: boolean
           can_view_clients: boolean
           can_view_installations: boolean
+          can_view_lal_acessos: boolean
+          can_view_lal_classificacao: boolean
+          can_view_lal_config: boolean
+          can_view_lal_estrutura: boolean
+          can_view_lal_ocorrencias: boolean
           can_view_loja_a_loja: boolean | null
           can_view_occurrences: boolean
           can_view_photo_checkin: boolean
@@ -2381,6 +2397,12 @@ export type Database = {
           can_delete_campaigns?: boolean
           can_delete_clients?: boolean
           can_delete_installations?: boolean
+          can_delete_lal_acessos?: boolean
+          can_delete_lal_classificacao?: boolean
+          can_delete_lal_config?: boolean
+          can_delete_lal_estrutura?: boolean
+          can_delete_lal_ocorrencias?: boolean
+          can_delete_loja_a_loja?: boolean
           can_delete_occurrences?: boolean
           can_delete_pieces?: boolean
           can_delete_schedules?: boolean
@@ -2389,6 +2411,11 @@ export type Database = {
           can_edit_campaigns?: boolean
           can_edit_clients?: boolean
           can_edit_installations?: boolean
+          can_edit_lal_acessos?: boolean
+          can_edit_lal_classificacao?: boolean
+          can_edit_lal_config?: boolean
+          can_edit_lal_estrutura?: boolean
+          can_edit_lal_ocorrencias?: boolean
           can_edit_loja_a_loja?: boolean | null
           can_edit_occurrences?: boolean
           can_edit_pieces?: boolean
@@ -2401,6 +2428,11 @@ export type Database = {
           can_view_campaigns?: boolean
           can_view_clients?: boolean
           can_view_installations?: boolean
+          can_view_lal_acessos?: boolean
+          can_view_lal_classificacao?: boolean
+          can_view_lal_config?: boolean
+          can_view_lal_estrutura?: boolean
+          can_view_lal_ocorrencias?: boolean
           can_view_loja_a_loja?: boolean | null
           can_view_occurrences?: boolean
           can_view_photo_checkin?: boolean
@@ -2416,6 +2448,12 @@ export type Database = {
           can_delete_campaigns?: boolean
           can_delete_clients?: boolean
           can_delete_installations?: boolean
+          can_delete_lal_acessos?: boolean
+          can_delete_lal_classificacao?: boolean
+          can_delete_lal_config?: boolean
+          can_delete_lal_estrutura?: boolean
+          can_delete_lal_ocorrencias?: boolean
+          can_delete_loja_a_loja?: boolean
           can_delete_occurrences?: boolean
           can_delete_pieces?: boolean
           can_delete_schedules?: boolean
@@ -2424,6 +2462,11 @@ export type Database = {
           can_edit_campaigns?: boolean
           can_edit_clients?: boolean
           can_edit_installations?: boolean
+          can_edit_lal_acessos?: boolean
+          can_edit_lal_classificacao?: boolean
+          can_edit_lal_config?: boolean
+          can_edit_lal_estrutura?: boolean
+          can_edit_lal_ocorrencias?: boolean
           can_edit_loja_a_loja?: boolean | null
           can_edit_occurrences?: boolean
           can_edit_pieces?: boolean
@@ -2436,6 +2479,11 @@ export type Database = {
           can_view_campaigns?: boolean
           can_view_clients?: boolean
           can_view_installations?: boolean
+          can_view_lal_acessos?: boolean
+          can_view_lal_classificacao?: boolean
+          can_view_lal_config?: boolean
+          can_view_lal_estrutura?: boolean
+          can_view_lal_ocorrencias?: boolean
           can_view_loja_a_loja?: boolean | null
           can_view_occurrences?: boolean
           can_view_photo_checkin?: boolean
