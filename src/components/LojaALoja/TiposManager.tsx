@@ -881,7 +881,7 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                           </DndContext>
 
                           {canEdit && (
-                              <div className="flex items-center gap-1 px-2">
+                            addingSubForTipoId === tipo.id ? (
                                 <Input
                                   value={newSubNome}
                                   onChange={(e) => setNewSubNome(e.target.value)}
@@ -932,6 +932,7 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                 Peças {selectedTipo ? `— ${selectedTipo.letra} ${selectedTipo.nome}` : ""}
               </h3>
               {canEdit && (
+                <Button size="sm" className="h-7 text-xs" onClick={() => setShowAddPeca(true)}>
                   <Plus className="w-3 h-3 mr-1" /> Peça
                 </Button>
               )}
@@ -960,6 +961,7 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                           peca={peca}
                           canEdit={canEdit}
                           canDelete={canDelete}
+                          isDragOverImage={isDragOver}
                           isUploading={isUploading}
                           isEditingName={isEditingName}
                           editingNome={editingPecaNome}
