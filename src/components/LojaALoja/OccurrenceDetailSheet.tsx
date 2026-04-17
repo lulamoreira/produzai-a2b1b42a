@@ -17,7 +17,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   occurrence: any | null;
-  isAdmin: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   campaignId: string;
 }
 
@@ -47,7 +48,8 @@ function toLocalInput(iso: string | null | undefined): string {
   return local.toISOString().slice(0, 16);
 }
 
-export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, isAdmin, campaignId }: Props) {
+export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, canEdit, canDelete, campaignId }: Props) {
+  const isAdmin = canEdit; // legacy alias for input disabled states
   const qc = useQueryClient();
 
   // Editable state — initialized from occurrence

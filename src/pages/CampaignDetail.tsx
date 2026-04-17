@@ -20,6 +20,7 @@ import {
 
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useLojaALojaPermissions } from "@/hooks/useLojaALojaPermissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -94,6 +95,7 @@ const CampaignDetail = () => {
   }, [isLimitedMode, navigate]);
 
   const { isAdmin, isAdminOrMaster } = useUserRole();
+  const lalPerms = useLojaALojaPermissions(campaignId, clientId);
 
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaign } = useClientPermission(clientId, "can_edit_campaigns");
@@ -1029,7 +1031,7 @@ const CampaignDetail = () => {
               items={[
                 { key: "scheduling", label: t("modules.scheduling"), icon: CalendarDays, visible: canViewSchedules, color: "#5C6B3F" },
                 { key: "installations", label: t("modules.installations"), icon: Camera, visible: canViewInstallations, color: "#7B5E3A" },
-                { key: "loja_a_loja", label: t("modules.loja_a_loja"), icon: LayoutGrid, visible: isAdminOrMaster, color: "#5B7B5E", badge: "Beta" },
+                { key: "loja_a_loja", label: t("modules.loja_a_loja"), icon: LayoutGrid, visible: lalPerms.canViewModule, color: "#5B7B5E", badge: "Beta" },
                 { key: "stores", label: t("modules.stores"), icon: Store, visible: canViewStores || canViewCampaignStores, color: "#6B4F2E" },
                 { key: "occurrences", label: t("modules.occurrences"), icon: AlertTriangle, visible: canViewOccurrences, color: "#7A3B2E" },
                 { key: "budgets", label: t("modules.budgets"), icon: DollarSign, visible: isAdmin, color: "#4A5568" },
@@ -2474,7 +2476,7 @@ const CampaignDetail = () => {
 
           {/* ─── SECTION: LOJA A LOJA ─── */}
           {activeSection === "loja_a_loja" && campaignId && clientId && (
-            <LojaALojaTab campaignId={campaignId} clientId={clientId} isAdmin={isAdminOrMaster} />
+            <LojaALojaTab campaignId={campaignId} clientId={clientId} permissions={lalPerms} />
           )}
           </>
         )}

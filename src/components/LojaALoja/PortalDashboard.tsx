@@ -51,10 +51,12 @@ function CollapsibleCard({ title, defaultOpen = false, children }: CollapsibleCa
   );
 }
 
+interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
+
 interface Props {
   campaignId: string;
   clientId: string;
-  isAdmin: boolean;
+  permissions: SubAreaPermission;
 }
 
 /* ── Data hooks ── */
@@ -179,7 +181,12 @@ function daysOpen(createdAt: string, resolvedAt: string | null) {
   return Math.max(0, Math.floor((end - start) / (1000 * 60 * 60 * 24)));
 }
 
-export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props) {
+export default function PortalDashboard({ campaignId, clientId, permissions }: Props) {
+  const canEdit = permissions.canEdit;
+  const canDelete = permissions.canDelete;
+  // Legacy alias for unmodified blocks
+  const isAdmin = canDelete; // delete buttons gate
+
   const { data: occurrences, isLoading: l1 } = usePortalOccurrences(campaignId);
   const { data: maintenance, isLoading: l2 } = usePortalMaintenance(campaignId);
   const { data: replacements, isLoading: l3 } = usePortalReplacements(campaignId);
@@ -786,7 +793,7 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
       )}
 
       {/* Pending Replacements Table */}
-      {isAdmin && pendingList.length > 0 && (
+      {canEdit && pendingList.length > 0 && (
         <CollapsibleCard title="Reposições Pendentes de Aprovação">
           <div className="overflow-x-auto">
             <Table>
@@ -815,15 +822,21 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
                     <TableCell>{formatDate(r.requested_at)}</TableCell>
                     <TableCell className="text-right">
                        <div className="flex gap-1 justify-end">
-                         <Button size="sm" variant="ghost" className="h-7 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => setConfirmAction({ id: r.id, status: "aprovada", storeId: r.store_id })}>
-                           <Check className="h-4 w-4" />
-                         </Button>
-                         <Button size="sm" variant="ghost" className="h-7 text-destructive hover:bg-destructive/10" onClick={() => setConfirmAction({ id: r.id, status: "rejeitada", storeId: r.store_id })}>
-                           <X className="h-4 w-4" />
-                         </Button>
-                         <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: r.id, table: "store_replacement_requests", queryKey: "portal-replacements" })}>
-                           <Trash2 className="h-4 w-4" />
-                         </Button>
+                         {canEdit && (
+                           <Button size="sm" variant="ghost" className="h-7 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20" onClick={() => setConfirmAction({ id: r.id, status: "aprovada", storeId: r.store_id })}>
+                             <Check className="h-4 w-4" />
+                           </Button>
+                         )}
+                         {canEdit && (
+                           <Button size="sm" variant="ghost" className="h-7 text-destructive hover:bg-destructive/10" onClick={() => setConfirmAction({ id: r.id, status: "rejeitada", storeId: r.store_id })}>
+                             <X className="h-4 w-4" />
+                           </Button>
+                         )}
+                         {canDelete && (
+                           <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:bg-destructive/10" onClick={() => setDeleteTarget({ id: r.id, table: "store_replacement_requests", queryKey: "portal-replacements" })}>
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
+                         )}
                        </div>
                     </TableCell>
                   </TableRow>
@@ -919,7 +932,8 @@ export default function PortalDashboard({ campaignId, clientId, isAdmin }: Props
         open={!!selectedOccurrence}
         onOpenChange={(o) => !o && setSelectedOccurrence(null)}
         occurrence={selectedOccurrence}
-        isAdmin={isAdmin}
+        canEdit={canEdit}
+        canDelete={canDelete}
         campaignId={campaignId}
       />
     </div>
