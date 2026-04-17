@@ -114,10 +114,31 @@ export default function CategoryManager() {
     if (cat.can_manage_team_codes) count++;
     if (cat.can_lock_cards) count++;
     if (cat.can_view_photo_checkin) count++;
-    if (cat.can_view_loja_a_loja) count++;
-    if (cat.can_edit_loja_a_loja) count++;
+    for (const k of LAL_ALL_KEYS) {
+      if ((cat as Record<string, unknown>)[k]) count++;
+    }
     return count;
   };
+
+  // LAL helpers for the sub-matrix
+  const isLalCellChecked = (perm: PermKey, sub: LalKey) =>
+    !!(form as Record<string, unknown>)[`can_${perm}_${sub}`];
+  const setLalCell = (perm: PermKey, sub: LalKey, val: boolean) =>
+    setForm(f => ({ ...f, [`can_${perm}_${sub}`]: val } as typeof f));
+  const setLalColumn = (perm: PermKey, val: boolean) =>
+    setForm(f => {
+      const next = { ...f } as Record<string, unknown>;
+      for (const s of LAL_SUBAREAS) next[`can_${perm}_${s.key}`] = val;
+      return next as typeof f;
+    });
+  const setLalGeneral = (perm: PermKey, val: boolean) =>
+    setForm(f => {
+      const next = { ...f, [`can_${perm}_loja_a_loja`]: val } as Record<string, unknown>;
+      for (const s of LAL_SUB_KEYS) next[`can_${perm}_${s}`] = val;
+      return next as typeof f;
+    });
+  const isLalColumnAllOn = (perm: PermKey) =>
+    LAL_SUBAREAS.every(s => !!(form as Record<string, unknown>)[`can_${perm}_${s.key}`]);
 
   return (
     <div>
