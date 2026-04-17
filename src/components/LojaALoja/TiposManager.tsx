@@ -55,9 +55,15 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
+interface SubAreaPermission {
+  canView: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+}
+
 interface TiposManagerProps {
   campaignId: string;
-  isAdmin: boolean;
+  permissions: SubAreaPermission;
 }
 
 /** Resize image proportionally (contain) into a square canvas with white background */
@@ -99,7 +105,8 @@ function SortableTipoRow({
   isEditing,
   editingNome,
   pecaCount,
-  isAdmin,
+  canEdit,
+  canDelete,
   onSelect,
   onStartEdit,
   onSaveEdit,
@@ -114,7 +121,8 @@ function SortableTipoRow({
   isEditing: boolean;
   editingNome: string;
   pecaCount: number;
-  isAdmin: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   onSelect: () => void;
   onStartEdit: () => void;
   onSaveEdit: () => void;
@@ -175,14 +183,18 @@ function SortableTipoRow({
             {tipo.tem_subdivisao && (
               <ChevronRight className={cn("w-3 h-3 transition-transform text-muted-foreground", isExpanded && "rotate-90")} />
             )}
-            {isAdmin && (
+            {(canEdit || canDelete) && (
               <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
-                <Button size="icon" variant="ghost" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); onStartEdit(); }}>
-                  <Pencil className="w-3 h-3" />
-                </Button>
-                <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+                {canEdit && (
+                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); onStartEdit(); }}>
+                    <Pencil className="w-3 h-3" />
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(); }}>
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                )}
               </div>
             )}
           </>

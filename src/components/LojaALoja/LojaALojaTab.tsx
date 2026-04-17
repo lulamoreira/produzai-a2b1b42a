@@ -37,11 +37,12 @@ import {
   useLojaALojaTabOrder,
   DEFAULT_LOJA_A_LOJA_TABS,
 } from "@/hooks/useLojaALojaTabOrder";
+import type { LalPermissions } from "@/hooks/useLojaALojaPermissions";
 
 interface Props {
   campaignId: string;
   clientId: string;
-  isAdmin: boolean;
+  permissions: LalPermissions;
 }
 
 const TAB_META: Record<
@@ -100,21 +101,35 @@ function SortableTab({ id }: { id: string }) {
   );
 }
 
-export default function LojaALojaTab({ campaignId, clientId, isAdmin }: Props) {
+export default function LojaALojaTab({ campaignId, clientId, permissions }: Props) {
   const { order, saveOrder, loaded } = useLojaALojaTabOrder();
-  const [active, setActive] = useState<string>(DEFAULT_LOJA_A_LOJA_TABS[0]);
 
-  // Quando a ordem carrega/muda, garante que a aba ativa exista; default = primeira
+  // Filter tabs by per-area view permission
+  const visibleTabs = useMemo(() => {
+    return order.filter((id) => {
+      switch (id) {
+        case "dashboard": return permissions.canViewModule;
+        case "portal-dashboard": return permissions.ocorrencias.canView;
+        case "tipos": return permissions.estrutura.canView;
+        case "lojas": return permissions.classificacao.canView;
+        case "portais": return permissions.acessos.canView;
+        case "config": return permissions.config.canView;
+        default: return false;
+      }
+    });
+  }, [order, permissions]);
+
+  const [active, setActive] = useState<string>(visibleTabs[0] ?? DEFAULT_LOJA_A_LOJA_TABS[0]);
+
   useEffect(() => {
     if (!loaded) return;
-    if (!order.includes(active)) {
-      setActive(order[0] ?? DEFAULT_LOJA_A_LOJA_TABS[0]);
+    if (!visibleTabs.includes(active)) {
+      setActive(visibleTabs[0] ?? DEFAULT_LOJA_A_LOJA_TABS[0]);
     }
-  }, [loaded, order, active]);
+  }, [loaded, visibleTabs, active]);
 
-  // Define a primeira aba da ordem salva como padrão na montagem
   useEffect(() => {
-    if (loaded && order[0]) setActive(order[0]);
+    if (loaded && visibleTabs[0]) setActive(visibleTabs[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded]);
 
@@ -133,7 +148,13 @@ export default function LojaALojaTab({ campaignId, clientId, isAdmin }: Props) {
     saveOrder(next);
   };
 
-  const renderedOrder = useMemo(() => order, [order]);
+  if (permissions.isLoading) {
+    return <div className="text-sm text-muted-foreground p-4">Carregando permissões...</div>;
+  }
+
+  if (!permissions.canViewModule) {
+    return <div className="text-sm text-muted-foreground p-4">Você não tem acesso a este módulo.</div>;
+  }
 
   return (
     <Tabs value={active} onValueChange={setActive} className="w-full">
@@ -142,33 +163,45 @@ export default function LojaALojaTab({ campaignId, clientId, isAdmin }: Props) {
         collisionDetection={closestCenter}
         onDragEnd={handleDragEnd}
       >
-        <SortableContext items={renderedOrder} strategy={horizontalListSortingStrategy}>
+        <SortableContext items={visibleTabs} strategy={horizontalListSortingStrategy}>
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
-            {renderedOrder.map((id) => (
+            {visibleTabs.map((id) => (
               <SortableTab key={id} id={id} />
             ))}
           </TabsList>
         </SortableContext>
       </DndContext>
 
-      <TabsContent value="dashboard">
-        <LojaALojaDashboard campaignId={campaignId} clientId={clientId} />
-      </TabsContent>
-      <TabsContent value="portal-dashboard">
-        <PortalDashboard campaignId={campaignId} clientId={clientId} isAdmin={isAdmin} />
-      </TabsContent>
-      <TabsContent value="tipos">
-        <TiposManager campaignId={campaignId} isAdmin={isAdmin} />
-      </TabsContent>
-      <TabsContent value="lojas">
-        <LojasManager campaignId={campaignId} clientId={clientId} isAdmin={isAdmin} />
-      </TabsContent>
-      <TabsContent value="portais">
-        <PortaisManager campaignId={campaignId} clientId={clientId} isAdmin={isAdmin} />
-      </TabsContent>
-      <TabsContent value="config">
-        <PortalConfigTab campaignId={campaignId} clientId={clientId} isAdmin={isAdmin} />
-      </TabsContent>
+      {visibleTabs.includes("dashboard") && (
+        <TabsContent value="dashboard">
+          <LojaALojaDashboard campaignId={campaignId} clientId={clientId} />
+        </TabsContent>
+      )}
+      {visibleTabs.includes("portal-dashboard") && (
+        <TabsContent value="portal-dashboard">
+          <PortalDashboard campaignId={campaignId} clientId={clientId} permissions={permissions.ocorrencias} />
+        </TabsContent>
+      )}
+      {visibleTabs.includes("tipos") && (
+        <TabsContent value="tipos">
+          <TiposManager campaignId={campaignId} permissions={permissions.estrutura} />
+        </TabsContent>
+      )}
+      {visibleTabs.includes("lojas") && (
+        <TabsContent value="lojas">
+          <LojasManager campaignId={campaignId} clientId={clientId} permissions={permissions.classificacao} />
+        </TabsContent>
+      )}
+      {visibleTabs.includes("portais") && (
+        <TabsContent value="portais">
+          <PortaisManager campaignId={campaignId} clientId={clientId} permissions={permissions.acessos} />
+        </TabsContent>
+      )}
+      {visibleTabs.includes("config") && (
+        <TabsContent value="config">
+          <PortalConfigTab campaignId={campaignId} clientId={clientId} permissions={permissions.config} />
+        </TabsContent>
+      )}
     </Tabs>
   );
 }
