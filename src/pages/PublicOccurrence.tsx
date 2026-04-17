@@ -382,54 +382,42 @@ const PublicOccurrence = () => {
 
             <div>
               <label className="text-sm font-medium text-foreground mb-1.5 block">Identifique-se *</label>
-              <Select value={reporterType || storeId} onValueChange={(val) => {
-                if (val === SPECIAL_AGENCY || val === SPECIAL_FORNECEDOR || val === SPECIAL_CLIENTE) {
-                  setReporterType(val);
-                  setStoreId("");
-                  setSpecialStoreId("");
-                  setReporterName("");
-                  setPhoneDDD("");
-                  setPhoneNumber("");
-                  setReporterEmail("");
-                } else {
-                  setReporterType("");
-                  setStoreId(val);
-                  setSpecialStoreId("");
-                  const selected = stores.find((s) => s.id === val);
-                  if (selected) {
-                    if (selected.phone) {
-                      const digits = selected.phone.replace(/\D/g, "");
-                      setPhoneDDD(digits.slice(0, 2));
-                      setPhoneNumber(digits.slice(2));
+              <ReporterCombobox
+                value={reporterType || storeId}
+                stores={stores}
+                agencyName={agencyName}
+                clientName={clientName2}
+                onChange={(val) => {
+                  if (val === SPECIAL_AGENCY || val === SPECIAL_FORNECEDOR || val === SPECIAL_CLIENTE) {
+                    setReporterType(val);
+                    setStoreId("");
+                    setSpecialStoreId("");
+                    setReporterName("");
+                    setPhoneDDD("");
+                    setPhoneNumber("");
+                    setReporterEmail("");
+                  } else {
+                    setReporterType("");
+                    setStoreId(val);
+                    setSpecialStoreId("");
+                    const selected = stores.find((s) => s.id === val);
+                    if (selected) {
+                      if (selected.phone) {
+                        const digits = selected.phone.replace(/\D/g, "");
+                        setPhoneDDD(digits.slice(0, 2));
+                        setPhoneNumber(digits.slice(2));
+                      }
+                      if (selected.email) setReporterEmail(selected.email);
                     }
-                    if (selected.email) setReporterEmail(selected.email);
                   }
-                }
-              }}>
-                <SelectTrigger><SelectValue placeholder="Selecione quem está reportando" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={SPECIAL_AGENCY}>{agencyName}</SelectItem>
-                  <SelectItem value={SPECIAL_CLIENTE}>{clientName2}</SelectItem>
-                  <SelectItem value={SPECIAL_FORNECEDOR}>Fornecedor</SelectItem>
-                  <SelectSeparator />
-                  {stores.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.nickname || s.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                }}
+              />
             </div>
 
             {isSpecialReporter && (
               <div>
                 <label className="text-sm font-medium text-foreground mb-1.5 block">Loja relacionada *</label>
-                <Select value={specialStoreId} onValueChange={setSpecialStoreId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione a loja" /></SelectTrigger>
-                  <SelectContent>
-                    {stores.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>{s.nickname || s.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <StoreCombobox value={specialStoreId} stores={stores} onChange={setSpecialStoreId} />
               </div>
             )}
 
