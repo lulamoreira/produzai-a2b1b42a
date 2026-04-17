@@ -813,7 +813,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           </Select>
 
           {/* Date range */}
-          <div className="flex items-center gap-1 flex-1 sm:flex-none min-w-[200px] sm:min-w-0">
+          <div className="flex items-center gap-1 w-full sm:w-auto sm:flex-none">
             <Input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} className="h-8 text-xs flex-1 sm:w-32 min-w-0" />
             <span className="text-[11px] shrink-0" style={{ color: "var(--text-muted)" }}>→</span>
             <Input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} className="h-8 text-xs flex-1 sm:w-32 min-w-0" />
