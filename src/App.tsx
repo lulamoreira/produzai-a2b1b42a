@@ -102,9 +102,9 @@ const HomeRedirect = () => {
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
   const { isLimited, campaigns, isLoading: directLoading } = useUserDirectAccess();
-  const { data: hasFavorites, isLoading } = useQuery({
+  const { data: hasFavorites, isLoading: favLoading } = useQuery({
     queryKey: ["has_favorites", user?.id],
-    enabled: !!user && isAdminOrMaster,
+    enabled: !!user,
     queryFn: async () => {
       const { data } = await supabase
         .from("user_campaign_favorites")
@@ -123,24 +123,24 @@ const HomeRedirect = () => {
     );
   }
 
+  if (favLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (hasFavorites) {
+    return <Navigate to="/favorites" replace />;
+  }
+
   if (isLimited) {
     const agencyIds = Array.from(new Set(campaigns.map((c) => c.agencyId).filter(Boolean)));
     if (agencyIds.length === 1) {
       return <Navigate to={`/agency/${agencyIds[0]}`} replace />;
     }
     return <Navigate to="/agencies" replace />;
-  }
-
-  if (isAdminOrMaster && isLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  if (isAdminOrMaster && hasFavorites) {
-    return <Navigate to="/favorites" replace />;
   }
 
   return <Navigate to="/agencies" replace />;
