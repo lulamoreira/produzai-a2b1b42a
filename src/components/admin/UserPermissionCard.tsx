@@ -170,23 +170,24 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
         {icon}
         <span className="text-sm text-foreground flex-1 min-w-0 truncate">{label}</span>
       </div>
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
         <Select value={categoryId || ""} onValueChange={onChangeCategory}>
-          <SelectTrigger className="h-7 text-xs flex-1 min-w-[120px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
+          <SelectTrigger className="h-9 text-xs flex-1 min-w-[120px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
           <SelectContent>
             {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Badge variant="outline" className={`text-[10px] shrink-0 ${suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
-          {suspended ? "Suspenso" : "Ativo"}
-        </Badge>
-        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title={suspended ? "Reativar" : "Suspender"} onClick={onToggleSuspend}>
-          {suspended ? <PlayCircle className="w-3.5 h-3.5 text-green-600" /> : <PauseCircle className="w-3.5 h-3.5 text-yellow-600" />}
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-          </AlertDialogTrigger>
+        <div className="flex items-center gap-2 justify-end">
+          <Badge variant="outline" className={`text-[10px] shrink-0 ${suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
+            {suspended ? "Suspenso" : "Ativo"}
+          </Badge>
+          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" title={suspended ? "Reativar" : "Suspender"} onClick={onToggleSuspend}>
+            {suspended ? <PlayCircle className="w-4 h-4 text-green-600" /> : <PauseCircle className="w-4 h-4 text-yellow-600" />}
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0"><Trash2 className="w-4 h-4 text-destructive" /></Button>
+            </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>{deleteTitle}</AlertDialogTitle>
@@ -198,6 +199,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        </div>
       </div>
     </div>
   );
@@ -461,34 +463,36 @@ function CampaignAccessRow({ access, clients, agencies, categories, onChangeCate
         <Megaphone className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         <span className="text-sm text-foreground flex-1 min-w-0 truncate">{label}</span>
       </div>
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
         <Select value={access.category_id || ""} onValueChange={onChangeCategory}>
-          <SelectTrigger className="h-7 text-xs flex-1 min-w-[120px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
+          <SelectTrigger className="h-9 text-xs flex-1 min-w-[120px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
           <SelectContent>
             {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Badge variant="outline" className={`text-[10px] shrink-0 ${access.suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
-          {access.suspended ? "Suspenso" : "Ativo"}
-        </Badge>
-        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" title={access.suspended ? "Reativar" : "Suspender"} onClick={onToggleSuspend}>
-          {access.suspended ? <PlayCircle className="w-3.5 h-3.5 text-green-600" /> : <PauseCircle className="w-3.5 h-3.5 text-yellow-600" />}
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0"><Trash2 className="w-3.5 h-3.5 text-destructive" /></Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Remover acesso à campanha "{campaign?.name}"?</AlertDialogTitle>
-              <AlertDialogDescription>O usuário perderá todas as permissões nesta campanha.</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remover</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <div className="flex items-center gap-2 justify-end">
+          <Badge variant="outline" className={`text-[10px] shrink-0 ${access.suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
+            {access.suspended ? "Suspenso" : "Ativo"}
+          </Badge>
+          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" title={access.suspended ? "Reativar" : "Suspender"} onClick={onToggleSuspend}>
+            {access.suspended ? <PlayCircle className="w-4 h-4 text-green-600" /> : <PauseCircle className="w-4 h-4 text-yellow-600" />}
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0"><Trash2 className="w-4 h-4 text-destructive" /></Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remover acesso à campanha "{campaign?.name}"?</AlertDialogTitle>
+                <AlertDialogDescription>O usuário perderá todas as permissões nesta campanha.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remover</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
     </div>
   );
