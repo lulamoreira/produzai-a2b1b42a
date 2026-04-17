@@ -3,7 +3,7 @@ import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, LogOut, Package, Camera } from "lucide-react";
+import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, LogOut, Package, Camera, Building2 } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import ModuleGrid from "@/components/ModuleGrid";
 
@@ -20,6 +20,7 @@ const MyCampaigns = () => {
     occurrences: { label: t("modules.occurrences"), icon: AlertTriangle },
     scheduling: { label: t("modules.scheduling"), icon: CalendarDays },
     installations: { label: t("modules.installations"), icon: Camera },
+    loja_a_loja: { label: "Loja a Loja", icon: Building2 },
   };
 
   if (isLoading) {
