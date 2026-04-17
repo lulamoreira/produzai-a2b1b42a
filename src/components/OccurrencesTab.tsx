@@ -659,9 +659,9 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
 
         return (
           <div
-            className="flex items-baseline overflow-x-auto"
+            className="flex items-baseline overflow-x-auto max-w-full"
             style={{
-              padding: "10px 16px",
+              padding: "10px 12px",
               background: "var(--bg-surface)",
               borderBottom: "1px solid var(--border-subtle)",
               whiteSpace: "nowrap",
