@@ -609,13 +609,24 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           />
         )}
 
-        {/* Primary action */}
-        <a href={publicLink} target="_blank" rel="noopener noreferrer" className="shrink-0">
+        {/* Primary action — desktop only */}
+        <a href={publicLink} target="_blank" rel="noopener noreferrer" className="shrink-0 hidden sm:inline-flex">
           <Button size="sm" className="h-8 text-xs gap-1">
             <Plus className="w-3.5 h-3.5" /> Incluir Ocorrência
           </Button>
         </a>
       </div>
+
+      {/* Mobile FAB — Incluir Ocorrência */}
+      <a
+        href={publicLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="sm:hidden fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-xl flex items-center justify-center active:scale-95 transition-transform"
+        aria-label="Incluir Ocorrência"
+      >
+        <Plus className="w-6 h-6" />
+      </a>
 
       {/* LAYER 2 — KPI Strip */}
       {!isLoading && occurrences.length > 0 && (() => {
