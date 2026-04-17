@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useUserDirectAccess, type CampaignAccess } from "@/hooks/useUserDirectAccess";
 import { useCampaignFavorites, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 import AppLayout from "@/components/AppLayout";
-import { Star, ArrowRight, Briefcase } from "lucide-react";
+import { Star, ArrowRight, Briefcase, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
@@ -39,8 +39,17 @@ const MeuAcesso = () => {
     a[1].clientName.localeCompare(b[1].clientName, "pt-BR")
   );
 
+  // Derive unique clients with campaign counts
+  const uniqueClients = clientGroups.map(([clientId, group]) => ({
+    clientId,
+    clientName: group.clientName,
+    agencyId: group.agencyId,
+    campaignCount: group.campaigns.length,
+  }));
+
   const hasFavorites = favorites && favorites.length > 0;
   const hasCampaigns = directCampaigns.length > 0;
+  const hasClients = uniqueClients.length > 0;
 
   return (
     <AppLayout>
@@ -128,8 +137,68 @@ const MeuAcesso = () => {
           </>
         )}
 
-        {/* Divider between favorites and campaigns */}
-        {hasFavorites && hasCampaigns && (
+        {/* Divider between favorites and clients */}
+        {hasFavorites && hasClients && (
+          <div className="mt-10 pt-8 border-t" style={{ borderColor: "var(--border)" }} />
+        )}
+
+        {/* Meus Clientes section */}
+        {hasClients && (
+          <>
+            <div className="flex items-center gap-3 mb-6">
+              <Building2 className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
+                {t("meuAcesso.myClients", "Meus Clientes")}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {uniqueClients.map((cli) => {
+                const initial = (cli.clientName || "C").charAt(0).toUpperCase();
+                const color = "#6366f1";
+                return (
+                  <div
+                    key={cli.clientId}
+                    className="group card-base cursor-pointer hover:shadow-md transition-shadow duration-150 relative"
+                    onClick={() => navigate(`/agency/${cli.agencyId}/clients/${cli.clientId}`)}
+                  >
+                    <div
+                      className="absolute left-0 top-0 bottom-0 w-1 rounded-l-[var(--radius-card)]"
+                      style={{ backgroundColor: color }}
+                    />
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: color }}
+                      >
+                        <span className="text-white font-semibold text-base">{initial}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base truncate" style={{ color: "var(--text-primary)" }}>
+                          {cli.clientName}
+                        </h3>
+                        <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                          {cli.campaignCount}{" "}
+                          {cli.campaignCount === 1
+                            ? t("meuAcesso.campaignSingular", "campanha")
+                            : t("meuAcesso.campaignPlural", "campanhas")}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-end mt-3">
+                      <span className="text-[13px] font-medium text-primary flex items-center gap-1">
+                        {t("clientDashboard.access", "Acessar")}{" "}
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Divider between clients and campaigns */}
+        {hasClients && hasCampaigns && (
           <div className="mt-10 pt-8 border-t" style={{ borderColor: "var(--border)" }} />
         )}
 
