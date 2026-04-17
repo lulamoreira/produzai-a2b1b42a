@@ -23,13 +23,12 @@ import {
   Building2, Shield, LogOut, Users, Star, Home,
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
-  CalendarDays, Camera, DollarSign, Database, Globe, Settings, History, LayoutGrid,
+  CalendarDays, Camera, DollarSign, Database, Globe, Settings, LayoutGrid,
   Sun, Moon,
 } from "lucide-react";
 
 const CAMPAIGN_MODULE_KEYS = [
   { key: "scheduling", tKey: "modules.scheduling", icon: CalendarDays, color: "#5C6B3F" },
-  { key: "history", tKey: "modules.history", icon: History, color: "#6B5B4E" },
   { key: "installations", tKey: "modules.installations", icon: Camera, color: "#7B5E3A" },
   { key: "loja_a_loja", tKey: "modules.loja_a_loja", icon: LayoutGrid, color: "#5B7B5E" },
   { key: "stores", tKey: "modules.stores", icon: Store, color: "#6B4F2E" },
@@ -279,19 +278,17 @@ export default function AppSidebar() {
           </button>
         )}
 
-        {/* ── Favoritos (admin/master only) ── */}
-        {isAdminOrMaster && (
-          <button
-            onClick={() => handleNavigate("/favorites")}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-            style={itemStyle(location.pathname === "/favorites")}
-            {...hoverHandlers(location.pathname === "/favorites")}
-            title={collapsed ? t("sidebar.favorites", "Favoritos") : undefined}
-          >
-            <AquaIcon icon={Star} size="sm" color="#eab308" />
-            {!collapsed && <span className="truncate font-medium">{t("sidebar.favorites", "Favoritos")}</span>}
-          </button>
-        )}
+        {/* ── Favoritos (all authenticated users) ── */}
+        <button
+          onClick={() => handleNavigate("/favorites")}
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+          style={itemStyle(location.pathname === "/favorites")}
+          {...hoverHandlers(location.pathname === "/favorites")}
+          title={collapsed ? t("sidebar.favorites", "Favoritos") : undefined}
+        >
+          <AquaIcon icon={Star} size="sm" color="#eab308" />
+          {!collapsed && <span className="truncate font-medium">{t("sidebar.favorites", "Favoritos")}</span>}
+        </button>
 
         {/* ── Admin (fixed, admin/master only) ── */}
         {isAdminOrMaster && (
@@ -399,7 +396,8 @@ export default function AppSidebar() {
                         {isExpanded && (
                           <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
                             {CAMPAIGN_MODULE_KEYS.filter(mod => {
-                              if (mod.key === "budgets" || mod.key === "loja_a_loja") return false;
+                              if (mod.key === "budgets") return false;
+                              if (mod.key === "history") return false;
                               return camp.modules.includes(mod.key);
                             }).map((mod) => {
                               const modActive = isCampaignModuleActive(camp.campaignId, mod.key);
@@ -484,7 +482,8 @@ export default function AppSidebar() {
                     {isExpanded && (
                       <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
                         {CAMPAIGN_MODULE_KEYS.filter(mod => {
-                          if ((mod.key === "budgets" || mod.key === "loja_a_loja") && !isAdminOrMaster) return false;
+                          if (mod.key === "budgets" && !isAdminOrMaster) return false;
+                          if (mod.key === "history") return false;
                           return true;
                         }).map((mod) => {
                           const modActive = isCampaignModuleActive(camp.id, mod.key);
