@@ -8,13 +8,17 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Pencil, Trash2, Plus, Check, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
+
 interface Props {
   clientId: string;
-  isAdmin: boolean;
+  permissions: SubAreaPermission;
   embedded?: boolean;
 }
 
-export default function MotivosManager({ clientId, isAdmin, embedded = false }: Props) {
+export default function MotivosManager({ clientId, permissions, embedded = false }: Props) {
+  const canEdit = permissions.canEdit;
+  const canDelete = permissions.canDelete;
   const { data: motivos = [], isLoading } = useStorePortalMotivos(clientId);
   const addMutation = useAddMotivo();
   const updateMutation = useUpdateMotivo();
@@ -79,7 +83,7 @@ export default function MotivosManager({ clientId, isAdmin, embedded = false }: 
   const body = (
     <div className="space-y-3">
       {/* original CardContent body below; rendered conditionally with or without Card wrapper */}
-        {isAdmin && (
+        {canEdit && (
           <div className="flex gap-2">
             <Input
               placeholder="Novo motivo (ex: Peça danificada)"
@@ -110,8 +114,9 @@ export default function MotivosManager({ clientId, isAdmin, embedded = false }: 
                       onKeyDown={(e) => { if (e.key === "Enter") saveEdit(m); if (e.key === "Escape") setEditingId(null); }}
                       autoFocus
                       className="h-8"
+                      disabled={!canEdit}
                     />
-                    <Button size="sm" variant="ghost" onClick={() => saveEdit(m)} className="h-8 px-2">
+                    <Button size="sm" variant="ghost" onClick={() => saveEdit(m)} className="h-8 px-2" disabled={!canEdit}>
                       <Check className="h-4 w-4 text-green-600" />
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} className="h-8 px-2">
@@ -121,15 +126,19 @@ export default function MotivosManager({ clientId, isAdmin, embedded = false }: 
                 ) : (
                   <>
                     <span className={`flex-1 text-sm ${m.ativo ? "" : "text-muted-foreground line-through"}`}>{m.descricao}</span>
-                    {isAdmin && (
+                    {(canEdit || canDelete) && (
                       <>
-                        <Switch checked={m.ativo} onCheckedChange={() => toggleAtivo(m)} />
-                        <Button size="sm" variant="ghost" onClick={() => startEdit(m)} className="h-8 w-8 p-0">
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(m)} className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        {canEdit && <Switch checked={m.ativo} onCheckedChange={() => toggleAtivo(m)} />}
+                        {canEdit && (
+                          <Button size="sm" variant="ghost" onClick={() => startEdit(m)} className="h-8 w-8 p-0">
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(m)} className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </>
                     )}
                   </>

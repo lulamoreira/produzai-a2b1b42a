@@ -49,10 +49,12 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 
+interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
+
 interface Props {
   campaignId: string;
   clientId: string;
-  isAdmin: boolean;
+  permissions: SubAreaPermission;
 }
 
 const MODULES = [
@@ -131,7 +133,8 @@ function SortableCard({ id, collapsed, onToggleCollapsed, isAdmin, children, tit
   );
 }
 
-export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props) {
+export default function PortalConfigTab({ campaignId, clientId, permissions }: Props) {
+  const isAdmin = permissions.canEdit;
   const { data: config, isLoading: configLoading } = useStorePortalConfig(campaignId);
   const upsertConfig = useUpsertPortalConfig();
   const { data: overrides = [] } = useStorePortalOverrides(campaignId);
@@ -553,7 +556,7 @@ export default function PortalConfigTab({ campaignId, clientId, isAdmin }: Props
       case "motivos":
         return (
           <CardContent className="pt-6">
-            <MotivosManager clientId={clientId} isAdmin={isAdmin} embedded />
+            <MotivosManager clientId={clientId} permissions={permissions} embedded />
           </CardContent>
         );
 

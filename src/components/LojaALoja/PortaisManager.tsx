@@ -14,16 +14,20 @@ import { Badge } from "@/components/ui/badge";
 import { Link2, Copy, MessageCircle, Trash2, Plus, LinkIcon, ExternalLink, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 
+interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
+
 interface Props {
   campaignId: string;
   clientId: string;
-  isAdmin: boolean;
+  permissions: SubAreaPermission;
 }
 
 type SortField = "name" | "city" | "state" | "status";
 type SortDir = "asc" | "desc" | null;
 
-export default function PortaisManager({ campaignId, clientId, isAdmin }: Props) {
+export default function PortaisManager({ campaignId, clientId, permissions }: Props) {
+  const canEdit = permissions.canEdit;
+  const canDelete = permissions.canDelete;
   const { data: lojas = [] } = useLojaALojaLojas(campaignId);
   const { data: tokens = [], isLoading } = useStorePortalTokens(campaignId);
   const generateToken = useGenerateStoreToken();
@@ -128,7 +132,7 @@ export default function PortaisManager({ campaignId, clientId, isAdmin }: Props)
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{stores.length} lojas vinculadas</p>
-        {isAdmin && (
+        {canEdit && (
           <Button
             size="sm"
             onClick={() => generateAll.mutate(campaignId)}
@@ -198,7 +202,7 @@ export default function PortaisManager({ campaignId, clientId, isAdmin }: Props)
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openWhatsApp(tk.token, store.name)} title="Enviar por WhatsApp">
                             <MessageCircle className="h-3.5 w-3.5" />
                           </Button>
-                          {isAdmin && (
+                          {canDelete && (
                             <Button
                               variant="ghost"
                               size="icon"
@@ -212,7 +216,7 @@ export default function PortaisManager({ campaignId, clientId, isAdmin }: Props)
                           )}
                         </>
                       ) : (
-                        isAdmin && (
+                        canEdit && (
                           <Button
                             variant="ghost"
                             size="sm"

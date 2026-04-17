@@ -17,13 +17,18 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTableSort } from "@/hooks/useTableSort";
 
+interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
+
 interface Props {
   campaignId: string;
   clientId: string;
-  isAdmin: boolean;
+  permissions: SubAreaPermission;
 }
 
-export default function LojasManager({ campaignId, clientId, isAdmin }: Props) {
+export default function LojasManager({ campaignId, clientId, permissions }: Props) {
+  const canEdit = permissions.canEdit;
+  // Treat canEdit as "isAdmin" for write controls (toggles, copy, bulk)
+  const isAdmin = canEdit;
   const { data: tipos = [], isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: lojas = [], isLoading: loadingLojas } = useLojaALojaLojas(campaignId);
   const { data: stores = [], isLoading: loadingStores } = useClientStores(clientId);
