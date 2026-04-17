@@ -39,6 +39,21 @@ type PermKey = typeof PERMISSIONS[number]["key"];
 const getField = (form: any, perm: PermKey, mod: ModuleKey): boolean => form[`can_${perm}_${mod}`] ?? false;
 const setField = (form: any, perm: PermKey, mod: ModuleKey, val: boolean) => ({ ...form, [`can_${perm}_${mod}`]: val });
 
+const LAL_SUBAREAS: ReadonlyArray<{ key: string; label: string; isMaster?: boolean }> = [
+  { key: "loja_a_loja", label: "Geral (Master)", isMaster: true },
+  { key: "lal_estrutura", label: "Estrutura" },
+  { key: "lal_classificacao", label: "Classificação" },
+  { key: "lal_acessos", label: "Acessos" },
+  { key: "lal_config", label: "Configuração" },
+  { key: "lal_ocorrencias", label: "Ocorrências" },
+];
+
+type LalKey = string;
+const LAL_SUB_KEYS: LalKey[] = ["lal_estrutura", "lal_classificacao", "lal_acessos", "lal_config", "lal_ocorrencias"];
+const LAL_ALL_KEYS: string[] = LAL_SUBAREAS.flatMap(s =>
+  PERMISSIONS.map(p => `can_${p.key}_${s.key}`)
+);
+
 const defaultForm = (): Omit<PermissionCategory, "id" | "created_at"> => ({
   name: "",
   can_view_clients: true, can_edit_clients: false, can_delete_clients: false,
@@ -55,6 +70,12 @@ const defaultForm = (): Omit<PermissionCategory, "id" | "created_at"> => ({
   can_view_photo_checkin: false,
   can_view_loja_a_loja: false,
   can_edit_loja_a_loja: false,
+  can_delete_loja_a_loja: false,
+  can_view_lal_estrutura: false, can_edit_lal_estrutura: false, can_delete_lal_estrutura: false,
+  can_view_lal_classificacao: false, can_edit_lal_classificacao: false, can_delete_lal_classificacao: false,
+  can_view_lal_acessos: false, can_edit_lal_acessos: false, can_delete_lal_acessos: false,
+  can_view_lal_config: false, can_edit_lal_config: false, can_delete_lal_config: false,
+  can_view_lal_ocorrencias: false, can_edit_lal_ocorrencias: false, can_delete_lal_ocorrencias: false,
 });
 
 export default function CategoryManager() {
@@ -93,10 +114,31 @@ export default function CategoryManager() {
     if (cat.can_manage_team_codes) count++;
     if (cat.can_lock_cards) count++;
     if (cat.can_view_photo_checkin) count++;
-    if (cat.can_view_loja_a_loja) count++;
-    if (cat.can_edit_loja_a_loja) count++;
+    for (const k of LAL_ALL_KEYS) {
+      if ((cat as Record<string, unknown>)[k]) count++;
+    }
     return count;
   };
+
+  // LAL helpers for the sub-matrix
+  const isLalCellChecked = (perm: PermKey, sub: LalKey) =>
+    !!(form as Record<string, unknown>)[`can_${perm}_${sub}`];
+  const setLalCell = (perm: PermKey, sub: LalKey, val: boolean) =>
+    setForm(f => ({ ...f, [`can_${perm}_${sub}`]: val } as typeof f));
+  const setLalColumn = (perm: PermKey, val: boolean) =>
+    setForm(f => {
+      const next = { ...f } as Record<string, unknown>;
+      for (const s of LAL_SUBAREAS) next[`can_${perm}_${s.key}`] = val;
+      return next as typeof f;
+    });
+  const setLalGeneral = (perm: PermKey, val: boolean) =>
+    setForm(f => {
+      const next = { ...f, [`can_${perm}_loja_a_loja`]: val } as Record<string, unknown>;
+      for (const s of LAL_SUB_KEYS) next[`can_${perm}_${s}`] = val;
+      return next as typeof f;
+    });
+  const isLalColumnAllOn = (perm: PermKey) =>
+    LAL_SUBAREAS.every(s => !!(form as Record<string, unknown>)[`can_${perm}_${s.key}`]);
 
   return (
     <div>
@@ -184,13 +226,29 @@ export default function CategoryManager() {
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-700 border border-teal-500/20">Ver</span>
                   </div>
                 )}
-                {(cat.can_view_loja_a_loja || cat.can_edit_loja_a_loja) && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs w-28 truncate text-muted-foreground">🏪 Loja a Loja</span>
-                    {cat.can_view_loja_a_loja && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 border border-amber-500/20">Ver</span>}
-                    {cat.can_edit_loja_a_loja && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 border border-amber-500/20">Editar</span>}
-                  </div>
-                )}
+                {(() => {
+                  const lalActive = LAL_ALL_KEYS.some(k => !!(cat as Record<string, unknown>)[k]);
+                  if (!lalActive) return null;
+                  return (
+                    <div className="flex items-start gap-2">
+                      <span className="text-xs w-28 truncate text-muted-foreground shrink-0">🏪 Loja a Loja</span>
+                      <div className="flex flex-wrap gap-1">
+                        {LAL_SUBAREAS.map(s => {
+                          const v = !!(cat as Record<string, unknown>)[`can_view_${s.key}`];
+                          const e = !!(cat as Record<string, unknown>)[`can_edit_${s.key}`];
+                          const d = !!(cat as Record<string, unknown>)[`can_delete_${s.key}`];
+                          if (!v && !e && !d) return null;
+                          const flags = [v && "V", e && "E", d && "D"].filter(Boolean).join("");
+                          return (
+                            <span key={s.key} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                              {s.label}: {flags}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               <p className="text-[10px] text-muted-foreground mt-3">{countPerms(cat)} permissão(ões) ativas</p>
@@ -277,20 +335,52 @@ export default function CategoryManager() {
               <label className="text-sm font-medium">✅ Ver Check-in de Fotos para Ocorrências</label>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={!!form.can_view_loja_a_loja}
-                onCheckedChange={checked => setForm(f => ({ ...f, can_view_loja_a_loja: !!checked }))}
-              />
-              <label className="text-sm font-medium">🏪 Ver Loja a Loja</label>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <Checkbox
-                checked={!!form.can_edit_loja_a_loja}
-                onCheckedChange={checked => setForm(f => ({ ...f, can_edit_loja_a_loja: !!checked }))}
-              />
-              <label className="text-sm font-medium">🏪 Editar Loja a Loja</label>
+            {/* Loja a Loja sub-matrix */}
+            <div className="border border-border rounded-lg overflow-hidden">
+              <div className="bg-muted/30 px-3 py-2 flex items-center justify-between">
+                <span className="text-sm font-semibold">🏪 Loja a Loja</span>
+                <span className="text-[10px] text-muted-foreground">Clique no cabeçalho da coluna para alternar tudo</span>
+              </div>
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-muted/20">
+                    <th className="text-left text-xs font-medium text-muted-foreground px-3 py-2">Sub-área</th>
+                    {PERMISSIONS.map(p => (
+                      <th key={p.key} className="text-center text-xs font-medium text-muted-foreground px-2 py-2 w-20">
+                        <button
+                          type="button"
+                          onClick={() => setLalColumn(p.key, !isLalColumnAllOn(p.key))}
+                          className="flex items-center justify-center gap-1 mx-auto hover:text-foreground transition-colors"
+                          title={`Alternar todos: ${p.label}`}
+                        >
+                          {p.icon} {p.label}
+                        </button>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {LAL_SUBAREAS.map((s, i) => (
+                    <tr key={s.key} className={i % 2 === 0 ? "bg-card" : "bg-muted/10"}>
+                      <td className="text-sm font-medium px-3 py-2.5">
+                        {s.label}
+                        {s.isMaster && <span className="ml-1 text-[10px] text-muted-foreground">(controla todas)</span>}
+                      </td>
+                      {PERMISSIONS.map(p => (
+                        <td key={p.key} className="text-center px-2 py-2.5">
+                          <Checkbox
+                            checked={isLalCellChecked(p.key, s.key)}
+                            onCheckedChange={checked => {
+                              if (s.isMaster) setLalGeneral(p.key, !!checked);
+                              else setLalCell(p.key, s.key, !!checked);
+                            }}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
             <Button onClick={handleSave} className="w-full" disabled={addCategory.isPending || updateCategory.isPending}>
