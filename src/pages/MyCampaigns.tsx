@@ -3,15 +3,19 @@ import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, LogOut, Package, Camera, Building2 } from "lucide-react";
+import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, LogOut, Package, Camera, Building2, Star, ArrowRight } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import ModuleGrid from "@/components/ModuleGrid";
+import { useCampaignFavorites, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 
 const MyCampaigns = () => {
   const { t } = useTranslation();
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const { campaigns, isLimited, isLoading } = useUserDirectAccess();
+  const { data: favorites } = useCampaignFavorites();
+  const toggleFavorite = useToggleFavorite();
+  const hasFavorites = favorites && favorites.length > 0;
 
   const MODULE_META: Record<string, { label: string; icon: React.ElementType }> = {
     stores: { label: t("modules.stores"), icon: Store },
