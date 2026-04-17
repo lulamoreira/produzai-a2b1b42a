@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useUserDirectAccess, type CampaignAccess } from "@/hooks/useUserDirectAccess";
 import { useCampaignFavorites, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 import AppLayout from "@/components/AppLayout";
-import { Star, ArrowRight, Briefcase } from "lucide-react";
+import { Star, ArrowRight, Briefcase, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
