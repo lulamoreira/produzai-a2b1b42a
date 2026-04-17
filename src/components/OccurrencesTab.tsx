@@ -440,7 +440,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   return (
     <div className="space-y-0">
       {/* LAYER 1 — Toolbar */}
-      <div className="flex items-center gap-2 px-4 py-2 border-b" style={{ borderColor: "var(--border-subtle)", minHeight: 44 }}>
+      <div className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-2 border-b" style={{ borderColor: "var(--border-subtle)", minHeight: 44 }}>
         {/* View toggle */}
         <div className="flex rounded-md border overflow-hidden shrink-0" style={{ borderColor: "var(--border-default)" }}>
           <button
