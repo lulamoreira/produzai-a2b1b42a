@@ -35,6 +35,22 @@ export type PermissionCategory = {
   can_view_photo_checkin: boolean;
   can_view_loja_a_loja: boolean;
   can_edit_loja_a_loja: boolean;
+  can_delete_loja_a_loja?: boolean;
+  can_view_lal_estrutura?: boolean;
+  can_edit_lal_estrutura?: boolean;
+  can_delete_lal_estrutura?: boolean;
+  can_view_lal_classificacao?: boolean;
+  can_edit_lal_classificacao?: boolean;
+  can_delete_lal_classificacao?: boolean;
+  can_view_lal_acessos?: boolean;
+  can_edit_lal_acessos?: boolean;
+  can_delete_lal_acessos?: boolean;
+  can_view_lal_config?: boolean;
+  can_edit_lal_config?: boolean;
+  can_delete_lal_config?: boolean;
+  can_view_lal_ocorrencias?: boolean;
+  can_edit_lal_ocorrencias?: boolean;
+  can_delete_lal_ocorrencias?: boolean;
   created_at: string;
 };
 
