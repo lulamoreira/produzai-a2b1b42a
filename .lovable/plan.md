@@ -1,44 +1,88 @@
 
 
-# Plan: Drag & Drop + Tap Image Upload on Piece Cards
+## Plano: adicionar cards de clientes na tela "Meu Acesso"
 
-## Overview
-Add drag & drop (desktop) and tap-to-upload (mobile) directly on piece cards in the TiposManager pieces grid, reusing the existing `cropSquare` function and upload logic.
+### Objetivo
+Para usuários restritos (acesso só a campanhas), mostrar **uma seção de clientes acessíveis** acima da seção atual de campanhas. Cada card de cliente leva à página do cliente (`/agency/:agencyId/clients/:clientId`), onde o usuário verá apenas as campanhas permitidas pela RLS.
 
-## Changes — `src/components/LojaALoja/TiposManager.tsx`
+### Validação técnica (concluída)
+- `ClientDetail` não bloqueia usuário restrito — apenas exige login.
+- `useCampaigns(clientId)` lê de `campaigns` filtrando por `client_id`. A RLS via `has_campaign_access` garante que usuário restrito só veja as campanhas a que tem acesso direto.
+- `useUserDirectAccess` já retorna `clientId`, `clientName` e `agencyId` em cada `CampaignAccess` — podemos derivar a lista de clientes únicos sem fetch adicional.
 
-### 1. Extract shared upload helper
-Create an internal `uploadPecaImage` async function that takes a `File` and a `pecaId`, runs `cropSquare(file, 400, 0.7)`, uploads to `piece-images` bucket with path `loja-a-loja-{pecaId}-{timestamp}.jpg`, gets public URL, and updates the piece via a new mutation. This same function will be called from drag & drop, tap/click, and the existing add-piece dialog flow.
+### Nova estrutura da tela `MeuAcesso.tsx`
 
-### 2. Add `useUpdatePecaImage` mutation
-In `useLojaALoja.ts`, add a mutation that updates `loja_a_loja_pecas.image_url` by piece ID (simple `.update({ image_url }).eq('id', id)`), invalidating the pecas query.
+```text
+┌─ Header: "Meu Acesso" ─────────────────────────┐
+│                                                │
+├─ ⭐ Favoritos (se houver) ────────────────────┤
+│   [card campanha] [card campanha] ...          │
+│                                                │
+├─ ─────────── divisor ─────────                │
+│                                                │
+├─ 🏢 Meus Clientes (NOVO) ─────────────────────┤
+│   [card cliente] [card cliente] ...            │
+│   → onClick: /agency/:a/clients/:c             │
+│                                                │
+├─ ─────────── divisor ─────────                │
+│                                                │
+├─ 💼 Minhas Campanhas (existente) ─────────────┤
+│   Cliente A                                    │
+│     [card camp] [card camp]                    │
+│   Cliente B                                    │
+│     [card camp]                                │
+└────────────────────────────────────────────────┘
+```
 
-### 3. New state: `uploadingPecaId`
-Track which piece card is currently uploading (`string | null`) to show a spinner overlay.
+### Implementação (arquivo único: `src/pages/MeuAcesso.tsx`)
 
-### 4. New state: `dragOverPecaId`
-Track which piece card has a file being dragged over it (`string | null`) for visual feedback.
+1. **Derivar lista única de clientes** a partir de `directCampaigns`:
+   ```ts
+   const uniqueClients = Array.from(
+     new Map(directCampaigns.map(c => [c.clientId, {
+       clientId: c.clientId,
+       clientName: c.clientName,
+       agencyId: c.agencyId,
+       campaignCount: 0,
+     }])).values()
+   );
+   // contar campanhas por cliente
+   directCampaigns.forEach(c => {
+     const entry = uniqueClients.find(u => u.clientId === c.clientId);
+     if (entry) entry.campaignCount++;
+   });
+   uniqueClients.sort((a, b) => a.clientName.localeCompare(b.clientName, "pt-BR"));
+   ```
 
-### 5. Replace piece card rendering (lines 522-543)
-Each card becomes a drop target + click-to-upload zone:
+2. **Adicionar nova seção "Meus Clientes"** entre Favoritos e Minhas Campanhas:
+   - Ícone `Building2` + título `t("meuAcesso.myClients", "Meus Clientes")`
+   - Grid `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4`
+   - Cada card:
+     - Mesmo estilo dos cards existentes (`card-base`, borda lateral colorida `#6366f1`)
+     - Avatar inicial do nome do cliente
+     - Nome do cliente (h3)
+     - Subtexto: `"{campaignCount} campanha(s)"`
+     - "Acessar →" no canto inferior
+   - `onClick`: `navigate(/agency/${agencyId}/clients/${clientId})`
 
-- **Drag events**: `onDragOver`, `onDragEnter`, `onDragLeave`, `onDrop` on the card wrapper. On drop, extract the first image file and call `uploadPecaImage(file, peca.id)`.
-- **Click/tap**: A hidden `<input type="file" accept="image/*">` per card, triggered on card click. After selection, call `uploadPecaImage(file, peca.id)`.
-- **Drag-over visual**: When `dragOverPecaId === peca.id`, show dashed border with brand color (`border-[#8C6F4E]`), semi-transparent overlay with "Solte a imagem aqui" text.
-- **Uploading visual**: When `uploadingPecaId === peca.id`, show spinner overlay.
-- **Empty card**: Dashed border + Image icon + "Arraste ou clique" text.
-- **Existing image**: Show image normally; drag & drop or click replaces it.
-- **File validation**: Only accept `image/png`, `image/jpeg`, `image/webp`.
+3. **Divisores condicionais**:
+   - Entre Favoritos e Clientes: se ambos existirem
+   - Entre Clientes e Campanhas: se ambos existirem
+   - Manter o atual entre Favoritos e Campanhas só se Clientes não aparecer
 
-### 6. Keep existing flows intact
-- The "+ Peça" button and add-piece dialog remain unchanged.
-- The delete button on cards remains unchanged.
-- The `cropSquare` function stays as-is (already isolated at module level).
+4. **Empty state** atualizado: texto se mantém quando nem favoritos nem campanhas existem (clientes derivam de campanhas, então mesma condição).
 
-## Files Changed
+5. **Imports**: adicionar `Building2` ao import do lucide-react.
 
-| File | Change |
-|------|--------|
-| `src/hooks/useLojaALoja.ts` | Add `useUpdateLojaPeca` mutation for updating `image_url` |
-| `src/components/LojaALoja/TiposManager.tsx` | Extract `uploadPecaImage` helper, add drag & drop + tap handlers on piece cards, add visual states |
+### Sem mudanças em
+- `useUserDirectAccess.ts` (já fornece tudo)
+- `ClientDetail.tsx` (RLS já filtra campanhas)
+- Rotas, RLS, banco
+- `Favorites.tsx`, `App.tsx`, `AppSidebar.tsx`
+
+### Teste pós-implementação
+- Login restrito com 2 campanhas em clientes diferentes → ver 2 cards de cliente + 2 cards de campanha agrupados
+- Clicar em card de cliente → entrar em ClientDetail e ver só as campanhas permitidas
+- Login restrito com 1 favorito + 1 campanha → ver favorito, 1 card de cliente, 1 card de campanha
+- Login restrito sem nada → empty state inalterado
 
