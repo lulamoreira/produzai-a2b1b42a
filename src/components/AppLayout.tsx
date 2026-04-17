@@ -122,7 +122,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
 
       <div className={`min-h-dvh transition-all duration-300 ${collapsed ? "lg:pl-[60px]" : "lg:pl-[220px]"}`}>
         {/* Always-visible desktop header bar */}
-        <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 sm:px-6 py-2">
+        <header className={`sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border pl-4 ${campaignId ? "pr-28" : "pr-14"} sm:px-6 py-2`}>
           <div className="flex items-center justify-between gap-3">
             {!isRootPage && (
               <button
