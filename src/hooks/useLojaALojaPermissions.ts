@@ -147,7 +147,13 @@ export function useLojaALojaPermissions(
 
   const p = data;
   return {
-    canViewModule: !!p.can_view_loja_a_loja,
+    canViewModule:
+      !!p.can_view_loja_a_loja ||
+      !!p.can_view_lal_estrutura ||
+      !!p.can_view_lal_classificacao ||
+      !!p.can_view_lal_acessos ||
+      !!p.can_view_lal_config ||
+      !!p.can_view_lal_ocorrencias,
     canDeleteModule: !!p.can_delete_loja_a_loja,
     estrutura: {
       canView: !!p.can_view_lal_estrutura,
