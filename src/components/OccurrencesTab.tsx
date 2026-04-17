@@ -784,19 +784,19 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           </DropdownMenu>
 
           {/* Store search */}
-          <div className="relative flex-1 min-w-[160px] sm:max-w-[240px]">
+          <div className="relative w-full sm:flex-1 sm:min-w-[160px] sm:max-w-[240px]">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: "var(--text-muted)" }} />
             <Input
               placeholder="Nome, apelido ou código"
               value={searchStore}
               onChange={(e) => setSearchStore(e.target.value)}
-              className="h-8 text-xs pl-7"
+              className="h-8 text-xs pl-7 w-full"
             />
           </div>
 
           {/* State select */}
           <Select value={filterState || "__all__"} onValueChange={(v) => setFilterState(v === "__all__" ? "" : v)}>
-            <SelectTrigger className="h-8 text-xs w-20 sm:w-24 shrink-0"><SelectValue placeholder="UF" /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs flex-1 sm:flex-none sm:w-24 min-w-0"><SelectValue placeholder="UF" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">UF</SelectItem>
               {stateOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -805,7 +805,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
 
           {/* City select */}
           <Select value={filterCity || "__all__"} onValueChange={(v) => setFilterCity(v === "__all__" ? "" : v)}>
-            <SelectTrigger className="h-8 text-xs flex-1 min-w-[110px] sm:flex-none sm:w-32 shrink-0"><SelectValue placeholder="Cidade" /></SelectTrigger>
+            <SelectTrigger className="h-8 text-xs flex-1 sm:flex-none sm:w-32 min-w-0"><SelectValue placeholder="Cidade" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Cidade</SelectItem>
               {cityOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
