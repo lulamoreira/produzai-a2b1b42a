@@ -199,6 +199,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        </div>
       </div>
     </div>
   );
