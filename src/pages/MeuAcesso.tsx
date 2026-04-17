@@ -39,13 +39,27 @@ const MeuAcesso = () => {
     a[1].clientName.localeCompare(b[1].clientName, "pt-BR")
   );
 
-  // Derive unique clients with campaign counts
-  const uniqueClients = clientGroups.map(([clientId, group]) => ({
-    clientId,
-    clientName: group.clientName,
-    agencyId: group.agencyId,
-    campaignCount: group.campaigns.length,
-  }));
+  // Merge clients from direct client access AND campaign-derived clients
+  const clientMap = new Map<string, { clientId: string; clientName: string; agencyId: string; campaignCount: number }>();
+  for (const dc of directClients) {
+    clientMap.set(dc.clientId, { ...dc, campaignCount: 0 });
+  }
+  for (const c of directCampaigns) {
+    const existing = clientMap.get(c.clientId);
+    if (existing) {
+      existing.campaignCount += 1;
+    } else {
+      clientMap.set(c.clientId, {
+        clientId: c.clientId,
+        clientName: c.clientName,
+        agencyId: c.agencyId,
+        campaignCount: 1,
+      });
+    }
+  }
+  const uniqueClients = Array.from(clientMap.values()).sort((a, b) =>
+    a.clientName.localeCompare(b.clientName, "pt-BR")
+  );
 
   const hasFavorites = favorites && favorites.length > 0;
   const hasCampaigns = directCampaigns.length > 0;
