@@ -77,7 +77,7 @@ const MeuAcesso = () => {
         </div>
 
         {/* Empty state */}
-        {!hasFavorites && !hasCampaigns && (
+        {!hasFavorites && !hasCampaigns && !hasClients && (
           <div className="text-center py-20">
             <Briefcase className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
             <p className="text-muted-foreground text-sm">
