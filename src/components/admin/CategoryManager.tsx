@@ -39,14 +39,14 @@ type PermKey = typeof PERMISSIONS[number]["key"];
 const getField = (form: any, perm: PermKey, mod: ModuleKey): boolean => form[`can_${perm}_${mod}`] ?? false;
 const setField = (form: any, perm: PermKey, mod: ModuleKey, val: boolean) => ({ ...form, [`can_${perm}_${mod}`]: val });
 
-const LAL_SUBAREAS = [
+const LAL_SUBAREAS: ReadonlyArray<{ key: string; label: string; isMaster?: boolean }> = [
   { key: "loja_a_loja", label: "Geral (Master)", isMaster: true },
   { key: "lal_estrutura", label: "Estrutura" },
   { key: "lal_classificacao", label: "Classificação" },
   { key: "lal_acessos", label: "Acessos" },
   { key: "lal_config", label: "Configuração" },
   { key: "lal_ocorrencias", label: "Ocorrências" },
-] as const;
+];
 
 type LalKey = typeof LAL_SUBAREAS[number]["key"];
 const LAL_SUB_KEYS: LalKey[] = ["lal_estrutura", "lal_classificacao", "lal_acessos", "lal_config", "lal_ocorrencias"];
