@@ -270,6 +270,64 @@ const AgencySelect = () => {
   return (
     <AppLayout title="Agências">
       <div className="max-w-5xl mx-auto">
+        {/* Favorites section (only when user has any) */}
+        {favorites.length > 0 && (
+          <div className="mb-10">
+            <div className="flex items-center gap-3 mb-4">
+              <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
+              <h2 className="text-xl font-bold text-foreground">Favoritos</h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {favorites.map((fav) => {
+                const color = fav.campaign_color || "#6366f1";
+                const initial = (fav.campaign_name || "C").charAt(0).toUpperCase();
+                return (
+                  <div
+                    key={fav.id}
+                    className="group card-base cursor-pointer hover:shadow-md transition-shadow duration-150 relative"
+                    onClick={() => navigate(`/agency/${fav.agency_id}/clients/${fav.client_id}/campaigns/${fav.campaign_id}`)}
+                  >
+                    <div
+                      className="absolute left-0 top-0 bottom-0 w-1 rounded-l-[var(--radius-card)]"
+                      style={{ backgroundColor: color }}
+                    />
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: color }}
+                      >
+                        <span className="text-white font-semibold text-base">{initial}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base truncate text-foreground">{fav.campaign_name}</h3>
+                        <p className="text-xs mt-0.5 text-muted-foreground">
+                          {fav.client_name} · {fav.agency_name}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 flex-shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFavorite.mutate({ campaignId: fav.campaign_id, isFavorited: true });
+                        }}
+                      >
+                        <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-end mt-3">
+                      <span className="text-[13px] font-medium text-primary flex items-center gap-1">
+                        Acessar <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="text-center mb-10">
           <h2 className="text-2xl font-bold text-foreground mb-2">Agências</h2>
           <p className="text-muted-foreground text-sm">Selecione uma agência para gerenciar seus clientes e campanhas.</p>
