@@ -115,7 +115,7 @@ const HomeRedirect = () => {
     },
   });
 
-  if (isLimited) return <Navigate to="/agencies" replace />;
+  if (isLimited) return <Navigate to="/favorites" replace />;
 
   if (isAdminOrMaster && isLoading) {
     return (
