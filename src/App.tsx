@@ -27,7 +27,6 @@ import PublicOccurrence from "./pages/PublicOccurrence";
 import PublicOccurrenceDetail from "./pages/PublicOccurrenceDetail";
 
 import MyCampaigns from "./pages/MyCampaigns";
-import Favorites from "./pages/Favorites";
 import MeuAcesso from "./pages/MeuAcesso";
 import PhotoCheckin from "./pages/PhotoCheckin";
 import InstallerPortal from "./pages/InstallerPortal";
