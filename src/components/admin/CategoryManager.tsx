@@ -226,13 +226,29 @@ export default function CategoryManager() {
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/10 text-teal-700 border border-teal-500/20">Ver</span>
                   </div>
                 )}
-                {(cat.can_view_loja_a_loja || cat.can_edit_loja_a_loja) && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs w-28 truncate text-muted-foreground">🏪 Loja a Loja</span>
-                    {cat.can_view_loja_a_loja && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 border border-amber-500/20">Ver</span>}
-                    {cat.can_edit_loja_a_loja && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 border border-amber-500/20">Editar</span>}
-                  </div>
-                )}
+                {(() => {
+                  const lalActive = LAL_ALL_KEYS.some(k => !!(cat as Record<string, unknown>)[k]);
+                  if (!lalActive) return null;
+                  return (
+                    <div className="flex items-start gap-2">
+                      <span className="text-xs w-28 truncate text-muted-foreground shrink-0">🏪 Loja a Loja</span>
+                      <div className="flex flex-wrap gap-1">
+                        {LAL_SUBAREAS.map(s => {
+                          const v = !!(cat as Record<string, unknown>)[`can_view_${s.key}`];
+                          const e = !!(cat as Record<string, unknown>)[`can_edit_${s.key}`];
+                          const d = !!(cat as Record<string, unknown>)[`can_delete_${s.key}`];
+                          if (!v && !e && !d) return null;
+                          const flags = [v && "V", e && "E", d && "D"].filter(Boolean).join("");
+                          return (
+                            <span key={s.key} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                              {s.label}: {flags}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               <p className="text-[10px] text-muted-foreground mt-3">{countPerms(cat)} permissão(ões) ativas</p>
