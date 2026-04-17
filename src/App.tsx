@@ -34,7 +34,7 @@ import Unsubscribe from "./pages/Unsubscribe";
 import SupplierPortal from "./pages/SupplierPortal";
 import StorePortal from "./pages/StorePortal";
 import OccurrencesPortal from "./pages/OccurrencesPortal";
-import { Clock } from "lucide-react";
+import { Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const queryClient = new QueryClient({
@@ -101,7 +101,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const HomeRedirect = () => {
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
-  const { isLimited, campaigns } = useUserDirectAccess();
+  const { isLimited, campaigns, isLoading: directLoading } = useUserDirectAccess();
   const { data: hasFavorites, isLoading } = useQuery({
     queryKey: ["has_favorites", user?.id],
     enabled: !!user && isAdminOrMaster,
@@ -114,6 +114,14 @@ const HomeRedirect = () => {
       return (data?.length ?? 0) > 0;
     },
   });
+
+  if (directLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (isLimited) {
     const agencyIds = Array.from(new Set(campaigns.map((c) => c.agencyId).filter(Boolean)));

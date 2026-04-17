@@ -32,7 +32,7 @@ const MyCampaigns = () => {
   }
 
   if (!isLimited) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/agencies" replace />;
   }
 
   if (campaigns.length === 1 && campaigns[0].modules.length === 1) {
