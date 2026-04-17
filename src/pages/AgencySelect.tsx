@@ -9,6 +9,7 @@ import {
 } from "@/hooks/useAgencies";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
+import { useCampaignFavorites, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Building2, Plus, ArrowRight, Trash2, LogOut, Shield, Sparkles, MessageSquare, Upload, Palette, ImageIcon, RotateCcw, Trash, Clock } from "lucide-react";
+import { Building2, Plus, ArrowRight, Trash2, LogOut, Shield, Sparkles, MessageSquare, Upload, Palette, ImageIcon, RotateCcw, Trash, Clock, Star } from "lucide-react";
 import { toast } from "sonner";
 
 const PRESET_COLORS = [
@@ -44,6 +45,8 @@ const AgencySelect = () => {
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const { isLimited, campaigns: limitedCampaigns, isLoading: loadingDirectAccess } = useUserDirectAccess();
+  const { data: favorites = [] } = useCampaignFavorites();
+  const toggleFavorite = useToggleFavorite();
   const { data: allAgencies = [], isLoading } = useAgencies();
   const { data: allAgenciesIncDeleted = [] } = useAgencies(true);
 
