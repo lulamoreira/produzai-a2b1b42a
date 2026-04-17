@@ -19,7 +19,7 @@ const Favorites = () => {
   const navigate = useNavigate();
   const { data: favorites, isLoading } = useCampaignFavorites();
   const toggleFavorite = useToggleFavorite();
-  const { isLimited, campaigns: directCampaigns } = useUserDirectAccess();
+  const { isLimited, campaigns: directCampaigns, isLoading: directLoading } = useUserDirectAccess();
 
   // Agency data — same hooks as AgencySelect
   const { data: allAgencies = [], isLoading: loadingAgencies } = useAgencies();
@@ -152,14 +152,20 @@ const Favorites = () => {
 
         {/* Divider + secondary section: Acesso Direto (restricted) OR Todas as Agências (others) */}
         <div className="mt-10 pt-8 border-t" style={{ borderColor: "var(--border)" }}>
-          <div className="flex items-center gap-3 mb-6">
-            <Building2 className="w-5 h-5 text-muted-foreground" />
-            <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
-              {isLimited
-                ? t("favorites.directAccess", "Acesso Direto")
-                : t("favorites.allAgencies", "Todas as Agências")}
-            </h2>
-          </div>
+          {directLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 mb-6">
+                <Building2 className="w-5 h-5 text-muted-foreground" />
+                <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
+                  {isLimited
+                    ? t("favorites.directAccess", "Acesso Direto")
+                    : t("favorites.allAgencies", "Todas as Agências")}
+                </h2>
+              </div>
 
           {isLimited ? (
             // Restricted user: campaigns grouped by client
@@ -278,6 +284,8 @@ const Favorites = () => {
                 );
               })}
             </div>
+          )}
+            </>
           )}
         </div>
       </div>
