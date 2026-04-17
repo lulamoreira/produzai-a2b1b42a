@@ -19,7 +19,7 @@ const Favorites = () => {
   const navigate = useNavigate();
   const { data: favorites, isLoading } = useCampaignFavorites();
   const toggleFavorite = useToggleFavorite();
-  const { isLimited, campaigns: directCampaigns } = useUserDirectAccess();
+  const { isLimited, campaigns: directCampaigns, isLoading: directLoading } = useUserDirectAccess();
 
   // Agency data — same hooks as AgencySelect
   const { data: allAgencies = [], isLoading: loadingAgencies } = useAgencies();
