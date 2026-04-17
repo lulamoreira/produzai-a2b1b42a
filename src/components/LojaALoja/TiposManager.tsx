@@ -817,6 +817,17 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                       pecaCount={getTipoCount(tipo)}
                       canEdit={canEdit}
                       canDelete={canDelete}
+                      onSelect={() => handleSelectTipo(tipo)}
+                      onStartEdit={() => { setEditingTipoId(tipo.id); setEditingTipoNome(tipo.nome); }}
+                      onSaveEdit={handleSaveEditTipo}
+                      onCancelEdit={() => setEditingTipoId(null)}
+                      onChangeEditNome={setEditingTipoNome}
+                      onDelete={() => setDeletingTipo({ id: tipo.id, nome: tipo.nome })}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+              {canEdit && renderAddTipoForm("vitrines")}
             </div>
 
             {/* Internos section */}
