@@ -7,6 +7,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useCampaignFavorites, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 import { useAgencies } from "@/hooks/useAgencies";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
+import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import AppLayout from "@/components/AppLayout";
 import { Star, ArrowRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ const Favorites = () => {
   const navigate = useNavigate();
   const { data: favorites, isLoading } = useCampaignFavorites();
   const toggleFavorite = useToggleFavorite();
+  const { isLimited, campaigns: directCampaigns } = useUserDirectAccess();
 
   // Agency data — same hooks as AgencySelect
   const { data: allAgencies = [], isLoading: loadingAgencies } = useAgencies();
@@ -46,6 +48,16 @@ const Favorites = () => {
         );
         return hasAgencyAccess || hasClientInAgency;
       });
+
+  // Group direct-access campaigns by client (for restricted users)
+  const byClient = directCampaigns.reduce((acc, c) => {
+    if (!acc[c.clientId]) acc[c.clientId] = { clientName: c.clientName, agencyId: c.agencyId, campaigns: [] };
+    acc[c.clientId].campaigns.push(c);
+    return acc;
+  }, {} as Record<string, { clientName: string; agencyId: string; campaigns: typeof directCampaigns }>);
+  const clientGroups = Object.entries(byClient).sort((a, b) =>
+    a[1].clientName.localeCompare(b[1].clientName, "pt-BR")
+  );
 
   return (
     <AppLayout>
@@ -138,16 +150,88 @@ const Favorites = () => {
           </div>
         )}
 
-        {/* Divider + All Agencies section */}
+        {/* Divider + secondary section: Acesso Direto (restricted) OR Todas as Agências (others) */}
         <div className="mt-10 pt-8 border-t" style={{ borderColor: "var(--border)" }}>
           <div className="flex items-center gap-3 mb-6">
             <Building2 className="w-5 h-5 text-muted-foreground" />
             <h2 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
-              {t("favorites.allAgencies", "Todas as Agências")}
+              {isLimited
+                ? t("favorites.directAccess", "Acesso Direto")
+                : t("favorites.allAgencies", "Todas as Agências")}
             </h2>
           </div>
 
-          {loadingAgencies ? (
+          {isLimited ? (
+            // Restricted user: campaigns grouped by client
+            directCampaigns.length === 0 ? (
+              <div className="text-center py-12">
+                <Building2 className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
+                <p className="text-muted-foreground text-sm">
+                  {t("favorites.noDirectCampaigns", "Nenhuma campanha disponível.")}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {clientGroups.map(([clientId, group]) => (
+                  <div key={clientId}>
+                    <h3
+                      className="font-bold text-foreground text-base mb-3"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      {group.clientName}
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {group.campaigns.map((c) => {
+                        const initial = (c.campaignName || "C").charAt(0).toUpperCase();
+                        const color = "#6366f1";
+                        return (
+                          <div
+                            key={c.campaignId}
+                            className="group card-base cursor-pointer hover:shadow-md transition-shadow duration-150 relative"
+                            onClick={() =>
+                              navigate(
+                                `/agency/${c.agencyId}/clients/${c.clientId}/campaigns/${c.campaignId}`
+                              )
+                            }
+                          >
+                            <div
+                              className="absolute left-0 top-0 bottom-0 w-1 rounded-l-[var(--radius-card)]"
+                              style={{ backgroundColor: color }}
+                            />
+                            <div className="flex items-start gap-3">
+                              <div
+                                className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0"
+                                style={{ backgroundColor: color }}
+                              >
+                                <span className="text-white font-semibold text-base">{initial}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4
+                                  className="font-semibold text-base truncate"
+                                  style={{ color: "var(--text-primary)" }}
+                                >
+                                  {c.campaignName}
+                                </h4>
+                                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                                  {c.clientName}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-end mt-3">
+                              <span className="text-[13px] font-medium text-primary flex items-center gap-1">
+                                {t("clientDashboard.access", "Acessar")}{" "}
+                                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : loadingAgencies ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
             </div>
