@@ -29,7 +29,6 @@ import {
 
 const CAMPAIGN_MODULE_KEYS = [
   { key: "scheduling", tKey: "modules.scheduling", icon: CalendarDays, color: "#5C6B3F" },
-  { key: "history", tKey: "modules.history", icon: History, color: "#6B5B4E" },
   { key: "installations", tKey: "modules.installations", icon: Camera, color: "#7B5E3A" },
   { key: "loja_a_loja", tKey: "modules.loja_a_loja", icon: LayoutGrid, color: "#5B7B5E" },
   { key: "stores", tKey: "modules.stores", icon: Store, color: "#6B4F2E" },
