@@ -101,7 +101,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const HomeRedirect = () => {
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
-  const { isLimited } = useUserDirectAccess();
+  const { isLimited, campaigns } = useUserDirectAccess();
   const { data: hasFavorites, isLoading } = useQuery({
     queryKey: ["has_favorites", user?.id],
     enabled: !!user && isAdminOrMaster,
@@ -115,7 +115,13 @@ const HomeRedirect = () => {
     },
   });
 
-  if (isLimited) return <Navigate to="/favorites" replace />;
+  if (isLimited) {
+    const agencyIds = Array.from(new Set(campaigns.map((c) => c.agencyId).filter(Boolean)));
+    if (agencyIds.length === 1) {
+      return <Navigate to={`/agency/${agencyIds[0]}`} replace />;
+    }
+    return <Navigate to="/agencies" replace />;
+  }
 
   if (isAdminOrMaster && isLoading) {
     return (
