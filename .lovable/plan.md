@@ -1,60 +1,38 @@
 
 
-## Diagnóstico
-A tela é o **diálogo de Categorias de Permissão** (`CategoryManager.tsx`), aberto via Admin → Categorias → Editar.
+## Pré-aplicar filtros ao navegar dos KPIs do Status da Campanha
 
-Problemas confirmados no código:
-1. `DialogContent className="max-w-lg"` (≈512px) — estreito demais para 2 tabelas (Módulo×Permissão e Loja a Loja×Permissão).
-2. Sem scroll interno: o `DialogContent` cresce até ultrapassar a viewport e oculta o botão "Salvar" + última linha (visível no print).
-3. Header e footer (botão Salvar) **não são sticky** — somem ao rolar.
-4. Tabelas usam larguras fixas (`w-20`) sem responsividade — em mobile estouram horizontal.
-5. Checkboxes minúsculas, alvos de toque < 44px (viola padrão V2 mobile).
-6. Toggles "Ver/Editar/Apagar" na coluna são botões escondidos (cabeçalho clicável sem affordance visual clara).
+Hoje, ao clicar em "5 Pendentes" no painel **Status da Campanha**, o sistema apenas abre o módulo de Instalações com **todas** as 99 lojas listadas. O usuário precisa aplicar manualmente o filtro para isolar as pendentes. O mesmo problema ocorre com os demais KPIs (Concluídas, Sem check-in, Com ocorrência, Agendadas, etc.).
 
-## Redesenho proposto
+A correção fará com que cada KPI carregue o módulo de destino **já com o filtro correspondente aplicado**.
 
-### Layout do diálogo
-- Trocar `max-w-lg` por `max-w-3xl` (desktop) com `w-[95vw]` (mobile).
-- Estrutura interna em 3 zonas com **flex-col + altura máxima**:
-  - **Header sticky** (título + nome da categoria sempre visível)
-  - **Body scrollable** (`overflow-y-auto`, `max-h-[calc(90vh-200px)]`)
-  - **Footer sticky** com botões "Cancelar" + "Salvar" sempre acessíveis
+### Mapeamento de KPIs → Filtro de destino
 
-### Conteúdo reorganizado em seções colapsáveis
-Dividir em **Accordion** (Radix) com 4 seções, todas abertas por padrão no desktop, fechadas no mobile:
-1. **Informações** — campo Nome
-2. **Módulos principais** — matriz Módulo × (Ver/Editar/Apagar)
-3. **Permissões avançadas** — 4 toggles (Lojista, Códigos, Cards, Check-in) em grid 2 colunas no desktop, 1 no mobile
-4. **Loja a Loja** — sub-matriz dedicada
+| KPI | Módulo destino | Filtro pré-aplicado |
+|-----|---------------|---------------------|
+| Lojas total | Instalações | (sem filtro) |
+| Concluídas | Instalações | Status = `completed` |
+| Pendentes | Instalações | Status = `pending` |
+| Com ocorrência | Ocorrências | (lista padrão de abertas) |
+| Com check-in | Instalações | Check-in = `checked` |
+| Sem check-in | Instalações | Check-in = `unchecked` |
+| Fotos enviadas | Instalações | Resumo = `withPhotos` |
+| Agendadas | Agendamento | Resumo = `scheduled` |
 
-### Matriz responsiva
-- **Desktop (≥768px)**: tabela tradicional, mas com toggle no header da coluna mostrando "Marcar todos" como botão visível com ícone, não link disfarçado.
-- **Mobile (<768px)**: vira **lista vertical** — cada módulo é um card com 3 toggles em linha (label "Ver / Editar / Apagar"), eliminando scroll horizontal.
+### Como vai funcionar (UX)
 
-### Cards do `UserPermissionCard`
-Redesenho leve para coerência (mesma tela, problemas relacionados):
-- Botões de ação (suspender/remover) em alvo mínimo de 36×36px.
-- Em mobile: empilhar `Select Categoria` + `Badge` + ações em duas linhas para evitar quebra ruim.
-- Linha de adicionar acesso (cliente/agência/campanha): inputs em `flex-col` no mobile, `flex-row` no desktop.
+1. Usuário clica num card do dashboard (ex.: "5 Pendentes").
+2. O sistema abre o módulo correspondente com o filtro já marcado no topo.
+3. A lista exibe **apenas** os registros que correspondem ao filtro (no exemplo, apenas as 5 lojas pendentes).
+4. O usuário pode limpar o filtro normalmente para voltar a ver tudo.
 
-### Acessibilidade & UX
-- Foco visível em todos os controles.
-- Checkboxes com `min-h-[28px] min-w-[28px]` (alvo touch).
-- Cabeçalho de coluna com tooltip "Clique para marcar/desmarcar tudo" + ícone visual.
-- Salvar desabilitado quando nome vazio.
+### Detalhes técnicos
 
-## Arquivos a editar
-- `src/components/admin/CategoryManager.tsx` — redesenho completo do diálogo (estrutura sticky + accordion + responsividade mobile).
-- `src/components/admin/UserPermissionCard.tsx` — pequenos ajustes responsivos no `AccessRow` e formulários de adicionar acesso.
+- **`CampaignStatusDashboard.tsx`**: cada KPI passará um identificador de filtro (ex.: `{ section: "installations", filter: "pending" }`) em vez de só o nome da seção.
+- **`CampaignDetail.tsx`**: o `onNavigate` salvará esse filtro num estado local (`pendingInitialFilter`) e o repassará como prop para o componente da seção ativa (`InstallationsTab`, `SchedulingTab`, `OccurrencesTab`).
+- **`InstallationsTab.tsx`**: aceitará nova prop opcional `initialFilter` que, no `useEffect` inicial, definirá `setFilterStatus("pending")`, `setFilterCheckin("checked")`, `setSummaryFilter("withPhotos")` etc., conforme o caso. Após aplicar, o filtro é "consumido" (limpo do estado pai) para não reaplicar em navegações futuras.
+- **`SchedulingTab.tsx`**: mesma abordagem com `setSummaryFilter("scheduled")`.
+- **`OccurrencesTab.tsx`**: já abre por padrão a aba de ocorrências abertas — não precisará de mudança.
 
-## Não tocar
-- Lógica de `defaultForm`, helpers `setLalCell/setLalGeneral`, hooks de mutação — **zero alteração lógica** (regra V2).
-- Estrutura de tabs em `Admin.tsx`.
-- Permissões e categorias no banco.
-
-## Teste pós-implementação
-- Desktop 1332px: abrir "Editar Categoria" → todas as seções visíveis, footer "Salvar" sempre fixo.
-- Mobile 390px: abrir mesmo diálogo → matriz vira lista vertical, sem scroll horizontal, botão Salvar acessível.
-- Cards de usuário: adicionar agência/cliente/campanha em mobile sem quebra de layout.
-- Salvar nova categoria e editar existente — comportamento idêntico ao atual.
+Nenhum filtro existente será removido; apenas habilitamos a pré-seleção a partir da navegação.
 
