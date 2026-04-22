@@ -543,12 +543,158 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
       </div>
 
       {/* ═══ ADD SUPPLIER DIALOG ═══ */}
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setShowQuickCreate(false); setClientSupplierSearch(""); } }}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Adicionar Fornecedor</DialogTitle>
-            <DialogDescription>Cadastre um fornecedor para participar da cotação.</DialogDescription>
+            <DialogDescription>Selecione um fornecedor cadastrado ou adicione manualmente.</DialogDescription>
           </DialogHeader>
+
+          {/* ─── Picker from client suppliers ─── */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold">Selecionar do cadastro do cliente</Label>
+              {!showQuickCreate && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs gap-1 text-primary"
+                  onClick={() => setShowQuickCreate(true)}
+                >
+                  <Plus className="w-3 h-3" /> Cadastrar novo
+                </Button>
+              )}
+            </div>
+
+            {showQuickCreate ? (
+              <div className="border border-border rounded-md p-3 space-y-2 bg-muted/30">
+                <p className="text-xs font-medium text-muted-foreground">Novo fornecedor (será salvo no cadastro do cliente)</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    placeholder="Empresa *"
+                    value={quickCreateForm.company_name}
+                    onChange={(e) => setQuickCreateForm((p) => ({ ...p, company_name: e.target.value }))}
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    placeholder="Contato"
+                    value={quickCreateForm.contact_name}
+                    onChange={(e) => setQuickCreateForm((p) => ({ ...p, contact_name: e.target.value }))}
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    placeholder="Telefone"
+                    value={quickCreateForm.phone}
+                    onChange={(e) => setQuickCreateForm((p) => ({ ...p, phone: e.target.value }))}
+                    className="h-8 text-xs"
+                  />
+                  <Input
+                    type="email"
+                    placeholder="E-mail *"
+                    value={quickCreateForm.email}
+                    onChange={(e) => setQuickCreateForm((p) => ({ ...p, email: e.target.value }))}
+                    className="h-8 text-xs"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => { setShowQuickCreate(false); setQuickCreateForm({ company_name: "", contact_name: "", phone: "", email: "" }); }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="h-7 text-xs"
+                    disabled={addClientSupplier.isPending || !quickCreateForm.company_name.trim() || !quickCreateForm.email.trim()}
+                    onClick={async () => {
+                      try {
+                        const created = await addClientSupplier.mutateAsync({
+                          client_id: clientId,
+                          company_name: quickCreateForm.company_name.trim(),
+                          contact_name: quickCreateForm.contact_name.trim() || null,
+                          phone: quickCreateForm.phone.trim() || null,
+                          email: quickCreateForm.email.trim(),
+                        });
+                        setNewSupplier({
+                          company_name: created.company_name,
+                          contact_name: created.contact_name || "",
+                          phone: created.phone || "",
+                          email: created.email,
+                        });
+                        setShowQuickCreate(false);
+                        setQuickCreateForm({ company_name: "", contact_name: "", phone: "", email: "" });
+                      } catch { /* toast handled by hook */ }
+                    }}
+                  >
+                    Salvar e usar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <Input
+                  placeholder="Buscar por empresa ou e-mail..."
+                  value={clientSupplierSearch}
+                  onChange={(e) => setClientSupplierSearch(e.target.value)}
+                  className="h-8 text-xs"
+                />
+                <div className="max-h-40 overflow-y-auto border border-border rounded-md divide-y divide-border">
+                  {clientSuppliers.length === 0 ? (
+                    <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                      Nenhum fornecedor cadastrado para este cliente.
+                    </div>
+                  ) : (
+                    clientSuppliers
+                      .filter((s) => {
+                        const q = clientSupplierSearch.trim().toLowerCase();
+                        if (!q) return true;
+                        return s.company_name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q);
+                      })
+                      .map((s) => (
+                        <div key={s.id} className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-muted/40">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-medium text-foreground truncate">{s.company_name}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">{s.email}</p>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => setNewSupplier({
+                              company_name: s.company_name,
+                              contact_name: s.contact_name || "",
+                              phone: s.phone || "",
+                              email: s.email,
+                            })}
+                          >
+                            Usar
+                          </Button>
+                        </div>
+                      ))
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* ─── Divider ─── */}
+          <div className="relative my-2">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-[10px] uppercase">
+              <span className="bg-background px-2 text-muted-foreground">Ou adicionar manualmente</span>
+            </div>
+          </div>
+
+          {/* ─── Manual entry form ─── */}
           <div className="space-y-3">
             <div>
               <Label className="text-xs">Empresa</Label>
