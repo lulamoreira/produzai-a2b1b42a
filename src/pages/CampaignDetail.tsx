@@ -71,6 +71,7 @@ import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
+import ExportAllPhotosDialog from "@/components/ExportAllPhotosDialog";
 import RateioExportColorDialog, { type ColorPalette } from "@/components/RateioExportColorDialog";
 import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 import PendingOccurrencesDashboard from "@/components/PendingOccurrencesDashboard";
@@ -1002,14 +1003,22 @@ const CampaignDetail = () => {
                   <span className="text-[13px] group-hover:underline" style={{ color: "var(--text-muted)" }}>{t("pieces.registered")}</span>
                 </button>
               </div>
-              {(isAdmin || canEditCampaign) && (
-                <ExportReportDropdown
-                  campaignId={campaignId!}
-                  clientId={clientId!}
-                  campaignName={campaign?.name || ""}
-                  clientName={client?.name || ""}
-                />
-              )}
+              <div className="flex items-center gap-2">
+                {isAdminOrMaster && (
+                  <ExportAllPhotosDialog
+                    campaignId={campaignId!}
+                    campaignName={campaign?.name || ""}
+                  />
+                )}
+                {(isAdmin || canEditCampaign) && (
+                  <ExportReportDropdown
+                    campaignId={campaignId!}
+                    clientId={clientId!}
+                    campaignName={campaign?.name || ""}
+                    clientName={client?.name || ""}
+                  />
+                )}
+              </div>
             </div>
 
             <CampaignStatusDashboard
