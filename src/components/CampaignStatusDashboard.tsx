@@ -102,7 +102,7 @@ export default function CampaignStatusDashboard({
     ? Math.round((stats.instalacoes_concluidas / stats.total_lojas) * 100)
     : 0;
 
-  const kpis: { valor: number; label: string; cor: KpiColor; section: string }[] = [
+  const kpis: { valor: number; label: string; cor: KpiColor; section: string; filter?: DashboardFilter }[] = [
     {
       valor: stats.total_lojas,
       label: "Lojas total",
@@ -114,12 +114,14 @@ export default function CampaignStatusDashboard({
       label: "Concluídas",
       cor: "success",
       section: "installations",
+      filter: { type: "status", value: "completed" },
     },
     {
       valor: stats.instalacoes_pendentes,
       label: "Pendentes",
       cor: stats.instalacoes_pendentes > 0 ? "warning" : "neutral",
       section: "installations",
+      filter: { type: "status", value: "pending" },
     },
     {
       valor: stats.lojas_com_ocorrencia,
@@ -132,24 +134,28 @@ export default function CampaignStatusDashboard({
       label: "Com check-in",
       cor: "success",
       section: "installations",
+      filter: { type: "checkin", value: "checked" },
     },
     {
       valor: stats.sem_checkin,
       label: "Sem check-in",
       cor: stats.sem_checkin > 0 ? "danger" : "neutral",
       section: "installations",
+      filter: { type: "checkin", value: "unchecked" },
     },
     {
       valor: stats.total_fotos,
       label: "Fotos enviadas",
       cor: "neutral",
       section: "installations",
+      filter: { type: "summary", value: "withPhotos" },
     },
     {
       valor: stats.agendamentos_confirmados,
       label: "Agendadas",
       cor: "success",
       section: "scheduling",
+      filter: { type: "summary", value: "scheduled" },
     },
   ];
 
@@ -172,7 +178,7 @@ export default function CampaignStatusDashboard({
           return (
             <button
               key={i}
-              onClick={() => onNavigate(kpi.section)}
+              onClick={() => onNavigate(kpi.section, kpi.filter)}
               className={`flex flex-col items-start gap-1 p-3 rounded-lg text-left transition-all hover:-translate-y-0.5 hover:shadow-md ${colors.card}`}
             >
               <span className={`text-2xl font-bold leading-none ${colors.value}`}>
