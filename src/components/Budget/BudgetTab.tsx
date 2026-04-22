@@ -104,6 +104,15 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyCode);
   const [showLockConfirm, setShowLockConfirm] = useState(false);
 
+  // Client suppliers picker
+  const { data: clientSuppliers = [] } = useClientSuppliers(clientId);
+  const addClientSupplier = useAddClientSupplier();
+  const [clientSupplierSearch, setClientSupplierSearch] = useState("");
+  const [showQuickCreate, setShowQuickCreate] = useState(false);
+  const [quickCreateForm, setQuickCreateForm] = useState({
+    company_name: "", contact_name: "", phone: "", email: "",
+  });
+
   // Keep selectedCurrency in sync if settings load after mount
   React.useEffect(() => {
     setSelectedCurrency(currencyCode);
