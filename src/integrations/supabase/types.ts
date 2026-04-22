@@ -285,6 +285,7 @@ export type Database = {
           budget_amount: number | null
           campaign_id: string
           created_at: string | null
+          currency_code: string
           deadline: string | null
           id: string
           notify_user_ids: string[] | null
@@ -293,6 +294,7 @@ export type Database = {
           budget_amount?: number | null
           campaign_id: string
           created_at?: string | null
+          currency_code?: string
           deadline?: string | null
           id?: string
           notify_user_ids?: string[] | null
@@ -301,6 +303,7 @@ export type Database = {
           budget_amount?: number | null
           campaign_id?: string
           created_at?: string | null
+          currency_code?: string
           deadline?: string | null
           id?: string
           notify_user_ids?: string[] | null
