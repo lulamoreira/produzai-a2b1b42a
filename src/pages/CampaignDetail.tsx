@@ -2451,6 +2451,12 @@ const CampaignDetail = () => {
               campaignName={campaign?.name || ""}
               clientId={clientId!}
               agencyId={agencyId}
+              initialFilter={
+                pendingInitialFilter?.type === "summary" && pendingInitialFilter.value === "scheduled"
+                  ? { type: "summary", value: "scheduled" }
+                  : null
+              }
+              onInitialFilterApplied={() => setPendingInitialFilter(null)}
             />
           )}
 
@@ -2464,6 +2470,16 @@ const CampaignDetail = () => {
               clientId={clientId!}
               agencyName={agency?.name || ""}
               clientName={client?.name || ""}
+              initialFilter={
+                pendingInitialFilter && (
+                  pendingInitialFilter.type === "status" ||
+                  pendingInitialFilter.type === "checkin" ||
+                  (pendingInitialFilter.type === "summary" && pendingInitialFilter.value === "withPhotos")
+                )
+                  ? (pendingInitialFilter as any)
+                  : null
+              }
+              onInitialFilterApplied={() => setPendingInitialFilter(null)}
             />
           )}
 
