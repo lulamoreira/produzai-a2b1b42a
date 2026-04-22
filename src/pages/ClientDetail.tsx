@@ -919,12 +919,9 @@ const ClientDetail = () => {
                 </Button>
                 {canEditStores && (
                   <>
-                    <label className="cursor-pointer">
-                      <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportFile} />
-                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" asChild>
-                        <span><Upload className="w-3 h-3" /> Importar</span>
-                      </Button>
-                    </label>
+                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setStoreImportOpen(true)}>
+                      <Upload className="w-3 h-3" /> Importar
+                    </Button>
                     <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleReviewStoreCodes}>
                       <Sparkles className="w-3 h-3" /> Códigos
                     </Button>
