@@ -286,6 +286,7 @@ export type Database = {
           campaign_id: string
           created_at: string | null
           currency_code: string
+          currency_locked: boolean
           deadline: string | null
           id: string
           notify_user_ids: string[] | null
@@ -295,6 +296,7 @@ export type Database = {
           campaign_id: string
           created_at?: string | null
           currency_code?: string
+          currency_locked?: boolean
           deadline?: string | null
           id?: string
           notify_user_ids?: string[] | null
@@ -304,6 +306,7 @@ export type Database = {
           campaign_id?: string
           created_at?: string | null
           currency_code?: string
+          currency_locked?: boolean
           deadline?: string | null
           id?: string
           notify_user_ids?: string[] | null
