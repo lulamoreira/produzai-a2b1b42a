@@ -316,8 +316,8 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                 <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
             )}
-            {/* Deadline */}
-            <div className="flex items-center gap-2">
+            {/* Deadline + Currency */}
+            <div className="flex items-center gap-2 flex-wrap">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className={cn("h-7 text-xs gap-1", !deadlineDate && "text-muted-foreground")}>
@@ -335,6 +335,28 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                   />
                 </PopoverContent>
               </Popover>
+              <Select
+                value={currencyCode}
+                onValueChange={(val) => {
+                  saveSettings.mutate({
+                    campaign_id: campaignId,
+                    budget_amount: budgetAmount,
+                    deadline: settings?.deadline ?? null,
+                    currency_code: val,
+                  });
+                }}
+              >
+                <SelectTrigger className="h-7 w-auto text-xs gap-1 px-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(COUNTRY_CONFIGS).map((c) => (
+                    <SelectItem key={c.currency} value={c.currency} className="text-xs">
+                      {c.currency} — {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>

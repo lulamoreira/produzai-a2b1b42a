@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
+import { formatCurrencyByCode } from "@/lib/countryConfig";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
 
 /* ─── Types ──────────────────────────────────────────────── */
@@ -89,10 +90,7 @@ interface DisplayRow {
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
-const fmt = (v: number | null | undefined) =>
-  v != null
-    ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
-    : "—";
+// Currency formatter is created inside the component to access the campaign's currency_code
 
 const daysUntil = (d: string | null) => {
   if (!d) return null;
