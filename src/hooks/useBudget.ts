@@ -21,17 +21,16 @@ export function useBudgetSettings(campaignId: string | undefined) {
 export function useSaveBudgetSettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { campaign_id: string; budget_amount?: number | null; deadline?: string | null }) => {
+    mutationFn: async (params: { campaign_id: string; budget_amount?: number | null; deadline?: string | null; currency_code?: string }) => {
+      const payload: Record<string, unknown> = {
+        campaign_id: params.campaign_id,
+        budget_amount: params.budget_amount ?? null,
+        deadline: params.deadline ?? null,
+      };
+      if (params.currency_code !== undefined) payload.currency_code = params.currency_code;
       const { data, error } = await supabase
         .from("budget_settings")
-        .upsert(
-          {
-            campaign_id: params.campaign_id,
-            budget_amount: params.budget_amount ?? null,
-            deadline: params.deadline ?? null,
-          },
-          { onConflict: "campaign_id" }
-        )
+        .upsert(payload as never, { onConflict: "campaign_id" })
         .select()
         .single();
       if (error) throw error;

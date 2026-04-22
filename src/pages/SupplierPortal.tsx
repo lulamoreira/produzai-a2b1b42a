@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
+import { formatCurrencyByCode } from "@/lib/countryConfig";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
 
 /* ─── Types ──────────────────────────────────────────────── */
@@ -89,10 +90,7 @@ interface DisplayRow {
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
-const fmt = (v: number | null | undefined) =>
-  v != null
-    ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
-    : "—";
+// Currency formatter is created inside the component to access the campaign's currency_code
 
 const daysUntil = (d: string | null) => {
   if (!d) return null;
@@ -128,6 +126,7 @@ const SupplierPortal = () => {
   const [clientName, setClientName] = useState("");
   const [agencyName, setAgencyName] = useState("");
   const [deadline, setDeadline] = useState<string | null>(null);
+  const [currencyCode, setCurrencyCode] = useState<string>("BRL");
 
   const [allPieces, setAllPieces] = useState<PieceData[]>([]);
   const [kitsData, setKitsData] = useState<KitData[]>([]);
@@ -329,6 +328,12 @@ const SupplierPortal = () => {
       }
     })();
   }, [token]);
+
+  // ─── Currency-aware formatter (depends on campaign currency) ─
+  const fmt = useCallback(
+    (v: number | null | undefined) => (v != null ? formatCurrencyByCode(v, currencyCode) : "—"),
+    [currencyCode]
+  );
 
   // ─── Build display rows ────────────────────────────────
   const displayRows = useMemo(() => {

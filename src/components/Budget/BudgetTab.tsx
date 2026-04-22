@@ -27,8 +27,10 @@ import {
 } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { COUNTRY_CONFIGS, formatCurrencyByCode } from "@/lib/countryConfig";
 
 import {
   useBudgetSettings, useSaveBudgetSettings,
@@ -57,8 +59,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   prazo_encerrado: { label: "Prazo encerrado", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 };
 
-const fmtCurrency = (v: number | null | undefined) =>
-  v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+// Note: fmtCurrency is defined inside the component to access settings.currency_code
 
 // ─── Main Component ──────────────────────────────────────
 export default function BudgetTab({ campaignId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores }: BudgetTabProps) {
@@ -73,6 +74,11 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
   const updateSupplier = useUpdateSupplier();
   const { data: prices = [] } = useBudgetPrices(campaignId);
   const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
+
+  // Currency-aware formatter (depends on settings)
+  const currencyCode = (settings as { currency_code?: string } | null | undefined)?.currency_code || "BRL";
+  const fmtCurrency = (v: number | null | undefined) =>
+    v == null ? "—" : formatCurrencyByCode(v, currencyCode);
 
   // Local state
   const [editingBudget, setEditingBudget] = useState(false);
@@ -310,8 +316,8 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                 <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
             )}
-            {/* Deadline */}
-            <div className="flex items-center gap-2">
+            {/* Deadline + Currency */}
+            <div className="flex items-center gap-2 flex-wrap">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className={cn("h-7 text-xs gap-1", !deadlineDate && "text-muted-foreground")}>
@@ -329,6 +335,28 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                   />
                 </PopoverContent>
               </Popover>
+              <Select
+                value={currencyCode}
+                onValueChange={(val) => {
+                  saveSettings.mutate({
+                    campaign_id: campaignId,
+                    budget_amount: budgetAmount,
+                    deadline: settings?.deadline ?? null,
+                    currency_code: val,
+                  });
+                }}
+              >
+                <SelectTrigger className="h-7 w-auto text-xs gap-1 px-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(COUNTRY_CONFIGS).map((c) => (
+                    <SelectItem key={c.currency} value={c.currency} className="text-xs">
+                      {c.currency} — {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
