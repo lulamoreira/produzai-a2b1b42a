@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, Loader2, ChevronDown, ChevronUp,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, Loader2, ChevronDown, ChevronUp, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,7 +36,7 @@ import { COUNTRY_CONFIGS, formatCurrencyByCode } from "@/lib/countryConfig";
 import {
   useBudgetSettings, useSaveBudgetSettings,
   useBudgetSuppliers, useAddSupplier, useDeleteSupplier, useUpdateSupplier,
-  useBudgetPrices, useBudgetExtraCosts, useSupplierSpecSuggestions,
+  useBudgetPrices, useBudgetExtraCosts, useSupplierSpecSuggestions, useExchangeRate,
 } from "@/hooks/useBudget";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
@@ -64,6 +65,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 // ─── Main Component ──────────────────────────────────────
 export default function BudgetTab({ campaignId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores }: BudgetTabProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   // Data hooks
   const { data: settings } = useBudgetSettings(campaignId);
@@ -76,9 +78,17 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
   const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
 
   // Currency-aware formatter (depends on settings)
-  const currencyCode = (settings as { currency_code?: string } | null | undefined)?.currency_code || "BRL";
+  const settingsTyped = settings as { currency_code?: string; currency_locked?: boolean } | null | undefined;
+  const currencyCode = settingsTyped?.currency_code || "BRL";
+  const currencyLocked = settingsTyped?.currency_locked === true;
   const fmtCurrency = (v: number | null | undefined) =>
     v == null ? "—" : formatCurrencyByCode(v, currencyCode);
+  const fmtBRL = (v: number | null | undefined) =>
+    v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  // Exchange rate for non-BRL currencies
+  const { data: rateData, isLoading: rateLoading } = useExchangeRate(currencyCode);
+  const exchangeRate = rateData?.rate ?? 1;
 
   // Local state
   const [editingBudget, setEditingBudget] = useState(false);
@@ -89,6 +99,13 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
   const [newSupplier, setNewSupplier] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [expandedSuggestionPieceId, setExpandedSuggestionPieceId] = useState<string | null>(null);
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyCode);
+  const [showLockConfirm, setShowLockConfirm] = useState(false);
+
+  // Keep selectedCurrency in sync if settings load after mount
+  React.useEffect(() => {
+    setSelectedCurrency(currencyCode);
+  }, [currencyCode]);
 
   // ─── Piece total quantities (sum across all stores) ────
   const pieceTotals = useMemo(() => {
@@ -316,6 +333,9 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                 <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
             )}
+            {budgetAmount != null && currencyCode !== "BRL" && (
+              <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(budgetAmount * exchangeRate)}</p>
+            )}
             {/* Deadline + Currency */}
             <div className="flex items-center gap-2 flex-wrap">
               <Popover>
@@ -335,28 +355,39 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                   />
                 </PopoverContent>
               </Popover>
-              <Select
-                value={currencyCode}
-                onValueChange={(val) => {
-                  saveSettings.mutate({
-                    campaign_id: campaignId,
-                    budget_amount: budgetAmount,
-                    deadline: settings?.deadline ?? null,
-                    currency_code: val,
-                  });
-                }}
-              >
-                <SelectTrigger className="h-7 w-auto text-xs gap-1 px-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.values(COUNTRY_CONFIGS).map((c) => (
-                    <SelectItem key={c.currency} value={c.currency} className="text-xs">
-                      {c.currency} — {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {currencyLocked ? (
+                <div className="flex items-center gap-1.5 h-7 text-xs px-2 text-foreground">
+                  <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="font-medium">
+                    {currencyCode === "USD"
+                      ? "Dólar Americano"
+                      : currencyCode === "CLP"
+                        ? "Peso Chileno"
+                        : "Real Brasileiro"}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                    <SelectTrigger className="h-7 w-auto text-xs gap-1 px-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BRL" className="text-xs">🇧🇷 Real Brasileiro (BRL)</SelectItem>
+                      <SelectItem value="USD" className="text-xs">🇺🇸 Dólar Americano (USD)</SelectItem>
+                      <SelectItem value="CLP" className="text-xs">🇨🇱 Peso Chileno (CLP)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => setShowLockConfirm(true)}
+                  >
+                    Confirmar moeda
+                  </Button>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -368,6 +399,9 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
             {bestSupplier ? (
               <>
                 <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(bestSupplier.total)}</p>
+                {currencyCode !== "BRL" && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(bestSupplier.total * exchangeRate)}</p>
+                )}
                 <p className="text-xs text-muted-foreground">{bestSupplier.name}</p>
               </>
             ) : (
@@ -381,15 +415,40 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
           <CardContent className="pt-4 pb-4 space-y-1">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Diferença</p>
             {difference != null ? (
-              <p className={cn("text-2xl font-bold", difference <= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
-                {difference <= 0 ? "" : "+"}{fmtCurrency(difference)}
-              </p>
+              <>
+                <p className={cn("text-2xl font-bold", difference <= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+                  {difference <= 0 ? "" : "+"}{fmtCurrency(difference)}
+                </p>
+                {currencyCode !== "BRL" && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(difference * exchangeRate)}</p>
+                )}
+              </>
             ) : (
               <p className="text-lg text-muted-foreground">—</p>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Exchange rate info row (shown only when currency is not BRL) */}
+      {currencyCode !== "BRL" && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground -mt-2">
+          <span>
+            Cotação: 1 {currencyCode} = {fmtBRL(exchangeRate)}
+            {rateData?.updatedAt ? ` · Atualizado em ${rateData.updatedAt}` : ""}
+            {" · Fonte: AwesomeAPI"}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            disabled={rateLoading}
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["exchange_rate", currencyCode] })}
+          >
+            <RefreshCw className={cn("w-3 h-3", rateLoading && "animate-spin")} />
+          </Button>
+        </div>
+      )}
 
       {/* ═══ SUPPLIERS SECTION ═══ */}
       <div className="space-y-3">
@@ -529,6 +588,43 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
               }}
             >
               Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ═══ CURRENCY LOCK CONFIRMATION ═══ */}
+      <AlertDialog open={showLockConfirm} onOpenChange={setShowLockConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar moeda da campanha?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Após confirmar, a moeda não poderá ser alterada. Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                saveSettings.mutate(
+                  {
+                    campaign_id: campaignId,
+                    budget_amount: budgetAmount,
+                    deadline: settings?.deadline ?? null,
+                    currency_code: selectedCurrency,
+                    currency_locked: true,
+                  },
+                  {
+                    onSuccess: () => {
+                      toast.success("Moeda confirmada e bloqueada.");
+                      setShowLockConfirm(false);
+                    },
+                    onError: () => toast.error("Erro ao confirmar moeda."),
+                  }
+                );
+              }}
+            >
+              Confirmar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

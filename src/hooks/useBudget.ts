@@ -21,13 +21,14 @@ export function useBudgetSettings(campaignId: string | undefined) {
 export function useSaveBudgetSettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { campaign_id: string; budget_amount?: number | null; deadline?: string | null; currency_code?: string }) => {
+    mutationFn: async (params: { campaign_id: string; budget_amount?: number | null; deadline?: string | null; currency_code?: string; currency_locked?: boolean }) => {
       const payload: Record<string, unknown> = {
         campaign_id: params.campaign_id,
         budget_amount: params.budget_amount ?? null,
         deadline: params.deadline ?? null,
       };
       if (params.currency_code !== undefined) payload.currency_code = params.currency_code;
+      if (params.currency_locked !== undefined) payload.currency_locked = params.currency_locked;
       const { data, error } = await supabase
         .from("budget_settings")
         .upsert(payload as never, { onConflict: "campaign_id" })
@@ -37,6 +38,25 @@ export function useSaveBudgetSettings() {
       return data;
     },
     onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: ["budget_settings", v.campaign_id] }),
+  });
+}
+
+// ─── Exchange Rate (USD/CLP → BRL) ────────────────────────
+export function useExchangeRate(currencyCode: string) {
+  return useQuery({
+    queryKey: ["exchange_rate", currencyCode],
+    enabled: currencyCode !== "BRL",
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const res = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL,CLP-BRL");
+      const data = await res.json();
+      const rate =
+        currencyCode === "USD"
+          ? parseFloat(data["USDBRL"].bid)
+          : parseFloat(data["CLPBRL"].bid);
+      const updatedAt = new Date().toLocaleString("pt-BR");
+      return { rate, updatedAt };
+    },
   });
 }
 
