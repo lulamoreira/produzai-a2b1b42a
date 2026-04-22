@@ -2702,6 +2702,14 @@ const CampaignDetail = () => {
         motives={occMotives}
         statuses={occStatuses}
       />
+
+      <ImportWizardDialog
+        open={pieceImportOpen}
+        onOpenChange={setPieceImportOpen}
+        mode="pieces"
+        existingItems={pieces.map(p => ({ name: p.name, id: p.id }))}
+        onImport={handlePiecesImport}
+      />
     </AppLayout>
   );
 };
