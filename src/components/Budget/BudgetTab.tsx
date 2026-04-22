@@ -75,6 +75,11 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
   const { data: prices = [] } = useBudgetPrices(campaignId);
   const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
 
+  // Currency-aware formatter (depends on settings)
+  const currencyCode = (settings as { currency_code?: string } | null | undefined)?.currency_code || "BRL";
+  const fmtCurrency = (v: number | null | undefined) =>
+    v == null ? "—" : formatCurrencyByCode(v, currencyCode);
+
   // Local state
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetDraft, setBudgetDraft] = useState("");
