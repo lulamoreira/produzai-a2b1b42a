@@ -65,6 +65,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 // ─── Main Component ──────────────────────────────────────
 export default function BudgetTab({ campaignId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores }: BudgetTabProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   // Data hooks
   const { data: settings } = useBudgetSettings(campaignId);
@@ -77,9 +78,17 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
   const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
 
   // Currency-aware formatter (depends on settings)
-  const currencyCode = (settings as { currency_code?: string } | null | undefined)?.currency_code || "BRL";
+  const settingsTyped = settings as { currency_code?: string; currency_locked?: boolean } | null | undefined;
+  const currencyCode = settingsTyped?.currency_code || "BRL";
+  const currencyLocked = settingsTyped?.currency_locked === true;
   const fmtCurrency = (v: number | null | undefined) =>
     v == null ? "—" : formatCurrencyByCode(v, currencyCode);
+  const fmtBRL = (v: number | null | undefined) =>
+    v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  // Exchange rate for non-BRL currencies
+  const { data: rateData, isLoading: rateLoading } = useExchangeRate(currencyCode);
+  const exchangeRate = rateData?.rate ?? 1;
 
   // Local state
   const [editingBudget, setEditingBudget] = useState(false);
@@ -90,6 +99,13 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
   const [newSupplier, setNewSupplier] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
   const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [expandedSuggestionPieceId, setExpandedSuggestionPieceId] = useState<string | null>(null);
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyCode);
+  const [showLockConfirm, setShowLockConfirm] = useState(false);
+
+  // Keep selectedCurrency in sync if settings load after mount
+  React.useEffect(() => {
+    setSelectedCurrency(currencyCode);
+  }, [currencyCode]);
 
   // ─── Piece total quantities (sum across all stores) ────
   const pieceTotals = useMemo(() => {
