@@ -328,6 +328,12 @@ const SupplierPortal = () => {
     })();
   }, [token]);
 
+  // ─── Currency-aware formatter (depends on campaign currency) ─
+  const fmt = useCallback(
+    (v: number | null | undefined) => (v != null ? formatCurrencyByCode(v, currencyCode) : "—"),
+    [currencyCode]
+  );
+
   // ─── Build display rows ────────────────────────────────
   const displayRows = useMemo(() => {
     const rows: DisplayRow[] = [];
