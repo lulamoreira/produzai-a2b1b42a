@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, Loader2, ChevronDown, ChevronUp,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, Loader2, ChevronDown, ChevronUp, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,7 +36,7 @@ import { COUNTRY_CONFIGS, formatCurrencyByCode } from "@/lib/countryConfig";
 import {
   useBudgetSettings, useSaveBudgetSettings,
   useBudgetSuppliers, useAddSupplier, useDeleteSupplier, useUpdateSupplier,
-  useBudgetPrices, useBudgetExtraCosts, useSupplierSpecSuggestions,
+  useBudgetPrices, useBudgetExtraCosts, useSupplierSpecSuggestions, useExchangeRate,
 } from "@/hooks/useBudget";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
