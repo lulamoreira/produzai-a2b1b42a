@@ -170,12 +170,13 @@ const SupplierPortal = () => {
         // 2) Budget settings
         const { data: settings } = await supabase
           .from("budget_settings")
-          .select("deadline")
+          .select("deadline, currency_code")
           .eq("campaign_id", sup.campaign_id)
           .maybeSingle();
 
         const dl = settings?.deadline ?? null;
         setDeadline(dl);
+        setCurrencyCode((settings as { currency_code?: string } | null | undefined)?.currency_code || "BRL");
 
         if (dl && new Date(dl) < new Date() && sup.status !== "enviado") {
           await supabase.from("budget_suppliers").update({ status: "prazo_encerrado" }).eq("id", sup.id);
