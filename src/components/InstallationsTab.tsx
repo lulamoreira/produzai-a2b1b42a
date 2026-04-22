@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import EmptyState from "@/components/EmptyState";
 import { CardSkeleton } from "@/components/CardSkeleton";
 import { useTranslation } from "react-i18next";
@@ -64,6 +64,11 @@ import {
   type TeamVehicle,
 } from "@/components/InstallationTeamDialog";
 
+export type InstallationsInitialFilter =
+  | { type: "status"; value: "completed" | "pending" }
+  | { type: "checkin"; value: "checked" | "unchecked" }
+  | { type: "summary"; value: "withPhotos" };
+
 interface InstallationsTabProps {
   campaignId: string;
   campaignName: string;
@@ -72,6 +77,8 @@ interface InstallationsTabProps {
   clientId: string;
   agencyName?: string;
   clientName?: string;
+  initialFilter?: InstallationsInitialFilter | null;
+  onInitialFilterApplied?: () => void;
 }
 
 const CATEGORY_OPTIONS = [
@@ -80,7 +87,7 @@ const CATEGORY_OPTIONS = [
   { value: "after", labelKey: "installations.after" },
 ];
 
-const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId, agencyName = "", clientName = "" }: InstallationsTabProps) => {
+const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId, agencyName = "", clientName = "", initialFilter, onInitialFilterApplied }: InstallationsTabProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
