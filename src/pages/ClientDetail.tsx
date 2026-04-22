@@ -23,7 +23,9 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil } from "lucide-react";
+import { useClientSuppliers, useAddClientSupplier, useUpdateClientSupplier, useDeleteClientSupplier, type ClientSupplier } from "@/hooks/useClientSuppliers";
+import { Textarea } from "@/components/ui/textarea";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 import StoresMatrixTable from "@/components/StoresMatrixTable";
 import StoreFullCardView from "@/components/StoreFullCardView";
@@ -310,6 +312,79 @@ const ClientDetail = () => {
   const { data: storeModels = [] } = useClientStoreModels(clientId);
   const addStoreModel = useAddClientStoreModel();
   const deleteStoreModel = useDeleteClientStoreModel();
+
+  // Suppliers
+  const { data: suppliers = [] } = useClientSuppliers(clientId);
+  const addSupplier = useAddClientSupplier();
+  const updateSupplier = useUpdateClientSupplier();
+  const deleteSupplier = useDeleteClientSupplier();
+  const [supplierSearch, setSupplierSearch] = useState("");
+  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+  const [editingSupplierId, setEditingSupplierId] = useState<string | null>(null);
+  const [supplierForm, setSupplierForm] = useState({
+    company_name: "", contact_name: "", phone: "", email: "", observations: "",
+  });
+  const [deleteSupplierId, setDeleteSupplierId] = useState<string | null>(null);
+
+  const openSupplierForCreate = () => {
+    setEditingSupplierId(null);
+    setSupplierForm({ company_name: "", contact_name: "", phone: "", email: "", observations: "" });
+    setSupplierDialogOpen(true);
+  };
+
+  const openSupplierForEdit = (s: ClientSupplier) => {
+    setEditingSupplierId(s.id);
+    setSupplierForm({
+      company_name: s.company_name || "",
+      contact_name: s.contact_name || "",
+      phone: s.phone || "",
+      email: s.email || "",
+      observations: s.observations || "",
+    });
+    setSupplierDialogOpen(true);
+  };
+
+  const handleSubmitSupplier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clientId) return;
+    if (!supplierForm.company_name.trim() || !supplierForm.email.trim()) {
+      toast.error("Empresa e e-mail são obrigatórios.");
+      return;
+    }
+    if (editingSupplierId) {
+      await updateSupplier.mutateAsync({
+        id: editingSupplierId,
+        client_id: clientId,
+        company_name: supplierForm.company_name.trim(),
+        contact_name: supplierForm.contact_name.trim() || null,
+        phone: supplierForm.phone.trim() || null,
+        email: supplierForm.email.trim(),
+        observations: supplierForm.observations.trim() || null,
+      } as any);
+    } else {
+      await addSupplier.mutateAsync({
+        client_id: clientId,
+        company_name: supplierForm.company_name.trim(),
+        contact_name: supplierForm.contact_name.trim() || null,
+        phone: supplierForm.phone.trim() || null,
+        email: supplierForm.email.trim(),
+        observations: supplierForm.observations.trim() || null,
+      });
+    }
+    setSupplierDialogOpen(false);
+    setEditingSupplierId(null);
+  };
+
+  const filteredSuppliers = suppliers.filter((s) => {
+    const q = supplierSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      s.company_name.toLowerCase().includes(q) ||
+      (s.contact_name || "").toLowerCase().includes(q) ||
+      (s.email || "").toLowerCase().includes(q) ||
+      (s.phone || "").toLowerCase().includes(q)
+    );
+  });
 
   const [campaignName, setCampaignName] = useState("");
   const [campaignColor, setCampaignColor] = useState(CAMPAIGN_COLORS[0]);
@@ -798,7 +873,7 @@ const ClientDetail = () => {
         {!new URLSearchParams(location.search).has("tab") && (
           <>
             {/* Stats cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               <div className="card-kpi flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}`)}>
                 <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
                   <Megaphone className="w-5 h-5 text-primary-foreground" />
@@ -815,6 +890,15 @@ const ClientDetail = () => {
                 <div>
                   <p className="text-2xl font-bold text-foreground">{stores.length}</p>
                   <p className="text-[11px] text-muted-foreground">{t("clientDashboard.storeCount")}</p>
+                </div>
+              </div>
+              <div className="card-kpi flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=suppliers`)}>
+                <div className="w-10 h-10 rounded-lg bg-primary/60 flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{suppliers.length}</p>
+                  <p className="text-[11px] text-muted-foreground">Fornecedores</p>
                 </div>
               </div>
               {canEditCampaigns && (
@@ -1186,7 +1270,182 @@ const ClientDetail = () => {
             />
           </>
         )}
+
+        {/* ─── Suppliers View ─── */}
+        {new URLSearchParams(location.search).get("tab") === "suppliers" && (
+          <>
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <span className="text-sm font-semibold text-foreground">{suppliers.length} fornecedor(es)</span>
+              <div className="flex-1 min-w-[160px] max-w-xs">
+                <Input
+                  placeholder="Buscar fornecedor..."
+                  value={supplierSearch}
+                  onChange={(e) => setSupplierSearch(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              {canEditClients && (
+                <Button size="sm" className="gap-1 h-8" onClick={openSupplierForCreate}>
+                  <Plus className="w-3.5 h-3.5" /> Adicionar Fornecedor
+                </Button>
+              )}
+            </div>
+
+            {filteredSuppliers.length === 0 ? (
+              <div className="text-center py-16 border border-dashed border-border rounded-lg">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <Building2 className="w-6 h-6 text-primary" />
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  {supplierSearch ? "Nenhum fornecedor encontrado." : "Nenhum fornecedor cadastrado."}
+                </p>
+              </div>
+            ) : (
+              <div className="border rounded-md overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Empresa</TableHead>
+                      <TableHead className="text-xs">Contato</TableHead>
+                      <TableHead className="text-xs">Telefone</TableHead>
+                      <TableHead className="text-xs">E-mail</TableHead>
+                      <TableHead className="text-xs">Observações</TableHead>
+                      <TableHead className="text-xs text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSuppliers.map((s) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="text-sm font-medium">{s.company_name}</TableCell>
+                        <TableCell className="text-sm">{s.contact_name || "—"}</TableCell>
+                        <TableCell className="text-sm">{s.phone || "—"}</TableCell>
+                        <TableCell className="text-sm">{s.email}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-xs truncate">
+                          {s.observations || "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {canEditClients && (
+                              <>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7"
+                                  onClick={() => openSupplierForEdit(s)}
+                                  title="Editar"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-destructive"
+                                  onClick={() => setDeleteSupplierId(s.id)}
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </>
+        )}
       </div>
+
+      {/* ─── Supplier Add/Edit Dialog ─── */}
+      <Dialog open={supplierDialogOpen} onOpenChange={setSupplierDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingSupplierId ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmitSupplier} className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Empresa *</label>
+              <Input
+                value={supplierForm.company_name}
+                onChange={(e) => setSupplierForm((f) => ({ ...f, company_name: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Contato</label>
+              <Input
+                value={supplierForm.contact_name}
+                onChange={(e) => setSupplierForm((f) => ({ ...f, contact_name: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefone</label>
+                <Input
+                  value={supplierForm.phone}
+                  onChange={(e) => setSupplierForm((f) => ({ ...f, phone: e.target.value }))}
+                  placeholder="+5511999999999"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">E-mail *</label>
+                <Input
+                  type="email"
+                  value={supplierForm.email}
+                  onChange={(e) => setSupplierForm((f) => ({ ...f, email: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
+              <Textarea
+                value={supplierForm.observations}
+                onChange={(e) => setSupplierForm((f) => ({ ...f, observations: e.target.value }))}
+                placeholder="Notas internas sobre o fornecedor..."
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setSupplierDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={addSupplier.isPending || updateSupplier.isPending}>
+                {editingSupplierId ? "Salvar" : "Adicionar"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteSupplierId} onOpenChange={(o) => !o && setDeleteSupplierId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir fornecedor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação removerá o cadastro deste fornecedor. Cotações já criadas em campanhas não serão afetadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteSupplierId) {
+                  deleteSupplier.mutate(deleteSupplierId, {
+                    onSuccess: () => setDeleteSupplierId(null),
+                  });
+                }
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ─── Store Models Management Dialog ─── */}
       <Dialog open={storeModelDialogOpen} onOpenChange={setStoreModelDialogOpen}>

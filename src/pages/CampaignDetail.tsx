@@ -2499,6 +2499,7 @@ const CampaignDetail = () => {
           {activeSection === "budgets" && (
             <BudgetTab
               campaignId={campaignId!}
+              clientId={clientId!}
               campaignName={campaign?.name || ""}
               agencyName={agency?.name || ""}
               pieces={pieces}
