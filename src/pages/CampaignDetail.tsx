@@ -50,6 +50,7 @@ import AppLayout from "@/components/AppLayout";
 import QuickMatrixEditor from "@/components/QuickMatrixEditor";
 import { toast } from "sonner";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
+import ImportWizardDialog from "@/components/ImportWizardDialog";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
 import OccurrencesTab from "@/components/OccurrencesTab";
@@ -145,6 +146,41 @@ const CampaignDetail = () => {
   const addKitPiece = useAddCampaignKitPiece();
   const deleteKitPiece = useDeleteCampaignKitPiece();
   const updateKitPiece = useUpdateCampaignKitPiece();
+
+  const [pieceImportOpen, setPieceImportOpen] = useState(false);
+
+  const handlePiecesImport = async (
+    rows: Record<string, string>[],
+    { updateExisting }: { updateExisting: boolean },
+  ) => {
+    if (!campaignId) return;
+    let added = 0, updated = 0;
+    for (const row of rows) {
+      const item = {
+        name: row.name ?? "",
+        code: parseInt(row.code ?? "0", 10) || 0,
+        category: row.category || "",
+        size: row.size || "",
+        specification: row.specification || "Vide Book/Manual",
+        store_category: row.store_category || null,
+        installation_instructions: row.installation_instructions || "Sem informações específicas",
+        sub_location: row.sub_location || null,
+        kit_only: ["true", "1", "sim", "yes"].includes(String(row.kit_only ?? "").toLowerCase()),
+      };
+      const existing = pieces.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+      if (existing && updateExisting) {
+        await updatePiece.mutateAsync({ id: existing.id, ...item } as any);
+        updated++;
+      } else {
+        await addPiece.mutateAsync({ campaign_id: campaignId, ...item } as any);
+        added++;
+      }
+    }
+    const parts: string[] = [];
+    if (added > 0) parts.push(`${added} adicionada(s)`);
+    if (updated > 0) parts.push(`${updated} atualizada(s)`);
+    if (parts.length > 0) toast.success(parts.join(", ") + "!");
+  };
 
   // Fetch agency color for header gradient
   const { data: agency } = useQuery({
@@ -2225,31 +2261,8 @@ const CampaignDetail = () => {
                     <DropdownMenuItem onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
                       <Download className="w-4 h-4 mr-2" /> {t("common.export")}
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <label className="cursor-pointer flex items-center w-full">
-                        <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file || !campaignId) return;
-                          try {
-                            const items = await parsePiecesImport(file);
-                            if (items.length === 0) { toast.error("Nenhuma peça encontrada."); return; }
-                            let added = 0, updated = 0;
-                            for (const item of items) {
-                              const existing = pieces.find(p => p.name.toLowerCase() === item.name.toLowerCase());
-                              if (existing) {
-                                await updatePiece.mutateAsync({ id: existing.id, ...item });
-                                updated++;
-                              } else {
-                                await addPiece.mutateAsync({ campaign_id: campaignId, ...item });
-                                added++;
-                              }
-                            }
-                            toast.success(`${added} adicionada(s), ${updated} atualizada(s)!`);
-                          } catch { toast.error("Erro ao importar."); }
-                          e.target.value = "";
-                        }} />
-                        <Upload className="w-4 h-4 mr-2" /> Importar
-                      </label>
+                    <DropdownMenuItem onClick={() => setPieceImportOpen(true)}>
+                      <Upload className="w-4 h-4 mr-2" /> Importar
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleReviewPieceCodes}>
                       <Sparkles className="w-4 h-4 mr-2" /> {t("pieces.reviewCodes")}
@@ -2688,6 +2701,14 @@ const CampaignDetail = () => {
         pieces={pieces}
         motives={occMotives}
         statuses={occStatuses}
+      />
+
+      <ImportWizardDialog
+        open={pieceImportOpen}
+        onOpenChange={setPieceImportOpen}
+        mode="pieces"
+        existingItems={pieces.map(p => ({ name: p.name, id: p.id }))}
+        onImport={handlePiecesImport}
       />
     </AppLayout>
   );

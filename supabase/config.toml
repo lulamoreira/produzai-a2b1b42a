@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.validate-store-token]
 verify_jwt = false
+
+[functions.ai-field-mapping]
+verify_jwt = false

@@ -40,6 +40,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import AppLayout from "@/components/AppLayout";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
+import ImportWizardDialog from "@/components/ImportWizardDialog";
 import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -547,64 +548,53 @@ const ClientDetail = () => {
     }
   };
 
-  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !clientId) return;
-    const reader = new FileReader();
-    reader.onload = async (evt) => {
-      try {
-        const wb = XLSX.read(evt.target?.result, { type: "binary" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws);
-        const mapped = rows.map((r) => ({
-          client_id: clientId,
-          name: r["nome"] || r["Nome"] || r["name"] || "",
-          nickname: r["apelido"] || r["Apelido"] || r["nickname"] || null,
-          city: r["cidade"] || r["Cidade"] || r["city"] || null,
-          state: r["estado"] || r["Estado"] || r["uf"] || r["UF"] || null,
-          cnpj: r["cnpj"] || r["CNPJ"] || null,
-          state_registration: r["inscricao_estadual"] || r["Inscricao Estadual"] || r["IE"] || r["Inscrição Estadual"] || null,
-          zip_code: r["cep"] || r["CEP"] || null,
-          street: r["rua"] || r["Rua"] || r["logradouro"] || r["Logradouro"] || null,
-          number: r["numero"] || r["Numero"] || r["Número"] || null,
-          complement: r["complemento"] || r["Complemento"] || null,
-          neighborhood: r["bairro"] || r["Bairro"] || null,
-          phone: r["telefone"] || r["Telefone"] || r["phone"] || null,
-          manager_name: r["gerente"] || r["Gerente"] || r["responsavel"] || r["Responsavel"] || null,
-          country: r["país"] || r["País"] || r["pais"] || r["country"] || null,
-          store_model: r["modelo de loja"] || r["Modelo de Loja"] || r["store_model"] || null,
-          store_code: r["código da loja"] || r["Código da Loja"] || r["store_code"] || null,
-          email: r["email"] || r["Email"] || r["E-mail"] || r["e-mail"] || null,
-          showcase_count: parseInt(r["quantidade de vitrines"] || r["Quantidade de Vitrines"] || r["vitrines"] || r["Vitrines"] || r["showcase_count"] || "0", 10) || 0,
-        })).filter((s) => s.name);
-        if (mapped.length === 0) {
-          toast.error("Nenhuma loja encontrada na planilha.");
-          return;
-        }
-        const existingByName = new Map(stores.map(s => [s.name.toLowerCase(), s]));
-        let added = 0;
-        let updated = 0;
-        for (const rawItem of mapped) {
-          const item = capitalizeStoreFields(rawItem);
-          const existing = existingByName.get(item.name.toLowerCase());
-          if (existing) {
-            await updateStore.mutateAsync({ id: existing.id, ...item });
-            updated++;
-          } else {
-            await addStore.mutateAsync(item);
-            added++;
-          }
-        }
-        const parts: string[] = [];
-        if (added > 0) parts.push(`${added} adicionada(s)`);
-        if (updated > 0) parts.push(`${updated} atualizada(s)`);
-        toast.success(`${parts.join(", ")}!`);
-      } catch {
-        toast.error("Erro ao ler a planilha.");
+  const [storeImportOpen, setStoreImportOpen] = useState(false);
+
+  const handleStoresImport = async (
+    rows: Record<string, string>[],
+    { updateExisting }: { updateExisting: boolean },
+  ) => {
+    if (!clientId) return;
+    const existingByName = new Map(stores.map(s => [s.name.trim().toLowerCase(), s]));
+    let added = 0;
+    let updated = 0;
+    for (const row of rows) {
+      const showcaseRaw = row.showcase_count ?? "";
+      const item = capitalizeStoreFields({
+        client_id: clientId,
+        name: row.name ?? "",
+        nickname: row.nickname || null,
+        city: row.city || null,
+        state: row.state || null,
+        cnpj: row.cnpj || null,
+        state_registration: row.state_registration || null,
+        zip_code: row.zip_code || null,
+        street: row.street || null,
+        number: row.number || null,
+        complement: row.complement || null,
+        neighborhood: row.neighborhood || null,
+        phone: row.phone || null,
+        manager_name: row.manager_name || null,
+        country: row.country || null,
+        store_model: row.store_model || null,
+        store_code: row.store_code || null,
+        email: row.email || null,
+        observations: row.observations || null,
+        showcase_count: parseInt(showcaseRaw, 10) || 0,
+      });
+      const existing = existingByName.get(item.name.trim().toLowerCase());
+      if (existing && updateExisting) {
+        await updateStore.mutateAsync({ id: existing.id, ...item });
+        updated++;
+      } else {
+        await addStore.mutateAsync(item);
+        added++;
       }
-    };
-    reader.readAsBinaryString(file);
-    e.target.value = "";
+    }
+    const parts: string[] = [];
+    if (added > 0) parts.push(`${added} adicionada(s)`);
+    if (updated > 0) parts.push(`${updated} atualizada(s)`);
+    if (parts.length > 0) toast.success(parts.join(", ") + "!");
   };
 
   const handleSaveSettings = async () => {
@@ -929,12 +919,9 @@ const ClientDetail = () => {
                 </Button>
                 {canEditStores && (
                   <>
-                    <label className="cursor-pointer">
-                      <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImportFile} />
-                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" asChild>
-                        <span><Upload className="w-3 h-3" /> Importar</span>
-                      </Button>
-                    </label>
+                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setStoreImportOpen(true)}>
+                      <Upload className="w-3 h-3" /> Importar
+                    </Button>
                     <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleReviewStoreCodes}>
                       <Sparkles className="w-3 h-3" /> Códigos
                     </Button>
@@ -1245,6 +1232,14 @@ const ClientDetail = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ImportWizardDialog
+        open={storeImportOpen}
+        onOpenChange={setStoreImportOpen}
+        mode="stores"
+        existingItems={stores.map(s => ({ name: s.name, id: s.id }))}
+        onImport={handleStoresImport}
+      />
     </AppLayout>
   );
 };
