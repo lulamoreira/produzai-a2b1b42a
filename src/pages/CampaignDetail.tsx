@@ -979,10 +979,9 @@ const CampaignDetail = () => {
         const crumbs = [
           { label: agency?.name || "Agência", href: isLimitedMode ? undefined : "/" },
           { label: client?.name || "Cliente", href: isLimitedMode ? undefined : `/agency/${agencyId}/clients/${clientId}` },
-          { label: campaign.name, href: undefined as string | undefined },
+          { label: campaign.name, href: isLimitedMode ? undefined : `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}` as string | undefined },
         ];
         if (activeSection) {
-          crumbs[crumbs.length - 1].href = isLimitedMode ? undefined : `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}`;
           crumbs.push({ label: SECTION_LABELS[activeSection] || activeSection, href: undefined });
         }
         return crumbs;
