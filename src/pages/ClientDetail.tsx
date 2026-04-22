@@ -313,6 +313,79 @@ const ClientDetail = () => {
   const addStoreModel = useAddClientStoreModel();
   const deleteStoreModel = useDeleteClientStoreModel();
 
+  // Suppliers
+  const { data: suppliers = [] } = useClientSuppliers(clientId);
+  const addSupplier = useAddClientSupplier();
+  const updateSupplier = useUpdateClientSupplier();
+  const deleteSupplier = useDeleteClientSupplier();
+  const [supplierSearch, setSupplierSearch] = useState("");
+  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+  const [editingSupplierId, setEditingSupplierId] = useState<string | null>(null);
+  const [supplierForm, setSupplierForm] = useState({
+    company_name: "", contact_name: "", phone: "", email: "", observations: "",
+  });
+  const [deleteSupplierId, setDeleteSupplierId] = useState<string | null>(null);
+
+  const openSupplierForCreate = () => {
+    setEditingSupplierId(null);
+    setSupplierForm({ company_name: "", contact_name: "", phone: "", email: "", observations: "" });
+    setSupplierDialogOpen(true);
+  };
+
+  const openSupplierForEdit = (s: ClientSupplier) => {
+    setEditingSupplierId(s.id);
+    setSupplierForm({
+      company_name: s.company_name || "",
+      contact_name: s.contact_name || "",
+      phone: s.phone || "",
+      email: s.email || "",
+      observations: s.observations || "",
+    });
+    setSupplierDialogOpen(true);
+  };
+
+  const handleSubmitSupplier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clientId) return;
+    if (!supplierForm.company_name.trim() || !supplierForm.email.trim()) {
+      toast.error("Empresa e e-mail são obrigatórios.");
+      return;
+    }
+    if (editingSupplierId) {
+      await updateSupplier.mutateAsync({
+        id: editingSupplierId,
+        client_id: clientId,
+        company_name: supplierForm.company_name.trim(),
+        contact_name: supplierForm.contact_name.trim() || null,
+        phone: supplierForm.phone.trim() || null,
+        email: supplierForm.email.trim(),
+        observations: supplierForm.observations.trim() || null,
+      } as any);
+    } else {
+      await addSupplier.mutateAsync({
+        client_id: clientId,
+        company_name: supplierForm.company_name.trim(),
+        contact_name: supplierForm.contact_name.trim() || null,
+        phone: supplierForm.phone.trim() || null,
+        email: supplierForm.email.trim(),
+        observations: supplierForm.observations.trim() || null,
+      });
+    }
+    setSupplierDialogOpen(false);
+    setEditingSupplierId(null);
+  };
+
+  const filteredSuppliers = suppliers.filter((s) => {
+    const q = supplierSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      s.company_name.toLowerCase().includes(q) ||
+      (s.contact_name || "").toLowerCase().includes(q) ||
+      (s.email || "").toLowerCase().includes(q) ||
+      (s.phone || "").toLowerCase().includes(q)
+    );
+  });
+
   const [campaignName, setCampaignName] = useState("");
   const [campaignColor, setCampaignColor] = useState(CAMPAIGN_COLORS[0]);
   const [campaignDialogOpen, setCampaignDialogOpen] = useState(false);
