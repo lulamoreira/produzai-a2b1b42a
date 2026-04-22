@@ -48,6 +48,8 @@ import InstallationTeamDialog, {
   type TeamVehicle,
 } from "@/components/InstallationTeamDialog";
 
+export type SchedulingInitialFilter = { type: "summary"; value: "scheduled" };
+
 interface SchedulingTabProps {
   campaignId: string;
   stores: ClientStore[];
@@ -57,6 +59,8 @@ interface SchedulingTabProps {
   campaignName: string;
   clientId: string;
   agencyId?: string;
+  initialFilter?: SchedulingInitialFilter | null;
+  onInitialFilterApplied?: () => void;
 }
 
 function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string, storeName?: string) {
@@ -82,7 +86,7 @@ function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string
   return `https://wa.me/${fullNumber}?text=${encodeURIComponent(message)}`;
 }
 
-const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, campaignName, clientId, agencyId }: SchedulingTabProps) => {
+const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, campaignName, clientId, agencyId, initialFilter, onInitialFilterApplied }: SchedulingTabProps) => {
   const { t } = useTranslation();
   const PREFERENCE_OPTIONS = useMemo(() => [
     { value: "not_informed", label: t("scheduling.notInformed"), icon: HelpCircle },
@@ -113,6 +117,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [logStoreId, setLogStoreId] = useState("");
   const [logStoreName, setLogStoreName] = useState("");
   const { isAdminOrMaster } = useUserRole();
+
+  // Apply pre-set filter from external navigation (e.g. Status dashboard)
+  useEffect(() => {
+    if (!initialFilter) return;
+    if (initialFilter.type === "summary") {
+      setSummaryFilter(initialFilter.value);
+    }
+    onInitialFilterApplied?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFilter]);
   const { hasPermission: canLockCards } = useClientPermission(clientId, "can_lock_cards");
   const logActivity = useLogActivity();
   const logCampaignActivity = useLogCampaignActivity();

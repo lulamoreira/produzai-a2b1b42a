@@ -65,7 +65,7 @@ import ManageLocationsDialog from "@/components/ManageLocationsDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters, type FilterLogicMode } from "@/components/MatrixFilterSidebar";
 import ModuleGrid from "@/components/ModuleGrid";
-import CampaignStatusDashboard from "@/components/CampaignStatusDashboard";
+import CampaignStatusDashboard, { type DashboardFilter } from "@/components/CampaignStatusDashboard";
 
 import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
@@ -258,6 +258,7 @@ const CampaignDetail = () => {
   const searchParams = new URLSearchParams(location.search);
   const sectionFromUrl = searchParams.get("section");
   const [activeSection, setActiveSectionState] = useState<string | null>(locationState?.initialSection || sectionFromUrl || null);
+  const [pendingInitialFilter, setPendingInitialFilter] = useState<DashboardFilter | null>(null);
   const [pieceSearch, setPieceSearch] = useState("");
 
   // Sync section from URL search params (for sidebar navigation)
@@ -1023,7 +1024,10 @@ const CampaignDetail = () => {
 
             <CampaignStatusDashboard
               campaignId={campaignId!}
-              onNavigate={(section) => setActiveSection(section)}
+              onNavigate={(section, filter) => {
+                setPendingInitialFilter(filter ?? null);
+                setActiveSection(section);
+              }}
             />
 
             {/* Pending occurrences dashboard button */}
@@ -2447,6 +2451,12 @@ const CampaignDetail = () => {
               campaignName={campaign?.name || ""}
               clientId={clientId!}
               agencyId={agencyId}
+              initialFilter={
+                pendingInitialFilter?.type === "summary" && pendingInitialFilter.value === "scheduled"
+                  ? { type: "summary", value: "scheduled" }
+                  : null
+              }
+              onInitialFilterApplied={() => setPendingInitialFilter(null)}
             />
           )}
 
@@ -2460,6 +2470,16 @@ const CampaignDetail = () => {
               clientId={clientId!}
               agencyName={agency?.name || ""}
               clientName={client?.name || ""}
+              initialFilter={
+                pendingInitialFilter && (
+                  pendingInitialFilter.type === "status" ||
+                  pendingInitialFilter.type === "checkin" ||
+                  (pendingInitialFilter.type === "summary" && pendingInitialFilter.value === "withPhotos")
+                )
+                  ? (pendingInitialFilter as any)
+                  : null
+              }
+              onInitialFilterApplied={() => setPendingInitialFilter(null)}
             />
           )}
 
