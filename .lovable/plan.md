@@ -1,38 +1,37 @@
 
 
-## Pré-aplicar filtros ao navegar dos KPIs do Status da Campanha
+## Tornar o breadcrumb clicável (Cliente e Campanha)
 
-Hoje, ao clicar em "5 Pendentes" no painel **Status da Campanha**, o sistema apenas abre o módulo de Instalações com **todas** as 99 lojas listadas. O usuário precisa aplicar manualmente o filtro para isolar as pendentes. O mesmo problema ocorre com os demais KPIs (Concluídas, Sem check-in, Com ocorrência, Agendadas, etc.).
+Atualmente, no breadcrumb "Vimer Retail Experience › Lindt Chile › Pralinas" exibido no topo da campanha:
 
-A correção fará com que cada KPI carregue o módulo de destino **já com o filtro correspondente aplicado**.
+- **"Pralinas"** (nome da campanha) é apenas texto em negrito e não navega para lugar nenhum.
+- **"Lindt Chile"** (nome do cliente) só é clicável quando há uma sub-seção aberta (Instalações, Agendamento, etc.). Na tela inicial da campanha, ele também fica inerte.
 
-### Mapeamento de KPIs → Filtro de destino
+A correção transformará ambos em links funcionais.
 
-| KPI | Módulo destino | Filtro pré-aplicado |
-|-----|---------------|---------------------|
-| Lojas total | Instalações | (sem filtro) |
-| Concluídas | Instalações | Status = `completed` |
-| Pendentes | Instalações | Status = `pending` |
-| Com ocorrência | Ocorrências | (lista padrão de abertas) |
-| Com check-in | Instalações | Check-in = `checked` |
-| Sem check-in | Instalações | Check-in = `unchecked` |
-| Fotos enviadas | Instalações | Resumo = `withPhotos` |
-| Agendadas | Agendamento | Resumo = `scheduled` |
+### Comportamento esperado
 
-### Como vai funcionar (UX)
-
-1. Usuário clica num card do dashboard (ex.: "5 Pendentes").
-2. O sistema abre o módulo correspondente com o filtro já marcado no topo.
-3. A lista exibe **apenas** os registros que correspondem ao filtro (no exemplo, apenas as 5 lojas pendentes).
-4. O usuário pode limpar o filtro normalmente para voltar a ver tudo.
+| Item clicado | Destino |
+|--------------|---------|
+| Nome da agência (ex.: Vimer Retail Experience) | Tela de Agências (`/`) — já funciona |
+| Nome do cliente (ex.: Lindt Chile) | Página do cliente com a lista de campanhas (`/agency/:agencyId/clients/:clientId`) |
+| Nome da campanha (ex.: Pralinas) | Hub principal da campanha (volta para a tela inicial sem sub-seção, removendo `?section=...`) |
+| Nome da sub-seção atual (quando houver) | Permanece como rótulo final, sem link |
 
 ### Detalhes técnicos
 
-- **`CampaignStatusDashboard.tsx`**: cada KPI passará um identificador de filtro (ex.: `{ section: "installations", filter: "pending" }`) em vez de só o nome da seção.
-- **`CampaignDetail.tsx`**: o `onNavigate` salvará esse filtro num estado local (`pendingInitialFilter`) e o repassará como prop para o componente da seção ativa (`InstallationsTab`, `SchedulingTab`, `OccurrencesTab`).
-- **`InstallationsTab.tsx`**: aceitará nova prop opcional `initialFilter` que, no `useEffect` inicial, definirá `setFilterStatus("pending")`, `setFilterCheckin("checked")`, `setSummaryFilter("withPhotos")` etc., conforme o caso. Após aplicar, o filtro é "consumido" (limpo do estado pai) para não reaplicar em navegações futuras.
-- **`SchedulingTab.tsx`**: mesma abordagem com `setSummaryFilter("scheduled")`.
-- **`OccurrencesTab.tsx`**: já abre por padrão a aba de ocorrências abertas — não precisará de mudança.
+1. **`src/pages/CampaignDetail.tsx`** (geração do array de breadcrumbs, linhas ~972–989):
+   - Sempre atribuir `href` para o item do **cliente**, independente de haver `activeSection` (apenas continua bloqueado em `isLimitedMode`).
+   - Sempre atribuir `href` para o item da **campanha** apontando para `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}`. Quando o usuário já está no hub (sem `activeSection`), clicar nesse link não fará nada visível, mas também não quebra; quando houver uma seção aberta, o clique remove o `?section=...` e volta ao hub.
 
-Nenhum filtro existente será removido; apenas habilitamos a pré-seleção a partir da navegação.
+2. **`src/components/AppLayout.tsx`** (renderização do breadcrumb, linhas ~197–204):
+   - O último item do breadcrumb é renderizado como texto em negrito não clicável (linha 200–202). Vamos torná-lo clicável quando ele tiver `href` definido — usando um `<button>` com o mesmo estilo bold atual, que dispara `navigate(crumb.href)`.
+   - Isso faz com que o nome da campanha (último item no hub da campanha) e o nome da sub-seção (quando aplicável) respeitem o `href`. Itens sem `href` continuam como texto puro.
+
+3. Nenhuma alteração é necessária em rotas, permissões ou lógica de carregamento — as rotas de destino (`ClientDetail` e `CampaignDetail`) já existem e funcionam.
+
+### Restrições preservadas
+
+- Em `isLimitedMode` (usuários com acesso restrito a uma única campanha) os links de Agência, Cliente e Campanha continuam desabilitados, como hoje.
+- Estilo visual (tipografia, cores, negrito, truncamento) permanece idêntico — apenas a interatividade é adicionada.
 
