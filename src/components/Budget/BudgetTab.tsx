@@ -333,6 +333,9 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                 <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
             )}
+            {budgetAmount != null && currencyCode !== "BRL" && (
+              <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(budgetAmount * exchangeRate)}</p>
+            )}
             {/* Deadline + Currency */}
             <div className="flex items-center gap-2 flex-wrap">
               <Popover>
@@ -352,28 +355,39 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
                   />
                 </PopoverContent>
               </Popover>
-              <Select
-                value={currencyCode}
-                onValueChange={(val) => {
-                  saveSettings.mutate({
-                    campaign_id: campaignId,
-                    budget_amount: budgetAmount,
-                    deadline: settings?.deadline ?? null,
-                    currency_code: val,
-                  });
-                }}
-              >
-                <SelectTrigger className="h-7 w-auto text-xs gap-1 px-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.values(COUNTRY_CONFIGS).map((c) => (
-                    <SelectItem key={c.currency} value={c.currency} className="text-xs">
-                      {c.currency} — {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {currencyLocked ? (
+                <div className="flex items-center gap-1.5 h-7 text-xs px-2 text-foreground">
+                  <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="font-medium">
+                    {currencyCode === "USD"
+                      ? "Dólar Americano"
+                      : currencyCode === "CLP"
+                        ? "Peso Chileno"
+                        : "Real Brasileiro"}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                    <SelectTrigger className="h-7 w-auto text-xs gap-1 px-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BRL" className="text-xs">🇧🇷 Real Brasileiro (BRL)</SelectItem>
+                      <SelectItem value="USD" className="text-xs">🇺🇸 Dólar Americano (USD)</SelectItem>
+                      <SelectItem value="CLP" className="text-xs">🇨🇱 Peso Chileno (CLP)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => setShowLockConfirm(true)}
+                  >
+                    Confirmar moeda
+                  </Button>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -385,6 +399,9 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
             {bestSupplier ? (
               <>
                 <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(bestSupplier.total)}</p>
+                {currencyCode !== "BRL" && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(bestSupplier.total * exchangeRate)}</p>
+                )}
                 <p className="text-xs text-muted-foreground">{bestSupplier.name}</p>
               </>
             ) : (
@@ -398,15 +415,40 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
           <CardContent className="pt-4 pb-4 space-y-1">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Diferença</p>
             {difference != null ? (
-              <p className={cn("text-2xl font-bold", difference <= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
-                {difference <= 0 ? "" : "+"}{fmtCurrency(difference)}
-              </p>
+              <>
+                <p className={cn("text-2xl font-bold", difference <= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+                  {difference <= 0 ? "" : "+"}{fmtCurrency(difference)}
+                </p>
+                {currencyCode !== "BRL" && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(difference * exchangeRate)}</p>
+                )}
+              </>
             ) : (
               <p className="text-lg text-muted-foreground">—</p>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Exchange rate info row (shown only when currency is not BRL) */}
+      {currencyCode !== "BRL" && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground -mt-2">
+          <span>
+            Cotação: 1 {currencyCode} = {fmtBRL(exchangeRate)}
+            {rateData?.updatedAt ? ` · Atualizado em ${rateData.updatedAt}` : ""}
+            {" · Fonte: AwesomeAPI"}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            disabled={rateLoading}
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["exchange_rate", currencyCode] })}
+          >
+            <RefreshCw className={cn("w-3 h-3", rateLoading && "animate-spin")} />
+          </Button>
+        </div>
+      )}
 
       {/* ═══ SUPPLIERS SECTION ═══ */}
       <div className="space-y-3">
