@@ -1270,7 +1270,182 @@ const ClientDetail = () => {
             />
           </>
         )}
+
+        {/* ─── Suppliers View ─── */}
+        {new URLSearchParams(location.search).get("tab") === "suppliers" && (
+          <>
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
+              <span className="text-sm font-semibold text-foreground">{suppliers.length} fornecedor(es)</span>
+              <div className="flex-1 min-w-[160px] max-w-xs">
+                <Input
+                  placeholder="Buscar fornecedor..."
+                  value={supplierSearch}
+                  onChange={(e) => setSupplierSearch(e.target.value)}
+                  className="h-8 text-xs"
+                />
+              </div>
+              {canEditClients && (
+                <Button size="sm" className="gap-1 h-8" onClick={openSupplierForCreate}>
+                  <Plus className="w-3.5 h-3.5" /> Adicionar Fornecedor
+                </Button>
+              )}
+            </div>
+
+            {filteredSuppliers.length === 0 ? (
+              <div className="text-center py-16 border border-dashed border-border rounded-lg">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <Building2 className="w-6 h-6 text-primary" />
+                </div>
+                <p className="text-muted-foreground text-sm">
+                  {supplierSearch ? "Nenhum fornecedor encontrado." : "Nenhum fornecedor cadastrado."}
+                </p>
+              </div>
+            ) : (
+              <div className="border rounded-md overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Empresa</TableHead>
+                      <TableHead className="text-xs">Contato</TableHead>
+                      <TableHead className="text-xs">Telefone</TableHead>
+                      <TableHead className="text-xs">E-mail</TableHead>
+                      <TableHead className="text-xs">Observações</TableHead>
+                      <TableHead className="text-xs text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredSuppliers.map((s) => (
+                      <TableRow key={s.id}>
+                        <TableCell className="text-sm font-medium">{s.company_name}</TableCell>
+                        <TableCell className="text-sm">{s.contact_name || "—"}</TableCell>
+                        <TableCell className="text-sm">{s.phone || "—"}</TableCell>
+                        <TableCell className="text-sm">{s.email}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground max-w-xs truncate">
+                          {s.observations || "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {canEditClients && (
+                              <>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7"
+                                  onClick={() => openSupplierForEdit(s)}
+                                  title="Editar"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-7 w-7 text-destructive"
+                                  onClick={() => setDeleteSupplierId(s.id)}
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </>
+        )}
       </div>
+
+      {/* ─── Supplier Add/Edit Dialog ─── */}
+      <Dialog open={supplierDialogOpen} onOpenChange={setSupplierDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{editingSupplierId ? "Editar Fornecedor" : "Novo Fornecedor"}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmitSupplier} className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Empresa *</label>
+              <Input
+                value={supplierForm.company_name}
+                onChange={(e) => setSupplierForm((f) => ({ ...f, company_name: e.target.value }))}
+                required
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Contato</label>
+              <Input
+                value={supplierForm.contact_name}
+                onChange={(e) => setSupplierForm((f) => ({ ...f, contact_name: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Telefone</label>
+                <Input
+                  value={supplierForm.phone}
+                  onChange={(e) => setSupplierForm((f) => ({ ...f, phone: e.target.value }))}
+                  placeholder="+5511999999999"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">E-mail *</label>
+                <Input
+                  type="email"
+                  value={supplierForm.email}
+                  onChange={(e) => setSupplierForm((f) => ({ ...f, email: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Observações</label>
+              <Textarea
+                value={supplierForm.observations}
+                onChange={(e) => setSupplierForm((f) => ({ ...f, observations: e.target.value }))}
+                placeholder="Notas internas sobre o fornecedor..."
+                rows={3}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => setSupplierDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={addSupplier.isPending || updateSupplier.isPending}>
+                {editingSupplierId ? "Salvar" : "Adicionar"}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteSupplierId} onOpenChange={(o) => !o && setDeleteSupplierId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir fornecedor?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação removerá o cadastro deste fornecedor. Cotações já criadas em campanhas não serão afetadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteSupplierId) {
+                  deleteSupplier.mutate(deleteSupplierId, {
+                    onSuccess: () => setDeleteSupplierId(null),
+                  });
+                }
+              }}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ─── Store Models Management Dialog ─── */}
       <Dialog open={storeModelDialogOpen} onOpenChange={setStoreModelDialogOpen}>
