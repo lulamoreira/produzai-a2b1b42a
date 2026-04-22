@@ -2261,31 +2261,8 @@ const CampaignDetail = () => {
                     <DropdownMenuItem onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
                       <Download className="w-4 h-4 mr-2" /> {t("common.export")}
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <label className="cursor-pointer flex items-center w-full">
-                        <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (!file || !campaignId) return;
-                          try {
-                            const items = await parsePiecesImport(file);
-                            if (items.length === 0) { toast.error("Nenhuma peça encontrada."); return; }
-                            let added = 0, updated = 0;
-                            for (const item of items) {
-                              const existing = pieces.find(p => p.name.toLowerCase() === item.name.toLowerCase());
-                              if (existing) {
-                                await updatePiece.mutateAsync({ id: existing.id, ...item });
-                                updated++;
-                              } else {
-                                await addPiece.mutateAsync({ campaign_id: campaignId, ...item });
-                                added++;
-                              }
-                            }
-                            toast.success(`${added} adicionada(s), ${updated} atualizada(s)!`);
-                          } catch { toast.error("Erro ao importar."); }
-                          e.target.value = "";
-                        }} />
-                        <Upload className="w-4 h-4 mr-2" /> Importar
-                      </label>
+                    <DropdownMenuItem onClick={() => setPieceImportOpen(true)}>
+                      <Upload className="w-4 h-4 mr-2" /> Importar
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleReviewPieceCodes}>
                       <Sparkles className="w-4 h-4 mr-2" /> {t("pieces.reviewCodes")}
