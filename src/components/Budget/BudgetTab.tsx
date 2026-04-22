@@ -38,11 +38,13 @@ import {
   useBudgetSuppliers, useAddSupplier, useDeleteSupplier, useUpdateSupplier,
   useBudgetPrices, useBudgetExtraCosts, useSupplierSpecSuggestions, useExchangeRate,
 } from "@/hooks/useBudget";
+import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppliers";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
 interface BudgetTabProps {
   campaignId: string;
+  clientId: string;
   campaignName: string;
   agencyName: string;
   pieces: CampaignPiece[];
@@ -63,7 +65,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 // Note: fmtCurrency is defined inside the component to access settings.currency_code
 
 // ─── Main Component ──────────────────────────────────────
-export default function BudgetTab({ campaignId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores }: BudgetTabProps) {
+export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores }: BudgetTabProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
