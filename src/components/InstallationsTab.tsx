@@ -137,6 +137,20 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [previewSchedule, setPreviewSchedule] = useState<any>(null);
   const [previewTeam, setPreviewTeam] = useState<any>(null);
 
+  // Apply pre-set filter from external navigation (e.g. Status dashboard)
+  useEffect(() => {
+    if (!initialFilter) return;
+    if (initialFilter.type === "status") {
+      setFilterStatus(initialFilter.value);
+    } else if (initialFilter.type === "checkin") {
+      setFilterCheckin(initialFilter.value);
+    } else if (initialFilter.type === "summary") {
+      setSummaryFilter(initialFilter.value);
+    }
+    onInitialFilterApplied?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFilter]);
+
   const toggleCardExpanded = (storeId: string) => {
     setExpandedCards(prev => {
       const next = new Set(prev);
