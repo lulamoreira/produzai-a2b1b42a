@@ -593,6 +593,43 @@ export default function BudgetTab({ campaignId, campaignName, agencyName, pieces
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* ═══ CURRENCY LOCK CONFIRMATION ═══ */}
+      <AlertDialog open={showLockConfirm} onOpenChange={setShowLockConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar moeda da campanha?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Após confirmar, a moeda não poderá ser alterada. Deseja continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                saveSettings.mutate(
+                  {
+                    campaign_id: campaignId,
+                    budget_amount: budgetAmount,
+                    deadline: settings?.deadline ?? null,
+                    currency_code: selectedCurrency,
+                    currency_locked: true,
+                  },
+                  {
+                    onSuccess: () => {
+                      toast.success("Moeda confirmada e bloqueada.");
+                      setShowLockConfirm(false);
+                    },
+                    onError: () => toast.error("Erro ao confirmar moeda."),
+                  }
+                );
+              }}
+            >
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* ═══ SUPPLIER DETAIL SHEET ═══ */}
       <Sheet open={!!detailSupplier} onOpenChange={(o) => !o && setDetailSupplier(null)}>
         <SheetContent className="sm:max-w-2xl overflow-y-auto">
