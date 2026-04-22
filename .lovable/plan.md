@@ -1,37 +1,89 @@
 
 
-## Tornar o breadcrumb clicável (Cliente e Campanha)
+## Diagnóstico — Estado atual do sistema de moeda no módulo Orçamentos
 
-Atualmente, no breadcrumb "Vimer Retail Experience › Lindt Chile › Pralinas" exibido no topo da campanha:
+Antes de implementar a seleção de moeda, segue o levantamento solicitado.
 
-- **"Pralinas"** (nome da campanha) é apenas texto em negrito e não navega para lugar nenhum.
-- **"Lindt Chile"** (nome do cliente) só é clicável quando há uma sub-seção aberta (Instalações, Agendamento, etc.). Na tela inicial da campanha, ele também fica inerte.
+### 1. Estrutura da tabela `budget_settings`
 
-A correção transformará ambos em links funcionais.
+| Coluna | Tipo | Nulo | Default |
+|---|---|---|---|
+| `id` | uuid | NO | `gen_random_uuid()` |
+| `campaign_id` | uuid | NO | — |
+| `budget_amount` | numeric | YES | — |
+| `deadline` | timestamptz | YES | — |
+| `notify_user_ids` | uuid[] | YES | `'{}'::uuid[]` |
+| `created_at` | timestamptz | YES | `now()` |
 
-### Comportamento esperado
+**Não existe coluna de moeda.** Será necessário adicionar uma (ex.: `currency_code text default 'BRL'`).
 
-| Item clicado | Destino |
-|--------------|---------|
-| Nome da agência (ex.: Vimer Retail Experience) | Tela de Agências (`/`) — já funciona |
-| Nome do cliente (ex.: Lindt Chile) | Página do cliente com a lista de campanhas (`/agency/:agencyId/clients/:clientId`) |
-| Nome da campanha (ex.: Pralinas) | Hub principal da campanha (volta para a tela inicial sem sub-seção, removendo `?section=...`) |
-| Nome da sub-seção atual (quando houver) | Permanece como rótulo final, sem link |
+### 2. `BudgetTab.tsx` — KPIs e fluxo de settings
 
-### Detalhes técnicos
+- **Hook de leitura**: `useBudgetSettings(campaignId)` → `settings.budget_amount` e `settings.deadline`.
+- **Hook de escrita**: `useSaveBudgetSettings()` → upsert em `budget_settings` com `{campaign_id, budget_amount, deadline}`.
+- **Formatador hardcoded** (linha 60–61): `fmtCurrency(v)` → `v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })`.
+- **3 KPIs** (linhas 287–364):
+  1. **Budget da Campanha** — input editável + popover de prazo. Salva via `saveSettings.mutate`.
+  2. **Melhor Proposta** — `fmtCurrency(bestSupplier.total)` (verde se houver proposta).
+  3. **Diferença** — `fmtCurrency(difference)` (verde se ≤0, vermelho se positivo).
+- **Totais por fornecedor** (linhas 119–146) e **detail sheet** (linhas 260–281) também usam `fmtCurrency`.
 
-1. **`src/pages/CampaignDetail.tsx`** (geração do array de breadcrumbs, linhas ~972–989):
-   - Sempre atribuir `href` para o item do **cliente**, independente de haver `activeSection` (apenas continua bloqueado em `isLimitedMode`).
-   - Sempre atribuir `href` para o item da **campanha** apontando para `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}`. Quando o usuário já está no hub (sem `activeSection`), clicar nesse link não fará nada visível, mas também não quebra; quando houver uma seção aberta, o clique remove o `?section=...` e volta ao hub.
+### 3. `useBudget.ts` — hooks exportados
 
-2. **`src/components/AppLayout.tsx`** (renderização do breadcrumb, linhas ~197–204):
-   - O último item do breadcrumb é renderizado como texto em negrito não clicável (linha 200–202). Vamos torná-lo clicável quando ele tiver `href` definido — usando um `<button>` com o mesmo estilo bold atual, que dispara `navigate(crumb.href)`.
-   - Isso faz com que o nome da campanha (último item no hub da campanha) e o nome da sub-seção (quando aplicável) respeitem o `href`. Itens sem `href` continuam como texto puro.
+| Hook | Assinatura |
+|---|---|
+| `useBudgetSettings(campaignId)` | `select * from budget_settings where campaign_id eq` |
+| `useSaveBudgetSettings()` | `mutate({ campaign_id, budget_amount, deadline })` — **upsert por `campaign_id`** |
+| `useBudgetSuppliers(campaignId)` | lista fornecedores |
+| `useAddSupplier / useUpdateSupplier / useDeleteSupplier` | CRUD fornecedores |
+| `useBudgetPrices(campaignId)` | preços por peça |
+| `useBudgetExtraCosts(campaignId)` | instalação + frete por fornecedor |
+| `useSupplierSpecSuggestions(supplierId)` | sugestões de especificação |
 
-3. Nenhuma alteração é necessária em rotas, permissões ou lógica de carregamento — as rotas de destino (`ClientDetail` e `CampaignDetail`) já existem e funcionam.
+A mutation `useSaveBudgetSettings` aceita só `budget_amount` e `deadline` — precisa aceitar `currency_code`.
+
+### 4. `SupplierPortal.tsx` — exibição de preços e moeda
+
+- **Formatador hardcoded** (linhas 92–95): `fmt(v)` → `Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })`.
+- **Símbolo atual exibido ao fornecedor**: **R$** (BRL fixo).
+- **Fluxo**:
+  1. Carrega `budget_settings` (linha 172) — atualmente busca só `deadline`. Precisará buscar também `currency_code`.
+  2. Preços salvos em `budget_prices.unit_price` (numeric, sem moeda associada — apenas valor).
+  3. Custos extras (`installation_value`, `freight_value`) também em numeric puro.
+  4. Excel exportado via `exportMatrixExcelJS` também usa formatação BRL embutida.
+
+### 5. Funções de formatação existentes no codebase
+
+- **`src/lib/countryConfig.ts`** já expõe `formatCurrencyByCode(value, currencyCode, locale)` que faz exatamente o que precisamos — itera `COUNTRY_CONFIGS` para achar `currencyLocale` correto. Suporta BRL, CLP, USD, MXN, ARS, COP, PEN.
+- **`ClientDetail.tsx`** (linhas 346–349, 1002–1005) já tem UI de configuração de `currency_code` por cliente em `clients.currency_code`.
+- Os dois formatadores em `BudgetTab.tsx` (linha 60) e `SupplierPortal.tsx` (linha 92) são **duplicações locais** com BRL hardcoded.
+
+---
+
+## Plano de implementação proposto (somente após sua aprovação)
+
+### Mudanças no banco
+- **Migration**: adicionar coluna `currency_code text not null default 'BRL'` em `budget_settings`. Backfill com `'BRL'` para registros existentes.
+
+### Mudanças no frontend
+1. **`useBudget.ts`**: estender `useSaveBudgetSettings` para aceitar `currency_code` opcional no payload.
+2. **`BudgetTab.tsx`**:
+   - Substituir `fmtCurrency` local por `formatCurrencyByCode(v, settings?.currency_code)` de `countryConfig.ts`.
+   - Adicionar **Select de moeda** dentro do card "Budget da Campanha" (abaixo do prazo), listando as 7 moedas suportadas em `COUNTRY_CONFIGS` (BRL, CLP, USD, MXN, ARS, COP, PEN).
+   - Onboarding: na primeira leitura, se `currency_code` vier nulo, default `BRL`. Salvar via `saveSettings.mutate`.
+3. **`SupplierPortal.tsx`**:
+   - Buscar `currency_code` do `budget_settings` no fetch inicial (linha 172).
+   - Substituir `fmt` local por `formatCurrencyByCode(v, currencyCode)`.
+   - Mostrar moeda selecionada ao fornecedor de forma visível (ex.: badge no header "Valores em USD").
+4. **`exportMatrixExcelJS`** (apenas se aplicável ao orçamento): passar `currency_code` do contexto da campanha para garantir que o Excel exportado pelo fornecedor use a mesma moeda.
+
+### Comportamento UX
+- Admin define a moeda no card de Budget. A escolha é **por campanha** (não por agência/cliente) para suportar campanhas internacionais isoladas.
+- Toda a UI (KPIs, totais, portal do fornecedor, preços por peça) renderiza no símbolo correto.
+- Valores numéricos no banco continuam em `numeric` puro — apenas a apresentação muda. **Nenhuma conversão cambial** é feita.
 
 ### Restrições preservadas
-
-- Em `isLimitedMode` (usuários com acesso restrito a uma única campanha) os links de Agência, Cliente e Campanha continuam desabilitados, como hoje.
-- Estilo visual (tipografia, cores, negrito, truncamento) permanece idêntico — apenas a interatividade é adicionada.
+- Lógica de cálculo (`supplierTotals`, `bestSupplier`, `difference`) não muda.
+- RLS, permissões e fluxo de envio do fornecedor permanecem idênticos.
+- Acesso continua restrito a Admin (memo `budget-visibility-constraint`).
 
