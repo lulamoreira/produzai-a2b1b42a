@@ -747,7 +747,12 @@ const SupplierPortal = () => {
               <h1 className="text-xl font-bold">{campaignName}</h1>
               <p className="text-sm opacity-80 mt-0.5">{supplier.company_name}</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              {currencyCode !== "BRL" && (
+                <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full font-medium">
+                  Valores em {currencyCode}
+                </span>
+              )}
               <Badge variant="secondary" className="bg-white/20 text-white border-0 hover:bg-white/30">
                 {supplier.status === "aguardando" && "Aguardando"}
                 {supplier.status === "preenchendo" && "Preenchendo"}
