@@ -873,7 +873,7 @@ const ClientDetail = () => {
         {!new URLSearchParams(location.search).has("tab") && (
           <>
             {/* Stats cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               <div className="card-kpi flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}`)}>
                 <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
                   <Megaphone className="w-5 h-5 text-primary-foreground" />
@@ -890,6 +890,15 @@ const ClientDetail = () => {
                 <div>
                   <p className="text-2xl font-bold text-foreground">{stores.length}</p>
                   <p className="text-[11px] text-muted-foreground">{t("clientDashboard.storeCount")}</p>
+                </div>
+              </div>
+              <div className="card-kpi flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=suppliers`)}>
+                <div className="w-10 h-10 rounded-lg bg-primary/60 flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-foreground">{suppliers.length}</p>
+                  <p className="text-[11px] text-muted-foreground">Fornecedores</p>
                 </div>
               </div>
               {canEditCampaigns && (
