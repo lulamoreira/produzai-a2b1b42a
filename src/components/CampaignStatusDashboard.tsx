@@ -2,9 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
+export type DashboardFilter =
+  | { type: "status"; value: "completed" | "pending" }
+  | { type: "checkin"; value: "checked" | "unchecked" }
+  | { type: "summary"; value: "withPhotos" | "scheduled" };
+
 interface CampaignStatusDashboardProps {
   campaignId: string;
-  onNavigate: (section: string) => void;
+  onNavigate: (section: string, filter?: DashboardFilter) => void;
 }
 
 function useCampaignStats(campaignId: string) {
