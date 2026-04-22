@@ -198,7 +198,17 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
             <div className="mt-0.5 flex items-start gap-3">
               <div className="w-9 lg:hidden flex-shrink-0" />
               <div className="min-w-0 flex-1 text-sm font-bold text-foreground leading-tight">
-                {breadcrumbs[breadcrumbs.length - 1]?.label}
+                {breadcrumbs[breadcrumbs.length - 1]?.href ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate(breadcrumbs[breadcrumbs.length - 1]!.href!)}
+                    className="text-left hover:underline"
+                  >
+                    {breadcrumbs[breadcrumbs.length - 1]?.label}
+                  </button>
+                ) : (
+                  breadcrumbs[breadcrumbs.length - 1]?.label
+                )}
               </div>
             </div>
           )}
