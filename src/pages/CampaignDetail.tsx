@@ -147,6 +147,41 @@ const CampaignDetail = () => {
   const deleteKitPiece = useDeleteCampaignKitPiece();
   const updateKitPiece = useUpdateCampaignKitPiece();
 
+  const [pieceImportOpen, setPieceImportOpen] = useState(false);
+
+  const handlePiecesImport = async (
+    rows: Record<string, string>[],
+    { updateExisting }: { updateExisting: boolean },
+  ) => {
+    if (!campaignId) return;
+    let added = 0, updated = 0;
+    for (const row of rows) {
+      const item = {
+        name: row.name ?? "",
+        code: parseInt(row.code ?? "0", 10) || 0,
+        category: row.category || "",
+        size: row.size || "",
+        specification: row.specification || "Vide Book/Manual",
+        store_category: row.store_category || null,
+        installation_instructions: row.installation_instructions || "Sem informações específicas",
+        sub_location: row.sub_location || null,
+        kit_only: ["true", "1", "sim", "yes"].includes(String(row.kit_only ?? "").toLowerCase()),
+      };
+      const existing = pieces.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+      if (existing && updateExisting) {
+        await updatePiece.mutateAsync({ id: existing.id, ...item } as any);
+        updated++;
+      } else {
+        await addPiece.mutateAsync({ campaign_id: campaignId, ...item } as any);
+        added++;
+      }
+    }
+    const parts: string[] = [];
+    if (added > 0) parts.push(`${added} adicionada(s)`);
+    if (updated > 0) parts.push(`${updated} atualizada(s)`);
+    if (parts.length > 0) toast.success(parts.join(", ") + "!");
+  };
+
   // Fetch agency color for header gradient
   const { data: agency } = useQuery({
     queryKey: ["agency", agencyId],
