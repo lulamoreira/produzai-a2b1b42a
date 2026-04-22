@@ -1232,6 +1232,14 @@ const ClientDetail = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ImportWizardDialog
+        open={storeImportOpen}
+        onOpenChange={setStoreImportOpen}
+        mode="stores"
+        existingItems={stores.map(s => ({ name: s.name, id: s.id }))}
+        onImport={handleStoresImport}
+      />
     </AppLayout>
   );
 };
