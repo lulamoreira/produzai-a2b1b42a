@@ -6,12 +6,13 @@ import {
   Camera, Upload, CalendarIcon, Clock, MapPin, Phone, User,
   CheckCircle, KeyRound, Store, FileText, Building2, AlertTriangle,
   ArrowDown, ChevronDown, ChevronUp,
-  WifiOff, Loader2, X,
+  WifiOff, Loader2, X, Leaf,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
+import { getCompressionProfile } from "@/lib/deviceProfile";
 import { enqueue, queueCount, dequeue } from "@/lib/offlineQueue";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 
@@ -374,8 +375,10 @@ export default function InstallerPortal() {
 
       let compressed: Blob;
       try {
-        // 1024px / 0.65 — agressivo para Android low-end (sem comprometer leitura)
-        compressed = await compressImage(file, 1024, 0.65);
+        // Sem parâmetros → usa o perfil de compressão dinâmico (deviceProfile.ts):
+        // Android low-end: 800px/0.55 · Android mid: 1024px/0.6 · iOS/desktop: 1280px/0.7
+        // Arquivos >5MB descem um tier automaticamente para evitar OOM.
+        compressed = await compressImage(file);
       } catch (err) {
         console.error("Compression failed:", err);
         compressed = file;
@@ -710,6 +713,9 @@ export default function InstallerPortal() {
   const pendingCount2 = uploadingCount + queuedLocalCount;
   const totalMidias = sentCount + pendingCount2;
   const atingiuMinimo = totalMidias >= MINIMO_FOTOS;
+  // Device compression profile — used to show "Modo economia" badge on low-end / Android devices
+  const compressionProfile = getCompressionProfile();
+  const isMemorySaver = compressionProfile.tier !== "high";
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-page, #F5F2ED)" }}>
@@ -843,7 +849,18 @@ export default function InstallerPortal() {
         {/* Photos */}
         <div className="bg-card border border-border rounded-xl p-4 space-y-3" id="secao-fotos">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Fotos da instalação</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Fotos da instalação</p>
+              {isMemorySaver && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 rounded-full px-2 py-0.5 border border-emerald-200 dark:border-emerald-900/40"
+                  title={`Compressão otimizada para seu dispositivo (${compressionProfile.maxDimension}px · q${compressionProfile.quality})`}
+                >
+                  <Leaf className="w-3 h-3" />
+                  Modo economia
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1 flex-wrap">
               <span
                 key={`sent-${sentCount}`}
