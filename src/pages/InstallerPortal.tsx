@@ -370,7 +370,6 @@ export default function InstallerPortal() {
           _failed: false,
           _previewPending: isMemorySaver,
         },
-        },
       };
     });
 
@@ -390,6 +389,18 @@ export default function InstallerPortal() {
       } catch (err) {
         console.error("Compression failed:", err);
         compressed = file;
+      }
+
+      // In memory-saver mode, only show the preview AFTER compression to avoid decoding the original photo.
+      if (isMemorySaver) {
+        const compressedPreviewUrl = URL.createObjectURL(compressed);
+        setLocalPhotos((prev) =>
+          prev.map((p) =>
+            p.id === tempId
+              ? { ...p, photo_url: compressedPreviewUrl, _previewPending: false }
+              : p
+          )
+        );
       }
 
       // Offline path — enfileira BLOB direto (não base64) para economizar memória
