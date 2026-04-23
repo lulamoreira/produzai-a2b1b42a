@@ -6,13 +6,13 @@ import {
   Camera, Upload, CalendarIcon, Clock, MapPin, Phone, User,
   CheckCircle, KeyRound, Store, FileText, Building2, AlertTriangle,
   ArrowDown, ChevronDown, ChevronUp,
-  WifiOff, Loader2,
+  WifiOff, Loader2, X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
-import { enqueue, blobToBase64, queueCount } from "@/lib/offlineQueue";
+import { enqueue, blobToBase64, queueCount, dequeue } from "@/lib/offlineQueue";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 
 interface PortalData {
@@ -73,6 +73,9 @@ export default function InstallerPortal() {
   const [offlineLoaded, setOfflineLoaded] = useState(false);
   const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
   const [pendingPhotoCount, setPendingPhotoCount] = useState(0);
+
+  // Track tempIds the user cancelled mid-upload, so the upload loop can skip them
+  const cancelledTempIdsRef = useRef<Set<string>>(new Set());
 
   // Offline sync hook
   const { isOnline, isSyncing, pendingCount, refreshCount } = useOfflineSync(() => {
@@ -381,7 +384,7 @@ export default function InstallerPortal() {
       if (!isOnline) {
         try {
           const base64 = await blobToBase64(compressed);
-          await enqueue({
+          const queueId = await enqueue({
             type: "photo",
             createdAt: new Date().toISOString(),
             payload: {
@@ -392,10 +395,15 @@ export default function InstallerPortal() {
               uploadMethod: method,
             },
           });
+          if (cancelledTempIdsRef.current.has(tempId)) {
+            // User cancelled while we were enqueuing — undo it
+            try { await dequeue(queueId); } catch { /* ignore */ }
+            cancelledTempIdsRef.current.delete(tempId);
+            continue;
+          }
           queued++;
-          // Mark as queued (still visible, but with pending indicator)
           setLocalPhotos((prev) =>
-            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true } : p))
+            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true, _queueId: queueId } : p))
           );
         } catch (e) {
           console.error("Offline queue failed:", e);
@@ -432,32 +440,43 @@ export default function InstallerPortal() {
           throw new Error(result?.error || `HTTP ${res.status}`);
         }
 
+        // If user cancelled while upload was in flight — delete server record and skip UI update
+        if (cancelledTempIdsRef.current.has(tempId)) {
+          cancelledTempIdsRef.current.delete(tempId);
+          if (result?.photo?.id) {
+            try {
+              const photoUrl = result.photo.photo_url as string;
+              const url = new URL(photoUrl);
+              const m = url.pathname.match(/\/storage\/v1\/object\/public\/installation-photos\/(.+)/);
+              if (m) await supabase.storage.from("installation-photos").remove([m[1]]);
+              await supabase.from("installation_photos").delete().eq("id", result.photo.id);
+            } catch { /* ignore */ }
+          }
+          continue;
+        }
+
         // Success — replace placeholder with real record
         if (result?.photo) {
           setLocalPhotos((prev) =>
             prev.map((p) => {
               if (p.id !== tempId) return p;
-              // Free the temporary blob URL
               try { URL.revokeObjectURL(p.photo_url); } catch { /* ignore */ }
               return result.photo;
             })
           );
         } else {
-          // No photo returned but request OK — at least mark as not uploading
           setLocalPhotos((prev) =>
             prev.map((p) => (p.id === tempId ? { ...p, _uploading: false } : p))
           );
         }
         sent++;
 
-        // Subtle haptic on each successful photo
         try { (navigator as any).vibrate?.(10); } catch { /* ignore */ }
       } catch (err: any) {
         console.error("Upload failed, queuing offline:", err);
-        // Network or server error — queue for retry, keep showing photo
         try {
           const base64 = await blobToBase64(compressed);
-          await enqueue({
+          const queueId = await enqueue({
             type: "photo",
             createdAt: new Date().toISOString(),
             payload: {
@@ -468,9 +487,14 @@ export default function InstallerPortal() {
               uploadMethod: method,
             },
           });
+          if (cancelledTempIdsRef.current.has(tempId)) {
+            try { await dequeue(queueId); } catch { /* ignore */ }
+            cancelledTempIdsRef.current.delete(tempId);
+            continue;
+          }
           queued++;
           setLocalPhotos((prev) =>
-            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true } : p))
+            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true, _queueId: queueId } : p))
           );
         } catch (e) {
           console.error("Final offline queue failed:", e);
@@ -489,6 +513,51 @@ export default function InstallerPortal() {
     if (failed > 0) toast.error(`${failed} foto(s) falharam. Tente novamente.`);
 
     setValidacaoError(null);
+  };
+
+  /**
+   * Remove a photo from the grid. Handles three cases:
+   * 1) Optimistic placeholder still uploading → mark as cancelled (upload loop will undo on completion)
+   * 2) Queued offline → remove from IndexedDB queue
+   * 3) Already saved on server → delete storage object + DB row
+   * In all cases, the UI is updated immediately.
+   */
+  const handleRemovePhoto = async (photo: any) => {
+    const isTemp = typeof photo.id === "string" && photo.id.startsWith("temp-");
+
+    // 1) Remove from UI immediately
+    setLocalPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+    try { if (photo.photo_url?.startsWith("blob:")) URL.revokeObjectURL(photo.photo_url); } catch { /* ignore */ }
+
+    try {
+      if (isTemp) {
+        // Mark as cancelled so the in-flight upload loop will undo any side effects
+        cancelledTempIdsRef.current.add(photo.id);
+
+        // If it was already in the offline queue, dequeue it now
+        if (photo._queueId) {
+          try { await dequeue(photo._queueId); } catch { /* ignore */ }
+          await refreshCount();
+        }
+        return;
+      }
+
+      // Already-saved server photo → delete storage + DB row
+      if (photo.photo_url) {
+        try {
+          const url = new URL(photo.photo_url);
+          const m = url.pathname.match(/\/storage\/v1\/object\/public\/installation-photos\/(.+)/);
+          if (m) await supabase.storage.from("installation-photos").remove([m[1]]);
+        } catch { /* ignore storage error — DB row removal still proceeds */ }
+      }
+      const { error } = await supabase.from("installation_photos").delete().eq("id", photo.id);
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Failed to remove photo:", err);
+      toast.error("Não foi possível remover a foto. Tente novamente.");
+      // Restore on failure
+      setLocalPhotos((prev) => (prev.some((p) => p.id === photo.id) ? prev : [...prev, photo]));
+    }
   };
 
   const handleComplete = async () => {
@@ -830,27 +899,36 @@ export default function InstallerPortal() {
           {localPhotos.length > 0 && (
             <div className="flex gap-1.5 flex-wrap">
               {localPhotos.map((photo: any) => (
-                <div key={photo.id} className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
+                <div key={photo.id} className="relative w-16 h-16 rounded-md overflow-hidden border border-border group">
                   <img
                     src={photo.photo_url}
                     alt=""
                     className={`w-full h-full object-cover transition-opacity ${photo._uploading ? "opacity-50" : ""}`}
                   />
                   {photo._uploading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
                       <Loader2 className="w-5 h-5 text-white animate-spin" />
                     </div>
                   )}
                   {photo._queued && !photo._uploading && (
-                    <div className="absolute bottom-0 inset-x-0 bg-amber-500 text-white text-[9px] font-semibold text-center py-0.5 leading-tight">
+                    <div className="absolute bottom-0 inset-x-0 bg-amber-500 text-white text-[9px] font-semibold text-center py-0.5 leading-tight pointer-events-none">
                       Na fila
                     </div>
                   )}
                   {photo._failed && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-destructive/80">
+                    <div className="absolute inset-0 flex items-center justify-center bg-destructive/80 pointer-events-none">
                       <AlertTriangle className="w-5 h-5 text-white" />
                     </div>
                   )}
+                  {/* Remove button — always visible on touch devices */}
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(photo)}
+                    aria-label="Remover foto"
+                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 hover:bg-destructive text-white flex items-center justify-center shadow-sm transition-colors z-10"
+                  >
+                    <X className="w-3 h-3" strokeWidth={3} />
+                  </button>
                 </div>
               ))}
             </div>
