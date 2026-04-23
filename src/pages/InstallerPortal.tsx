@@ -75,6 +75,10 @@ export default function InstallerPortal() {
   const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
   const [pendingPhotoCount, setPendingPhotoCount] = useState(0);
 
+  // Profile used both for compression and to avoid decoding original full-res photos on Android
+  const compressionProfile = getCompressionProfile();
+  const isMemorySaver = compressionProfile.tier !== "high";
+
   // Track tempIds the user cancelled mid-upload, so the upload loop can skip them
   const cancelledTempIdsRef = useRef<Set<string>>(new Set());
 
