@@ -6,15 +6,13 @@ import {
   Camera, Upload, CalendarIcon, Clock, MapPin, Phone, User,
   CheckCircle, KeyRound, Store, FileText, Building2, AlertTriangle,
   ArrowDown, ChevronDown, ChevronUp,
-  WifiOff, Loader2, X, Leaf,
+  Loader2, X, Leaf,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 import { getCompressionProfile } from "@/lib/deviceProfile";
-import { enqueue, queueCount, dequeue } from "@/lib/offlineQueue";
-import { useOfflineSync } from "@/hooks/useOfflineSync";
 
 interface PortalData {
   schedule: any;
@@ -71,9 +69,7 @@ export default function InstallerPortal() {
     faltam: number;
   } | null>(null);
   const [tentandoConcluir, setTentandoConcluir] = useState(false);
-  const [offlineLoaded, setOfflineLoaded] = useState(false);
   const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
-  const [pendingPhotoCount, setPendingPhotoCount] = useState(0);
 
   // Profile used both for compression and to avoid decoding original full-res photos on Android
   const compressionProfile = getCompressionProfile();
@@ -81,17 +77,6 @@ export default function InstallerPortal() {
 
   // Track tempIds the user cancelled mid-upload, so the upload loop can skip them
   const cancelledTempIdsRef = useRef<Set<string>>(new Set());
-
-  // Offline sync hook
-  const { isOnline, isSyncing, pendingCount, refreshCount, drainQueue } = useOfflineSync(() => {
-    // After sync completes, refresh data from server if online
-    if (code.length === 5) handleSubmit();
-  });
-
-  // Refresh pending photo count whenever pendingCount changes
-  useEffect(() => {
-    queueCount("photo").then(setPendingPhotoCount).catch(() => {});
-  }, [pendingCount]);
 
   // Auto-restore session on mount (online OR offline) — keep installer logged in across refreshes
   useEffect(() => {
@@ -102,20 +87,12 @@ export default function InstallerPortal() {
     setCode(cached.code);
     setCacheTimestamp(cached.ts);
 
-    if (!navigator.onLine) {
-      // Offline: use cached data directly
-      setData(cached.data);
-      setLocalPhotos(cached.data.photos || []);
-      setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
-      setIsCompleted(!!cached.data.schedule?.completed_at);
-      setOfflineLoaded(true);
-    } else {
-      // Online: show cached immediately, then revalidate in background via auto-submit effect
-      setData(cached.data);
-      setLocalPhotos(cached.data.photos || []);
-      setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
-      setIsCompleted(!!cached.data.schedule?.completed_at);
-    }
+    // Show cached view immediately so the installer doesn't need to retype the code
+    // on a page refresh. Fresh data is fetched in background via the auto-submit effect.
+    setData(cached.data);
+    setLocalPhotos(cached.data.photos || []);
+    setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
+    setIsCompleted(!!cached.data.schedule?.completed_at);
   }, []);
 
   // Auto-submit when 5 chars
@@ -195,22 +172,6 @@ export default function InstallerPortal() {
   const handleSubmit = async () => {
     if (code.length !== 5) return;
 
-    // If offline, try cache
-    if (!navigator.onLine) {
-      const cached = loadCache();
-      if (cached && cached.code === code.toLowerCase()) {
-        setData(cached.data);
-        setLocalPhotos(cached.data.photos || []);
-        setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
-        setIsCompleted(!!cached.data.schedule?.completed_at);
-        setOfflineLoaded(true);
-        setCacheTimestamp(cached.ts);
-        return;
-      }
-      setError("Sem conexão. Não há dados em cache para este código.");
-      return;
-    }
-
     setLoading(true);
     setError("");
 
@@ -234,25 +195,12 @@ export default function InstallerPortal() {
         setLocalPhotos(result.photos || []);
         setCheckinDone(!!result.schedule?.checkin_timestamp);
         setIsCompleted(!!result.schedule?.completed_at);
-        setOfflineLoaded(false);
-        // Cache for offline use
+        // Cache only metadata for fast restore on refresh (no offline operation)
         saveCache(code.toLowerCase(), result);
         setCacheTimestamp(new Date().toISOString());
       }
     } catch {
-      // Network error — try cache
-      const cached = loadCache();
-      if (cached && cached.code === code.toLowerCase()) {
-        setData(cached.data);
-        setLocalPhotos(cached.data.photos || []);
-        setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
-        setIsCompleted(!!cached.data.schedule?.completed_at);
-        setOfflineLoaded(true);
-        setCacheTimestamp(cached.ts);
-        toast.info("Carregado do cache offline.");
-      } else {
-        setError("Erro de conexão. Tente novamente.");
-      }
+      setError("Erro de conexão. Verifique sua internet e tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -295,14 +243,6 @@ export default function InstallerPortal() {
       storeName: data.store?.name,
     };
 
-    if (!isOnline) {
-      await enqueue({ type: "checkin", createdAt: new Date().toISOString(), payload: checkinPayload });
-      toast.success("Check-in salvo localmente. Será enviado quando a conexão voltar.");
-      setCheckinDone(true);
-      await refreshCount();
-      return;
-    }
-
     try {
       const { error: updateError } = await supabase
         .from("campaign_schedules")
@@ -343,11 +283,7 @@ export default function InstallerPortal() {
       toast.success("Check-in registrado! Bom trabalho. 👍");
       setCheckinDone(true);
     } catch {
-      // Fallback to offline queue
-      await enqueue({ type: "checkin", createdAt: new Date().toISOString(), payload: checkinPayload });
-      toast.success("Check-in salvo localmente. Será enviado quando a conexão voltar.");
-      setCheckinDone(true);
-      await refreshCount();
+      toast.error("Não foi possível registrar o check-in. Verifique sua conexão e tente novamente.");
     }
   };
 
@@ -357,8 +293,8 @@ export default function InstallerPortal() {
     const fileArray = Array.from(files);
     const total = fileArray.length;
     let sent = 0;
-    let queued = 0;
     let failed = 0;
+
 
     // Haptic feedback — instant confirmation that the tap was registered
     try { (navigator as any).vibrate?.(15); } catch { /* ignore */ }
@@ -412,41 +348,7 @@ export default function InstallerPortal() {
         );
       }
 
-      // Offline path — enfileira BLOB direto (não base64) para economizar memória
-      if (!isOnline) {
-        try {
-          const queueId = await enqueue({
-            type: "photo",
-            createdAt: new Date().toISOString(),
-            payload: {
-              blob: compressed,
-              installCode: code.toLowerCase(),
-              storeId: data.store.id,
-              category: uploadCategory,
-              uploadMethod: method,
-            },
-          });
-          if (cancelledTempIdsRef.current.has(tempId)) {
-            try { await dequeue(queueId); } catch { /* ignore */ }
-            cancelledTempIdsRef.current.delete(tempId);
-            await refreshCount();
-            continue;
-          }
-          queued++;
-          setLocalPhotos((prev) =>
-            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true, _queueId: queueId } : p))
-          );
-          // Atualiza badge imediatamente após cada enqueue
-          await refreshCount();
-        } catch (e) {
-          console.error("Offline queue failed:", e);
-          failed++;
-          setLocalPhotos((prev) =>
-            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _failed: true } : p))
-          );
-        }
-        continue;
-      }
+      // Online upload only — no offline queue
 
       // Online path
       try {
@@ -506,33 +408,11 @@ export default function InstallerPortal() {
 
         try { (navigator as any).vibrate?.(10); } catch { /* ignore */ }
       } catch (err: any) {
-        console.error("Upload failed, queuing offline:", err);
-        try {
-          const queueId = await enqueue({
-            type: "photo",
-            createdAt: new Date().toISOString(),
-            payload: {
-              blob: compressed,
-              installCode: code.toLowerCase(),
-              storeId: data.store.id,
-              category: uploadCategory,
-              uploadMethod: method,
-            },
-          });
-          if (cancelledTempIdsRef.current.has(tempId)) {
-            try { await dequeue(queueId); } catch { /* ignore */ }
-            cancelledTempIdsRef.current.delete(tempId);
-            await refreshCount();
-            continue;
-          }
-          queued++;
-          setLocalPhotos((prev) =>
-            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true, _queueId: queueId } : p))
-          );
-          // Atualiza badge imediatamente após cada enqueue de fallback
-          await refreshCount();
-        } catch (e) {
-          console.error("Final offline queue failed:", e);
+        console.error("Upload failed:", err);
+        // No offline queue — mark photo as failed and let installer retry manually
+        if (cancelledTempIdsRef.current.has(tempId)) {
+          cancelledTempIdsRef.current.delete(tempId);
+        } else {
           failed++;
           setLocalPhotos((prev) =>
             prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _failed: true } : p))
@@ -541,26 +421,16 @@ export default function InstallerPortal() {
       }
     }
 
-    await refreshCount();
-
-    // If we are online and items were queued (e.g. due to transient errors), drain immediately
-    // so the "X ação(ões) pendente(s)" banner disappears as soon as the network recovers.
-    if (isOnline && queued > 0) {
-      drainQueue().catch(() => { /* silent */ });
-    }
-
     if (sent > 0) toast.success(`${sent}/${total} foto(s) enviada(s)!`);
-    if (queued > 0) toast.info(`${queued} foto(s) na fila — enviarão quando a conexão estabilizar.`);
     if (failed > 0) toast.error(`${failed} foto(s) falharam. Tente novamente.`);
 
     setValidacaoError(null);
   };
 
   /**
-   * Remove a photo from the grid. Handles three cases:
-   * 1) Optimistic placeholder still uploading → mark as cancelled (upload loop will undo on completion)
-   * 2) Queued offline → remove from IndexedDB queue
-   * 3) Already saved on server → delete storage object + DB row
+   * Remove a photo from the grid. Handles two cases:
+   * 1) Optimistic placeholder still uploading → mark as cancelled (upload loop will skip on completion)
+   * 2) Already saved on server → delete storage object + DB row
    * In all cases, the UI is updated immediately.
    */
   const handleRemovePhoto = async (photo: any) => {
@@ -572,14 +442,8 @@ export default function InstallerPortal() {
 
     try {
       if (isTemp) {
-        // Mark as cancelled so the in-flight upload loop will undo any side effects
+        // Mark as cancelled so the in-flight upload loop will skip server-side side effects
         cancelledTempIdsRef.current.add(photo.id);
-
-        // If it was already in the offline queue, dequeue it now
-        if (photo._queueId) {
-          try { await dequeue(photo._queueId); } catch { /* ignore */ }
-          await refreshCount();
-        }
         return;
       }
 
@@ -604,7 +468,7 @@ export default function InstallerPortal() {
   const handleComplete = async () => {
     if (!data) return;
 
-    const totalMidias = localPhotos.length + pendingPhotoCount;
+    const totalMidias = localPhotos.length;
 
     if (totalMidias < MINIMO_FOTOS) {
       setValidacaoError({
@@ -617,19 +481,6 @@ export default function InstallerPortal() {
 
     setValidacaoError(null);
     setTentandoConcluir(true);
-
-    if (!isOnline) {
-      await enqueue({
-        type: "completion",
-        createdAt: new Date().toISOString(),
-        payload: { scheduleId: data.schedule.id },
-      });
-      setIsCompleted(true);
-      toast.success("Conclusão salva localmente. Será enviada quando a conexão voltar.");
-      setTentandoConcluir(false);
-      await refreshCount();
-      return;
-    }
 
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
@@ -657,13 +508,8 @@ export default function InstallerPortal() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg-page, #F5F2ED)" }}>
         <div className="w-full max-w-sm">
-          {/* Offline banner on login */}
-          {!isOnline && (
-            <div className="mb-4 flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 rounded-lg px-3 py-2 text-xs font-medium">
-              <WifiOff className="w-4 h-4 flex-shrink-0" />
-              Sem conexão — modo offline
-            </div>
-          )}
+          {/* Offline mode removed — uploads go straight to the server */}
+
           <div className="text-center mb-6">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
@@ -738,39 +584,16 @@ export default function InstallerPortal() {
   const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
   const preference = schedule?.installation_preference;
   const prefLabel = preference === "morning" ? "Manhã" : preference === "afternoon" ? "Tarde" : preference === "night" ? "Noite" : "";
-  // Counters derived from localPhotos for instant reactivity (no need to wait for refreshCount)
-  const sentCount = localPhotos.filter((p: any) => !p._uploading && !p._queued && !p._failed).length;
+  // Counters derived from localPhotos for instant reactivity
+  const sentCount = localPhotos.filter((p: any) => !p._uploading && !p._failed).length;
   const uploadingCount = localPhotos.filter((p: any) => p._uploading).length;
-  const queuedLocalCount = localPhotos.filter((p: any) => p._queued).length;
   const failedCount = localPhotos.filter((p: any) => p._failed).length;
-  // Pending = anything not yet confirmed by server (uploading + queued locally). Failed are not counted toward minimum.
-  const pendingCount2 = uploadingCount + queuedLocalCount;
-  const totalMidias = sentCount + pendingCount2;
+  // Pending = anything not yet confirmed by server. Failed are not counted toward minimum.
+  const totalMidias = sentCount + uploadingCount;
   const atingiuMinimo = totalMidias >= MINIMO_FOTOS;
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-page, #F5F2ED)" }}>
-      {/* Offline banner */}
-      {!isOnline && (
-        <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-amber-500 text-white px-4 py-2 text-xs font-semibold">
-          <WifiOff className="w-4 h-4" />
-          Sem conexão — modo offline
-          {cacheTimestamp && (
-            <span className="font-normal ml-1 opacity-80">
-              (dados de {new Date(cacheTimestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })})
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Syncing indicator */}
-      {isSyncing && (
-        <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2 text-xs font-semibold">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Sincronizando {pendingCount} ação(ões)...
-        </div>
-      )}
-
       {/* Header */}
       <header className="sticky top-0 z-30 border-b px-4 py-3.5" style={{ background: "var(--brand-800, #3D2E1E)", borderColor: "var(--border-subtle)" }}>
         <div className="flex items-center justify-between max-w-2xl mx-auto">
@@ -780,20 +603,10 @@ export default function InstallerPortal() {
               {campaign?.name || "Campanha"}
             </p>
           </div>
-          {!isOnline && (
-            <WifiOff className="w-4 h-4 flex-shrink-0" style={{ color: "#FBBF24" }} />
-          )}
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto p-4 space-y-4">
-        {/* Pending sync info — use local queued count for instant feedback (no IndexedDB read latency) */}
-        {queuedLocalCount > 0 && isOnline && !isSyncing && (
-          <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 rounded-lg px-3 py-2 text-xs font-medium">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            {queuedLocalCount} ação(ões) pendente(s) de sincronização
-          </div>
-        )}
 
         {/* Store info card */}
         <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
@@ -906,12 +719,8 @@ export default function InstallerPortal() {
                   {uploadingCount} enviando
                 </span>
               )}
-              {queuedLocalCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full px-2 py-0.5 animate-in fade-in zoom-in-95">
-                  <Upload className="w-3 h-3" />
-                  {queuedLocalCount} na fila
-                </span>
-              )}
+              {/* Offline queue removed */}
+
               {failedCount > 0 && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-destructive/15 text-destructive rounded-full px-2 py-0.5 animate-in fade-in zoom-in-95">
                   <AlertTriangle className="w-3 h-3" />
@@ -996,11 +805,8 @@ export default function InstallerPortal() {
                       <Loader2 className="w-5 h-5 text-white animate-spin" />
                     </div>
                   )}
-                  {photo._queued && !photo._uploading && (
-                    <div className="absolute bottom-0 inset-x-0 bg-amber-500 text-white text-[9px] font-semibold text-center py-0.5 leading-tight pointer-events-none">
-                      Na fila
-                    </div>
-                  )}
+                  {/* Offline queue removed */}
+
                   {photo._failed && (
                     <div className="absolute inset-0 flex items-center justify-center bg-destructive/80 pointer-events-none">
                       <AlertTriangle className="w-5 h-5 text-white" />
