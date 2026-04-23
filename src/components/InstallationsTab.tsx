@@ -624,6 +624,42 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
   return (
     <div className="space-y-4">
+      {/* Hidden file inputs shared across all store cards (phase chosen via dialog first) */}
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const ctx = pendingUploadRef.current;
+          if (ctx) handleUploadPhoto(ctx.storeId, e.target.files, pendingPhaseRef.current);
+          e.target.value = "";
+          pendingUploadRef.current = null;
+        }}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const ctx = pendingUploadRef.current;
+          if (ctx) handleUploadPhoto(ctx.storeId, e.target.files, pendingPhaseRef.current);
+          e.target.value = "";
+          pendingUploadRef.current = null;
+        }}
+      />
+      <PhasePickerDialog
+        open={phasePickerOpen}
+        onOpenChange={(o) => {
+          setPhasePickerOpen(o);
+          if (!o) pendingUploadRef.current = null;
+        }}
+        onSelect={handlePhaseSelected}
+      />
+
       {/* AccessWindowConfig (shown when toggled from Mais ações) */}
       {isAdminOrMaster && showCodes && (
         <div className="aqua-card p-4">
