@@ -1086,9 +1086,18 @@ export default function InstallerPortal() {
                   {/* Offline queue removed */}
 
                   {photo._failed && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-destructive/80 pointer-events-none">
-                      <AlertTriangle className="w-5 h-5 text-white" />
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRetryUpload(photo)}
+                      aria-label="Falhou — toque para tentar novamente"
+                      title="Falhou — toque para tentar novamente"
+                      className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-destructive/85 hover:bg-destructive text-white transition-colors cursor-pointer"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      <span className="text-[8px] font-semibold leading-none px-1 text-center">
+                        Tentar novamente
+                      </span>
+                    </button>
                   )}
                   {/* Remove button — always visible on touch devices */}
                   <button
