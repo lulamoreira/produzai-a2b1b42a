@@ -362,6 +362,12 @@ export default function InstallerPortal() {
         try { saveCache(code.toLowerCase(), updated); } catch { /* ignore */ }
         return updated;
       });
+
+      // Extra safety: re-read from the backend right after to confirm the check-in
+      // was actually persisted. If the server doesn't echo it back yet (replication
+      // lag), keep the local value — the sticky logic in revalidateFromServer also
+      // guarantees the UI never "uncheks" itself on refresh.
+      void confirmCheckinPersisted(code.toLowerCase(), checkinPayload.timestamp);
     } catch {
       toast.error("Não foi possível registrar o check-in. Verifique sua conexão e tente novamente.");
     }
