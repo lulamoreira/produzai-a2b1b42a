@@ -152,6 +152,49 @@ export default function InstallerPortal() {
     }
   }, []);
 
+  // Extra safety: poll the backend a couple of times right after a check-in to make
+  // sure it was actually persisted. If we ever see the server losing it, we re-send
+  // the check-in payload silently. The UI never "unchecks" itself thanks to the
+  // sticky checkinDone state.
+  const confirmCheckinPersisted = useCallback(
+    async (codeArg: string, expectedTimestamp: string) => {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const url = `https://${projectId}.supabase.co/functions/v1/validate-install-code`;
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        await new Promise((r) => setTimeout(r, 1500 * (attempt + 1)));
+        try {
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code: codeArg, action: "view" }),
+          });
+          if (!res.ok) continue;
+          const result = await res.json();
+          if (result?.schedule?.checkin_timestamp) {
+            // Backend confirmed → reconcile the cache so the next refresh shows it instantly
+            saveCache(codeArg, result);
+            return;
+          }
+
+          // Server view doesn't show the check-in yet → resend it silently
+          await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              code: codeArg,
+              action: "checkin",
+              timestamp: expectedTimestamp,
+            }),
+          });
+        } catch {
+          /* network blip — try again */
+        }
+      }
+    },
+    []
+  );
+
   // Auto-restore session on mount — keep installer logged in across refreshes.
   // Shows cached view immediately, then ALWAYS revalidates from the server so things
   // like check-in status and newly uploaded photos appear without re-typing the code.
