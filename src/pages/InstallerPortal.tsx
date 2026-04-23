@@ -6,13 +6,13 @@ import {
   Camera, Upload, CalendarIcon, Clock, MapPin, Phone, User,
   CheckCircle, KeyRound, Store, FileText, Building2, AlertTriangle,
   ArrowDown, ChevronDown, ChevronUp,
-  WifiOff, Loader2,
+  WifiOff, Loader2, X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
-import { enqueue, blobToBase64, queueCount } from "@/lib/offlineQueue";
+import { enqueue, blobToBase64, queueCount, dequeue } from "@/lib/offlineQueue";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 
 interface PortalData {
