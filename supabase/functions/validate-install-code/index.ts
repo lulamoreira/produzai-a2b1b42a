@@ -162,6 +162,23 @@ Deno.serve(async (req) => {
           _action_url: `/campanhas/${schedule.campaign_id}/instalacoes`,
         }).catch(() => {});
       }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          schedule: {
+            id: schedule.id,
+            campaign_id: schedule.campaign_id,
+            store_id: schedule.store_id,
+            checkin_timestamp: schedule.checkin_timestamp,
+            checkin_lat: schedule.checkin_lat,
+            checkin_lng: schedule.checkin_lng,
+            checkin_accuracy: schedule.checkin_accuracy,
+            checkin_device_info: schedule.checkin_device_info,
+          },
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Get store contacts
