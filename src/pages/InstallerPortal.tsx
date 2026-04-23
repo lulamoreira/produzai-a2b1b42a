@@ -1105,22 +1105,21 @@ export default function InstallerPortal() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:flex-wrap">
             <Button
-              variant="outline"
-              size="sm"
-              className="text-xs gap-1"
+              size="lg"
+              className="w-full sm:w-auto min-h-[56px] bg-[#8C6F4E] hover:bg-[#7A5F42] text-white text-lg font-semibold gap-2"
               onClick={() => {
                 pendingMethodRef.current = "camera";
                 setPhasePickerOpen(true);
               }}
             >
-              <Camera className="w-3 h-3" /> Tirar foto
+              <Camera className="w-6 h-6" /> Tirar foto
             </Button>
             <Button
               variant="outline"
               size="sm"
-              className="text-xs gap-1"
+              className="w-full sm:w-auto text-xs gap-1"
               onClick={() => {
                 pendingMethodRef.current = "upload";
                 setPhasePickerOpen(true);
