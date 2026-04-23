@@ -69,11 +69,20 @@ async function loadBitmap(file: File): Promise<{
   };
 }
 
+import { getCompressionProfileForFile } from "./deviceProfile";
+
 export async function compressImage(
   file: File,
-  maxDimension = 1200,
-  quality = 0.7
+  maxDimension?: number,
+  quality?: number
 ): Promise<Blob> {
+  // If callers don't provide explicit settings, pick them based on the device
+  // profile + file size — Android low-end gets the most aggressive defaults.
+  if (maxDimension === undefined || quality === undefined) {
+    const profile = getCompressionProfileForFile(file.size);
+    if (maxDimension === undefined) maxDimension = profile.maxDimension;
+    if (quality === undefined) quality = profile.quality;
+  }
   // If it's not actually an image (HEIC files often have empty type on Android), bail to original
   if (file.size === 0) throw new Error("Empty file");
 
