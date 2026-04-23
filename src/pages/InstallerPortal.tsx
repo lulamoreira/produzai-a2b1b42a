@@ -348,41 +348,7 @@ export default function InstallerPortal() {
         );
       }
 
-      // Offline path — enfileira BLOB direto (não base64) para economizar memória
-      if (!isOnline) {
-        try {
-          const queueId = await enqueue({
-            type: "photo",
-            createdAt: new Date().toISOString(),
-            payload: {
-              blob: compressed,
-              installCode: code.toLowerCase(),
-              storeId: data.store.id,
-              category: uploadCategory,
-              uploadMethod: method,
-            },
-          });
-          if (cancelledTempIdsRef.current.has(tempId)) {
-            try { await dequeue(queueId); } catch { /* ignore */ }
-            cancelledTempIdsRef.current.delete(tempId);
-            await refreshCount();
-            continue;
-          }
-          queued++;
-          setLocalPhotos((prev) =>
-            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true, _queueId: queueId } : p))
-          );
-          // Atualiza badge imediatamente após cada enqueue
-          await refreshCount();
-        } catch (e) {
-          console.error("Offline queue failed:", e);
-          failed++;
-          setLocalPhotos((prev) =>
-            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _failed: true } : p))
-          );
-        }
-        continue;
-      }
+      // Online upload only — no offline queue
 
       // Online path
       try {
