@@ -33,11 +33,27 @@ export default function InstallerDashboard() {
   const [localPhotos, setLocalPhotos] = useState<any[]>([]);
   const [completedStores, setCompletedStores] = useState<Map<string, string>>(new Map());
 
-  const CATEGORY_OPTIONS = [
-    { value: "before", label: t("installations.before"), icon: "🔵" },
-    { value: "during", label: t("installations.during"), icon: "🟡" },
-    { value: "after", label: t("installations.after"), icon: "🟢" },
-  ];
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pendingStoreRef = useRef<string | null>(null);
+  const pendingMethodRef = useRef<"upload" | "camera">("upload");
+  const pendingPhaseRef = useRef<PhotoPhase>("before");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+
+  const openPhasePicker = (storeId: string, method: "upload" | "camera") => {
+    pendingStoreRef.current = storeId;
+    pendingMethodRef.current = method;
+    setPickerOpen(true);
+  };
+
+  const handlePhaseSelected = (phase: PhotoPhase) => {
+    pendingPhaseRef.current = phase;
+    setPickerOpen(false);
+    setTimeout(() => {
+      if (pendingMethodRef.current === "camera") cameraInputRef.current?.click();
+      else fileInputRef.current?.click();
+    }, 50);
+  };
 
   const handleLogin = async () => {
     if (code.length !== 10) {
