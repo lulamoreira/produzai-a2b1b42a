@@ -1143,7 +1143,7 @@ export default function InstallerPortal() {
                   {/* Remove button — always visible on touch devices */}
                   <button
                     type="button"
-                    onClick={() => handleRemovePhoto(photo)}
+                    onClick={() => setPhotoToDelete(photo)}
                     aria-label="Remover foto"
                     className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 hover:bg-destructive text-white flex items-center justify-center shadow-sm transition-colors z-10"
                   >
