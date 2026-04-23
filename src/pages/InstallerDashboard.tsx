@@ -97,7 +97,7 @@ export default function InstallerDashboard() {
 
   const handleUpload = async (storeId: string, files: FileList | null, method: "upload" | "camera" = "upload") => {
     if (!files || !data) return;
-    const category = uploadCategory[storeId] || "before";
+    const category = pendingPhaseRef.current || "before";
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
     for (const file of Array.from(files)) {
