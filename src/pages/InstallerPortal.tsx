@@ -87,20 +87,12 @@ export default function InstallerPortal() {
     setCode(cached.code);
     setCacheTimestamp(cached.ts);
 
-    if (!navigator.onLine) {
-      // Offline: use cached data directly
-      setData(cached.data);
-      setLocalPhotos(cached.data.photos || []);
-      setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
-      setIsCompleted(!!cached.data.schedule?.completed_at);
-      setOfflineLoaded(true);
-    } else {
-      // Online: show cached immediately, then revalidate in background via auto-submit effect
-      setData(cached.data);
-      setLocalPhotos(cached.data.photos || []);
-      setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
-      setIsCompleted(!!cached.data.schedule?.completed_at);
-    }
+    // Show cached view immediately so the installer doesn't need to retype the code
+    // on a page refresh. Fresh data is fetched in background via the auto-submit effect.
+    setData(cached.data);
+    setLocalPhotos(cached.data.photos || []);
+    setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
+    setIsCompleted(!!cached.data.schedule?.completed_at);
   }, []);
 
   // Auto-submit when 5 chars
