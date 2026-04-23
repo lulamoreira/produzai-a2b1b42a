@@ -138,6 +138,8 @@ export function useOfflineSync(onSyncComplete?: () => void) {
 
           await dequeue(item.id!);
           synced++;
+          // Update pending count immediately so the UI badge shrinks in real time
+          await refreshCount();
         } catch (err) {
           console.error(`Offline sync failed for item ${item.id}:`, err);
           // Stop on first failure to preserve order
