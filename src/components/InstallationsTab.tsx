@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { downloadPhotosAsZip, downloadAllCampaignPhotosAsZip } from "@/lib/downloadPhotosZip";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -1311,45 +1312,64 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
                   {/* Photo Check-in */}
                   {showPhotoCheckin && schedule && (
-                    <button
-                      type="button"
-                      className={cn(
-                        "w-full flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors border min-h-[44px]",
-                        schedule.photo_checkin
-                          ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 hover:bg-emerald-500/20"
-                          : "bg-orange-500/10 text-orange-700 border-orange-500/30 hover:bg-orange-500/20"
-                      )}
-                      onClick={async () => {
-                        const newVal = !schedule.photo_checkin;
-                        try {
-                          const { error } = await supabase
-                            .from("campaign_schedules")
-                            .update({
-                              photo_checkin: newVal,
-                              photo_checkin_at: newVal ? new Date().toISOString() : null,
-                            } as any)
-                            .eq("id", schedule.id);
-                          if (error) throw error;
-                          queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-                          logActivity.mutate({
-                            campaign_id: campaignId,
-                            store_id: store.id,
-                            module: "installations",
-                            action: newVal ? "photo_checkin_done" : "photo_checkin_removed",
-                            details: newVal ? t("installations.checkinDone") : t("installations.checkinRemoved"),
-                          });
-                          toast.success(newVal ? t("installations.checkinDone") : t("installations.checkinRemoved"));
-                        } catch {
-                          toast.error(t("installations.errorUpdatingCheckin"));
-                        }
-                      }}
-                    >
-                      {schedule.photo_checkin && schedule.photo_checkin_at ? (
-                        <><CheckCircle2 className="w-4 h-4" /> Fotos para ocorrências verificadas em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
-                      ) : (
-                        <><AlertCircle className="w-4 h-4" /> Clique aqui para informar Check-in de fotos para ocorrências</>
-                      )}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        className={cn(
+                          "flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-xs font-semibold transition-colors border min-h-[44px]",
+                          schedule.photo_checkin
+                            ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/30 hover:bg-emerald-500/20"
+                            : "bg-orange-500/10 text-orange-700 border-orange-500/30 hover:bg-orange-500/20"
+                        )}
+                        onClick={async () => {
+                          const newVal = !schedule.photo_checkin;
+                          try {
+                            const { error } = await supabase
+                              .from("campaign_schedules")
+                              .update({
+                                photo_checkin: newVal,
+                                photo_checkin_at: newVal ? new Date().toISOString() : null,
+                              } as any)
+                              .eq("id", schedule.id);
+                            if (error) throw error;
+                            queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                            logActivity.mutate({
+                              campaign_id: campaignId,
+                              store_id: store.id,
+                              module: "installations",
+                              action: newVal ? "photo_checkin_done" : "photo_checkin_removed",
+                              details: newVal ? t("installations.checkinDone") : t("installations.checkinRemoved"),
+                            });
+                            toast.success(newVal ? t("installations.checkinDone") : t("installations.checkinRemoved"));
+                          } catch {
+                            toast.error(t("installations.errorUpdatingCheckin"));
+                          }
+                        }}
+                      >
+                        {schedule.photo_checkin && schedule.photo_checkin_at ? (
+                          <><CheckCircle2 className="w-4 h-4" /> Fotos para ocorrências verificadas em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
+                        ) : (
+                          <><AlertCircle className="w-4 h-4" /> Clique aqui para informar Check-in de fotos para ocorrências</>
+                        )}
+                      </button>
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className="text-muted-foreground hover:text-foreground shrink-0"
+                              aria-label="Ajuda sobre check-in de fotos"
+                              onClick={(e) => e.preventDefault()}
+                            >
+                              <HelpCircle className="w-4 h-4" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs text-xs">
+                            Confirme que você revisou as fotos desta loja e que estão prontas para gerar ocorrências, se necessário. Use após verificar a qualidade e completude do registro fotográfico da instalação.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                   )}
 
                   {/* Install code section — admin/master only */}

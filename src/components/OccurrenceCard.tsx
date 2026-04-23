@@ -26,8 +26,9 @@ import {
 import {
   Puzzle, Calendar, CalendarClock, MapPin, User, Pencil, Flag, Trash2,
   ExternalLink, Link2, MessageCircle, Phone, Save, ClipboardList, Loader2, Lock, LockOpen,
-  CheckCircle2, AlertCircle, Camera, RotateCcw,
+  CheckCircle2, AlertCircle, Camera, RotateCcw, HelpCircle,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 const GERAL_LOCATION = "GERAL - NA LOJA TODA";
@@ -449,6 +450,23 @@ export default function OccurrenceCard({
               <><AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> Check-in de fotos para ocorrências pendente</>
             )}
           </div>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground shrink-0"
+                  aria-label="Ajuda sobre check-in de fotos"
+                  onClick={(e) => e.preventDefault()}
+                >
+                  <HelpCircle className="w-3.5 h-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-xs">
+                Confirme que você revisou as fotos desta loja e que estão prontas para gerar ocorrências, se necessário. Use após verificar a qualidade e completude do registro fotográfico da instalação.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button variant="outline" size="sm" className="gap-1 text-xs shrink-0" onClick={() => setShowPhotos(true)}>
             <Camera className="w-3.5 h-3.5" /> Ver fotos
           </Button>
