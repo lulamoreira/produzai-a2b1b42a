@@ -102,11 +102,11 @@ export default function InstallerPortal() {
   // Track photo IDs deleted in this session so a stale revalidation never resurrects them.
   const deletedPhotoIdsRef = useRef<Set<string>>(new Set());
 
-  // Simple concurrency-limited upload queue (max 2 simultaneous) to prevent OOM
-  // when the user picks 5+ photos at once on a low/mid-tier device.
+  // Concurrency-limited upload queue to prevent OOM on mobile.
+  // High-tier (desktop/iOS) → 2 parallel uploads; mid/low-tier (Android) → 1 to keep RAM flat.
   const uploadQueueRef = useRef<Array<() => Promise<void>>>([]);
   const activeUploadsRef = useRef(0);
-  const UPLOAD_CONCURRENCY = 2;
+  const UPLOAD_CONCURRENCY = compressionProfile.tier === "high" ? 2 : 1;
 
   const runQueue = useCallback(() => {
     while (
@@ -553,6 +553,7 @@ export default function InstallerPortal() {
         // If user cancelled mid-flight — delete server record and skip UI update
         if (cancelledTempIdsRef.current.has(tempId)) {
           cancelledTempIdsRef.current.delete(tempId);
+          compressedBlobsRef.current.delete(tempId);
           if (result?.photo?.id) {
             try {
               const photoUrl = result.photo.photo_url as string;
@@ -760,6 +761,7 @@ export default function InstallerPortal() {
     // 1) Remove from UI immediately
     setLocalPhotos((prev) => prev.filter((p) => p.id !== photo.id));
     try { if (photo.photo_url?.startsWith("blob:")) URL.revokeObjectURL(photo.photo_url); } catch { /* ignore */ }
+    compressedBlobsRef.current.delete(photo.id);
 
     try {
       if (isTemp) {
