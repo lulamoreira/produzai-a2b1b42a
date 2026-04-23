@@ -78,7 +78,41 @@ export default function InstallerPortal() {
   // Track tempIds the user cancelled mid-upload, so the upload loop can skip them
   const cancelledTempIdsRef = useRef<Set<string>>(new Set());
 
-  // Auto-restore session on mount (online OR offline) — keep installer logged in across refreshes
+  // Silent revalidation — fetches the latest server state to refresh check-in/photos/completion
+  const revalidateFromServer = useCallback(async (codeArg: string) => {
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/validate-install-code`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: codeArg.toLowerCase(), action: "view" }),
+        }
+      );
+      if (!res.ok) return;
+      const result = await res.json();
+      setData(result);
+      // Merge server photos with any local optimistic placeholders still uploading/failed
+      setLocalPhotos((prev) => {
+        const optimistic = prev.filter(
+          (p: any) => typeof p.id === "string" && p.id.startsWith("temp-") && (p._uploading || p._failed)
+        );
+        const serverPhotos = result.photos || [];
+        return [...serverPhotos, ...optimistic];
+      });
+      setCheckinDone(!!result.schedule?.checkin_timestamp);
+      setIsCompleted(!!result.schedule?.completed_at);
+      saveCache(codeArg.toLowerCase(), result);
+      setCacheTimestamp(new Date().toISOString());
+    } catch {
+      /* silent — keep cached view */
+    }
+  }, []);
+
+  // Auto-restore session on mount — keep installer logged in across refreshes.
+  // Shows cached view immediately, then ALWAYS revalidates from the server so things
+  // like check-in status and newly uploaded photos appear without re-typing the code.
   useEffect(() => {
     if (data) return;
     const cached = loadCache();
@@ -86,16 +120,16 @@ export default function InstallerPortal() {
 
     setCode(cached.code);
     setCacheTimestamp(cached.ts);
-
-    // Show cached view immediately so the installer doesn't need to retype the code
-    // on a page refresh. Fresh data is fetched in background via the auto-submit effect.
     setData(cached.data);
     setLocalPhotos(cached.data.photos || []);
     setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
     setIsCompleted(!!cached.data.schedule?.completed_at);
+
+    revalidateFromServer(cached.code);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-submit when 5 chars
+  // Auto-submit when 5 chars and no data restored from cache yet
   useEffect(() => {
     if (code.length === 5 && !loading && !data) {
       handleSubmit();
@@ -282,6 +316,23 @@ export default function InstallerPortal() {
       }
       toast.success("Check-in registrado! Bom trabalho. 👍");
       setCheckinDone(true);
+      // Persist check-in into local data + cache so a refresh doesn't lose it
+      setData((prev) => {
+        if (!prev) return prev;
+        const updated = {
+          ...prev,
+          schedule: {
+            ...prev.schedule,
+            checkin_lat: lat,
+            checkin_lng: lng,
+            checkin_accuracy: accuracy,
+            checkin_timestamp: checkinPayload.timestamp,
+            checkin_device_info: checkinPayload.deviceInfo,
+          },
+        };
+        try { saveCache(code.toLowerCase(), updated); } catch { /* ignore */ }
+        return updated;
+      });
     } catch {
       toast.error("Não foi possível registrar o check-in. Verifique sua conexão e tente novamente.");
     }
@@ -348,10 +399,9 @@ export default function InstallerPortal() {
         );
       }
 
-      // Online upload only — no offline queue
-
-      // Online path
-      try {
+      // Online path — upload with timeout + 1 automatic retry to handle flaky mobile networks
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const uploadOnce = async (): Promise<{ res: Response; result: any }> => {
         const formData = new FormData();
         formData.append("install_code", code.toLowerCase());
         formData.append("store_id", data.store.id);
@@ -362,17 +412,32 @@ export default function InstallerPortal() {
           new File([compressed], "photo.jpg", { type: "image/jpeg" })
         );
 
-        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-        const res = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/upload-installation-photo`,
-          { method: "POST", body: formData }
-        );
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s safety timeout
+        try {
+          const res = await fetch(
+            `https://${projectId}.supabase.co/functions/v1/upload-installation-photo`,
+            { method: "POST", body: formData, signal: controller.signal }
+          );
+          let result: any = null;
+          try { result = await res.json(); } catch { /* ignore */ }
+          return { res, result };
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      };
 
-        let result: any = null;
-        try { result = await res.json(); } catch { /* ignore */ }
-
-        if (!res.ok) {
-          throw new Error(result?.error || `HTTP ${res.status}`);
+      try {
+        let res: Response;
+        let result: any;
+        try {
+          ({ res, result } = await uploadOnce());
+          if (!res.ok) throw new Error(result?.error || `HTTP ${res.status}`);
+        } catch (firstErr) {
+          // Retry once after a short backoff — covers transient 5xx / network blips on Android
+          await new Promise((r) => setTimeout(r, 1500));
+          ({ res, result } = await uploadOnce());
+          if (!res.ok) throw new Error(result?.error || `HTTP ${res.status}`);
         }
 
         // If user cancelled while upload was in flight — delete server record and skip UI update
