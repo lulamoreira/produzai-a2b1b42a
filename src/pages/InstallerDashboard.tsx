@@ -407,6 +407,37 @@ export default function InstallerDashboard() {
           </div>
         )}
       </main>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const storeId = pendingStoreRef.current;
+          if (storeId) handleUpload(storeId, e.target.files, "upload");
+          e.target.value = "";
+        }}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const storeId = pendingStoreRef.current;
+          if (storeId) handleUpload(storeId, e.target.files, "camera");
+          e.target.value = "";
+        }}
+      />
+
+      <PhasePickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={handlePhaseSelected}
+      />
     </div>
   );
 }
