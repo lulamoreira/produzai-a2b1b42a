@@ -589,39 +589,16 @@ export default function InstallerPortal() {
   const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
   const preference = schedule?.installation_preference;
   const prefLabel = preference === "morning" ? "Manhã" : preference === "afternoon" ? "Tarde" : preference === "night" ? "Noite" : "";
-  // Counters derived from localPhotos for instant reactivity (no need to wait for refreshCount)
-  const sentCount = localPhotos.filter((p: any) => !p._uploading && !p._queued && !p._failed).length;
+  // Counters derived from localPhotos for instant reactivity
+  const sentCount = localPhotos.filter((p: any) => !p._uploading && !p._failed).length;
   const uploadingCount = localPhotos.filter((p: any) => p._uploading).length;
-  const queuedLocalCount = localPhotos.filter((p: any) => p._queued).length;
   const failedCount = localPhotos.filter((p: any) => p._failed).length;
-  // Pending = anything not yet confirmed by server (uploading + queued locally). Failed are not counted toward minimum.
-  const pendingCount2 = uploadingCount + queuedLocalCount;
-  const totalMidias = sentCount + pendingCount2;
+  // Pending = anything not yet confirmed by server. Failed are not counted toward minimum.
+  const totalMidias = sentCount + uploadingCount;
   const atingiuMinimo = totalMidias >= MINIMO_FOTOS;
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-page, #F5F2ED)" }}>
-      {/* Offline banner */}
-      {!isOnline && (
-        <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-amber-500 text-white px-4 py-2 text-xs font-semibold">
-          <WifiOff className="w-4 h-4" />
-          Sem conexão — modo offline
-          {cacheTimestamp && (
-            <span className="font-normal ml-1 opacity-80">
-              (dados de {new Date(cacheTimestamp).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })})
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Syncing indicator */}
-      {isSyncing && (
-        <div className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-2 text-xs font-semibold">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Sincronizando {pendingCount} ação(ões)...
-        </div>
-      )}
-
       {/* Header */}
       <header className="sticky top-0 z-30 border-b px-4 py-3.5" style={{ background: "var(--brand-800, #3D2E1E)", borderColor: "var(--border-subtle)" }}>
         <div className="flex items-center justify-between max-w-2xl mx-auto">
@@ -631,20 +608,10 @@ export default function InstallerPortal() {
               {campaign?.name || "Campanha"}
             </p>
           </div>
-          {!isOnline && (
-            <WifiOff className="w-4 h-4 flex-shrink-0" style={{ color: "#FBBF24" }} />
-          )}
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto p-4 space-y-4">
-        {/* Pending sync info — use local queued count for instant feedback (no IndexedDB read latency) */}
-        {queuedLocalCount > 0 && isOnline && !isSyncing && (
-          <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 rounded-lg px-3 py-2 text-xs font-medium">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            {queuedLocalCount} ação(ões) pendente(s) de sincronização
-          </div>
-        )}
 
         {/* Store info card */}
         <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
