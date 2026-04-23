@@ -278,42 +278,29 @@ export default function InstallerPortal() {
     };
 
     try {
-      const { error: updateError } = await supabase
-        .from("campaign_schedules")
-        .update({
-          checkin_lat: lat,
-          checkin_lng: lng,
-          checkin_accuracy: accuracy,
-          checkin_timestamp: checkinPayload.timestamp,
-          checkin_device_info: checkinPayload.deviceInfo,
-        } as any)
-        .eq("install_code", code.toLowerCase());
-
-      if (updateError) throw updateError;
-
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      await fetch(
+      const res = await fetch(
         `https://${projectId}.supabase.co/functions/v1/validate-install-code`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: code.toLowerCase(), action: "checkin" }),
+          body: JSON.stringify({
+            code: code.toLowerCase(),
+            action: "checkin",
+            lat,
+            lng,
+            accuracy,
+            timestamp: checkinPayload.timestamp,
+            deviceInfo: checkinPayload.deviceInfo,
+          }),
         }
       );
 
-      if (data) {
-        try {
-          await supabase.from("campaign_activity_log" as any).insert({
-            campaign_id: data.campaign?.id || data.schedule?.campaign_id,
-            store_id: data.store?.id,
-            actor_name: "Instalador",
-            actor_type: "installer",
-            action: "checkin_realizado",
-            description: `Check-in realizado em ${data.store?.name || "loja"}`,
-            metadata: { tem_gps: !!(lat && lng) },
-          });
-        } catch { /* silent */ }
+      const result = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(result?.error || "Não foi possível registrar o check-in.");
       }
+
       toast.success("Check-in registrado! Bom trabalho. 👍");
       setCheckinDone(true);
       // Persist check-in into local data + cache so a refresh doesn't lose it

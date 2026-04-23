@@ -12,7 +12,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { code, action } = await req.json();
+    const {
+      code,
+      action,
+      lat,
+      lng,
+      accuracy,
+      timestamp,
+      deviceInfo,
+    } = await req.json();
 
     if (!code || typeof code !== "string" || code.length !== 5) {
       return new Response(
@@ -83,6 +91,50 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (action === "checkin") {
+      const checkinTimestamp =
+        typeof timestamp === "string" && timestamp.length > 0
+          ? timestamp
+          : new Date().toISOString();
+
+      const { error: checkinError } = await supabase
+        .from("campaign_schedules")
+        .update({
+          checkin_lat: typeof lat === "number" ? lat : null,
+          checkin_lng: typeof lng === "number" ? lng : null,
+          checkin_accuracy: typeof accuracy === "number" ? accuracy : null,
+          checkin_timestamp: checkinTimestamp,
+          checkin_device_info: deviceInfo ?? null,
+        })
+        .eq("id", schedule.id);
+
+      if (checkinError) {
+        return new Response(
+          JSON.stringify({ error: "Não foi possível registrar o check-in." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      schedule.checkin_lat = typeof lat === "number" ? lat : null;
+      schedule.checkin_lng = typeof lng === "number" ? lng : null;
+      schedule.checkin_accuracy = typeof accuracy === "number" ? accuracy : null;
+      schedule.checkin_timestamp = checkinTimestamp;
+      schedule.checkin_device_info = deviceInfo ?? null;
+
+      await supabase.from("campaign_activity_log").insert({
+        campaign_id: schedule.campaign_id,
+        store_id: schedule.store_id,
+        actor_name: "Instalador",
+        actor_type: "installer",
+        action: "checkin_realizado",
+        description: `Check-in realizado em ${(schedule as any).client_stores?.name || "loja"}`,
+        metadata: {
+          tem_gps: typeof lat === "number" && typeof lng === "number",
+          accuracy: typeof accuracy === "number" ? accuracy : null,
+        },
+      }).then(() => undefined).catch(() => undefined);
+    }
+
     // Log the access
     await supabase.from("install_access_log").insert({
       install_code: normalizedCode,
@@ -99,17 +151,38 @@ Deno.serve(async (req) => {
       const storeName = (schedule as any).client_stores?.name || "Loja";
       const clientId = (schedule as any).campaigns?.client_id;
       if (agencyId) {
-        supabase.rpc("criar_notificacao", {
-          _agency_id: agencyId,
-          _campaign_id: schedule.campaign_id,
-          _store_id: schedule.store_id,
-          _client_id: clientId ?? null,
-          _type: "checkin_realizado",
-          _title: "Check-in realizado",
-          _body: `Instalador fez check-in em ${storeName}`,
-          _action_url: `/campanhas/${schedule.campaign_id}/instalacoes`,
-        }).catch(() => {});
+        try {
+          await supabase.rpc("criar_notificacao", {
+            _agency_id: agencyId,
+            _campaign_id: schedule.campaign_id,
+            _store_id: schedule.store_id,
+            _client_id: clientId ?? null,
+            _type: "checkin_realizado",
+            _title: "Check-in realizado",
+            _body: `Instalador fez check-in em ${storeName}`,
+            _action_url: `/campanhas/${schedule.campaign_id}/instalacoes`,
+          });
+        } catch {
+          /* silent */
+        }
       }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          schedule: {
+            id: schedule.id,
+            campaign_id: schedule.campaign_id,
+            store_id: schedule.store_id,
+            checkin_timestamp: schedule.checkin_timestamp,
+            checkin_lat: schedule.checkin_lat,
+            checkin_lng: schedule.checkin_lng,
+            checkin_accuracy: schedule.checkin_accuracy,
+            checkin_device_info: schedule.checkin_device_info,
+          },
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Get store contacts
