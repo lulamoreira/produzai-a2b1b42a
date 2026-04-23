@@ -697,7 +697,14 @@ export default function InstallerPortal() {
   const selectedDate = schedule?.scheduled_date ? new Date(schedule.scheduled_date + "T12:00:00") : undefined;
   const preference = schedule?.installation_preference;
   const prefLabel = preference === "morning" ? "Manhã" : preference === "afternoon" ? "Tarde" : preference === "night" ? "Noite" : "";
-  const totalMidias = localPhotos.length + pendingPhotoCount;
+  // Counters derived from localPhotos for instant reactivity (no need to wait for refreshCount)
+  const sentCount = localPhotos.filter((p: any) => !p._uploading && !p._queued && !p._failed).length;
+  const uploadingCount = localPhotos.filter((p: any) => p._uploading).length;
+  const queuedLocalCount = localPhotos.filter((p: any) => p._queued).length;
+  const failedCount = localPhotos.filter((p: any) => p._failed).length;
+  // Pending = anything not yet confirmed by server (uploading + queued locally). Failed are not counted toward minimum.
+  const pendingCount2 = uploadingCount + queuedLocalCount;
+  const totalMidias = sentCount + pendingCount2;
   const atingiuMinimo = totalMidias >= MINIMO_FOTOS;
 
   return (
