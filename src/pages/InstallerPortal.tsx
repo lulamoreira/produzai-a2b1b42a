@@ -69,9 +69,7 @@ export default function InstallerPortal() {
     faltam: number;
   } | null>(null);
   const [tentandoConcluir, setTentandoConcluir] = useState(false);
-  const [offlineLoaded, setOfflineLoaded] = useState(false);
   const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
-  const [pendingPhotoCount, setPendingPhotoCount] = useState(0);
 
   // Profile used both for compression and to avoid decoding original full-res photos on Android
   const compressionProfile = getCompressionProfile();
@@ -79,17 +77,6 @@ export default function InstallerPortal() {
 
   // Track tempIds the user cancelled mid-upload, so the upload loop can skip them
   const cancelledTempIdsRef = useRef<Set<string>>(new Set());
-
-  // Offline sync hook
-  const { isOnline, isSyncing, pendingCount, refreshCount, drainQueue } = useOfflineSync(() => {
-    // After sync completes, refresh data from server if online
-    if (code.length === 5) handleSubmit();
-  });
-
-  // Refresh pending photo count whenever pendingCount changes
-  useEffect(() => {
-    queueCount("photo").then(setPendingPhotoCount).catch(() => {});
-  }, [pendingCount]);
 
   // Auto-restore session on mount (online OR offline) — keep installer logged in across refreshes
   useEffect(() => {
