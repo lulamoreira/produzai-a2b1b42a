@@ -468,7 +468,7 @@ export default function InstallerPortal() {
   const handleComplete = async () => {
     if (!data) return;
 
-    const totalMidias = localPhotos.length + pendingPhotoCount;
+    const totalMidias = localPhotos.length;
 
     if (totalMidias < MINIMO_FOTOS) {
       setValidacaoError({
@@ -481,19 +481,6 @@ export default function InstallerPortal() {
 
     setValidacaoError(null);
     setTentandoConcluir(true);
-
-    if (!isOnline) {
-      await enqueue({
-        type: "completion",
-        createdAt: new Date().toISOString(),
-        payload: { scheduleId: data.schedule.id },
-      });
-      setIsCompleted(true);
-      toast.success("Conclusão salva localmente. Será enviada quando a conexão voltar.");
-      setTentandoConcluir(false);
-      await refreshCount();
-      return;
-    }
 
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
