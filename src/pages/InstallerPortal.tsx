@@ -449,109 +449,84 @@ export default function InstallerPortal() {
     }
   };
 
-  const handleUpload = async (files: FileList | null, method: "upload" | "camera" = "upload") => {
-    if (!files || !data) return;
+  const MAX_FILE_BYTES = 15 * 1024 * 1024; // 15MB hard cap before we even attempt compression
+  const MEMORY_SAVER_MAX_FILES = 3; // max files per selection in memory-saver mode
 
-    const fileArray = Array.from(files);
-    const total = fileArray.length;
-    let sent = 0;
-    let failed = 0;
+  /**
+   * Upload a single file through the concurrency-limited queue.
+   * Used by both initial upload and the manual retry button on failed photos.
+   */
+  const uploadSingleFile = useCallback(
+    (
+      file: Blob,
+      tempId: string,
+      category: string,
+      method: "upload" | "camera",
+      counters: { sent: () => void; failed: () => void }
+    ) => {
+      enqueueUpload(async () => {
+        if (!data) return;
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const code_lc = code.toLowerCase();
 
+        const uploadOnce = async (): Promise<{ res: Response; result: any }> => {
+          const formData = new FormData();
+          formData.append("install_code", code_lc);
+          formData.append("store_id", data.store.id);
+          formData.append("category", category);
+          formData.append("upload_method", method);
+          formData.append("photo", new File([file], "photo.jpg", { type: "image/jpeg" }));
 
-    // Haptic feedback — instant confirmation that the tap was registered
-    try { (navigator as any).vibrate?.(15); } catch { /* ignore */ }
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 60000);
+          try {
+            const res = await fetch(
+              `https://${projectId}.supabase.co/functions/v1/upload-installation-photo`,
+              { method: "POST", body: formData, signal: controller.signal }
+            );
+            let result: any = null;
+            try { result = await res.json(); } catch { /* ignore */ }
+            return { res, result };
+          } finally {
+            clearTimeout(timeoutId);
+          }
+        };
 
-    // 1) Create optimistic placeholders IMMEDIATELY.
-    // On Android memory-saver devices, do NOT create an object URL from the original full-res file,
-    // because decoding several 8-12MP photos can crash the browser/app. We only attach a preview
-    // after compression, which is much smaller.
-    const optimisticEntries = fileArray.map((file) => {
-      const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      return {
-        tempId,
-        photo: {
-          id: tempId,
-          photo_url: isMemorySaver ? "" : URL.createObjectURL(file),
-          category: uploadCategory,
-          _uploading: true,
-          _failed: false,
-          _previewPending: isMemorySaver,
-        },
-      };
-    });
-
-    setLocalPhotos((prev) => [...prev, ...optimisticEntries.map((e) => e.photo)]);
-
-    // 2) Process each file and replace its placeholder with the real record (or mark failed)
-    for (let i = 0; i < fileArray.length; i++) {
-      const file = fileArray[i];
-      const { tempId } = optimisticEntries[i];
-
-      let compressed: Blob;
-      try {
-        // Sem parâmetros → usa o perfil de compressão dinâmico (deviceProfile.ts):
-        // Android low-end: 800px/0.55 · Android mid: 1024px/0.6 · iOS/desktop: 1280px/0.7
-        // Arquivos >5MB descem um tier automaticamente para evitar OOM.
-        compressed = await compressImage(file);
-      } catch (err) {
-        console.error("Compression failed:", err);
-        compressed = file;
-      }
-
-      // In memory-saver mode, only show the preview AFTER compression to avoid decoding the original photo.
-      if (isMemorySaver) {
-        const compressedPreviewUrl = URL.createObjectURL(compressed);
-        setLocalPhotos((prev) =>
-          prev.map((p) =>
-            p.id === tempId
-              ? { ...p, photo_url: compressedPreviewUrl, _previewPending: false }
-              : p
-          )
-        );
-      }
-
-      // Online path — upload with timeout + 1 automatic retry to handle flaky mobile networks
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const uploadOnce = async (): Promise<{ res: Response; result: any }> => {
-        const formData = new FormData();
-        formData.append("install_code", code.toLowerCase());
-        formData.append("store_id", data.store.id);
-        formData.append("category", uploadCategory);
-        formData.append("upload_method", method);
-        formData.append(
-          "photo",
-          new File([compressed], "photo.jpg", { type: "image/jpeg" })
-        );
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s safety timeout
-        try {
-          const res = await fetch(
-            `https://${projectId}.supabase.co/functions/v1/upload-installation-photo`,
-            { method: "POST", body: formData, signal: controller.signal }
-          );
-          let result: any = null;
-          try { result = await res.json(); } catch { /* ignore */ }
-          return { res, result };
-        } finally {
-          clearTimeout(timeoutId);
-        }
-      };
-
-      try {
-        let res: Response;
+        // Exponential backoff: try once, then retry up to 3 times waiting 2s, 4s, 8s.
+        const BACKOFFS_MS = [2000, 4000, 8000];
+        let res: Response | undefined;
         let result: any;
-        try {
-          ({ res, result } = await uploadOnce());
-          if (!res.ok) throw new Error(result?.error || `HTTP ${res.status}`);
-        } catch (firstErr) {
-          // Retry once after a short backoff — covers transient 5xx / network blips on Android
-          await new Promise((r) => setTimeout(r, 1500));
-          ({ res, result } = await uploadOnce());
-          if (!res.ok) throw new Error(result?.error || `HTTP ${res.status}`);
+        let lastErr: unknown = null;
+
+        for (let attempt = 0; attempt <= BACKOFFS_MS.length; attempt++) {
+          try {
+            ({ res, result } = await uploadOnce());
+            if (!res.ok) throw new Error(result?.error || `HTTP ${res.status}`);
+            lastErr = null;
+            break;
+          } catch (err) {
+            lastErr = err;
+            if (attempt < BACKOFFS_MS.length) {
+              const wait = BACKOFFS_MS[attempt];
+              toast.info(`Tentativa ${attempt + 2} de ${BACKOFFS_MS.length + 1} — aguardando rede…`);
+              await new Promise((r) => setTimeout(r, wait));
+            }
+          }
         }
 
-        // If user cancelled while upload was in flight — delete server record and skip UI update
+        if (lastErr || !res || !res.ok) {
+          if (cancelledTempIdsRef.current.has(tempId)) {
+            cancelledTempIdsRef.current.delete(tempId);
+          } else {
+            counters.failed();
+            setLocalPhotos((prev) =>
+              prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _failed: true } : p))
+            );
+          }
+          return;
+        }
+
+        // If user cancelled mid-flight — delete server record and skip UI update
         if (cancelledTempIdsRef.current.has(tempId)) {
           cancelledTempIdsRef.current.delete(tempId);
           if (result?.photo?.id) {
@@ -563,10 +538,9 @@ export default function InstallerPortal() {
               await supabase.from("installation_photos").delete().eq("id", result.photo.id);
             } catch { /* ignore */ }
           }
-          continue;
+          return;
         }
 
-        // Success — replace placeholder with real record
         if (result?.photo) {
           setLocalPhotos((prev) =>
             prev.map((p) => {
@@ -580,28 +554,156 @@ export default function InstallerPortal() {
             prev.map((p) => (p.id === tempId ? { ...p, _uploading: false } : p))
           );
         }
-        sent++;
-
+        counters.sent();
+        // Released: drop the cached blob now that it's safely on the server
+        compressedBlobsRef.current.delete(tempId);
         try { (navigator as any).vibrate?.(10); } catch { /* ignore */ }
-      } catch (err: any) {
-        console.error("Upload failed:", err);
-        // No offline queue — mark photo as failed and let installer retry manually
-        if (cancelledTempIdsRef.current.has(tempId)) {
-          cancelledTempIdsRef.current.delete(tempId);
-        } else {
-          failed++;
-          setLocalPhotos((prev) =>
-            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _failed: true } : p))
-          );
-        }
-      }
+      });
+    },
+    [code, data, enqueueUpload]
+  );
+
+  const handleUpload = async (files: FileList | null, method: "upload" | "camera" = "upload") => {
+    if (!files || !data) return;
+
+    let fileArray = Array.from(files);
+
+    // Fix 6 — memory-saver: cap how many files can be processed per selection.
+    if (isMemorySaver && fileArray.length > MEMORY_SAVER_MAX_FILES) {
+      toast.error(
+        `Selecione no máximo ${MEMORY_SAVER_MAX_FILES} fotos por vez para economizar memória`
+      );
+      fileArray = fileArray.slice(0, MEMORY_SAVER_MAX_FILES);
     }
 
+    // Fix 1 — drop oversized files BEFORE compression to avoid OOM crashes.
+    const validFiles: File[] = [];
+    for (const file of fileArray) {
+      if (file.size > MAX_FILE_BYTES) {
+        toast.error(
+          "Foto muito grande (máximo 15MB). Tente tirar uma nova foto com menor resolução."
+        );
+        continue;
+      }
+      validFiles.push(file);
+    }
+    if (validFiles.length === 0) return;
+
+    const total = validFiles.length;
+    let sent = 0;
+    let failed = 0;
+    const counters = {
+      sent: () => { sent++; },
+      failed: () => { failed++; },
+    };
+
+    try { (navigator as any).vibrate?.(15); } catch { /* ignore */ }
+
+    // 1) Optimistic placeholders. In memory-saver we DO NOT decode the original
+    // (no object URL from `file`) — the preview is built from the compressed blob.
+    const optimisticEntries = validFiles.map((file) => {
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      return {
+        tempId,
+        file,
+        photo: {
+          id: tempId,
+          photo_url: isMemorySaver ? "" : URL.createObjectURL(file),
+          category: uploadCategory,
+          _uploading: true,
+          _failed: false,
+          _previewPending: isMemorySaver,
+        },
+      };
+    });
+
+    setLocalPhotos((prev) => [...prev, ...optimisticEntries.map((e) => e.photo)]);
+
+    // 2) Compress + enqueue each file. Compression happens sequentially (it's CPU-heavy
+    // and decoding two photos at once on a low-end Android causes OOM); the queue
+    // takes over and runs at most UPLOAD_CONCURRENCY uploads in parallel.
+    for (const entry of optimisticEntries) {
+      const { tempId, file } = entry;
+
+      let compressed: Blob;
+      try {
+        compressed = await compressImage(file);
+      } catch (err) {
+        console.error("Compression failed:", err);
+        compressed = file;
+      }
+
+      // In memory-saver mode, attach the compressed preview and immediately revoke
+      // any object URL we created from the (large) original file.
+      if (isMemorySaver) {
+        const compressedPreviewUrl = URL.createObjectURL(compressed);
+        setLocalPhotos((prev) =>
+          prev.map((p) =>
+            p.id === tempId
+              ? { ...p, photo_url: compressedPreviewUrl, _previewPending: false }
+              : p
+          )
+        );
+      }
+
+      // Cache compressed blob so the user can retry without re-picking the photo
+      compressedBlobsRef.current.set(tempId, compressed);
+
+      uploadSingleFile(compressed, tempId, uploadCategory, method, counters);
+    }
+
+    // Wait for the queue to drain so we can show a meaningful aggregate toast.
+    await new Promise<void>((resolve) => {
+      const tick = () => {
+        if (
+          activeUploadsRef.current === 0 &&
+          uploadQueueRef.current.length === 0
+        ) {
+          resolve();
+        } else {
+          setTimeout(tick, 250);
+        }
+      };
+      tick();
+    });
+
     if (sent > 0) toast.success(`${sent}/${total} foto(s) enviada(s)!`);
-    if (failed > 0) toast.error(`${failed} foto(s) falharam. Tente novamente.`);
+    if (failed > 0) toast.error(`${failed} foto(s) falharam. Toque na foto para tentar novamente.`);
 
     setValidacaoError(null);
   };
+
+  /**
+   * Fix 4 — manual retry for a previously-failed photo. Reuses the cached compressed
+   * blob if it's still in memory; otherwise asks the user to re-select the photo.
+   */
+  const handleRetryUpload = (photo: any) => {
+    const tempId = photo.id as string;
+    const compressed = compressedBlobsRef.current.get(tempId);
+    if (!compressed) {
+      toast.info("Foto não está mais em memória — selecione novamente.");
+      // Drop the failed placeholder so the user can re-add the file cleanly.
+      setLocalPhotos((prev) => prev.filter((p) => p.id !== tempId));
+      return;
+    }
+    setLocalPhotos((prev) =>
+      prev.map((p) => (p.id === tempId ? { ...p, _uploading: true, _failed: false } : p))
+    );
+    let sent = 0;
+    let failed = 0;
+    const counters = {
+      sent: () => { sent++; toast.success("Foto reenviada com sucesso!"); },
+      failed: () => { failed++; toast.error("Falha ao reenviar. Tente novamente em instantes."); },
+    };
+    uploadSingleFile(
+      compressed,
+      tempId,
+      photo.category || uploadCategory,
+      "upload",
+      counters
+    );
+  };
+
 
   /**
    * Remove a photo from the grid. Handles two cases:
