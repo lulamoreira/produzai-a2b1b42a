@@ -849,7 +849,18 @@ export default function InstallerPortal() {
         {/* Photos */}
         <div className="bg-card border border-border rounded-xl p-4 space-y-3" id="secao-fotos">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Fotos da instalação</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Fotos da instalação</p>
+              {isMemorySaver && (
+                <span
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 rounded-full px-2 py-0.5 border border-emerald-200 dark:border-emerald-900/40"
+                  title={`Compressão otimizada para seu dispositivo (${compressionProfile.maxDimension}px · q${compressionProfile.quality})`}
+                >
+                  <Leaf className="w-3 h-3" />
+                  Modo economia
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1 flex-wrap">
               <span
                 key={`sent-${sentCount}`}
