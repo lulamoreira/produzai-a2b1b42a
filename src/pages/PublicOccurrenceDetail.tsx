@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Store, Puzzle, Calendar, MessageSquare, Camera, Tag, CircleDot, Link2, X, Wrench, Clock, Mail, Plus, Check } from "lucide-react";
@@ -261,7 +262,7 @@ const PublicOccurrenceDetail = () => {
               {isGeral ? (
                 <Store className="w-[15px] h-[15px]" style={{ color: "var(--brand-700)" }} />
               ) : piece?.image_url ? (
-                <img src={piece.image_url} alt={piece.name} className="w-8 h-8 object-cover" />
+                <img src={getThumbnailUrl(piece.image_url, 80)} alt={piece.name} loading="lazy" decoding="async" className="w-8 h-8 object-cover" />
               ) : (
                 <Puzzle className="w-[15px] h-[15px]" style={{ color: "var(--brand-700)" }} />
               )}
@@ -353,13 +354,13 @@ const PublicOccurrenceDetail = () => {
                   className="aspect-square rounded-xl border border-border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all"
                   onClick={() => setSelectedPhoto(selectedPhoto === i ? null : i)}
                 >
-                  <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                  <img src={getThumbnailUrl(url, 200)} alt={`Foto ${i + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
             {selectedPhoto !== null && photos[selectedPhoto] && (
               <div className="mt-3 rounded-xl overflow-hidden border border-border">
-                <img src={photos[selectedPhoto]} alt="Foto ampliada" className="w-full object-contain max-h-[60vh]" />
+                <img src={photos[selectedPhoto]} alt="Foto ampliada" loading="lazy" decoding="async" className="w-full object-contain max-h-[60vh]" />
               </div>
             )}
           </div>

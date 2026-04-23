@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useUpdatePieceImage, type Piece } from "@/hooks/useStoreData";
 import { compressImage } from "@/lib/compressImage";
@@ -61,7 +62,7 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
       <DialogTrigger asChild>
         <button className="relative group w-10 h-10 rounded-lg border border-border bg-muted/50 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors shrink-0">
           {piece.image_url ? (
-            <img src={piece.image_url} alt={piece.name} className="w-full h-full object-cover" />
+            <img src={getThumbnailUrl(piece.image_url, 80)} alt={piece.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
           ) : (
             <Image className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
           )}

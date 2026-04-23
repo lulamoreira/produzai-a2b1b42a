@@ -13,6 +13,7 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 import { getCompressionProfile } from "@/lib/deviceProfile";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1164,8 +1165,10 @@ export default function InstallerPortal() {
                 <div key={photo.id} className="relative w-16 h-16 rounded-md overflow-hidden border border-border group bg-muted/40">
                   {photo.photo_url ? (
                     <img
-                      src={photo.photo_url}
+                      src={getThumbnailUrl(photo.photo_url, 200)}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className={`w-full h-full object-cover transition-opacity ${photo._uploading ? "opacity-50" : ""}`}
                     />
                   ) : (
@@ -1327,6 +1330,8 @@ export default function InstallerPortal() {
               <img
                 src={photoToDelete.photo_url}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 className="max-h-40 rounded-md object-contain border border-border"
               />
             </div>

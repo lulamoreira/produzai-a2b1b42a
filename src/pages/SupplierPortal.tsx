@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import { toast } from "sonner";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -724,7 +725,7 @@ const SupplierPortal = () => {
   // ─── Piece thumbnail component ─────────────────────────
   const PieceThumbnail = ({ url }: { url?: string | null }) => (
     url ? (
-      <img src={url} alt="" className="w-10 h-10 rounded object-cover border shrink-0" />
+      <img src={getThumbnailUrl(url, 80)} alt="" loading="lazy" decoding="async" className="w-10 h-10 rounded object-cover border shrink-0" />
     ) : (
       <div className="w-10 h-10 rounded border bg-muted flex items-center justify-center shrink-0">
         <ImageIcon className="w-5 h-5 text-muted-foreground" />

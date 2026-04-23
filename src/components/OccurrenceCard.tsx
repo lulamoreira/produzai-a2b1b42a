@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, lazy, Suspense } from "react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import { getStatusLabel as _getStatusLabel, getStatusColor as _getStatusColor, isOccurrenceOverdue, parseLocalDate } from "@/lib/occurrenceHelpers";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -637,7 +638,7 @@ export default function OccurrenceCard({
           {photosMap[occ.id].slice(0, 3).map((url, pi) => (
             <button key={pi} type="button" className="w-16 h-16 rounded-lg border border-border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all flex-shrink-0"
               onClick={() => onOpenLightbox(photosMap[occ.id], pi)}>
-              <img src={url} alt={`Foto ${pi + 1}`} className="w-full h-full object-cover" />
+              <img src={getThumbnailUrl(url, 150)} alt={`Foto ${pi + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
             </button>
           ))}
         </div>

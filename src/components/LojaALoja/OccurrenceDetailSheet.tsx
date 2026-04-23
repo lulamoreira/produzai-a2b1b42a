@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -212,7 +213,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                   <div className="flex flex-wrap gap-2">
                     {photoUrls.map((url, i) => (
                       <button key={i} type="button" onClick={() => setLightboxUrl(url)} className="w-20 h-20 rounded-md overflow-hidden border border-border hover:opacity-80 transition">
-                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <img src={getThumbnailUrl(url, 200)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -296,7 +297,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                   {resolutionPhotos.map((url, i) => (
                     <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden border border-border">
                       <button type="button" onClick={() => setLightboxUrl(url)} className="w-full h-full">
-                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <img src={getThumbnailUrl(url, 200)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                       </button>
                       {isAdmin && (
                         <button type="button" onClick={() => setResolutionPhotos(resolutionPhotos.filter((_, x) => x !== i))} className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5">
@@ -330,7 +331,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       {/* Lightbox */}
       {lightboxUrl && (
         <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4" onClick={() => setLightboxUrl(null)}>
-          <img src={lightboxUrl} alt="" className="max-w-full max-h-full object-contain" />
+          <img src={lightboxUrl} alt="" loading="lazy" decoding="async" className="max-w-full max-h-full object-contain" />
           <button onClick={() => setLightboxUrl(null)} className="absolute top-4 right-4 text-white p-2 hover:bg-white/10 rounded-full">
             <X className="w-6 h-6" />
           </button>

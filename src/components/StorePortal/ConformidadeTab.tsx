@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { criarNotificacao } from "@/lib/criarNotificacao";
 import { toast } from "sonner";
@@ -173,7 +174,7 @@ export default function ConformidadeTab({ data, agencyId }: Props) {
       <div key={peca.id} className="flex items-center gap-2 py-2 border-b border-border last:border-0">
         <div className="w-10 h-10 rounded bg-muted overflow-hidden shrink-0 flex items-center justify-center">
           {peca.image_url ? (
-            <img src={peca.image_url} alt="" className="w-full h-full object-cover" />
+            <img src={getThumbnailUrl(peca.image_url, 100)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
           ) : (
             <ImageIcon className="w-4 h-4 text-muted-foreground/30" />
           )}

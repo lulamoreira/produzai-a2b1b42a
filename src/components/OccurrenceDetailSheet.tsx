@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -329,7 +330,7 @@ export function OccurrenceDetailSheet({
                     {photosMap[occ.id].map((url, i) => (
                       <button key={i} type="button" className="w-16 h-16 rounded-lg border border-border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all"
                         onClick={() => onOpenLightbox(photosMap[occ.id], i)}>
-                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <img src={getThumbnailUrl(url, 150)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";
 import {
   useLojaALojaTipos,
@@ -383,7 +384,7 @@ function SortablePieceCard({
         />
 
         {peca.image_url ? (
-          <img src={peca.image_url} alt={peca.nome} className="w-full h-full object-contain bg-white" />
+          <img src={getThumbnailUrl(peca.image_url, 200)} alt={peca.nome} loading="lazy" decoding="async" className="w-full h-full object-contain bg-white" />
         ) : (
           <div className="flex flex-col items-center gap-1 text-muted-foreground/40">
             <Image className="w-6 h-6" />
@@ -1025,7 +1026,7 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Imagem (1:1)</label>
               {newPecaPreview ? (
                 <div className="relative w-full max-w-[200px]">
-                  <img src={newPecaPreview} alt="Preview" className="w-full aspect-square object-cover rounded-lg border border-border" />
+                  <img src={newPecaPreview} alt="Preview" loading="lazy" decoding="async" className="w-full aspect-square object-cover rounded-lg border border-border" />
                   <Button
                     type="button"
                     size="sm"

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { criarNotificacao } from "@/lib/criarNotificacao";
 import { toast } from "sonner";
@@ -137,7 +138,7 @@ export default function ReposicoesTab({ data, agencyId }: Props) {
               <div className="flex items-center gap-3">
                 <div className="w-16 h-16 rounded-md bg-muted overflow-hidden shrink-0 flex items-center justify-center">
                   {selectedPeca.image_url ? (
-                    <img src={selectedPeca.image_url} alt="" className="w-full h-full object-cover" />
+                    <img src={getThumbnailUrl(selectedPeca.image_url, 200)} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   ) : (
                     <ImageIcon className="w-6 h-6 text-muted-foreground/30" />
                   )}

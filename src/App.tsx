@@ -14,6 +14,7 @@ import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { supabase } from "@/integrations/supabase/client";
 import { PendingUsersAlert } from "@/components/PendingUsersAlert";
 import { NameConfirmDialog } from "@/components/NameConfirmDialog";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import AgencySelect from "./pages/AgencySelect";
 import Dashboard from "./pages/Dashboard";
 import ClientDetail from "./pages/ClientDetail";
@@ -169,32 +170,34 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <SidebarStateProvider>
-            <Routes>
-              <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
-              <Route path="/agencies" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
-              <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
-              <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><CampaignDetail /></ProtectedRoute>} />
-              <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-              <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
-              
-              <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
-              <Route path="/favorites" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
-              <Route path="/meu-acesso" element={<ProtectedRoute><MeuAcesso /></ProtectedRoute>} />
-              <Route path="/installer" element={<InstallerPortal />} />
-              <Route path="/instalador" element={<InstallerPortal />} />
-              <Route path="/orcamento/:token" element={<SupplierPortal />} />
-              <Route path="/loja/:token" element={<StorePortal />} />
-              <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
-              <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
-              <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
-              <Route path="/unsubscribe" element={<Unsubscribe />} />
-              <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <ErrorBoundary>
+              <Routes>
+                <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
+                <Route path="/agencies" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
+                <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+                <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><ErrorBoundary><CampaignDetail /></ErrorBoundary></ProtectedRoute>} />
+                <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
+                <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
+                
+                <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
+                <Route path="/favorites" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
+                <Route path="/meu-acesso" element={<ProtectedRoute><MeuAcesso /></ProtectedRoute>} />
+                <Route path="/installer" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
+                <Route path="/instalador" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
+                <Route path="/orcamento/:token" element={<SupplierPortal />} />
+                <Route path="/loja/:token" element={<ErrorBoundary><StorePortal /></ErrorBoundary>} />
+                <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
+                <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
+                <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
+                <Route path="/unsubscribe" element={<Unsubscribe />} />
+                <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </ErrorBoundary>
             </SidebarStateProvider>
           </AuthProvider>
         </BrowserRouter>

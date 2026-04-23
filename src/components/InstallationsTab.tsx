@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import PhasePickerDialog, { type PhotoPhase } from "@/components/PhasePickerDialog";
 import EmptyState from "@/components/EmptyState";
 import { CardSkeleton } from "@/components/CardSkeleton";
@@ -1236,8 +1237,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                     {storePhotos.slice(0, 4).map((photo) => (
                       <img
                         key={photo.id}
-                        src={photo.photo_url}
+                        src={getThumbnailUrl(photo.photo_url, 100)}
                         alt=""
+                        loading="lazy"
+                        decoding="async"
                         className="w-8 h-8 rounded object-cover border border-[var(--border-subtle)]"
                         onClick={(e) => { e.stopPropagation(); setCheckinStore(store); }}
                         onError={() => handleMediaError(photo.id, photo.campaign_id)}
@@ -1563,8 +1566,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                         {storePhotos.slice(0, 6).map((photo) => (
                           <img
                             key={photo.id}
-                            src={photo.photo_url}
+                            src={getThumbnailUrl(photo.photo_url, 150)}
                             alt=""
+                            loading="lazy"
+                            decoding="async"
                             className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
                             onClick={() => setCheckinStore(store)}
                             onError={() => handleMediaError(photo.id, photo.campaign_id)}
