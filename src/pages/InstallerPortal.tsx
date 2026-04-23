@@ -6,7 +6,7 @@ import {
   Camera, Upload, CalendarIcon, Clock, MapPin, Phone, User,
   CheckCircle, KeyRound, Store, FileText, Building2, AlertTriangle,
   ArrowDown, ChevronDown, ChevronUp,
-  Loader2, X, Leaf,
+  Loader2, X, Leaf, RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -77,6 +77,39 @@ export default function InstallerPortal() {
 
   // Track tempIds the user cancelled mid-upload, so the upload loop can skip them
   const cancelledTempIdsRef = useRef<Set<string>>(new Set());
+
+  // Cache of compressed blobs per tempId so the user can retry a failed upload
+  // without re-selecting the photo (memory-light: we only keep what's still on screen).
+  const compressedBlobsRef = useRef<Map<string, Blob>>(new Map());
+
+  // Simple concurrency-limited upload queue (max 2 simultaneous) to prevent OOM
+  // when the user picks 5+ photos at once on a low/mid-tier device.
+  const uploadQueueRef = useRef<Array<() => Promise<void>>>([]);
+  const activeUploadsRef = useRef(0);
+  const UPLOAD_CONCURRENCY = 2;
+
+  const runQueue = useCallback(() => {
+    while (
+      activeUploadsRef.current < UPLOAD_CONCURRENCY &&
+      uploadQueueRef.current.length > 0
+    ) {
+      const task = uploadQueueRef.current.shift();
+      if (!task) break;
+      activeUploadsRef.current++;
+      task().finally(() => {
+        activeUploadsRef.current--;
+        runQueue();
+      });
+    }
+  }, []);
+
+  const enqueueUpload = useCallback(
+    (task: () => Promise<void>) => {
+      uploadQueueRef.current.push(task);
+      runQueue();
+    },
+    [runQueue]
+  );
 
   // Silent revalidation — fetches the latest server state to refresh check-in/photos/completion
   const revalidateFromServer = useCallback(async (codeArg: string) => {
