@@ -787,11 +787,11 @@ export default function InstallerPortal() {
       </header>
 
       <main className="max-w-2xl mx-auto p-4 space-y-4">
-        {/* Pending sync info */}
-        {pendingCount > 0 && isOnline && !isSyncing && (
+        {/* Pending sync info — use local queued count for instant feedback (no IndexedDB read latency) */}
+        {queuedLocalCount > 0 && isOnline && !isSyncing && (
           <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 rounded-lg px-3 py-2 text-xs font-medium">
-            <Loader2 className="w-3.5 h-3.5" />
-            {pendingCount} ação(ões) pendente(s) de sincronização
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            {queuedLocalCount} ação(ões) pendente(s) de sincronização
           </div>
         )}
 
