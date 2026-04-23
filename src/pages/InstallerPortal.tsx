@@ -1259,6 +1259,39 @@ export default function InstallerPortal() {
           </div>
         )}
       </main>
+
+      <AlertDialog open={!!photoToDelete} onOpenChange={(open) => !open && setPhotoToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover esta foto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A foto será removida permanentemente do registro de instalação.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {photoToDelete?.photo_url && (
+            <div className="flex justify-center py-2">
+              <img
+                src={photoToDelete.photo_url}
+                alt=""
+                className="max-h-40 rounded-md object-contain border border-border"
+              />
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const photo = photoToDelete;
+                setPhotoToDelete(null);
+                if (photo) handleRemovePhoto(photo);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
