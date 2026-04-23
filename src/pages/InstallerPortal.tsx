@@ -271,18 +271,43 @@ export default function InstallerPortal() {
   const handleUpload = async (files: FileList | null, method: "upload" | "camera" = "upload") => {
     if (!files || !data) return;
 
-    const total = files.length;
+    const fileArray = Array.from(files);
+    const total = fileArray.length;
     let sent = 0;
     let queued = 0;
     let failed = 0;
 
-    for (const file of Array.from(files)) {
+    // Haptic feedback — instant confirmation that the tap was registered
+    try { (navigator as any).vibrate?.(15); } catch { /* ignore */ }
+
+    // 1) Create optimistic placeholders IMMEDIATELY so user sees the photos before upload finishes
+    const optimisticEntries = fileArray.map((file) => {
+      const localUrl = URL.createObjectURL(file);
+      const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      return {
+        tempId,
+        photo: {
+          id: tempId,
+          photo_url: localUrl,
+          category: uploadCategory,
+          _uploading: true,
+          _failed: false,
+        },
+      };
+    });
+
+    setLocalPhotos((prev) => [...prev, ...optimisticEntries.map((e) => e.photo)]);
+
+    // 2) Process each file and replace its placeholder with the real record (or mark failed)
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
+      const { tempId } = optimisticEntries[i];
+
       let compressed: Blob;
       try {
         compressed = await compressImage(file, 1200, 0.7);
       } catch (err) {
         console.error("Compression failed:", err);
-        // Last-resort: try uploading the raw file (Android HEIC etc.)
         compressed = file;
       }
 
@@ -302,9 +327,16 @@ export default function InstallerPortal() {
             },
           });
           queued++;
+          // Mark as queued (still visible, but with pending indicator)
+          setLocalPhotos((prev) =>
+            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true } : p))
+          );
         } catch (e) {
           console.error("Offline queue failed:", e);
           failed++;
+          setLocalPhotos((prev) =>
+            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _failed: true } : p))
+          );
         }
         continue;
       }
@@ -333,11 +365,30 @@ export default function InstallerPortal() {
         if (!res.ok) {
           throw new Error(result?.error || `HTTP ${res.status}`);
         }
-        if (result?.photo) setLocalPhotos((prev) => [...prev, result.photo]);
+
+        // Success — replace placeholder with real record
+        if (result?.photo) {
+          setLocalPhotos((prev) =>
+            prev.map((p) => {
+              if (p.id !== tempId) return p;
+              // Free the temporary blob URL
+              try { URL.revokeObjectURL(p.photo_url); } catch { /* ignore */ }
+              return result.photo;
+            })
+          );
+        } else {
+          // No photo returned but request OK — at least mark as not uploading
+          setLocalPhotos((prev) =>
+            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false } : p))
+          );
+        }
         sent++;
+
+        // Subtle haptic on each successful photo
+        try { (navigator as any).vibrate?.(10); } catch { /* ignore */ }
       } catch (err: any) {
         console.error("Upload failed, queuing offline:", err);
-        // Network or server error — queue for retry
+        // Network or server error — queue for retry, keep showing photo
         try {
           const base64 = await blobToBase64(compressed);
           await enqueue({
@@ -352,9 +403,15 @@ export default function InstallerPortal() {
             },
           });
           queued++;
+          setLocalPhotos((prev) =>
+            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true } : p))
+          );
         } catch (e) {
           console.error("Final offline queue failed:", e);
           failed++;
+          setLocalPhotos((prev) =>
+            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _failed: true } : p))
+          );
         }
       }
     }
