@@ -47,3 +47,15 @@ verify_jwt = false
 
 [functions.ai-field-mapping]
 verify_jwt = false
+
+[functions.validate-install-code]
+verify_jwt = false
+
+[functions.upload-installation-photo]
+verify_jwt = false
+
+[functions.complete-installation]
+verify_jwt = false
+
+[functions.validate-team-code]
+verify_jwt = false
