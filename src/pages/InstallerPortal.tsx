@@ -408,33 +408,11 @@ export default function InstallerPortal() {
 
         try { (navigator as any).vibrate?.(10); } catch { /* ignore */ }
       } catch (err: any) {
-        console.error("Upload failed, queuing offline:", err);
-        try {
-          const queueId = await enqueue({
-            type: "photo",
-            createdAt: new Date().toISOString(),
-            payload: {
-              blob: compressed,
-              installCode: code.toLowerCase(),
-              storeId: data.store.id,
-              category: uploadCategory,
-              uploadMethod: method,
-            },
-          });
-          if (cancelledTempIdsRef.current.has(tempId)) {
-            try { await dequeue(queueId); } catch { /* ignore */ }
-            cancelledTempIdsRef.current.delete(tempId);
-            await refreshCount();
-            continue;
-          }
-          queued++;
-          setLocalPhotos((prev) =>
-            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true, _queueId: queueId } : p))
-          );
-          // Atualiza badge imediatamente após cada enqueue de fallback
-          await refreshCount();
-        } catch (e) {
-          console.error("Final offline queue failed:", e);
+        console.error("Upload failed:", err);
+        // No offline queue — mark photo as failed and let installer retry manually
+        if (cancelledTempIdsRef.current.has(tempId)) {
+          cancelledTempIdsRef.current.delete(tempId);
+        } else {
           failed++;
           setLocalPhotos((prev) =>
             prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _failed: true } : p))
@@ -443,16 +421,7 @@ export default function InstallerPortal() {
       }
     }
 
-    await refreshCount();
-
-    // If we are online and items were queued (e.g. due to transient errors), drain immediately
-    // so the "X ação(ões) pendente(s)" banner disappears as soon as the network recovers.
-    if (isOnline && queued > 0) {
-      drainQueue().catch(() => { /* silent */ });
-    }
-
     if (sent > 0) toast.success(`${sent}/${total} foto(s) enviada(s)!`);
-    if (queued > 0) toast.info(`${queued} foto(s) na fila — enviarão quando a conexão estabilizar.`);
     if (failed > 0) toast.error(`${failed} foto(s) falharam. Tente novamente.`);
 
     setValidacaoError(null);
