@@ -32,6 +32,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { buildRescheduleToggleUpdates } from "@/lib/scheduleHelpers";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import * as XLSX from "xlsx";
