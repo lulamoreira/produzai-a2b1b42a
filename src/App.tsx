@@ -14,6 +14,7 @@ import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { supabase } from "@/integrations/supabase/client";
 import { PendingUsersAlert } from "@/components/PendingUsersAlert";
 import { NameConfirmDialog } from "@/components/NameConfirmDialog";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import AgencySelect from "./pages/AgencySelect";
 import Dashboard from "./pages/Dashboard";
 import ClientDetail from "./pages/ClientDetail";
