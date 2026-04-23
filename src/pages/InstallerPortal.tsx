@@ -543,6 +543,12 @@ export default function InstallerPortal() {
 
     await refreshCount();
 
+    // If we are online and items were queued (e.g. due to transient errors), drain immediately
+    // so the "X ação(ões) pendente(s)" banner disappears as soon as the network recovers.
+    if (isOnline && queued > 0) {
+      drainQueue().catch(() => { /* silent */ });
+    }
+
     if (sent > 0) toast.success(`${sent}/${total} foto(s) enviada(s)!`);
     if (queued > 0) toast.info(`${queued} foto(s) na fila — enviarão quando a conexão estabilizar.`);
     if (failed > 0) toast.error(`${failed} foto(s) falharam. Tente novamente.`);
