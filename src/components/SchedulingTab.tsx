@@ -1196,7 +1196,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-medium text-foreground flex items-center gap-1"><Sun className="w-3 h-3" /> {t("scheduling.preferenceLabel")}</label>
-                          <select disabled={!cardCanEdit} value={schedule?.reschedule_preference || "not_informed"} onChange={(e) => handleFieldChange(store.id, "reschedule_preference", e.target.value)} className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2">
+                          <select disabled={!cardCanEdit} value={schedule?.reschedule_preference || schedule?.installation_preference || "not_informed"} onChange={(e) => handleFieldChange(store.id, "reschedule_preference", e.target.value)} className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2">
                             {PREFERENCE_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                           </select>
                         </div>
