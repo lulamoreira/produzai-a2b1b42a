@@ -515,6 +515,51 @@ export default function InstallerPortal() {
     setValidacaoError(null);
   };
 
+  /**
+   * Remove a photo from the grid. Handles three cases:
+   * 1) Optimistic placeholder still uploading → mark as cancelled (upload loop will undo on completion)
+   * 2) Queued offline → remove from IndexedDB queue
+   * 3) Already saved on server → delete storage object + DB row
+   * In all cases, the UI is updated immediately.
+   */
+  const handleRemovePhoto = async (photo: any) => {
+    const isTemp = typeof photo.id === "string" && photo.id.startsWith("temp-");
+
+    // 1) Remove from UI immediately
+    setLocalPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+    try { if (photo.photo_url?.startsWith("blob:")) URL.revokeObjectURL(photo.photo_url); } catch { /* ignore */ }
+
+    try {
+      if (isTemp) {
+        // Mark as cancelled so the in-flight upload loop will undo any side effects
+        cancelledTempIdsRef.current.add(photo.id);
+
+        // If it was already in the offline queue, dequeue it now
+        if (photo._queueId) {
+          try { await dequeue(photo._queueId); } catch { /* ignore */ }
+          await refreshCount();
+        }
+        return;
+      }
+
+      // Already-saved server photo → delete storage + DB row
+      if (photo.photo_url) {
+        try {
+          const url = new URL(photo.photo_url);
+          const m = url.pathname.match(/\/storage\/v1\/object\/public\/installation-photos\/(.+)/);
+          if (m) await supabase.storage.from("installation-photos").remove([m[1]]);
+        } catch { /* ignore storage error — DB row removal still proceeds */ }
+      }
+      const { error } = await supabase.from("installation_photos").delete().eq("id", photo.id);
+      if (error) throw error;
+    } catch (err: any) {
+      console.error("Failed to remove photo:", err);
+      toast.error("Não foi possível remover a foto. Tente novamente.");
+      // Restore on failure
+      setLocalPhotos((prev) => (prev.some((p) => p.id === photo.id) ? prev : [...prev, photo]));
+    }
+  };
+
   const handleComplete = async () => {
     if (!data) return;
 
