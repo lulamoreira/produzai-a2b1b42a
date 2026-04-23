@@ -1660,7 +1660,10 @@ function RescheduleSection({ schedule, storeId, campaignId, canEdit, teams, team
   const handleToggleReschedule = (enabled: boolean) => {
     if (!canEdit) return;
     const updates: Record<string, any> = { reschedule_enabled: enabled };
-    if (!enabled) {
+
+    if (enabled) {
+      updates.reschedule_preference = schedule?.reschedule_preference || schedule?.installation_preference || "not_informed";
+    } else {
       updates.reschedule_date = null;
       updates.reschedule_time = null;
       updates.reschedule_os = null;
@@ -1676,6 +1679,7 @@ function RescheduleSection({ schedule, storeId, campaignId, canEdit, teams, team
       updates.reschedule_suggested_date_2 = null;
       updates.reschedule_suggested_time_2 = null;
     }
+
     onMultiUpdate(updates);
   };
 
