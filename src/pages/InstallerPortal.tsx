@@ -82,6 +82,9 @@ export default function InstallerPortal() {
   // without re-selecting the photo (memory-light: we only keep what's still on screen).
   const compressedBlobsRef = useRef<Map<string, Blob>>(new Map());
 
+  // Track photo IDs deleted in this session so a stale revalidation never resurrects them.
+  const deletedPhotoIdsRef = useRef<Set<string>>(new Set());
+
   // Simple concurrency-limited upload queue (max 2 simultaneous) to prevent OOM
   // when the user picks 5+ photos at once on a low/mid-tier device.
   const uploadQueueRef = useRef<Array<() => Promise<void>>>([]);
@@ -146,12 +149,16 @@ export default function InstallerPortal() {
         }
         return result;
       });
-      // Merge server photos with any local optimistic placeholders still uploading/failed
+      // Merge server photos with any local optimistic placeholders still uploading/failed.
+      // Filter out any photos the user already deleted in this session, even if the server
+      // still returns them (race between delete + revalidate).
       setLocalPhotos((prev) => {
         const optimistic = prev.filter(
           (p: any) => typeof p.id === "string" && p.id.startsWith("temp-") && (p._uploading || p._failed)
         );
-        const serverPhotos = result.photos || [];
+        const serverPhotos = (result.photos || []).filter(
+          (p: any) => !deletedPhotoIdsRef.current.has(p.id)
+        );
         return [...serverPhotos, ...optimistic];
       });
       // Sticky check-in: once true locally, never flip back to false based on a server view.
@@ -725,16 +732,25 @@ export default function InstallerPortal() {
         return;
       }
 
-      // Already-saved server photo → delete storage + DB row
-      if (photo.photo_url) {
-        try {
-          const url = new URL(photo.photo_url);
-          const m = url.pathname.match(/\/storage\/v1\/object\/public\/installation-photos\/(.+)/);
-          if (m) await supabase.storage.from("installation-photos").remove([m[1]]);
-        } catch { /* ignore storage error — DB row removal still proceeds */ }
-      }
-      const { error } = await supabase.from("installation_photos").delete().eq("id", photo.id);
-      if (error) throw error;
+      // Already-saved server photo → delete via edge function (uses service role, bypasses RLS).
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const res = await fetch(
+        `https://${projectId}.supabase.co/functions/v1/delete-installation-photo`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            photo_id: photo.id,
+            photo_url: photo.photo_url,
+            install_code: code.toLowerCase(),
+            store_id: data?.store?.id,
+          }),
+        }
+      );
+      if (!res.ok) throw new Error(await res.text());
+
+      // Remember this id so a stale revalidation doesn't bring it back
+      deletedPhotoIdsRef.current.add(photo.id);
     } catch (err: any) {
       console.error("Failed to remove photo:", err);
       toast.error("Não foi possível remover a foto. Tente novamente.");
