@@ -83,7 +83,7 @@ export default function InstallerPortal() {
   const cancelledTempIdsRef = useRef<Set<string>>(new Set());
 
   // Offline sync hook
-  const { isOnline, isSyncing, pendingCount, refreshCount } = useOfflineSync(() => {
+  const { isOnline, isSyncing, pendingCount, refreshCount, drainQueue } = useOfflineSync(() => {
     // After sync completes, refresh data from server if online
     if (code.length === 5) handleSubmit();
   });
@@ -93,19 +93,28 @@ export default function InstallerPortal() {
     queueCount("photo").then(setPendingPhotoCount).catch(() => {});
   }, [pendingCount]);
 
-  // Try loading from cache if offline on mount
+  // Auto-restore session on mount (online OR offline) — keep installer logged in across refreshes
   useEffect(() => {
-    if (!navigator.onLine && !data) {
-      const cached = loadCache();
-      if (cached) {
-        setCode(cached.code);
-        setData(cached.data);
-        setLocalPhotos(cached.data.photos || []);
-        setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
-        setIsCompleted(!!cached.data.schedule?.completed_at);
-        setOfflineLoaded(true);
-        setCacheTimestamp(cached.ts);
-      }
+    if (data) return;
+    const cached = loadCache();
+    if (!cached) return;
+
+    setCode(cached.code);
+    setCacheTimestamp(cached.ts);
+
+    if (!navigator.onLine) {
+      // Offline: use cached data directly
+      setData(cached.data);
+      setLocalPhotos(cached.data.photos || []);
+      setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
+      setIsCompleted(!!cached.data.schedule?.completed_at);
+      setOfflineLoaded(true);
+    } else {
+      // Online: show cached immediately, then revalidate in background via auto-submit effect
+      setData(cached.data);
+      setLocalPhotos(cached.data.photos || []);
+      setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
+      setIsCompleted(!!cached.data.schedule?.completed_at);
     }
   }, []);
 
