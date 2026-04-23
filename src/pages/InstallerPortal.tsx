@@ -83,7 +83,7 @@ export default function InstallerPortal() {
   const cancelledTempIdsRef = useRef<Set<string>>(new Set());
 
   // Offline sync hook
-  const { isOnline, isSyncing, pendingCount, refreshCount } = useOfflineSync(() => {
+  const { isOnline, isSyncing, pendingCount, refreshCount, drainQueue } = useOfflineSync(() => {
     // After sync completes, refresh data from server if online
     if (code.length === 5) handleSubmit();
   });
@@ -93,19 +93,28 @@ export default function InstallerPortal() {
     queueCount("photo").then(setPendingPhotoCount).catch(() => {});
   }, [pendingCount]);
 
-  // Try loading from cache if offline on mount
+  // Auto-restore session on mount (online OR offline) — keep installer logged in across refreshes
   useEffect(() => {
-    if (!navigator.onLine && !data) {
-      const cached = loadCache();
-      if (cached) {
-        setCode(cached.code);
-        setData(cached.data);
-        setLocalPhotos(cached.data.photos || []);
-        setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
-        setIsCompleted(!!cached.data.schedule?.completed_at);
-        setOfflineLoaded(true);
-        setCacheTimestamp(cached.ts);
-      }
+    if (data) return;
+    const cached = loadCache();
+    if (!cached) return;
+
+    setCode(cached.code);
+    setCacheTimestamp(cached.ts);
+
+    if (!navigator.onLine) {
+      // Offline: use cached data directly
+      setData(cached.data);
+      setLocalPhotos(cached.data.photos || []);
+      setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
+      setIsCompleted(!!cached.data.schedule?.completed_at);
+      setOfflineLoaded(true);
+    } else {
+      // Online: show cached immediately, then revalidate in background via auto-submit effect
+      setData(cached.data);
+      setLocalPhotos(cached.data.photos || []);
+      setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
+      setIsCompleted(!!cached.data.schedule?.completed_at);
     }
   }, []);
 
@@ -534,6 +543,12 @@ export default function InstallerPortal() {
 
     await refreshCount();
 
+    // If we are online and items were queued (e.g. due to transient errors), drain immediately
+    // so the "X ação(ões) pendente(s)" banner disappears as soon as the network recovers.
+    if (isOnline && queued > 0) {
+      drainQueue().catch(() => { /* silent */ });
+    }
+
     if (sent > 0) toast.success(`${sent}/${total} foto(s) enviada(s)!`);
     if (queued > 0) toast.info(`${queued} foto(s) na fila — enviarão quando a conexão estabilizar.`);
     if (failed > 0) toast.error(`${failed} foto(s) falharam. Tente novamente.`);
@@ -772,11 +787,11 @@ export default function InstallerPortal() {
       </header>
 
       <main className="max-w-2xl mx-auto p-4 space-y-4">
-        {/* Pending sync info */}
-        {pendingCount > 0 && isOnline && !isSyncing && (
+        {/* Pending sync info — use local queued count for instant feedback (no IndexedDB read latency) */}
+        {queuedLocalCount > 0 && isOnline && !isSyncing && (
           <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 rounded-lg px-3 py-2 text-xs font-medium">
-            <Loader2 className="w-3.5 h-3.5" />
-            {pendingCount} ação(ões) pendente(s) de sincronização
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            {queuedLocalCount} ação(ões) pendente(s) de sincronização
           </div>
         )}
 
