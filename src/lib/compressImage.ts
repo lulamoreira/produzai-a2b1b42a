@@ -131,6 +131,20 @@ export async function compressImage(
       // toBlob can return null on Android with very large canvases — fall back to original
       return file;
     }
+
+    // Sanity check: under iOS Safari / Android memory pressure, drawImage can fail
+    // silently and the canvas keeps its initial fill color, producing a tiny solid-color
+    // JPEG (typically <8KB for 1024px). When that happens, fall back to the original file
+    // so the installer never sees red/green/white solid blocks instead of their photos.
+    const expectedMinSize = Math.max(8 * 1024, Math.round((width * height) / 200));
+    if (blob.size < expectedMinSize) {
+      console.warn(
+        "[compressImage] Suspicious tiny output blob — likely a solid-color canvas " +
+          "from memory pressure. Falling back to original file.",
+        { blobSize: blob.size, expectedMin: expectedMinSize, width, height }
+      );
+      return file;
+    }
     return blob;
   } finally {
     source.cleanup();
