@@ -41,10 +41,11 @@ const DebouncedInput = ({ value, onValueCommit, onKeyDown, debounceMs = 700, ...
 
   const commit = useCallback(() => {
     clearTimer();
-    if (latest.current !== value) {
+    if (latest.current !== lastCommittedRef.current) {
+      lastCommittedRef.current = latest.current;
       onValueCommit(latest.current);
     }
-  }, [value, onValueCommit]);
+  }, [onValueCommit]);
 
   useEffect(() => () => clearTimer(), []);
 
@@ -59,7 +60,11 @@ const DebouncedInput = ({ value, onValueCommit, onKeyDown, debounceMs = 700, ...
         if (debounceMs > 0) {
           clearTimer();
           timerRef.current = setTimeout(() => {
-            if (latest.current !== value) onValueCommit(latest.current);
+            timerRef.current = null;
+            if (latest.current !== lastCommittedRef.current) {
+              lastCommittedRef.current = latest.current;
+              onValueCommit(latest.current);
+            }
           }, debounceMs);
         }
       }}
