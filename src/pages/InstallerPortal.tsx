@@ -805,11 +805,8 @@ export default function InstallerPortal() {
                       <Loader2 className="w-5 h-5 text-white animate-spin" />
                     </div>
                   )}
-                  {photo._queued && !photo._uploading && (
-                    <div className="absolute bottom-0 inset-x-0 bg-amber-500 text-white text-[9px] font-semibold text-center py-0.5 leading-tight pointer-events-none">
-                      Na fila
-                    </div>
-                  )}
+                  {/* Offline queue removed */}
+
                   {photo._failed && (
                     <div className="absolute inset-0 flex items-center justify-center bg-destructive/80 pointer-events-none">
                       <AlertTriangle className="w-5 h-5 text-white" />
