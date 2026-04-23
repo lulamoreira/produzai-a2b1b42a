@@ -428,10 +428,9 @@ export default function InstallerPortal() {
   };
 
   /**
-   * Remove a photo from the grid. Handles three cases:
-   * 1) Optimistic placeholder still uploading → mark as cancelled (upload loop will undo on completion)
-   * 2) Queued offline → remove from IndexedDB queue
-   * 3) Already saved on server → delete storage object + DB row
+   * Remove a photo from the grid. Handles two cases:
+   * 1) Optimistic placeholder still uploading → mark as cancelled (upload loop will skip on completion)
+   * 2) Already saved on server → delete storage object + DB row
    * In all cases, the UI is updated immediately.
    */
   const handleRemovePhoto = async (photo: any) => {
@@ -443,14 +442,8 @@ export default function InstallerPortal() {
 
     try {
       if (isTemp) {
-        // Mark as cancelled so the in-flight upload loop will undo any side effects
+        // Mark as cancelled so the in-flight upload loop will skip server-side side effects
         cancelledTempIdsRef.current.add(photo.id);
-
-        // If it was already in the offline queue, dequeue it now
-        if (photo._queueId) {
-          try { await dequeue(photo._queueId); } catch { /* ignore */ }
-          await refreshCount();
-        }
         return;
       }
 
