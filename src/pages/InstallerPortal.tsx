@@ -13,6 +13,16 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 import { getCompressionProfile } from "@/lib/deviceProfile";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PortalData {
   schedule: any;
@@ -70,6 +80,7 @@ export default function InstallerPortal() {
   } | null>(null);
   const [tentandoConcluir, setTentandoConcluir] = useState(false);
   const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
+  const [photoToDelete, setPhotoToDelete] = useState<any | null>(null);
 
   // Profile used both for compression and to avoid decoding original full-res photos on Android
   const compressionProfile = getCompressionProfile();
@@ -1132,7 +1143,7 @@ export default function InstallerPortal() {
                   {/* Remove button — always visible on touch devices */}
                   <button
                     type="button"
-                    onClick={() => handleRemovePhoto(photo)}
+                    onClick={() => setPhotoToDelete(photo)}
                     aria-label="Remover foto"
                     className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 hover:bg-destructive text-white flex items-center justify-center shadow-sm transition-colors z-10"
                   >
@@ -1248,6 +1259,39 @@ export default function InstallerPortal() {
           </div>
         )}
       </main>
+
+      <AlertDialog open={!!photoToDelete} onOpenChange={(open) => !open && setPhotoToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover esta foto?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A foto será removida permanentemente do registro de instalação.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {photoToDelete?.photo_url && (
+            <div className="flex justify-center py-2">
+              <img
+                src={photoToDelete.photo_url}
+                alt=""
+                className="max-h-40 rounded-md object-contain border border-border"
+              />
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const photo = photoToDelete;
+                setPhotoToDelete(null);
+                if (photo) handleRemovePhoto(photo);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
