@@ -508,13 +508,8 @@ export default function InstallerPortal() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg-page, #F5F2ED)" }}>
         <div className="w-full max-w-sm">
-          {/* Offline banner on login */}
-          {!isOnline && (
-            <div className="mb-4 flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 rounded-lg px-3 py-2 text-xs font-medium">
-              <WifiOff className="w-4 h-4 flex-shrink-0" />
-              Sem conexão — modo offline
-            </div>
-          )}
+          {/* Offline mode removed — uploads go straight to the server */}
+
           <div className="text-center mb-6">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
