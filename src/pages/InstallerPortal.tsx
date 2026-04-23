@@ -74,6 +74,9 @@ export default function InstallerPortal() {
   const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
   const [pendingPhotoCount, setPendingPhotoCount] = useState(0);
 
+  // Track tempIds the user cancelled mid-upload, so the upload loop can skip them
+  const cancelledTempIdsRef = useRef<Set<string>>(new Set());
+
   // Offline sync hook
   const { isOnline, isSyncing, pendingCount, refreshCount } = useOfflineSync(() => {
     // After sync completes, refresh data from server if online
