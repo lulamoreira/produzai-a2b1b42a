@@ -1659,28 +1659,7 @@ function RescheduleSection({ schedule, storeId, campaignId, canEdit, teams, team
 
   const handleToggleReschedule = (enabled: boolean) => {
     if (!canEdit) return;
-    const updates: Record<string, any> = { reschedule_enabled: enabled };
-
-    if (enabled) {
-      updates.reschedule_preference = schedule?.reschedule_preference || schedule?.installation_preference || "not_informed";
-    } else {
-      updates.reschedule_date = null;
-      updates.reschedule_time = null;
-      updates.reschedule_os = null;
-      updates.reschedule_preference = "not_informed";
-      updates.reschedule_store_approval_status = "under_review";
-      updates.reschedule_store_approved_at = null;
-      updates.reschedule_team_approval_status = "under_review";
-      updates.reschedule_team_approved_at = null;
-      updates.reschedule_responsibility = null;
-      updates.reschedule_responsibility_at = null;
-      updates.reschedule_suggested_date = null;
-      updates.reschedule_suggested_time = null;
-      updates.reschedule_suggested_date_2 = null;
-      updates.reschedule_suggested_time_2 = null;
-    }
-
-    onMultiUpdate(updates);
+    onMultiUpdate(buildRescheduleToggleUpdates(schedule, enabled));
   };
 
   return (
