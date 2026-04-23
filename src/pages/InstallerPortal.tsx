@@ -384,7 +384,7 @@ export default function InstallerPortal() {
       if (!isOnline) {
         try {
           const base64 = await blobToBase64(compressed);
-          await enqueue({
+          const queueId = await enqueue({
             type: "photo",
             createdAt: new Date().toISOString(),
             payload: {
@@ -395,10 +395,15 @@ export default function InstallerPortal() {
               uploadMethod: method,
             },
           });
+          if (cancelledTempIdsRef.current.has(tempId)) {
+            // User cancelled while we were enqueuing — undo it
+            try { await dequeue(queueId); } catch { /* ignore */ }
+            cancelledTempIdsRef.current.delete(tempId);
+            continue;
+          }
           queued++;
-          // Mark as queued (still visible, but with pending indicator)
           setLocalPhotos((prev) =>
-            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true } : p))
+            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true, _queueId: queueId } : p))
           );
         } catch (e) {
           console.error("Offline queue failed:", e);
