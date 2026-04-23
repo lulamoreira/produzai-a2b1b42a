@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
+import PhasePickerDialog, { PhotoPhase } from "@/components/PhasePickerDialog";
 
 interface InstallerData {
   team: { id: string; name: string };
@@ -32,11 +33,27 @@ export default function InstallerDashboard() {
   const [localPhotos, setLocalPhotos] = useState<any[]>([]);
   const [completedStores, setCompletedStores] = useState<Map<string, string>>(new Map());
 
-  const CATEGORY_OPTIONS = [
-    { value: "before", label: t("installations.before"), icon: "🔵" },
-    { value: "during", label: t("installations.during"), icon: "🟡" },
-    { value: "after", label: t("installations.after"), icon: "🟢" },
-  ];
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pendingStoreRef = useRef<string | null>(null);
+  const pendingMethodRef = useRef<"upload" | "camera">("upload");
+  const pendingPhaseRef = useRef<PhotoPhase>("before");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+
+  const openPhasePicker = (storeId: string, method: "upload" | "camera") => {
+    pendingStoreRef.current = storeId;
+    pendingMethodRef.current = method;
+    setPickerOpen(true);
+  };
+
+  const handlePhaseSelected = (phase: PhotoPhase) => {
+    pendingPhaseRef.current = phase;
+    setPickerOpen(false);
+    setTimeout(() => {
+      if (pendingMethodRef.current === "camera") cameraInputRef.current?.click();
+      else fileInputRef.current?.click();
+    }, 50);
+  };
 
   const handleLogin = async () => {
     if (code.length !== 10) {
@@ -80,7 +97,7 @@ export default function InstallerDashboard() {
 
   const handleUpload = async (storeId: string, files: FileList | null, method: "upload" | "camera" = "upload") => {
     if (!files || !data) return;
-    const category = uploadCategory[storeId] || "before";
+    const category = pendingPhaseRef.current || "before";
     const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 
     for (const file of Array.from(files)) {
@@ -344,39 +361,22 @@ export default function InstallerDashboard() {
                 )}
 
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <select
-                    value={catForStore}
-                    onChange={(e) => setUploadCategory((prev) => ({ ...prev, [store.id]: e.target.value }))}
-                    className="h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1"
+                    onClick={() => openPhasePicker(store.id, "upload")}
                   >
-                    {CATEGORY_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.icon} {opt.label}</option>
-                    ))}
-                  </select>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => { handleUpload(store.id, e.target.files, "camera"); e.target.value = ""; }}
-                    />
-                    <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none" asChild>
-                      <span><Upload className="w-3 h-3" /> {t("common.upload")}</span>
-                    </Button>
-                  </label>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={(e) => { handleUpload(store.id, e.target.files, "upload"); e.target.value = ""; }}
-                    />
-                    <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none" asChild>
-                      <span><Camera className="w-3 h-3" /> {t("common.photo")}</span>
-                    </Button>
-                  </label>
+                    <Upload className="w-3 h-3" /> {t("common.upload")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1"
+                    onClick={() => openPhasePicker(store.id, "camera")}
+                  >
+                    <Camera className="w-3 h-3" /> {t("common.photo")}
+                  </Button>
                 </div>
               </div>
 
@@ -407,6 +407,37 @@ export default function InstallerDashboard() {
           </div>
         )}
       </main>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          const storeId = pendingStoreRef.current;
+          if (storeId) handleUpload(storeId, e.target.files, "upload");
+          e.target.value = "";
+        }}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const storeId = pendingStoreRef.current;
+          if (storeId) handleUpload(storeId, e.target.files, "camera");
+          e.target.value = "";
+        }}
+      />
+
+      <PhasePickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onSelect={handlePhaseSelected}
+      />
     </div>
   );
 }
