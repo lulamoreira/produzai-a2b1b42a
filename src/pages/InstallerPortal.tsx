@@ -374,8 +374,10 @@ export default function InstallerPortal() {
 
       let compressed: Blob;
       try {
-        // 1024px / 0.65 — agressivo para Android low-end (sem comprometer leitura)
-        compressed = await compressImage(file, 1024, 0.65);
+        // Sem parâmetros → usa o perfil de compressão dinâmico (deviceProfile.ts):
+        // Android low-end: 800px/0.55 · Android mid: 1024px/0.6 · iOS/desktop: 1280px/0.7
+        // Arquivos >5MB descem um tier automaticamente para evitar OOM.
+        compressed = await compressImage(file);
       } catch (err) {
         console.error("Compression failed:", err);
         compressed = file;
