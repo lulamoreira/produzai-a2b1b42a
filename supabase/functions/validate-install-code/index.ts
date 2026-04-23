@@ -12,7 +12,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { code, action } = await req.json();
+    const {
+      code,
+      action,
+      lat,
+      lng,
+      accuracy,
+      timestamp,
+      deviceInfo,
+    } = await req.json();
 
     if (!code || typeof code !== "string" || code.length !== 5) {
       return new Response(
@@ -81,6 +89,50 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "Código não encontrado. Verifique com o responsável da campanha." }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    if (action === "checkin") {
+      const checkinTimestamp =
+        typeof timestamp === "string" && timestamp.length > 0
+          ? timestamp
+          : new Date().toISOString();
+
+      const { error: checkinError } = await supabase
+        .from("campaign_schedules")
+        .update({
+          checkin_lat: typeof lat === "number" ? lat : null,
+          checkin_lng: typeof lng === "number" ? lng : null,
+          checkin_accuracy: typeof accuracy === "number" ? accuracy : null,
+          checkin_timestamp: checkinTimestamp,
+          checkin_device_info: deviceInfo ?? null,
+        })
+        .eq("id", schedule.id);
+
+      if (checkinError) {
+        return new Response(
+          JSON.stringify({ error: "Não foi possível registrar o check-in." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      schedule.checkin_lat = typeof lat === "number" ? lat : null;
+      schedule.checkin_lng = typeof lng === "number" ? lng : null;
+      schedule.checkin_accuracy = typeof accuracy === "number" ? accuracy : null;
+      schedule.checkin_timestamp = checkinTimestamp;
+      schedule.checkin_device_info = deviceInfo ?? null;
+
+      await supabase.from("campaign_activity_log").insert({
+        campaign_id: schedule.campaign_id,
+        store_id: schedule.store_id,
+        actor_name: "Instalador",
+        actor_type: "installer",
+        action: "checkin_realizado",
+        description: `Check-in realizado em ${(schedule as any).client_stores?.name || "loja"}`,
+        metadata: {
+          tem_gps: typeof lat === "number" && typeof lng === "number",
+          accuracy: typeof accuracy === "number" ? accuracy : null,
+        },
+      }).then(() => undefined).catch(() => undefined);
     }
 
     // Log the access
