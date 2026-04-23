@@ -75,6 +75,10 @@ export default function InstallerPortal() {
   const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
   const [pendingPhotoCount, setPendingPhotoCount] = useState(0);
 
+  // Profile used both for compression and to avoid decoding original full-res photos on Android
+  const compressionProfile = getCompressionProfile();
+  const isMemorySaver = compressionProfile.tier !== "high";
+
   // Track tempIds the user cancelled mid-upload, so the upload loop can skip them
   const cancelledTempIdsRef = useRef<Set<string>>(new Set());
 
@@ -350,18 +354,21 @@ export default function InstallerPortal() {
     // Haptic feedback — instant confirmation that the tap was registered
     try { (navigator as any).vibrate?.(15); } catch { /* ignore */ }
 
-    // 1) Create optimistic placeholders IMMEDIATELY so user sees the photos before upload finishes
+    // 1) Create optimistic placeholders IMMEDIATELY.
+    // On Android memory-saver devices, do NOT create an object URL from the original full-res file,
+    // because decoding several 8-12MP photos can crash the browser/app. We only attach a preview
+    // after compression, which is much smaller.
     const optimisticEntries = fileArray.map((file) => {
-      const localUrl = URL.createObjectURL(file);
       const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       return {
         tempId,
         photo: {
           id: tempId,
-          photo_url: localUrl,
+          photo_url: isMemorySaver ? "" : URL.createObjectURL(file),
           category: uploadCategory,
           _uploading: true,
           _failed: false,
+          _previewPending: isMemorySaver,
         },
       };
     });
@@ -382,6 +389,18 @@ export default function InstallerPortal() {
       } catch (err) {
         console.error("Compression failed:", err);
         compressed = file;
+      }
+
+      // In memory-saver mode, only show the preview AFTER compression to avoid decoding the original photo.
+      if (isMemorySaver) {
+        const compressedPreviewUrl = URL.createObjectURL(compressed);
+        setLocalPhotos((prev) =>
+          prev.map((p) =>
+            p.id === tempId
+              ? { ...p, photo_url: compressedPreviewUrl, _previewPending: false }
+              : p
+          )
+        );
       }
 
       // Offline path — enfileira BLOB direto (não base64) para economizar memória
@@ -713,9 +732,6 @@ export default function InstallerPortal() {
   const pendingCount2 = uploadingCount + queuedLocalCount;
   const totalMidias = sentCount + pendingCount2;
   const atingiuMinimo = totalMidias >= MINIMO_FOTOS;
-  // Device compression profile — used to show "Modo economia" badge on low-end / Android devices
-  const compressionProfile = getCompressionProfile();
-  const isMemorySaver = compressionProfile.tier !== "high";
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-page, #F5F2ED)" }}>
@@ -948,12 +964,18 @@ export default function InstallerPortal() {
           {localPhotos.length > 0 && (
             <div className="flex gap-1.5 flex-wrap">
               {localPhotos.map((photo: any) => (
-                <div key={photo.id} className="relative w-16 h-16 rounded-md overflow-hidden border border-border group">
-                  <img
-                    src={photo.photo_url}
-                    alt=""
-                    className={`w-full h-full object-cover transition-opacity ${photo._uploading ? "opacity-50" : ""}`}
-                  />
+                <div key={photo.id} className="relative w-16 h-16 rounded-md overflow-hidden border border-border group bg-muted/40">
+                  {photo.photo_url ? (
+                    <img
+                      src={photo.photo_url}
+                      alt=""
+                      className={`w-full h-full object-cover transition-opacity ${photo._uploading ? "opacity-50" : ""}`}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      <Camera className="w-5 h-5" />
+                    </div>
+                  )}
                   {photo._uploading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
                       <Loader2 className="w-5 h-5 text-white animate-spin" />
