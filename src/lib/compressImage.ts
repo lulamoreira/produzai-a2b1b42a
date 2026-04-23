@@ -123,12 +123,55 @@ export async function compressImage(
     ctx.fillRect(0, 0, width, height);
     source.draw(ctx, width, height);
 
+    // Sanity check: sample a few pixels across the canvas. If they're ALL identical,
+    // drawImage silently failed (common on iOS Safari + Android Chrome under memory
+    // pressure when uploading many photos in a row) and we'd be uploading a solid
+    // color block instead of the user's photo. Fall back to the original file.
+    try {
+      const samplePoints: Array<[number, number]> = [
+        [Math.floor(width * 0.25), Math.floor(height * 0.25)],
+        [Math.floor(width * 0.5), Math.floor(height * 0.5)],
+        [Math.floor(width * 0.75), Math.floor(height * 0.75)],
+        [Math.floor(width * 0.1), Math.floor(height * 0.9)],
+        [Math.floor(width * 0.9), Math.floor(height * 0.1)],
+      ];
+      const samples = samplePoints.map(([x, y]) => {
+        const d = ctx.getImageData(x, y, 1, 1).data;
+        return `${d[0]},${d[1]},${d[2]}`;
+      });
+      const unique = new Set(samples);
+      if (unique.size === 1) {
+        console.warn(
+          "[compressImage] Canvas appears to be a solid color after drawImage — " +
+            "likely a memory-pressure failure on mobile. Falling back to original.",
+          { sample: samples[0], width, height }
+        );
+        return file;
+      }
+    } catch {
+      // getImageData can throw on tainted canvases — safe to skip the check
+    }
+
     const blob = await new Promise<Blob | null>((resolve) => {
       canvas.toBlob((b) => resolve(b), "image/jpeg", quality);
     });
 
     if (!blob) {
       // toBlob can return null on Android with very large canvases — fall back to original
+      return file;
+    }
+
+    // Sanity check: under iOS Safari / Android memory pressure, drawImage can fail
+    // silently and the canvas keeps its initial fill color, producing a tiny solid-color
+    // JPEG (typically <8KB for 1024px). When that happens, fall back to the original file
+    // so the installer never sees red/green/white solid blocks instead of their photos.
+    const expectedMinSize = Math.max(8 * 1024, Math.round((width * height) / 200));
+    if (blob.size < expectedMinSize) {
+      console.warn(
+        "[compressImage] Suspicious tiny output blob — likely a solid-color canvas " +
+          "from memory pressure. Falling back to original file.",
+        { blobSize: blob.size, expectedMin: expectedMinSize, width, height }
+      );
       return file;
     }
     return blob;
