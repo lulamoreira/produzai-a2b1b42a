@@ -968,6 +968,20 @@ export default function InstallerPortal() {
           </div>
         )}
 
+        {/* Memory-saver persistent info banner (Fix 6) */}
+        {isMemorySaver && (
+          <div
+            className="rounded-xl px-3 py-2 flex items-start gap-2 text-xs border border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-900/15 text-emerald-800 dark:text-emerald-200"
+            role="status"
+          >
+            <Leaf className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span>
+              Modo economia de memória ativo — envie as fotos em grupos menores
+              (até 3 por vez) para melhor desempenho.
+            </span>
+          </div>
+        )}
+
         {/* Photos */}
         <div className="bg-card border border-border rounded-xl p-4 space-y-3" id="secao-fotos">
           <div className="flex items-center justify-between gap-2 flex-wrap">
