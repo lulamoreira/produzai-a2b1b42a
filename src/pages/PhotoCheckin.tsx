@@ -15,6 +15,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ArrowLeft, Camera, Upload, Trash2, Edit3, X, ChevronLeft, ChevronRight, Image, Download, Video } from "lucide-react";
 import { downloadPhotosAsZip } from "@/lib/downloadPhotosZip";
+import PhasePickerDialog, { type PhotoPhase } from "@/components/PhasePickerDialog";
 
 const CATEGORIES = [
   { value: "before", label: "Antes" },
@@ -34,6 +35,9 @@ export default function PhotoCheckin() {
   const [editingCaption, setEditingCaption] = useState<string | null>(null);
   const [captionValue, setCaptionValue] = useState("");
   const [uploadCategory, setUploadCategory] = useState("before");
+  const [phasePickerOpen, setPhasePickerOpen] = useState(false);
+  const pendingMethodRef = useRef<"upload" | "camera">("upload");
+  const pendingPhaseRef = useRef<PhotoPhase>("before");
 
   const { data: store, isLoading: loadingStore } = useQuery({
     queryKey: ["store-detail", storeId],
@@ -182,25 +186,59 @@ export default function PhotoCheckin() {
         <div className="rounded-lg border border-border bg-card p-4 space-y-3">
           <h2 className="text-sm font-semibold">Adicionar fotos e vídeos</h2>
           <div className="flex items-center gap-2 flex-wrap">
-            <select
-              value={uploadCategory}
-              onChange={(e) => setUploadCategory(e.target.value)}
-              className="h-9 rounded-md border border-input bg-background px-3 text-xs"
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs gap-1"
+              onClick={() => {
+                pendingMethodRef.current = "upload";
+                setPhasePickerOpen(true);
+              }}
             >
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
-            <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => fileRef.current?.click()}>
               <Upload className="w-3.5 h-3.5" /> Enviar arquivo
             </Button>
-            <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => cameraRef.current?.click()}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs gap-1"
+              onClick={() => {
+                pendingMethodRef.current = "camera";
+                setPhasePickerOpen(true);
+              }}
+            >
               <Camera className="w-3.5 h-3.5" /> Tirar foto/vídeo
             </Button>
           </div>
           <p className="text-[10px] text-muted-foreground">Aceita imagens e vídeos (MP4, MOV, WebM). Vídeos acima de 10 MB serão comprimidos automaticamente.</p>
-          <input ref={fileRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory, "upload")} />
-          <input ref={cameraRef} type="file" accept="image/*,video/*" capture="environment" className="hidden" onChange={(e) => handleUpload(e.target.files, uploadCategory, "camera")} />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,video/*"
+            multiple
+            className="hidden"
+            onChange={(e) => { handleUpload(e.target.files, pendingPhaseRef.current, "upload"); e.target.value = ""; }}
+          />
+          <input
+            ref={cameraRef}
+            type="file"
+            accept="image/*,video/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => { handleUpload(e.target.files, pendingPhaseRef.current, "camera"); e.target.value = ""; }}
+          />
+          <PhasePickerDialog
+            open={phasePickerOpen}
+            onOpenChange={setPhasePickerOpen}
+            onSelect={(phase) => {
+              pendingPhaseRef.current = phase;
+              setUploadCategory(phase);
+              setPhasePickerOpen(false);
+              setTimeout(() => {
+                if (pendingMethodRef.current === "camera") cameraRef.current?.click();
+                else fileRef.current?.click();
+              }, 50);
+            }}
+          />
         </div>
 
         {/* Category filter */}

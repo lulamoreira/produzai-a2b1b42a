@@ -23,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import PhasePickerDialog, { type PhotoPhase } from "@/components/PhasePickerDialog";
 
 interface PortalData {
   schedule: any;
@@ -81,6 +82,11 @@ export default function InstallerPortal() {
   const [tentandoConcluir, setTentandoConcluir] = useState(false);
   const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState<any | null>(null);
+  const [phasePickerOpen, setPhasePickerOpen] = useState(false);
+  const pendingMethodRef = useRef<"upload" | "camera">("upload");
+  const pendingPhaseRef = useRef<PhotoPhase>("before");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Profile used both for compression and to avoid decoding original full-res photos on Android
   const compressionProfile = getCompressionProfile();
@@ -1069,40 +1075,58 @@ export default function InstallerPortal() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <select
-              value={uploadCategory}
-              onChange={(e) => setUploadCategory(e.target.value)}
-              className="h-9 text-xs rounded-md border border-border bg-card text-foreground px-2"
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs gap-1"
+              onClick={() => {
+                pendingMethodRef.current = "camera";
+                setPhasePickerOpen(true);
+              }}
             >
-              {CATEGORY_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.icon} {opt.label}</option>
-              ))}
-            </select>
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => { handleUpload(e.target.files, "camera"); e.target.value = ""; }}
-              />
-              <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none" asChild>
-                <span><Camera className="w-3 h-3" /> Tirar foto</span>
-              </Button>
-            </label>
-            <label className="cursor-pointer">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                onChange={(e) => { handleUpload(e.target.files, "upload"); e.target.value = ""; }}
-              />
-              <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none" asChild>
-                <span><Upload className="w-3 h-3" /> Upload</span>
-              </Button>
-            </label>
+              <Camera className="w-3 h-3" /> Tirar foto
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs gap-1"
+              onClick={() => {
+                pendingMethodRef.current = "upload";
+                setPhasePickerOpen(true);
+              }}
+            >
+              <Upload className="w-3 h-3" /> Upload
+            </Button>
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => { handleUpload(e.target.files, "camera"); e.target.value = ""; }}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => { handleUpload(e.target.files, "upload"); e.target.value = ""; }}
+            />
           </div>
+          <PhasePickerDialog
+            open={phasePickerOpen}
+            onOpenChange={setPhasePickerOpen}
+            onSelect={(phase) => {
+              pendingPhaseRef.current = phase;
+              setUploadCategory(phase);
+              setPhasePickerOpen(false);
+              setTimeout(() => {
+                if (pendingMethodRef.current === "camera") cameraInputRef.current?.click();
+                else fileInputRef.current?.click();
+              }, 50);
+            }}
+          />
 
           {localPhotos.length > 0 && (
             <div className="flex gap-1.5 flex-wrap">
