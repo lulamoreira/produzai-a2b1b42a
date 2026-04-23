@@ -271,12 +271,24 @@ export default function InstallerPortal() {
   const handleUpload = async (files: FileList | null, method: "upload" | "camera" = "upload") => {
     if (!files || !data) return;
 
-    for (const file of Array.from(files)) {
-      try {
-        const compressed = await compressImage(file, 1200, 0.7);
+    const total = files.length;
+    let sent = 0;
+    let queued = 0;
+    let failed = 0;
 
-        if (!isOnline) {
-          // Queue for later
+    for (const file of Array.from(files)) {
+      let compressed: Blob;
+      try {
+        compressed = await compressImage(file, 1200, 0.7);
+      } catch (err) {
+        console.error("Compression failed:", err);
+        // Last-resort: try uploading the raw file (Android HEIC etc.)
+        compressed = file;
+      }
+
+      // Offline path
+      if (!isOnline) {
+        try {
           const base64 = await blobToBase64(compressed);
           await enqueue({
             type: "photo",
@@ -289,16 +301,25 @@ export default function InstallerPortal() {
               uploadMethod: method,
             },
           });
-          await refreshCount();
-          continue;
+          queued++;
+        } catch (e) {
+          console.error("Offline queue failed:", e);
+          failed++;
         }
+        continue;
+      }
 
+      // Online path
+      try {
         const formData = new FormData();
         formData.append("install_code", code.toLowerCase());
         formData.append("store_id", data.store.id);
         formData.append("category", uploadCategory);
         formData.append("upload_method", method);
-        formData.append("photo", new File([compressed], "photo.jpg", { type: "image/jpeg" }));
+        formData.append(
+          "photo",
+          new File([compressed], "photo.jpg", { type: "image/jpeg" })
+        );
 
         const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
         const res = await fetch(
@@ -306,40 +327,44 @@ export default function InstallerPortal() {
           { method: "POST", body: formData }
         );
 
-        const result = await res.json();
-        if (!res.ok) throw new Error(result.error);
-        if (result.photo) setLocalPhotos((prev) => [...prev, result.photo]);
+        let result: any = null;
+        try { result = await res.json(); } catch { /* ignore */ }
+
+        if (!res.ok) {
+          throw new Error(result?.error || `HTTP ${res.status}`);
+        }
+        if (result?.photo) setLocalPhotos((prev) => [...prev, result.photo]);
+        sent++;
       } catch (err: any) {
-        // On network error, queue offline
-        if (!isOnline || err.message?.includes("fetch")) {
-          try {
-            const compressed = await compressImage(file, 1200, 0.7);
-            const base64 = await blobToBase64(compressed);
-            await enqueue({
-              type: "photo",
-              createdAt: new Date().toISOString(),
-              payload: {
-                base64,
-                installCode: code.toLowerCase(),
-                storeId: data.store.id,
-                category: uploadCategory,
-                uploadMethod: method,
-              },
-            });
-            await refreshCount();
-          } catch {
-            toast.error("Erro ao salvar foto offline.");
-          }
-        } else {
-          toast.error(err.message || "Erro ao enviar foto.");
+        console.error("Upload failed, queuing offline:", err);
+        // Network or server error — queue for retry
+        try {
+          const base64 = await blobToBase64(compressed);
+          await enqueue({
+            type: "photo",
+            createdAt: new Date().toISOString(),
+            payload: {
+              base64,
+              installCode: code.toLowerCase(),
+              storeId: data.store.id,
+              category: uploadCategory,
+              uploadMethod: method,
+            },
+          });
+          queued++;
+        } catch (e) {
+          console.error("Final offline queue failed:", e);
+          failed++;
         }
       }
     }
-    if (isOnline) {
-      toast.success(`${files.length} foto(s) enviada(s)!`);
-    } else {
-      toast.success(`${files.length} foto(s) salva(s) offline. Serão enviadas quando a conexão voltar.`);
-    }
+
+    await refreshCount();
+
+    if (sent > 0) toast.success(`${sent}/${total} foto(s) enviada(s)!`);
+    if (queued > 0) toast.info(`${queued} foto(s) na fila — enviarão quando a conexão estabilizar.`);
+    if (failed > 0) toast.error(`${failed} foto(s) falharam. Tente novamente.`);
+
     setValidacaoError(null);
   };
 
