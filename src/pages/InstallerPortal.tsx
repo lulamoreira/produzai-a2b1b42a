@@ -662,11 +662,15 @@ export default function InstallerPortal() {
       if (isMemorySaver) {
         const compressedPreviewUrl = URL.createObjectURL(compressed);
         setLocalPhotos((prev) =>
-          prev.map((p) =>
-            p.id === tempId
-              ? { ...p, photo_url: compressedPreviewUrl, _previewPending: false }
-              : p
-          )
+          prev.map((p) => {
+            if (p.id !== tempId) return p;
+            // Revoke the previous blob URL (from the original file) before swapping it
+            // out, otherwise the original-file Blob stays alive in memory.
+            if (p.photo_url?.startsWith("blob:")) {
+              try { URL.revokeObjectURL(p.photo_url); } catch { /* ignore */ }
+            }
+            return { ...p, photo_url: compressedPreviewUrl, _previewPending: false };
+          })
         );
       }
 
@@ -707,11 +711,26 @@ export default function InstallerPortal() {
     if (!compressed) {
       toast.info("Foto não está mais em memória — selecione novamente.");
       // Drop the failed placeholder so the user can re-add the file cleanly.
-      setLocalPhotos((prev) => prev.filter((p) => p.id !== tempId));
+      setLocalPhotos((prev) => {
+        const stale = prev.find((p) => p.id === tempId);
+        if (stale?.photo_url?.startsWith("blob:")) {
+          try { URL.revokeObjectURL(stale.photo_url); } catch { /* ignore */ }
+        }
+        return prev.filter((p) => p.id !== tempId);
+      });
       return;
     }
+    // Reset the preview lifecycle: revoke the stale blob URL held by the failed card
+    // and mint a fresh one from the cached compressed blob so memory is reclaimed.
+    const freshUrl = URL.createObjectURL(compressed);
     setLocalPhotos((prev) =>
-      prev.map((p) => (p.id === tempId ? { ...p, _uploading: true, _failed: false } : p))
+      prev.map((p) => {
+        if (p.id !== tempId) return p;
+        if (p.photo_url?.startsWith("blob:")) {
+          try { URL.revokeObjectURL(p.photo_url); } catch { /* ignore */ }
+        }
+        return { ...p, photo_url: freshUrl, _uploading: true, _failed: false };
+      })
     );
     let sent = 0;
     let failed = 0;
