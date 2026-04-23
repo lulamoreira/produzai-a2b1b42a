@@ -180,22 +180,6 @@ export default function InstallerPortal() {
   const handleSubmit = async () => {
     if (code.length !== 5) return;
 
-    // If offline, try cache
-    if (!navigator.onLine) {
-      const cached = loadCache();
-      if (cached && cached.code === code.toLowerCase()) {
-        setData(cached.data);
-        setLocalPhotos(cached.data.photos || []);
-        setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
-        setIsCompleted(!!cached.data.schedule?.completed_at);
-        setOfflineLoaded(true);
-        setCacheTimestamp(cached.ts);
-        return;
-      }
-      setError("Sem conexão. Não há dados em cache para este código.");
-      return;
-    }
-
     setLoading(true);
     setError("");
 
@@ -219,25 +203,12 @@ export default function InstallerPortal() {
         setLocalPhotos(result.photos || []);
         setCheckinDone(!!result.schedule?.checkin_timestamp);
         setIsCompleted(!!result.schedule?.completed_at);
-        setOfflineLoaded(false);
-        // Cache for offline use
+        // Cache only metadata for fast restore on refresh (no offline operation)
         saveCache(code.toLowerCase(), result);
         setCacheTimestamp(new Date().toISOString());
       }
     } catch {
-      // Network error — try cache
-      const cached = loadCache();
-      if (cached && cached.code === code.toLowerCase()) {
-        setData(cached.data);
-        setLocalPhotos(cached.data.photos || []);
-        setCheckinDone(!!cached.data.schedule?.checkin_timestamp);
-        setIsCompleted(!!cached.data.schedule?.completed_at);
-        setOfflineLoaded(true);
-        setCacheTimestamp(cached.ts);
-        toast.info("Carregado do cache offline.");
-      } else {
-        setError("Erro de conexão. Tente novamente.");
-      }
+      setError("Erro de conexão. Verifique sua internet e tente novamente.");
     } finally {
       setLoading(false);
     }
