@@ -108,6 +108,72 @@ export default function InstallerPortal() {
     }
   }, [code]);
 
+  // Realtime sync — listen for installation_photos changes for this campaign+store
+  // and reconcile local optimistic state with server-confirmed records.
+  useEffect(() => {
+    const campaignId = data?.campaign?.id || data?.schedule?.campaign_id;
+    const storeId = data?.store?.id;
+    if (!campaignId || !storeId) return;
+
+    const channel = supabase
+      .channel(`installer-photos-${campaignId}-${storeId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "installation_photos",
+          filter: `campaign_id=eq.${campaignId}`,
+        },
+        (payload) => {
+          const newPhoto: any = payload.new;
+          if (!newPhoto || newPhoto.store_id !== storeId) return;
+
+          setLocalPhotos((prev) => {
+            // Skip if we already have this real id (avoid duplicates)
+            if (prev.some((p) => p.id === newPhoto.id)) return prev;
+
+            // Try to match an optimistic placeholder (queued or uploading) of same category
+            const matchIdx = prev.findIndex(
+              (p) =>
+                typeof p.id === "string" &&
+                p.id.startsWith("temp-") &&
+                (p._uploading || p._queued) &&
+                p.category === newPhoto.category
+            );
+
+            if (matchIdx >= 0) {
+              const next = [...prev];
+              try { URL.revokeObjectURL(next[matchIdx].photo_url); } catch { /* ignore */ }
+              next[matchIdx] = newPhoto;
+              return next;
+            }
+            // No placeholder to replace — append (e.g. uploaded from another device)
+            return [...prev, newPhoto];
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "installation_photos",
+          filter: `campaign_id=eq.${campaignId}`,
+        },
+        (payload) => {
+          const oldPhoto: any = payload.old;
+          if (!oldPhoto?.id) return;
+          setLocalPhotos((prev) => prev.filter((p) => p.id !== oldPhoto.id));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [data?.campaign?.id, data?.schedule?.campaign_id, data?.store?.id]);
+
 
   const handleSubmit = async () => {
     if (code.length !== 5) return;
