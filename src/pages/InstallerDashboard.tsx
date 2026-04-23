@@ -361,39 +361,22 @@ export default function InstallerDashboard() {
                 )}
 
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <select
-                    value={catForStore}
-                    onChange={(e) => setUploadCategory((prev) => ({ ...prev, [store.id]: e.target.value }))}
-                    className="h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1"
+                    onClick={() => openPhasePicker(store.id, "upload")}
                   >
-                    {CATEGORY_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.icon} {opt.label}</option>
-                    ))}
-                  </select>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      className="hidden"
-                      onChange={(e) => { handleUpload(store.id, e.target.files, "camera"); e.target.value = ""; }}
-                    />
-                    <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none" asChild>
-                      <span><Upload className="w-3 h-3" /> {t("common.upload")}</span>
-                    </Button>
-                  </label>
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={(e) => { handleUpload(store.id, e.target.files, "upload"); e.target.value = ""; }}
-                    />
-                    <Button variant="outline" size="sm" className="text-xs gap-1 pointer-events-none" asChild>
-                      <span><Camera className="w-3 h-3" /> {t("common.photo")}</span>
-                    </Button>
-                  </label>
+                    <Upload className="w-3 h-3" /> {t("common.upload")}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1"
+                    onClick={() => openPhasePicker(store.id, "camera")}
+                  >
+                    <Camera className="w-3 h-3" /> {t("common.photo")}
+                  </Button>
                 </div>
               </div>
 
