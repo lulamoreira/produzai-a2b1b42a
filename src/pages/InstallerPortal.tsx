@@ -899,27 +899,36 @@ export default function InstallerPortal() {
           {localPhotos.length > 0 && (
             <div className="flex gap-1.5 flex-wrap">
               {localPhotos.map((photo: any) => (
-                <div key={photo.id} className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
+                <div key={photo.id} className="relative w-16 h-16 rounded-md overflow-hidden border border-border group">
                   <img
                     src={photo.photo_url}
                     alt=""
                     className={`w-full h-full object-cover transition-opacity ${photo._uploading ? "opacity-50" : ""}`}
                   />
                   {photo._uploading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
                       <Loader2 className="w-5 h-5 text-white animate-spin" />
                     </div>
                   )}
                   {photo._queued && !photo._uploading && (
-                    <div className="absolute bottom-0 inset-x-0 bg-amber-500 text-white text-[9px] font-semibold text-center py-0.5 leading-tight">
+                    <div className="absolute bottom-0 inset-x-0 bg-amber-500 text-white text-[9px] font-semibold text-center py-0.5 leading-tight pointer-events-none">
                       Na fila
                     </div>
                   )}
                   {photo._failed && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-destructive/80">
+                    <div className="absolute inset-0 flex items-center justify-center bg-destructive/80 pointer-events-none">
                       <AlertTriangle className="w-5 h-5 text-white" />
                     </div>
                   )}
+                  {/* Remove button — always visible on touch devices */}
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(photo)}
+                    aria-label="Remover foto"
+                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 hover:bg-destructive text-white flex items-center justify-center shadow-sm transition-colors z-10"
+                  >
+                    <X className="w-3 h-3" strokeWidth={3} />
+                  </button>
                 </div>
               ))}
             </div>
