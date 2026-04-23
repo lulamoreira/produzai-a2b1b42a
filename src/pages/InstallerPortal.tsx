@@ -399,10 +399,9 @@ export default function InstallerPortal() {
         );
       }
 
-      // Online upload only — no offline queue
-
-      // Online path
-      try {
+      // Online path — upload with timeout + 1 automatic retry to handle flaky mobile networks
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      const uploadOnce = async (): Promise<{ res: Response; result: any }> => {
         const formData = new FormData();
         formData.append("install_code", code.toLowerCase());
         formData.append("store_id", data.store.id);
@@ -413,17 +412,32 @@ export default function InstallerPortal() {
           new File([compressed], "photo.jpg", { type: "image/jpeg" })
         );
 
-        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-        const res = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/upload-installation-photo`,
-          { method: "POST", body: formData }
-        );
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s safety timeout
+        try {
+          const res = await fetch(
+            `https://${projectId}.supabase.co/functions/v1/upload-installation-photo`,
+            { method: "POST", body: formData, signal: controller.signal }
+          );
+          let result: any = null;
+          try { result = await res.json(); } catch { /* ignore */ }
+          return { res, result };
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      };
 
-        let result: any = null;
-        try { result = await res.json(); } catch { /* ignore */ }
-
-        if (!res.ok) {
-          throw new Error(result?.error || `HTTP ${res.status}`);
+      try {
+        let res: Response;
+        let result: any;
+        try {
+          ({ res, result } = await uploadOnce());
+          if (!res.ok) throw new Error(result?.error || `HTTP ${res.status}`);
+        } catch (firstErr) {
+          // Retry once after a short backoff — covers transient 5xx / network blips on Android
+          await new Promise((r) => setTimeout(r, 1500));
+          ({ res, result } = await uploadOnce());
+          if (!res.ok) throw new Error(result?.error || `HTTP ${res.status}`);
         }
 
         // If user cancelled while upload was in flight — delete server record and skip UI update
