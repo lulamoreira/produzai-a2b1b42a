@@ -293,8 +293,8 @@ export default function InstallerPortal() {
     const fileArray = Array.from(files);
     const total = fileArray.length;
     let sent = 0;
-    let queued = 0;
     let failed = 0;
+
 
     // Haptic feedback — instant confirmation that the tap was registered
     try { (navigator as any).vibrate?.(15); } catch { /* ignore */ }
