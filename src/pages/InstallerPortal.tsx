@@ -92,7 +92,27 @@ export default function InstallerPortal() {
       );
       if (!res.ok) return;
       const result = await res.json();
-      setData(result);
+      // Never let a fresh server response erase a check-in that the user already made.
+      // If for any reason the server didn't echo back the check-in (e.g. partial response,
+      // replication lag, or out-of-order writes), keep the locally confirmed values.
+      setData((prev) => {
+        const prevCheckin = prev?.schedule?.checkin_timestamp;
+        const nextCheckin = result?.schedule?.checkin_timestamp;
+        if (prevCheckin && !nextCheckin && result?.schedule) {
+          return {
+            ...result,
+            schedule: {
+              ...result.schedule,
+              checkin_timestamp: prev?.schedule?.checkin_timestamp,
+              checkin_lat: prev?.schedule?.checkin_lat,
+              checkin_lng: prev?.schedule?.checkin_lng,
+              checkin_accuracy: prev?.schedule?.checkin_accuracy,
+              checkin_device_info: prev?.schedule?.checkin_device_info,
+            },
+          };
+        }
+        return result;
+      });
       // Merge server photos with any local optimistic placeholders still uploading/failed
       setLocalPhotos((prev) => {
         const optimistic = prev.filter(
@@ -101,9 +121,31 @@ export default function InstallerPortal() {
         const serverPhotos = result.photos || [];
         return [...serverPhotos, ...optimistic];
       });
-      setCheckinDone(!!result.schedule?.checkin_timestamp);
-      setIsCompleted(!!result.schedule?.completed_at);
-      saveCache(codeArg.toLowerCase(), result);
+      // Sticky check-in: once true locally, never flip back to false based on a server view.
+      setCheckinDone((prev) => prev || !!result.schedule?.checkin_timestamp);
+      setIsCompleted((prev) => prev || !!result.schedule?.completed_at);
+
+      // Cache: preserve any locally confirmed check-in fields if the server view omitted them.
+      const cacheData = (() => {
+        if (!result?.schedule) return result;
+        const cached = loadCache();
+        const cachedSchedule = cached?.data?.schedule;
+        if (cachedSchedule?.checkin_timestamp && !result.schedule.checkin_timestamp) {
+          return {
+            ...result,
+            schedule: {
+              ...result.schedule,
+              checkin_timestamp: cachedSchedule.checkin_timestamp,
+              checkin_lat: cachedSchedule.checkin_lat,
+              checkin_lng: cachedSchedule.checkin_lng,
+              checkin_accuracy: cachedSchedule.checkin_accuracy,
+              checkin_device_info: cachedSchedule.checkin_device_info,
+            },
+          };
+        }
+        return result;
+      })();
+      saveCache(codeArg.toLowerCase(), cacheData);
       setCacheTimestamp(new Date().toISOString());
     } catch {
       /* silent — keep cached view */
