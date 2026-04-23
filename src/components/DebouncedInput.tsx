@@ -17,10 +17,19 @@ const DebouncedInput = ({ value, onValueCommit, onKeyDown, debounceMs = 700, ...
   const [local, setLocal] = useState(value);
   const latest = useRef(local);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastCommittedRef = useRef(value);
 
   useEffect(() => {
+    // Only accept external value updates when the user is NOT actively typing.
+    // "Actively typing" = there is a pending debounce timer, OR the local value
+    // differs from what we last committed (meaning user has unsaved keystrokes).
+    // This prevents stale realtime/refetch echoes from wiping out in-flight input.
+    const userIsTyping = timerRef.current !== null || latest.current !== lastCommittedRef.current;
+    if (userIsTyping) return;
+    if (value === latest.current) return;
     setLocal(value);
     latest.current = value;
+    lastCommittedRef.current = value;
   }, [value]);
 
   const clearTimer = () => {
