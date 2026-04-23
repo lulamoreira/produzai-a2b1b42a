@@ -643,11 +643,21 @@ export default function InstallerPortal() {
 
     setLocalPhotos((prev) => [...prev, ...optimisticEntries.map((e) => e.photo)]);
 
-    // 2) Compress + enqueue each file. Compression happens sequentially (it's CPU-heavy
-    // and decoding two photos at once on a low-end Android causes OOM); the queue
-    // takes over and runs at most UPLOAD_CONCURRENCY uploads in parallel.
+    // 2) Compress + enqueue each file STRICTLY sequentially with backpressure.
+    // Compression is awaited (CPU/memory heavy: decoding two photos at once on a
+    // low-end Android causes OOM). After enqueueing, we also wait for a free queue
+    // slot before starting the next file's compression — this guarantees that at
+    // most (UPLOAD_CONCURRENCY + 1) compressed blobs exist in memory at any time,
+    // regardless of how many files the user selected.
     for (const entry of optimisticEntries) {
       const { tempId, file } = entry;
+
+      // Backpressure: wait until the queue has room before compressing the next file.
+      while (
+        uploadQueueRef.current.length + activeUploadsRef.current >= UPLOAD_CONCURRENCY
+      ) {
+        await new Promise<void>((r) => setTimeout(r, 100));
+      }
 
       let compressed: Blob;
       try {
