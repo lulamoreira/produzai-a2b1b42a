@@ -543,7 +543,7 @@ const PublicOccurrence = () => {
                                   <SelectItem key={p.id} value={p.id}>
                                     <div className="flex items-center gap-2">
                                       {p.image_url ? (
-                                        <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
+                                        <img src={getThumbnailUrl(p.image_url, 60)} alt={p.name} loading="lazy" decoding="async" className="w-6 h-6 rounded object-cover" />
                                       ) : (
                                         <Package className="w-4 h-4 text-muted-foreground" />
                                       )}
@@ -557,7 +557,7 @@ const PublicOccurrence = () => {
                               <SelectGroup key={item.kit.id}>
                                 <SelectLabel className="text-xs text-muted-foreground flex items-center gap-1">
                                   {item.kit.image_url ? (
-                                    <img src={item.kit.image_url} alt={item.kit.name} className="w-5 h-5 rounded object-cover" />
+                                    <img src={getThumbnailUrl(item.kit.image_url, 60)} alt={item.kit.name} loading="lazy" decoding="async" className="w-5 h-5 rounded object-cover" />
                                   ) : (
                                     <Boxes className="w-4 h-4 text-primary" />
                                   )}
@@ -575,7 +575,7 @@ const PublicOccurrence = () => {
                                   <SelectItem key={p.id} value={p.id}>
                                     <div className="flex items-center gap-2 pl-2">
                                       {p.image_url ? (
-                                        <img src={p.image_url} alt={p.name} className="w-6 h-6 rounded object-cover" />
+                                        <img src={getThumbnailUrl(p.image_url, 60)} alt={p.name} loading="lazy" decoding="async" className="w-6 h-6 rounded object-cover" />
                                       ) : (
                                         <Package className="w-4 h-4 text-muted-foreground" />
                                       )}
@@ -622,7 +622,7 @@ const PublicOccurrence = () => {
                 <div className="flex flex-wrap gap-2 mb-2">
                   {entry.photos.map((photo, i) => (
                     <div key={i} className="relative w-24 h-24 rounded-lg border border-border overflow-hidden group">
-                      <img src={photo.preview} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+                      <img src={photo.preview} alt={`Foto ${i + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => removePhoto(idx, i)}

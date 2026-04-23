@@ -56,7 +56,7 @@ export default function StorePortalPhotoUpload({ maxPhotos = 3, photos, onPhotos
       <div className="flex flex-wrap gap-2">
         {photos.map((url, i) => (
           <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden border border-border">
-            <img src={url} alt="" className="w-full h-full object-cover" />
+            <img src={url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
             <button
               onClick={() => removePhoto(i)}
               className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5"

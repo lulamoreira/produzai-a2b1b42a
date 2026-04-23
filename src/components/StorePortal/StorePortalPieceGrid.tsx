@@ -80,7 +80,7 @@ export default function StorePortalPieceGrid({ data, onPieceClick, badgeCounts, 
       >
         <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
           {peca.image_url ? (
-            <img src={peca.image_url} alt={peca.nome} className={`w-full h-full object-cover ${isBlocked ? "grayscale" : ""}`} />
+            <img src={getThumbnailUrl(peca.image_url, 300)} alt={peca.nome} loading="lazy" decoding="async" className={`w-full h-full object-cover ${isBlocked ? "grayscale" : ""}`} />
           ) : (
             <ImageIcon className="w-10 h-10 text-muted-foreground/30" />
           )}

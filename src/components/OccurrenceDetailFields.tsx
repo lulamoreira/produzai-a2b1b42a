@@ -356,7 +356,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
             <button key={p.id} type="button"
               className="w-16 h-16 rounded-lg border border-border overflow-hidden hover:ring-2 hover:ring-primary/50 transition-all flex-shrink-0"
               onClick={() => { setLightboxIndex(i); setLightboxOpen(true); }}>
-              <img src={p.photo_url} alt={`Resolução ${i + 1}`} className="w-full h-full object-cover" />
+              <img src={getThumbnailUrl(p.photo_url, 150)} alt={`Resolução ${i + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
             </button>
           ))}
           {canEdit && resolutionPhotos.length < 3 && (

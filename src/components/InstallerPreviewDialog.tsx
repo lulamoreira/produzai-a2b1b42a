@@ -136,7 +136,7 @@ export default function InstallerPreviewDialog({
             {photos.length > 0 ? (
               <div className="grid grid-cols-3 gap-1.5">
                 {photos.slice(0, 6).map((f) => (
-                  <img key={f.id} src={f.photo_url} alt="" className="w-full aspect-square rounded-md object-cover border" style={{ borderColor: "var(--border-subtle)" }} />
+                  <img key={f.id} src={getThumbnailUrl(f.photo_url, 200)} alt="" loading="lazy" decoding="async" className="w-full aspect-square rounded-md object-cover border" style={{ borderColor: "var(--border-subtle)" }} />
                 ))}
               </div>
             ) : (

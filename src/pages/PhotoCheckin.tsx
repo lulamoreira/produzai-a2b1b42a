@@ -304,8 +304,10 @@ export default function PhotoCheckin() {
                   </div>
                 ) : (
                   <img
-                    src={photo.photo_url}
+                    src={getThumbnailUrl(photo.photo_url, 400)}
                     alt={photo.caption || `Foto ${i + 1}`}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full aspect-square object-cover cursor-pointer transition-transform hover:scale-105"
                     onClick={() => setLightboxIndex(i)}
                     onError={() => handleMediaError(photo.id, campaignId!)}
@@ -389,6 +391,8 @@ export default function PhotoCheckin() {
             <img
               src={currentLightbox.photo_url}
               alt={currentLightbox.caption || "Foto"}
+              loading="lazy"
+              decoding="async"
               className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg"
               onClick={(e) => e.stopPropagation()}
             />

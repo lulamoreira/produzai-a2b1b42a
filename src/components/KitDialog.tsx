@@ -67,7 +67,7 @@ function KitImageSection({
     <div className="space-y-2">
       {imageUrl ? (
         <div className="relative">
-          <img src={imageUrl} alt={kitName} className="w-full h-32 object-contain rounded-lg border border-border bg-muted/30" />
+          <img src={imageUrl} alt={kitName} loading="lazy" decoding="async" className="w-full h-32 object-contain rounded-lg border border-border bg-muted/30" />
           {canEdit && (
             <Button size="sm" variant="destructive" className="absolute top-1 right-1 h-6 text-[10px] px-2" onClick={() => onImageUpdated(null)}>
               <X className="w-3 h-3 mr-1" /> Remover
@@ -456,7 +456,7 @@ export function KitDetailDialog({
           />
         )}
         {!canEdit && kit.image_url && (
-          <img src={kit.image_url} alt={kit.name} className="w-full h-32 object-contain rounded-lg border border-border bg-muted/30" />
+          <img src={kit.image_url} alt={kit.name} loading="lazy" decoding="async" className="w-full h-32 object-contain rounded-lg border border-border bg-muted/30" />
         )}
 
         {/* Mockup toggle */}
@@ -613,7 +613,7 @@ export function KitDetailDialog({
                     <div className="flex items-center gap-2">
                       {p.image_url && (
                         <div className="relative">
-                          <img src={p.image_url} alt={p.name} className="w-16 h-16 object-contain rounded border border-border" />
+                          <img src={getThumbnailUrl(p.image_url, 150)} alt={p.name} loading="lazy" decoding="async" className="w-16 h-16 object-contain rounded border border-border" />
                           <button onClick={() => handleRemovePieceImage(p.id)} className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full w-4 h-4 flex items-center justify-center">
                             <X className="w-2.5 h-2.5" />
                           </button>

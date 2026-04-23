@@ -82,6 +82,8 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
               <img
                 src={piece.image_url}
                 alt={piece.name}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-48 object-contain rounded-lg border border-border bg-muted/30"
               />
               <Button
