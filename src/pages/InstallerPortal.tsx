@@ -719,12 +719,8 @@ export default function InstallerPortal() {
                   {uploadingCount} enviando
                 </span>
               )}
-              {queuedLocalCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full px-2 py-0.5 animate-in fade-in zoom-in-95">
-                  <Upload className="w-3 h-3" />
-                  {queuedLocalCount} na fila
-                </span>
-              )}
+              {/* Offline queue removed */}
+
               {failedCount > 0 && (
                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-destructive/15 text-destructive rounded-full px-2 py-0.5 animate-in fade-in zoom-in-95">
                   <AlertTriangle className="w-3 h-3" />
