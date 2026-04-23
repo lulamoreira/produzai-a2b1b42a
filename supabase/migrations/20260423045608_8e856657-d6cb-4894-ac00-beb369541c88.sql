@@ -1,0 +1,1 @@
+ALTER TABLE public.store_occurrence_reports ALTER COLUMN description DROP NOT NULL;

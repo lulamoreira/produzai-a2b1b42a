@@ -3017,7 +3017,7 @@ export type Database = {
           agency_notes: string | null
           campaign_id: string
           created_at: string | null
-          description: string
+          description: string | null
           expected_resolution_date: string | null
           id: string
           loja_a_loja_peca_id: string | null
@@ -3043,7 +3043,7 @@ export type Database = {
           agency_notes?: string | null
           campaign_id: string
           created_at?: string | null
-          description: string
+          description?: string | null
           expected_resolution_date?: string | null
           id?: string
           loja_a_loja_peca_id?: string | null
@@ -3069,7 +3069,7 @@ export type Database = {
           agency_notes?: string | null
           campaign_id?: string
           created_at?: string | null
-          description?: string
+          description?: string | null
           expected_resolution_date?: string | null
           id?: string
           loja_a_loja_peca_id?: string | null
