@@ -764,12 +764,28 @@ export default function InstallerPortal() {
           {localPhotos.length > 0 && (
             <div className="flex gap-1.5 flex-wrap">
               {localPhotos.map((photo: any) => (
-                <img
-                  key={photo.id}
-                  src={photo.photo_url}
-                  alt=""
-                  className="w-16 h-16 rounded-md object-cover border border-border"
-                />
+                <div key={photo.id} className="relative w-16 h-16 rounded-md overflow-hidden border border-border">
+                  <img
+                    src={photo.photo_url}
+                    alt=""
+                    className={`w-full h-full object-cover transition-opacity ${photo._uploading ? "opacity-50" : ""}`}
+                  />
+                  {photo._uploading && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                      <Loader2 className="w-5 h-5 text-white animate-spin" />
+                    </div>
+                  )}
+                  {photo._queued && !photo._uploading && (
+                    <div className="absolute bottom-0 inset-x-0 bg-amber-500 text-white text-[9px] font-semibold text-center py-0.5 leading-tight">
+                      Na fila
+                    </div>
+                  )}
+                  {photo._failed && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-destructive/80">
+                      <AlertTriangle className="w-5 h-5 text-white" />
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           )}
