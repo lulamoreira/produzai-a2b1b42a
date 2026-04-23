@@ -713,6 +713,9 @@ export default function InstallerPortal() {
   const pendingCount2 = uploadingCount + queuedLocalCount;
   const totalMidias = sentCount + pendingCount2;
   const atingiuMinimo = totalMidias >= MINIMO_FOTOS;
+  // Device compression profile — used to show "Modo economia" badge on low-end / Android devices
+  const compressionProfile = getCompressionProfile();
+  const isMemorySaver = compressionProfile.tier !== "high";
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-page, #F5F2ED)" }}>
