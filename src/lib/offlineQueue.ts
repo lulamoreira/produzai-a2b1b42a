@@ -85,7 +85,11 @@ export async function clearQueue(): Promise<void> {
   });
 }
 
-/** Convert a Blob/File to base64 string for IndexedDB storage */
+/**
+ * Convert a Blob/File to base64 string for IndexedDB storage.
+ * @deprecated Prefer storing Blobs directly in IndexedDB — base64 uses ~33% more RAM
+ * and can crash low-end Android devices on large photos.
+ */
 export function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

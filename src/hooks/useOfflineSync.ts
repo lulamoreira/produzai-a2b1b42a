@@ -76,7 +76,8 @@ export function useOfflineSync(onSyncComplete?: () => void) {
   // Process a single photo item
   const processPhoto = async (item: QueueItem) => {
     const p = item.payload;
-    const blob = base64ToBlob(p.base64);
+    // Prefer Blob (low memory) — fall back to legacy base64 payload
+    const blob: Blob = p.blob instanceof Blob ? p.blob : base64ToBlob(p.base64);
     const formData = new FormData();
     formData.append("install_code", p.installCode);
     formData.append("store_id", p.storeId);
@@ -137,6 +138,8 @@ export function useOfflineSync(onSyncComplete?: () => void) {
 
           await dequeue(item.id!);
           synced++;
+          // Update pending count immediately so the UI badge shrinks in real time
+          await refreshCount();
         } catch (err) {
           console.error(`Offline sync failed for item ${item.id}:`, err);
           // Stop on first failure to preserve order

@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
-import { enqueue, blobToBase64, queueCount, dequeue } from "@/lib/offlineQueue";
+import { enqueue, queueCount, dequeue } from "@/lib/offlineQueue";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 
 interface PortalData {
@@ -374,21 +374,21 @@ export default function InstallerPortal() {
 
       let compressed: Blob;
       try {
-        compressed = await compressImage(file, 1200, 0.7);
+        // 1024px / 0.65 — agressivo para Android low-end (sem comprometer leitura)
+        compressed = await compressImage(file, 1024, 0.65);
       } catch (err) {
         console.error("Compression failed:", err);
         compressed = file;
       }
 
-      // Offline path
+      // Offline path — enfileira BLOB direto (não base64) para economizar memória
       if (!isOnline) {
         try {
-          const base64 = await blobToBase64(compressed);
           const queueId = await enqueue({
             type: "photo",
             createdAt: new Date().toISOString(),
             payload: {
-              base64,
+              blob: compressed,
               installCode: code.toLowerCase(),
               storeId: data.store.id,
               category: uploadCategory,
@@ -396,15 +396,17 @@ export default function InstallerPortal() {
             },
           });
           if (cancelledTempIdsRef.current.has(tempId)) {
-            // User cancelled while we were enqueuing — undo it
             try { await dequeue(queueId); } catch { /* ignore */ }
             cancelledTempIdsRef.current.delete(tempId);
+            await refreshCount();
             continue;
           }
           queued++;
           setLocalPhotos((prev) =>
             prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true, _queueId: queueId } : p))
           );
+          // Atualiza badge imediatamente após cada enqueue
+          await refreshCount();
         } catch (e) {
           console.error("Offline queue failed:", e);
           failed++;
@@ -475,12 +477,11 @@ export default function InstallerPortal() {
       } catch (err: any) {
         console.error("Upload failed, queuing offline:", err);
         try {
-          const base64 = await blobToBase64(compressed);
           const queueId = await enqueue({
             type: "photo",
             createdAt: new Date().toISOString(),
             payload: {
-              base64,
+              blob: compressed,
               installCode: code.toLowerCase(),
               storeId: data.store.id,
               category: uploadCategory,
@@ -490,12 +491,15 @@ export default function InstallerPortal() {
           if (cancelledTempIdsRef.current.has(tempId)) {
             try { await dequeue(queueId); } catch { /* ignore */ }
             cancelledTempIdsRef.current.delete(tempId);
+            await refreshCount();
             continue;
           }
           queued++;
           setLocalPhotos((prev) =>
             prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true, _queueId: queueId } : p))
           );
+          // Atualiza badge imediatamente após cada enqueue de fallback
+          await refreshCount();
         } catch (e) {
           console.error("Final offline queue failed:", e);
           failed++;
