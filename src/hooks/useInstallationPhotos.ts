@@ -20,6 +20,31 @@ export function isVideo(photo: InstallationPhoto) {
 }
 
 export function useInstallationPhotos(campaignId: string | undefined) {
+  const qc = useQueryClient();
+
+  // Realtime: invalidate cache on any change to installation_photos for this campaign
+  useEffect(() => {
+    if (!campaignId) return;
+    const channel = supabase
+      .channel(`installation_photos:${campaignId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "installation_photos",
+          filter: `campaign_id=eq.${campaignId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ["installation_photos", campaignId] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [campaignId, qc]);
+
   return useQuery({
     queryKey: ["installation_photos", campaignId],
     queryFn: async () => {
