@@ -76,7 +76,8 @@ export function useOfflineSync(onSyncComplete?: () => void) {
   // Process a single photo item
   const processPhoto = async (item: QueueItem) => {
     const p = item.payload;
-    const blob = base64ToBlob(p.base64);
+    // Prefer Blob (low memory) — fall back to legacy base64 payload
+    const blob: Blob = p.blob instanceof Blob ? p.blob : base64ToBlob(p.base64);
     const formData = new FormData();
     formData.append("install_code", p.installCode);
     formData.append("store_id", p.storeId);
