@@ -354,18 +354,22 @@ export default function InstallerPortal() {
     // Haptic feedback — instant confirmation that the tap was registered
     try { (navigator as any).vibrate?.(15); } catch { /* ignore */ }
 
-    // 1) Create optimistic placeholders IMMEDIATELY so user sees the photos before upload finishes
+    // 1) Create optimistic placeholders IMMEDIATELY.
+    // On Android memory-saver devices, do NOT create an object URL from the original full-res file,
+    // because decoding several 8-12MP photos can crash the browser/app. We only attach a preview
+    // after compression, which is much smaller.
     const optimisticEntries = fileArray.map((file) => {
-      const localUrl = URL.createObjectURL(file);
       const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       return {
         tempId,
         photo: {
           id: tempId,
-          photo_url: localUrl,
+          photo_url: isMemorySaver ? "" : URL.createObjectURL(file),
           category: uploadCategory,
           _uploading: true,
           _failed: false,
+          _previewPending: isMemorySaver,
+        },
         },
       };
     });
