@@ -13,6 +13,16 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 import { getCompressionProfile } from "@/lib/deviceProfile";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PortalData {
   schedule: any;
@@ -70,6 +80,7 @@ export default function InstallerPortal() {
   } | null>(null);
   const [tentandoConcluir, setTentandoConcluir] = useState(false);
   const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
+  const [photoToDelete, setPhotoToDelete] = useState<any | null>(null);
 
   // Profile used both for compression and to avoid decoding original full-res photos on Android
   const compressionProfile = getCompressionProfile();
