@@ -440,32 +440,43 @@ export default function InstallerPortal() {
           throw new Error(result?.error || `HTTP ${res.status}`);
         }
 
+        // If user cancelled while upload was in flight — delete server record and skip UI update
+        if (cancelledTempIdsRef.current.has(tempId)) {
+          cancelledTempIdsRef.current.delete(tempId);
+          if (result?.photo?.id) {
+            try {
+              const photoUrl = result.photo.photo_url as string;
+              const url = new URL(photoUrl);
+              const m = url.pathname.match(/\/storage\/v1\/object\/public\/installation-photos\/(.+)/);
+              if (m) await supabase.storage.from("installation-photos").remove([m[1]]);
+              await supabase.from("installation_photos").delete().eq("id", result.photo.id);
+            } catch { /* ignore */ }
+          }
+          continue;
+        }
+
         // Success — replace placeholder with real record
         if (result?.photo) {
           setLocalPhotos((prev) =>
             prev.map((p) => {
               if (p.id !== tempId) return p;
-              // Free the temporary blob URL
               try { URL.revokeObjectURL(p.photo_url); } catch { /* ignore */ }
               return result.photo;
             })
           );
         } else {
-          // No photo returned but request OK — at least mark as not uploading
           setLocalPhotos((prev) =>
             prev.map((p) => (p.id === tempId ? { ...p, _uploading: false } : p))
           );
         }
         sent++;
 
-        // Subtle haptic on each successful photo
         try { (navigator as any).vibrate?.(10); } catch { /* ignore */ }
       } catch (err: any) {
         console.error("Upload failed, queuing offline:", err);
-        // Network or server error — queue for retry, keep showing photo
         try {
           const base64 = await blobToBase64(compressed);
-          await enqueue({
+          const queueId = await enqueue({
             type: "photo",
             createdAt: new Date().toISOString(),
             payload: {
@@ -476,9 +487,14 @@ export default function InstallerPortal() {
               uploadMethod: method,
             },
           });
+          if (cancelledTempIdsRef.current.has(tempId)) {
+            try { await dequeue(queueId); } catch { /* ignore */ }
+            cancelledTempIdsRef.current.delete(tempId);
+            continue;
+          }
           queued++;
           setLocalPhotos((prev) =>
-            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true } : p))
+            prev.map((p) => (p.id === tempId ? { ...p, _uploading: false, _queued: true, _queueId: queueId } : p))
           );
         } catch (e) {
           console.error("Final offline queue failed:", e);
