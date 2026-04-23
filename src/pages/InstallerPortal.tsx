@@ -964,12 +964,18 @@ export default function InstallerPortal() {
           {localPhotos.length > 0 && (
             <div className="flex gap-1.5 flex-wrap">
               {localPhotos.map((photo: any) => (
-                <div key={photo.id} className="relative w-16 h-16 rounded-md overflow-hidden border border-border group">
-                  <img
-                    src={photo.photo_url}
-                    alt=""
-                    className={`w-full h-full object-cover transition-opacity ${photo._uploading ? "opacity-50" : ""}`}
-                  />
+                <div key={photo.id} className="relative w-16 h-16 rounded-md overflow-hidden border border-border group bg-muted/40">
+                  {photo.photo_url ? (
+                    <img
+                      src={photo.photo_url}
+                      alt=""
+                      className={`w-full h-full object-cover transition-opacity ${photo._uploading ? "opacity-50" : ""}`}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      <Camera className="w-5 h-5" />
+                    </div>
+                  )}
                   {photo._uploading && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30 pointer-events-none">
                       <Loader2 className="w-5 h-5 text-white animate-spin" />
