@@ -316,6 +316,23 @@ export default function InstallerPortal() {
       }
       toast.success("Check-in registrado! Bom trabalho. 👍");
       setCheckinDone(true);
+      // Persist check-in into local data + cache so a refresh doesn't lose it
+      setData((prev) => {
+        if (!prev) return prev;
+        const updated = {
+          ...prev,
+          schedule: {
+            ...prev.schedule,
+            checkin_lat: lat,
+            checkin_lng: lng,
+            checkin_accuracy: accuracy,
+            checkin_timestamp: checkinPayload.timestamp,
+            checkin_device_info: checkinPayload.deviceInfo,
+          },
+        };
+        try { saveCache(code.toLowerCase(), updated); } catch { /* ignore */ }
+        return updated;
+      });
     } catch {
       toast.error("Não foi possível registrar o check-in. Verifique sua conexão e tente novamente.");
     }
