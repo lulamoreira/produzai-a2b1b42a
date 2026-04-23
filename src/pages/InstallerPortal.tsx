@@ -13,6 +13,7 @@ import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
 import { compressImage } from "@/lib/compressImage";
 import { getCompressionProfile } from "@/lib/deviceProfile";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import {
   AlertDialog,
   AlertDialogAction,
