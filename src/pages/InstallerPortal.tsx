@@ -243,14 +243,6 @@ export default function InstallerPortal() {
       storeName: data.store?.name,
     };
 
-    if (!isOnline) {
-      await enqueue({ type: "checkin", createdAt: new Date().toISOString(), payload: checkinPayload });
-      toast.success("Check-in salvo localmente. Será enviado quando a conexão voltar.");
-      setCheckinDone(true);
-      await refreshCount();
-      return;
-    }
-
     try {
       const { error: updateError } = await supabase
         .from("campaign_schedules")
@@ -291,11 +283,7 @@ export default function InstallerPortal() {
       toast.success("Check-in registrado! Bom trabalho. 👍");
       setCheckinDone(true);
     } catch {
-      // Fallback to offline queue
-      await enqueue({ type: "checkin", createdAt: new Date().toISOString(), payload: checkinPayload });
-      toast.success("Check-in salvo localmente. Será enviado quando a conexão voltar.");
-      setCheckinDone(true);
-      await refreshCount();
+      toast.error("Não foi possível registrar o check-in. Verifique sua conexão e tente novamente.");
     }
   };
 
