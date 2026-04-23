@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import {
   DndContext,
   closestCenter,

@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, lazy, Suspense } from "react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import { getStatusLabel as _getStatusLabel, getStatusColor as _getStatusColor, isOccurrenceOverdue, parseLocalDate } from "@/lib/occurrenceHelpers";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";

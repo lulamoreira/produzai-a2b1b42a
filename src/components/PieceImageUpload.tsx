@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useUpdatePieceImage, type Piece } from "@/hooks/useStoreData";
 import { compressImage } from "@/lib/compressImage";

@@ -1,4 +1,5 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import {
   Building2, Store, MapPin, User, Phone, Calendar, Clock,
   CheckCircle, Camera, Upload,

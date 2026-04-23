@@ -1,4 +1,5 @@
 import { Image as ImageIcon } from "lucide-react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import type { PortalData } from "@/pages/StorePortal";
 
 interface PieceGridProps {

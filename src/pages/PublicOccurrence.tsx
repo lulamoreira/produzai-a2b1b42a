@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { getThumbnailUrl } from "@/lib/imageUrl";
 import { buildGroupedPieceOptions } from "@/lib/occurrenceHelpers";
 import { SPECIAL_AGENCY, SPECIAL_FORNECEDOR, SPECIAL_CLIENTE, GERAL_LOCATION, NAO_SEI_LOCATION, MAX_OCCURRENCE_PHOTOS } from "@/types/occurrence";
 import { useParams } from "react-router-dom";
