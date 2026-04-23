@@ -838,14 +838,35 @@ export default function InstallerPortal() {
 
         {/* Photos */}
         <div className="bg-card border border-border rounded-xl p-4 space-y-3" id="secao-fotos">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Fotos da instalação</p>
-            {pendingPhotoCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full px-2 py-0.5">
-                <Upload className="w-3 h-3" />
-                {pendingPhotoCount} pendente{pendingPhotoCount > 1 ? "s" : ""}
+            <div className="flex items-center gap-1 flex-wrap">
+              <span
+                key={`sent-${sentCount}`}
+                className="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full px-2 py-0.5 transition-all animate-in fade-in zoom-in-95"
+              >
+                <CheckCircle className="w-3 h-3" />
+                {sentCount} enviada{sentCount === 1 ? "" : "s"}
               </span>
-            )}
+              {uploadingCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full px-2 py-0.5 animate-in fade-in zoom-in-95">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  {uploadingCount} enviando
+                </span>
+              )}
+              {queuedLocalCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full px-2 py-0.5 animate-in fade-in zoom-in-95">
+                  <Upload className="w-3 h-3" />
+                  {queuedLocalCount} na fila
+                </span>
+              )}
+              {failedCount > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold bg-destructive/15 text-destructive rounded-full px-2 py-0.5 animate-in fade-in zoom-in-95">
+                  <AlertTriangle className="w-3 h-3" />
+                  {failedCount} falhou
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Progress bar */}
