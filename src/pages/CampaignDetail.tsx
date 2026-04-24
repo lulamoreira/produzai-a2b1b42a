@@ -596,12 +596,40 @@ const CampaignDetail = () => {
     if (targetCell) {
       setEditingCell(targetCell);
       const targetIsCurrent = targetCell.storeId === currentCell.storeId && targetCell.pieceId === currentCell.pieceId;
-      setEditValue(String(targetIsCurrent ? qty : getCellQty(targetCell.storeId, targetCell.pieceId)));
+      if (targetIsCurrent) {
+        setEditValue(String(qty));
+      } else {
+        // Read fresh from the React Query cache instead of the stale qtyMap closure.
+        // The optimistic update from the mutation above has already been applied via setQueryData in onMutate.
+        const freshData = queryClient.getQueryData<CampaignStorePiece[]>(["campaign_store_pieces", campaignId]);
+        let freshQty = 0;
+        if (targetCell.pieceId.startsWith("kit-")) {
+          const kitId = targetCell.pieceId.replace("kit-", "");
+          const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
+          if (piecesInKit.length > 0) {
+            freshQty = Math.min(
+              ...piecesInKit.map((kp) => {
+                const row = freshData?.find(
+                  (r) => r.store_id === targetCell.storeId && r.piece_id === kp.piece_id
+                );
+                const baseQty = row?.quantity || 0;
+                return Math.floor(baseQty / (kp.quantity || 1));
+              })
+            );
+          }
+        } else {
+          const row = freshData?.find(
+            (r) => r.store_id === targetCell.storeId && r.piece_id === targetCell.pieceId
+          );
+          freshQty = row?.quantity || 0;
+        }
+        setEditValue(String(freshQty));
+      }
       return;
     }
 
     setEditingCell(null);
-  }, [editingCell, campaignId, editValue, updateStorePiece, getCellQty]);
+  }, [editingCell, campaignId, editValue, updateStorePiece, queryClient, kitPieces]);
 
   const handlePieceBlur = () => {
     if (skipBlurSaveRef.current) {
