@@ -637,7 +637,7 @@ export default function MatrixAutomationDialog({
     }
   };
 
-  // Save current config as template (multi-filter format)
+  // Save current config as template (multi-filter format) — creates new OR updates existing
   const handleSaveTemplate = async () => {
     if (!saveName.trim()) return;
     if (kind === "by_field" && !baseField) {
@@ -645,7 +645,7 @@ export default function MatrixAutomationDialog({
       return;
     }
     try {
-      await saveTemplate.mutateAsync({
+      const payload = {
         name: saveName.trim(),
         filter_field: "__multi_v2__",
         filter_value: JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes }),
@@ -653,22 +653,44 @@ export default function MatrixAutomationDialog({
         outside_action: "keep",
         kind,
         base_field: kind === "by_field" ? baseField : null,
-      });
-      toast.success(t("automation.saved"));
+      };
+      if (editingId) {
+        await updateTemplate.mutateAsync({ id: editingId, ...payload });
+        toast.success("Automação atualizada");
+      } else {
+        await saveTemplate.mutateAsync(payload);
+        toast.success(t("automation.saved"));
+      }
       setSaveName("");
       setShowSaveInput(false);
+      setEditingId(null);
     } catch {
       toast.error(t("automation.errorSaving"));
     }
   };
 
-  // Load template into form
+  // Load template into form (read-only "carregar" — não entra em modo edição)
   const loadTemplate = (tpl: typeof templates[0]) => {
     const migrated = migrateTemplate(tpl);
     setFilterGroup(migrated);
     setSelectedItems(tpl.items);
     setKind(tpl.kind ?? "fixed");
     setBaseField(tpl.base_field ?? "");
+    setEditingId(null);
+    setMainTab("new");
+    setStep(1);
+  };
+
+  // Edit template: load into form AND mark as editing so save updates in place
+  const editTemplate = (tpl: typeof templates[0]) => {
+    const migrated = migrateTemplate(tpl);
+    setFilterGroup(migrated);
+    setSelectedItems(tpl.items);
+    setKind(tpl.kind ?? "fixed");
+    setBaseField(tpl.base_field ?? "");
+    setEditingId(tpl.id);
+    setSaveName(tpl.name);
+    setShowSaveInput(true);
     setMainTab("new");
     setStep(1);
   };
