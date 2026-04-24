@@ -512,19 +512,27 @@ export default function MatrixAutomationDialog({
     setOutsideActions(updated);
   };
 
-  // Execute automation (reusable for single + group) — now supports multi-filter
+  // Execute automation (reusable for single + group) — supports kind=fixed|by_field
   const executeAutomationMulti = async (
-    fg: FilterGroup, items: SelectedItem[],
+    fg: FilterGroup,
+    items: SelectedItem[],
+    k: AutomationKind = "fixed",
+    bf: string | null = null,
   ): Promise<{ updated: number; kept: number; zeroed: number }> => {
-    const resolvedPieces = resolveItemsToPieces(items);
     const matching = filtrarLojas(stores, fg);
     const matchingIds = new Set(matching.map(s => s.id));
     const nonMatchingStores = stores.filter(s => !matchingIds.has(s.id));
 
     const upserts: { campaign_id: string; store_id: string; piece_id: string; quantity: number }[] = [];
     const deletes: { storeId: string; pieceId: string }[] = [];
+    let touchedStores = 0;
 
     for (const store of matching) {
+      const resolvedPieces = k === "by_field" && bf
+        ? resolveItemsForStore(items, store, bf)
+        : resolveItemsToPieces(items);
+      if (resolvedPieces.length === 0) continue;
+      touchedStores++;
       for (const rp of resolvedPieces) {
         if (rp.quantity > 0) {
           upserts.push({ campaign_id: campaignId, store_id: store.id, piece_id: rp.pieceId, quantity: rp.quantity });
@@ -534,9 +542,10 @@ export default function MatrixAutomationDialog({
       }
     }
 
+    const fallbackPieces = resolveItemsToPieces(items);
     let keepCount = 0;
     for (const store of nonMatchingStores) {
-      for (const rp of resolvedPieces) {
+      for (const rp of fallbackPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
         if (currentQty > 0) keepCount++;
       }
@@ -554,7 +563,7 @@ export default function MatrixAutomationDialog({
         .eq("campaign_id", campaignId).eq("store_id", del.storeId).eq("piece_id", del.pieceId);
     }
 
-    return { updated: matching.length, kept: keepCount, zeroed: 0 };
+    return { updated: touchedStores, kept: keepCount, zeroed: 0 };
   };
 
   // Step 2: Execute with preview-based actions
