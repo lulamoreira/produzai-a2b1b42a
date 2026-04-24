@@ -52,7 +52,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
+// xlsx is dynamically imported inside handleExport to keep it out of the initial bundle
 import { downloadWorkbook } from "@/lib/downloadWorkbook";
 import { buildExportFileName } from "@/lib/exportFileName";
 import { exportInstallCodes } from "@/lib/exportInstallCodes";
@@ -570,7 +570,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
     toast.success(`${files.length} foto(s) enviada(s)!`);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    const XLSX = await import("xlsx");
     const rows = displayedStores.map((store) => {
       const schedule = scheduleMap[store.id];
       const team = schedule?.team_id ? teamMap[schedule.team_id] : null;
