@@ -128,7 +128,8 @@ const RED_FONT: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: tru
    EXCEL EXPORT
    ══════════════════════════════════════════ */
 export async function exportPendingExcel(data: PendingOccurrenceData) {
-  const wb = new ExcelJS.Workbook();
+  const ExcelJSRuntime = (await import("exceljs")).default;
+  const wb = new ExcelJSRuntime.Workbook();
   wb.creator = "ProduzAI";
   wb.created = new Date();
   const sm = storeMap(data.stores);
