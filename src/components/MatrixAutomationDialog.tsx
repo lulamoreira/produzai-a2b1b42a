@@ -215,8 +215,24 @@ export default function MatrixAutomationDialog({
       setNewGroupName("");
       setAddingTemplateToGroup(null);
       setOverwriteDialog({ open: false, count: 0 });
+      setKind("fixed");
+      setBaseField("");
     }
   }, [open]);
+
+  // Numeric fields available as the multiplication base (showcase_count + custom Number fields)
+  const numericFields = useMemo(() => {
+    const list: { key: string; label: string }[] = [
+      { key: "showcase_count", label: "Qtd. Vitrines" },
+    ];
+    for (const cf of customFieldLabels) {
+      const parsed = parseCustomFieldLabel(cf.label);
+      if (parsed.type === "number") {
+        list.push({ key: cf.key, label: parsed.name || cf.label });
+      }
+    }
+    return list;
+  }, [customFieldLabels]);
 
   // All filterable fields
   const allFilterFields = useMemo(() => {
