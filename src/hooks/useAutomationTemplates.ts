@@ -62,6 +62,8 @@ export function useAutomationTemplates(campaignId: string) {
       if (error) throw error;
       return (data || []).map((t: any) => ({
         ...t,
+        kind: (t.kind as AutomationKind) ?? "fixed",
+        base_field: t.base_field ?? null,
         items: (typeof t.items === "string" ? JSON.parse(t.items) : t.items) as AutomationTemplateItem[],
       })) as AutomationTemplate[];
     },
