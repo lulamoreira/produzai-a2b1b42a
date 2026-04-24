@@ -1120,7 +1120,15 @@ export default function MatrixAutomationDialog({
                         {t("automation.load")}
                       </Button>
                       <Button
+                        size="icon" variant="ghost" className="h-7 w-7"
+                        title="Editar automação"
+                        onClick={() => editTemplate(tpl)}
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </Button>
+                      <Button
                         size="icon" variant="ghost" className="h-7 w-7 text-destructive"
+                        title="Excluir automação"
                         onClick={async () => {
                           await deleteTemplate.mutateAsync(tpl.id);
                           toast.success(t("automation.deleted"));
