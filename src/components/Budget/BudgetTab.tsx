@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, Loader2, ChevronDown, ChevronUp, RefreshCw,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,7 +30,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 import { COUNTRY_CONFIGS, formatCurrencyByCode } from "@/lib/countryConfig";
 
 import {
@@ -102,7 +101,6 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detailSupplier, setDetailSupplier] = useState<string | null>(null);
   const [newSupplier, setNewSupplier] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
-  const [sendingEmailId, setSendingEmailId] = useState<string | null>(null);
   const [expandedSuggestionPieceId, setExpandedSuggestionPieceId] = useState<string | null>(null);
   const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyCode);
   const [showLockConfirm, setShowLockConfirm] = useState(false);
@@ -235,41 +233,35 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     );
   };
 
-  // ─── Send email invite ─────────────────────────────────
-  const handleSendEmail = async (sup: typeof suppliers[0]) => {
-    setSendingEmailId(sup.id);
-    try {
-      const portalUrl = `${window.location.origin}/orcamento/${sup.access_token}`;
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "supplier-invite",
-          recipientEmail: sup.email,
-          idempotencyKey: `supplier-invite-${sup.id}-${Date.now()}`,
-          templateData: {
-            contactName: sup.contact_name,
-            companyName: sup.company_name,
-            agencyName,
-            campaignName,
-            portalUrl,
-            deadline: settings?.deadline || null,
-            timelineEntries: timelineEntries.map((e) => ({
-              entry_date: e.entry_date,
-              description: e.description,
-            })),
-          },
-        },
-      });
-      if (error) throw error;
-      toast.success(`Email enviado para ${sup.email}`);
-      if (!sup.invited_at) {
-        updateSupplier.mutate({ id: sup.id, campaign_id: campaignId, updates: { invited_at: new Date().toISOString() } });
-      }
-    } catch (err: any) {
-      toast.error("Erro ao enviar email.");
-      console.error("Email send error:", err);
-    } finally {
-      setSendingEmailId(null);
-    }
+  // ─── Email mailto: builder ─────────────────────────────
+  const buildEmailMailto = (sup: typeof suppliers[0]) => {
+    const portalUrl = `${window.location.origin}/orcamento/${sup.access_token}`;
+    const subject = `${campaignName} — Convite para Cotação`;
+
+    const deadlineLine = settings?.deadline
+      ? `\n⏰ Prazo para envio: ${new Date(settings.deadline).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}\n`
+      : '';
+
+    const timelineLines = timelineEntries.length > 0
+      ? `\n📅 CRONOGRAMA DA CAMPANHA\n${timelineEntries.map(e => `• ${new Date(e.entry_date + 'T00:00:00').toLocaleDateString('pt-BR')} — ${e.description}`).join('\n')}\n\n⚠ Ao preencher e enviar o orçamento, você confirma o aceite deste cronograma.\n`
+      : '';
+
+    const body = `Olá, ${sup.contact_name}!
+
+A ${agencyName} está convidando a ${sup.company_name} para participar do processo de cotação da campanha ${campaignName}.
+
+Para acessar a planilha de cotação e preencher seus preços:
+
+1. Acesse o link abaixo para abrir o portal de cotação
+2. Preencha o preço unitário de cada peça/kit
+3. Informe os valores de instalação e frete
+4. Clique em ENVIAR quando concluir a cotação
+
+🔗 Acesse a cotação: ${portalUrl}
+${deadlineLine}${timelineLines}
+Este convite foi enviado em nome da ${agencyName}.`;
+
+    return `mailto:${sup.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
 
   // ─── WhatsApp message builder ──────────────────────────
@@ -486,7 +478,6 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {suppliers.map((sup) => {
               const st = STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
-              const isSendingEmail = sendingEmailId === sup.id;
               return (
                 <Card key={sup.id} className="relative">
                   <CardContent className="pt-4 pb-3 space-y-2">
@@ -525,14 +516,19 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
                       </Button>
                       <Button
                         size="sm" variant="ghost" className="h-7 w-7 p-0"
-                        title="Email"
-                        disabled={isSendingEmail}
-                        onClick={() => handleSendEmail(sup)}
+                        title="Enviar convite por e-mail"
+                        onClick={() => {
+                          window.location.href = buildEmailMailto(sup);
+                          if (!sup.invited_at) {
+                            updateSupplier.mutate({
+                              id: sup.id,
+                              campaign_id: campaignId,
+                              updates: { invited_at: new Date().toISOString() },
+                            });
+                          }
+                        }}
                       >
-                        {isSendingEmail
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          : <Mail className="w-3.5 h-3.5" />
-                        }
+                        <Mail className="w-3.5 h-3.5" />
                       </Button>
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setDetailSupplier(sup.id)} title="Ver detalhes">
                         <Eye className="w-3.5 h-3.5" />
