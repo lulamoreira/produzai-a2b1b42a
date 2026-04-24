@@ -200,3 +200,31 @@ const deadlineTextNormal = { fontSize: '14px', color: '#6b5937', margin: '0' }
 const deadlineTextUrgent = { fontSize: '14px', color: '#dc2626', fontWeight: 'bold' as const, margin: '0' }
 const hr = { borderColor: '#e5e5e5', margin: '24px 0 16px' }
 const footer = { fontSize: '12px', color: '#999999', lineHeight: '1.5', margin: '0' }
+const timelineBox = {
+  backgroundColor: '#f9f7f5',
+  borderLeft: `4px solid ${BRAND}`,
+  padding: '16px 20px',
+  margin: '0 0 24px',
+  borderRadius: '4px',
+}
+const timelineTitle = {
+  fontSize: '15px',
+  fontWeight: 'bold' as const,
+  color: '#1a1a1a',
+  margin: '0 0 12px',
+}
+const timelineItem = {
+  fontSize: '14px',
+  color: '#333333',
+  lineHeight: '1.6',
+  margin: '0 0 8px',
+}
+const timelineAcceptance = {
+  fontSize: '13px',
+  color: '#b91c1c',
+  fontWeight: 'bold' as const,
+  lineHeight: '1.5',
+  margin: '12px 0 0',
+  paddingTop: '12px',
+  borderTop: '1px solid #e5d8c8',
+}
