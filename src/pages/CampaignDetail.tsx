@@ -555,7 +555,7 @@ const CampaignDetail = () => {
     if (!editingCell) return;
     const rafId = requestAnimationFrame(() => focusEditingCell(editingCell));
     return () => cancelAnimationFrame(rafId);
-  }, [editingCell, qtyMap, focusEditingCell]);
+  }, [editingCell, focusEditingCell]);
 
   const getCellQty = useCallback((storeId: string, pieceId: string) => {
     if (pieceId.startsWith("kit-")) {
