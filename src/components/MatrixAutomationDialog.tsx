@@ -368,11 +368,28 @@ export default function MatrixAutomationDialog({
     [resolveItemsToPieces],
   );
 
+  // Compute resolved pieces for a single store, respecting current `kind`/`baseField`.
+  const resolveForStore = useCallback(
+    (store: ClientStore, items: SelectedItem[], k: AutomationKind, bf: string) => {
+      if (k === "by_field") {
+        if (!bf) return [];
+        return resolveItemsForStore(items, store, bf);
+      }
+      return resolveItemsToPieces(items);
+    },
+    [resolveItemsForStore, resolveItemsToPieces],
+  );
+
   // Check for overwrite before preview
   const handlePreviewClick = async () => {
     const validFilters = filterGroup.filtros.filter(f => f.campo && f.valor);
     if (validFilters.length === 0 || selectedItems.length === 0) {
       toast.error(t("automation.fillAllFields"));
+      return;
+    }
+
+    if (kind === "by_field" && !baseField) {
+      toast.error("Selecione o campo base para multiplicação.");
       return;
     }
 
@@ -393,9 +410,9 @@ export default function MatrixAutomationDialog({
 
     // Check overwrite
     const filtered = filtrarLojas(stores, filterGroup);
-    const resolvedPieces = resolveItemsToPieces(selectedItems);
     let overwriteCount = 0;
     for (const store of filtered) {
+      const resolvedPieces = resolveForStore(store, selectedItems, kind, baseField);
       for (const rp of resolvedPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
         if (currentQty > 0) overwriteCount++;
