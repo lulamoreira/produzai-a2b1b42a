@@ -1058,6 +1058,11 @@ const ClientDetail = () => {
                         custom_field_3_label: client.custom_field_3_label || "",
                         custom_field_4_label: client.custom_field_4_label || "",
                         custom_field_5_label: client.custom_field_5_label || "",
+                        custom_field_6_label: client.custom_field_6_label || "",
+                        custom_field_7_label: client.custom_field_7_label || "",
+                        custom_field_8_label: client.custom_field_8_label || "",
+                        custom_field_9_label: client.custom_field_9_label || "",
+                        custom_field_10_label: client.custom_field_10_label || "",
                       });
                       setCountryCode(client.country_code || "BR");
                       setCurrencyCode(client.currency_code || "BRL");
