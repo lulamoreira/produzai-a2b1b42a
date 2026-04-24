@@ -610,12 +610,17 @@ const CampaignDetail = () => {
     // Snapshot target qty BEFORE saving previous cell, so optimistic updates
     // on shared piece keys (kit components) cannot leak into the new cell.
     const targetQty = getCellQty(newStoreId, newPieceId);
-    if (current && (current.storeId !== newStoreId || current.pieceId !== newPieceId)) {
-      saveCell(current, editValue);
-    }
+
+    // Open new cell immediately with correct value
     setEditingCell({ storeId: newStoreId, pieceId: newPieceId });
     setEditValue(targetQty > 0 ? String(targetQty) : "");
-  }, [canEditCampaign, saveCell, editValue, getCellQty]);
+
+    // Defer save of previous cell so its optimistic update / re-render
+    // does not interfere with the new cell's editValue in the same cycle.
+    if (current && (current.storeId !== newStoreId || current.pieceId !== newPieceId)) {
+      setTimeout(() => saveCell(current, editValueRef.current ?? ""), 0);
+    }
+  }, [canEditCampaign, saveCell, getCellQty]);
 
   // ─── Close editing: save current value and clear state ───
   const closeEditing = useCallback(() => {
