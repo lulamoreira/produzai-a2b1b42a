@@ -1672,13 +1672,11 @@ const CampaignDetail = () => {
                         }
                       }}
                       onEditingChange={setQuickEditActive}
-                      customFieldLabels={[
-                        ...(client?.custom_field_1_label ? [{ key: "custom_field_1", label: client.custom_field_1_label }] : []),
-                        ...(client?.custom_field_2_label ? [{ key: "custom_field_2", label: client.custom_field_2_label }] : []),
-                        ...(client?.custom_field_3_label ? [{ key: "custom_field_3", label: client.custom_field_3_label }] : []),
-                        ...(client?.custom_field_4_label ? [{ key: "custom_field_4", label: client.custom_field_4_label }] : []),
-                        ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label }] : []),
-                      ]}
+                      customFieldLabels={Array.from({ length: 10 }, (_, idx) => {
+                        const i = idx + 1;
+                        const label = (client as any)?.[`custom_field_${i}_label`];
+                        return label ? { key: `custom_field_${i}`, label } : null;
+                      }).filter((x): x is { key: string; label: string } => x !== null)}
                       onReorderColumns={async (reordered) => {
                         for (const item of reordered) {
                           if (item.type === "piece") {
