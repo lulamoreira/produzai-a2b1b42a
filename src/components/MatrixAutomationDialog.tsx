@@ -767,6 +767,63 @@ export default function MatrixAutomationDialog({
 
             {/* ──── TAB: Nova automação ──── */}
             <TabsContent value="new" className="space-y-4 mt-3">
+              {/* ── Tipo de automação ── */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">Tipo de automação</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setKind("fixed")}
+                    className={`text-left p-3 rounded-lg border transition-all ${
+                      kind === "fixed"
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border bg-background hover:border-primary/40"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">Quantidade fixa</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Cada item recebe uma quantidade definida por você
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setKind("by_field")}
+                    disabled={numericFields.length === 0}
+                    className={`text-left p-3 rounded-lg border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                      kind === "by_field"
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border bg-background hover:border-primary/40"
+                    }`}
+                    title={numericFields.length === 0 ? "Nenhum campo numérico disponível" : undefined}
+                  >
+                    <p className="text-sm font-medium">Multiplicar por campo da loja</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Quantidade = valor do campo × fator por item
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* ── Campo base (apenas no modo by_field) ── */}
+              {kind === "by_field" && (
+                <div>
+                  <Label className="text-sm font-semibold mb-2 block">Campo base (numérico)</Label>
+                  <Select value={baseField} onValueChange={setBaseField}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Selecione o campo numérico..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {numericFields.map(f => (
+                        <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Lojas sem valor neste campo serão ignoradas pela automação.
+                  </p>
+                </div>
+              )}
+
               {/* Multi-filter section */}
               <div>
                 <Label className="text-sm font-semibold mb-2 block">Filtros de Lojas</Label>
