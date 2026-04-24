@@ -1432,12 +1432,44 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
   const [localSuggestedDate2, setLocalSuggestedDate2] = useState((schedule as any)?.suggested_date_2 || "");
   const [localSuggestedTime2, setLocalSuggestedTime2] = useState((schedule as any)?.suggested_time_2 || "");
 
+  // Refs track the last value we accepted from props. If the local state has
+  // diverged from this baseline, the user is mid-edit and we must NOT overwrite.
+  const lastAcceptedSuggestedDate = useRef(schedule?.suggested_date || "");
+  const lastAcceptedSuggestedTime = useRef(schedule?.suggested_time || "");
+  const lastAcceptedSuggestedDate2 = useRef((schedule as any)?.suggested_date_2 || "");
+  const lastAcceptedSuggestedTime2 = useRef((schedule as any)?.suggested_time_2 || "");
+
   useEffect(() => {
-    setLocalSuggestedDate(schedule?.suggested_date || "");
-    setLocalSuggestedTime(schedule?.suggested_time || "");
-    setLocalSuggestedDate2((schedule as any)?.suggested_date_2 || "");
-    setLocalSuggestedTime2((schedule as any)?.suggested_time_2 || "");
-  }, [schedule?.suggested_date, schedule?.suggested_time, (schedule as any)?.suggested_date_2, (schedule as any)?.suggested_time_2]);
+    const propDate = schedule?.suggested_date || "";
+    const propTime = schedule?.suggested_time || "";
+    const propDate2 = (schedule as any)?.suggested_date_2 || "";
+    const propTime2 = (schedule as any)?.suggested_time_2 || "";
+
+    if (localSuggestedDate === lastAcceptedSuggestedDate.current && propDate !== localSuggestedDate) {
+      setLocalSuggestedDate(propDate);
+      lastAcceptedSuggestedDate.current = propDate;
+    } else if (propDate === localSuggestedDate) {
+      lastAcceptedSuggestedDate.current = propDate;
+    }
+    if (localSuggestedTime === lastAcceptedSuggestedTime.current && propTime !== localSuggestedTime) {
+      setLocalSuggestedTime(propTime);
+      lastAcceptedSuggestedTime.current = propTime;
+    } else if (propTime === localSuggestedTime) {
+      lastAcceptedSuggestedTime.current = propTime;
+    }
+    if (localSuggestedDate2 === lastAcceptedSuggestedDate2.current && propDate2 !== localSuggestedDate2) {
+      setLocalSuggestedDate2(propDate2);
+      lastAcceptedSuggestedDate2.current = propDate2;
+    } else if (propDate2 === localSuggestedDate2) {
+      lastAcceptedSuggestedDate2.current = propDate2;
+    }
+    if (localSuggestedTime2 === lastAcceptedSuggestedTime2.current && propTime2 !== localSuggestedTime2) {
+      setLocalSuggestedTime2(propTime2);
+      lastAcceptedSuggestedTime2.current = propTime2;
+    } else if (propTime2 === localSuggestedTime2) {
+      lastAcceptedSuggestedTime2.current = propTime2;
+    }
+  }, [schedule?.suggested_date, schedule?.suggested_time, (schedule as any)?.suggested_date_2, (schedule as any)?.suggested_time_2, localSuggestedDate, localSuggestedTime, localSuggestedDate2, localSuggestedTime2]);
 
   const handleSetStatus = (field: "store_approval_status" | "team_approval_status", newVal: ApprovalStatusValue) => {
     if (!canEdit) return;
