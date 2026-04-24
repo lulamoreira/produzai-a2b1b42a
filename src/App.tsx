@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -15,28 +16,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { PendingUsersAlert } from "@/components/PendingUsersAlert";
 import { NameConfirmDialog } from "@/components/NameConfirmDialog";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import AgencySelect from "./pages/AgencySelect";
-import Dashboard from "./pages/Dashboard";
-import ClientDetail from "./pages/ClientDetail";
-import CampaignDetail from "./pages/CampaignDetail";
-import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
-import Admin from "./pages/Admin";
-import UserApprovals from "./pages/UserApprovals";
-import PublicOccurrence from "./pages/PublicOccurrence";
-import PublicOccurrenceDetail from "./pages/PublicOccurrenceDetail";
-
-import MyCampaigns from "./pages/MyCampaigns";
-import MeuAcesso from "./pages/MeuAcesso";
-import PhotoCheckin from "./pages/PhotoCheckin";
-import InstallerPortal from "./pages/InstallerPortal";
-import Unsubscribe from "./pages/Unsubscribe";
-import SupplierPortal from "./pages/SupplierPortal";
-import StorePortal from "./pages/StorePortal";
-import OccurrencesPortal from "./pages/OccurrencesPortal";
 import { Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+// Lazy-loaded page components (one chunk per route)
+const AgencySelect = lazy(() => import("./pages/AgencySelect"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const ClientDetail = lazy(() => import("./pages/ClientDetail"));
+const CampaignDetail = lazy(() => import("./pages/CampaignDetail"));
+const Auth = lazy(() => import("./pages/Auth"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Admin = lazy(() => import("./pages/Admin"));
+const UserApprovals = lazy(() => import("./pages/UserApprovals"));
+const PublicOccurrence = lazy(() => import("./pages/PublicOccurrence"));
+const PublicOccurrenceDetail = lazy(() => import("./pages/PublicOccurrenceDetail"));
+const MyCampaigns = lazy(() => import("./pages/MyCampaigns"));
+const PhotoCheckin = lazy(() => import("./pages/PhotoCheckin"));
+const InstallerPortal = lazy(() => import("./pages/InstallerPortal"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const SupplierPortal = lazy(() => import("./pages/SupplierPortal"));
+const StorePortal = lazy(() => import("./pages/StorePortal"));
+const OccurrencesPortal = lazy(() => import("./pages/OccurrencesPortal"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +49,15 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+const RouteFallback = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div
+      className="animate-spin w-8 h-8 border-[3px] border-t-transparent rounded-full"
+      style={{ borderColor: "#8C6F4E", borderTopColor: "transparent" }}
+    />
+  </div>
+);
 
 const PendingApprovalScreen = () => {
   const { signOut } = useAuth();
@@ -133,7 +143,7 @@ const HomeRedirect = () => {
   }
 
   if (isLimited) {
-    return <Navigate to="/meu-acesso" replace />;
+    return <Navigate to="/my-campaigns" replace />;
   }
 
   if (hasFavorites) {
@@ -171,32 +181,33 @@ const App = () => (
           <AuthProvider>
             <SidebarStateProvider>
             <ErrorBoundary>
-              <Routes>
-                <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
-                <Route path="/agencies" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
-                <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
-                <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><ErrorBoundary><CampaignDetail /></ErrorBoundary></ProtectedRoute>} />
-                <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
-                <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-                <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
-                
-                <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
-                <Route path="/favorites" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
-                <Route path="/meu-acesso" element={<ProtectedRoute><MeuAcesso /></ProtectedRoute>} />
-                <Route path="/installer" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
-                <Route path="/instalador" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
-                <Route path="/orcamento/:token" element={<SupplierPortal />} />
-                <Route path="/loja/:token" element={<ErrorBoundary><StorePortal /></ErrorBoundary>} />
-                <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
-                <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
-                <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
-                <Route path="/unsubscribe" element={<Unsubscribe />} />
-                <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <Suspense fallback={<RouteFallback />}>
+                <Routes>
+                  <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
+                  <Route path="/agencies" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><ErrorBoundary><CampaignDetail /></ErrorBoundary></ProtectedRoute>} />
+                  <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
+                  <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                  <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
+
+                  <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
+                  <Route path="/favorites" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
+                  <Route path="/installer" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
+                  <Route path="/instalador" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
+                  <Route path="/orcamento/:token" element={<SupplierPortal />} />
+                  <Route path="/loja/:token" element={<ErrorBoundary><StorePortal /></ErrorBoundary>} />
+                  <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
+                  <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
+                  <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
+                  <Route path="/unsubscribe" element={<Unsubscribe />} />
+                  <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
             </ErrorBoundary>
             </SidebarStateProvider>
           </AuthProvider>

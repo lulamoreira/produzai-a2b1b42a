@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback, lazy, Suspense } from "react";
 import EmptyState from "@/components/EmptyState";
 import { CardSkeleton, ListSkeleton } from "@/components/CardSkeleton";
 import { useTranslation } from "react-i18next";
@@ -48,7 +48,8 @@ import { format } from "date-fns";
 
 import PhotoLightbox from "./PhotoLightbox";
 import ExportOccurrencesButton from "./ExportOccurrencesButton";
-import PendingOccurrencesDashboard from "./PendingOccurrencesDashboard";
+// Lazy: defers recharts (~80KB) until the user opens the pending dashboard
+const PendingOccurrencesDashboard = lazy(() => import("./PendingOccurrencesDashboard"));
 import type { OccurrenceReportData } from "@/lib/exportOccurrencesReport";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
@@ -1205,20 +1206,24 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           </Tabs>
         </DialogContent>
       </Dialog>
-      <PendingOccurrencesDashboard
-        open={pendingDashOpen}
-        onOpenChange={setPendingDashOpen}
-        campaignId={campaignId}
-        campaignName={campaignInfo?.name}
-        clientName={clientName}
-        agencyName={agencyName}
-        agencyId={campaignInfo?.clients?.agency_id}
-        clientId={clientId}
-        stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null, nickname: s.nickname ?? null, store_code: s.store_code ?? null }))}
-        pieces={pieces}
-        motives={motives}
-        statuses={statuses}
-      />
+      {pendingDashOpen && (
+        <Suspense fallback={null}>
+          <PendingOccurrencesDashboard
+            open={pendingDashOpen}
+            onOpenChange={setPendingDashOpen}
+            campaignId={campaignId}
+            campaignName={campaignInfo?.name}
+            clientName={clientName}
+            agencyName={agencyName}
+            agencyId={campaignInfo?.clients?.agency_id}
+            clientId={clientId}
+            stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null, nickname: s.nickname ?? null, store_code: s.store_code ?? null }))}
+            pieces={pieces}
+            motives={motives}
+            statuses={statuses}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };

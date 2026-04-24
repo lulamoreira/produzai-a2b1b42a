@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import PhasePickerDialog, { type PhotoPhase } from "@/components/PhasePickerDialog";
 import EmptyState from "@/components/EmptyState";
@@ -28,7 +28,8 @@ import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
 import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
 import InstallerPreviewDialog from "@/components/InstallerPreviewDialog";
-import InstallationsMapView from "@/components/InstallationsMapView";
+// Lazy-loaded: leaflet (~150KB) only ships when the user opens the map view
+const InstallationsMapView = lazy(() => import("@/components/InstallationsMapView"));
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
+// xlsx is dynamically imported inside handleExport to keep it out of the initial bundle
 import { downloadWorkbook } from "@/lib/downloadWorkbook";
 import { buildExportFileName } from "@/lib/exportFileName";
 import { exportInstallCodes } from "@/lib/exportInstallCodes";
@@ -570,7 +571,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
     toast.success(`${files.length} foto(s) enviada(s)!`);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
+    const XLSX = await import("xlsx");
     const rows = displayedStores.map((store) => {
       const schedule = scheduleMap[store.id];
       const team = schedule?.team_id ? teamMap[schedule.team_id] : null;
@@ -1031,12 +1033,14 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
       {/* Map View */}
       {viewMode === "map" ? (
-        <InstallationsMapView
-          stores={displayedStores}
-          scheduleMap={scheduleMap}
-          storeOccurrenceStatus={storeOccurrenceStatus}
-          photosByStore={photosByStore}
-        />
+        <Suspense fallback={<div className="h-[500px] w-full rounded-md bg-muted/40 animate-pulse" />}>
+          <InstallationsMapView
+            stores={displayedStores}
+            scheduleMap={scheduleMap}
+            storeOccurrenceStatus={storeOccurrenceStatus}
+            photosByStore={photosByStore}
+          />
+        </Suspense>
       ) : displayedStores.length === 0 ? (
         <EmptyState
           icon={Camera}

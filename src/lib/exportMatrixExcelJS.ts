@@ -1,4 +1,4 @@
-import ExcelJS from "exceljs";
+import type * as ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import type { ClientStore, CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
 import type { ColorPalette } from "@/components/RateioExportColorDialog";
@@ -318,7 +318,9 @@ export async function exportMatrixExcelJS(
   agencyName?: string,
   clientName?: string,
 ) {
-  const wb = new ExcelJS.Workbook();
+  const ExcelJSModule = await import("exceljs");
+  const ExcelJSRuntime = ExcelJSModule.default;
+  const wb = new ExcelJSRuntime.Workbook();
   wb.creator = "ProduzAI";
   const colors = makeColors(palette);
   const locData: LocationData = { locations, subLocations };

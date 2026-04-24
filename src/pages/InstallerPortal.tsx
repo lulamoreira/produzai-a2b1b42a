@@ -15,6 +15,12 @@ import { compressImage } from "@/lib/compressImage";
 import { getCompressionProfile } from "@/lib/deviceProfile";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import {
+  savePendingUpload,
+  getPendingUploads,
+  deletePendingUpload,
+  type UploadMeta,
+} from "@/lib/installerUploadStore";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -278,6 +284,69 @@ export default function InstallerPortal() {
       handleSubmit();
     }
   }, [code]);
+
+  // Resume any pending uploads persisted to IndexedDB on previous sessions.
+  // Runs once we have an authenticated session (data + code) bound to a store.
+  const resumedRef = useRef(false);
+  useEffect(() => {
+    if (resumedRef.current) return;
+    if (!data || !code) return;
+    resumedRef.current = true;
+
+    (async () => {
+      let pending: Awaited<ReturnType<typeof getPendingUploads>> = [];
+      try {
+        pending = await getPendingUploads();
+      } catch {
+        return; // IndexedDB unavailable — nothing to resume
+      }
+      // Only resume uploads bound to the current store/campaign
+      const currentStoreId = data.store?.id;
+      const currentCampaignId = data.campaign?.id || data.schedule?.campaign_id;
+      const mine = pending.filter(
+        (p) => p.meta.storeId === currentStoreId && p.meta.campaignId === currentCampaignId
+      );
+      if (mine.length === 0) return;
+
+      // Drop entries that the user already sees as server-saved photos
+      const knownIds = new Set(localPhotos.map((p: any) => p.id));
+      const toResume = mine.filter((p) => !knownIds.has(p.id));
+      if (toResume.length === 0) return;
+
+      toast.info(`Retomando ${toResume.length} foto(s) pendente(s)...`);
+
+      let sent = 0;
+      let failed = 0;
+      const counters = {
+        sent: () => { sent++; },
+        failed: () => { failed++; },
+      };
+
+      // Re-create optimistic placeholders + cached blobs + re-queue uploads
+      setLocalPhotos((prev) => {
+        const placeholders = toResume.map((p) => ({
+          id: p.id,
+          photo_url: URL.createObjectURL(p.blob),
+          category: p.meta.category,
+          _uploading: true,
+          _failed: false,
+        }));
+        return [...prev, ...placeholders];
+      });
+
+      for (const p of toResume) {
+        compressedBlobsRef.current.set(p.id, p.blob);
+        uploadSingleFile(
+          p.blob,
+          p.id,
+          p.meta.category,
+          (p.meta.method as "upload" | "camera") || "upload",
+          counters
+        );
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, code]);
 
   // Realtime sync — listen for installation_photos changes for this campaign+store
   // and reconcile local optimistic state with server-confirmed records.
@@ -583,6 +652,8 @@ export default function InstallerPortal() {
         counters.sent();
         // Released: drop the cached blob now that it's safely on the server
         compressedBlobsRef.current.delete(tempId);
+        // Persisted upload completed → drop it from IndexedDB.
+        deletePendingUpload(tempId).catch(() => { /* best-effort */ });
         try { (navigator as any).vibrate?.(10); } catch { /* ignore */ }
       });
     },
@@ -689,6 +760,19 @@ export default function InstallerPortal() {
       // Cache compressed blob so the user can retry without re-picking the photo
       compressedBlobsRef.current.set(tempId, compressed);
 
+      // Persist to IndexedDB so a page reload mid-upload can resume the queue.
+      try {
+        await savePendingUpload(tempId, compressed, {
+          storeId: data.store.id,
+          campaignId: data.campaign?.id || data.schedule?.campaign_id,
+          category: uploadCategory,
+          method,
+          fileName: file.name || "photo.jpg",
+        });
+      } catch {
+        // IndexedDB unavailable (private mode, quota) — proceed in-memory only.
+      }
+
       uploadSingleFile(compressed, tempId, uploadCategory, method, counters);
     }
 
@@ -773,6 +857,8 @@ export default function InstallerPortal() {
     setLocalPhotos((prev) => prev.filter((p) => p.id !== photo.id));
     try { if (photo.photo_url?.startsWith("blob:")) URL.revokeObjectURL(photo.photo_url); } catch { /* ignore */ }
     compressedBlobsRef.current.delete(photo.id);
+    // Drop from IndexedDB too (silent if not present).
+    deletePendingUpload(photo.id).catch(() => { /* best-effort */ });
 
     try {
       if (isTemp) {

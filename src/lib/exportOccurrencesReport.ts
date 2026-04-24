@@ -1,7 +1,7 @@
-import ExcelJS from "exceljs";
+import type * as ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import type { jsPDF as jsPDFType } from "jspdf";
+type JsPDFCtor = typeof import("jspdf").jsPDF;
 import type { Schedule } from "@/types/schedule";
 import { isOccurrenceOverdue, formatDateBR, parseLocalDate } from "@/lib/occurrenceHelpers";
 
@@ -264,7 +264,8 @@ function kpiLabelStyle(bg: string): Partial<ExcelJS.Style> {
    EXCEL EXPORT
    ══════════════════════════════════════════ */
 export async function exportOccurrencesExcel(data: OccurrenceReportData) {
-  const wb = new ExcelJS.Workbook();
+  const ExcelJSRuntime = (await import("exceljs")).default;
+  const wb = new ExcelJSRuntime.Workbook();
   wb.creator = "ProduzAI";
   wb.created = new Date();
 
@@ -573,7 +574,7 @@ export async function exportOccurrencesExcel(data: OccurrenceReportData) {
 /* ══════════════════════════════════════════
    PDF EXPORT
    ══════════════════════════════════════════ */
-function addPdfHeader(doc: jsPDF, text: string) {
+function addPdfHeader(doc: jsPDFType, text: string) {
   const pw = doc.internal.pageSize.getWidth();
   doc.setFillColor(...BRAND_RGB);
   doc.rect(0, 0, pw, 18, "F");
@@ -583,7 +584,9 @@ function addPdfHeader(doc: jsPDF, text: string) {
   doc.setTextColor(0, 0, 0);
 }
 
-export function exportOccurrencesPDF(data: OccurrenceReportData) {
+export async function exportOccurrencesPDF(data: OccurrenceReportData) {
+  const { jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();

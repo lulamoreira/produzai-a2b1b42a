@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -75,7 +75,8 @@ import ExportReportDropdown from "@/components/ExportReportDropdown";
 import ExportAllPhotosDialog from "@/components/ExportAllPhotosDialog";
 import RateioExportColorDialog, { type ColorPalette } from "@/components/RateioExportColorDialog";
 import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
-import PendingOccurrencesDashboard from "@/components/PendingOccurrencesDashboard";
+// Lazy: defers recharts (~80KB) until the user opens the pending dashboard
+const PendingOccurrencesDashboard = lazy(() => import("@/components/PendingOccurrencesDashboard"));
 import BudgetTab from "@/components/Budget/BudgetTab";
 import { useOccurrenceMotives, useOccurrenceStatuses } from "@/hooks/useOccurrences";
 const CampaignDetail = () => {
@@ -2689,20 +2690,24 @@ const CampaignDetail = () => {
           }}
         />
       )}
-      <PendingOccurrencesDashboard
-        open={pendingDashOpen}
-        onOpenChange={setPendingDashOpen}
-        campaignId={campaignId!}
-        campaignName={campaign?.name}
-        clientName={client?.name}
-        agencyName={agency?.name}
-        agencyId={agencyId}
-        clientId={clientId}
-        stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null, nickname: s.nickname ?? null, store_code: s.store_code ?? null }))}
-        pieces={pieces}
-        motives={occMotives}
-        statuses={occStatuses}
-      />
+      {pendingDashOpen && (
+        <Suspense fallback={null}>
+          <PendingOccurrencesDashboard
+            open={pendingDashOpen}
+            onOpenChange={setPendingDashOpen}
+            campaignId={campaignId!}
+            campaignName={campaign?.name}
+            clientName={client?.name}
+            agencyName={agency?.name}
+            agencyId={agencyId}
+            clientId={clientId}
+            stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null, nickname: s.nickname ?? null, store_code: s.store_code ?? null }))}
+            pieces={pieces}
+            motives={occMotives}
+            statuses={occStatuses}
+          />
+        </Suspense>
+      )}
 
       <ImportWizardDialog
         open={pieceImportOpen}
