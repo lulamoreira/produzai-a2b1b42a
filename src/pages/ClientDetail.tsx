@@ -1070,7 +1070,7 @@ const ClientDetail = () => {
                       <Settings className="w-3.5 h-3.5" /> Configurações
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-h-[85vh] overflow-y-auto">
                     <DialogHeader><DialogTitle>Configurações do Cliente</DialogTitle></DialogHeader>
 
                     {/* Country / Currency */}
