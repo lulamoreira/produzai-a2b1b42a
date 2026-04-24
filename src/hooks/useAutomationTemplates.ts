@@ -89,6 +89,25 @@ export function useAutomationTemplates(campaignId: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
   });
 
+  const updateTemplate = useMutation({
+    mutationFn: async (t: { id: string; name: string; filter_field: string; filter_value: string; items: AutomationTemplateItem[]; outside_action: string; kind?: AutomationKind; base_field?: string | null }) => {
+      const { error } = await supabase
+        .from("automation_templates")
+        .update({
+          name: t.name,
+          filter_field: t.filter_field,
+          filter_value: t.filter_value,
+          items: t.items as any,
+          outside_action: t.outside_action,
+          kind: t.kind ?? "fixed",
+          base_field: t.base_field ?? null,
+        } as any)
+        .eq("id", t.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: key }),
+  });
+
   const deleteTemplate = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("automation_templates").delete().eq("id", id);
@@ -185,7 +204,7 @@ export function useAutomationTemplates(campaignId: string) {
   });
 
   return {
-    templates, loadingTemplates, saveTemplate, deleteTemplate,
+    templates, loadingTemplates, saveTemplate, updateTemplate, deleteTemplate,
     groups, loadingGroups, saveGroup, deleteGroup,
     groupItems, loadingGroupItems, addToGroup, removeFromGroup, toggleGroupItem,
   };

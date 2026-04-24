@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus, ArrowRight, Check, AlertTriangle, Eye, Save, FolderOpen, Play, Layers, Shield } from "lucide-react";
+import { Trash2, Plus, ArrowRight, Check, AlertTriangle, Eye, Save, FolderOpen, Play, Layers, Shield, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -195,10 +195,13 @@ export default function MatrixAutomationDialog({
 
   // Hook
   const {
-    templates, saveTemplate, deleteTemplate,
+    templates, saveTemplate, updateTemplate, deleteTemplate,
     groups, saveGroup, deleteGroup,
     groupItems, addToGroup, removeFromGroup, toggleGroupItem,
   } = useAutomationTemplates(campaignId);
+
+  // Editing state: when set, "salvar" updates this template instead of creating a new one
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Reset on open
   useEffect(() => {
@@ -217,6 +220,7 @@ export default function MatrixAutomationDialog({
       setOverwriteDialog({ open: false, count: 0 });
       setKind("fixed");
       setBaseField("");
+      setEditingId(null);
     }
   }, [open]);
 
@@ -633,7 +637,7 @@ export default function MatrixAutomationDialog({
     }
   };
 
-  // Save current config as template (multi-filter format)
+  // Save current config as template (multi-filter format) — creates new OR updates existing
   const handleSaveTemplate = async () => {
     if (!saveName.trim()) return;
     if (kind === "by_field" && !baseField) {
@@ -641,7 +645,7 @@ export default function MatrixAutomationDialog({
       return;
     }
     try {
-      await saveTemplate.mutateAsync({
+      const payload = {
         name: saveName.trim(),
         filter_field: "__multi_v2__",
         filter_value: JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes }),
@@ -649,22 +653,44 @@ export default function MatrixAutomationDialog({
         outside_action: "keep",
         kind,
         base_field: kind === "by_field" ? baseField : null,
-      });
-      toast.success(t("automation.saved"));
+      };
+      if (editingId) {
+        await updateTemplate.mutateAsync({ id: editingId, ...payload });
+        toast.success("Automação atualizada");
+      } else {
+        await saveTemplate.mutateAsync(payload);
+        toast.success(t("automation.saved"));
+      }
       setSaveName("");
       setShowSaveInput(false);
+      setEditingId(null);
     } catch {
       toast.error(t("automation.errorSaving"));
     }
   };
 
-  // Load template into form
+  // Load template into form (read-only "carregar" — não entra em modo edição)
   const loadTemplate = (tpl: typeof templates[0]) => {
     const migrated = migrateTemplate(tpl);
     setFilterGroup(migrated);
     setSelectedItems(tpl.items);
     setKind(tpl.kind ?? "fixed");
     setBaseField(tpl.base_field ?? "");
+    setEditingId(null);
+    setMainTab("new");
+    setStep(1);
+  };
+
+  // Edit template: load into form AND mark as editing so save updates in place
+  const editTemplate = (tpl: typeof templates[0]) => {
+    const migrated = migrateTemplate(tpl);
+    setFilterGroup(migrated);
+    setSelectedItems(tpl.items);
+    setKind(tpl.kind ?? "fixed");
+    setBaseField(tpl.base_field ?? "");
+    setEditingId(tpl.id);
+    setSaveName(tpl.name);
+    setShowSaveInput(true);
     setMainTab("new");
     setStep(1);
   };
@@ -772,6 +798,30 @@ export default function MatrixAutomationDialog({
 
             {/* ──── TAB: Nova automação ──── */}
             <TabsContent value="new" className="space-y-4 mt-3">
+              {editingId && (
+                <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-primary/40 bg-primary/5">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Pencil className="w-3.5 h-3.5 text-primary" />
+                    <span>
+                      Editando automação salva: <span className="font-semibold">{saveName || "—"}</span>
+                    </span>
+                  </div>
+                  <Button
+                    size="sm" variant="ghost" className="h-7 text-xs"
+                    onClick={() => {
+                      setEditingId(null);
+                      setSaveName("");
+                      setShowSaveInput(false);
+                      setFilterGroup({ filtros: [createEmptyFilter()], condicoes: [] });
+                      setSelectedItems([]);
+                      setKind("fixed");
+                      setBaseField("");
+                    }}
+                  >
+                    Cancelar edição
+                  </Button>
+                </div>
+              )}
               {/* ── Tipo de automação ── */}
               <div>
                 <Label className="text-sm font-semibold mb-2 block">Tipo de automação</Label>
@@ -1047,8 +1097,8 @@ export default function MatrixAutomationDialog({
                 {canProceed && selectedItems.length > 0 && (
                   <>
                     {!showSaveInput ? (
-                      <Button variant="outline" size="icon" onClick={() => setShowSaveInput(true)} title={t("automation.saveTemplate")}>
-                        <Save className="w-4 h-4" />
+                      <Button variant="outline" size="icon" onClick={() => setShowSaveInput(true)} title={editingId ? "Atualizar automação" : t("automation.saveTemplate")}>
+                        {editingId ? <Pencil className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                       </Button>
                     ) : (
                       <div className="flex gap-1 items-center">
@@ -1059,8 +1109,9 @@ export default function MatrixAutomationDialog({
                           className="w-40 h-9 text-xs"
                           onKeyDown={e => e.key === "Enter" && handleSaveTemplate()}
                         />
-                        <Button size="sm" onClick={handleSaveTemplate} disabled={!saveName.trim()}>
+                        <Button size="sm" onClick={handleSaveTemplate} disabled={!saveName.trim()} title={editingId ? "Atualizar" : "Salvar"}>
                           <Check className="w-3 h-3" />
+                          {editingId && <span className="ml-1 text-xs">Atualizar</span>}
                         </Button>
                       </div>
                     )}
@@ -1094,7 +1145,15 @@ export default function MatrixAutomationDialog({
                         {t("automation.load")}
                       </Button>
                       <Button
+                        size="icon" variant="ghost" className="h-7 w-7"
+                        title="Editar automação"
+                        onClick={() => editTemplate(tpl)}
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </Button>
+                      <Button
                         size="icon" variant="ghost" className="h-7 w-7 text-destructive"
+                        title="Excluir automação"
                         onClick={async () => {
                           await deleteTemplate.mutateAsync(tpl.id);
                           toast.success(t("automation.deleted"));
