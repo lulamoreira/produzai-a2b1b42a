@@ -2120,96 +2120,29 @@ const CampaignDetail = () => {
                                           min={0}
                                           value={editValue}
                                           onChange={(e) => setEditValue(e.target.value)}
-                                          onBlur={async () => {
-                                            if (skipBlurSaveRef.current) {
-                                              skipBlurSaveRef.current = false;
-                                              return;
-                                            }
-
-                                            const qty = Math.max(0, parseInt(editValue) || 0);
-                                            if (campaignId) {
-                                              for (const kp of kitPiecesForKit) {
-                                                await updateStorePiece.mutateAsync({
-                                                  campaignId,
-                                                  storeId: store.id,
-                                                  pieceId: kp.piece_id,
-                                                  quantity: qty * (kp.quantity || 1),
-                                                });
-                                              }
-                                            }
-
-                                            // Re-derive kit qty from the updated query cache instead of the stale `qty` closure
-                                            // captured before the await — prevents overwriting any value the user typed mid-save.
-                                            const updatedData = queryClient.getQueryData<CampaignStorePiece[]>(["campaign_store_pieces", campaignId]);
-                                            let updatedKitQty = 0;
-                                            if (kitPiecesForKit.length > 0) {
-                                              updatedKitQty = Math.min(
-                                                ...kitPiecesForKit.map((kp) => {
-                                                  const row = updatedData?.find(
-                                                    (r) => r.store_id === store.id && r.piece_id === kp.piece_id
-                                                  );
-                                                  const baseQty = row?.quantity || 0;
-                                                  return Math.floor(baseQty / (kp.quantity || 1));
-                                                })
-                                              );
-                                            }
-                                            setEditValue(String(updatedKitQty));
-
-                                            const currentCell = { storeId: store.id, pieceId: `kit-${kit.id}` };
-                                            if (
-                                              editingCellRef.current?.storeId === currentCell.storeId &&
-                                              editingCellRef.current?.pieceId === currentCell.pieceId
-                                            ) {
-                                              requestAnimationFrame(() => focusEditingCell(currentCell));
-                                            }
-                                          }}
-                                          onKeyDown={async (e) => {
-                                            const saveKit = async () => {
-                                              const qty = Math.max(0, parseInt(editValue) || 0);
-                                              if (campaignId) {
-                                                for (const kp of kitPiecesForKit) {
-                                                  await updateStorePiece.mutateAsync({
-                                                    campaignId,
-                                                    storeId: store.id,
-                                                    pieceId: kp.piece_id,
-                                                    quantity: qty * (kp.quantity || 1),
-                                                  });
-                                                }
-                                              }
-                                            };
-
-                                            const saveAndNavigate = async (dir: "up" | "down" | "left" | "right") => {
+                                          onBlur={handlePieceBlur}
+                                          onKeyDown={(e) => {
+                                            const move = (dir: "up" | "down" | "left" | "right") => {
+                                              e.preventDefault();
                                               skipBlurSaveRef.current = true;
-                                              await saveKit();
                                               const next = navigateMatrixCell(dir);
                                               if (next) {
-                                                setEditingCell(next);
-                                                setEditValue(String(getCellQty(next.storeId, next.pieceId)));
+                                                switchToCell(next.storeId, next.pieceId);
                                               } else {
-                                                setEditingCell(null);
+                                                closeEditing();
                                               }
                                             };
-
-                                            if (e.key === "Tab") {
+                                            if (e.key === "Tab") move(e.shiftKey ? "left" : "right");
+                                            else if (e.key === "Enter") move(e.shiftKey ? "up" : "down");
+                                            else if (e.key === "ArrowUp") move("up");
+                                            else if (e.key === "ArrowDown") move("down");
+                                            else if (e.key === "ArrowLeft") move("left");
+                                            else if (e.key === "ArrowRight") move("right");
+                                            else if (e.key === "Escape") {
                                               e.preventDefault();
-                                              await saveAndNavigate(e.shiftKey ? "left" : "right");
-                                            } else if (e.key === "Enter") {
-                                              e.preventDefault();
-                                              await saveAndNavigate(e.shiftKey ? "up" : "down");
-                                            } else if (e.key === "ArrowUp") {
-                                              e.preventDefault();
-                                              await saveAndNavigate("up");
-                                            } else if (e.key === "ArrowDown") {
-                                              e.preventDefault();
-                                              await saveAndNavigate("down");
-                                            } else if (e.key === "ArrowLeft") {
-                                              e.preventDefault();
-                                              await saveAndNavigate("left");
-                                            } else if (e.key === "ArrowRight") {
-                                              e.preventDefault();
-                                              await saveAndNavigate("right");
-                                            } else if (e.key === "Escape") {
+                                              skipBlurSaveRef.current = true;
                                               setEditingCell(null);
+                                              setEditValue("");
                                             }
                                           }}
                                           className="w-16 h-8 text-center mx-auto text-sm"
@@ -2217,11 +2150,7 @@ const CampaignDetail = () => {
                                         />
                                       ) : (
                                         <button
-                                          onClick={() => {
-                                            if (!canEditCampaign) return;
-                                            setEditingCell({ storeId: store.id, pieceId: `kit-${kit.id}` });
-                                            setEditValue(String(kitQty));
-                                          }}
+                                          onClick={() => handleCellClick(store.id, `kit-${kit.id}`)}
                                           className={`w-full h-8 text-sm rounded transition-colors ${
                                             kitQty > 0
                                               ? "bg-primary/15 text-primary font-semibold hover:bg-primary/25"
