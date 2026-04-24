@@ -11,6 +11,8 @@ export type AutomationTemplateItem = {
   quantity: number;
 };
 
+export type AutomationKind = "fixed" | "by_field";
+
 export type AutomationTemplate = {
   id: string;
   campaign_id: string;
@@ -19,6 +21,8 @@ export type AutomationTemplate = {
   filter_value: string;
   items: AutomationTemplateItem[];
   outside_action: string;
+  kind: AutomationKind;
+  base_field: string | null;
   created_at: string;
 };
 
