@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import EmptyState from "@/components/EmptyState";
 import { CardSkeleton } from "@/components/CardSkeleton";
 import { useTranslation } from "react-i18next";
