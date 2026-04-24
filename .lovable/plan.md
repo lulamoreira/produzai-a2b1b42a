@@ -1,118 +1,64 @@
-## Objetivo
+## Nova automação: "Multiplicar quantidade por campo da loja"
 
-1. Expandir os campos personalizáveis das lojas de **5 para 10** (mantendo todos os dados já cadastrados nos campos 1–5 intactos).
-2. Habilitar **atualização em tempo real (Realtime)** para que alterações em campos de lojas e em rótulos personalizáveis apareçam imediatamente em todas as abas abertas, sem refresh manual.
+Hoje a aba **Rateio → Automações** já tem três sub-abas (Nova / Salvas / Grupos) que executam um modelo único: filtra lojas por X e atribui Y unidades a cada peça/kit selecionado.
 
----
+A nova automação adiciona um modelo paralelo: em vez de uma quantidade fixa, a quantidade vem de um **campo numérico da loja** (Qtd. Vitrines ou um custom_field do tipo Número), multiplicado por um **fator definido por item** (default = 1).
 
-## Investigação concluída
+Exemplo: campo = "Qtd. Vitrines", Peça A com fator ×1 e Kit B com fator ×3 → uma loja com 4 vitrines recebe 4 da Peça A e 12 do Kit B (que ainda se desdobra nas peças componentes).
 
-Mapeei todos os pontos do sistema que tocam `custom_field_*`:
+### Como aparece na UI (mesmo dialog `MatrixAutomationDialog`)
 
-**Banco de dados:**
-- `client_stores.custom_field_1..5` (text) — armazenam o valor de cada loja.
-- `clients.custom_field_1_label..5_label` (text) — armazenam o nome do rótulo + tipo (formato `"Nome|tipo"`, onde tipo é `text|number|date|boolean`).
+Na aba **Nova automação**, acima dos "Filtros de Lojas" entra um seletor de **Tipo de automação** com dois cartões/radio:
 
-**Código (8 arquivos):**
-- `src/pages/ClientDetail.tsx` — formulário de cadastro/edição de loja, diálogo de Configurações (definição dos rótulos), exportação custom.
-- `src/pages/CampaignDetail.tsx` — filtros, agrupamento e colunas da matriz/rateio.
-- `src/components/StoresMatrixTable.tsx` — colunas dinâmicas da tabela de lojas (já parametrizado por índice).
-- `src/components/StoreFullCardView.tsx` — card de loja em tela cheia.
-- `src/components/MatrixFilterSidebar.tsx` — filtros laterais do rateio.
-- `src/components/MatrixAutomationDialog.tsx` — automações que usam custom fields como critério.
-- `src/hooks/useMultiClientData.ts` — tipos `Client` e `ClientStore`, mutações.
-- `src/integrations/supabase/types.ts` — auto-gerado (atualiza sozinho após migração).
-
-**Realtime:** Nenhum canal ativo para `clients` ou `client_stores`. Tabelas não estão na publicação `supabase_realtime`. Por isso, mudanças não se propagam para outras abas.
-
----
-
-## Plano de execução
-
-### 1. Migração de banco (não destrutiva)
-
-```sql
--- Adicionar 5 novos campos de valor em client_stores
-ALTER TABLE public.client_stores
-  ADD COLUMN custom_field_6  text,
-  ADD COLUMN custom_field_7  text,
-  ADD COLUMN custom_field_8  text,
-  ADD COLUMN custom_field_9  text,
-  ADD COLUMN custom_field_10 text;
-
--- Adicionar 5 novos rótulos em clients
-ALTER TABLE public.clients
-  ADD COLUMN custom_field_6_label  text,
-  ADD COLUMN custom_field_7_label  text,
-  ADD COLUMN custom_field_8_label  text,
-  ADD COLUMN custom_field_9_label  text,
-  ADD COLUMN custom_field_10_label text;
-
--- Habilitar Realtime para refletir mudanças entre abas
-ALTER TABLE public.client_stores REPLICA IDENTITY FULL;
-ALTER TABLE public.clients       REPLICA IDENTITY FULL;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.client_stores;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.clients;
+```text
+┌──────────────────────────┐  ┌──────────────────────────┐
+│ ● Quantidade fixa        │  │ ○ Multiplicar por campo  │
+│   (modo atual)           │  │   da loja (NOVO)         │
+└──────────────────────────┘  └──────────────────────────┘
 ```
 
-> Os dados existentes em `custom_field_1..5` ficam **100% preservados** — apenas adicionamos colunas novas.
+Quando "Multiplicar por campo" estiver ativo:
 
-### 2. Refatoração do código para suportar 10 campos
+1. Os filtros de lojas continuam idênticos (mesma seção, mesmas regras E/OU).
+2. Surge um bloco novo **"Campo base"** (Select):
+   - Qtd. Vitrines
+   - Cada custom_field cujo tipo configurado seja "Número"
+3. A lista de itens selecionados ganha uma coluna extra **"× fator"** (Input numérico, abre em **1**), substituindo a coluna "quantidade" atual nesse modo. O label fica `Quantidade = ${campoLabel} × ${fator}`.
+4. Contador de lojas no rodapé mostra também quantas das lojas filtradas têm o campo preenchido (ex.: `38 de 41 lojas com valor em Qtd. Vitrines`).
 
-**Estratégia:** trocar todos os arrays/laços fixos `[1..5]` por `[1..10]`, e usar `Array.from({length: 10})` para iteração genérica. Atualmente os trechos repetem 5 linhas explicitamente — isso será generalizado para que futuras expansões sejam triviais.
+Botões de ação (Pré-visualizar, Salvar, Salvar+Adicionar a grupo) e o **Step 2 (preview)** permanecem idênticos: o preview já exibe `Atual → Nova quantidade`, então cada loja aparece com sua quantidade calculada (lojas sem valor no campo são listadas em **"Ignoradas"**).
 
-Mudanças por arquivo:
+### Salvar e usar em Grupos
 
-| Arquivo | O que muda |
-|---|---|
-| `useMultiClientData.ts` | Tipos `Client` e `ClientStore` ganham `custom_field_6..10` e `custom_field_6_label..10_label`. Mutação `addClient` aceita os novos rótulos. |
-| `ClientDetail.tsx` | `emptyStoreForm`, `capitalizeStoreFields`, `handleOpenEditStore`, `customFieldLabelsRaw`, lista de campos no diálogo de Configurações (`[1..10]`), colunas de exportação. |
-| `CampaignDetail.tsx` | Filtros, colunas de tabela e agrupamento — substituir spreads explícitos por `.map` em `[1..10]`. |
-| `MatrixFilterSidebar.tsx` | Tipo `StoreFilters`, valor inicial e construção de opções únicas — generalizar para 10. |
-| `StoreFullCardView.tsx` | Loop visual já é genérico; ajustar limite de 5 para 10. |
-| `StoresMatrixTable.tsx` | Já parametrizado — apenas garantir que `customFieldLabels` venha com 10. |
-| `MatrixAutomationDialog.tsx` | Usa `fieldDef.index` dinamicamente — só aumentar a fonte para 10. |
+A automação salva aparece naturalmente nas abas "Salvas" e "Grupos" usando os mesmos cards. A linha de descrição passa a mostrar:
 
-### 3. Realtime nos hooks
-
-No `useMultiClientData.ts`, adicionar `useEffect` em `useClient` e `useClientStores` que assinam canais Postgres Changes:
-
-```ts
-// Em useClientStores
-useEffect(() => {
-  if (!clientId) return;
-  const channel = supabase
-    .channel(`client_stores:${clientId}`)
-    .on('postgres_changes',
-      { event: '*', schema: 'public', table: 'client_stores', filter: `client_id=eq.${clientId}` },
-      () => qc.invalidateQueries({ queryKey: ['client_stores', clientId] })
-    )
-    .subscribe();
-  return () => { supabase.removeChannel(channel); };
-}, [clientId, qc]);
-
-// Em useClient — assina mudanças no próprio cliente (rótulos custom)
-useEffect(() => {
-  if (!clientId) return;
-  const channel = supabase
-    .channel(`client:${clientId}`)
-    .on('postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'clients', filter: `id=eq.${clientId}` },
-      () => qc.invalidateQueries({ queryKey: ['client', clientId] })
-    )
-    .subscribe();
-  return () => { supabase.removeChannel(channel); };
-}, [clientId, qc]);
+```text
+Vitrine_PRIMÁRIA contém "Estilo A" · usar Qtd. Vitrines × {fator por item}
 ```
 
-Resultado: ao editar uma loja ou um rótulo numa aba, todas as outras abas (incluindo o Rateio aberto em outra aba) recarregam os dados automaticamente em < 1 segundo.
+E na execução de **Grupo** (botão Executar), a engine reusa a mesma função `executeAutomationMulti`, agora ramificando para `executeAutomationByField` quando o template for desse tipo.
 
----
+### Detalhes técnicos
 
-## Garantias
+**Migration** (apenas schema, dados preservados):
+- `automation_templates`: adicionar coluna `kind text not null default 'fixed'` e `base_field text null`. Templates antigos ficam como `'fixed'` automaticamente.
+- O campo `items` (jsonb) já é flexível: nesse modo o `quantity` passa a representar o **fator multiplicador**.
 
-- **Zero perda de dados:** apenas `ADD COLUMN` (nullable). Os campos 1–5 continuam exatamente como estão.
-- **Compatibilidade:** o sistema de rótulos `"Nome|tipo"` (text/number/date/boolean) funciona igual nos campos 6–10.
-- **Cobertura completa:** formulário de cadastro, formulário de edição, configurações de rótulos, tabela de lojas, card de loja, exportação, filtros do rateio, agrupamento do rateio, colunas da matriz e automações — todos passam a suportar 10 campos.
-- **Realtime sem polling:** usa Supabase Realtime nativo (broadcast Postgres → cliente).
-- **Build limpo confirmado** ao final com `bun run build`.
+**Hook** `useAutomationTemplates.ts`:
+- Estender `AutomationTemplate` com `kind: 'fixed' | 'by_field'` e `base_field: string | null`.
+- `saveTemplate` aceita os dois novos campos.
+
+**Componente** `MatrixAutomationDialog.tsx`:
+- Novo state `kind` (`'fixed' | 'by_field'`) e `baseField`.
+- Lista `numericFields` derivada de `customFieldLabels` (filtra `parseFieldLabel(label).type === 'numero'`) + `showcase_count`.
+- `resolveItemsToPieces` ganha sobrecarga: quando `kind === 'by_field'`, recebe a `store` e calcula `quantity = Number(store[baseField]) * item.quantity` (fator). Se valor ausente/inválido (NaN/0), retorna `[]` para essa loja → cai no grupo "Ignoradas".
+- `executeAutomationMulti` passa a iterar lojas com a função resolver dependente do `kind`.
+- `getTemplateFilterSummary`: adiciona linha extra `Modo: campo {baseField} × fator` para templates `by_field`.
+- `loadTemplate`: restaura `kind` e `baseField`.
+- Reset no `useEffect(open)` zera os novos states (`kind='fixed'`, `baseField=''`).
+
+**i18n**: novas chaves em `pt-BR`/`en`/`es` (`automation.kindFixed`, `automation.kindByField`, `automation.baseField`, `automation.factor`, `automation.storesWithValue`, `automation.modeByFieldSummary`).
+
+**Build check** após implementação: `bun run build` com zero erros TS.
+
+Nada da automação atual (fixa) é alterado em comportamento — apenas convive com a nova opção.
