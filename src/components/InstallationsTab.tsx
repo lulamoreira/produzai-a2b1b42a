@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef, lazy, Suspense } from "react";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import PhasePickerDialog, { type PhotoPhase } from "@/components/PhasePickerDialog";
 import EmptyState from "@/components/EmptyState";
@@ -28,7 +28,8 @@ import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
 import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
 import InstallerPreviewDialog from "@/components/InstallerPreviewDialog";
-import InstallationsMapView from "@/components/InstallationsMapView";
+// Lazy-loaded: leaflet (~150KB) only ships when the user opens the map view
+const InstallationsMapView = lazy(() => import("@/components/InstallationsMapView"));
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -1032,12 +1033,14 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
       {/* Map View */}
       {viewMode === "map" ? (
-        <InstallationsMapView
-          stores={displayedStores}
-          scheduleMap={scheduleMap}
-          storeOccurrenceStatus={storeOccurrenceStatus}
-          photosByStore={photosByStore}
-        />
+        <Suspense fallback={<div className="h-[500px] w-full rounded-md bg-muted/40 animate-pulse" />}>
+          <InstallationsMapView
+            stores={displayedStores}
+            scheduleMap={scheduleMap}
+            storeOccurrenceStatus={storeOccurrenceStatus}
+            photosByStore={photosByStore}
+          />
+        </Suspense>
       ) : displayedStores.length === 0 ? (
         <EmptyState
           icon={Camera}
