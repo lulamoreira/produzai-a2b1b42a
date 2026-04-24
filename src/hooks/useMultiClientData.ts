@@ -662,7 +662,6 @@ export function useUpdateCampaignStorePiece() {
       }
     },
     onMutate: async ({ campaignId, storeId, pieceId, quantity }) => {
-      console.log("[MUTATION_OPTIMISTIC]", { storeId: storeId, pieceId: pieceId, quantity: quantity });
       const queryKey = ["campaign_store_pieces", campaignId] as const;
       await qc.cancelQueries({ queryKey });
 
@@ -696,7 +695,6 @@ export function useUpdateCampaignStorePiece() {
       toast.error("Erro: " + e.message);
     },
     onSettled: (_data, _error, vars) => {
-      console.log("[MUTATION_SETTLED]", { storeId: vars.storeId, pieceId: vars.pieceId });
       qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
     },
   });
