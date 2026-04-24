@@ -635,6 +635,10 @@ export default function MatrixAutomationDialog({
   // Save current config as template (multi-filter format)
   const handleSaveTemplate = async () => {
     if (!saveName.trim()) return;
+    if (kind === "by_field" && !baseField) {
+      toast.error("Selecione o campo base para multiplicação.");
+      return;
+    }
     try {
       await saveTemplate.mutateAsync({
         name: saveName.trim(),
@@ -642,6 +646,8 @@ export default function MatrixAutomationDialog({
         filter_value: JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes }),
         items: selectedItems,
         outside_action: "keep",
+        kind,
+        base_field: kind === "by_field" ? baseField : null,
       });
       toast.success(t("automation.saved"));
       setSaveName("");
@@ -656,6 +662,8 @@ export default function MatrixAutomationDialog({
     const migrated = migrateTemplate(tpl);
     setFilterGroup(migrated);
     setSelectedItems(tpl.items);
+    setKind(tpl.kind ?? "fixed");
+    setBaseField(tpl.base_field ?? "");
     setMainTab("new");
     setStep(1);
   };
@@ -673,7 +681,12 @@ export default function MatrixAutomationDialog({
         const tpl = templates.find(t => t.id === gi.template_id);
         if (!tpl) continue;
         const migrated = migrateTemplate(tpl);
-        const result = await executeAutomationMulti(migrated, tpl.items);
+        const result = await executeAutomationMulti(
+          migrated,
+          tpl.items,
+          tpl.kind ?? "fixed",
+          tpl.base_field ?? null,
+        );
         totalUpdated += result.updated;
       }
 
