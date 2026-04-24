@@ -69,10 +69,19 @@ export function useAutomationTemplates(campaignId: string) {
   });
 
   const saveTemplate = useMutation({
-    mutationFn: async (t: { name: string; filter_field: string; filter_value: string; items: AutomationTemplateItem[]; outside_action: string }) => {
+    mutationFn: async (t: { name: string; filter_field: string; filter_value: string; items: AutomationTemplateItem[]; outside_action: string; kind?: AutomationKind; base_field?: string | null }) => {
       const { error } = await supabase
         .from("automation_templates")
-        .insert({ campaign_id: campaignId, name: t.name, filter_field: t.filter_field, filter_value: t.filter_value, items: t.items as any, outside_action: t.outside_action });
+        .insert({
+          campaign_id: campaignId,
+          name: t.name,
+          filter_field: t.filter_field,
+          filter_value: t.filter_value,
+          items: t.items as any,
+          outside_action: t.outside_action,
+          kind: t.kind ?? "fixed",
+          base_field: t.base_field ?? null,
+        } as any);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
