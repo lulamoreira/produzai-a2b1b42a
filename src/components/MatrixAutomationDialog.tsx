@@ -325,7 +325,7 @@ export default function MatrixAutomationDialog({
     setSelectedItems(prev => prev.map((item, i) => i === idx ? { ...item, quantity: Math.max(1, qty) } : item));
   };
 
-  // Resolve items to piece-level changes
+  // Resolve items to piece-level changes (FIXED mode)
   const resolveItemsToPieces = useCallback((items: SelectedItem[]): { pieceId: string; pieceName: string; quantity: number }[] => {
     const result: { pieceId: string; pieceName: string; quantity: number }[] = [];
     for (const item of items) {
@@ -351,6 +351,22 @@ export default function MatrixAutomationDialog({
     }
     return result;
   }, [kitPieces, pieces]);
+
+  /**
+   * Resolve items multiplied by a numeric store field (BY_FIELD mode).
+   * Returns [] when the store has no valid numeric value in the base field
+   * (the store should then be skipped entirely from the automation).
+   */
+  const resolveItemsForStore = useCallback(
+    (items: SelectedItem[], store: ClientStore, field: string): { pieceId: string; pieceName: string; quantity: number }[] => {
+      const raw = (store as any)[field];
+      const baseValue = Number(raw);
+      if (!Number.isFinite(baseValue) || baseValue <= 0) return [];
+      const multiplied = items.map(it => ({ ...it, quantity: it.quantity * baseValue }));
+      return resolveItemsToPieces(multiplied);
+    },
+    [resolveItemsToPieces],
+  );
 
   // Check for overwrite before preview
   const handlePreviewClick = async () => {
