@@ -2186,7 +2186,6 @@ const CampaignDetail = () => {
                                           autoFocus
                                         />
                                       ) : (
-                                      ) : (
                                         <button
                                           onClick={() => {
                                             if (!canEditCampaign) return;
@@ -2204,7 +2203,6 @@ const CampaignDetail = () => {
                                         >
                                           {kitQty > 0 ? kitQty : "—"}
                                         </button>
-                                      )}
                                       )}
                                     </TableCell>
                                   );
