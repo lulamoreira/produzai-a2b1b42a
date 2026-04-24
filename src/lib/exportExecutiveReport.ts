@@ -1,7 +1,6 @@
-import * as XLSX from "xlsx";
+import type * as XLSXType from "xlsx";
 import { downloadWorkbook } from "./downloadWorkbook";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import type { jsPDF as jsPDFType } from "jspdf";
 
 const BRAND = "#8C6F4E";
 const BRAND_RGB: [number, number, number] = [140, 111, 78];
@@ -92,7 +91,8 @@ function sanitize(name: string) {
 /* ──────────────────────────────────────────
    EXCEL
    ────────────────────────────────────────── */
-export function exportExecutiveExcel(data: ReportData) {
+export async function exportExecutiveExcel(data: ReportData) {
+  const XLSX = await import("xlsx");
   const wb = XLSX.utils.book_new();
   const sm = scheduleMap(data.schedules);
   const occCount = countByStore(data.occurrences);
@@ -184,7 +184,7 @@ export function exportExecutiveExcel(data: ReportData) {
 /* ──────────────────────────────────────────
    PDF
    ────────────────────────────────────────── */
-function addHeaderBar(doc: jsPDF, text: string) {
+function addHeaderBar(doc: jsPDFType, text: string) {
   const pw = doc.internal.pageSize.getWidth();
   doc.setFillColor(...BRAND_RGB);
   doc.rect(0, 0, pw, 18, "F");
@@ -194,7 +194,9 @@ function addHeaderBar(doc: jsPDF, text: string) {
   doc.setTextColor(0, 0, 0);
 }
 
-export function exportExecutivePDF(data: ReportData) {
+export async function exportExecutivePDF(data: ReportData) {
+  const { jsPDF } = await import("jspdf");
+  const { default: autoTable } = await import("jspdf-autotable");
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
