@@ -2186,6 +2186,7 @@ const CampaignDetail = () => {
                                           autoFocus
                                         />
                                       ) : (
+                                      ) : (
                                         <button
                                           onClick={() => {
                                             if (!canEditCampaign) return;
@@ -2195,17 +2196,15 @@ const CampaignDetail = () => {
                                           className={`w-full h-8 text-sm rounded transition-colors ${
                                             kitQty > 0
                                               ? "bg-primary/15 text-primary font-semibold hover:bg-primary/25"
-                                              : isEmptyStore
-                                              ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-medium"
                                               : canEditCampaign
                                               ? "text-muted-foreground/40 hover:bg-muted"
                                               : "text-muted-foreground/40"
                                           }`}
                                           disabled={!canEditCampaign}
-                                          title={isEmptyStore && kitQty === 0 ? "Loja sem quantidades — preencha manualmente" : undefined}
                                         >
-                                          {kitQty > 0 ? kitQty : isEmptyStore ? "⚠" : "—"}
+                                          {kitQty > 0 ? kitQty : "—"}
                                         </button>
+                                      )}
                                       )}
                                     </TableCell>
                                   );
