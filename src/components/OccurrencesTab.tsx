@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo, useEffect, useCallback } from "react";
+import { useState, useRef, useMemo, useEffect, useCallback, lazy, Suspense } from "react";
 import EmptyState from "@/components/EmptyState";
 import { CardSkeleton, ListSkeleton } from "@/components/CardSkeleton";
 import { useTranslation } from "react-i18next";
@@ -48,7 +48,8 @@ import { format } from "date-fns";
 
 import PhotoLightbox from "./PhotoLightbox";
 import ExportOccurrencesButton from "./ExportOccurrencesButton";
-import PendingOccurrencesDashboard from "./PendingOccurrencesDashboard";
+// Lazy: defers recharts (~80KB) until the user opens the pending dashboard
+const PendingOccurrencesDashboard = lazy(() => import("./PendingOccurrencesDashboard"));
 import type { OccurrenceReportData } from "@/lib/exportOccurrencesReport";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent,
