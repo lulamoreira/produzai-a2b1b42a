@@ -374,6 +374,41 @@ export type Database = {
           },
         ]
       }
+      budget_timeline_entries: {
+        Row: {
+          campaign_id: string
+          created_at: string | null
+          description: string
+          display_order: number
+          entry_date: string
+          id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string | null
+          description: string
+          display_order?: number
+          entry_date: string
+          id?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string | null
+          description?: string
+          display_order?: number
+          entry_date?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_timeline_entries_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_activity_log: {
         Row: {
           action: string
