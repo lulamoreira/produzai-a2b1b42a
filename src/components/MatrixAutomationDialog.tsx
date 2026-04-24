@@ -431,17 +431,33 @@ export default function MatrixAutomationDialog({
     const filtered = filtrarLojas(stores, filterGroup);
     const filteredIds = new Set(filtered.map(s => s.id));
     const nonMatchingStores = stores.filter(s => !filteredIds.has(s.id));
-    const resolvedPieces = resolveItemsToPieces(selectedItems);
+
+    // For non-matching stores, in by_field mode we still need a "default" piece list
+    // to know which pieces could conflict — pre-resolve assuming factor=1 (a virtual store).
+    const fallbackPieces = resolveItemsToPieces(selectedItems);
 
     const rows: PreviewRow[] = [];
     const actions: Record<string, OutsideFilterAction> = {};
 
     for (const store of filtered) {
+      const resolvedPieces = resolveForStore(store, selectedItems, kind, baseField);
+      // by_field: store sem valor numérico válido cai como ignorada (1 linha agregada)
+      if (resolvedPieces.length === 0 && kind === "by_field") {
+        rows.push({
+          storeId: store.id,
+          storeName: store.name,
+          group: "ignored",
+          pieceId: "__no_value__",
+          pieceName: `(sem valor em ${baseField})`,
+          currentQty: 0,
+          newQty: 0,
+          action: "keep",
+        });
+        continue;
+      }
       for (const rp of resolvedPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
-        // If not overwriting and already has value, skip (mark as "outside" to keep)
         if (!sobrescrever && currentQty > 0) {
-          // Still show in update group but with current qty preserved
           rows.push({
             storeId: store.id, storeName: store.name, group: "update",
             pieceId: rp.pieceId, pieceName: rp.pieceName,
@@ -458,7 +474,7 @@ export default function MatrixAutomationDialog({
     }
 
     for (const store of nonMatchingStores) {
-      for (const rp of resolvedPieces) {
+      for (const rp of fallbackPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
         if (currentQty > 0) {
           const key = `${store.id}-${rp.pieceId}`;
