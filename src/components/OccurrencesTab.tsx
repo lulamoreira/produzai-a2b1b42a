@@ -1206,20 +1206,24 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           </Tabs>
         </DialogContent>
       </Dialog>
-      <PendingOccurrencesDashboard
-        open={pendingDashOpen}
-        onOpenChange={setPendingDashOpen}
-        campaignId={campaignId}
-        campaignName={campaignInfo?.name}
-        clientName={clientName}
-        agencyName={agencyName}
-        agencyId={campaignInfo?.clients?.agency_id}
-        clientId={clientId}
-        stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null, nickname: s.nickname ?? null, store_code: s.store_code ?? null }))}
-        pieces={pieces}
-        motives={motives}
-        statuses={statuses}
-      />
+      {pendingDashOpen && (
+        <Suspense fallback={null}>
+          <PendingOccurrencesDashboard
+            open={pendingDashOpen}
+            onOpenChange={setPendingDashOpen}
+            campaignId={campaignId}
+            campaignName={campaignInfo?.name}
+            clientName={clientName}
+            agencyName={agencyName}
+            agencyId={campaignInfo?.clients?.agency_id}
+            clientId={clientId}
+            stores={stores.map((s) => ({ id: s.id, name: s.name, city: s.city ?? null, state: s.state ?? null, nickname: s.nickname ?? null, store_code: s.store_code ?? null }))}
+            pieces={pieces}
+            motives={motives}
+            statuses={statuses}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
