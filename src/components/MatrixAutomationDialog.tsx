@@ -195,10 +195,13 @@ export default function MatrixAutomationDialog({
 
   // Hook
   const {
-    templates, saveTemplate, deleteTemplate,
+    templates, saveTemplate, updateTemplate, deleteTemplate,
     groups, saveGroup, deleteGroup,
     groupItems, addToGroup, removeFromGroup, toggleGroupItem,
   } = useAutomationTemplates(campaignId);
+
+  // Editing state: when set, "salvar" updates this template instead of creating a new one
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Reset on open
   useEffect(() => {
@@ -217,6 +220,7 @@ export default function MatrixAutomationDialog({
       setOverwriteDialog({ open: false, count: 0 });
       setKind("fixed");
       setBaseField("");
+      setEditingId(null);
     }
   }, [open]);
 
