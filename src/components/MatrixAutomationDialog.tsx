@@ -941,7 +941,7 @@ export default function MatrixAutomationDialog({
                 </Button>
 
                 {/* Matching stores counter */}
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg mt-2">
+                <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg mt-2">
                   <span className="text-lg font-bold text-primary">{matchingStores.length}</span>
                   <span className="text-xs text-muted-foreground">
                     de {stores.length} lojas correspondem a estes filtros
@@ -949,6 +949,11 @@ export default function MatrixAutomationDialog({
                   {hasValidFilters && matchingStores.length === 0 && (
                     <span className="text-xs text-amber-600 dark:text-amber-400 ml-2">
                       ⚠ Nenhuma loja encontrada
+                    </span>
+                  )}
+                  {kind === "by_field" && baseField && matchingStores.length > 0 && (
+                    <span className="text-[11px] text-muted-foreground ml-auto">
+                      <span className="font-semibold text-foreground">{matchingStoresWithValue}</span> com valor em {getNumericFieldLabel(baseField)}
                     </span>
                   )}
                 </div>
