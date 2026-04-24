@@ -37,6 +37,7 @@ export function useAdminUsers() {
         created_at: p.created_at,
       })) as UserWithRole[];
     },
+    staleTime: 5 * 60 * 1000, // reference data — rarely changes
   });
 }
 

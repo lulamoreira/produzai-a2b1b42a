@@ -23,6 +23,7 @@ export function useAgencies(includeDeleted = false) {
       if (error) throw error;
       return data as Agency[];
     },
+    staleTime: 5 * 60 * 1000, // reference data — rarely changes
   });
 }
 

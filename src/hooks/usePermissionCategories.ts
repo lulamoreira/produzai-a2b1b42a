@@ -65,6 +65,7 @@ export function usePermissionCategories() {
       if (error) throw error;
       return data as PermissionCategory[];
     },
+    staleTime: 5 * 60 * 1000, // reference data — rarely changes
   });
 }
 

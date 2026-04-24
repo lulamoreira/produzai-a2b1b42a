@@ -24,7 +24,8 @@ export function useOccurrenceStatusSync(campaignId?: string) {
     enabled: !!campaignId,
   });
 
-  // Realtime subscription
+  // Realtime subscription — single source of truth for occurrences changes per campaign.
+  // Consumers (OccurrencesTab, SchedulingTab, etc.) all reuse this hook to avoid duplicate channels.
   useEffect(() => {
     if (!campaignId) return;
     const channel = supabase
@@ -37,6 +38,7 @@ export function useOccurrenceStatusSync(campaignId?: string) {
       }, () => {
         queryClient.invalidateQueries({ queryKey: ["occurrences_status_sync", campaignId] });
         queryClient.invalidateQueries({ queryKey: ["occurrences", campaignId] });
+        queryClient.invalidateQueries({ queryKey: ["occurrence_photos", campaignId] });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };

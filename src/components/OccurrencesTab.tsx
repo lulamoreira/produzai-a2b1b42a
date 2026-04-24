@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { CampaignKit, CampaignKitPiece, CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 import { useCampaignKitPieces, useCampaignKits, useCampaignPieceLocations } from "@/hooks/useMultiClientData";
 import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
+import { useOccurrenceStatusSync } from "@/hooks/useOccurrenceStatusSync";
 import OccurrenceCard from "./OccurrenceCard";
 import OccurrenceListView from "./OccurrenceListView";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -154,21 +155,9 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
   const reorderStatuses = useReorderOccurrenceStatuses();
   const queryClient = useQueryClient();
 
-  // Realtime subscription for occurrences
-  useEffect(() => {
-    const channel = supabase
-      .channel(`occurrences-realtime-${campaignId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'occurrences', filter: `campaign_id=eq.${campaignId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["occurrences", campaignId] });
-          queryClient.invalidateQueries({ queryKey: ["occurrence_photos", campaignId] });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [campaignId, queryClient]);
+  // Realtime sync: shared hook keeps occurrences/photos caches fresh.
+  // Single Supabase channel per campaign — replaces the previous duplicated subscription.
+  useOccurrenceStatusSync(campaignId);
 
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

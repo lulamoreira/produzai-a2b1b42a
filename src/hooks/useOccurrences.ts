@@ -107,6 +107,7 @@ export function useOccurrenceMotives() {
       if (error) throw error;
       return data as OccurrenceMotive[];
     },
+    staleTime: 5 * 60 * 1000, // reference data — rarely changes
   });
 }
 
@@ -172,6 +173,7 @@ export function useOccurrenceStatuses() {
       return (data ?? []) as OccurrenceStatus[];
     },
     select: (data) => data.map(normalizeOccurrenceStatusItem),
+    staleTime: 5 * 60 * 1000, // reference data — rarely changes
   });
 }
 
