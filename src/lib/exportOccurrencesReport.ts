@@ -1,7 +1,7 @@
-import ExcelJS from "exceljs";
+import type * as ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import type { jsPDF as jsPDFType } from "jspdf";
+type JsPDFCtor = typeof import("jspdf").jsPDF;
 import type { Schedule } from "@/types/schedule";
 import { isOccurrenceOverdue, formatDateBR, parseLocalDate } from "@/lib/occurrenceHelpers";
 
@@ -264,7 +264,8 @@ function kpiLabelStyle(bg: string): Partial<ExcelJS.Style> {
    EXCEL EXPORT
    ══════════════════════════════════════════ */
 export async function exportOccurrencesExcel(data: OccurrenceReportData) {
-  const wb = new ExcelJS.Workbook();
+  const ExcelJSRuntime = (await import("exceljs")).default;
+  const wb = new ExcelJSRuntime.Workbook();
   wb.creator = "ProduzAI";
   wb.created = new Date();
 
