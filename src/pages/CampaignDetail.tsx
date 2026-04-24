@@ -584,13 +584,6 @@ const CampaignDetail = () => {
     const currentCell = editingCell;
     const qty = Math.max(0, parseInt(editValue) || 0);
 
-    console.log("[CELL_SAVE]", {
-      storeId: currentCell.storeId,
-      pieceId: currentCell.pieceId,
-      editValue: editValue,
-      parsedQty: Math.max(0, parseInt(editValue) || 0),
-    });
-
     updateStorePiece.mutate({
       campaignId,
       storeId: currentCell.storeId,
