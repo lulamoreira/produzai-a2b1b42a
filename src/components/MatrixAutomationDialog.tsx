@@ -1043,7 +1043,7 @@ export default function MatrixAutomationDialog({
                 >
                   <Eye className="w-4 h-4 mr-1" /> {t("automation.preview")}
                 </Button>
-                {hasValidFilters && selectedItems.length > 0 && (
+                {canProceed && selectedItems.length > 0 && (
                   <>
                     {!showSaveInput ? (
                       <Button variant="outline" size="icon" onClick={() => setShowSaveInput(true)} title={t("automation.saveTemplate")}>
