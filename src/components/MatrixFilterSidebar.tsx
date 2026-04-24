@@ -61,6 +61,11 @@ const EMPTY_STORE_FILTERS: StoreFilters = {
   custom_field_3: new Set(),
   custom_field_4: new Set(),
   custom_field_5: new Set(),
+  custom_field_6: new Set(),
+  custom_field_7: new Set(),
+  custom_field_8: new Set(),
+  custom_field_9: new Set(),
+  custom_field_10: new Set(),
 };
 
 interface FilterGroupProps {
