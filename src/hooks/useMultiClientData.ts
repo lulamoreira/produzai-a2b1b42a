@@ -400,7 +400,8 @@ export function useDeleteCampaign() {
 // ─── Client Stores ───────────────────────────────────────
 
 export function useClientStores(clientId: string | undefined) {
-  return useQuery({
+  const qc = useQueryClient();
+  const query = useQuery({
     queryKey: ["client_stores", clientId],
     queryFn: async () => {
       if (!clientId) return [];
@@ -414,6 +415,24 @@ export function useClientStores(clientId: string | undefined) {
     },
     enabled: !!clientId,
   });
+
+  // Realtime: refresh when any store of this client changes (insert/update/delete from any tab)
+  useEffect(() => {
+    if (!clientId) return;
+    const channel = supabase
+      .channel(`client-stores-rt-${clientId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "client_stores", filter: `client_id=eq.${clientId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["client_stores", clientId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [clientId, qc]);
+
+  return query;
 }
 
 export function useAddClientStore() {
