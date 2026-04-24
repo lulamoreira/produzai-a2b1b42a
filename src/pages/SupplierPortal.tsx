@@ -180,6 +180,14 @@ const SupplierPortal = () => {
         setDeadline(dl);
         setCurrencyCode((settings as { currency_code?: string } | null | undefined)?.currency_code || "BRL");
 
+        // 2b) Timeline entries
+        const { data: timeline } = await supabase
+          .from("budget_timeline_entries")
+          .select("id, entry_date, description")
+          .eq("campaign_id", sup.campaign_id)
+          .order("display_order", { ascending: true });
+        setTimelineEntries(timeline ?? []);
+
         if (dl && new Date(dl) < new Date() && sup.status !== "enviado") {
           await supabase.from("budget_suppliers").update({ status: "prazo_encerrado" }).eq("id", sup.id);
           sup.status = "prazo_encerrado";
