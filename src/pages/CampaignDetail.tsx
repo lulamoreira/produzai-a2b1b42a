@@ -1994,10 +1994,13 @@ const CampaignDetail = () => {
                         <TableBody>
                           {activeFilteredStores.map((store) => {
                             const storeTotal = matrixPieces.reduce((s, p) => s + (qtyMap[`${store.id}-${p.id}`] || 0), 0);
+                            // Real total considers ALL pieces (including kit_only components),
+                            // so stores filled only via kits aren't falsely flagged as empty.
+                            const storeTotalReal = pieces.reduce((sum, p) => sum + (qtyMap[`${store.id}-${p.id}`] || 0), 0);
                             const hasAnyStoreWithQty = activeFilteredStores.some(
-                              (st) => st.id !== store.id && matrixPieces.some((p) => (qtyMap[`${st.id}-${p.id}`] || 0) > 0)
+                              (st) => st.id !== store.id && pieces.some((p) => (qtyMap[`${st.id}-${p.id}`] || 0) > 0)
                             );
-                            const isEmptyStore = storeTotal === 0 && hasAnyStoreWithQty;
+                            const isEmptyStore = storeTotalReal === 0 && hasAnyStoreWithQty;
                             return (
                               <TableRow key={store.id}>
                                 <TableCell className="sticky left-0 bg-card z-[5] font-medium">
