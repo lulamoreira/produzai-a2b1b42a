@@ -377,11 +377,14 @@ const CampaignDetail = () => {
       if (sf.city.size > 0) storeChecks.push(!!s.city && sf.city.has(s.city));
       if (sf.state.size > 0) storeChecks.push(!!s.state && sf.state.has(s.state.trim()));
       if (sf.store_model.size > 0) storeChecks.push(!!s.store_model && sf.store_model.has(s.store_model));
-      if (sf.custom_field_1.size > 0) storeChecks.push(!!s.custom_field_1 && sf.custom_field_1.has(s.custom_field_1));
-      if (sf.custom_field_2.size > 0) storeChecks.push(!!s.custom_field_2 && sf.custom_field_2.has(s.custom_field_2));
-      if (sf.custom_field_3.size > 0) storeChecks.push(!!s.custom_field_3 && sf.custom_field_3.has(s.custom_field_3));
-      if (sf.custom_field_4.size > 0) storeChecks.push(!!s.custom_field_4 && sf.custom_field_4.has(s.custom_field_4));
-      if (sf.custom_field_5.size > 0) storeChecks.push(!!s.custom_field_5 && sf.custom_field_5.has(s.custom_field_5));
+      for (let i = 1; i <= 10; i++) {
+        const key = `custom_field_${i}` as keyof typeof sf;
+        const set = (sf as any)[key] as Set<string> | undefined;
+        if (set && set.size > 0) {
+          const val = (s as any)[key];
+          storeChecks.push(!!val && set.has(val));
+        }
+      }
 
       if (storeChecks.length > 0) {
         if (filterLogicMode === "and" || filterLogicMode === "and_or") {
