@@ -69,7 +69,7 @@ interface Props {
   kitPieces: { kit_id: string; piece_id: string; quantity: number }[];
   qtyMap: Record<string, number>;
   customFieldLabels: CustomFieldDef[];
-  onComplete: () => void;
+  onComplete: () => void | Promise<void>;
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -640,7 +640,7 @@ export default function MatrixAutomationDialog({
       }
 
       toast.success(t("automation.successMessage", { updated: uniqueUpdateStores, kept: keepCount, zeroed: zeroCount }));
-      onComplete();
+      await onComplete();
       onOpenChange(false);
     } catch (err: any) {
       toast.error(t("automation.executionError") + ": " + (err.message || ""));
@@ -730,7 +730,7 @@ export default function MatrixAutomationDialog({
       }
 
       toast.success(t("automation.groupExecuted") + ` (${totalUpdated} ${t("automation.stores")})`);
-      onComplete();
+      await onComplete();
       onOpenChange(false);
     } catch (err: any) {
       toast.error(t("automation.executionError") + ": " + (err.message || ""));
