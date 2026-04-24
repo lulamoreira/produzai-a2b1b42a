@@ -327,6 +327,7 @@ const CampaignDetail = () => {
   const [editValue, setEditValue] = useState("");
   const editingInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const editingCellRef = useRef<{ storeId: string; pieceId: string } | null>(null);
+  const editValueRef = useRef("");
   const skipBlurSaveRef = useRef(false);
   const [importMatrixDialogOpen, setImportMatrixDialogOpen] = useState(false);
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
@@ -550,6 +551,10 @@ const CampaignDetail = () => {
     editingCellRef.current = editingCell;
   }, [editingCell]);
 
+  useEffect(() => {
+    editValueRef.current = editValue;
+  }, [editValue]);
+
   // Focus only depends on editingCell — never on qtyMap or query data.
   useEffect(() => {
     if (!editingCell) return;
@@ -605,12 +610,17 @@ const CampaignDetail = () => {
     // Snapshot target qty BEFORE saving previous cell, so optimistic updates
     // on shared piece keys (kit components) cannot leak into the new cell.
     const targetQty = getCellQty(newStoreId, newPieceId);
-    if (current && (current.storeId !== newStoreId || current.pieceId !== newPieceId)) {
-      saveCell(current, editValue);
-    }
+
+    // Open new cell immediately with correct value
     setEditingCell({ storeId: newStoreId, pieceId: newPieceId });
     setEditValue(targetQty > 0 ? String(targetQty) : "");
-  }, [canEditCampaign, saveCell, editValue, getCellQty]);
+
+    // Defer save of previous cell so its optimistic update / re-render
+    // does not interfere with the new cell's editValue in the same cycle.
+    if (current && (current.storeId !== newStoreId || current.pieceId !== newPieceId)) {
+      setTimeout(() => saveCell(current, editValueRef.current ?? ""), 0);
+    }
+  }, [canEditCampaign, saveCell, getCellQty]);
 
   // ─── Close editing: save current value and clear state ───
   const closeEditing = useCallback(() => {
