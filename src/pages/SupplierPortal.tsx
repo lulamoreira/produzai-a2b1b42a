@@ -128,6 +128,7 @@ const SupplierPortal = () => {
   const [agencyName, setAgencyName] = useState("");
   const [deadline, setDeadline] = useState<string | null>(null);
   const [currencyCode, setCurrencyCode] = useState<string>("BRL");
+  const [timelineEntries, setTimelineEntries] = useState<{ id: string; entry_date: string; description: string }[]>([]);
 
   const [allPieces, setAllPieces] = useState<PieceData[]>([]);
   const [kitsData, setKitsData] = useState<KitData[]>([]);
