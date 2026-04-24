@@ -39,6 +39,8 @@ import {
   useBudgetPrices, useBudgetExtraCosts, useSupplierSpecSuggestions, useExchangeRate,
 } from "@/hooks/useBudget";
 import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppliers";
+import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
+import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
