@@ -80,6 +80,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const updateSupplier = useUpdateSupplier();
   const { data: prices = [] } = useBudgetPrices(campaignId);
   const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
+  const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
 
   // Currency-aware formatter (depends on settings)
   const settingsTyped = settings as { currency_code?: string; currency_locked?: boolean } | null | undefined;
