@@ -794,6 +794,8 @@ export default function InstallerPortal() {
     setLocalPhotos((prev) => prev.filter((p) => p.id !== photo.id));
     try { if (photo.photo_url?.startsWith("blob:")) URL.revokeObjectURL(photo.photo_url); } catch { /* ignore */ }
     compressedBlobsRef.current.delete(photo.id);
+    // Drop from IndexedDB too (silent if not present).
+    deletePendingUpload(photo.id).catch(() => { /* best-effort */ });
 
     try {
       if (isTemp) {
