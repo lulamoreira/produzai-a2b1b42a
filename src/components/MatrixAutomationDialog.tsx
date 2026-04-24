@@ -338,14 +338,8 @@ export default function MatrixAutomationDialog({
         result.push({ pieceId: item.id, pieceName: item.name, quantity: item.quantity });
       } else {
         const components = kitPieces.filter(kp => kp.kit_id === item.id);
-        console.log("[AUTOMATION] resolveItemsToPieces kit expansion", {
-          kitId: item.id,
-          kitName: item.name,
-          kitPiecesFound: components,
-          allKitPiecesCount: kitPieces.length,
-        });
         if (components.length === 0) {
-          console.warn("[AUTOMATION] kit has NO components in kitPieces — falling back to kit.id as piece_id (likely WRONG, but prevents silent skip)", { kitId: item.id, kitName: item.name });
+          console.warn("Kit has no components — falling back to kit.id as piece_id", { kitId: item.id, kitName: item.name });
           result.push({
             pieceId: item.id,
             pieceName: `[KIT sem componentes] ${item.name}`,
