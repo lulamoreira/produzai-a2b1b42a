@@ -204,7 +204,7 @@ export function useAutomationTemplates(campaignId: string) {
   });
 
   return {
-    templates, loadingTemplates, saveTemplate, deleteTemplate,
+    templates, loadingTemplates, saveTemplate, updateTemplate, deleteTemplate,
     groups, loadingGroups, saveGroup, deleteGroup,
     groupItems, loadingGroupItems, addToGroup, removeFromGroup, toggleGroupItem,
   };
