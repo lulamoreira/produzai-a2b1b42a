@@ -206,8 +206,12 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
   const [localConfig, setLocalConfig] = useState<Record<string, any>>({});
 
   useEffect(() => {
+    // Skip refetch echoes while a mutation is in flight — the local optimistic
+    // state already reflects the user's intent and a stale server payload would
+    // overwrite values the user just set (or that haven't finished saving yet).
+    if (upsertConfig.isPending) return;
     if (config) setLocalConfig(config);
-  }, [config]);
+  }, [config, upsertConfig.isPending]);
 
   const saveConfig = useCallback(
     (patch: Record<string, any>) => {
