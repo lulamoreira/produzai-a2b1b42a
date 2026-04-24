@@ -962,6 +962,11 @@ export default function MatrixAutomationDialog({
               {/* Items selection */}
               <div>
                 <Label className="text-sm font-medium">{t("automation.selectItems")}</Label>
+                {kind === "by_field" && baseField && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Quantidade por loja = <span className="font-semibold text-foreground">{getNumericFieldLabel(baseField)}</span> × fator do item (abaixo)
+                  </p>
+                )}
                 <div className="relative mt-1">
                   <Input
                     placeholder={t("automation.searchByCode")}
