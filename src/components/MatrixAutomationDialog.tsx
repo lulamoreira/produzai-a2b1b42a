@@ -1097,8 +1097,8 @@ export default function MatrixAutomationDialog({
                 {canProceed && selectedItems.length > 0 && (
                   <>
                     {!showSaveInput ? (
-                      <Button variant="outline" size="icon" onClick={() => setShowSaveInput(true)} title={t("automation.saveTemplate")}>
-                        <Save className="w-4 h-4" />
+                      <Button variant="outline" size="icon" onClick={() => setShowSaveInput(true)} title={editingId ? "Atualizar automação" : t("automation.saveTemplate")}>
+                        {editingId ? <Pencil className="w-4 h-4" /> : <Save className="w-4 h-4" />}
                       </Button>
                     ) : (
                       <div className="flex gap-1 items-center">
@@ -1109,8 +1109,9 @@ export default function MatrixAutomationDialog({
                           className="w-40 h-9 text-xs"
                           onKeyDown={e => e.key === "Enter" && handleSaveTemplate()}
                         />
-                        <Button size="sm" onClick={handleSaveTemplate} disabled={!saveName.trim()}>
+                        <Button size="sm" onClick={handleSaveTemplate} disabled={!saveName.trim()} title={editingId ? "Atualizar" : "Salvar"}>
                           <Check className="w-3 h-3" />
+                          {editingId && <span className="ml-1 text-xs">Atualizar</span>}
                         </Button>
                       </div>
                     )}
