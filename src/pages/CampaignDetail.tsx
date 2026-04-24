@@ -1644,8 +1644,8 @@ const CampaignDetail = () => {
                 customFieldLabels={Array.from({ length: 10 }, (_, idx) => {
                   const i = idx + 1;
                   const label = (client as any)?.[`custom_field_${i}_label`];
-                  return label ? { key: `custom_field_${i}` as const, label } : null;
-                }).filter((x): x is { key: `custom_field_${number}`; label: string } => x !== null)}
+                  return label ? { key: `custom_field_${i}` as any, label } : null;
+                }).filter((x): x is { key: any; label: string } => x !== null)}
                 filterLogicMode={filterLogicMode}
                 onFilterLogicModeChange={setFilterLogicMode}
               />
