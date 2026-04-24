@@ -551,6 +551,10 @@ const CampaignDetail = () => {
     editingCellRef.current = editingCell;
   }, [editingCell]);
 
+  useEffect(() => {
+    editValueRef.current = editValue;
+  }, [editValue]);
+
   // Focus only depends on editingCell — never on qtyMap or query data.
   useEffect(() => {
     if (!editingCell) return;
