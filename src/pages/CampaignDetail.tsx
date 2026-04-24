@@ -1796,13 +1796,11 @@ const CampaignDetail = () => {
                   kits={kits}
                   kitPieces={kitPieces}
                   qtyMap={qtyMap}
-                  customFieldLabels={[
-                    ...(client?.custom_field_1_label ? [{ key: "custom_field_1", label: client.custom_field_1_label, index: 1 }] : []),
-                    ...(client?.custom_field_2_label ? [{ key: "custom_field_2", label: client.custom_field_2_label, index: 2 }] : []),
-                    ...(client?.custom_field_3_label ? [{ key: "custom_field_3", label: client.custom_field_3_label, index: 3 }] : []),
-                    ...(client?.custom_field_4_label ? [{ key: "custom_field_4", label: client.custom_field_4_label, index: 4 }] : []),
-                    ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label, index: 5 }] : []),
-                  ]}
+                  customFieldLabels={Array.from({ length: 10 }, (_, idx) => {
+                    const i = idx + 1;
+                    const label = (client as any)?.[`custom_field_${i}_label`];
+                    return label ? { key: `custom_field_${i}`, label, index: i } : null;
+                  }).filter((x): x is { key: string; label: string; index: number } => x !== null)}
                   onComplete={() => {
                     queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
                   }}
