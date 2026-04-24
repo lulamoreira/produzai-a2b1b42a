@@ -1038,7 +1038,7 @@ export default function MatrixAutomationDialog({
               <div className="flex gap-2">
                 <Button
                   className="flex-1"
-                  disabled={!hasValidFilters || selectedItems.length === 0}
+                  disabled={!canProceed || selectedItems.length === 0}
                   onClick={handlePreviewClick}
                 >
                   <Eye className="w-4 h-4 mr-1" /> {t("automation.preview")}
