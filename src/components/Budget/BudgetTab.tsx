@@ -238,28 +238,61 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     const portalUrl = `${window.location.origin}/orcamento/${sup.access_token}`;
     const subject = `${campaignName} — Convite para Cotação`;
 
-    const deadlineLine = settings?.deadline
-      ? `\n⏰ Prazo para envio: ${new Date(settings.deadline).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}\n`
+    const deadlineBlock = settings?.deadline
+      ? `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ⏰ PRAZO PARA ENVIO
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📅 ${new Date(settings.deadline).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+`
       : '';
 
-    const timelineLines = timelineEntries.length > 0
-      ? `\n📅 CRONOGRAMA DA CAMPANHA\n${timelineEntries.map(e => `• ${new Date(e.entry_date + 'T00:00:00').toLocaleDateString('pt-BR')} — ${e.description}`).join('\n')}\n\n⚠ Ao preencher e enviar o orçamento, você confirma o aceite deste cronograma.\n`
+    const timelineBlock = timelineEntries.length > 0
+      ? `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📅 CRONOGRAMA DA CAMPANHA
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${timelineEntries.map(e => `🔸 ${new Date(e.entry_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+   ${e.description}`).join('\n\n')}
+
+⚠️  ATENÇÃO: Ao preencher e enviar o orçamento, você confirma o aceite deste cronograma.
+`
       : '';
 
-    const body = `Olá, ${sup.contact_name}!
+    const body = `━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📋 CONVITE PARA COTAÇÃO
+━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-A ${agencyName} está convidando a ${sup.company_name} para participar do processo de cotação da campanha ${campaignName}.
+👋 Olá, ${sup.contact_name}!
 
-Para acessar a planilha de cotação e preencher seus preços:
+✨ A ${agencyName} está convidando a ${sup.company_name} para participar do processo de cotação da campanha:
 
-1. Acesse o link abaixo para abrir o portal de cotação
-2. Preencha o preço unitário de cada peça/kit
-3. Informe os valores de instalação e frete
-4. Clique em ENVIAR quando concluir a cotação
+📌 ${campaignName.toUpperCase()}
 
-🔗 Acesse a cotação: ${portalUrl}
-${deadlineLine}${timelineLines}
-Este convite foi enviado em nome da ${agencyName}.`;
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📝 COMO PARTICIPAR
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+▸ 1️⃣  Acesse o portal de cotação pelo link abaixo
+▸ 2️⃣  Preencha o preço unitário de cada peça/kit
+▸ 3️⃣  Informe os valores de instalação e frete
+▸ 4️⃣  Clique em ENVIAR ao concluir a cotação
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+  🔗 ACESSE AQUI
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👉 ${portalUrl}
+${deadlineBlock}${timelineBlock}
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💼 Este convite foi enviado em nome da ${agencyName}.
+🚀 Powered by ProduzAI
+`;
 
     return `mailto:${sup.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
