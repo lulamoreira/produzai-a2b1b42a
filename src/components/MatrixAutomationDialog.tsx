@@ -948,7 +948,9 @@ export default function MatrixAutomationDialog({
                 <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg mt-2">
                   <span className="text-lg font-bold text-primary">{matchingStores.length}</span>
                   <span className="text-xs text-muted-foreground">
-                    de {stores.length} lojas correspondem a estes filtros
+                    {applyingToAll
+                      ? `de ${stores.length} lojas (sem filtros — aplicará a todas)`
+                      : `de ${stores.length} lojas correspondem a estes filtros`}
                   </span>
                   {hasValidFilters && matchingStores.length === 0 && (
                     <span className="text-xs text-amber-600 dark:text-amber-400 ml-2">
@@ -961,6 +963,11 @@ export default function MatrixAutomationDialog({
                     </span>
                   )}
                 </div>
+                {kind === "by_field" && (
+                  <p className="text-[11px] text-muted-foreground mt-1.5">
+                    💡 Deixe os filtros vazios para aplicar a <span className="font-semibold text-foreground">todas as lojas</span> que tiverem valor no campo base.
+                  </p>
+                )}
               </div>
 
               {/* Items selection */}
