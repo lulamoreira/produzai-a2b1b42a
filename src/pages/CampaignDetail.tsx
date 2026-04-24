@@ -15,7 +15,7 @@ import {
   useClientStoreModels,
   useCampaignKits, useAddCampaignKit, useDeleteCampaignKit, useUpdateCampaignKit,
   useCampaignKitPieces, useAddCampaignKitPiece, useDeleteCampaignKitPiece, useUpdateCampaignKitPiece,
-  type CampaignPiece, type ClientStore, type CampaignKit,
+  type CampaignPiece, type ClientStore, type CampaignKit, type CampaignStorePiece,
 } from "@/hooks/useMultiClientData";
 
 import { useClientPermission } from "@/hooks/useClientPermission";
