@@ -543,7 +543,7 @@ const CampaignDetail = () => {
     const el = editingInputRefs.current[`${cell.storeId}-${cell.pieceId}`];
     if (el && document.activeElement !== el) {
       el.focus();
-      el.select();
+      // Note: el.select() removed — re-running on qtyMap change caused the value to appear to flicker.
     }
   }, []);
 
