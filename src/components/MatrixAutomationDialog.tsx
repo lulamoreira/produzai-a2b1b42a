@@ -798,6 +798,30 @@ export default function MatrixAutomationDialog({
 
             {/* ──── TAB: Nova automação ──── */}
             <TabsContent value="new" className="space-y-4 mt-3">
+              {editingId && (
+                <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-primary/40 bg-primary/5">
+                  <div className="flex items-center gap-2 text-xs">
+                    <Pencil className="w-3.5 h-3.5 text-primary" />
+                    <span>
+                      Editando automação salva: <span className="font-semibold">{saveName || "—"}</span>
+                    </span>
+                  </div>
+                  <Button
+                    size="sm" variant="ghost" className="h-7 text-xs"
+                    onClick={() => {
+                      setEditingId(null);
+                      setSaveName("");
+                      setShowSaveInput(false);
+                      setFilterGroup({ filtros: [createEmptyFilter()], condicoes: [] });
+                      setSelectedItems([]);
+                      setKind("fixed");
+                      setBaseField("");
+                    }}
+                  >
+                    Cancelar edição
+                  </Button>
+                </div>
+              )}
               {/* ── Tipo de automação ── */}
               <div>
                 <Label className="text-sm font-semibold mb-2 block">Tipo de automação</Label>
