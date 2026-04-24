@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -15,6 +16,11 @@ export type Client = {
   custom_field_3_label: string | null;
   custom_field_4_label: string | null;
   custom_field_5_label: string | null;
+  custom_field_6_label: string | null;
+  custom_field_7_label: string | null;
+  custom_field_8_label: string | null;
+  custom_field_9_label: string | null;
+  custom_field_10_label: string | null;
   country_code: string | null;
   currency_code: string | null;
   created_at: string;
@@ -54,6 +60,11 @@ export type ClientStore = {
   custom_field_3: string | null;
   custom_field_4: string | null;
   custom_field_5: string | null;
+  custom_field_6: string | null;
+  custom_field_7: string | null;
+  custom_field_8: string | null;
+  custom_field_9: string | null;
+  custom_field_10: string | null;
   observations: string | null;
   auto_distribute: boolean;
   show_in_scheduling: boolean;
@@ -133,7 +144,8 @@ export function useClients(agencyId?: string) {
 }
 
 export function useClient(clientId: string | undefined) {
-  return useQuery({
+  const qc = useQueryClient();
+  const query = useQuery({
     queryKey: ["clients", clientId],
     queryFn: async () => {
       if (!clientId) return null;
@@ -147,12 +159,34 @@ export function useClient(clientId: string | undefined) {
     },
     enabled: !!clientId,
   });
+
+  // Realtime: refresh when this client row changes (e.g. custom field labels updated in another tab)
+  useEffect(() => {
+    if (!clientId) return;
+    const channel = supabase
+      .channel(`client-rt-${clientId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "clients", filter: `id=eq.${clientId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["clients", clientId] });
+          qc.invalidateQueries({ queryKey: ["clients"] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [clientId, qc]);
+
+  return query;
 }
 
 export function useAddClient() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (client: { name: string; agency_id: string; custom_field_1_label?: string; custom_field_2_label?: string; custom_field_3_label?: string; custom_field_4_label?: string; custom_field_5_label?: string }) => {
+    mutationFn: async (client: { name: string; agency_id: string } & Partial<Pick<Client,
+      "custom_field_1_label" | "custom_field_2_label" | "custom_field_3_label" | "custom_field_4_label" | "custom_field_5_label" |
+      "custom_field_6_label" | "custom_field_7_label" | "custom_field_8_label" | "custom_field_9_label" | "custom_field_10_label"
+    >>) => {
       const { data, error } = await supabase.from("clients").insert(client).select().single();
       if (error) throw error;
       return data as Client;
@@ -171,6 +205,11 @@ export function useAddClient() {
         custom_field_3_label: newClient.custom_field_3_label || null,
         custom_field_4_label: newClient.custom_field_4_label || null,
         custom_field_5_label: newClient.custom_field_5_label || null,
+        custom_field_6_label: newClient.custom_field_6_label || null,
+        custom_field_7_label: newClient.custom_field_7_label || null,
+        custom_field_8_label: newClient.custom_field_8_label || null,
+        custom_field_9_label: newClient.custom_field_9_label || null,
+        custom_field_10_label: newClient.custom_field_10_label || null,
         country_code: null,
         currency_code: null,
         created_at: new Date().toISOString(),
@@ -361,7 +400,8 @@ export function useDeleteCampaign() {
 // ─── Client Stores ───────────────────────────────────────
 
 export function useClientStores(clientId: string | undefined) {
-  return useQuery({
+  const qc = useQueryClient();
+  const query = useQuery({
     queryKey: ["client_stores", clientId],
     queryFn: async () => {
       if (!clientId) return [];
@@ -375,6 +415,24 @@ export function useClientStores(clientId: string | undefined) {
     },
     enabled: !!clientId,
   });
+
+  // Realtime: refresh when any store of this client changes (insert/update/delete from any tab)
+  useEffect(() => {
+    if (!clientId) return;
+    const channel = supabase
+      .channel(`client-stores-rt-${clientId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "client_stores", filter: `client_id=eq.${clientId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["client_stores", clientId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [clientId, qc]);
+
+  return query;
 }
 
 export function useAddClientStore() {

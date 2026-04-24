@@ -377,11 +377,14 @@ const CampaignDetail = () => {
       if (sf.city.size > 0) storeChecks.push(!!s.city && sf.city.has(s.city));
       if (sf.state.size > 0) storeChecks.push(!!s.state && sf.state.has(s.state.trim()));
       if (sf.store_model.size > 0) storeChecks.push(!!s.store_model && sf.store_model.has(s.store_model));
-      if (sf.custom_field_1.size > 0) storeChecks.push(!!s.custom_field_1 && sf.custom_field_1.has(s.custom_field_1));
-      if (sf.custom_field_2.size > 0) storeChecks.push(!!s.custom_field_2 && sf.custom_field_2.has(s.custom_field_2));
-      if (sf.custom_field_3.size > 0) storeChecks.push(!!s.custom_field_3 && sf.custom_field_3.has(s.custom_field_3));
-      if (sf.custom_field_4.size > 0) storeChecks.push(!!s.custom_field_4 && sf.custom_field_4.has(s.custom_field_4));
-      if (sf.custom_field_5.size > 0) storeChecks.push(!!s.custom_field_5 && sf.custom_field_5.has(s.custom_field_5));
+      for (let i = 1; i <= 10; i++) {
+        const key = `custom_field_${i}` as keyof typeof sf;
+        const set = (sf as any)[key] as Set<string> | undefined;
+        if (set && set.size > 0) {
+          const val = (s as any)[key];
+          storeChecks.push(!!val && set.has(val));
+        }
+      }
 
       if (storeChecks.length > 0) {
         if (filterLogicMode === "and" || filterLogicMode === "and_or") {
@@ -1638,13 +1641,11 @@ const CampaignDetail = () => {
                 onStoreFiltersChange={setStoreFilters}
                 collapsed={filterSidebarCollapsed}
                 onCollapsedChange={handleFilterSidebarCollapsedChange}
-                customFieldLabels={[
-                  ...(client?.custom_field_1_label ? [{ key: "custom_field_1" as const, label: client.custom_field_1_label }] : []),
-                  ...(client?.custom_field_2_label ? [{ key: "custom_field_2" as const, label: client.custom_field_2_label }] : []),
-                  ...(client?.custom_field_3_label ? [{ key: "custom_field_3" as const, label: client.custom_field_3_label }] : []),
-                  ...(client?.custom_field_4_label ? [{ key: "custom_field_4" as const, label: client.custom_field_4_label }] : []),
-                  ...(client?.custom_field_5_label ? [{ key: "custom_field_5" as const, label: client.custom_field_5_label }] : []),
-                ]}
+                customFieldLabels={Array.from({ length: 10 }, (_, idx) => {
+                  const i = idx + 1;
+                  const label = (client as any)?.[`custom_field_${i}_label`];
+                  return label ? { key: `custom_field_${i}` as any, label } : null;
+                }).filter((x): x is { key: any; label: string } => x !== null)}
                 filterLogicMode={filterLogicMode}
                 onFilterLogicModeChange={setFilterLogicMode}
               />
@@ -1671,13 +1672,11 @@ const CampaignDetail = () => {
                         }
                       }}
                       onEditingChange={setQuickEditActive}
-                      customFieldLabels={[
-                        ...(client?.custom_field_1_label ? [{ key: "custom_field_1", label: client.custom_field_1_label }] : []),
-                        ...(client?.custom_field_2_label ? [{ key: "custom_field_2", label: client.custom_field_2_label }] : []),
-                        ...(client?.custom_field_3_label ? [{ key: "custom_field_3", label: client.custom_field_3_label }] : []),
-                        ...(client?.custom_field_4_label ? [{ key: "custom_field_4", label: client.custom_field_4_label }] : []),
-                        ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label }] : []),
-                      ]}
+                      customFieldLabels={Array.from({ length: 10 }, (_, idx) => {
+                        const i = idx + 1;
+                        const label = (client as any)?.[`custom_field_${i}_label`];
+                        return label ? { key: `custom_field_${i}`, label } : null;
+                      }).filter((x): x is { key: string; label: string } => x !== null)}
                       onReorderColumns={async (reordered) => {
                         for (const item of reordered) {
                           if (item.type === "piece") {
@@ -1797,13 +1796,11 @@ const CampaignDetail = () => {
                   kits={kits}
                   kitPieces={kitPieces}
                   qtyMap={qtyMap}
-                  customFieldLabels={[
-                    ...(client?.custom_field_1_label ? [{ key: "custom_field_1", label: client.custom_field_1_label, index: 1 }] : []),
-                    ...(client?.custom_field_2_label ? [{ key: "custom_field_2", label: client.custom_field_2_label, index: 2 }] : []),
-                    ...(client?.custom_field_3_label ? [{ key: "custom_field_3", label: client.custom_field_3_label, index: 3 }] : []),
-                    ...(client?.custom_field_4_label ? [{ key: "custom_field_4", label: client.custom_field_4_label, index: 4 }] : []),
-                    ...(client?.custom_field_5_label ? [{ key: "custom_field_5", label: client.custom_field_5_label, index: 5 }] : []),
-                  ]}
+                  customFieldLabels={Array.from({ length: 10 }, (_, idx) => {
+                    const i = idx + 1;
+                    const label = (client as any)?.[`custom_field_${i}_label`];
+                    return label ? { key: `custom_field_${i}`, label, index: i } : null;
+                  }).filter((x): x is { key: string; label: string; index: number } => x !== null)}
                   onComplete={() => {
                     queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
                   }}
@@ -1854,7 +1851,7 @@ const CampaignDetail = () => {
                       { key: "store_email", label: "E-mail", getValue: (s: ClientStore) => s.email || "" },
                       { key: "store_manager", label: "Contato", getValue: (s: ClientStore) => s.manager_name || "" },
                     ];
-                    [1, 2, 3, 4, 5].forEach((i) => {
+                    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].forEach((i) => {
                       const label = (client as any)?.[`custom_field_${i}_label`];
                       if (label) {
                         const parsed = label.split("|")[0];

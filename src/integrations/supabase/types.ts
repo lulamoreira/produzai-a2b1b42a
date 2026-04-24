@@ -1328,10 +1328,15 @@ export type Database = {
           country: string | null
           created_at: string
           custom_field_1: string | null
+          custom_field_10: string | null
           custom_field_2: string | null
           custom_field_3: string | null
           custom_field_4: string | null
           custom_field_5: string | null
+          custom_field_6: string | null
+          custom_field_7: string | null
+          custom_field_8: string | null
+          custom_field_9: string | null
           email: string | null
           id: string
           latitude: number | null
@@ -1361,10 +1366,15 @@ export type Database = {
           country?: string | null
           created_at?: string
           custom_field_1?: string | null
+          custom_field_10?: string | null
           custom_field_2?: string | null
           custom_field_3?: string | null
           custom_field_4?: string | null
           custom_field_5?: string | null
+          custom_field_6?: string | null
+          custom_field_7?: string | null
+          custom_field_8?: string | null
+          custom_field_9?: string | null
           email?: string | null
           id?: string
           latitude?: number | null
@@ -1394,10 +1404,15 @@ export type Database = {
           country?: string | null
           created_at?: string
           custom_field_1?: string | null
+          custom_field_10?: string | null
           custom_field_2?: string | null
           custom_field_3?: string | null
           custom_field_4?: string | null
           custom_field_5?: string | null
+          custom_field_6?: string | null
+          custom_field_7?: string | null
+          custom_field_8?: string | null
+          custom_field_9?: string | null
           email?: string | null
           id?: string
           latitude?: number | null
@@ -1480,10 +1495,15 @@ export type Database = {
           created_at: string
           currency_code: string | null
           custom_field_1_label: string | null
+          custom_field_10_label: string | null
           custom_field_2_label: string | null
           custom_field_3_label: string | null
           custom_field_4_label: string | null
           custom_field_5_label: string | null
+          custom_field_6_label: string | null
+          custom_field_7_label: string | null
+          custom_field_8_label: string | null
+          custom_field_9_label: string | null
           display_order: number | null
           id: string
           language: string | null
@@ -1496,10 +1516,15 @@ export type Database = {
           created_at?: string
           currency_code?: string | null
           custom_field_1_label?: string | null
+          custom_field_10_label?: string | null
           custom_field_2_label?: string | null
           custom_field_3_label?: string | null
           custom_field_4_label?: string | null
           custom_field_5_label?: string | null
+          custom_field_6_label?: string | null
+          custom_field_7_label?: string | null
+          custom_field_8_label?: string | null
+          custom_field_9_label?: string | null
           display_order?: number | null
           id?: string
           language?: string | null
@@ -1512,10 +1537,15 @@ export type Database = {
           created_at?: string
           currency_code?: string | null
           custom_field_1_label?: string | null
+          custom_field_10_label?: string | null
           custom_field_2_label?: string | null
           custom_field_3_label?: string | null
           custom_field_4_label?: string | null
           custom_field_5_label?: string | null
+          custom_field_6_label?: string | null
+          custom_field_7_label?: string | null
+          custom_field_8_label?: string | null
+          custom_field_9_label?: string | null
           display_order?: number | null
           id?: string
           language?: string | null

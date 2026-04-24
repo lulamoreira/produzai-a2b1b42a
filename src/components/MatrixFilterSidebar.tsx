@@ -34,6 +34,11 @@ export type StoreFilters = {
   custom_field_3: Set<string>;
   custom_field_4: Set<string>;
   custom_field_5: Set<string>;
+  custom_field_6: Set<string>;
+  custom_field_7: Set<string>;
+  custom_field_8: Set<string>;
+  custom_field_9: Set<string>;
+  custom_field_10: Set<string>;
 };
 
 const EMPTY_FILTERS: PieceFilters = {
@@ -56,6 +61,11 @@ const EMPTY_STORE_FILTERS: StoreFilters = {
   custom_field_3: new Set(),
   custom_field_4: new Set(),
   custom_field_5: new Set(),
+  custom_field_6: new Set(),
+  custom_field_7: new Set(),
+  custom_field_8: new Set(),
+  custom_field_9: new Set(),
+  custom_field_10: new Set(),
 };
 
 interface FilterGroupProps {
@@ -194,21 +204,16 @@ const MatrixFilterSidebar = ({
     const cities = [...new Set(stores.map((s) => s.city).filter(Boolean) as string[])].sort();
     const states = [...new Set(stores.map((s) => s.state?.trim()).filter(Boolean) as string[])].sort();
     const models = [...new Set(stores.map((s) => s.store_model).filter(Boolean) as string[])].sort();
-    const cf1 = [...new Set(stores.map((s) => s.custom_field_1).filter(Boolean) as string[])].sort();
-    const cf2 = [...new Set(stores.map((s) => s.custom_field_2).filter(Boolean) as string[])].sort();
-    const cf3 = [...new Set(stores.map((s) => s.custom_field_3).filter(Boolean) as string[])].sort();
-    const cf4 = [...new Set(stores.map((s) => s.custom_field_4).filter(Boolean) as string[])].sort();
-    const cf5 = [...new Set(stores.map((s) => s.custom_field_5).filter(Boolean) as string[])].sort();
-
+    const customs: Record<string, string[]> = {};
+    for (let i = 1; i <= 10; i++) {
+      const key = `custom_field_${i}`;
+      customs[key] = [...new Set(stores.map((s) => (s as any)[key]).filter(Boolean) as string[])].sort();
+    }
     return {
       city: cities,
       state: states,
       store_model: models,
-      custom_field_1: cf1,
-      custom_field_2: cf2,
-      custom_field_3: cf3,
-      custom_field_4: cf4,
-      custom_field_5: cf5,
+      ...customs,
     };
   }, [stores]);
 
