@@ -173,6 +173,10 @@ export default function MatrixAutomationDialog({
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [itemSearch, setItemSearch] = useState("");
 
+  // Automation kind: 'fixed' = quantity per item; 'by_field' = store_field × factor
+  const [kind, setKind] = useState<AutomationKind>("fixed");
+  const [baseField, setBaseField] = useState<string>("");
+
   // Step 2 state
   const [preview, setPreview] = useState<PreviewRow[]>([]);
   const [outsideActions, setOutsideActions] = useState<Record<string, OutsideFilterAction>>({});
