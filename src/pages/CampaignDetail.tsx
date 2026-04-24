@@ -1851,7 +1851,7 @@ const CampaignDetail = () => {
                       { key: "store_email", label: "E-mail", getValue: (s: ClientStore) => s.email || "" },
                       { key: "store_manager", label: "Contato", getValue: (s: ClientStore) => s.manager_name || "" },
                     ];
-                    [1, 2, 3, 4, 5].forEach((i) => {
+                    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].forEach((i) => {
                       const label = (client as any)?.[`custom_field_${i}_label`];
                       if (label) {
                         const parsed = label.split("|")[0];
