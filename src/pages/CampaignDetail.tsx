@@ -574,6 +574,13 @@ const CampaignDetail = () => {
 
   const handleCellClick = (storeId: string, pieceId: string) => {
     if (!canEditCampaign) return;
+    console.log("[CELL_CLICK]", {
+      storeId: storeId,
+      pieceId: pieceId,
+      qtyMapValue: qtyMap[`${storeId}-${pieceId}`],
+      getCellQtyResult: getCellQty(storeId, pieceId),
+      editValueWillBe: String(getCellQty(storeId, pieceId)),
+    });
     setEditingCell({ storeId, pieceId });
     setEditValue(String(getCellQty(storeId, pieceId)));
   };
@@ -583,6 +590,13 @@ const CampaignDetail = () => {
 
     const currentCell = editingCell;
     const qty = Math.max(0, parseInt(editValue) || 0);
+
+    console.log("[CELL_SAVE]", {
+      storeId: currentCell.storeId,
+      pieceId: currentCell.pieceId,
+      editValue: editValue,
+      parsedQty: Math.max(0, parseInt(editValue) || 0),
+    });
 
     updateStorePiece.mutate({
       campaignId,
