@@ -302,13 +302,26 @@ const QuickMatrixEditor = ({
 
   const colIds = useMemo(() => matrixColumns.map(getColId), [matrixColumns]);
 
+  // Helper: derive a kit's location from its underlying pieces when not set explicitly
+  const getKitCategory = useCallback((kit: CampaignKit) => {
+    if (kit.category) return kit.category;
+    const kpRows = kitPieces.filter((kp) => kp.kit_id === kit.id);
+    for (const kp of kpRows) {
+      const p = pieces.find((pp) => pp.id === kp.piece_id);
+      if (p?.category) return p.category;
+    }
+    return null;
+  }, [kitPieces, pieces]);
+
   // Category group headers
   const categoryGroups = useMemo(() => {
     const groups: { label: string; span: number }[] = [];
     let currentCat: string | null = null;
     let currentSpan = 0;
     matrixColumns.forEach((col) => {
-      const cat = col.type === "piece" ? (col.data.category || "Sem localização") : (col.data.category || "Sem localização");
+      const cat = col.type === "piece"
+        ? (col.data.category || "Sem localização")
+        : (getKitCategory(col.data) || "Sem localização");
       if (cat !== currentCat) {
         if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
         currentCat = cat;
