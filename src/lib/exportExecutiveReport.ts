@@ -1,4 +1,3 @@
-import type * as XLSXType from "xlsx";
 import { downloadWorkbook } from "./downloadWorkbook";
 import type { jsPDF as jsPDFType } from "jspdf";
 
