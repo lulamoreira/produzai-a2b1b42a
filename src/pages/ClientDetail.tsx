@@ -1115,7 +1115,7 @@ const ClientDetail = () => {
                     <p className="text-xs font-semibold text-muted-foreground uppercase pt-1">Campos Personalizáveis</p>
                     <p className="text-xs text-muted-foreground mb-2">Defina os nomes dos campos extras para as lojas deste cliente.</p>
                     <div className="space-y-3">
-                      {[1, 2, 3, 4, 5].map((i) => {
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => {
                         const parsed = parseFieldLabel((customLabels as any)[`custom_field_${i}_label`]);
                         return (
                           <div key={i} className="space-y-1">
