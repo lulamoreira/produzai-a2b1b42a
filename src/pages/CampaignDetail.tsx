@@ -958,6 +958,16 @@ const CampaignDetail = () => {
   // Kits appear as virtual columns in the matrix
   const matrixKits = kits;
 
+  const getKitCategory = useCallback((kit: CampaignKit) => {
+    if (kit.category) return kit.category;
+    const kpRows = kitPieces.filter((kp) => kp.kit_id === kit.id);
+    for (const kp of kpRows) {
+      const piece = pieces.find((p) => p.id === kp.piece_id);
+      if (piece?.category) return piece.category;
+    }
+    return null;
+  }, [kitPieces, pieces]);
+
   // Unified matrix columns sorted by display_order (same as pieces table)
   type MatrixCol = { type: "piece"; data: CampaignPiece } | { type: "kit"; data: CampaignKit };
   const matrixColumns: MatrixCol[] = [
@@ -1920,7 +1930,9 @@ const CampaignDetail = () => {
                             let currentCat: string | null = null;
                             let currentSpan = 0;
                             matrixColumns.forEach((col) => {
-                              const cat = col.type === "piece" ? (col.data.category || "Sem localização") : (col.data.category || "Sem localização");
+                              const cat = col.type === "piece"
+                                ? (col.data.category || "Sem localização")
+                                : (getKitCategory(col.data) || "Sem localização");
                               if (cat !== currentCat) {
                                 if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
                                 currentCat = cat;
