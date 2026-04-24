@@ -468,6 +468,9 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
         </div>
       )}
 
+      {/* ═══ TIMELINE SECTION ═══ */}
+      <BudgetTimelineSection campaignId={campaignId} />
+
       {/* ═══ SUPPLIERS SECTION ═══ */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
