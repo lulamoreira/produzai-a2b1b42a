@@ -1792,7 +1792,7 @@ const CampaignDetail = () => {
                   campaignId={campaignId!}
                   clientId={clientId!}
                   stores={activeFilteredStores}
-                  pieces={matrixPieces}
+                  pieces={pieces}
                   kits={kits}
                   kitPieces={kitPieces}
                   qtyMap={qtyMap}
