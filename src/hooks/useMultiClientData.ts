@@ -163,7 +163,10 @@ export function useClient(clientId: string | undefined) {
 export function useAddClient() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (client: { name: string; agency_id: string; custom_field_1_label?: string; custom_field_2_label?: string; custom_field_3_label?: string; custom_field_4_label?: string; custom_field_5_label?: string }) => {
+    mutationFn: async (client: { name: string; agency_id: string } & Partial<Pick<Client,
+      "custom_field_1_label" | "custom_field_2_label" | "custom_field_3_label" | "custom_field_4_label" | "custom_field_5_label" |
+      "custom_field_6_label" | "custom_field_7_label" | "custom_field_8_label" | "custom_field_9_label" | "custom_field_10_label"
+    >>) => {
       const { data, error } = await supabase.from("clients").insert(client).select().single();
       if (error) throw error;
       return data as Client;
@@ -182,6 +185,11 @@ export function useAddClient() {
         custom_field_3_label: newClient.custom_field_3_label || null,
         custom_field_4_label: newClient.custom_field_4_label || null,
         custom_field_5_label: newClient.custom_field_5_label || null,
+        custom_field_6_label: newClient.custom_field_6_label || null,
+        custom_field_7_label: newClient.custom_field_7_label || null,
+        custom_field_8_label: newClient.custom_field_8_label || null,
+        custom_field_9_label: newClient.custom_field_9_label || null,
+        custom_field_10_label: newClient.custom_field_10_label || null,
         country_code: null,
         currency_code: null,
         created_at: new Date().toISOString(),
