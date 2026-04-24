@@ -8,6 +8,11 @@ import type { TemplateEntry } from './registry.ts'
 const SITE_NAME = 'ProduzAI'
 const BRAND = '#8C6F4E'
 
+interface TimelineEntry {
+  entry_date: string
+  description: string
+}
+
 interface SupplierInviteProps {
   contactName?: string
   companyName?: string
@@ -15,6 +20,7 @@ interface SupplierInviteProps {
   campaignName?: string
   portalUrl?: string
   deadline?: string
+  timelineEntries?: TimelineEntry[]
 }
 
 const SupplierInviteEmail = ({
@@ -24,6 +30,7 @@ const SupplierInviteEmail = ({
   campaignName = 'Campanha',
   portalUrl = '#',
   deadline,
+  timelineEntries = [],
 }: SupplierInviteProps) => {
   const deadlineDate = deadline ? new Date(deadline) : null
   const daysLeft = deadlineDate
@@ -94,6 +101,24 @@ const SupplierInviteEmail = ({
             </Section>
           )}
 
+          {timelineEntries && timelineEntries.length > 0 && (
+            <Section style={timelineBox}>
+              <Text style={timelineTitle}>📅 Cronograma da Campanha</Text>
+              {timelineEntries.map((entry, i) => (
+                <Text key={i} style={timelineItem}>
+                  <strong>
+                    {new Date(entry.entry_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </strong>
+                  {' — '}
+                  {entry.description}
+                </Text>
+              ))}
+              <Text style={timelineAcceptance}>
+                ⚠ Ao preencher e enviar o orçamento, você confirma o aceite deste cronograma.
+              </Text>
+            </Section>
+          )}
+
           <Hr style={hr} />
 
           <Text style={footer}>
@@ -119,6 +144,11 @@ export const template = {
     campaignName: 'Campanha Verão 2026',
     portalUrl: 'https://example.com/orcamento/abc123',
     deadline: new Date(Date.now() + 2 * 86400000).toISOString(),
+    timelineEntries: [
+      { entry_date: '2026-05-01', description: 'Aprovação da arte final' },
+      { entry_date: '2026-05-10', description: 'Início da produção' },
+      { entry_date: '2026-05-25', description: 'Entrega nas lojas' },
+    ],
   },
 } satisfies TemplateEntry
 
@@ -170,3 +200,31 @@ const deadlineTextNormal = { fontSize: '14px', color: '#6b5937', margin: '0' }
 const deadlineTextUrgent = { fontSize: '14px', color: '#dc2626', fontWeight: 'bold' as const, margin: '0' }
 const hr = { borderColor: '#e5e5e5', margin: '24px 0 16px' }
 const footer = { fontSize: '12px', color: '#999999', lineHeight: '1.5', margin: '0' }
+const timelineBox = {
+  backgroundColor: '#f9f7f5',
+  borderLeft: `4px solid ${BRAND}`,
+  padding: '16px 20px',
+  margin: '0 0 24px',
+  borderRadius: '4px',
+}
+const timelineTitle = {
+  fontSize: '15px',
+  fontWeight: 'bold' as const,
+  color: '#1a1a1a',
+  margin: '0 0 12px',
+}
+const timelineItem = {
+  fontSize: '14px',
+  color: '#333333',
+  lineHeight: '1.6',
+  margin: '0 0 8px',
+}
+const timelineAcceptance = {
+  fontSize: '13px',
+  color: '#b91c1c',
+  fontWeight: 'bold' as const,
+  lineHeight: '1.5',
+  margin: '12px 0 0',
+  paddingTop: '12px',
+  borderTop: '1px solid #e5d8c8',
+}

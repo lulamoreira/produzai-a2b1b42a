@@ -128,6 +128,7 @@ const SupplierPortal = () => {
   const [agencyName, setAgencyName] = useState("");
   const [deadline, setDeadline] = useState<string | null>(null);
   const [currencyCode, setCurrencyCode] = useState<string>("BRL");
+  const [timelineEntries, setTimelineEntries] = useState<{ id: string; entry_date: string; description: string }[]>([]);
 
   const [allPieces, setAllPieces] = useState<PieceData[]>([]);
   const [kitsData, setKitsData] = useState<KitData[]>([]);
@@ -178,6 +179,14 @@ const SupplierPortal = () => {
         const dl = settings?.deadline ?? null;
         setDeadline(dl);
         setCurrencyCode((settings as { currency_code?: string } | null | undefined)?.currency_code || "BRL");
+
+        // 2b) Timeline entries
+        const { data: timeline } = await supabase
+          .from("budget_timeline_entries")
+          .select("id, entry_date, description")
+          .eq("campaign_id", sup.campaign_id)
+          .order("display_order", { ascending: true });
+        setTimelineEntries(timeline ?? []);
 
         if (dl && new Date(dl) < new Date() && sup.status !== "enviado") {
           await supabase.from("budget_suppliers").update({ status: "prazo_encerrado" }).eq("id", sup.id);
@@ -824,6 +833,45 @@ const SupplierPortal = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Timeline / Cronograma */}
+        {timelineEntries.length > 0 && (
+          <Card>
+            <CardContent className="p-5 space-y-4">
+              <div>
+                <h3 className="text-base font-semibold text-foreground">
+                  📅 Cronograma da Campanha
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Datas e entregas acordadas para esta campanha
+                </p>
+              </div>
+
+              <ul className="space-y-2">
+                {timelineEntries.map((entry) => (
+                  <li
+                    key={entry.id}
+                    className="flex items-start gap-3 py-2 border-b border-border last:border-b-0"
+                  >
+                    <span className="text-sm font-semibold text-foreground min-w-[100px] shrink-0">
+                      {new Date(entry.entry_date + "T00:00:00").toLocaleDateString("pt-BR")}
+                    </span>
+                    <span className="text-sm text-muted-foreground leading-relaxed">
+                      {entry.description}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5">
+                <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                <p className="text-sm text-warning leading-relaxed">
+                  <strong>Atenção:</strong> Ao enviar este orçamento, você confirma o aceite do cronograma acima.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Matrix */}
         <Card>

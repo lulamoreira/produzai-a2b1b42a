@@ -39,6 +39,8 @@ import {
   useBudgetPrices, useBudgetExtraCosts, useSupplierSpecSuggestions, useExchangeRate,
 } from "@/hooks/useBudget";
 import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppliers";
+import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
+import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -78,6 +80,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const updateSupplier = useUpdateSupplier();
   const { data: prices = [] } = useBudgetPrices(campaignId);
   const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
+  const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
 
   // Currency-aware formatter (depends on settings)
   const settingsTyped = settings as { currency_code?: string; currency_locked?: boolean } | null | undefined;
@@ -249,6 +252,10 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
             campaignName,
             portalUrl,
             deadline: settings?.deadline || null,
+            timelineEntries: timelineEntries.map((e) => ({
+              entry_date: e.entry_date,
+              description: e.description,
+            })),
           },
         },
       });
@@ -460,6 +467,9 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
           </Button>
         </div>
       )}
+
+      {/* ═══ TIMELINE SECTION ═══ */}
+      <BudgetTimelineSection campaignId={campaignId} />
 
       {/* ═══ SUPPLIERS SECTION ═══ */}
       <div className="space-y-3">
