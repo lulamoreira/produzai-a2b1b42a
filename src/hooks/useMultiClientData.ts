@@ -60,6 +60,11 @@ export type ClientStore = {
   custom_field_3: string | null;
   custom_field_4: string | null;
   custom_field_5: string | null;
+  custom_field_6: string | null;
+  custom_field_7: string | null;
+  custom_field_8: string | null;
+  custom_field_9: string | null;
+  custom_field_10: string | null;
   observations: string | null;
   auto_distribute: boolean;
   show_in_scheduling: boolean;
