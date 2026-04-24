@@ -1641,13 +1641,11 @@ const CampaignDetail = () => {
                 onStoreFiltersChange={setStoreFilters}
                 collapsed={filterSidebarCollapsed}
                 onCollapsedChange={handleFilterSidebarCollapsedChange}
-                customFieldLabels={[
-                  ...(client?.custom_field_1_label ? [{ key: "custom_field_1" as const, label: client.custom_field_1_label }] : []),
-                  ...(client?.custom_field_2_label ? [{ key: "custom_field_2" as const, label: client.custom_field_2_label }] : []),
-                  ...(client?.custom_field_3_label ? [{ key: "custom_field_3" as const, label: client.custom_field_3_label }] : []),
-                  ...(client?.custom_field_4_label ? [{ key: "custom_field_4" as const, label: client.custom_field_4_label }] : []),
-                  ...(client?.custom_field_5_label ? [{ key: "custom_field_5" as const, label: client.custom_field_5_label }] : []),
-                ]}
+                customFieldLabels={Array.from({ length: 10 }, (_, idx) => {
+                  const i = idx + 1;
+                  const label = (client as any)?.[`custom_field_${i}_label`];
+                  return label ? { key: `custom_field_${i}` as const, label } : null;
+                }).filter((x): x is { key: `custom_field_${number}`; label: string } => x !== null)}
                 filterLogicMode={filterLogicMode}
                 onFilterLogicModeChange={setFilterLogicMode}
               />
