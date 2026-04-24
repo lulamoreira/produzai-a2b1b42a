@@ -589,6 +589,8 @@ export default function InstallerPortal() {
         counters.sent();
         // Released: drop the cached blob now that it's safely on the server
         compressedBlobsRef.current.delete(tempId);
+        // Persisted upload completed → drop it from IndexedDB.
+        deletePendingUpload(tempId).catch(() => { /* best-effort */ });
         try { (navigator as any).vibrate?.(10); } catch { /* ignore */ }
       });
     },
@@ -694,6 +696,19 @@ export default function InstallerPortal() {
 
       // Cache compressed blob so the user can retry without re-picking the photo
       compressedBlobsRef.current.set(tempId, compressed);
+
+      // Persist to IndexedDB so a page reload mid-upload can resume the queue.
+      try {
+        await savePendingUpload(tempId, compressed, {
+          storeId: data.store.id,
+          campaignId: data.campaign?.id || data.schedule?.campaign_id,
+          category: uploadCategory,
+          method,
+          fileName: file.name || "photo.jpg",
+        });
+      } catch {
+        // IndexedDB unavailable (private mode, quota) — proceed in-memory only.
+      }
 
       uploadSingleFile(compressed, tempId, uploadCategory, method, counters);
     }
