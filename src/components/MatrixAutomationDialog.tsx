@@ -625,33 +625,18 @@ export default function MatrixAutomationDialog({
         }
       }
 
-      console.log("[AUTOMATION] handleExecute payload", {
-        upsertsCount: upserts.length,
-        deletesCount: deletes.length,
-        upsertsSample: upserts.slice(0, 5),
-        deletesSample: deletes.slice(0, 5),
-        updateRowsCount: updateRows.length,
-        outsideRowsCount: outsideRows.length,
-      });
-
-      console.log("[AUTOMATION] upsert full detail", {
-        piece_ids_unique: [...new Set(upserts.map(u => u.piece_id))],
-        sample_rows: upserts.slice(0, 10),
-      });
-
       if (upserts.length > 0) {
-        const { data, error, status, statusText } = await supabase
+        const { error } = await supabase
           .from("campaign_store_pieces")
           .upsert(upserts, { onConflict: "campaign_id,store_id,piece_id" })
           .select();
-        console.log("[AUTOMATION] upsert response", { status, statusText, error, returnedRows: data?.length, data });
         if (error) throw error;
       }
 
       for (const del of deletes) {
-        const { error: delError, status: delStatus } = await supabase.from("campaign_store_pieces").delete()
+        const { error: delError } = await supabase.from("campaign_store_pieces").delete()
           .eq("campaign_id", campaignId).eq("store_id", del.storeId).eq("piece_id", del.pieceId);
-        if (delError) console.warn("[AUTOMATION] delete error", { del, delError, delStatus });
+        if (delError) console.warn("Delete error", { del, delError });
       }
 
       toast.success(t("automation.successMessage", { updated: uniqueUpdateStores, kept: keepCount, zeroed: zeroCount }));
