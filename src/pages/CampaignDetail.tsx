@@ -327,6 +327,7 @@ const CampaignDetail = () => {
   const [editValue, setEditValue] = useState("");
   const editingInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const editingCellRef = useRef<{ storeId: string; pieceId: string } | null>(null);
+  const editValueRef = useRef("");
   const skipBlurSaveRef = useRef(false);
   const [importMatrixDialogOpen, setImportMatrixDialogOpen] = useState(false);
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
