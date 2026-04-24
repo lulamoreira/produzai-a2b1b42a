@@ -161,15 +161,6 @@ export default function MatrixAutomationDialog({
 }: Props) {
   const { t } = useTranslation();
 
-  if (open) {
-    console.log("[AUTOMATION] dialog render — props snapshot", {
-      kitPiecesCount: kitPieces.length,
-      kitPiecesSample: kitPieces.slice(0, 5),
-      kitsCount: kits.length,
-      piecesCount: pieces.length,
-      kitsSample: kits.slice(0, 3).map(k => ({ id: k.id, name: k.name, code: k.code })),
-    });
-  }
 
   const [mainTab, setMainTab] = useState<string>("new");
   const [step, setStep] = useState<1 | 2>(1);
