@@ -1,7 +1,6 @@
-import ExcelJS from "exceljs";
+import type * as ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import type { jsPDF as jsPDFType } from "jspdf";
 import { isOccurrenceOverdue, formatDateBR } from "@/lib/occurrenceHelpers";
 
 /* ── Brand / Color constants ── */
