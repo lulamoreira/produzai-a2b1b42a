@@ -383,7 +383,8 @@ export default function MatrixAutomationDialog({
   // Check for overwrite before preview
   const handlePreviewClick = async () => {
     const validFilters = filterGroup.filtros.filter(f => f.campo && f.valor);
-    if (validFilters.length === 0 || selectedItems.length === 0) {
+    const allowNoFilters = kind === "by_field"; // Modo "Multiplicar por campo": permite aplicar a TODAS as lojas
+    if ((validFilters.length === 0 && !allowNoFilters) || selectedItems.length === 0) {
       toast.error(t("automation.fillAllFields"));
       return;
     }
@@ -704,6 +705,10 @@ export default function MatrixAutomationDialog({
   const getNumericFieldLabel = (key: string) => numericFields.find(f => f.key === key)?.label || key;
 
   const hasValidFilters = filterGroup.filtros.some(f => f.campo && f.valor);
+  // No modo "by_field", se nenhum filtro foi preenchido, a automação é aplicada a TODAS as lojas
+  // (filtrando depois por valor numérico válido no campo base). Isso permite uma "automação global".
+  const canProceed = kind === "by_field" ? (!!baseField && (hasValidFilters || filterGroup.filtros.every(f => !f.campo && !f.valor))) : hasValidFilters;
+  const applyingToAll = kind === "by_field" && !hasValidFilters;
 
   // Stores within filter that have a valid numeric value in baseField
   const matchingStoresWithValue = useMemo(() => {
@@ -944,7 +949,9 @@ export default function MatrixAutomationDialog({
                 <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg mt-2">
                   <span className="text-lg font-bold text-primary">{matchingStores.length}</span>
                   <span className="text-xs text-muted-foreground">
-                    de {stores.length} lojas correspondem a estes filtros
+                    {applyingToAll
+                      ? `de ${stores.length} lojas (sem filtros — aplicará a todas)`
+                      : `de ${stores.length} lojas correspondem a estes filtros`}
                   </span>
                   {hasValidFilters && matchingStores.length === 0 && (
                     <span className="text-xs text-amber-600 dark:text-amber-400 ml-2">
@@ -957,6 +964,11 @@ export default function MatrixAutomationDialog({
                     </span>
                   )}
                 </div>
+                {kind === "by_field" && (
+                  <p className="text-[11px] text-muted-foreground mt-1.5">
+                    💡 Deixe os filtros vazios para aplicar a <span className="font-semibold text-foreground">todas as lojas</span> que tiverem valor no campo base.
+                  </p>
+                )}
               </div>
 
               {/* Items selection */}
@@ -1027,12 +1039,12 @@ export default function MatrixAutomationDialog({
               <div className="flex gap-2">
                 <Button
                   className="flex-1"
-                  disabled={!hasValidFilters || selectedItems.length === 0}
+                  disabled={!canProceed || selectedItems.length === 0}
                   onClick={handlePreviewClick}
                 >
                   <Eye className="w-4 h-4 mr-1" /> {t("automation.preview")}
                 </Button>
-                {hasValidFilters && selectedItems.length > 0 && (
+                {canProceed && selectedItems.length > 0 && (
                   <>
                     {!showSaveInput ? (
                       <Button variant="outline" size="icon" onClick={() => setShowSaveInput(true)} title={t("automation.saveTemplate")}>
