@@ -1072,7 +1072,7 @@ export default function MatrixAutomationDialog({
                       <div className="flex flex-wrap gap-1 mt-1">
                         {tpl.items.map(it => (
                           <Badge key={`${it.type}-${it.id}`} variant="secondary" className="text-[10px]">
-                            {it.type === "kit" ? "Kit" : ""} {it.code} × {it.quantity}
+                            {it.type === "kit" ? "Kit" : ""} {it.code} {(tpl.kind ?? "fixed") === "by_field" ? "f×" : "×"} {it.quantity}
                           </Badge>
                         ))}
                       </div>
