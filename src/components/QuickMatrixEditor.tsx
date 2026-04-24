@@ -647,19 +647,28 @@ const QuickMatrixEditor = ({
 
   // Pre-compute row data for memoization
   const rowData = useMemo(() => {
+    // Build a deduped list of piece ids that count toward "store has any qty":
+    // visible matrix pieces + all kit component piece ids (kit_only pieces).
+    const allPieceIds = new Set<string>(pieces.map((p) => p.id));
+    kitPieces.forEach((kp) => allPieceIds.add(kp.piece_id));
+    const allPieceIdList = Array.from(allPieceIds);
+
     return stores.map(store => {
       const storeSlice = storeDraftSlices[store.id] || {};
       const rowTotal = pieces.reduce((s, p) => {
         const key = mk(store.id, p.id);
         return s + (parseInt(draft[key]) || 0);
       }, 0);
+      // Real total includes kit_only piece quantities so stores filled only via kits
+      // are not falsely flagged as empty.
+      const storeTotalReal = allPieceIdList.reduce((sum, pid) => sum + getQty(store.id, pid), 0);
       const hasAnyStoreWithQty = stores.some(
-        (st) => st.id !== store.id && pieces.some((p) => getQty(st.id, p.id) > 0)
+        (st) => st.id !== store.id && allPieceIdList.some((pid) => getQty(st.id, pid) > 0)
       );
-      const isEmptyStore = rowTotal === 0 && hasAnyStoreWithQty;
+      const isEmptyStore = storeTotalReal === 0 && hasAnyStoreWithQty;
       return { store, storeSlice, rowTotal, isEmptyStore };
     });
-  }, [stores, pieces, draft, storeDraftSlices, getQty]);
+  }, [stores, pieces, kitPieces, draft, storeDraftSlices, getQty]);
 
   if (!isAdmin) return null;
 
