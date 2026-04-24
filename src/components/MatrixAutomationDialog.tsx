@@ -139,6 +139,19 @@ const OPERATOR_LABELS: Record<FilterOperator, string> = {
   nao_contem: "não contém",
 };
 
+/** Extract display name and type from raw client custom_field label ("Name|type"). */
+function parseCustomFieldLabel(raw: string): { name: string; type: "text" | "number" | "date" | "boolean" } {
+  if (!raw) return { name: "", type: "text" };
+  const [name, t] = raw.split("|");
+  const type = (t as any) || "text";
+  return {
+    name: name || "",
+    type: ["text", "number", "date", "boolean"].includes(type) ? type : "text",
+  };
+}
+
+type AutomationKind = "fixed" | "by_field";
+
 /* ─── Component ──────────────────────────────────────────── */
 
 export default function MatrixAutomationDialog({
