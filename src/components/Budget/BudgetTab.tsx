@@ -252,6 +252,10 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
             campaignName,
             portalUrl,
             deadline: settings?.deadline || null,
+            timelineEntries: timelineEntries.map((e) => ({
+              entry_date: e.entry_date,
+              description: e.description,
+            })),
           },
         },
       });
