@@ -636,7 +636,7 @@ const CampaignDetail = () => {
       skipBlurSaveRef.current = false;
       return;
     }
-    handleCellSave({ keepEditing: true });
+    handleCellSave({ keepEditing: false });
   };
 
 
