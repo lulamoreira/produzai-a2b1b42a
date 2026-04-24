@@ -1801,8 +1801,12 @@ const CampaignDetail = () => {
                     const label = (client as any)?.[`custom_field_${i}_label`];
                     return label ? { key: `custom_field_${i}`, label, index: i } : null;
                   }).filter((x): x is { key: string; label: string; index: number } => x !== null)}
-                  onComplete={() => {
-                    queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
+                  onComplete={async () => {
+                    await queryClient.refetchQueries({
+                      queryKey: ["campaign_store_pieces", campaignId],
+                      exact: true,
+                      type: "active",
+                    });
                   }}
                 />
 
