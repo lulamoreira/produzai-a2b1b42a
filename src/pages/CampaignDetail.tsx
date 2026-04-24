@@ -2074,16 +2074,13 @@ const CampaignDetail = () => {
                                             className={`w-full h-8 text-sm rounded transition-colors ${
                                               qty > 0
                                                 ? "bg-primary/10 text-primary font-semibold hover:bg-primary/20"
-                                                : isEmptyStore
-                                                ? "text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30 font-medium"
                                                 : canEditCampaign
                                                 ? "text-muted-foreground/40 hover:bg-muted"
                                                 : "text-muted-foreground/40"
                                             }`}
                                             disabled={!canEditCampaign}
-                                            title={isEmptyStore && qty === 0 ? "Loja sem quantidades — preencha manualmente" : undefined}
                                           >
-                                            {qty > 0 ? qty : isEmptyStore ? "⚠" : "—"}
+                                            {qty > 0 ? qty : "—"}
                                           </button>
                                         )}
                                       </TableCell>
