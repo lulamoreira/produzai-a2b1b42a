@@ -139,6 +139,19 @@ const OPERATOR_LABELS: Record<FilterOperator, string> = {
   nao_contem: "não contém",
 };
 
+/** Extract display name and type from raw client custom_field label ("Name|type"). */
+function parseCustomFieldLabel(raw: string): { name: string; type: "text" | "number" | "date" | "boolean" } {
+  if (!raw) return { name: "", type: "text" };
+  const [name, t] = raw.split("|");
+  const type = (t as any) || "text";
+  return {
+    name: name || "",
+    type: ["text", "number", "date", "boolean"].includes(type) ? type : "text",
+  };
+}
+
+type AutomationKind = "fixed" | "by_field";
+
 /* ─── Component ──────────────────────────────────────────── */
 
 export default function MatrixAutomationDialog({
@@ -159,6 +172,10 @@ export default function MatrixAutomationDialog({
 
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [itemSearch, setItemSearch] = useState("");
+
+  // Automation kind: 'fixed' = quantity per item; 'by_field' = store_field × factor
+  const [kind, setKind] = useState<AutomationKind>("fixed");
+  const [baseField, setBaseField] = useState<string>("");
 
   // Step 2 state
   const [preview, setPreview] = useState<PreviewRow[]>([]);
@@ -198,8 +215,24 @@ export default function MatrixAutomationDialog({
       setNewGroupName("");
       setAddingTemplateToGroup(null);
       setOverwriteDialog({ open: false, count: 0 });
+      setKind("fixed");
+      setBaseField("");
     }
   }, [open]);
+
+  // Numeric fields available as the multiplication base (showcase_count + custom Number fields)
+  const numericFields = useMemo(() => {
+    const list: { key: string; label: string }[] = [
+      { key: "showcase_count", label: "Qtd. Vitrines" },
+    ];
+    for (const cf of customFieldLabels) {
+      const parsed = parseCustomFieldLabel(cf.label);
+      if (parsed.type === "number") {
+        list.push({ key: cf.key, label: parsed.name || cf.label });
+      }
+    }
+    return list;
+  }, [customFieldLabels]);
 
   // All filterable fields
   const allFilterFields = useMemo(() => {
@@ -292,7 +325,7 @@ export default function MatrixAutomationDialog({
     setSelectedItems(prev => prev.map((item, i) => i === idx ? { ...item, quantity: Math.max(1, qty) } : item));
   };
 
-  // Resolve items to piece-level changes
+  // Resolve items to piece-level changes (FIXED mode)
   const resolveItemsToPieces = useCallback((items: SelectedItem[]): { pieceId: string; pieceName: string; quantity: number }[] => {
     const result: { pieceId: string; pieceName: string; quantity: number }[] = [];
     for (const item of items) {
@@ -319,11 +352,44 @@ export default function MatrixAutomationDialog({
     return result;
   }, [kitPieces, pieces]);
 
+  /**
+   * Resolve items multiplied by a numeric store field (BY_FIELD mode).
+   * Returns [] when the store has no valid numeric value in the base field
+   * (the store should then be skipped entirely from the automation).
+   */
+  const resolveItemsForStore = useCallback(
+    (items: SelectedItem[], store: ClientStore, field: string): { pieceId: string; pieceName: string; quantity: number }[] => {
+      const raw = (store as any)[field];
+      const baseValue = Number(raw);
+      if (!Number.isFinite(baseValue) || baseValue <= 0) return [];
+      const multiplied = items.map(it => ({ ...it, quantity: it.quantity * baseValue }));
+      return resolveItemsToPieces(multiplied);
+    },
+    [resolveItemsToPieces],
+  );
+
+  // Compute resolved pieces for a single store, respecting current `kind`/`baseField`.
+  const resolveForStore = useCallback(
+    (store: ClientStore, items: SelectedItem[], k: AutomationKind, bf: string) => {
+      if (k === "by_field") {
+        if (!bf) return [];
+        return resolveItemsForStore(items, store, bf);
+      }
+      return resolveItemsToPieces(items);
+    },
+    [resolveItemsForStore, resolveItemsToPieces],
+  );
+
   // Check for overwrite before preview
   const handlePreviewClick = async () => {
     const validFilters = filterGroup.filtros.filter(f => f.campo && f.valor);
     if (validFilters.length === 0 || selectedItems.length === 0) {
       toast.error(t("automation.fillAllFields"));
+      return;
+    }
+
+    if (kind === "by_field" && !baseField) {
+      toast.error("Selecione o campo base para multiplicação.");
       return;
     }
 
@@ -344,9 +410,9 @@ export default function MatrixAutomationDialog({
 
     // Check overwrite
     const filtered = filtrarLojas(stores, filterGroup);
-    const resolvedPieces = resolveItemsToPieces(selectedItems);
     let overwriteCount = 0;
     for (const store of filtered) {
+      const resolvedPieces = resolveForStore(store, selectedItems, kind, baseField);
       for (const rp of resolvedPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
         if (currentQty > 0) overwriteCount++;
@@ -365,17 +431,33 @@ export default function MatrixAutomationDialog({
     const filtered = filtrarLojas(stores, filterGroup);
     const filteredIds = new Set(filtered.map(s => s.id));
     const nonMatchingStores = stores.filter(s => !filteredIds.has(s.id));
-    const resolvedPieces = resolveItemsToPieces(selectedItems);
+
+    // For non-matching stores, in by_field mode we still need a "default" piece list
+    // to know which pieces could conflict — pre-resolve assuming factor=1 (a virtual store).
+    const fallbackPieces = resolveItemsToPieces(selectedItems);
 
     const rows: PreviewRow[] = [];
     const actions: Record<string, OutsideFilterAction> = {};
 
     for (const store of filtered) {
+      const resolvedPieces = resolveForStore(store, selectedItems, kind, baseField);
+      // by_field: store sem valor numérico válido cai como ignorada (1 linha agregada)
+      if (resolvedPieces.length === 0 && kind === "by_field") {
+        rows.push({
+          storeId: store.id,
+          storeName: store.name,
+          group: "ignored",
+          pieceId: "__no_value__",
+          pieceName: `(sem valor em ${baseField})`,
+          currentQty: 0,
+          newQty: 0,
+          action: "keep",
+        });
+        continue;
+      }
       for (const rp of resolvedPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
-        // If not overwriting and already has value, skip (mark as "outside" to keep)
         if (!sobrescrever && currentQty > 0) {
-          // Still show in update group but with current qty preserved
           rows.push({
             storeId: store.id, storeName: store.name, group: "update",
             pieceId: rp.pieceId, pieceName: rp.pieceName,
@@ -392,7 +474,7 @@ export default function MatrixAutomationDialog({
     }
 
     for (const store of nonMatchingStores) {
-      for (const rp of resolvedPieces) {
+      for (const rp of fallbackPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
         if (currentQty > 0) {
           const key = `${store.id}-${rp.pieceId}`;
@@ -430,19 +512,27 @@ export default function MatrixAutomationDialog({
     setOutsideActions(updated);
   };
 
-  // Execute automation (reusable for single + group) — now supports multi-filter
+  // Execute automation (reusable for single + group) — supports kind=fixed|by_field
   const executeAutomationMulti = async (
-    fg: FilterGroup, items: SelectedItem[],
+    fg: FilterGroup,
+    items: SelectedItem[],
+    k: AutomationKind = "fixed",
+    bf: string | null = null,
   ): Promise<{ updated: number; kept: number; zeroed: number }> => {
-    const resolvedPieces = resolveItemsToPieces(items);
     const matching = filtrarLojas(stores, fg);
     const matchingIds = new Set(matching.map(s => s.id));
     const nonMatchingStores = stores.filter(s => !matchingIds.has(s.id));
 
     const upserts: { campaign_id: string; store_id: string; piece_id: string; quantity: number }[] = [];
     const deletes: { storeId: string; pieceId: string }[] = [];
+    let touchedStores = 0;
 
     for (const store of matching) {
+      const resolvedPieces = k === "by_field" && bf
+        ? resolveItemsForStore(items, store, bf)
+        : resolveItemsToPieces(items);
+      if (resolvedPieces.length === 0) continue;
+      touchedStores++;
       for (const rp of resolvedPieces) {
         if (rp.quantity > 0) {
           upserts.push({ campaign_id: campaignId, store_id: store.id, piece_id: rp.pieceId, quantity: rp.quantity });
@@ -452,9 +542,10 @@ export default function MatrixAutomationDialog({
       }
     }
 
+    const fallbackPieces = resolveItemsToPieces(items);
     let keepCount = 0;
     for (const store of nonMatchingStores) {
-      for (const rp of resolvedPieces) {
+      for (const rp of fallbackPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
         if (currentQty > 0) keepCount++;
       }
@@ -472,7 +563,7 @@ export default function MatrixAutomationDialog({
         .eq("campaign_id", campaignId).eq("store_id", del.storeId).eq("piece_id", del.pieceId);
     }
 
-    return { updated: matching.length, kept: keepCount, zeroed: 0 };
+    return { updated: touchedStores, kept: keepCount, zeroed: 0 };
   };
 
   // Step 2: Execute with preview-based actions
@@ -544,6 +635,10 @@ export default function MatrixAutomationDialog({
   // Save current config as template (multi-filter format)
   const handleSaveTemplate = async () => {
     if (!saveName.trim()) return;
+    if (kind === "by_field" && !baseField) {
+      toast.error("Selecione o campo base para multiplicação.");
+      return;
+    }
     try {
       await saveTemplate.mutateAsync({
         name: saveName.trim(),
@@ -551,6 +646,8 @@ export default function MatrixAutomationDialog({
         filter_value: JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes }),
         items: selectedItems,
         outside_action: "keep",
+        kind,
+        base_field: kind === "by_field" ? baseField : null,
       });
       toast.success(t("automation.saved"));
       setSaveName("");
@@ -565,6 +662,8 @@ export default function MatrixAutomationDialog({
     const migrated = migrateTemplate(tpl);
     setFilterGroup(migrated);
     setSelectedItems(tpl.items);
+    setKind(tpl.kind ?? "fixed");
+    setBaseField(tpl.base_field ?? "");
     setMainTab("new");
     setStep(1);
   };
@@ -582,7 +681,12 @@ export default function MatrixAutomationDialog({
         const tpl = templates.find(t => t.id === gi.template_id);
         if (!tpl) continue;
         const migrated = migrateTemplate(tpl);
-        const result = await executeAutomationMulti(migrated, tpl.items);
+        const result = await executeAutomationMulti(
+          migrated,
+          tpl.items,
+          tpl.kind ?? "fixed",
+          tpl.base_field ?? null,
+        );
         totalUpdated += result.updated;
       }
 
@@ -597,27 +701,43 @@ export default function MatrixAutomationDialog({
   };
 
   const getFieldLabel = (key: string) => allFilterFields.find(f => f.key === key)?.label || key;
+  const getNumericFieldLabel = (key: string) => numericFields.find(f => f.key === key)?.label || key;
 
   const hasValidFilters = filterGroup.filtros.some(f => f.campo && f.valor);
 
+  // Stores within filter that have a valid numeric value in baseField
+  const matchingStoresWithValue = useMemo(() => {
+    if (kind !== "by_field" || !baseField) return matchingStores.length;
+    return matchingStores.filter(s => {
+      const v = Number((s as any)[baseField]);
+      return Number.isFinite(v) && v > 0;
+    }).length;
+  }, [matchingStores, kind, baseField]);
+
   // Template display helper
   const getTemplateFilterSummary = (tpl: typeof templates[0]): string => {
+    let base: string;
     if (tpl.filter_field === "__multi_v2__") {
       try {
         const parsed = JSON.parse(tpl.filter_value);
         const filtros = parsed.filtros || [];
         const condicoes = parsed.condicoes || [];
-        return filtros.map((f: AutomationFilter, i: number) => {
+        base = filtros.map((f: AutomationFilter, i: number) => {
           const label = getFieldLabel(f.campo);
           const op = OPERATOR_LABELS[f.operador] || f.operador;
           const prefix = i > 0 ? ` ${condicoes[i - 1] || "E"} ` : "";
           return `${prefix}${label} ${op} "${f.valor}"`;
         }).join("");
       } catch {
-        return "Filtro inválido";
+        base = "Filtro inválido";
       }
+    } else {
+      base = `${getFieldLabel(tpl.filter_field)} = ${tpl.filter_value}`;
     }
-    return `${getFieldLabel(tpl.filter_field)} = ${tpl.filter_value}`;
+    if ((tpl.kind ?? "fixed") === "by_field" && tpl.base_field) {
+      base += ` · usar ${getNumericFieldLabel(tpl.base_field)} × fator`;
+    }
+    return base;
   };
 
   return (
@@ -647,6 +767,63 @@ export default function MatrixAutomationDialog({
 
             {/* ──── TAB: Nova automação ──── */}
             <TabsContent value="new" className="space-y-4 mt-3">
+              {/* ── Tipo de automação ── */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">Tipo de automação</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setKind("fixed")}
+                    className={`text-left p-3 rounded-lg border transition-all ${
+                      kind === "fixed"
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border bg-background hover:border-primary/40"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">Quantidade fixa</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Cada item recebe uma quantidade definida por você
+                    </p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setKind("by_field")}
+                    disabled={numericFields.length === 0}
+                    className={`text-left p-3 rounded-lg border transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                      kind === "by_field"
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border bg-background hover:border-primary/40"
+                    }`}
+                    title={numericFields.length === 0 ? "Nenhum campo numérico disponível" : undefined}
+                  >
+                    <p className="text-sm font-medium">Multiplicar por campo da loja</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Quantidade = valor do campo × fator por item
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* ── Campo base (apenas no modo by_field) ── */}
+              {kind === "by_field" && (
+                <div>
+                  <Label className="text-sm font-semibold mb-2 block">Campo base (numérico)</Label>
+                  <Select value={baseField} onValueChange={setBaseField}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Selecione o campo numérico..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {numericFields.map(f => (
+                        <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Lojas sem valor neste campo serão ignoradas pela automação.
+                  </p>
+                </div>
+              )}
+
               {/* Multi-filter section */}
               <div>
                 <Label className="text-sm font-semibold mb-2 block">Filtros de Lojas</Label>
@@ -764,7 +941,7 @@ export default function MatrixAutomationDialog({
                 </Button>
 
                 {/* Matching stores counter */}
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg mt-2">
+                <div className="flex flex-wrap items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg mt-2">
                   <span className="text-lg font-bold text-primary">{matchingStores.length}</span>
                   <span className="text-xs text-muted-foreground">
                     de {stores.length} lojas correspondem a estes filtros
@@ -774,12 +951,22 @@ export default function MatrixAutomationDialog({
                       ⚠ Nenhuma loja encontrada
                     </span>
                   )}
+                  {kind === "by_field" && baseField && matchingStores.length > 0 && (
+                    <span className="text-[11px] text-muted-foreground ml-auto">
+                      <span className="font-semibold text-foreground">{matchingStoresWithValue}</span> com valor em {getNumericFieldLabel(baseField)}
+                    </span>
+                  )}
                 </div>
               </div>
 
               {/* Items selection */}
               <div>
                 <Label className="text-sm font-medium">{t("automation.selectItems")}</Label>
+                {kind === "by_field" && baseField && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Quantidade por loja = <span className="font-semibold text-foreground">{getNumericFieldLabel(baseField)}</span> × fator do item (abaixo)
+                  </p>
+                )}
                 <div className="relative mt-1">
                   <Input
                     placeholder={t("automation.searchByCode")}
@@ -818,10 +1005,14 @@ export default function MatrixAutomationDialog({
                         </Badge>
                         <span className="font-mono text-xs">{item.code}</span>
                         <span className="text-sm truncate flex-1">{item.name}</span>
+                        {kind === "by_field" && (
+                          <span className="text-xs text-muted-foreground font-semibold">×</span>
+                        )}
                         <Input
                           type="number" min={1} value={item.quantity}
                           onChange={e => updateItemQty(idx, parseInt(e.target.value) || 1)}
                           className="w-20 h-7 text-xs"
+                          title={kind === "by_field" ? "Fator multiplicador" : "Quantidade"}
                         />
                         <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeItem(idx)}>
                           <Trash2 className="w-3 h-3" />
@@ -881,7 +1072,7 @@ export default function MatrixAutomationDialog({
                       <div className="flex flex-wrap gap-1 mt-1">
                         {tpl.items.map(it => (
                           <Badge key={`${it.type}-${it.id}`} variant="secondary" className="text-[10px]">
-                            {it.type === "kit" ? "Kit" : ""} {it.code} × {it.quantity}
+                            {it.type === "kit" ? "Kit" : ""} {it.code} {(tpl.kind ?? "fixed") === "by_field" ? "f×" : "×"} {it.quantity}
                           </Badge>
                         ))}
                       </div>

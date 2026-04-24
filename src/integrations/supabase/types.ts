@@ -150,32 +150,38 @@ export type Database = {
       }
       automation_templates: {
         Row: {
+          base_field: string | null
           campaign_id: string
           created_at: string
           filter_field: string
           filter_value: string
           id: string
           items: Json
+          kind: string
           name: string
           outside_action: string
         }
         Insert: {
+          base_field?: string | null
           campaign_id: string
           created_at?: string
           filter_field: string
           filter_value: string
           id?: string
           items?: Json
+          kind?: string
           name: string
           outside_action?: string
         }
         Update: {
+          base_field?: string | null
           campaign_id?: string
           created_at?: string
           filter_field?: string
           filter_value?: string
           id?: string
           items?: Json
+          kind?: string
           name?: string
           outside_action?: string
         }

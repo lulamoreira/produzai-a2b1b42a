@@ -11,6 +11,8 @@ export type AutomationTemplateItem = {
   quantity: number;
 };
 
+export type AutomationKind = "fixed" | "by_field";
+
 export type AutomationTemplate = {
   id: string;
   campaign_id: string;
@@ -19,6 +21,8 @@ export type AutomationTemplate = {
   filter_value: string;
   items: AutomationTemplateItem[];
   outside_action: string;
+  kind: AutomationKind;
+  base_field: string | null;
   created_at: string;
 };
 
@@ -58,6 +62,8 @@ export function useAutomationTemplates(campaignId: string) {
       if (error) throw error;
       return (data || []).map((t: any) => ({
         ...t,
+        kind: (t.kind as AutomationKind) ?? "fixed",
+        base_field: t.base_field ?? null,
         items: (typeof t.items === "string" ? JSON.parse(t.items) : t.items) as AutomationTemplateItem[],
       })) as AutomationTemplate[];
     },
@@ -65,10 +71,19 @@ export function useAutomationTemplates(campaignId: string) {
   });
 
   const saveTemplate = useMutation({
-    mutationFn: async (t: { name: string; filter_field: string; filter_value: string; items: AutomationTemplateItem[]; outside_action: string }) => {
+    mutationFn: async (t: { name: string; filter_field: string; filter_value: string; items: AutomationTemplateItem[]; outside_action: string; kind?: AutomationKind; base_field?: string | null }) => {
       const { error } = await supabase
         .from("automation_templates")
-        .insert({ campaign_id: campaignId, name: t.name, filter_field: t.filter_field, filter_value: t.filter_value, items: t.items as any, outside_action: t.outside_action });
+        .insert({
+          campaign_id: campaignId,
+          name: t.name,
+          filter_field: t.filter_field,
+          filter_value: t.filter_value,
+          items: t.items as any,
+          outside_action: t.outside_action,
+          kind: t.kind ?? "fixed",
+          base_field: t.base_field ?? null,
+        } as any);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: key }),
