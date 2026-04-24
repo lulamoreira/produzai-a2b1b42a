@@ -15,6 +15,12 @@ import { compressImage } from "@/lib/compressImage";
 import { getCompressionProfile } from "@/lib/deviceProfile";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import {
+  savePendingUpload,
+  getPendingUploads,
+  deletePendingUpload,
+  type UploadMeta,
+} from "@/lib/installerUploadStore";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
