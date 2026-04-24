@@ -383,7 +383,8 @@ export default function MatrixAutomationDialog({
   // Check for overwrite before preview
   const handlePreviewClick = async () => {
     const validFilters = filterGroup.filtros.filter(f => f.campo && f.valor);
-    if (validFilters.length === 0 || selectedItems.length === 0) {
+    const allowNoFilters = kind === "by_field"; // Modo "Multiplicar por campo": permite aplicar a TODAS as lojas
+    if ((validFilters.length === 0 && !allowNoFilters) || selectedItems.length === 0) {
       toast.error(t("automation.fillAllFields"));
       return;
     }
