@@ -631,33 +631,7 @@ const CampaignDetail = () => {
     closeEditing();
   };
 
-  // Shared keyboard navigation for both piece and kit cells.
-  const handleEditorKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    const move = (dir: "up" | "down" | "left" | "right") => {
-      e.preventDefault();
-      const next = navigateMatrixCell(dir);
-      if (next) {
-        skipBlurSaveRef.current = true;
-        switchToCell(next.storeId, next.pieceId);
-      } else {
-        skipBlurSaveRef.current = true;
-        closeEditing();
-      }
-    };
-
-    if (e.key === "Tab") move(e.shiftKey ? "left" : "right");
-    else if (e.key === "Enter") move(e.shiftKey ? "up" : "down");
-    else if (e.key === "ArrowUp") move("up");
-    else if (e.key === "ArrowDown") move("down");
-    else if (e.key === "ArrowLeft") move("left");
-    else if (e.key === "ArrowRight") move("right");
-    else if (e.key === "Escape") {
-      e.preventDefault();
-      skipBlurSaveRef.current = true;
-      setEditingCell(null);
-      setEditValue("");
-    }
-  }, [switchToCell, closeEditing]);
+  // Note: shared keyboard handler is defined inline in JSX (uses navigateMatrixCell which is declared later).
 
 
   const handleDistributePiece = async (piece: CampaignPiece) => {
