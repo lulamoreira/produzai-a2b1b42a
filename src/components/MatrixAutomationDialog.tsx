@@ -704,6 +704,10 @@ export default function MatrixAutomationDialog({
   const getNumericFieldLabel = (key: string) => numericFields.find(f => f.key === key)?.label || key;
 
   const hasValidFilters = filterGroup.filtros.some(f => f.campo && f.valor);
+  // No modo "by_field", se nenhum filtro foi preenchido, a automação é aplicada a TODAS as lojas
+  // (filtrando depois por valor numérico válido no campo base). Isso permite uma "automação global".
+  const canProceed = kind === "by_field" ? (!!baseField && (hasValidFilters || filterGroup.filtros.every(f => !f.campo && !f.valor))) : hasValidFilters;
+  const applyingToAll = kind === "by_field" && !hasValidFilters;
 
   // Stores within filter that have a valid numeric value in baseField
   const matchingStoresWithValue = useMemo(() => {
