@@ -332,7 +332,7 @@ const QuickMatrixEditor = ({
     });
     if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
     return groups;
-  }, [matrixColumns]);
+  }, [matrixColumns, getKitCategory]);
 
   // Build flat grid index for keyboard navigation
   const gridKeys = useMemo(() => {
