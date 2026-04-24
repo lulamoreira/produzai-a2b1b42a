@@ -649,6 +649,11 @@ export default function MatrixAutomationDialog({
         outsideRowsCount: outsideRows.length,
       });
 
+      console.log("[AUTOMATION] upsert full detail", {
+        piece_ids_unique: [...new Set(upserts.map(u => u.piece_id))],
+        sample_rows: upserts.slice(0, 10),
+      });
+
       if (upserts.length > 0) {
         const { data, error, status, statusText } = await supabase
           .from("campaign_store_pieces")
