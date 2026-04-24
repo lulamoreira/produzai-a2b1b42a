@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { CampaignKit, CampaignKitPiece, CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 import { useCampaignKitPieces, useCampaignKits, useCampaignPieceLocations } from "@/hooks/useMultiClientData";
 import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
+import { useOccurrenceStatusSync } from "@/hooks/useOccurrenceStatusSync";
 import OccurrenceCard from "./OccurrenceCard";
 import OccurrenceListView from "./OccurrenceListView";
 import { useUserRole } from "@/hooks/useUserRole";

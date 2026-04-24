@@ -255,8 +255,8 @@ export default function AppSidebar() {
         <button
           onClick={() => handleNavigate("/")}
           className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-          style={itemStyle(location.pathname === "/" || location.pathname === "/favorites" || location.pathname === "/agencies" || location.pathname === "/my-campaigns" || location.pathname === "/meu-acesso")}
-          {...hoverHandlers(location.pathname === "/" || location.pathname === "/favorites" || location.pathname === "/agencies" || location.pathname === "/my-campaigns" || location.pathname === "/meu-acesso")}
+          style={itemStyle(location.pathname === "/" || location.pathname === "/favorites" || location.pathname === "/agencies" || location.pathname === "/my-campaigns")}
+          {...hoverHandlers(location.pathname === "/" || location.pathname === "/favorites" || location.pathname === "/agencies" || location.pathname === "/my-campaigns")}
           title={collapsed ? t("sidebar.home", "Início") : undefined}
         >
           <AquaIcon icon={Home} size="sm" color="#8C6F4E" />
