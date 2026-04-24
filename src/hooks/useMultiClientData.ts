@@ -662,7 +662,6 @@ export function useUpdateCampaignStorePiece() {
       }
     },
     onMutate: async ({ campaignId, storeId, pieceId, quantity }) => {
-      console.log("[MUTATION_OPTIMISTIC]", { storeId: storeId, pieceId: pieceId, quantity: quantity });
       const queryKey = ["campaign_store_pieces", campaignId] as const;
       await qc.cancelQueries({ queryKey });
 
