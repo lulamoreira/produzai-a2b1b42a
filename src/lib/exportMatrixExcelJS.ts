@@ -318,7 +318,9 @@ export async function exportMatrixExcelJS(
   agencyName?: string,
   clientName?: string,
 ) {
-  const wb = new ExcelJS.Workbook();
+  const ExcelJSModule = await import("exceljs");
+  const ExcelJSRuntime = ExcelJSModule.default;
+  const wb = new ExcelJSRuntime.Workbook();
   wb.creator = "ProduzAI";
   const colors = makeColors(palette);
   const locData: LocationData = { locations, subLocations };
