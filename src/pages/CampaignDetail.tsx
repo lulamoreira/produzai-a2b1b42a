@@ -2155,7 +2155,22 @@ const CampaignDetail = () => {
                                               }
                                             }
 
-                                            setEditValue(String(qty));
+                                            // Re-derive kit qty from the updated query cache instead of the stale `qty` closure
+                                            // captured before the await — prevents overwriting any value the user typed mid-save.
+                                            const updatedData = queryClient.getQueryData<CampaignStorePiece[]>(["campaign_store_pieces", campaignId]);
+                                            let updatedKitQty = 0;
+                                            if (kitPiecesForKit.length > 0) {
+                                              updatedKitQty = Math.min(
+                                                ...kitPiecesForKit.map((kp) => {
+                                                  const row = updatedData?.find(
+                                                    (r) => r.store_id === store.id && r.piece_id === kp.piece_id
+                                                  );
+                                                  const baseQty = row?.quantity || 0;
+                                                  return Math.floor(baseQty / (kp.quantity || 1));
+                                                })
+                                              );
+                                            }
+                                            setEditValue(String(updatedKitQty));
 
                                             const currentCell = { storeId: store.id, pieceId: `kit-${kit.id}` };
                                             if (
