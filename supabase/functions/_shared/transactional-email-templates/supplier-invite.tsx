@@ -101,6 +101,24 @@ const SupplierInviteEmail = ({
             </Section>
           )}
 
+          {timelineEntries && timelineEntries.length > 0 && (
+            <Section style={timelineBox}>
+              <Text style={timelineTitle}>📅 Cronograma da Campanha</Text>
+              {timelineEntries.map((entry, i) => (
+                <Text key={i} style={timelineItem}>
+                  <strong>
+                    {new Date(entry.entry_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </strong>
+                  {' — '}
+                  {entry.description}
+                </Text>
+              ))}
+              <Text style={timelineAcceptance}>
+                ⚠ Ao preencher e enviar o orçamento, você confirma o aceite deste cronograma.
+              </Text>
+            </Section>
+          )}
+
           <Hr style={hr} />
 
           <Text style={footer}>
