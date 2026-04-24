@@ -28,6 +28,7 @@ export function useClientSuppliers(clientId: string | undefined) {
       return data as ClientSupplier[];
     },
     enabled: !!clientId,
+    staleTime: 5 * 60 * 1000, // reference data — rarely changes
   });
 }
 
