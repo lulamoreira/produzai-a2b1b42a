@@ -144,7 +144,8 @@ export function useClients(agencyId?: string) {
 }
 
 export function useClient(clientId: string | undefined) {
-  return useQuery({
+  const qc = useQueryClient();
+  const query = useQuery({
     queryKey: ["clients", clientId],
     queryFn: async () => {
       if (!clientId) return null;
@@ -158,6 +159,25 @@ export function useClient(clientId: string | undefined) {
     },
     enabled: !!clientId,
   });
+
+  // Realtime: refresh when this client row changes (e.g. custom field labels updated in another tab)
+  useEffect(() => {
+    if (!clientId) return;
+    const channel = supabase
+      .channel(`client-rt-${clientId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "clients", filter: `id=eq.${clientId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["clients", clientId] });
+          qc.invalidateQueries({ queryKey: ["clients"] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [clientId, qc]);
+
+  return query;
 }
 
 export function useAddClient() {
