@@ -144,6 +144,11 @@ export const template = {
     campaignName: 'Campanha Verão 2026',
     portalUrl: 'https://example.com/orcamento/abc123',
     deadline: new Date(Date.now() + 2 * 86400000).toISOString(),
+    timelineEntries: [
+      { entry_date: '2026-05-01', description: 'Aprovação da arte final' },
+      { entry_date: '2026-05-10', description: 'Início da produção' },
+      { entry_date: '2026-05-25', description: 'Entrega nas lojas' },
+    ],
   },
 } satisfies TemplateEntry
 
