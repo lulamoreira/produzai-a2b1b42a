@@ -8,6 +8,11 @@ import type { TemplateEntry } from './registry.ts'
 const SITE_NAME = 'ProduzAI'
 const BRAND = '#8C6F4E'
 
+interface TimelineEntry {
+  entry_date: string
+  description: string
+}
+
 interface SupplierInviteProps {
   contactName?: string
   companyName?: string
@@ -15,6 +20,7 @@ interface SupplierInviteProps {
   campaignName?: string
   portalUrl?: string
   deadline?: string
+  timelineEntries?: TimelineEntry[]
 }
 
 const SupplierInviteEmail = ({
@@ -24,6 +30,7 @@ const SupplierInviteEmail = ({
   campaignName = 'Campanha',
   portalUrl = '#',
   deadline,
+  timelineEntries = [],
 }: SupplierInviteProps) => {
   const deadlineDate = deadline ? new Date(deadline) : null
   const daysLeft = deadlineDate
