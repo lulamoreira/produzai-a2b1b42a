@@ -602,11 +602,14 @@ const CampaignDetail = () => {
   const switchToCell = useCallback((newStoreId: string, newPieceId: string) => {
     if (!canEditCampaign) return;
     const current = editingCellRef.current;
+    // Snapshot target qty BEFORE saving previous cell, so optimistic updates
+    // on shared piece keys (kit components) cannot leak into the new cell.
+    const targetQty = getCellQty(newStoreId, newPieceId);
     if (current && (current.storeId !== newStoreId || current.pieceId !== newPieceId)) {
       saveCell(current, editValue);
     }
     setEditingCell({ storeId: newStoreId, pieceId: newPieceId });
-    setEditValue(String(getCellQty(newStoreId, newPieceId)));
+    setEditValue(targetQty > 0 ? String(targetQty) : "");
   }, [canEditCampaign, saveCell, editValue, getCellQty]);
 
   // ─── Close editing: save current value and clear state ───
@@ -620,6 +623,9 @@ const CampaignDetail = () => {
   }, [saveCell, editValue]);
 
   const handleCellClick = (storeId: string, pieceId: string) => {
+    // Suppress the blur-save from the previously-focused input; switchToCell
+    // already handles saving the previous cell atomically.
+    skipBlurSaveRef.current = true;
     switchToCell(storeId, pieceId);
   };
 
