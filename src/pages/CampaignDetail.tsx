@@ -2057,38 +2057,27 @@ const CampaignDetail = () => {
                                             onChange={(e) => setEditValue(e.target.value)}
                                             onBlur={handlePieceBlur}
                                             onKeyDown={(e) => {
-                                              if (e.key === "Tab") {
+                                              const move = (dir: "up" | "down" | "left" | "right") => {
                                                 e.preventDefault();
                                                 skipBlurSaveRef.current = true;
-                                                const next = navigateMatrixCell(e.shiftKey ? "left" : "right");
-                                                handleCellSave(next ? { navigateTo: next } : undefined);
-                                              } else if (e.key === "Enter") {
+                                                const next = navigateMatrixCell(dir);
+                                                if (next) {
+                                                  switchToCell(next.storeId, next.pieceId);
+                                                } else {
+                                                  closeEditing();
+                                                }
+                                              };
+                                              if (e.key === "Tab") move(e.shiftKey ? "left" : "right");
+                                              else if (e.key === "Enter") move(e.shiftKey ? "up" : "down");
+                                              else if (e.key === "ArrowUp") move("up");
+                                              else if (e.key === "ArrowDown") move("down");
+                                              else if (e.key === "ArrowLeft") move("left");
+                                              else if (e.key === "ArrowRight") move("right");
+                                              else if (e.key === "Escape") {
                                                 e.preventDefault();
                                                 skipBlurSaveRef.current = true;
-                                                const next = navigateMatrixCell(e.shiftKey ? "up" : "down");
-                                                handleCellSave(next ? { navigateTo: next } : undefined);
-                                              } else if (e.key === "ArrowUp") {
-                                                e.preventDefault();
-                                                skipBlurSaveRef.current = true;
-                                                const next = navigateMatrixCell("up");
-                                                handleCellSave(next ? { navigateTo: next } : undefined);
-                                              } else if (e.key === "ArrowDown") {
-                                                e.preventDefault();
-                                                skipBlurSaveRef.current = true;
-                                                const next = navigateMatrixCell("down");
-                                                handleCellSave(next ? { navigateTo: next } : undefined);
-                                              } else if (e.key === "ArrowLeft") {
-                                                e.preventDefault();
-                                                skipBlurSaveRef.current = true;
-                                                const next = navigateMatrixCell("left");
-                                                handleCellSave(next ? { navigateTo: next } : undefined);
-                                              } else if (e.key === "ArrowRight") {
-                                                e.preventDefault();
-                                                skipBlurSaveRef.current = true;
-                                                const next = navigateMatrixCell("right");
-                                                handleCellSave(next ? { navigateTo: next } : undefined);
-                                              } else if (e.key === "Escape") {
                                                 setEditingCell(null);
+                                                setEditValue("");
                                               }
                                             }}
                                             className="w-16 h-8 text-center mx-auto text-sm"
