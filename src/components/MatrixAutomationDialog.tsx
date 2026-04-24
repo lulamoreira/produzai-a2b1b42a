@@ -701,27 +701,43 @@ export default function MatrixAutomationDialog({
   };
 
   const getFieldLabel = (key: string) => allFilterFields.find(f => f.key === key)?.label || key;
+  const getNumericFieldLabel = (key: string) => numericFields.find(f => f.key === key)?.label || key;
 
   const hasValidFilters = filterGroup.filtros.some(f => f.campo && f.valor);
 
+  // Stores within filter that have a valid numeric value in baseField
+  const matchingStoresWithValue = useMemo(() => {
+    if (kind !== "by_field" || !baseField) return matchingStores.length;
+    return matchingStores.filter(s => {
+      const v = Number((s as any)[baseField]);
+      return Number.isFinite(v) && v > 0;
+    }).length;
+  }, [matchingStores, kind, baseField]);
+
   // Template display helper
   const getTemplateFilterSummary = (tpl: typeof templates[0]): string => {
+    let base: string;
     if (tpl.filter_field === "__multi_v2__") {
       try {
         const parsed = JSON.parse(tpl.filter_value);
         const filtros = parsed.filtros || [];
         const condicoes = parsed.condicoes || [];
-        return filtros.map((f: AutomationFilter, i: number) => {
+        base = filtros.map((f: AutomationFilter, i: number) => {
           const label = getFieldLabel(f.campo);
           const op = OPERATOR_LABELS[f.operador] || f.operador;
           const prefix = i > 0 ? ` ${condicoes[i - 1] || "E"} ` : "";
           return `${prefix}${label} ${op} "${f.valor}"`;
         }).join("");
       } catch {
-        return "Filtro inválido";
+        base = "Filtro inválido";
       }
+    } else {
+      base = `${getFieldLabel(tpl.filter_field)} = ${tpl.filter_value}`;
     }
-    return `${getFieldLabel(tpl.filter_field)} = ${tpl.filter_value}`;
+    if ((tpl.kind ?? "fixed") === "by_field" && tpl.base_field) {
+      base += ` · usar ${getNumericFieldLabel(tpl.base_field)} × fator`;
+    }
+    return base;
   };
 
   return (
