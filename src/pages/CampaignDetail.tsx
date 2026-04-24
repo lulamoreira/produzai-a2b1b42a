@@ -611,6 +611,10 @@ const CampaignDetail = () => {
     // on shared piece keys (kit components) cannot leak into the new cell.
     const targetQty = getCellQty(newStoreId, newPieceId);
 
+    // Capture the value to save BEFORE any state changes — the ref will be
+    // reset to "" by setEditValue below before the deferred timeout runs.
+    const valueToSave = editValueRef.current ?? "";
+
     // Open new cell immediately with correct value
     setEditingCell({ storeId: newStoreId, pieceId: newPieceId });
     setEditValue(targetQty > 0 ? String(targetQty) : "");
@@ -618,7 +622,10 @@ const CampaignDetail = () => {
     // Defer save of previous cell so its optimistic update / re-render
     // does not interfere with the new cell's editValue in the same cycle.
     if (current && (current.storeId !== newStoreId || current.pieceId !== newPieceId)) {
-      setTimeout(() => saveCell(current, editValueRef.current ?? ""), 0);
+      setTimeout(() => {
+        console.log("[SAVE]", { valueToSave, current });
+        saveCell(current, valueToSave);
+      }, 0);
     }
   }, [canEditCampaign, saveCell, getCellQty]);
 
@@ -640,6 +647,7 @@ const CampaignDetail = () => {
   };
 
   const handlePieceBlur = () => {
+    console.log("[BLUR]", { skipped: skipBlurSaveRef.current });
     if (skipBlurSaveRef.current) {
       skipBlurSaveRef.current = false;
       return;
