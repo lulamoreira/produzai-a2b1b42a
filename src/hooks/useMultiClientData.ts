@@ -627,6 +627,7 @@ export function useCampaignStorePieces(campaignId: string | undefined) {
           .from("campaign_store_pieces")
           .select("*")
           .eq("campaign_id", campaignId)
+          .order("id", { ascending: true })
           .range(from, from + pageSize - 1);
 
         if (error) throw error;
