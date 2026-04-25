@@ -2443,6 +2443,9 @@ const CampaignDetail = () => {
                     <DropdownMenuItem onClick={handleRecodificar}>
                       <RefreshCw className="w-4 h-4 mr-2" /> {t("pieces.recode")}
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setOrderByLocationOpen(true)}>
+                      <ArrowDownAZ className="w-4 h-4 mr-2" /> Ordenar por localização
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setLocationDialogOpen(true)}>
                       <MapPin className="w-4 h-4 mr-2" /> {t("pieces.storeLocation")}
                     </DropdownMenuItem>
