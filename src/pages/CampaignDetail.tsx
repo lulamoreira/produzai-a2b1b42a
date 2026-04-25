@@ -2429,11 +2429,12 @@ const CampaignDetail = () => {
                           {/* Totals row */}
                           <TableRow className="bg-muted/50 font-bold">
                             <TableCell className="sticky left-0 bg-muted/50 z-[5]">Total</TableCell>
-                            {matrixColumns.map((col) => {
+                            {matrixColumns.map((col, colIdx) => {
+                              const tint = columnTints[colIdx] || "";
                               if (col.type === "piece") {
                                 const p = col.data;
                                 const pieceTotal = filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
-                                return <TableCell key={p.id} className="text-center text-sm">{pieceTotal}</TableCell>;
+                                return <TableCell key={p.id} className={`text-center text-sm border-l border-border/70 ${tint}`}>{pieceTotal}</TableCell>;
                               }
                               const kit = col.data;
                               const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
@@ -2446,7 +2447,7 @@ const CampaignDetail = () => {
                                     return total + minQty;
                                   }, 0)
                                 : 0;
-                              return <TableCell key={`kit-total-${kit.id}`} className="text-center text-sm">{kitTotal}</TableCell>;
+                              return <TableCell key={`kit-total-${kit.id}`} className={`text-center text-sm border-l border-border/70 ${tint}`}>{kitTotal}</TableCell>;
                             })}
                             <TableCell className="text-center text-sm text-primary">
                               {pieces.reduce((total, p) => total + filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0), 0)}
