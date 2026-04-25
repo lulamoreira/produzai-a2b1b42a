@@ -700,6 +700,106 @@ export function useUpdateCampaignStorePiece() {
   });
 }
 
+// Bulk update for a single (storeId, [pieceId, quantity]) batch — used by kit
+// cells where editing one cell maps to N component-piece writes. Performs ONE
+// optimistic setQueryData covering all writes, runs all DB calls in parallel
+// WITHOUT per-mutation invalidations, then issues ONE final invalidate when
+// every write has settled. This eliminates the race where partial refetches
+// would render stale Math.min(...) over kit components and make the value
+// "disappear" for stores like Jardim Sul, Leblon and Outlet Premium Itupeva
+// whose only editable cells are kits.
+export function useBulkUpdateCampaignStorePieces() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      campaignId,
+      storeId,
+      updates,
+    }: {
+      campaignId: string;
+      storeId: string;
+      updates: Array<{ pieceId: string; quantity: number }>;
+    }) => {
+      await Promise.all(
+        updates.map(async ({ pieceId, quantity }) => {
+          const normalizedQty = Math.max(0, quantity);
+          if (normalizedQty === 0) {
+            const { error } = await supabase
+              .from("campaign_store_pieces")
+              .delete()
+              .eq("campaign_id", campaignId)
+              .eq("store_id", storeId)
+              .eq("piece_id", pieceId);
+            if (error) throw error;
+            return;
+          }
+
+          const { data: existing, error: existingError } = await supabase
+            .from("campaign_store_pieces")
+            .select("id")
+            .eq("campaign_id", campaignId)
+            .eq("store_id", storeId)
+            .eq("piece_id", pieceId)
+            .maybeSingle();
+          if (existingError) throw existingError;
+
+          if (existing) {
+            const { error } = await supabase
+              .from("campaign_store_pieces")
+              .update({ quantity: normalizedQty })
+              .eq("id", existing.id);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase
+              .from("campaign_store_pieces")
+              .insert({ campaign_id: campaignId, store_id: storeId, piece_id: pieceId, quantity: normalizedQty });
+            if (error) throw error;
+          }
+        })
+      );
+    },
+    onMutate: async ({ campaignId, storeId, updates }) => {
+      const queryKey = ["campaign_store_pieces", campaignId] as const;
+      await qc.cancelQueries({ queryKey });
+      const previous = qc.getQueryData<CampaignStorePiece[]>(queryKey) ?? [];
+      const next = [...previous];
+
+      for (const { pieceId, quantity } of updates) {
+        const idx = next.findIndex(
+          (row) => row.campaign_id === campaignId && row.store_id === storeId && row.piece_id === pieceId
+        );
+        if (quantity <= 0) {
+          if (idx >= 0) next.splice(idx, 1);
+        } else if (idx >= 0) {
+          next[idx] = { ...next[idx], quantity };
+        } else {
+          next.push({
+            id: `optimistic-${campaignId}-${storeId}-${pieceId}`,
+            campaign_id: campaignId,
+            store_id: storeId,
+            piece_id: pieceId,
+            quantity,
+          });
+        }
+      }
+
+      qc.setQueryData(queryKey, next);
+      return { queryKey, previous };
+    },
+    onError: (e, _vars, context) => {
+      if (context?.queryKey && context?.previous) {
+        qc.setQueryData(context.queryKey, context.previous);
+      }
+      toast.error("Erro: " + (e as Error).message);
+    },
+    // Single invalidation after the WHOLE batch — never mid-flight.
+    onSettled: (_data, _error, vars) => {
+      qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
+    },
+  });
+}
+
 // ─── User Client Access ──────────────────────────────────
 
 export function useUserClientAccess(clientId?: string) {
