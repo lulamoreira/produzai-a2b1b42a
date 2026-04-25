@@ -148,7 +148,7 @@ export function OrderByLocationDialog({
             Cancelar
           </Button>
           <Button onClick={handleApply} disabled={saving || order.length === 0}>
-            {saving ? "Aplicando..." : "Aplicar ordem"}
+            {saving ? "Aplicando..." : "Confirmar e recodificar"}
           </Button>
         </DialogFooter>
       </DialogContent>
