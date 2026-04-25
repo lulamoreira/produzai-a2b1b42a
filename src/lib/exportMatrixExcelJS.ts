@@ -1,5 +1,5 @@
 import type * as ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
+import { saveXlsxAs } from "./saveBlobAs";
 import type { ClientStore, CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
 import type { ColorPalette } from "@/components/RateioExportColorDialog";
 
@@ -519,9 +519,8 @@ export async function exportMatrixExcelJS(
   dash.getColumn(2).width = 40;
   dash.getColumn(3).width = 20;
 
-  // Generate and download
+  // Generate and download (com diálogo "Salvar como" quando suportado)
   const buffer = await wb.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const fileName = `Orcamento_${campaignName.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
-  saveAs(blob, fileName);
+  const fileName = `Rateio_${campaignName.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  await saveXlsxAs(buffer as ArrayBuffer, fileName);
 }

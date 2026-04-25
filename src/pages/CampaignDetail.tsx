@@ -1802,7 +1802,7 @@ const CampaignDetail = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-56">
                         {/* Export group */}
-                        <DropdownMenuItem onClick={() => exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
+                        <DropdownMenuItem onClick={() => { void exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name); }}>
                           <Download className="w-4 h-4 mr-2" />
                           {t("common.export")} {t("modules.matrix")}
                         </DropdownMenuItem>
@@ -1904,7 +1904,7 @@ const CampaignDetail = () => {
                     } catch (err) {
                       console.error(err);
                       try {
-                        exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name);
+                        await exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name);
                         toast.success("Planilha exportada sem imagens.", { id: "matrix-excel" });
                       } catch (fallbackErr) {
                         console.error(fallbackErr);

@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { buildExportFileName } from "@/lib/exportFileName";
+import { saveXlsxAs } from "@/lib/saveBlobAs";
 import type { Client, ClientStore, Campaign, CampaignPiece, CampaignStorePiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
 
 // ─── Clients ────────────────────────────────────────────
@@ -187,7 +188,7 @@ export function parsePiecesImport(file: File): Promise<Array<{ code: number; cat
 
 // ─── Matrix (Store x Pieces + Kits) ─────────────────────
 
-export function exportMatrix(
+export async function exportMatrix(
   stores: ClientStore[],
   pieces: CampaignPiece[],
   storePieces: CampaignStorePiece[],
@@ -275,7 +276,9 @@ export function exportMatrix(
     }
   });
 
-  XLSX.writeFile(wb, buildExportFileName(`Matriz_${campaignName}`, { agencyName, clientName }));
+  const fileName = buildExportFileName(`Matriz_${campaignName}`, { agencyName, clientName });
+  const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+  await saveXlsxAs(buffer, fileName);
 }
 
 export function parseMatrixImport(
