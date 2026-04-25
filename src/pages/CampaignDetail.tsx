@@ -2295,14 +2295,15 @@ const CampaignDetail = () => {
                                     )}
                                   </div>
                                 </TableCell>
-                                {matrixColumns.map((col) => {
+                                {matrixColumns.map((col, colIdx) => {
+                                  const tint = columnTints[colIdx] || "";
                                   if (col.type === "piece") {
                                     const p = col.data;
                                     const key = `${store.id}-${p.id}`;
                                     const qty = qtyMap[key] || 0;
                                     const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === p.id;
                                     return (
-                                      <TableCell key={p.id} className="text-center p-1">
+                                      <TableCell key={p.id} className={`text-center p-1 border-l border-border/70 ${tint}`}>
                                         {isEditing ? (
                                           <Input
                                             ref={(el) => { editingInputRefs.current[`${store.id}-${p.id}`] = el; }}
