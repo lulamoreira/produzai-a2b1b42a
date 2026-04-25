@@ -196,6 +196,14 @@ export default function MatrixAutomationDialog({
   const [newGroupName, setNewGroupName] = useState("");
   const [addingTemplateToGroup, setAddingTemplateToGroup] = useState<string | null>(null);
 
+  // Group run review/error state
+  const [reviewDialog, setReviewDialog] = useState<{ open: boolean; groupId: string; groupName: string; validations: TemplateValidation[] }>({
+    open: false, groupId: "", groupName: "", validations: [],
+  });
+  const [errorDialog, setErrorDialog] = useState<{ open: boolean; groupName: string; groupId: string; results: GroupRunResult[] }>({
+    open: false, groupName: "", groupId: "", results: [],
+  });
+
   // Hook
   const {
     templates, saveTemplate, updateTemplate, deleteTemplate,
