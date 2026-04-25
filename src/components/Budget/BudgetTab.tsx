@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,6 +40,7 @@ import {
 import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppliers";
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
+import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
