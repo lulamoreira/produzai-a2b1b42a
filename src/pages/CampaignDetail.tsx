@@ -1903,7 +1903,13 @@ const CampaignDetail = () => {
                       toast.success("Planilha exportada com sucesso!", { id: "matrix-excel" });
                     } catch (err) {
                       console.error(err);
-                      toast.error("Erro ao exportar planilha", { id: "matrix-excel" });
+                      try {
+                        exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name);
+                        toast.success("Planilha exportada sem imagens.", { id: "matrix-excel" });
+                      } catch (fallbackErr) {
+                        console.error(fallbackErr);
+                        toast.error("Erro ao exportar planilha", { id: "matrix-excel" });
+                      }
                     }
                   }}
                 />
