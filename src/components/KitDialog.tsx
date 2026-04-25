@@ -109,13 +109,14 @@ interface CreateKitDialogProps {
   campaignId: string;
   kitOnlyPieces: CampaignPiece[];
   existingKits: CampaignKit[];
+  existingPieces?: CampaignPiece[];
   onCreateKit: (kit: { campaign_id: string; name: string; code: number }) => Promise<CampaignKit>;
   onAddKitPiece: (kitPiece: { kit_id: string; piece_id: string }) => Promise<void>;
   onUpdateKit: (kit: { id: string; image_url?: string | null }) => Promise<CampaignKit>;
 }
 
 export function CreateKitDialog({
-  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, onCreateKit, onAddKitPiece, onUpdateKit,
+  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], onCreateKit, onAddKitPiece, onUpdateKit,
 }: CreateKitDialogProps) {
   const [step, setStep] = useState<"name" | "pieces">("name");
   const [kitName, setKitName] = useState("");
