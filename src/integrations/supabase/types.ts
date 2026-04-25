@@ -589,6 +589,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_mockup: boolean
+          is_new: boolean
           name: string
           sub_location: string | null
         }
@@ -601,6 +602,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_mockup?: boolean
+          is_new?: boolean
           name: string
           sub_location?: string | null
         }
@@ -613,6 +615,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_mockup?: boolean
+          is_new?: boolean
           name?: string
           sub_location?: string | null
         }
@@ -798,6 +801,7 @@ export type Database = {
           image_url: string | null
           installation_instructions: string
           is_mockup: boolean
+          is_new: boolean
           kit_only: boolean
           name: string
           size: string
@@ -815,6 +819,7 @@ export type Database = {
           image_url?: string | null
           installation_instructions?: string
           is_mockup?: boolean
+          is_new?: boolean
           kit_only?: boolean
           name: string
           size: string
@@ -832,6 +837,7 @@ export type Database = {
           image_url?: string | null
           installation_instructions?: string
           is_mockup?: boolean
+          is_new?: boolean
           kit_only?: boolean
           name?: string
           size?: string
