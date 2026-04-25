@@ -2085,10 +2085,11 @@ const CampaignDetail = () => {
                         </TableHeader>
                         <TableBody>
                           {activeFilteredStores.map((store) => {
-                            const storeTotal = matrixPieces.reduce((s, p) => s + (qtyMap[`${store.id}-${p.id}`] || 0), 0);
-                            // Real total considers ALL pieces (including kit_only components),
-                            // so stores filled only via kits aren't falsely flagged as empty.
+                            // Total real considera TODAS as peças (incluindo kit_only),
+                            // refletindo a soma efetiva de itens enviados para a loja —
+                            // tanto via peças individuais quanto via composição de kits.
                             const storeTotalReal = pieces.reduce((sum, p) => sum + (qtyMap[`${store.id}-${p.id}`] || 0), 0);
+                            const storeTotal = storeTotalReal;
                             const hasAnyStoreWithQty = activeFilteredStores.some(
                               (st) => st.id !== store.id && pieces.some((p) => (qtyMap[`${st.id}-${p.id}`] || 0) > 0)
                             );
@@ -2259,7 +2260,7 @@ const CampaignDetail = () => {
                               return <TableCell key={`kit-total-${kit.id}`} className="text-center text-sm">{kitTotal}</TableCell>;
                             })}
                             <TableCell className="text-center text-sm text-primary">
-                              {matrixPieces.reduce((total, p) => total + filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0), 0)}
+                              {pieces.reduce((total, p) => total + filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0), 0)}
                             </TableCell>
                           </TableRow>
                         </TableBody>
