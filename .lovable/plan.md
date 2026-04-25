@@ -1,81 +1,62 @@
-## Causa raiz identificada
+## Diagnóstico do bug "valor desaparece" — causa raiz identificada
 
-O bug **só atinge Jardim Sul, Leblon e Outlet Premium Itupeva** porque essas 3 lojas têm uma característica única no banco: **todas as 9 peças associadas a elas são `kit_only: true`** (componentes de kit). Não há nada de errado com os dados — não há duplicatas, nulls, zeros ou peças órfãs. O problema é como o código lida com edição em **células de kit**.
+### O que a investigação revelou
 
-### O que acontece passo a passo
+**Identificadores estão corretos.** Não há inconsistência de slug/nome/id. O sistema usa exclusivamente `store.id` (UUID estável vindo do banco) em todo o ciclo: render (`value`), `onChange`, `saveCell` e chave do React (`key={store.id}`). As lojas Jardim Sul (`fd13f7a1…`), Leblon (`fffd241f…`) e Outlet Premium Itupeva (`feb067d7…`) compartilham UUIDs estáveis idênticos em todo o fluxo. **Hipótese de chave inconsistente: descartada.**
 
-1. Como `kit_only` peças são excluídas das colunas normais, nessas lojas o usuário **só consegue editar células de kit** (`pieceId = "kit-{kitId}"`).
-2. Ao clicar para editar, `getCellQty` calcula o valor do kit fazendo `Math.min(...componentes)` e abre o input com esse valor.
-3. Ao digitar um novo valor, `editValue` muda — tudo OK até aqui.
-4. Ao sair da célula (blur ou clique em outra), `saveCell` é chamado com `pieceId = "kit-{kitId}"`. Isso dispara um loop sobre os componentes do kit e chama `updateStorePiece.mutate` **N vezes em sequência**, uma por componente.
-5. Cada mutação dispara `onMutate` (otimistic update no `qtyMap`) → cada uma re-renderiza a tabela → cada `onSettled` invalida a query `["campaign_store_pieces", campaignId]` → re-fetch.
-6. Durante esse turbilhão de re-renders, o `editValue` da célula recém-clicada (em `switchToCell`) é resetado, OU o input do kit que estava sendo editado é desmontado pelo re-render com o valor antigo derivado, fazendo parecer que "o valor sumiu".
+**Diferença estrutural real entre lojas que falham e lojas que funcionam:** Consulta direta ao banco para a campanha "Inverno":
 
-### Por que outras lojas funcionam
+| Loja | Peças standalone | Peças kit_only | Total |
+|------|---|---|---|
+| Jardim Sul | 2 | **15** | 17 |
+| Leblon | 1 | **15** | 16 |
+| Outlet Premium Itupeva | 1 | **9** | 10 |
 
-Lojas com peças individuais editam a célula da peça diretamente — **uma única mutation, um único `onMutate`, um único re-render**. Sem race condition.
+Essas lojas têm a esmagadora maioria das peças marcadas como `kit_only`. Na prática, **as únicas células editáveis dessas lojas no Rateio são células de KIT** (colunas roxas `kit-${id}`). Lojas que funcionam têm peças standalone editáveis diretamente.
 
-### Por que as tentativas anteriores não resolveram
+### Onde o valor se perde — fluxo célula-de-KIT
 
-`editValueRef`, `setTimeout(saveCell, 0)`, `skipBlurSaveRef` — todas tratavam o caminho do **switchToCell** (clicar em outra célula). Mas o problema fundamental é **o save de uma célula de kit dispara N mutations encadeadas**, e isso causa N optimistic updates em sequência. Mesmo com setTimeout, o intervalo entre cada `onMutate` é suficiente para o React processar re-renders intermediários que interferem com o input ativo.
+Em `saveCell` (CampaignDetail.tsx:582–638), quando a célula é um kit:
 
----
+1. Aplica **um** `setQueryData` agregando todas as N peças do kit (linha 614). Bom.
+2. Dispara **N** chamadas paralelas a `updateStorePiece.mutateAsync` (linhas 619–628).
+3. Cada uma dessas N mutações executa `onMutate` em `useMultiClientData.ts:664` que:
+   - Faz `await qc.cancelQueries(...)` — **assíncrono**, libera o event loop.
+   - Lê `getQueryData` e re-aplica `setQueryData` por peça (linhas 668–688).
+4. Cada uma também dispara `onSettled` → `invalidateQueries` (linha 698). N invalidações em sequência forçam refetch que, enquanto em flight, podem reescrever o cache com o estado anterior do servidor.
 
-## Plano de correção
+Como o `value={editValue}` do input **só** está vinculado ao `editValue` local (não ao cache), o valor digitado em si não é sobrescrito. O que de fato acontece com a percepção do usuário: ao **clicar fora**, `closeEditing` salva via `editValueRef.current` e zera `editValue` + `editingCell`. Aí o botão (não-editing) renderiza `qty = qtyMap[key] || 0`, que para uma célula de kit recalcula `Math.min(...)` sobre N peças. **Se qualquer uma das N invalidations tiver retornado dados antigos do servidor antes das demais, o `Math.min` retorna 0 ou um valor antigo** — visualmente "o valor desapareceu". Esse cenário só ocorre nessas três lojas porque só elas dependem de células de kit no ciclo normal de edição.
 
-Implementação cirúrgica em **um único arquivo**: `src/pages/CampaignDetail.tsx`.
+### Validação da hipótese
 
-### Mudança 1 — Salvar kits como **uma única operação atômica**
+Plano de instrumentação para fechar o diagnóstico definitivamente em runtime, antes de qualquer correção:
 
-Substituir o loop em `saveCell` (linhas 585–595) por uma única mutação por componente, mas envolvida em um `Promise.all` com optimistic update **manual e único** antes de qualquer mutate. Em vez de N `mutate` chamadas (cada uma triggando seu próprio `onMutate` e seu próprio re-render):
+1. Adicionar logs em três pontos do `CampaignDetail.tsx`:
+   - **onChange do input** (linhas 2130 e 2195): `console.log("[CELL][CHANGE]", store.name, isKit, e.target.value)`
+   - **saveCell** (linha 582): `console.log("[CELL][SAVE]", cell, rawValue, qty, isKit)`
+   - **render do botão não-editing** (linha 2120/2186): `console.log("[CELL][RENDER]", store.name, pieceId, qty)`
+2. Adicionar log em `useMultiClientData.ts` `onMutate` (linha 664) e `onSettled` (linha 697) com o `quantity` da mutation e a key.
+3. Reproduzir digitando "5" em Jardim Sul (kit), Tab para outra célula. Esperado nos logs:
+   - `CHANGE jardim-sul kit-X 5`
+   - `SAVE { jardim-sul, kit-X } "5" qty=5 isKit=true`
+   - `onMutate` N vezes com `quantity = 5 * componente`
+   - `onSettled` N vezes
+   - `RENDER jardim-sul kit-X qty=?` — **se aparecer 0 aqui, confirma a hipótese** (refetch retornou dado antigo do servidor antes de propagar todas as escritas).
 
-```ts
-if (cell.pieceId.startsWith("kit-")) {
-  const kitId = cell.pieceId.replace("kit-", "");
-  const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
+### Correção planejada (após confirmação dos logs)
 
-  // 1) Optimistic update único para todos os componentes em uma só passada
-  const queryKey = ["campaign_store_pieces", campaignId] as const;
-  const previous = queryClient.getQueryData<CampaignStorePiece[]>(queryKey) ?? [];
-  const next = [...previous];
-  for (const kp of piecesInKit) {
-    const targetQty = qty * (kp.quantity || 1);
-    const idx = next.findIndex(r => r.store_id === cell.storeId && r.piece_id === kp.piece_id);
-    if (targetQty <= 0) { if (idx >= 0) next.splice(idx, 1); }
-    else if (idx >= 0) next[idx] = { ...next[idx], quantity: targetQty };
-    else next.push({ id: `optimistic-${cell.storeId}-${kp.piece_id}`, campaign_id: campaignId, store_id: cell.storeId, piece_id: kp.piece_id, quantity: targetQty });
-  }
-  queryClient.setQueryData(queryKey, next); // 1 só re-render
+A correção definitiva ataca a causa raiz no fluxo de kit:
 
-  // 2) Disparar mutations em paralelo (sem onMutate adicional já que o estado está atualizado)
-  Promise.all(piecesInKit.map(kp =>
-    updateStorePiece.mutateAsync({
-      campaignId, storeId: cell.storeId, pieceId: kp.piece_id, quantity: qty * (kp.quantity || 1),
-    })
-  )).catch(() => {/* erro já tratado pela mutation */});
-  return;
-}
-```
+1. **Em `saveCell` para kit**: substituir o array de `mutateAsync` paralelos por uma única função que faz **um único bulk upsert** ao Supabase (`upsert([…N rows])` em `campaign_store_pieces`), seguido de **uma única** `invalidateQueries`. Isso elimina N onMutate/onSettled concorrentes e o intervalo em que refetches parciais podem renderizar `Math.min` inconsistente.
+2. **Em `useUpdateCampaignStorePiece.onSettled`**: tornar a invalidação debounced (ou mover a invalidação para fora da mutation individual quando chamada em lote), evitando N refetches em sequência.
+3. **No render da célula de kit**: enquanto houver mutations pendentes para qualquer peça desse kit naquela loja (`updateStorePiece.isPending` + alguma identificação), renderizar o último valor otimista, não o `Math.min` recalculado.
 
-Isso garante **um único re-render** ao invés de N quando o usuário edita uma célula de kit, eliminando a race condition que faz o input piscar/perder valor.
+### Detalhes técnicos
 
-### Mudança 2 — Importar `useQueryClient` e o tipo se necessário
+- Arquivos a editar: `src/pages/CampaignDetail.tsx` (saveCell + render botão), `src/hooks/useMultiClientData.ts` (mutation hook ou novo hook bulk).
+- Testes a adicionar em `src/pages/__tests__/cellEditing.test.tsx`: simular kit com 3 peças componentes, mockar mutation com latências desiguais, verificar que ao blur o valor renderizado é o último digitado e não 0.
+- Critério de pronto: ao digitar valor em célula de kit em Jardim Sul/Leblon/Itupeva e clicar fora, o número permanece visível imediatamente e após o ciclo de invalidação.
 
-Adicionar `const queryClient = useQueryClient();` no topo do componente (já deve estar disponível via import existente).
+### Próximo passo
 
-### Mudança 3 — Remover instrumentação temporária
-
-Remover os `console.log("[SAVE]", …)` em `switchToCell` (linha 626) e `console.log("[BLUR]", …)` em `handlePieceBlur` (linha 650) — não são mais necessários.
-
-### O que NÃO mudar
-
-- `QuickMatrixEditor`, lógica de mutação genérica em `useMultiClientData.ts`, banco de dados, RLS, schema.
-- `editValueRef`, `skipBlurSaveRef`, `setTimeout` em `switchToCell` — continuam corretos para o caso de troca de célula entre peças individuais.
-- O hook `useUpdateCampaignStorePiece` permanece como está (cada chamada individual mantém seu rollback em caso de erro).
-
-### Validação esperada após o fix
-
-- Abrir campanha → editar célula de kit em **Jardim Sul** → digitar `2` → clicar em outra célula → valor `2` permanece e é persistido em todos os componentes do kit.
-- Mesmo comportamento em **Leblon** e **Outlet Premium Itupeva**.
-- Lojas com peças individuais continuam funcionando idênticas a antes (caminho não-kit do `saveCell` permanece intocado).
-- Console limpo (sem `[SAVE]` / `[BLUR]`).
+Aprove para eu (1) instrumentar os logs e pedir para você reproduzir uma vez (2 min), confirmar a hipótese pelos logs, e em seguida (2) aplicar a correção bulk + render protegido por isPending.
