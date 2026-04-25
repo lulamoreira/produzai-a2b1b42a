@@ -842,8 +842,7 @@ export function useBulkUpdateCampaignStorePieces() {
     },
   });
 }
-  });
-}
+
 
 // ─── User Client Access ──────────────────────────────────
 
