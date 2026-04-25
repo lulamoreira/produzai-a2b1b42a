@@ -576,58 +576,35 @@ const CampaignDetail = () => {
   }, [qtyMap, kitPieces]);
 
   // ─── Unified save: handles both piece and kit cells ───
-  // For kit cells we batch the optimistic update into a SINGLE setQueryData
-  // call before firing the per-component mutations in parallel. This avoids
-  // the cascade of N onMutate / re-render cycles that previously caused the
-  // active input to lose its value in stores whose only editable cells are
-  // kit cells (Jardim Sul, Leblon, Outlet Premium Itupeva).
+  // Kit cells write to N component pieces. We use a SINGLE bulk mutation that
+  // performs one optimistic update + parallel writes + ONE final invalidation.
+  // This eliminates the prior race where N independent mutations could each
+  // trigger their own onSettled → invalidateQueries, causing a partial refetch
+  // to render Math.min(...) over kit components and make the value appear to
+  // "disappear" — a bug that surfaced only on stores whose ONLY editable
+  // cells are kit cells (Jardim Sul, Leblon, Outlet Premium Itupeva).
   const saveCell = useCallback((cell: { storeId: string; pieceId: string }, rawValue: string) => {
     if (!campaignId) return;
     const qty = Math.max(0, parseInt(rawValue) || 0);
+
+    if (typeof window !== "undefined" && (window as any).__rateioDebug) {
+      // eslint-disable-next-line no-console
+      console.log("[CELL][SAVE]", { ...cell, rawValue, qty, isKit: cell.pieceId.startsWith("kit-") });
+    }
 
     if (cell.pieceId.startsWith("kit-")) {
       const kitId = cell.pieceId.replace("kit-", "");
       const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
       if (piecesInKit.length === 0) return;
 
-      // 1) Apply ONE optimistic update covering every component of the kit.
-      const queryKey = ["campaign_store_pieces", campaignId] as const;
-      const previous = queryClient.getQueryData<CampaignStorePiece[]>(queryKey) ?? [];
-      const next = [...previous];
-      for (const kp of piecesInKit) {
-        const targetQty = qty * (kp.quantity || 1);
-        const idx = next.findIndex(
-          (r) => r.campaign_id === campaignId && r.store_id === cell.storeId && r.piece_id === kp.piece_id
-        );
-        if (targetQty <= 0) {
-          if (idx >= 0) next.splice(idx, 1);
-        } else if (idx >= 0) {
-          next[idx] = { ...next[idx], quantity: targetQty };
-        } else {
-          next.push({
-            id: `optimistic-${campaignId}-${cell.storeId}-${kp.piece_id}`,
-            campaign_id: campaignId,
-            store_id: cell.storeId,
-            piece_id: kp.piece_id,
-            quantity: targetQty,
-          } as CampaignStorePiece);
-        }
-      }
-      queryClient.setQueryData(queryKey, next);
-
-      // 2) Fire the persistence calls in parallel. Each mutation will still
-      // run its own onMutate (which is a no-op against the already-updated
-      // cache) and onSettled (single invalidate at the end refreshes data).
-      void Promise.all(
-        piecesInKit.map((kp) =>
-          updateStorePiece.mutateAsync({
-            campaignId,
-            storeId: cell.storeId,
-            pieceId: kp.piece_id,
-            quantity: qty * (kp.quantity || 1),
-          })
-        )
-      ).catch(() => {/* per-mutation error handling already shows a toast */});
+      bulkUpdateStorePieces.mutate({
+        campaignId,
+        storeId: cell.storeId,
+        updates: piecesInKit.map((kp) => ({
+          pieceId: kp.piece_id,
+          quantity: qty * (kp.quantity || 1),
+        })),
+      });
       return;
     }
 
@@ -637,7 +614,7 @@ const CampaignDetail = () => {
       pieceId: cell.pieceId,
       quantity: qty,
     });
-  }, [campaignId, kitPieces, updateStorePiece, queryClient]);
+  }, [campaignId, kitPieces, updateStorePiece, bulkUpdateStorePieces]);
 
   // ─── Atomic transition: save current cell (if any) and open the new one ───
   // The save runs SYNCHRONOUSLY using editValueRef.current as the source of
