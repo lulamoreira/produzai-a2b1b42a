@@ -296,6 +296,7 @@ interface KitDetailDialogProps {
   kit: CampaignKit | null;
   kitPieces: CampaignKitPiece[];
   allPieces: CampaignPiece[];
+  existingKits?: CampaignKit[];
   canEdit?: boolean;
   pieceLocations?: { id: string; name: string }[];
   pieceSubLocations?: { id: string; location_id: string; name: string }[];
@@ -310,7 +311,7 @@ interface KitDetailDialogProps {
 }
 
 export function KitDetailDialog({
-  open, onOpenChange, kit, kitPieces, allPieces, canEdit,
+  open, onOpenChange, kit, kitPieces, allPieces, existingKits = [], canEdit,
   pieceLocations = [], pieceSubLocations = [],
   onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece, onDuplicatePiece,
 }: KitDetailDialogProps) {
