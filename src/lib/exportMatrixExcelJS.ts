@@ -435,6 +435,7 @@ export async function exportMatrixExcelJS(
         specification: piece?.specification || "",
         installation_instructions: piece?.installation_instructions || "",
         image_url: piece?.image_url,
+        is_new: (piece as any)?.is_new || false,
       };
     });
 
