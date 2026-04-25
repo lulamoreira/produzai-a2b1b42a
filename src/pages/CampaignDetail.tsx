@@ -2605,6 +2605,7 @@ const CampaignDetail = () => {
           campaignId={campaignId}
           kitOnlyPieces={kitOnlyPieces}
           existingKits={kits}
+          existingPieces={pieces}
           onCreateKit={async (kit) => await addKit.mutateAsync(kit)}
           onAddKitPiece={async (kp) => await addKitPiece.mutateAsync(kp)}
           onUpdateKit={async (kit) => await updateKit.mutateAsync(kit)}
@@ -2618,6 +2619,7 @@ const CampaignDetail = () => {
         kit={viewKitDetail}
         kitPieces={kitPieces}
         allPieces={pieces}
+        existingKits={kits}
         canEdit={canEditPieces}
         pieceLocations={pieceLocations}
         pieceSubLocations={pieceSubLocations}
