@@ -752,6 +752,65 @@ const CampaignDetail = () => {
     queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
   }, [queryClient]);
 
+  // ─── Reorder by location group (drag entire location block) ───
+  // Reorders all matrix columns (pieces + kits) so that locations follow the
+  // requested order. Items within the same location keep their relative order.
+  // Locations with the same name are merged into a single contiguous block.
+  const handleReorderByLocation = useCallback(async (newLocationOrder: string[]) => {
+    const getLoc = (col: { type: "piece" | "kit"; data: any }): string => {
+      if (col.type === "piece") return col.data.category || "Sem localização";
+      return getKitCategory(col.data) || "Sem localização";
+    };
+
+    // Current ordered columns
+    const allCols: { type: "piece" | "kit"; data: any; display_order: number }[] = [
+      ...pieces.map(p => ({ type: "piece" as const, data: p, display_order: p.display_order })),
+      ...kits.map(k => ({ type: "kit" as const, data: k, display_order: k.display_order })),
+    ].sort((a, b) => a.display_order - b.display_order);
+
+    // Group by location, preserving internal order
+    const byLoc = new Map<string, typeof allCols>();
+    for (const col of allCols) {
+      const loc = getLoc(col);
+      if (!byLoc.has(loc)) byLoc.set(loc, []);
+      byLoc.get(loc)!.push(col);
+    }
+
+    // Build new sequence following requested location order.
+    // Any location not present in newLocationOrder is appended at the end (preserving original order).
+    const seenLocs = new Set<string>();
+    const finalCols: typeof allCols = [];
+    for (const loc of newLocationOrder) {
+      const cols = byLoc.get(loc);
+      if (cols) {
+        finalCols.push(...cols);
+        seenLocs.add(loc);
+      }
+    }
+    for (const [loc, cols] of byLoc.entries()) {
+      if (!seenLocs.has(loc)) finalCols.push(...cols);
+    }
+
+    // Apply new display_order in parallel only for items that changed
+    const updates: Promise<any>[] = [];
+    finalCols.forEach((col, idx) => {
+      const newOrder = idx + 1;
+      if (col.data.display_order !== newOrder) {
+        if (col.type === "piece") {
+          updates.push(supabase.from("campaign_pieces").update({ display_order: newOrder }).eq("id", col.data.id));
+        } else {
+          updates.push(supabase.from("campaign_kits").update({ display_order: newOrder }).eq("id", col.data.id));
+        }
+      }
+    });
+    if (updates.length === 0) return;
+    await Promise.all(updates);
+    queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+    queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
+    toast.success("Localizações reordenadas.");
+  }, [pieces, kits, kitPieces, queryClient]);
+
+
   // ─── Recodificar (rewrite codes sequentially) ─────────
   const handleRecodificar = async () => {
     const allItems: { type: "piece" | "kit"; id: string; display_order: number }[] = [
