@@ -26,6 +26,9 @@ interface Props {
 function humanizeError(raw: string | undefined): string {
   if (!raw) return "Erro desconhecido.";
   const msg = raw.toLowerCase();
+  if (msg.includes("on conflict do update command cannot affect row a second time")) {
+    return "Esta automação tenta atualizar a mesma peça da mesma loja mais de uma vez no mesmo lote (provavelmente um kit com peças repetidas). Revise o kit ou a configuração da automação.";
+  }
   if (msg.includes("foreign key") || msg.includes("violates foreign key constraint")) {
     return "A peça referenciada não existe mais no banco de dados. Substitua ou remova o item da automação.";
   }
