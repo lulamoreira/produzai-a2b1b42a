@@ -619,12 +619,25 @@ export function useCampaignStorePieces(campaignId: string | undefined) {
     queryKey: ["campaign_store_pieces", campaignId],
     queryFn: async () => {
       if (!campaignId) return [];
-      const { data, error } = await supabase
-        .from("campaign_store_pieces")
-        .select("*")
-        .eq("campaign_id", campaignId);
-      if (error) throw error;
-      return data as CampaignStorePiece[];
+      const pageSize = 1000;
+      const rows: CampaignStorePiece[] = [];
+
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from("campaign_store_pieces")
+          .select("*")
+          .eq("campaign_id", campaignId)
+          .range(from, from + pageSize - 1);
+
+        if (error) throw error;
+
+        const page = (data ?? []) as CampaignStorePiece[];
+        rows.push(...page);
+
+        if (page.length < pageSize) break;
+      }
+
+      return rows;
     },
     enabled: !!campaignId,
   });
