@@ -797,9 +797,9 @@ const CampaignDetail = () => {
       const newOrder = idx + 1;
       if (col.data.display_order !== newOrder) {
         if (col.type === "piece") {
-          updates.push(supabase.from("campaign_pieces").update({ display_order: newOrder }).eq("id", col.data.id));
+          updates.push(Promise.resolve(supabase.from("campaign_pieces").update({ display_order: newOrder }).eq("id", col.data.id)));
         } else {
-          updates.push(supabase.from("campaign_kits").update({ display_order: newOrder }).eq("id", col.data.id));
+          updates.push(Promise.resolve(supabase.from("campaign_kits").update({ display_order: newOrder }).eq("id", col.data.id)));
         }
       }
     });
