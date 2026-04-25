@@ -203,6 +203,18 @@ export function exportMatrix(
 
   // Build piece map from ALL pieces (including kit_only) for kit sheet lookups
   const pieceMap = new Map((allPieces.length > 0 ? allPieces : pieces).map(p => [p.id, p]));
+  const usedSheetNames = new Set(["matriz"]);
+  const safeSheetName = (raw: string) => {
+    const base = (raw.replace(/[\\/?*\[\]:]/g, "-").replace(/\s+/g, " ").trim() || "Kit").slice(0, 31);
+    let name = base;
+    let idx = 2;
+    while (usedSheetNames.has(name.toLowerCase())) {
+      const suffix = ` (${idx++})`;
+      name = `${base.slice(0, 31 - suffix.length).trim()}${suffix}`;
+    }
+    usedSheetNames.add(name.toLowerCase());
+    return name;
+  };
 
   const rows = stores.map((store) => {
     const row: Record<string, string | number> = {
@@ -259,7 +271,7 @@ export function exportMatrix(
     if (kitRows.length > 0) {
       const kitWs = XLSX.utils.json_to_sheet(kitRows);
       kitWs["!cols"] = [{ wch: 8 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 12 }];
-      XLSX.utils.book_append_sheet(wb, kitWs, `Kit ${kitSeqCode} - ${kit.name}`.slice(0, 31));
+      XLSX.utils.book_append_sheet(wb, kitWs, safeSheetName(`Kit ${kitSeqCode} - ${kit.name}`));
     }
   });
 
