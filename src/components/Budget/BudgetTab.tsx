@@ -105,6 +105,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [expandedSuggestionPieceId, setExpandedSuggestionPieceId] = useState<string | null>(null);
   const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyCode);
   const [showLockConfirm, setShowLockConfirm] = useState(false);
+  const [exportingBudget, setExportingBudget] = useState(false);
 
   // Client suppliers picker
   const { data: clientSuppliers = [] } = useClientSuppliers(clientId);
@@ -310,6 +311,38 @@ ${deadlineBlock}${timelineBlock}
   const handleWhatsAppClick = (sup: typeof suppliers[0]) => {
     if (!sup.invited_at) {
       updateSupplier.mutate({ id: sup.id, campaign_id: campaignId, updates: { invited_at: new Date().toISOString() } });
+    }
+  };
+
+  const handleExportBudget = async () => {
+    if (suppliers.length === 0) {
+      toast.error("Adicione ao menos um fornecedor para exportar.");
+      return;
+    }
+
+    setExportingBudget(true);
+    try {
+      await exportBudgetComparison({
+        campaignName,
+        agencyName,
+        clientName: "",
+        currencyCode,
+        budgetAmount,
+        suppliers,
+        prices,
+        extraCosts,
+        pieces,
+        kits,
+        kitPieces,
+        qtyMap,
+        stores,
+      });
+      toast.success("Planilha de orçamento exportada.");
+    } catch (error) {
+      console.error("Budget export error:", error);
+      toast.error("Erro ao exportar a planilha de orçamento.");
+    } finally {
+      setExportingBudget(false);
     }
   };
 
