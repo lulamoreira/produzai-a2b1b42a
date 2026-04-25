@@ -1,5 +1,6 @@
 import * as XLSX from "xlsx";
 import { buildExportFileName } from "@/lib/exportFileName";
+import { saveXlsxAs } from "@/lib/saveBlobAs";
 import type { Client, ClientStore, Campaign, CampaignPiece, CampaignStorePiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
 
 // ─── Clients ────────────────────────────────────────────
