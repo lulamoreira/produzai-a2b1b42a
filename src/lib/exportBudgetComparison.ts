@@ -258,8 +258,13 @@ export async function exportBudgetComparison(params: ExportBudgetComparisonParam
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  saveAs(blob, buildExportFileName(`Orcamento_${params.campaignName}`, {
+  const fileName = buildExportFileName(`Orcamento_${params.campaignName}`, {
     agencyName: params.agencyName,
     clientName: params.clientName,
-  }));
+  });
+  await saveBlobAs(blob, fileName, {
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    description: "Planilha Excel (.xlsx)",
+    extension: ".xlsx",
+  });
 }
