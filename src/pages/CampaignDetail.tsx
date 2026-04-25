@@ -211,6 +211,7 @@ const CampaignDetail = () => {
 
   // ─── Location management ──────────────────────────────
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
+  const [orderByLocationOpen, setOrderByLocationOpen] = useState(false);
 
   // ─── Pending occurrences dashboard ─────────────────────
   const [pendingDashOpen, setPendingDashOpen] = useState(false);
