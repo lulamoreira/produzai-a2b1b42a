@@ -188,7 +188,7 @@ export function parsePiecesImport(file: File): Promise<Array<{ code: number; cat
 
 // ─── Matrix (Store x Pieces + Kits) ─────────────────────
 
-export function exportMatrix(
+export async function exportMatrix(
   stores: ClientStore[],
   pieces: CampaignPiece[],
   storePieces: CampaignStorePiece[],
