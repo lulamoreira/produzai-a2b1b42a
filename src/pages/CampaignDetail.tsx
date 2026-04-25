@@ -2185,7 +2185,7 @@ const CampaignDetail = () => {
                                           type="number"
                                           min={0}
                                           value={editValue}
-                                          onChange={(e) => setEditValue(e.target.value)}
+                                          onChange={(e) => { editValueRef.current = e.target.value; setEditValue(e.target.value); }}
                                           onBlur={handlePieceBlur}
                                           onKeyDown={(e) => {
                                             const move = (dir: "up" | "down" | "left" | "right") => {
