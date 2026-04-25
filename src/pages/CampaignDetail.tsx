@@ -1840,6 +1840,15 @@ const CampaignDetail = () => {
                               <Copy className="w-4 h-4 mr-2" />
                               {t("matrix.fromOtherCampaign")}
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {/* Destructive: reset all quantities */}
+                            <DropdownMenuItem
+                              onClick={() => setResetMatrixOpen(true)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Zerar planilha
+                            </DropdownMenuItem>
                           </>
                         )}
                       </DropdownMenuContent>
