@@ -515,6 +515,23 @@ export function KitDetailDialog({
           </div>
         )}
 
+        {/* Kit Novo toggle */}
+        {canEdit && onUpdateKit && (
+          <div className="flex items-center justify-between p-3 rounded-lg border border-green-500/20 bg-green-500/5">
+            <div>
+              <label className="text-xs font-medium text-foreground">Kit Novo</label>
+              <p className="text-[10px] text-muted-foreground">Marcar como kit novo na campanha</p>
+            </div>
+            <Switch
+              checked={(kit as any).is_new || false}
+              onCheckedChange={async (checked) => {
+                await onUpdateKit({ id: kit.id, is_new: checked });
+                toast.success(checked ? "Kit marcado como novo!" : "Marcação de novo removida!");
+              }}
+            />
+          </div>
+        )}
+
         {/* Kit location */}
         {canEdit && onUpdateKit && pieceLocations.length > 0 && (
           <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/20">
