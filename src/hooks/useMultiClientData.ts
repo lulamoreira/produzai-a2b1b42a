@@ -512,7 +512,20 @@ export function useAddCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (piece: { campaign_id: string; code: number; category: string; name: string; size: string; store_category?: string; sub_location?: string; image_url?: string; specification?: string; installation_instructions?: string; kit_only?: boolean; is_mockup?: boolean; display_order?: number }) => {
-      const { data, error } = await supabase.from("campaign_pieces").insert(piece).select().single();
+      // Pieces live in the [0, 9999] display_order namespace to avoid collisions with kits (>= 10000).
+      let resolvedOrder = piece.display_order;
+      if (resolvedOrder === undefined || resolvedOrder === null) {
+        const { data: maxRow } = await supabase
+          .from("campaign_pieces")
+          .select("display_order")
+          .eq("campaign_id", piece.campaign_id)
+          .lt("display_order", 10000)
+          .order("display_order", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        resolvedOrder = (maxRow?.display_order ?? -1) + 1;
+      }
+      const { data, error } = await supabase.from("campaign_pieces").insert({ ...piece, display_order: resolvedOrder }).select().single();
       if (error) throw error;
       return data as CampaignPiece;
     },
@@ -1264,7 +1277,21 @@ export function useAddCampaignKit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (kit: { campaign_id: string; name: string; code: number; display_order?: number }) => {
-      const { data, error } = await supabase.from("campaign_kits").insert(kit).select().single();
+      // Kits live in the [10000, ...] display_order namespace to keep them sorted after standalone pieces
+      // and to prevent collisions that destabilize matrix column identity.
+      let resolvedOrder = kit.display_order;
+      if (resolvedOrder === undefined || resolvedOrder === null || resolvedOrder < 10000) {
+        const { data: maxRow } = await supabase
+          .from("campaign_kits")
+          .select("display_order")
+          .eq("campaign_id", kit.campaign_id)
+          .gte("display_order", 10000)
+          .order("display_order", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        resolvedOrder = (maxRow?.display_order ?? 9999) + 1;
+      }
+      const { data, error } = await supabase.from("campaign_kits").insert({ ...kit, display_order: resolvedOrder }).select().single();
       if (error) throw error;
       return data as CampaignKit;
     },

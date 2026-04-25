@@ -1045,12 +1045,20 @@ const CampaignDetail = () => {
     return null;
   }, [kitPieces, pieces]);
 
-  // Unified matrix columns sorted by display_order (same as pieces table)
-  type MatrixCol = { type: "piece"; data: CampaignPiece } | { type: "kit"; data: CampaignKit };
-  const matrixColumns: MatrixCol[] = [
-    ...matrixPieces.map(p => ({ type: "piece" as const, data: p, display_order: p.display_order })),
-    ...matrixKits.map(k => ({ type: "kit" as const, data: k, display_order: k.display_order })),
-  ].sort((a, b) => a.display_order - b.display_order);
+  // Unified matrix columns sorted by display_order with deterministic tiebreakers.
+  // Memoized to keep stable column identity across re-renders (prevents focus loss
+  // / value drop when display_order collisions exist between pieces and kits).
+  type MatrixCol = { type: "piece"; data: CampaignPiece; display_order: number } | { type: "kit"; data: CampaignKit; display_order: number };
+  const matrixColumns: MatrixCol[] = useMemo(() => {
+    return [
+      ...matrixPieces.map(p => ({ type: "piece" as const, data: p, display_order: p.display_order })),
+      ...matrixKits.map(k => ({ type: "kit" as const, data: k, display_order: k.display_order })),
+    ].sort((a, b) =>
+      a.display_order - b.display_order
+      || (a.type === b.type ? 0 : a.type === "piece" ? -1 : 1)
+      || (a.data.id < b.data.id ? -1 : 1)
+    );
+  }, [matrixPieces, matrixKits]);
 
   const navigateMatrixCell = useCallback((dir: "up" | "down" | "left" | "right") => {
     if (!editingCell) return null;
