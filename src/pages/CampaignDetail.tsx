@@ -2368,7 +2368,7 @@ const CampaignDetail = () => {
                                     : 0;
                                   const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === `kit-${kit.id}`;
                                   return (
-                                    <TableCell key={`kit-${kit.id}`} className="text-center p-1 bg-primary/5">
+                                    <TableCell key={`kit-${kit.id}`} className={`text-center p-1 border-l border-border/70 ${tint}`}>
                                       {isEditing ? (
                                         <Input
                                           ref={(el) => { editingInputRefs.current[`${store.id}-kit-${kit.id}`] = el; }}
