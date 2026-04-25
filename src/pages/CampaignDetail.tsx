@@ -811,7 +811,7 @@ const CampaignDetail = () => {
     });
 
     // Persist new display_order (1-indexed) to DB, only when changed
-    let updated = 0;
+    let reorderCount = 0;
     for (let i = 0; i < finalSequence.length; i++) {
       const item = finalSequence[i];
       const newOrder = i + 1;
@@ -819,24 +819,53 @@ const CampaignDetail = () => {
         const p = visiblePieces.find((x) => x.id === item.id);
         if (p && p.display_order !== newOrder) {
           await supabase.from("campaign_pieces").update({ display_order: newOrder }).eq("id", item.id);
-          updated++;
+          reorderCount++;
         }
       } else {
         const k = kits.find((x) => x.id === item.id);
         if (k && k.display_order !== newOrder) {
           await supabase.from("campaign_kits").update({ display_order: newOrder }).eq("id", item.id);
-          updated++;
+          reorderCount++;
         }
       }
     }
+
+    // Recodificar sequencialmente (mesma lógica de handleRecodificar, mas usando a finalSequence em memória)
+    let code = 1;
+    let recodeCount = 0;
+    for (const item of finalSequence) {
+      if (item.type === "piece") {
+        const piece = visiblePieces.find((p) => p.id === item.id);
+        if (piece && piece.code !== code) {
+          await supabase.from("campaign_pieces").update({ code }).eq("id", item.id);
+          recodeCount++;
+        }
+        code++;
+      } else {
+        const kit = kits.find((k) => k.id === item.id);
+        if (kit && kit.code !== code) {
+          await supabase.from("campaign_kits").update({ code }).eq("id", item.id);
+          recodeCount++;
+        }
+        // Recodificar as peças do kit sequencialmente a partir do código do kit + 1
+        const kitPiecesForKit = kitPieces.filter((kp) => kp.kit_id === item.id);
+        let kitPieceCode = code + 1;
+        for (const kp of kitPiecesForKit) {
+          const piece = kitOnlyPieces.find((p) => p.id === kp.piece_id);
+          if (piece && piece.code !== kitPieceCode) {
+            await supabase.from("campaign_pieces").update({ code: kitPieceCode }).eq("id", kp.piece_id);
+            recodeCount++;
+          }
+          kitPieceCode++;
+        }
+        code = kitPieceCode;
+      }
+    }
+
     queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
     queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
-    if (updated > 0) {
-      toast.success(`Ordem atualizada! ${updated} item(ns) reordenado(s). Clique em "Recodificar" para atualizar os códigos.`);
-    } else {
-      toast.info("A ordem já estava conforme o desejado.");
-    }
-  }, [campaignId, locationItemsForOrdering, visiblePieces, kits, queryClient]);
+    toast.success(`Ordem aplicada! ${reorderCount} item(ns) reordenado(s) e ${recodeCount} código(s) atualizado(s).`);
+  }, [campaignId, locationItemsForOrdering, visiblePieces, kits, kitPieces, kitOnlyPieces, queryClient]);
 
   const handleRecodificar = async () => {
     const allItems: { type: "piece" | "kit"; id: string; display_order: number }[] = [

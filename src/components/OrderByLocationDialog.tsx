@@ -119,7 +119,7 @@ export function OrderByLocationDialog({
         <DialogHeader>
           <DialogTitle>Ordenar por localização</DialogTitle>
           <DialogDescription>
-            Arraste as localizações para definir a ordem. Peças e kits da mesma localização serão agrupados e ordenados alfabeticamente. A nova ordem será aplicada também ao Rateio. Para atualizar os códigos, clique em <strong>Recodificar</strong> depois.
+            Arraste as localizações para definir a ordem. Peças e kits da mesma localização serão agrupados e ordenados alfabeticamente pelo nome. Ao confirmar, a nova ordem será aplicada às Peças e ao Rateio, e <strong>todos os códigos serão recodificados sequencialmente</strong>.
           </DialogDescription>
         </DialogHeader>
 
@@ -148,7 +148,7 @@ export function OrderByLocationDialog({
             Cancelar
           </Button>
           <Button onClick={handleApply} disabled={saving || order.length === 0}>
-            {saving ? "Aplicando..." : "Aplicar ordem"}
+            {saving ? "Aplicando..." : "Confirmar e recodificar"}
           </Button>
         </DialogFooter>
       </DialogContent>
