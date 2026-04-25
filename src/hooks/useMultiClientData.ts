@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -632,6 +632,11 @@ export function useCampaignStorePieces(campaignId: string | undefined) {
 
 export function useUpdateCampaignStorePiece() {
   const qc = useQueryClient();
+  // Tracks the most recently started mutation. We use this to skip invalidation
+  // for stale mutations whose newer sibling is still in-flight — preventing the
+  // race where a slow refetch overwrites a fresher optimistic update and the
+  // value visually "disappears" right after the user clicks the next cell.
+  const lastMutationRef = useRef(0);
 
   return useMutation({
     mutationFn: async ({ campaignId, storeId, pieceId, quantity }: { campaignId: string; storeId: string; pieceId: string; quantity: number }) => {
@@ -675,6 +680,10 @@ export function useUpdateCampaignStorePiece() {
       }
     },
     onMutate: async ({ campaignId, storeId, pieceId, quantity }) => {
+      // Stamp this mutation; onSettled will compare against this snapshot.
+      lastMutationRef.current = Date.now();
+      const mutationTime = lastMutationRef.current;
+
       const queryKey = ["campaign_store_pieces", campaignId] as const;
       await qc.cancelQueries({ queryKey });
 
@@ -699,7 +708,7 @@ export function useUpdateCampaignStorePiece() {
       }
 
       qc.setQueryData(queryKey, next);
-      return { queryKey, previous };
+      return { queryKey, previous, mutationTime };
     },
     onError: (e, _vars, context) => {
       if (context?.queryKey && context?.previous) {
@@ -707,8 +716,16 @@ export function useUpdateCampaignStorePiece() {
       }
       toast.error("Erro: " + e.message);
     },
-    onSettled: (_data, _error, vars) => {
-      qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
+    onSettled: (_data, _error, vars, context) => {
+      // Delay invalidation 500ms so the database commit has time to land,
+      // and skip entirely if a newer mutation has started since — its own
+      // onSettled will perform the final refetch with the freshest data.
+      const mutationTime = context?.mutationTime ?? 0;
+      setTimeout(() => {
+        if (lastMutationRef.current === mutationTime) {
+          qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
+        }
+      }, 500);
     },
   });
 }
@@ -723,6 +740,10 @@ export function useUpdateCampaignStorePiece() {
 // whose only editable cells are kits.
 export function useBulkUpdateCampaignStorePieces() {
   const qc = useQueryClient();
+  // Same anti-race guard as useUpdateCampaignStorePiece — if a newer batch
+  // starts before this one's invalidation timer fires, skip it and let the
+  // newer batch own the final refetch.
+  const lastMutationRef = useRef(0);
 
   return useMutation({
     mutationFn: async ({
@@ -773,6 +794,9 @@ export function useBulkUpdateCampaignStorePieces() {
       );
     },
     onMutate: async ({ campaignId, storeId, updates }) => {
+      lastMutationRef.current = Date.now();
+      const mutationTime = lastMutationRef.current;
+
       const queryKey = ["campaign_store_pieces", campaignId] as const;
       await qc.cancelQueries({ queryKey });
       const previous = qc.getQueryData<CampaignStorePiece[]>(queryKey) ?? [];
@@ -798,7 +822,7 @@ export function useBulkUpdateCampaignStorePieces() {
       }
 
       qc.setQueryData(queryKey, next);
-      return { queryKey, previous };
+      return { queryKey, previous, mutationTime };
     },
     onError: (e, _vars, context) => {
       if (context?.queryKey && context?.previous) {
@@ -806,12 +830,19 @@ export function useBulkUpdateCampaignStorePieces() {
       }
       toast.error("Erro: " + (e as Error).message);
     },
-    // Single invalidation after the WHOLE batch — never mid-flight.
-    onSettled: (_data, _error, vars) => {
-      qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
+    // Delayed + race-guarded invalidation: 500ms gives the DB time to commit,
+    // and the timestamp check ensures only the latest batch triggers a refetch.
+    onSettled: (_data, _error, vars, context) => {
+      const mutationTime = context?.mutationTime ?? 0;
+      setTimeout(() => {
+        if (lastMutationRef.current === mutationTime) {
+          qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
+        }
+      }, 500);
     },
   });
 }
+
 
 // ─── User Client Access ──────────────────────────────────
 
