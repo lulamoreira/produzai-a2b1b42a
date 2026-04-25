@@ -234,6 +234,7 @@ const CampaignDetail = () => {
     installation_instructions: "Sem informações específicas",
     kit_only: false,
     is_mockup: false,
+    is_new: false,
     image_url: "",
   });
   const [pieceImageUploading, setPieceImageUploading] = useState(false);
@@ -246,6 +247,7 @@ const CampaignDetail = () => {
     installation_instructions: "Sem informações específicas",
     kit_only: false,
     is_mockup: false,
+    is_new: false,
     image_url: "",
   });
 
@@ -477,9 +479,10 @@ const CampaignDetail = () => {
       installation_instructions: pieceForm.installation_instructions,
       kit_only: pieceForm.kit_only,
       is_mockup: pieceForm.is_mockup,
+      is_new: pieceForm.is_new,
       display_order: maxOrder + 1,
       image_url: pieceForm.image_url || undefined,
-    });
+    } as any);
     setPieceForm({
       code: "", category: "", sub_location: "", name: "",
       width: "", length: "", height: "",
@@ -488,6 +491,7 @@ const CampaignDetail = () => {
       installation_instructions: "Sem informações específicas",
       kit_only: false,
       is_mockup: false,
+      is_new: false,
       image_url: "",
     });
     setPieceDialogOpen(false);
@@ -509,6 +513,7 @@ const CampaignDetail = () => {
       installation_instructions: piece.installation_instructions || "Sem informações específicas",
       kit_only: piece.kit_only || false,
       is_mockup: piece.is_mockup || false,
+      is_new: (piece as any).is_new || false,
       image_url: piece.image_url || "",
     });
     setEditPieceDialogOpen(true);
@@ -536,8 +541,9 @@ const CampaignDetail = () => {
       installation_instructions: editPieceForm.installation_instructions,
       kit_only: editPieceForm.kit_only,
       is_mockup: editPieceForm.is_mockup,
+      is_new: editPieceForm.is_new,
       image_url: editPieceForm.image_url || null,
-    });
+    } as any);
     setEditPieceDialogOpen(false);
   };
 
@@ -933,6 +939,13 @@ const CampaignDetail = () => {
           <p className="text-[10px] text-muted-foreground">Marcar esta peça como item de mockup</p>
         </div>
         <Switch checked={form.is_mockup} onCheckedChange={(checked) => setForm((f) => ({ ...f, is_mockup: checked }))} />
+      </div>
+      <div className="flex items-center justify-between p-3 rounded-lg border border-green-500/20 bg-green-500/5">
+        <div>
+          <label className="text-xs font-medium text-foreground">Peça Nova</label>
+          <p className="text-[10px] text-muted-foreground">Marcar como peça nova na campanha</p>
+        </div>
+        <Switch checked={form.is_new} onCheckedChange={(checked) => setForm((f) => ({ ...f, is_new: checked }))} />
       </div>
       {/* Image upload */}
       <div>
