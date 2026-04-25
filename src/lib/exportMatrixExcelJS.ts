@@ -354,13 +354,29 @@ export async function exportMatrixExcelJS(
     })),
   ].sort((a, b) => a.display_order - b.display_order);
 
-  // Build kit sheet names map first
+  // Build kit sheet names map first.
+  // Excel forbids \ / ? * [ ] : in sheet names and limits length to 31 chars.
+  // Also deduplicate names (truncation can collide, e.g. "Kit 111 - KIT Revestimento Cubo" / "Kit 114 - ...").
+  const usedSheetNames = new Set<string>();
+  usedSheetNames.add("matriz lojas x peças");
+  usedSheetNames.add("dashboard");
+  const safeSheetName = (raw: string): string => {
+    let base = raw.replace(/[\\/?*\[\]:]/g, "-").replace(/\s+/g, " ").slice(0, 31).trim();
+    if (!base) base = "Sheet";
+    let name = base;
+    let i = 2;
+    while (usedSheetNames.has(name.toLowerCase())) {
+      const suffix = ` (${i++})`;
+      name = base.slice(0, 31 - suffix.length).trim() + suffix;
+    }
+    usedSheetNames.add(name.toLowerCase());
+    return name;
+  };
   const kitSheetNames = new Map<string, string>();
   for (const kit of kits) {
     const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
     if (kpList.length === 0) continue;
-    const sheetName = `Kit ${kit.code} - ${kit.name}`.slice(0, 31);
-    kitSheetNames.set(kit.id, sheetName);
+    kitSheetNames.set(kit.id, safeSheetName(`Kit ${kit.code} - ${kit.name}`));
   }
 
   // Pre-compute kit quantities into a merged qtyMap for the main tab
