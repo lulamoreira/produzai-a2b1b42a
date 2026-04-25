@@ -110,9 +110,9 @@ interface CreateKitDialogProps {
   kitOnlyPieces: CampaignPiece[];
   existingKits: CampaignKit[];
   existingPieces?: CampaignPiece[];
-  onCreateKit: (kit: { campaign_id: string; name: string; code: number }) => Promise<CampaignKit>;
+  onCreateKit: (kit: { campaign_id: string; name: string; code: number; is_new?: boolean }) => Promise<CampaignKit>;
   onAddKitPiece: (kitPiece: { kit_id: string; piece_id: string }) => Promise<void>;
-  onUpdateKit: (kit: { id: string; image_url?: string | null }) => Promise<CampaignKit>;
+  onUpdateKit: (kit: { id: string; image_url?: string | null; is_new?: boolean }) => Promise<CampaignKit>;
 }
 
 export function CreateKitDialog({
@@ -120,6 +120,7 @@ export function CreateKitDialog({
 }: CreateKitDialogProps) {
   const [step, setStep] = useState<"name" | "pieces">("name");
   const [kitName, setKitName] = useState("");
+  const [kitIsNew, setKitIsNew] = useState(false);
   const [createdKit, setCreatedKit] = useState<CampaignKit | null>(null);
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -158,7 +159,7 @@ export function CreateKitDialog({
     }
     setSaving(true);
     try {
-      const kit = await onCreateKit({ campaign_id: campaignId, name: finalName, code: nextCode });
+      const kit = await onCreateKit({ campaign_id: campaignId, name: finalName, code: nextCode, is_new: kitIsNew });
       setCreatedKit(kit);
       setStep("pieces");
     } finally {
@@ -175,6 +176,7 @@ export function CreateKitDialog({
   const handleClose = () => {
     setStep("name");
     setKitName("");
+    setKitIsNew(false);
     setCreatedKit(null);
     setSelectedPieceIds([]);
     setCreateSearch("");
@@ -204,6 +206,13 @@ export function CreateKitDialog({
                 onKeyDown={(e) => { if (e.key === "Enter") handleCreateKit(); }}
                 autoFocus
               />
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border border-green-500/20 bg-green-500/5">
+              <div>
+                <label className="text-xs font-medium text-foreground">Kit Novo</label>
+                <p className="text-[10px] text-muted-foreground">Marcar como kit novo na campanha</p>
+              </div>
+              <Switch checked={kitIsNew} onCheckedChange={setKitIsNew} />
             </div>
             <Button onClick={handleCreateKit} disabled={!kitName.trim() || saving} className="w-full">
               {saving ? "Criando..." : "Avançar"}
@@ -303,7 +312,7 @@ interface KitDetailDialogProps {
   onDeleteKitPiece?: (id: string) => void;
   onDeleteKit?: (id: string) => void;
   onAddKitPiece?: (kitPiece: { kit_id: string; piece_id: string; quantity?: number }) => Promise<void>;
-  onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null; is_mockup?: boolean; category?: string | null; sub_location?: string | null }) => Promise<CampaignKit>;
+  onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null; is_mockup?: boolean; is_new?: boolean; category?: string | null; sub_location?: string | null }) => Promise<CampaignKit>;
   onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
   onDeletePiece?: (id: string) => void;
   onUpdateKitPiece?: (update: { id: string; quantity: number }) => Promise<void>;
