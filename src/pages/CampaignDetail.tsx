@@ -2727,6 +2727,15 @@ const CampaignDetail = () => {
         />
       )}
 
+      {/* Order by Location Dialog */}
+      <OrderByLocationDialog
+        open={orderByLocationOpen}
+        onOpenChange={setOrderByLocationOpen}
+        locations={distinctLocations}
+        countsByLocation={countsByLocation}
+        onApply={handleApplyOrderByLocation}
+      />
+
       {/* Create Kit Dialog */}
       {campaignId && (
         <CreateKitDialog
