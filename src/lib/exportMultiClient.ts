@@ -276,7 +276,9 @@ export async function exportMatrix(
     }
   });
 
-  XLSX.writeFile(wb, buildExportFileName(`Matriz_${campaignName}`, { agencyName, clientName }));
+  const fileName = buildExportFileName(`Matriz_${campaignName}`, { agencyName, clientName });
+  const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+  await saveXlsxAs(buffer, fileName);
 }
 
 export function parseMatrixImport(
