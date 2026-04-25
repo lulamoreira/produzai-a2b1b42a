@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
+import { findDuplicateName, duplicateNameMessage } from "@/lib/duplicateName";
 
 // ─── Kit Image Upload (inline) ───────────────────────────
 
