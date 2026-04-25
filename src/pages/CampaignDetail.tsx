@@ -2260,6 +2260,7 @@ const CampaignDetail = () => {
                                       {/* Spacer to align with kit "(X pçs)" line */}
                                       <span className="text-[9px] sm:text-[10px] font-semibold leading-tight invisible" aria-hidden="true">.</span>
                                       <span className="text-[9px] sm:text-[10px] text-muted-foreground text-center leading-tight max-w-[68px] sm:max-w-[100px] whitespace-normal break-words">{p.name}</span>
+                                      {(p as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold mt-0.5">NOVO</span>}
                                     </button>
                                   </TableHead>
                                 );
@@ -2279,6 +2280,7 @@ const CampaignDetail = () => {
                                     <span className="text-[10px] sm:text-xs font-bold text-primary leading-tight">{kit.code}</span>
                                     <span className="text-[9px] sm:text-[10px] font-semibold text-foreground leading-tight">({kitPieceCount} {kitPieceCount === 1 ? "pç" : "pçs"})</span>
                                     <span className="text-[9px] sm:text-[10px] text-muted-foreground text-center leading-tight max-w-[68px] sm:max-w-[100px] whitespace-normal break-words">{kit.name}</span>
+                                    {(kit as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold mt-0.5">NOVO</span>}
                                   </button>
                                 </TableHead>
                               );

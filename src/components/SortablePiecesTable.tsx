@@ -105,6 +105,7 @@ function SortableRow({
             <span className="flex items-center gap-1.5">
               {kit.name}
               {kit.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">MOCKUP</span>}
+              {(kit as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">NOVO</span>}
             </span>
             <span className="text-[11px] text-muted-foreground block">
               {kitPieceDetails.length} peça(s): {kitPieceDetails.map(p => p!.name).join(", ") || "Nenhuma"}
@@ -189,6 +190,7 @@ function SortableRow({
           <span className="flex items-center gap-1.5 flex-wrap">
             {piece.name}
             {piece.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">MOCKUP</span>}
+            {(piece as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">NOVO</span>}
           </span>
         </button>
       </TableCell>

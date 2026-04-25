@@ -776,6 +776,7 @@ const QuickMatrixEditor = ({
                             <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
                             <span className="text-xs font-bold">{p.code}</span>
                             <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[120px] whitespace-normal break-words">{p.name}</span>
+                            {(p as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold mt-0.5">NOVO</span>}
                           </DraggableColHeader>
                         );
                       }
@@ -791,6 +792,7 @@ const QuickMatrixEditor = ({
                           )}
                           <span className="text-xs font-bold text-primary">{kit.code}</span>
                           <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[120px] whitespace-normal break-words">{kit.name}</span>
+                          {(kit as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold mt-0.5">NOVO</span>}
                         </DraggableColHeader>
                       );
                     })}
