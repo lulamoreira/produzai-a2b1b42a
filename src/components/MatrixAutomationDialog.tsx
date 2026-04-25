@@ -577,9 +577,23 @@ export default function MatrixAutomationDialog({
     }
 
     if (upserts.length > 0) {
+      // Deduplicate: same (store_id, piece_id) cannot appear twice in a single upsert
+      // (Postgres throws "ON CONFLICT DO UPDATE command cannot affect row a second time").
+      // When a kit references the same piece more than once, sum the quantities.
+      const dedupMap = new Map<string, typeof upserts[number]>();
+      for (const u of upserts) {
+        const key = `${u.store_id}-${u.piece_id}`;
+        const existing = dedupMap.get(key);
+        if (existing) {
+          existing.quantity += u.quantity;
+        } else {
+          dedupMap.set(key, { ...u });
+        }
+      }
+      const dedupedUpserts = Array.from(dedupMap.values());
       const { error } = await supabase
         .from("campaign_store_pieces")
-        .upsert(upserts, { onConflict: "campaign_id,store_id,piece_id" });
+        .upsert(dedupedUpserts, { onConflict: "campaign_id,store_id,piece_id" });
       if (error) throw error;
     }
 
