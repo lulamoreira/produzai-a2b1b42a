@@ -328,7 +328,7 @@ const CampaignDetail = () => {
   const editingInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const editingCellRef = useRef<{ storeId: string; pieceId: string } | null>(null);
   const editValueRef = useRef("");
-  const skipBlurSaveRef = useRef(false);
+  const skipBlurSaveRef = useRef<string | null>(null);
   const [importMatrixDialogOpen, setImportMatrixDialogOpen] = useState(false);
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
@@ -551,10 +551,6 @@ const CampaignDetail = () => {
     editingCellRef.current = editingCell;
   }, [editingCell]);
 
-  useEffect(() => {
-    editValueRef.current = editValue;
-  }, [editValue]);
-
   // Focus only depends on editingCell — never on qtyMap or query data.
   useEffect(() => {
     if (!editingCell) return;
@@ -645,6 +641,13 @@ const CampaignDetail = () => {
   // The save runs SYNCHRONOUSLY using editValueRef.current as the source of
   // truth — no setTimeout, no stale state. The ref is updated synchronously
   // by the input's onChange, so it always holds the very last keystroke.
+  const getEditingCellKey = (storeId: string, pieceId: string) => `${storeId}-${pieceId}`;
+
+  const markCurrentBlurAsHandled = useCallback(() => {
+    const current = editingCellRef.current;
+    skipBlurSaveRef.current = current ? getEditingCellKey(current.storeId, current.pieceId) : null;
+  }, []);
+
   const switchToCell = useCallback((newStoreId: string, newPieceId: string) => {
     if (!canEditCampaign) return;
     const current = editingCellRef.current;
@@ -664,8 +667,10 @@ const CampaignDetail = () => {
 
     // Update both ref and state synchronously so onBlur firing after this
     // transition reads the new (empty/numeric) value, never the previous.
+    const nextCell = { storeId: newStoreId, pieceId: newPieceId };
     editValueRef.current = nextValue;
-    setEditingCell({ storeId: newStoreId, pieceId: newPieceId });
+    editingCellRef.current = nextCell;
+    setEditingCell(nextCell);
     setEditValue(nextValue);
   }, [canEditCampaign, saveCell, getCellQty]);
 
@@ -678,6 +683,7 @@ const CampaignDetail = () => {
       saveCell(current, editValueRef.current ?? "");
     }
     editValueRef.current = "";
+    editingCellRef.current = null;
     setEditingCell(null);
     setEditValue("");
   }, [saveCell]);
@@ -685,13 +691,14 @@ const CampaignDetail = () => {
   const handleCellClick = (storeId: string, pieceId: string) => {
     // Suppress the blur-save from the previously-focused input; switchToCell
     // already handles saving the previous cell atomically.
-    skipBlurSaveRef.current = true;
+    markCurrentBlurAsHandled();
     switchToCell(storeId, pieceId);
   };
 
-  const handlePieceBlur = () => {
-    if (skipBlurSaveRef.current) {
-      skipBlurSaveRef.current = false;
+  const handlePieceBlur = (storeId: string, pieceId: string) => {
+    const blurredKey = getEditingCellKey(storeId, pieceId);
+    if (skipBlurSaveRef.current === blurredKey) {
+      skipBlurSaveRef.current = null;
       return;
     }
     closeEditing();
