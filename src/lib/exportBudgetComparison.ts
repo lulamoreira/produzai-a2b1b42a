@@ -1,7 +1,7 @@
 import type * as ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { buildExportFileName } from "@/lib/exportFileName";
-import type { CampaignKit, CampaignKitPiece, CampaignPiece } from "@/hooks/useMultiClientData";
+import type { CampaignKit, CampaignPiece } from "@/hooks/useMultiClientData";
 
 type BudgetSupplier = {
   id: string;
@@ -25,6 +25,13 @@ type BudgetExtraCost = {
   freight_value: number | string | null;
 };
 
+type BudgetKitPiece = {
+  id: string;
+  kit_id: string;
+  piece_id: string;
+  quantity: number;
+};
+
 type BudgetStore = { id: string; name: string };
 
 type ExportBudgetComparisonParams = {
@@ -38,7 +45,7 @@ type ExportBudgetComparisonParams = {
   extraCosts: BudgetExtraCost[];
   pieces: CampaignPiece[];
   kits: CampaignKit[];
-  kitPieces: CampaignKitPiece[];
+  kitPieces: BudgetKitPiece[];
   qtyMap: Record<string, number>;
   stores: BudgetStore[];
 };
@@ -70,7 +77,7 @@ function getPieceTotals(pieces: CampaignPiece[], stores: BudgetStore[], qtyMap: 
 
 function getKitComponentTotals(
   kits: CampaignKit[],
-  kitPieces: CampaignKitPiece[],
+  kitPieces: BudgetKitPiece[],
   pieceTotals: Record<string, number>,
 ) {
   return kits.reduce<Record<string, { kitQty: number; components: Record<string, number> }>>((acc, kit) => {
