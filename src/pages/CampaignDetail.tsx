@@ -2237,7 +2237,7 @@ const CampaignDetail = () => {
                               if (col.type === "piece") {
                                 const p = col.data;
                                 return (
-                                  <TableHead key={p.id} className={`text-center min-w-[100px] border-l border-border/70 ${tint}`}>
+                                  <TableHead key={p.id} className={`text-center min-w-[100px] border-l border-border/70 align-top ${tint}`}>
                                     <button
                                       className="flex flex-col items-center gap-0.5 w-full hover:opacity-80 transition-opacity"
                                       onClick={() => handleOpenEditPiece(p)}
@@ -2252,8 +2252,8 @@ const CampaignDetail = () => {
                               const kit = col.data;
                               const kitPieceCount = kitPieces.filter(kp => kp.kit_id === kit.id).reduce((s, kp) => s + (kp.quantity || 0), 0);
                               return (
-                                <TableHead key={`kit-${kit.id}`} className={`text-center min-w-[100px] border-l border-border/70 ${tint}`}>
-                                  <button onClick={() => setViewKitDetail(kit)} className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
+                                <TableHead key={`kit-${kit.id}`} className={`text-center min-w-[100px] border-l border-border/70 align-top ${tint}`}>
+                                  <button onClick={() => setViewKitDetail(kit)} className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity w-full">
                                     {kit.image_url ? (
                                       <PieceThumbnail imageUrl={kit.image_url} name={kit.name} size="sm" />
                                     ) : (
@@ -2262,8 +2262,8 @@ const CampaignDetail = () => {
                                       </div>
                                     )}
                                     <span className="text-xs font-bold text-primary">{kit.code}</span>
+                                    <span className="text-[10px] font-bold text-foreground">({kitPieceCount} {kitPieceCount === 1 ? "peça" : "peças"})</span>
                                     <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[100px] whitespace-normal break-words">{kit.name}</span>
-                                    <span className="text-[10px] text-muted-foreground">({kitPieceCount} {kitPieceCount === 1 ? "peça" : "peças"})</span>
                                   </button>
                                 </TableHead>
                               );
