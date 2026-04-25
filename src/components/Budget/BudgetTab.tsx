@@ -534,9 +534,14 @@ ${deadlineBlock}${timelineBlock}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Fornecedores</h3>
-          <Button size="sm" variant="outline" className="gap-1" onClick={() => setAddOpen(true)}>
-            <Plus className="w-3.5 h-3.5" /> Adicionar Fornecedor
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="gap-1" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
+              <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setAddOpen(true)}>
+              <Plus className="w-3.5 h-3.5" /> Adicionar Fornecedor
+            </Button>
+          </div>
         </div>
 
         {suppliers.length === 0 ? (
