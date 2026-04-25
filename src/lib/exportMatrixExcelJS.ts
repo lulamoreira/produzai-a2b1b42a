@@ -95,8 +95,9 @@ function gradientFill(from: string, to: string, degree = 0): ExcelJS.FillGradien
 
 // ─── Types ───────────────────────────────────────────────
 
-const META_LABELS = ["IMAGEM", "CÓDIGO", "LOCAL", "NOME", "TAMANHO", "ESPECIFICAÇÃO", "INSTRUÇÕES DE INSTALAÇÃO"];
+const META_LABELS = ["IMAGEM", "CÓDIGO", "LOCAL", "NOME", "TAMANHO", "ESPECIFICAÇÃO", "INSTRUÇÕES DE INSTALAÇÃO", "NOVO"];
 const IMAGE_ROW_INDEX = 0;
+const NEW_ROW_INDEX = 7;
 const META_ROW_COUNT = META_LABELS.length;
 
 type MatrixItem = {
@@ -109,6 +110,7 @@ type MatrixItem = {
   specification?: string;
   installation_instructions?: string;
   image_url?: string | null;
+  is_new?: boolean;
   _type?: "piece" | "kit";
 };
 
@@ -175,6 +177,7 @@ async function buildTransposedSheet(
         case 4: values.push(p.size); break;
         case 5: values.push(p.specification || ""); break;
         case 6: values.push(p.installation_instructions || ""); break;
+        case 7: values.push(p.is_new ? "Sim" : ""); break;
         default: values.push("");
       }
     }
@@ -192,7 +195,21 @@ async function buildTransposedSheet(
       const cell = ws.getCell(rowNum, ci);
       cell.font = { ...darkFont, size: 10 };
       cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-      cell.fill = mi === IMAGE_ROW_INDEX ? solidFill("FFFFFF") : gradientFill("FFFFFF", LIGHT);
+      if (mi === IMAGE_ROW_INDEX) {
+        cell.fill = solidFill("FFFFFF");
+      } else if (mi === NEW_ROW_INDEX) {
+        // Highlight "Sim" cells in green; leave empty cells white
+        const itemIdx = ci - STORE_META_COLS - 1;
+        const isNewItem = !!items[itemIdx]?.is_new;
+        if (isNewItem) {
+          cell.fill = solidFill("22C55E"); // green-500
+          cell.font = { color: { argb: "FFFFFFFF" }, bold: true, size: 10 };
+        } else {
+          cell.fill = gradientFill("FFFFFF", LIGHT);
+        }
+      } else {
+        cell.fill = gradientFill("FFFFFF", LIGHT);
+      }
       cell.border = allBorders;
     }
 
@@ -338,6 +355,7 @@ export async function exportMatrixExcelJS(
       store_category: p.category,
       specification: p.specification || "",
       installation_instructions: p.installation_instructions || "",
+      is_new: (p as any).is_new || false,
     })),
     ...kits.map((k) => ({
       id: k.id,
@@ -349,6 +367,7 @@ export async function exportMatrixExcelJS(
       specification: "",
       installation_instructions: "",
       image_url: k.image_url,
+      is_new: (k as any).is_new || false,
       _type: "kit" as const,
       display_order: k.display_order,
     })),
@@ -416,6 +435,7 @@ export async function exportMatrixExcelJS(
         specification: piece?.specification || "",
         installation_instructions: piece?.installation_instructions || "",
         image_url: piece?.image_url,
+        is_new: (piece as any)?.is_new || false,
       };
     });
 
