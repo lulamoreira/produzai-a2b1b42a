@@ -345,6 +345,8 @@ const CampaignDetail = () => {
   });
   const [quickEditActive, setQuickEditActive] = useState(false);
   const [matrixCustomExportOpen, setMatrixCustomExportOpen] = useState(false);
+  const [resetMatrixOpen, setResetMatrixOpen] = useState(false);
+  const [resettingMatrix, setResettingMatrix] = useState(false);
   const [automationOpen, setAutomationOpen] = useState(false);
   const [budgetExportDialogOpen, setBudgetExportDialogOpen] = useState(false);
 
