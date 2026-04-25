@@ -2128,11 +2128,11 @@ const CampaignDetail = () => {
                                             min={0}
                                             value={editValue}
                                             onChange={(e) => { editValueRef.current = e.target.value; setEditValue(e.target.value); }}
-                                            onBlur={handlePieceBlur}
+                                            onBlur={() => handlePieceBlur(store.id, p.id)}
                                             onKeyDown={(e) => {
                                               const move = (dir: "up" | "down" | "left" | "right") => {
                                                 e.preventDefault();
-                                                skipBlurSaveRef.current = true;
+                                                markCurrentBlurAsHandled();
                                                 const next = navigateMatrixCell(dir);
                                                 if (next) {
                                                   switchToCell(next.storeId, next.pieceId);
@@ -2148,7 +2148,7 @@ const CampaignDetail = () => {
                                               else if (e.key === "ArrowRight") move("right");
                                               else if (e.key === "Escape") {
                                                 e.preventDefault();
-                                                skipBlurSaveRef.current = true;
+                                                markCurrentBlurAsHandled();
                                                 setEditingCell(null);
                                                 setEditValue("");
                                               }
@@ -2193,11 +2193,11 @@ const CampaignDetail = () => {
                                           min={0}
                                           value={editValue}
                                           onChange={(e) => { editValueRef.current = e.target.value; setEditValue(e.target.value); }}
-                                          onBlur={handlePieceBlur}
+                                          onBlur={() => handlePieceBlur(store.id, `kit-${kit.id}`)}
                                           onKeyDown={(e) => {
                                             const move = (dir: "up" | "down" | "left" | "right") => {
                                               e.preventDefault();
-                                              skipBlurSaveRef.current = true;
+                                              markCurrentBlurAsHandled();
                                               const next = navigateMatrixCell(dir);
                                               if (next) {
                                                 switchToCell(next.storeId, next.pieceId);
@@ -2213,7 +2213,7 @@ const CampaignDetail = () => {
                                             else if (e.key === "ArrowRight") move("right");
                                             else if (e.key === "Escape") {
                                               e.preventDefault();
-                                              skipBlurSaveRef.current = true;
+                                              markCurrentBlurAsHandled();
                                               setEditingCell(null);
                                               setEditValue("");
                                             }
