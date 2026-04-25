@@ -44,7 +44,6 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, MoreHorizontal, History } from "lucide-react";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
-import { SortableLocationHeader, type LocationGroup } from "@/components/Matrix/SortableLocationHeader";
 
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
@@ -751,65 +750,6 @@ const CampaignDetail = () => {
     queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
     queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
   }, [queryClient]);
-
-  // ─── Reorder by location group (drag entire location block) ───
-  // Reorders all matrix columns (pieces + kits) so that locations follow the
-  // requested order. Items within the same location keep their relative order.
-  // Locations with the same name are merged into a single contiguous block.
-  const handleReorderByLocation = useCallback(async (newLocationOrder: string[]) => {
-    const getLoc = (col: { type: "piece" | "kit"; data: any }): string => {
-      if (col.type === "piece") return col.data.category || "Sem localização";
-      return getKitCategory(col.data) || "Sem localização";
-    };
-
-    // Current ordered columns
-    const allCols: { type: "piece" | "kit"; data: any; display_order: number }[] = [
-      ...pieces.map(p => ({ type: "piece" as const, data: p, display_order: p.display_order })),
-      ...kits.map(k => ({ type: "kit" as const, data: k, display_order: k.display_order })),
-    ].sort((a, b) => a.display_order - b.display_order);
-
-    // Group by location, preserving internal order
-    const byLoc = new Map<string, typeof allCols>();
-    for (const col of allCols) {
-      const loc = getLoc(col);
-      if (!byLoc.has(loc)) byLoc.set(loc, []);
-      byLoc.get(loc)!.push(col);
-    }
-
-    // Build new sequence following requested location order.
-    // Any location not present in newLocationOrder is appended at the end (preserving original order).
-    const seenLocs = new Set<string>();
-    const finalCols: typeof allCols = [];
-    for (const loc of newLocationOrder) {
-      const cols = byLoc.get(loc);
-      if (cols) {
-        finalCols.push(...cols);
-        seenLocs.add(loc);
-      }
-    }
-    for (const [loc, cols] of byLoc.entries()) {
-      if (!seenLocs.has(loc)) finalCols.push(...cols);
-    }
-
-    // Apply new display_order in parallel only for items that changed
-    const updates: Promise<any>[] = [];
-    finalCols.forEach((col, idx) => {
-      const newOrder = idx + 1;
-      if (col.data.display_order !== newOrder) {
-        if (col.type === "piece") {
-          updates.push(Promise.resolve(supabase.from("campaign_pieces").update({ display_order: newOrder }).eq("id", col.data.id)));
-        } else {
-          updates.push(Promise.resolve(supabase.from("campaign_kits").update({ display_order: newOrder }).eq("id", col.data.id)));
-        }
-      }
-    });
-    if (updates.length === 0) return;
-    await Promise.all(updates);
-    queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
-    queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
-    toast.success("Localizações reordenadas.");
-  }, [pieces, kits, kitPieces, queryClient]);
-
 
   // ─── Recodificar (rewrite codes sequentially) ─────────
   const handleRecodificar = async () => {
@@ -1904,12 +1844,6 @@ const CampaignDetail = () => {
                               {t("matrix.fromOtherCampaign")}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            {/* Apply new order and recode */}
-                            <DropdownMenuItem onClick={handleRecodificar}>
-                              <RefreshCw className="w-4 h-4 mr-2" />
-                              Aplicar nova ordem e recodificar
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                             {/* Destructive: reset all quantities */}
                             <DropdownMenuItem
                               onClick={() => setResetMatrixOpen(true)}
@@ -2131,9 +2065,9 @@ const CampaignDetail = () => {
                     <div className="border border-border rounded-lg overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          {/* Category group header row (drag to reorder entire location block) */}
+                          {/* Category group header row */}
                           {(() => {
-                            const groups: LocationGroup[] = [];
+                            const groups: { label: string; span: number }[] = [];
                             let currentCat: string | null = null;
                             let currentSpan = 0;
                             matrixColumns.forEach((col) => {
@@ -2141,21 +2075,26 @@ const CampaignDetail = () => {
                                 ? (col.data.category || "Sem localização")
                                 : (getKitCategory(col.data) || "Sem localização");
                               if (cat !== currentCat) {
-                                if (currentCat !== null) groups.push({ key: currentCat, label: currentCat, span: currentSpan });
+                                if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
                                 currentCat = cat;
                                 currentSpan = 1;
                               } else {
                                 currentSpan++;
                               }
                             });
-                            if (currentCat !== null) groups.push({ key: currentCat, label: currentCat, span: currentSpan });
+                            if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
+                            // Only show if there's more than one group
                             if (groups.length <= 1) return null;
                             return (
-                              <SortableLocationHeader
-                                groups={groups}
-                                canEdit={canEditCampaign}
-                                onReorder={handleReorderByLocation}
-                              />
+                              <TableRow className="bg-muted/30">
+                                <TableHead className="sticky left-0 bg-muted/30 z-[5]" />
+                                {groups.map((g, i) => (
+                                  <TableHead key={i} colSpan={g.span} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-l border-border py-1">
+                                    {g.label}
+                                  </TableHead>
+                                ))}
+                                <TableHead />
+                              </TableRow>
                             );
                           })()}
                           <TableRow>
