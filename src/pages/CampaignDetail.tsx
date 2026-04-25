@@ -2260,7 +2260,7 @@ const CampaignDetail = () => {
                               return <TableCell key={`kit-total-${kit.id}`} className="text-center text-sm">{kitTotal}</TableCell>;
                             })}
                             <TableCell className="text-center text-sm text-primary">
-                              {matrixPieces.reduce((total, p) => total + filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0), 0)}
+                              {pieces.reduce((total, p) => total + filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0), 0)}
                             </TableCell>
                           </TableRow>
                         </TableBody>
