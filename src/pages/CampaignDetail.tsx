@@ -72,6 +72,7 @@ import CampaignStatusDashboard, { type DashboardFilter } from "@/components/Camp
 
 import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
+import { ResetMatrixDialog } from "@/components/Matrix/ResetMatrixDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import ExportAllPhotosDialog from "@/components/ExportAllPhotosDialog";
@@ -344,6 +345,8 @@ const CampaignDetail = () => {
   });
   const [quickEditActive, setQuickEditActive] = useState(false);
   const [matrixCustomExportOpen, setMatrixCustomExportOpen] = useState(false);
+  const [resetMatrixOpen, setResetMatrixOpen] = useState(false);
+  const [resettingMatrix, setResettingMatrix] = useState(false);
   const [automationOpen, setAutomationOpen] = useState(false);
   const [budgetExportDialogOpen, setBudgetExportDialogOpen] = useState(false);
 
@@ -1840,6 +1843,15 @@ const CampaignDetail = () => {
                               <Copy className="w-4 h-4 mr-2" />
                               {t("matrix.fromOtherCampaign")}
                             </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {/* Destructive: reset all quantities */}
+                            <DropdownMenuItem
+                              onClick={() => setResetMatrixOpen(true)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Zerar planilha
+                            </DropdownMenuItem>
                           </>
                         )}
                       </DropdownMenuContent>
@@ -1927,6 +1939,33 @@ const CampaignDetail = () => {
                   }}
                 />
 
+
+                {/* Reset Matrix Dialog (zera todas as quantidades do rateio) */}
+                <ResetMatrixDialog
+                  open={resetMatrixOpen}
+                  onOpenChange={setResetMatrixOpen}
+                  campaignName={campaign?.name || ""}
+                  totalEntries={storePieces.length}
+                  onConfirm={async () => {
+                    if (!campaignId || resettingMatrix) return;
+                    setResettingMatrix(true);
+                    const toastId = toast.loading("Zerando planilha do Rateio...");
+                    try {
+                      const { error } = await supabase
+                        .from("campaign_store_pieces")
+                        .delete()
+                        .eq("campaign_id", campaignId);
+                      if (error) throw error;
+                      await queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
+                      toast.success("Planilha do Rateio zerada com sucesso.", { id: toastId });
+                    } catch (err) {
+                      console.error(err);
+                      toast.error("Erro ao zerar a planilha. Tente novamente.", { id: toastId });
+                    } finally {
+                      setResettingMatrix(false);
+                    }
+                  }}
+                />
 
                 <CustomExportDialog
                   open={matrixCustomExportOpen}
