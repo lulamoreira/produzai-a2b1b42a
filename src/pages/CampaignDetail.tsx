@@ -2232,11 +2232,12 @@ const CampaignDetail = () => {
                           })()}
                           <TableRow>
                             <TableHead className="sticky left-0 bg-card z-[5] min-w-[180px]">{t("matrix.store")}</TableHead>
-                            {matrixColumns.map((col) => {
+                            {matrixColumns.map((col, colIdx) => {
+                              const tint = columnTints[colIdx] || "";
                               if (col.type === "piece") {
                                 const p = col.data;
                                 return (
-                                  <TableHead key={p.id} className="text-center min-w-[100px]">
+                                  <TableHead key={p.id} className={`text-center min-w-[100px] border-l border-border/70 ${tint}`}>
                                     <button
                                       className="flex flex-col items-center gap-0.5 w-full hover:opacity-80 transition-opacity"
                                       onClick={() => handleOpenEditPiece(p)}
@@ -2251,7 +2252,7 @@ const CampaignDetail = () => {
                               const kit = col.data;
                               const kitPieceCount = kitPieces.filter(kp => kp.kit_id === kit.id).reduce((s, kp) => s + (kp.quantity || 0), 0);
                               return (
-                                <TableHead key={`kit-${kit.id}`} className="text-center min-w-[100px]">
+                                <TableHead key={`kit-${kit.id}`} className={`text-center min-w-[100px] border-l border-border/70 ${tint}`}>
                                   <button onClick={() => setViewKitDetail(kit)} className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
                                     {kit.image_url ? (
                                       <PieceThumbnail imageUrl={kit.image_url} name={kit.name} size="sm" />
