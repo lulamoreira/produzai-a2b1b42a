@@ -420,17 +420,28 @@ export function KitDetailDialog({
                   className="h-8 text-sm"
                   autoFocus
                   onKeyDown={async (e) => {
-                    if (e.key === "Enter" && kitNameInput.trim()) {
-                      setLocalKitName(kitNameInput.trim());
+                    if (e.key === "Enter" && kitNameInput.trim() && kit) {
+                      const safeName = kitNameInput.trim().startsWith("KIT ") ? kitNameInput.trim() : `KIT ${kitNameInput.trim()}`;
+                      const dup = findDuplicateName(safeName, allPieces, existingKits, { ignoreKitId: kit.id });
+                      if (dup) {
+                        toast.error(duplicateNameMessage(dup));
+                        return;
+                      }
+                      setLocalKitName(safeName);
                       setEditingKitName(false);
                       toast.success("Nome atualizado!");
-                      await onUpdateKit({ id: kit.id, name: kitNameInput.trim() });
+                      await onUpdateKit({ id: kit.id, name: safeName });
                     }
                   }}
                 />
                 <Button size="sm" className="h-8 text-xs" onClick={async () => {
-                  if (kitNameInput.trim()) {
+                  if (kitNameInput.trim() && kit) {
                     const safeName = kitNameInput.trim().startsWith("KIT ") ? kitNameInput.trim() : `KIT ${kitNameInput.trim()}`;
+                    const dup = findDuplicateName(safeName, allPieces, existingKits, { ignoreKitId: kit.id });
+                    if (dup) {
+                      toast.error(duplicateNameMessage(dup));
+                      return;
+                    }
                     setLocalKitName(safeName);
                     setEditingKitName(false);
                     toast.success("Nome atualizado!");
