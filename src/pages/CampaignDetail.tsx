@@ -2178,28 +2178,8 @@ const CampaignDetail = () => {
                     </div>
                   ) : (
                      <div className="border border-border rounded-lg overflow-x-auto">
-                      {(() => { return null; })()}
                       <Table>
                         <TableHeader>
-                          {/* Compute column tints alternating by location */}
-                          {(() => {
-                            // Build column tint map (alternates by location group)
-                            const tints: Record<number, string> = {};
-                            let currentCat: string | null = null;
-                            let tintIndex = -1;
-                            matrixColumns.forEach((col, idx) => {
-                              const cat = col.type === "piece"
-                                ? (col.data.category || "Sem localização")
-                                : (getKitCategory(col.data) || "Sem localização");
-                              if (cat !== currentCat) {
-                                currentCat = cat;
-                                tintIndex++;
-                              }
-                              tints[idx] = tintIndex % 2 === 0 ? "bg-muted/20" : "bg-transparent";
-                            });
-                            (window as unknown as { __matrixTints?: Record<number, string> }).__matrixTints = tints;
-                            return null;
-                          })()}
                           {/* Category group header row */}
                           {(() => {
                             const groups: { label: string; span: number }[] = [];
