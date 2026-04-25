@@ -511,6 +511,12 @@ const CampaignDetail = () => {
 
   const handleEditPiece = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validate duplicate name (ignore the piece being edited)
+    const dup = findDuplicateName(editPieceForm.name, pieces, kits, { ignorePieceId: editPieceForm.id });
+    if (dup) {
+      toast.error(duplicateNameMessage(dup));
+      return;
+    }
     const size = [editPieceForm.width, editPieceForm.height, editPieceForm.length].filter(Boolean).join(" x ");
     const code = editPieceForm.code ? parseInt(editPieceForm.code) : nextPieceCode.seq;
     await updatePiece.mutateAsync({
