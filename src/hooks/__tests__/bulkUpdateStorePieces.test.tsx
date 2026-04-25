@@ -115,11 +115,15 @@ describe("useBulkUpdateCampaignStorePieces", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     // Critical: exactly ONE invalidation for the whole batch — never per row.
-    const matchingCalls = invalidateSpy.mock.calls.filter((c) => {
-      const k = (c[0] as any)?.queryKey;
-      return Array.isArray(k) && k[0] === "campaign_store_pieces" && k[1] === "campaign-2";
+    // The hook intentionally delays invalidation by 500ms to avoid refetching
+    // before the database has committed every component-piece write.
+    await waitFor(() => {
+      const matchingCalls = invalidateSpy.mock.calls.filter((c) => {
+        const k = (c[0] as any)?.queryKey;
+        return Array.isArray(k) && k[0] === "campaign_store_pieces" && k[1] === "campaign-2";
+      });
+      expect(matchingCalls).toHaveLength(1);
     });
-    expect(matchingCalls).toHaveLength(1);
   });
 
   it("rolls back to the previous snapshot if the batch errors", async () => {
