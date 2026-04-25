@@ -2244,6 +2244,8 @@ const CampaignDetail = () => {
                                     >
                                       <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
                                       <span className="text-[10px] sm:text-xs font-bold leading-tight">{p.code}</span>
+                                      {/* Spacer to align with kit "(X pçs)" line */}
+                                      <span className="text-[9px] sm:text-[10px] font-semibold leading-tight invisible" aria-hidden="true">.</span>
                                       <span className="text-[9px] sm:text-[10px] text-muted-foreground text-center leading-tight max-w-[68px] sm:max-w-[100px] whitespace-normal break-words">{p.name}</span>
                                     </button>
                                   </TableHead>
@@ -2262,7 +2264,7 @@ const CampaignDetail = () => {
                                       </div>
                                     )}
                                     <span className="text-[10px] sm:text-xs font-bold text-primary leading-tight">{kit.code}</span>
-                                    <span className="text-[9px] sm:text-[10px] font-bold text-foreground leading-tight">({kitPieceCount} {kitPieceCount === 1 ? "pç" : "pçs"})</span>
+                                    <span className="text-[9px] sm:text-[10px] font-semibold text-foreground leading-tight">({kitPieceCount} {kitPieceCount === 1 ? "pç" : "pçs"})</span>
                                     <span className="text-[9px] sm:text-[10px] text-muted-foreground text-center leading-tight max-w-[68px] sm:max-w-[100px] whitespace-normal break-words">{kit.name}</span>
                                   </button>
                                 </TableHead>
