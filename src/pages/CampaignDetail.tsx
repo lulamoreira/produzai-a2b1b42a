@@ -753,7 +753,82 @@ const CampaignDetail = () => {
     queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
   }, [queryClient]);
 
-  // ─── Recodificar (rewrite codes sequentially) ─────────
+  // ─── Order pieces & kits by location (drag location bucket order) ───
+  const locationItemsForOrdering = useMemo(() => {
+    // Combine pieces (excluding kit-only pieces) + kits with their effective location
+    const items: { id: string; type: "piece" | "kit"; name: string; location: string }[] = [];
+    visiblePieces.forEach((p) => {
+      items.push({ id: p.id, type: "piece", name: p.name || "", location: (p.category || "").trim() });
+    });
+    kits.forEach((k) => {
+      items.push({ id: k.id, type: "kit", name: k.name || "", location: (getKitCategory(k) || "").trim() });
+    });
+    return items;
+  }, [visiblePieces, kits, getKitCategory]);
+
+  const distinctLocations = useMemo(() => {
+    const set = new Set<string>();
+    locationItemsForOrdering.forEach((it) => set.add(it.location));
+    // Stable order: alphabetical, "" (no location) last
+    const arr = Array.from(set);
+    const named = arr.filter((l) => l !== "").sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    const hasNone = arr.includes("");
+    return hasNone ? [...named, ""] : named;
+  }, [locationItemsForOrdering]);
+
+  const countsByLocation = useMemo(() => {
+    const map: Record<string, number> = {};
+    locationItemsForOrdering.forEach((it) => {
+      map[it.location] = (map[it.location] || 0) + 1;
+    });
+    return map;
+  }, [locationItemsForOrdering]);
+
+  const handleApplyOrderByLocation = useCallback(async (orderedLocations: string[]) => {
+    if (!campaignId) return;
+    // Build the new global order: for each location in given order, items sorted alphabetically by name (pieces+kits mixed)
+    const grouped = new Map<string, { id: string; type: "piece" | "kit"; name: string }[]>();
+    orderedLocations.forEach((loc) => grouped.set(loc, []));
+    locationItemsForOrdering.forEach((it) => {
+      const bucket = grouped.get(it.location);
+      if (bucket) bucket.push({ id: it.id, type: it.type, name: it.name });
+    });
+
+    const finalSequence: { id: string; type: "piece" | "kit" }[] = [];
+    orderedLocations.forEach((loc) => {
+      const bucket = grouped.get(loc) || [];
+      bucket.sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" }));
+      bucket.forEach((b) => finalSequence.push({ id: b.id, type: b.type }));
+    });
+
+    // Persist new display_order (1-indexed) to DB, only when changed
+    let updated = 0;
+    for (let i = 0; i < finalSequence.length; i++) {
+      const item = finalSequence[i];
+      const newOrder = i + 1;
+      if (item.type === "piece") {
+        const p = visiblePieces.find((x) => x.id === item.id);
+        if (p && p.display_order !== newOrder) {
+          await supabase.from("campaign_pieces").update({ display_order: newOrder }).eq("id", item.id);
+          updated++;
+        }
+      } else {
+        const k = kits.find((x) => x.id === item.id);
+        if (k && k.display_order !== newOrder) {
+          await supabase.from("campaign_kits").update({ display_order: newOrder }).eq("id", item.id);
+          updated++;
+        }
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+    queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
+    if (updated > 0) {
+      toast.success(`Ordem atualizada! ${updated} item(ns) reordenado(s). Clique em "Recodificar" para atualizar os códigos.`);
+    } else {
+      toast.info("A ordem já estava conforme o desejado.");
+    }
+  }, [campaignId, locationItemsForOrdering, visiblePieces, kits, queryClient]);
+
   const handleRecodificar = async () => {
     const allItems: { type: "piece" | "kit"; id: string; display_order: number }[] = [
       ...visiblePieces.map(p => ({ type: "piece" as const, id: p.id, display_order: p.display_order })),
