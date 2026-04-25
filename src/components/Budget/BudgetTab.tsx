@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -40,6 +40,7 @@ import {
 import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppliers";
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
+import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -104,6 +105,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [expandedSuggestionPieceId, setExpandedSuggestionPieceId] = useState<string | null>(null);
   const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyCode);
   const [showLockConfirm, setShowLockConfirm] = useState(false);
+  const [exportingBudget, setExportingBudget] = useState(false);
 
   // Client suppliers picker
   const { data: clientSuppliers = [] } = useClientSuppliers(clientId);
@@ -312,6 +314,38 @@ ${deadlineBlock}${timelineBlock}
     }
   };
 
+  const handleExportBudget = async () => {
+    if (suppliers.length === 0) {
+      toast.error("Adicione ao menos um fornecedor para exportar.");
+      return;
+    }
+
+    setExportingBudget(true);
+    try {
+      await exportBudgetComparison({
+        campaignName,
+        agencyName,
+        clientName: "",
+        currencyCode,
+        budgetAmount,
+        suppliers,
+        prices,
+        extraCosts,
+        pieces,
+        kits,
+        kitPieces,
+        qtyMap,
+        stores,
+      });
+      toast.success("Planilha de orçamento exportada.");
+    } catch (error) {
+      console.error("Budget export error:", error);
+      toast.error("Erro ao exportar a planilha de orçamento.");
+    } finally {
+      setExportingBudget(false);
+    }
+  };
+
   // ─── Detail supplier data ──────────────────────────────
   const detailSup = detailSupplier ? suppliers.find((s) => s.id === detailSupplier) : null;
   const detailPrices = detailSupplier ? prices.filter((p) => p.supplier_id === detailSupplier) : [];
@@ -500,9 +534,14 @@ ${deadlineBlock}${timelineBlock}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Fornecedores</h3>
-          <Button size="sm" variant="outline" className="gap-1" onClick={() => setAddOpen(true)}>
-            <Plus className="w-3.5 h-3.5" /> Adicionar Fornecedor
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="gap-1" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
+              <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
+            </Button>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => setAddOpen(true)}>
+              <Plus className="w-3.5 h-3.5" /> Adicionar Fornecedor
+            </Button>
+          </div>
         </div>
 
         {suppliers.length === 0 ? (
