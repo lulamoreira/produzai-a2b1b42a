@@ -1940,6 +1940,33 @@ const CampaignDetail = () => {
                 />
 
 
+                {/* Reset Matrix Dialog (zera todas as quantidades do rateio) */}
+                <ResetMatrixDialog
+                  open={resetMatrixOpen}
+                  onOpenChange={setResetMatrixOpen}
+                  campaignName={campaign?.name || ""}
+                  totalEntries={storePieces.length}
+                  onConfirm={async () => {
+                    if (!campaignId || resettingMatrix) return;
+                    setResettingMatrix(true);
+                    const toastId = toast.loading("Zerando planilha do Rateio...");
+                    try {
+                      const { error } = await supabase
+                        .from("campaign_store_pieces")
+                        .delete()
+                        .eq("campaign_id", campaignId);
+                      if (error) throw error;
+                      await queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
+                      toast.success("Planilha do Rateio zerada com sucesso.", { id: toastId });
+                    } catch (err) {
+                      console.error(err);
+                      toast.error("Erro ao zerar a planilha. Tente novamente.", { id: toastId });
+                    } finally {
+                      setResettingMatrix(false);
+                    }
+                  }}
+                />
+
                 <CustomExportDialog
                   open={matrixCustomExportOpen}
                   onOpenChange={setMatrixCustomExportOpen}
