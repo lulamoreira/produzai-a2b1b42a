@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
+import { findDuplicateName, duplicateNameMessage } from "@/lib/duplicateName";
 
 // ─── Kit Image Upload (inline) ───────────────────────────
 
@@ -108,13 +109,14 @@ interface CreateKitDialogProps {
   campaignId: string;
   kitOnlyPieces: CampaignPiece[];
   existingKits: CampaignKit[];
+  existingPieces?: CampaignPiece[];
   onCreateKit: (kit: { campaign_id: string; name: string; code: number }) => Promise<CampaignKit>;
   onAddKitPiece: (kitPiece: { kit_id: string; piece_id: string }) => Promise<void>;
   onUpdateKit: (kit: { id: string; image_url?: string | null }) => Promise<CampaignKit>;
 }
 
 export function CreateKitDialog({
-  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, onCreateKit, onAddKitPiece, onUpdateKit,
+  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], onCreateKit, onAddKitPiece, onUpdateKit,
 }: CreateKitDialogProps) {
   const [step, setStep] = useState<"name" | "pieces">("name");
   const [kitName, setKitName] = useState("");
@@ -147,9 +149,16 @@ export function CreateKitDialog({
 
   const handleCreateKit = async () => {
     if (!kitName.trim()) return;
+    const finalName = ensureKitPrefix(kitName);
+    // Validate duplicate name (against pieces + kits in this campaign)
+    const dup = findDuplicateName(finalName, existingPieces, existingKits);
+    if (dup) {
+      toast.error(duplicateNameMessage(dup));
+      return;
+    }
     setSaving(true);
     try {
-      const kit = await onCreateKit({ campaign_id: campaignId, name: ensureKitPrefix(kitName), code: nextCode });
+      const kit = await onCreateKit({ campaign_id: campaignId, name: finalName, code: nextCode });
       setCreatedKit(kit);
       setStep("pieces");
     } finally {
@@ -287,6 +296,7 @@ interface KitDetailDialogProps {
   kit: CampaignKit | null;
   kitPieces: CampaignKitPiece[];
   allPieces: CampaignPiece[];
+  existingKits?: CampaignKit[];
   canEdit?: boolean;
   pieceLocations?: { id: string; name: string }[];
   pieceSubLocations?: { id: string; location_id: string; name: string }[];
@@ -301,7 +311,7 @@ interface KitDetailDialogProps {
 }
 
 export function KitDetailDialog({
-  open, onOpenChange, kit, kitPieces, allPieces, canEdit,
+  open, onOpenChange, kit, kitPieces, allPieces, existingKits = [], canEdit,
   pieceLocations = [], pieceSubLocations = [],
   onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece, onDuplicatePiece,
 }: KitDetailDialogProps) {
@@ -410,17 +420,28 @@ export function KitDetailDialog({
                   className="h-8 text-sm"
                   autoFocus
                   onKeyDown={async (e) => {
-                    if (e.key === "Enter" && kitNameInput.trim()) {
-                      setLocalKitName(kitNameInput.trim());
+                    if (e.key === "Enter" && kitNameInput.trim() && kit) {
+                      const safeName = kitNameInput.trim().startsWith("KIT ") ? kitNameInput.trim() : `KIT ${kitNameInput.trim()}`;
+                      const dup = findDuplicateName(safeName, allPieces, existingKits, { ignoreKitId: kit.id });
+                      if (dup) {
+                        toast.error(duplicateNameMessage(dup));
+                        return;
+                      }
+                      setLocalKitName(safeName);
                       setEditingKitName(false);
                       toast.success("Nome atualizado!");
-                      await onUpdateKit({ id: kit.id, name: kitNameInput.trim() });
+                      await onUpdateKit({ id: kit.id, name: safeName });
                     }
                   }}
                 />
                 <Button size="sm" className="h-8 text-xs" onClick={async () => {
-                  if (kitNameInput.trim()) {
+                  if (kitNameInput.trim() && kit) {
                     const safeName = kitNameInput.trim().startsWith("KIT ") ? kitNameInput.trim() : `KIT ${kitNameInput.trim()}`;
+                    const dup = findDuplicateName(safeName, allPieces, existingKits, { ignoreKitId: kit.id });
+                    if (dup) {
+                      toast.error(duplicateNameMessage(dup));
+                      return;
+                    }
                     setLocalKitName(safeName);
                     setEditingKitName(false);
                     toast.success("Nome atualizado!");

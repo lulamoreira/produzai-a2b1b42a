@@ -50,6 +50,7 @@ import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import AppLayout from "@/components/AppLayout";
 import QuickMatrixEditor from "@/components/QuickMatrixEditor";
 import { toast } from "sonner";
+import { findDuplicateName, duplicateNameMessage } from "@/lib/duplicateName";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
 import ImportWizardDialog from "@/components/ImportWizardDialog";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
@@ -447,6 +448,12 @@ const CampaignDetail = () => {
   const handleAddPiece = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!campaignId) return;
+    // Validate duplicate name (against pieces + kits in this campaign)
+    const dup = findDuplicateName(pieceForm.name, pieces, kits);
+    if (dup) {
+      toast.error(duplicateNameMessage(dup));
+      return;
+    }
     const size = [pieceForm.width, pieceForm.height, pieceForm.length].filter(Boolean).join(" x ");
     const code = pieceForm.code ? parseInt(pieceForm.code) : nextPieceCode.seq;
     if (pieceForm.store_category) {
@@ -504,6 +511,12 @@ const CampaignDetail = () => {
 
   const handleEditPiece = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validate duplicate name (ignore the piece being edited)
+    const dup = findDuplicateName(editPieceForm.name, pieces, kits, { ignorePieceId: editPieceForm.id });
+    if (dup) {
+      toast.error(duplicateNameMessage(dup));
+      return;
+    }
     const size = [editPieceForm.width, editPieceForm.height, editPieceForm.length].filter(Boolean).join(" x ");
     const code = editPieceForm.code ? parseInt(editPieceForm.code) : nextPieceCode.seq;
     await updatePiece.mutateAsync({
@@ -2592,6 +2605,7 @@ const CampaignDetail = () => {
           campaignId={campaignId}
           kitOnlyPieces={kitOnlyPieces}
           existingKits={kits}
+          existingPieces={pieces}
           onCreateKit={async (kit) => await addKit.mutateAsync(kit)}
           onAddKitPiece={async (kp) => await addKitPiece.mutateAsync(kp)}
           onUpdateKit={async (kit) => await updateKit.mutateAsync(kit)}
@@ -2605,6 +2619,7 @@ const CampaignDetail = () => {
         kit={viewKitDetail}
         kitPieces={kitPieces}
         allPieces={pieces}
+        existingKits={kits}
         canEdit={canEditPieces}
         pieceLocations={pieceLocations}
         pieceSubLocations={pieceSubLocations}
