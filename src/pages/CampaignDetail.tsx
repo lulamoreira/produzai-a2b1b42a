@@ -761,10 +761,19 @@ const CampaignDetail = () => {
       items.push({ id: p.id, type: "piece", name: p.name || "", location: (p.category || "").trim() });
     });
     kits.forEach((k) => {
-      items.push({ id: k.id, type: "kit", name: k.name || "", location: (getKitCategory(k) || "").trim() });
+      // Inline equivalent of getKitCategory (declared later) to avoid forward reference
+      let kitLoc = (k.category || "").trim();
+      if (!kitLoc) {
+        const kpRows = kitPieces.filter((kp) => kp.kit_id === k.id);
+        for (const kp of kpRows) {
+          const piece = pieces.find((p) => p.id === kp.piece_id);
+          if (piece?.category) { kitLoc = piece.category.trim(); break; }
+        }
+      }
+      items.push({ id: k.id, type: "kit", name: k.name || "", location: kitLoc });
     });
     return items;
-  }, [visiblePieces, kits, getKitCategory]);
+  }, [visiblePieces, kits, kitPieces, pieces]);
 
   const distinctLocations = useMemo(() => {
     const set = new Set<string>();
