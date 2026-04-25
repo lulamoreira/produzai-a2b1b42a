@@ -1904,7 +1904,7 @@ const CampaignDetail = () => {
                     } catch (err) {
                       console.error(err);
                       try {
-                        exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name);
+                        await exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name);
                         toast.success("Planilha exportada sem imagens.", { id: "matrix-excel" });
                       } catch (fallbackErr) {
                         console.error(fallbackErr);
