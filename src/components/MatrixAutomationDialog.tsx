@@ -1662,6 +1662,32 @@ export default function MatrixAutomationDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <GroupRunReviewDialog
+        open={reviewDialog.open}
+        onOpenChange={(o) => setReviewDialog(prev => ({ ...prev, open: o }))}
+        groupName={reviewDialog.groupName}
+        validations={reviewDialog.validations}
+        pieces={pieces}
+        kits={kits}
+        templates={templates}
+        onReplaceItem={handleReplaceItem}
+        onRemoveItemFromTemplate={handleRemoveItemFromTemplate}
+        onToggleGroupItem={handleToggleGroupItemFromReview}
+        onEditTemplate={handleEditTemplateFromReview}
+        onConfirmRun={executeGroupRun}
+      />
+
+      <GroupRunErrorDialog
+        open={errorDialog.open}
+        onOpenChange={(o) => setErrorDialog(prev => ({ ...prev, open: o }))}
+        groupName={errorDialog.groupName}
+        results={errorDialog.results}
+        onReview={() => {
+          setErrorDialog(prev => ({ ...prev, open: false }));
+          handleRunGroup(errorDialog.groupId);
+        }}
+      />
     </Dialog>
   );
 }
