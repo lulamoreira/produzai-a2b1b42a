@@ -718,36 +718,187 @@ export default function MatrixAutomationDialog({
   };
 
   // Run group
-  const handleRunGroup = async (groupId: string) => {
-    setExecuting(true);
-    try {
-      const items = groupItems
-        .filter(gi => gi.group_id === groupId && gi.enabled)
-        .sort((a, b) => a.display_order - b.display_order);
+  // Filter helper that accepts the legacy/multi format used in templates
+  const filterStoresFromTemplate = useCallback((srcStores: ClientStore[], filterValue: string, filterField: string): ClientStore[] => {
+    let fg: FilterGroup;
+    if (filterField === "__multi_v2__") {
+      try {
+        const parsed = JSON.parse(filterValue);
+        fg = { filtros: parsed.filtros || [], condicoes: parsed.condicoes || [] };
+      } catch {
+        fg = { filtros: [createEmptyFilter()], condicoes: [] };
+      }
+    } else {
+      fg = {
+        filtros: [{ id: "x", campo: filterField, operador: "igual" as FilterOperator, valor: filterValue }],
+        condicoes: [],
+      };
+    }
+    return filtrarLojas(srcStores, fg);
+  }, []);
 
-      let totalUpdated = 0;
-      for (const gi of items) {
-        const tpl = templates.find(t => t.id === gi.template_id);
-        if (!tpl) continue;
+  // Step 1: open review dialog before running
+  const handleRunGroup = (groupId: string) => {
+    const group = groups.find(g => g.id === groupId);
+    if (!group) return;
+    const items = groupItems
+      .filter(gi => gi.group_id === groupId)
+      .sort((a, b) => a.display_order - b.display_order);
+
+    const validations = buildValidations({
+      groupItems: items,
+      templates,
+      pieces,
+      kits,
+      kitPieces,
+      stores,
+      customFieldLabels,
+      numericFieldKeys: numericFields.map(f => f.key),
+      filterStores: filterStoresFromTemplate,
+    });
+
+    setReviewDialog({ open: true, groupId, groupName: group.name, validations });
+  };
+
+  // Step 2: actually execute after user confirms in review dialog
+  const executeGroupRun = async () => {
+    const { groupId, groupName } = reviewDialog;
+    setReviewDialog(prev => ({ ...prev, open: false }));
+    setExecuting(true);
+
+    const items = groupItems
+      .filter(gi => gi.group_id === groupId && gi.enabled)
+      .sort((a, b) => a.display_order - b.display_order);
+
+    const results: GroupRunResult[] = [];
+    for (const gi of items) {
+      const tpl = templates.find(t => t.id === gi.template_id);
+      if (!tpl) {
+        results.push({
+          templateId: gi.template_id,
+          templateName: "(Automação removida)",
+          status: "error",
+          errorMessage: "A automação foi excluída do banco.",
+        });
+        continue;
+      }
+      try {
         const migrated = migrateTemplate(tpl);
         const result = await executeAutomationMulti(
-          migrated,
+          { filtros: migrated.filtros, condicoes: migrated.condicoes },
           tpl.items,
           tpl.kind ?? "fixed",
           tpl.base_field ?? null,
         );
-        totalUpdated += result.updated;
+        results.push({
+          templateId: tpl.id,
+          templateName: tpl.name,
+          status: "success",
+          storesUpdated: result.updated,
+        });
+      } catch (err: any) {
+        results.push({
+          templateId: tpl.id,
+          templateName: tpl.name,
+          status: "error",
+          errorMessage: err?.message || String(err),
+        });
       }
+    }
 
+    setExecuting(false);
+    await onComplete();
+
+    const failures = results.filter(r => r.status === "error");
+    if (failures.length === 0) {
+      const totalUpdated = results.reduce((s, r) => s + (r.storesUpdated || 0), 0);
       toast.success(t("automation.groupExecuted") + ` (${totalUpdated} ${t("automation.stores")})`);
-      await onComplete();
       onOpenChange(false);
-    } catch (err: any) {
-      toast.error(t("automation.executionError") + ": " + (err.message || ""));
-    } finally {
-      setExecuting(false);
+    } else {
+      // Open detailed error dialog
+      setErrorDialog({ open: true, groupName, groupId, results });
     }
   };
+
+  // Recovery: replace a problematic item in a template
+  const handleReplaceItem = useCallback(async (templateId: string, itemIndex: number, newItem: AutomationTemplateItem) => {
+    const tpl = templates.find(t => t.id === templateId);
+    if (!tpl) return;
+    const newItems = tpl.items.map((it, i) => i === itemIndex ? newItem : it);
+    await updateTemplate.mutateAsync({
+      id: tpl.id,
+      name: tpl.name,
+      filter_field: tpl.filter_field,
+      filter_value: tpl.filter_value,
+      items: newItems,
+      outside_action: tpl.outside_action,
+      kind: tpl.kind,
+      base_field: tpl.base_field,
+    });
+    toast.success("Item substituído");
+    // Refresh validations in the open review dialog
+    setReviewDialog(prev => {
+      if (!prev.open) return prev;
+      const refreshed = buildValidations({
+        groupItems: groupItems.filter(gi => gi.group_id === prev.groupId),
+        templates: templates.map(t => t.id === templateId ? { ...t, items: newItems } : t),
+        pieces, kits, kitPieces, stores, customFieldLabels,
+        numericFieldKeys: numericFields.map(f => f.key),
+        filterStores: filterStoresFromTemplate,
+      });
+      return { ...prev, validations: refreshed };
+    });
+  }, [templates, updateTemplate, groupItems, pieces, kits, kitPieces, stores, customFieldLabels, numericFields, filterStoresFromTemplate]);
+
+  // Recovery: remove a problematic item from a template
+  const handleRemoveItemFromTemplate = useCallback(async (templateId: string, itemIndex: number) => {
+    const tpl = templates.find(t => t.id === templateId);
+    if (!tpl) return;
+    const newItems = tpl.items.filter((_, i) => i !== itemIndex);
+    await updateTemplate.mutateAsync({
+      id: tpl.id,
+      name: tpl.name,
+      filter_field: tpl.filter_field,
+      filter_value: tpl.filter_value,
+      items: newItems,
+      outside_action: tpl.outside_action,
+      kind: tpl.kind,
+      base_field: tpl.base_field,
+    });
+    toast.success("Item removido da automação");
+    setReviewDialog(prev => {
+      if (!prev.open) return prev;
+      const refreshed = buildValidations({
+        groupItems: groupItems.filter(gi => gi.group_id === prev.groupId),
+        templates: templates.map(t => t.id === templateId ? { ...t, items: newItems } : t),
+        pieces, kits, kitPieces, stores, customFieldLabels,
+        numericFieldKeys: numericFields.map(f => f.key),
+        filterStores: filterStoresFromTemplate,
+      });
+      return { ...prev, validations: refreshed };
+    });
+  }, [templates, updateTemplate, groupItems, pieces, kits, kitPieces, stores, customFieldLabels, numericFields, filterStoresFromTemplate]);
+
+  // Recovery: toggle group item enabled
+  const handleToggleGroupItemFromReview = useCallback(async (groupItemId: string, enabled: boolean) => {
+    await toggleGroupItem.mutateAsync({ id: groupItemId, enabled });
+    setReviewDialog(prev => {
+      if (!prev.open) return prev;
+      return {
+        ...prev,
+        validations: prev.validations.map(v => v.groupItemId === groupItemId ? { ...v, enabled } : v),
+      };
+    });
+  }, [toggleGroupItem]);
+
+  // Recovery: edit template (close review and load it in form)
+  const handleEditTemplateFromReview = useCallback((templateId: string) => {
+    const tpl = templates.find(t => t.id === templateId);
+    if (!tpl) return;
+    setReviewDialog(prev => ({ ...prev, open: false }));
+    editTemplate(tpl);
+  }, [templates]); // editTemplate is declared above; safe due to component scope
+
 
   const getFieldLabel = (key: string) => allFilterFields.find(f => f.key === key)?.label || key;
   const getNumericFieldLabel = (key: string) => numericFields.find(f => f.key === key)?.label || key;
