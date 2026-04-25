@@ -133,6 +133,7 @@ const CampaignDetail = () => {
   const deletePiece = useDeleteCampaignPiece();
   const updatePiece = useUpdateCampaignPiece();
   const updateStorePiece = useUpdateCampaignStorePiece();
+  const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
   const addPieceLocation = useAddCampaignPieceLocation();
