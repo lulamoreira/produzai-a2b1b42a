@@ -1191,6 +1191,24 @@ const CampaignDetail = () => {
     );
   }, [matrixPieces, matrixKits]);
 
+  // Alternating background tints per column based on location (changes whenever location changes)
+  const columnTints = useMemo(() => {
+    const tints: string[] = [];
+    let currentCat: string | null = null;
+    let tintIndex = -1;
+    matrixColumns.forEach((col) => {
+      const cat = col.type === "piece"
+        ? (col.data.category || "Sem localização")
+        : (getKitCategory(col.data) || "Sem localização");
+      if (cat !== currentCat) {
+        currentCat = cat;
+        tintIndex++;
+      }
+      tints.push(tintIndex % 2 === 0 ? "bg-muted/30" : "bg-transparent");
+    });
+    return tints;
+  }, [matrixColumns, getKitCategory]);
+
   const navigateMatrixCell = useCallback((dir: "up" | "down" | "left" | "right") => {
     if (!editingCell) return null;
     const storeIdx = activeFilteredStores.findIndex((s) => s.id === editingCell.storeId);
