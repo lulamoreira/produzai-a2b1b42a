@@ -305,6 +305,7 @@ const CampaignDetail = () => {
   const [activeSection, setActiveSectionState] = useState<string | null>(locationState?.initialSection || sectionFromUrl || null);
   const [pendingInitialFilter, setPendingInitialFilter] = useState<DashboardFilter | null>(null);
   const [pieceSearch, setPieceSearch] = useState("");
+  const [showOnlyNew, setShowOnlyNew] = useState(false);
 
   // Sync section from URL search params (for sidebar navigation)
   useEffect(() => {
@@ -2555,24 +2556,37 @@ const CampaignDetail = () => {
             </div>
 
             {/* Search bar */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder={t("pieces.searchPiece")}
-                value={pieceSearch}
-                onChange={(e) => setPieceSearch(e.target.value)}
-                className="pl-9 h-9 text-sm"
-              />
-              {pieceSearch && (
-                <button onClick={() => setPieceSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
+            <div className="flex items-center gap-2 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder={t("pieces.searchPiece")}
+                  value={pieceSearch}
+                  onChange={(e) => setPieceSearch(e.target.value)}
+                  className="pl-9 h-9 text-sm"
+                />
+                {pieceSearch && (
+                  <button onClick={() => setPieceSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant={showOnlyNew ? "default" : "outline"}
+                onClick={() => setShowOnlyNew(v => !v)}
+                className={`h-9 text-xs gap-1.5 shrink-0 ${showOnlyNew ? "bg-green-500 hover:bg-green-600 text-white border-0" : ""}`}
+                title="Mostrar apenas itens marcados como NOVO"
+              >
+                <span className={`inline-block w-2 h-2 rounded-full ${showOnlyNew ? "bg-white" : "bg-green-500"}`} />
+                Apenas NOVO
+              </Button>
             </div>
 
             {(() => {
               const search = pieceSearch.toLowerCase().trim();
-              const filteredVisiblePieces = search
+              let filteredVisiblePieces = search
                 ? visiblePieces.filter(p =>
                     p.name.toLowerCase().includes(search) ||
                     String(p.code).includes(search) ||
@@ -2580,13 +2594,18 @@ const CampaignDetail = () => {
                     (p.store_category || "").toLowerCase().includes(search)
                   )
                 : visiblePieces;
-              const filteredKits = search
+              let filteredKits = search
                 ? kits.filter(k => {
                     if (k.name.toLowerCase().includes(search) || String(k.code).includes(search)) return true;
                     const kpIds = kitPieces.filter(kp => kp.kit_id === k.id).map(kp => kp.piece_id);
                     return pieces.some(p => kpIds.includes(p.id) && p.name.toLowerCase().includes(search));
                   })
                 : kits;
+
+              if (showOnlyNew) {
+                filteredVisiblePieces = filteredVisiblePieces.filter(p => (p as any).is_new === true);
+                filteredKits = filteredKits.filter(k => (k as any).is_new === true);
+              }
 
               if (filteredVisiblePieces.length === 0 && filteredKits.length === 0) {
                 return (
