@@ -2116,6 +2116,7 @@ const CampaignDetail = () => {
                                 );
                               }
                               const kit = col.data;
+                              const kitPieceCount = kitPieces.filter(kp => kp.kit_id === kit.id).reduce((s, kp) => s + (kp.quantity || 0), 0);
                               return (
                                 <TableHead key={`kit-${kit.id}`} className="text-center min-w-[100px]">
                                   <button onClick={() => setViewKitDetail(kit)} className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
@@ -2128,6 +2129,7 @@ const CampaignDetail = () => {
                                     )}
                                     <span className="text-xs font-bold text-primary">{kit.code}</span>
                                     <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[100px] whitespace-normal break-words">{kit.name}</span>
+                                    <span className="text-[10px] text-muted-foreground">({kitPieceCount} {kitPieceCount === 1 ? "peça" : "peças"})</span>
                                   </button>
                                 </TableHead>
                               );
