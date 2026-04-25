@@ -642,37 +642,45 @@ const CampaignDetail = () => {
   }, [campaignId, kitPieces, updateStorePiece, queryClient]);
 
   // ─── Atomic transition: save current cell (if any) and open the new one ───
+  // The save runs SYNCHRONOUSLY using editValueRef.current as the source of
+  // truth — no setTimeout, no stale state. The ref is updated synchronously
+  // by the input's onChange, so it always holds the very last keystroke.
   const switchToCell = useCallback((newStoreId: string, newPieceId: string) => {
     if (!canEditCampaign) return;
     const current = editingCellRef.current;
-    // Snapshot target qty BEFORE saving previous cell, so optimistic updates
-    // on shared piece keys (kit components) cannot leak into the new cell.
-    const targetQty = getCellQty(newStoreId, newPieceId);
-
-    // Capture the value to save BEFORE any state changes — the ref will be
-    // reset to "" by setEditValue below before the deferred timeout runs.
     const valueToSave = editValueRef.current ?? "";
 
-    // Open new cell immediately with correct value
-    setEditingCell({ storeId: newStoreId, pieceId: newPieceId });
-    setEditValue(targetQty > 0 ? String(targetQty) : "");
-
-    // Defer save of previous cell so its optimistic update / re-render
-    // does not interfere with the new cell's editValue in the same cycle.
+    // Persist the previous cell first using the latest typed value.
     if (current && (current.storeId !== newStoreId || current.pieceId !== newPieceId)) {
-      setTimeout(() => saveCell(current, valueToSave), 0);
+      saveCell(current, valueToSave);
     }
+
+    // Snapshot target qty for the destination cell AFTER the save call so
+    // any optimistic update has already been folded into qtyMap-derived
+    // reads on the next render. Using getCellQty here reads the current
+    // cache snapshot directly (it does not need a re-render to be correct).
+    const targetQty = getCellQty(newStoreId, newPieceId);
+    const nextValue = targetQty > 0 ? String(targetQty) : "";
+
+    // Update both ref and state synchronously so onBlur firing after this
+    // transition reads the new (empty/numeric) value, never the previous.
+    editValueRef.current = nextValue;
+    setEditingCell({ storeId: newStoreId, pieceId: newPieceId });
+    setEditValue(nextValue);
   }, [canEditCampaign, saveCell, getCellQty]);
 
   // ─── Close editing: save current value and clear state ───
   const closeEditing = useCallback(() => {
     const current = editingCellRef.current;
     if (current) {
-      saveCell(current, editValue);
+      // Read from ref — editValue closure may be stale relative to the
+      // very last keystroke right before blur fires.
+      saveCell(current, editValueRef.current ?? "");
     }
+    editValueRef.current = "";
     setEditingCell(null);
     setEditValue("");
-  }, [saveCell, editValue]);
+  }, [saveCell]);
 
   const handleCellClick = (storeId: string, pieceId: string) => {
     // Suppress the blur-save from the previously-focused input; switchToCell
@@ -2112,7 +2120,7 @@ const CampaignDetail = () => {
                                             type="number"
                                             min={0}
                                             value={editValue}
-                                            onChange={(e) => setEditValue(e.target.value)}
+                                            onChange={(e) => { editValueRef.current = e.target.value; setEditValue(e.target.value); }}
                                             onBlur={handlePieceBlur}
                                             onKeyDown={(e) => {
                                               const move = (dir: "up" | "down" | "left" | "right") => {
@@ -2177,7 +2185,7 @@ const CampaignDetail = () => {
                                           type="number"
                                           min={0}
                                           value={editValue}
-                                          onChange={(e) => setEditValue(e.target.value)}
+                                          onChange={(e) => { editValueRef.current = e.target.value; setEditValue(e.target.value); }}
                                           onBlur={handlePieceBlur}
                                           onKeyDown={(e) => {
                                             const move = (dir: "up" | "down" | "left" | "right") => {
