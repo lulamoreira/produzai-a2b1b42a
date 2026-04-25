@@ -1191,6 +1191,24 @@ const CampaignDetail = () => {
     );
   }, [matrixPieces, matrixKits]);
 
+  // Alternating background tints per column based on location (changes whenever location changes)
+  const columnTints = useMemo(() => {
+    const tints: string[] = [];
+    let currentCat: string | null = null;
+    let tintIndex = -1;
+    matrixColumns.forEach((col) => {
+      const cat = col.type === "piece"
+        ? (col.data.category || "Sem localização")
+        : (getKitCategory(col.data) || "Sem localização");
+      if (cat !== currentCat) {
+        currentCat = cat;
+        tintIndex++;
+      }
+      tints.push(tintIndex % 2 === 0 ? "bg-muted/30" : "bg-transparent");
+    });
+    return tints;
+  }, [matrixColumns, getKitCategory]);
+
   const navigateMatrixCell = useCallback((dir: "up" | "down" | "left" | "right") => {
     if (!editingCell) return null;
     const storeIdx = activeFilteredStores.findIndex((s) => s.id === editingCell.storeId);
@@ -2177,7 +2195,7 @@ const CampaignDetail = () => {
                       </Button>
                     </div>
                   ) : (
-                    <div className="border border-border rounded-lg overflow-x-auto">
+                     <div className="border border-border rounded-lg overflow-x-auto">
                       <Table>
                         <TableHeader>
                           {/* Category group header row */}
@@ -2214,11 +2232,12 @@ const CampaignDetail = () => {
                           })()}
                           <TableRow>
                             <TableHead className="sticky left-0 bg-card z-[5] min-w-[180px]">{t("matrix.store")}</TableHead>
-                            {matrixColumns.map((col) => {
+                            {matrixColumns.map((col, colIdx) => {
+                              const tint = columnTints[colIdx] || "";
                               if (col.type === "piece") {
                                 const p = col.data;
                                 return (
-                                  <TableHead key={p.id} className="text-center min-w-[100px]">
+                                  <TableHead key={p.id} className={`text-center min-w-[100px] border-l border-border/70 ${tint}`}>
                                     <button
                                       className="flex flex-col items-center gap-0.5 w-full hover:opacity-80 transition-opacity"
                                       onClick={() => handleOpenEditPiece(p)}
@@ -2233,7 +2252,7 @@ const CampaignDetail = () => {
                               const kit = col.data;
                               const kitPieceCount = kitPieces.filter(kp => kp.kit_id === kit.id).reduce((s, kp) => s + (kp.quantity || 0), 0);
                               return (
-                                <TableHead key={`kit-${kit.id}`} className="text-center min-w-[100px]">
+                                <TableHead key={`kit-${kit.id}`} className={`text-center min-w-[100px] border-l border-border/70 ${tint}`}>
                                   <button onClick={() => setViewKitDetail(kit)} className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
                                     {kit.image_url ? (
                                       <PieceThumbnail imageUrl={kit.image_url} name={kit.name} size="sm" />
@@ -2276,14 +2295,15 @@ const CampaignDetail = () => {
                                     )}
                                   </div>
                                 </TableCell>
-                                {matrixColumns.map((col) => {
+                                {matrixColumns.map((col, colIdx) => {
+                                  const tint = columnTints[colIdx] || "";
                                   if (col.type === "piece") {
                                     const p = col.data;
                                     const key = `${store.id}-${p.id}`;
                                     const qty = qtyMap[key] || 0;
                                     const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === p.id;
                                     return (
-                                      <TableCell key={p.id} className="text-center p-1">
+                                      <TableCell key={p.id} className={`text-center p-1 border-l border-border/70 ${tint}`}>
                                         {isEditing ? (
                                           <Input
                                             ref={(el) => { editingInputRefs.current[`${store.id}-${p.id}`] = el; }}
@@ -2348,7 +2368,7 @@ const CampaignDetail = () => {
                                     : 0;
                                   const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === `kit-${kit.id}`;
                                   return (
-                                    <TableCell key={`kit-${kit.id}`} className="text-center p-1 bg-primary/5">
+                                    <TableCell key={`kit-${kit.id}`} className={`text-center p-1 border-l border-border/70 ${tint}`}>
                                       {isEditing ? (
                                         <Input
                                           ref={(el) => { editingInputRefs.current[`${store.id}-kit-${kit.id}`] = el; }}
@@ -2409,11 +2429,12 @@ const CampaignDetail = () => {
                           {/* Totals row */}
                           <TableRow className="bg-muted/50 font-bold">
                             <TableCell className="sticky left-0 bg-muted/50 z-[5]">Total</TableCell>
-                            {matrixColumns.map((col) => {
+                            {matrixColumns.map((col, colIdx) => {
+                              const tint = columnTints[colIdx] || "";
                               if (col.type === "piece") {
                                 const p = col.data;
                                 const pieceTotal = filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
-                                return <TableCell key={p.id} className="text-center text-sm">{pieceTotal}</TableCell>;
+                                return <TableCell key={p.id} className={`text-center text-sm border-l border-border/70 ${tint}`}>{pieceTotal}</TableCell>;
                               }
                               const kit = col.data;
                               const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
@@ -2426,7 +2447,7 @@ const CampaignDetail = () => {
                                     return total + minQty;
                                   }, 0)
                                 : 0;
-                              return <TableCell key={`kit-total-${kit.id}`} className="text-center text-sm">{kitTotal}</TableCell>;
+                              return <TableCell key={`kit-total-${kit.id}`} className={`text-center text-sm border-l border-border/70 ${tint}`}>{kitTotal}</TableCell>;
                             })}
                             <TableCell className="text-center text-sm text-primary">
                               {pieces.reduce((total, p) => total + filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0), 0)}
