@@ -448,6 +448,12 @@ const CampaignDetail = () => {
   const handleAddPiece = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!campaignId) return;
+    // Validate duplicate name (against pieces + kits in this campaign)
+    const dup = findDuplicateName(pieceForm.name, pieces, kits);
+    if (dup) {
+      toast.error(duplicateNameMessage(dup));
+      return;
+    }
     const size = [pieceForm.width, pieceForm.height, pieceForm.length].filter(Boolean).join(" x ");
     const code = pieceForm.code ? parseInt(pieceForm.code) : nextPieceCode.seq;
     if (pieceForm.store_category) {
