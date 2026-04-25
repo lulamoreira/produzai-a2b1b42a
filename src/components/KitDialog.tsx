@@ -149,9 +149,16 @@ export function CreateKitDialog({
 
   const handleCreateKit = async () => {
     if (!kitName.trim()) return;
+    const finalName = ensureKitPrefix(kitName);
+    // Validate duplicate name (against pieces + kits in this campaign)
+    const dup = findDuplicateName(finalName, existingPieces, existingKits);
+    if (dup) {
+      toast.error(duplicateNameMessage(dup));
+      return;
+    }
     setSaving(true);
     try {
-      const kit = await onCreateKit({ campaign_id: campaignId, name: ensureKitPrefix(kitName), code: nextCode });
+      const kit = await onCreateKit({ campaign_id: campaignId, name: finalName, code: nextCode });
       setCreatedKit(kit);
       setStep("pieces");
     } finally {
