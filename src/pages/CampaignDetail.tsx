@@ -682,7 +682,6 @@ const CampaignDetail = () => {
   };
 
   const handlePieceBlur = () => {
-    console.log("[BLUR]", { skipped: skipBlurSaveRef.current });
     if (skipBlurSaveRef.current) {
       skipBlurSaveRef.current = false;
       return;
