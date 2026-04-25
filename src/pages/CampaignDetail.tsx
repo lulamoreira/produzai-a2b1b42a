@@ -660,10 +660,7 @@ const CampaignDetail = () => {
     // Defer save of previous cell so its optimistic update / re-render
     // does not interfere with the new cell's editValue in the same cycle.
     if (current && (current.storeId !== newStoreId || current.pieceId !== newPieceId)) {
-      setTimeout(() => {
-        console.log("[SAVE]", { valueToSave, current });
-        saveCell(current, valueToSave);
-      }, 0);
+      setTimeout(() => saveCell(current, valueToSave), 0);
     }
   }, [canEditCampaign, saveCell, getCellQty]);
 
