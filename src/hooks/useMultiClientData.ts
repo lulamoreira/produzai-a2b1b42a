@@ -740,6 +740,10 @@ export function useUpdateCampaignStorePiece() {
 // whose only editable cells are kits.
 export function useBulkUpdateCampaignStorePieces() {
   const qc = useQueryClient();
+  // Same anti-race guard as useUpdateCampaignStorePiece — if a newer batch
+  // starts before this one's invalidation timer fires, skip it and let the
+  // newer batch own the final refetch.
+  const lastMutationRef = useRef(0);
 
   return useMutation({
     mutationFn: async ({
@@ -790,6 +794,9 @@ export function useBulkUpdateCampaignStorePieces() {
       );
     },
     onMutate: async ({ campaignId, storeId, updates }) => {
+      lastMutationRef.current = Date.now();
+      const mutationTime = lastMutationRef.current;
+
       const queryKey = ["campaign_store_pieces", campaignId] as const;
       await qc.cancelQueries({ queryKey });
       const previous = qc.getQueryData<CampaignStorePiece[]>(queryKey) ?? [];
@@ -815,7 +822,7 @@ export function useBulkUpdateCampaignStorePieces() {
       }
 
       qc.setQueryData(queryKey, next);
-      return { queryKey, previous };
+      return { queryKey, previous, mutationTime };
     },
     onError: (e, _vars, context) => {
       if (context?.queryKey && context?.previous) {
@@ -823,10 +830,18 @@ export function useBulkUpdateCampaignStorePieces() {
       }
       toast.error("Erro: " + (e as Error).message);
     },
-    // Single invalidation after the WHOLE batch — never mid-flight.
-    onSettled: (_data, _error, vars) => {
-      qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
+    // Delayed + race-guarded invalidation: 500ms gives the DB time to commit,
+    // and the timestamp check ensures only the latest batch triggers a refetch.
+    onSettled: (_data, _error, vars, context) => {
+      const mutationTime = context?.mutationTime ?? 0;
+      setTimeout(() => {
+        if (lastMutationRef.current === mutationTime) {
+          qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
+        }
+      }, 500);
     },
+  });
+}
   });
 }
 
