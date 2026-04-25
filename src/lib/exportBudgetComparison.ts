@@ -1,5 +1,5 @@
 import type * as ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
+import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildExportFileName } from "@/lib/exportFileName";
 import type { CampaignKit, CampaignPiece } from "@/hooks/useMultiClientData";
 
