@@ -2125,9 +2125,9 @@ const CampaignDetail = () => {
                     <div className="border border-border rounded-lg overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          {/* Category group header row */}
+                          {/* Category group header row (drag to reorder entire location block) */}
                           {(() => {
-                            const groups: { label: string; span: number }[] = [];
+                            const groups: LocationGroup[] = [];
                             let currentCat: string | null = null;
                             let currentSpan = 0;
                             matrixColumns.forEach((col) => {
@@ -2135,26 +2135,21 @@ const CampaignDetail = () => {
                                 ? (col.data.category || "Sem localização")
                                 : (getKitCategory(col.data) || "Sem localização");
                               if (cat !== currentCat) {
-                                if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
+                                if (currentCat !== null) groups.push({ key: currentCat, label: currentCat, span: currentSpan });
                                 currentCat = cat;
                                 currentSpan = 1;
                               } else {
                                 currentSpan++;
                               }
                             });
-                            if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
-                            // Only show if there's more than one group
+                            if (currentCat !== null) groups.push({ key: currentCat, label: currentCat, span: currentSpan });
                             if (groups.length <= 1) return null;
                             return (
-                              <TableRow className="bg-muted/30">
-                                <TableHead className="sticky left-0 bg-muted/30 z-[5]" />
-                                {groups.map((g, i) => (
-                                  <TableHead key={i} colSpan={g.span} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-l border-border py-1">
-                                    {g.label}
-                                  </TableHead>
-                                ))}
-                                <TableHead />
-                              </TableRow>
+                              <SortableLocationHeader
+                                groups={groups}
+                                canEdit={canEditCampaign}
+                                onReorder={handleReorderByLocation}
+                              />
                             );
                           })()}
                           <TableRow>
