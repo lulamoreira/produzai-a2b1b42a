@@ -1904,6 +1904,12 @@ const CampaignDetail = () => {
                               {t("matrix.fromOtherCampaign")}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
+                            {/* Apply new order and recode */}
+                            <DropdownMenuItem onClick={handleRecodificar}>
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              Aplicar nova ordem e recodificar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             {/* Destructive: reset all quantities */}
                             <DropdownMenuItem
                               onClick={() => setResetMatrixOpen(true)}
