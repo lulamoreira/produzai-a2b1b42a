@@ -2,7 +2,8 @@ import { useState, type ReactNode } from "react";
 import AppSidebar from "@/components/AppSidebar";
 import NotificationBell from "@/components/NotificationBell";
 import CampaignChatPanel from "@/components/CampaignChatPanel";
-import { ChevronLeft, ChevronRight, MessageSquare, History } from "lucide-react";
+import CampaignSnapshotsSheet from "@/components/CampaignSnapshotsSheet";
+import { ChevronLeft, ChevronRight, MessageSquare, History, Layers } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useCampaignUnreadCount } from "@/hooks/useCampaignChat";
@@ -28,6 +29,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
   const campaignId = params.campaignId;
 
   const [chatOpen, setChatOpen] = useState(false);
+  const [snapshotsOpen, setSnapshotsOpen] = useState(false);
   const { data: unreadCount = 0 } = useCampaignUnreadCount(campaignId);
 
   // Derive campaign name from last breadcrumb if available
@@ -92,6 +94,17 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
 
       {/* Fixed notification bell + chat + history for mobile */}
       <div className="lg:hidden fixed top-3 right-3 z-40 flex items-center gap-1.5">
+        {campaignId && (
+          <Button
+            size="icon"
+            variant="outline"
+            className="relative h-8 w-8 bg-card text-foreground border-border shadow-lg hover:bg-accent"
+            onClick={() => setSnapshotsOpen(true)}
+            title="Versões da campanha"
+          >
+            <Layers className="w-3.5 h-3.5" />
+          </Button>
+        )}
         {campaignId && (
           <Button
             size="icon"
@@ -165,6 +178,19 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
                     size="icon"
                     variant="outline"
                     className="relative h-8 w-8 bg-card text-foreground border-border shadow-lg hover:bg-accent"
+                    onClick={() => setSnapshotsOpen(true)}
+                    title="Versões da campanha"
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              )}
+              {campaignId && (
+                <div className="hidden lg:block">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="relative h-8 w-8 bg-card text-foreground border-border shadow-lg hover:bg-accent"
                     onClick={() => navigate(`${location.pathname.split("?")[0]}?section=history`)}
                   >
                     <History className="w-3.5 h-3.5" />
@@ -224,6 +250,16 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
         <CampaignChatPanel
           open={chatOpen}
           onOpenChange={setChatOpen}
+          campaignId={campaignId}
+          campaignName={campaignName}
+        />
+      )}
+
+      {/* Campaign Snapshots Sheet */}
+      {campaignId && (
+        <CampaignSnapshotsSheet
+          open={snapshotsOpen}
+          onOpenChange={setSnapshotsOpen}
           campaignId={campaignId}
           campaignName={campaignName}
         />
