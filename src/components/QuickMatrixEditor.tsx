@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Edit3, Save, X, Package, Sparkles, Loader2, Send, GripVertical } from "lucide-react";
+import { Edit3, Save, X, Package, Sparkles, Loader2, Send, GripVertical, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import PieceThumbnail from "@/components/PieceThumbnail";
-import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
@@ -176,29 +176,59 @@ const MatrixRow = React.memo(({
   customFieldLabels?: CustomFieldLabel[];
 }) => {
   const getColId = (col: MatrixCol) => col.type === "piece" ? col.data.id : `kit${SEP}${col.data.id}`;
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const closeDetailsTimer = useRef<number | null>(null);
 
   const storeAny = store as any;
   const filledCustomFields = customFieldLabels
     .map((cf) => ({ label: cf.label, value: storeAny[cf.key] }))
     .filter((f) => f.value !== null && f.value !== undefined && String(f.value).trim() !== "");
   const locationParts = [store.city, store.state].filter(Boolean).join(" / ");
+  const cancelDetailsClose = () => {
+    if (closeDetailsTimer.current) {
+      window.clearTimeout(closeDetailsTimer.current);
+      closeDetailsTimer.current = null;
+    }
+  };
+  const scheduleDetailsClose = () => {
+    cancelDetailsClose();
+    closeDetailsTimer.current = window.setTimeout(() => setDetailsOpen(false), 160);
+  };
 
   return (
     <TableRow className={isEmptyStore ? "bg-amber-50/50 dark:bg-amber-950/10" : ""}>
       <TableCell className={`sticky left-0 z-[5] font-medium ${isEmptyStore ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-card"}`}>
-        <HoverCard openDelay={120} closeDelay={80}>
-          <HoverCardTrigger asChild>
-            <button
-              type="button"
-              className="inline-flex items-baseline flex-wrap gap-1 text-left cursor-help hover:underline decoration-dotted underline-offset-4 focus:outline-none"
+        <div className="inline-flex items-baseline flex-wrap gap-1.5">
+          <span className="text-sm">{store.name}</span>
+          {store.nickname && store.nickname !== store.name && (
+            <span className="text-[10px] text-muted-foreground">({store.nickname})</span>
+          )}
+          <Popover open={detailsOpen} onOpenChange={setDetailsOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Ver detalhes da loja ${store.name}`}
+                onMouseEnter={() => {
+                  cancelDetailsClose();
+                  setDetailsOpen(true);
+                }}
+                onMouseLeave={scheduleDetailsClose}
+                onClick={(event) => {
+                  event.preventDefault();
+                  setDetailsOpen((open) => !open);
+                }}
+                className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-warning/40 bg-warning/10 text-warning transition-colors hover:bg-warning/20 focus:outline-none focus:ring-2 focus:ring-warning/40"
+              >
+                <HelpCircle className="h-3 w-3" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="right"
+              align="start"
+              className="w-72 text-xs p-3 z-50"
+              onMouseEnter={cancelDetailsClose}
+              onMouseLeave={scheduleDetailsClose}
             >
-              <span className="text-sm">{store.name}</span>
-              {store.nickname && store.nickname !== store.name && (
-                <span className="text-[10px] text-muted-foreground">({store.nickname})</span>
-              )}
-            </button>
-          </HoverCardTrigger>
-          <HoverCardContent side="right" align="start" className="w-72 text-xs p-3 z-50">
             <div className="space-y-2">
               <div>
                 <div className="font-semibold text-sm leading-tight">{store.name}</div>
@@ -238,8 +268,9 @@ const MatrixRow = React.memo(({
                 ) : null}
               </div>
             </div>
-          </HoverCardContent>
-        </HoverCard>
+            </PopoverContent>
+          </Popover>
+        </div>
         {isEmptyStore && (
           <span className="text-amber-500 ml-1 text-[10px]" title="Loja sem quantidades — preencha manualmente">⚠</span>
         )}
