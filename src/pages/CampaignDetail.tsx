@@ -455,7 +455,7 @@ const CampaignDetail = () => {
       return saved === null ? true : saved === 'collapsed';
     } catch { return true; }
   });
-  const [quickEditActive, setQuickEditActive] = useState(false);
+  
   const [matrixCustomExportOpen, setMatrixCustomExportOpen] = useState(false);
   const [resetMatrixOpen, setResetMatrixOpen] = useState(false);
   const [resettingMatrix, setResettingMatrix] = useState(false);
