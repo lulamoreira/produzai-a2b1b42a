@@ -259,13 +259,11 @@ export async function exportRateioGrid(
     tCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
     tCell.alignment = { horizontal: "center", vertical: "middle" };
     ws.getRow(totalRow).height = 28;
+
+    safeProgress(onProgress, storeIndex, totalStores, store.name || "Loja");
   }
 
-  if (wb.worksheets.length === 0) {
-    throw new Error("Nenhuma loja com quantidades preenchidas para exportar.");
-  }
-
-  const suffix = mode === "pieces" ? "Peças" : "Peças e Kits";
+  const suffix = rateioGridFileSuffix(mode);
   const filename = `${campaignName} — Rateio por Loja (${suffix}).xlsx`;
 
   const buffer = await wb.xlsx.writeBuffer();
