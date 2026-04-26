@@ -49,7 +49,7 @@ import StoreContactsCardView from "@/components/StoreContactsCardView";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import AppLayout from "@/components/AppLayout";
-import QuickMatrixEditor from "@/components/QuickMatrixEditor";
+
 import { toast } from "sonner";
 import { findDuplicateName, duplicateNameMessage } from "@/lib/duplicateName";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
