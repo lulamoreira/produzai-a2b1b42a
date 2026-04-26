@@ -2003,7 +2003,7 @@ const CampaignDetail = () => {
           </>)}
 
           {activeSection === "matrix" && (
-            <div className="flex flex-col lg:flex-row border border-border rounded-xl overflow-hidden bg-card -mx-2 sm:-mx-4" style={{ minHeight: "calc(100vh - 200px)" }}>
+            <div className="flex flex-col lg:flex-row border border-border rounded-xl overflow-hidden bg-card -mx-2 sm:-mx-4" style={{ height: "calc(100vh - 200px)" }}>
               {/* Filter Sidebar */}
               <MatrixFilterSidebar
                 pieces={pieces}
@@ -2440,22 +2440,7 @@ const CampaignDetail = () => {
                         <TableHeader>
                           {/* Category group header row */}
                           {(() => {
-                            const groups: { label: string; span: number }[] = [];
-                            let currentCat: string | null = null;
-                            let currentSpan = 0;
-                            matrixColumns.forEach((col) => {
-                              const cat = col.type === "piece"
-                                ? (col.data.category || "Sem localização")
-                                : (getKitCategory(col.data) || "Sem localização");
-                              if (cat !== currentCat) {
-                                if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
-                                currentCat = cat;
-                                currentSpan = 1;
-                              } else {
-                                currentSpan++;
-                              }
-                            });
-                            if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
+                            const groups = matrixCategoryGroups;
                             // Only show if there's more than one group
                             if (groups.length <= 1) return null;
                             return (
