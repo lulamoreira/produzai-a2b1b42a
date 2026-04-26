@@ -186,16 +186,19 @@ const MatrixRow = React.memo(({
   return (
     <TableRow className={isEmptyStore ? "bg-amber-50/50 dark:bg-amber-950/10" : ""}>
       <TableCell className={`sticky left-0 z-[5] font-medium ${isEmptyStore ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-card"}`}>
-        <HoverCard openDelay={150} closeDelay={80}>
+        <HoverCard openDelay={120} closeDelay={80}>
           <HoverCardTrigger asChild>
-            <span className="cursor-default">
+            <button
+              type="button"
+              className="inline-flex items-baseline flex-wrap gap-1 text-left cursor-help hover:underline decoration-dotted underline-offset-4 focus:outline-none"
+            >
               <span className="text-sm">{store.name}</span>
               {store.nickname && store.nickname !== store.name && (
-                <span className="text-[10px] text-muted-foreground ml-1">({store.nickname})</span>
+                <span className="text-[10px] text-muted-foreground">({store.nickname})</span>
               )}
-            </span>
+            </button>
           </HoverCardTrigger>
-          <HoverCardContent side="right" align="start" className="w-72 text-xs p-3">
+          <HoverCardContent side="right" align="start" className="w-72 text-xs p-3 z-50">
             <div className="space-y-2">
               <div>
                 <div className="font-semibold text-sm leading-tight">{store.name}</div>
