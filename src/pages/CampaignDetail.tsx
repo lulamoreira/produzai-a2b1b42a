@@ -2116,7 +2116,7 @@ const CampaignDetail = () => {
                       onClick={() => setRateioGridExportOpen(true)}
                     >
                       <LayoutGrid className="w-4 h-4" />
-                      <span className="hidden sm:inline">Exportar por Loja</span>
+                      <span className="hidden sm:inline">Exportar rateio por Loja</span>
                     </Button>
 
                     <AlertDialog open={rateioGridExportOpen} onOpenChange={setRateioGridExportOpen}>
