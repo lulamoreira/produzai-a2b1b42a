@@ -13,7 +13,7 @@ const BORDER = "FFE0D5C8";
 
 type Item = {
   name: string;
-  code: string;
+  code: string | number;
   category: string;
   quantity: number;
   is_new: boolean;
