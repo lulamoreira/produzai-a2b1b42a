@@ -207,32 +207,35 @@ const MatrixRow = React.memo(({
                 )}
               </div>
               <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
-                {locationParts && (
-                  <>
-                    <span className="text-muted-foreground">Localização</span>
-                    <span>{locationParts}</span>
-                  </>
-                )}
-                {store.store_code && (
-                  <>
-                    <span className="text-muted-foreground">Código</span>
-                    <span>{store.store_code}</span>
-                  </>
-                )}
-                {store.store_model && (
-                  <>
-                    <span className="text-muted-foreground">Modelo</span>
-                    <span>{store.store_model}</span>
-                  </>
-                )}
+                <span className="text-muted-foreground">Localização</span>
+                <span className={locationParts ? "" : "italic text-muted-foreground/70"}>
+                  {locationParts || "Não informada"}
+                </span>
+                <span className="text-muted-foreground">Código</span>
+                <span className={store.store_code ? "" : "italic text-muted-foreground/70"}>
+                  {store.store_code || "Não informado"}
+                </span>
+                <span className="text-muted-foreground">Modelo</span>
+                <span className={store.store_model ? "" : "italic text-muted-foreground/70"}>
+                  {store.store_model || "Não informado"}
+                </span>
                 <span className="text-muted-foreground">Vitrines</span>
-                <span>{storeAny.showcase_count ?? 0}</span>
-                {filledCustomFields.map((f) => (
-                  <React.Fragment key={f.label}>
-                    <span className="text-muted-foreground">{f.label}</span>
-                    <span className="break-words">{String(f.value)}</span>
-                  </React.Fragment>
-                ))}
+                <span className={storeAny.showcase_count ? "" : "italic text-muted-foreground/70"}>
+                  {storeAny.showcase_count ?? "Não informado"}
+                </span>
+                {filledCustomFields.length > 0 ? (
+                  filledCustomFields.map((f) => (
+                    <React.Fragment key={f.label}>
+                      <span className="text-muted-foreground">{f.label}</span>
+                      <span className="break-words">{String(f.value)}</span>
+                    </React.Fragment>
+                  ))
+                ) : customFieldLabels.length > 0 ? (
+                  <>
+                    <span className="text-muted-foreground">Campos extras</span>
+                    <span className="italic text-muted-foreground/70">Nenhum preenchido</span>
+                  </>
+                ) : null}
               </div>
             </div>
           </HoverCardContent>
