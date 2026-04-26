@@ -2025,7 +2025,7 @@ const CampaignDetail = () => {
           </>)}
 
           {activeSection === "matrix" && (
-            <div className="flex flex-col lg:flex-row border border-border rounded-xl overflow-hidden bg-card -mx-2 sm:-mx-4" style={{ height: "calc(100vh - 200px)" }}>
+            <div ref={matrixContainerRef} className="flex flex-col lg:flex-row border border-border rounded-xl overflow-hidden bg-card -mx-2 sm:-mx-4" style={{ height: matrixHeight }}>
               {/* Filter Sidebar */}
               <MatrixFilterSidebar
                 pieces={pieces}
