@@ -2058,7 +2058,25 @@ const CampaignDetail = () => {
               {/* Matrix Content */}
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Toolbar */}
-                <div className="px-3 py-2.5 border-b border-border bg-muted/30">
+                <div className="border-b border-border bg-muted/30">
+                  <div className="flex items-center justify-between px-3 py-1">
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                      {matrixToolbarCollapsed ? "Filtros e ações ocultos" : "Filtros e ações"}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={toggleMatrixToolbar}
+                      className="h-6 px-2 text-xs gap-1"
+                      title={matrixToolbarCollapsed ? "Expandir" : "Recolher"}
+                    >
+                      {matrixToolbarCollapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+                      {matrixToolbarCollapsed ? "Expandir" : "Recolher"}
+                    </Button>
+                  </div>
+                  {!matrixToolbarCollapsed && (
+                  <div className="px-3 pb-2.5">
                   {renderStoreFilters()}
                   <div className="flex items-center gap-2">
                     <QuickMatrixEditor
