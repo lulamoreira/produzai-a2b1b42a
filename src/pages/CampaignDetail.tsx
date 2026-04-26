@@ -42,7 +42,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, MoreHorizontal, History, ArrowDownAZ } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ } from "lucide-react";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -55,6 +55,7 @@ import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImpor
 import ImportWizardDialog from "@/components/ImportWizardDialog";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { exportRateioGrid } from "@/lib/exportRateioGrid";
+import { exportRateioGridPDF } from "@/lib/exportRateioGridPDF";
 import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
 import OccurrencesTab from "@/components/OccurrencesTab";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
@@ -1974,59 +1975,84 @@ const CampaignDetail = () => {
                           <AlertDialogTitle>Exportar Rateio por Loja</AlertDialogTitle>
                           <AlertDialogDescription>Selecione o formato de exportação:</AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter className="sm:justify-center gap-2">
+                        {(() => {
+                          const runExport = async (
+                            fn: typeof exportRateioGrid | typeof exportRateioGridPDF,
+                            mode: "pieces" | "pieces_and_kits",
+                            kind: "Excel" | "PDF",
+                          ) => {
+                            setRateioGridExportOpen(false);
+                            toast.loading("Iniciando exportação...", { id: "rateio-grid" });
+                            try {
+                              await fn(
+                                pieces,
+                                kits,
+                                kitPieces,
+                                activeFilteredStores,
+                                qtyMap,
+                                campaign?.name || "Campanha",
+                                client?.name || "",
+                                agency?.name || "",
+                                mode,
+                                (current, total, storeName) => {
+                                  toast.loading(
+                                    `Exportando loja ${current} de ${total}: ${storeName}...`,
+                                    { id: "rateio-grid" },
+                                  );
+                                },
+                              );
+                              toast.success(`${kind} exportado com sucesso!`, { id: "rateio-grid" });
+                            } catch (err) {
+                              console.error(err);
+                              toast.error(
+                                err instanceof Error ? err.message : "Erro ao exportar rateio.",
+                                { id: "rateio-grid" },
+                              );
+                            }
+                          };
+                          return (
+                            <div className="grid grid-cols-2 gap-2 py-2">
+                              <Button
+                                variant="default"
+                                className="h-auto py-3 flex flex-col items-center gap-1"
+                                onClick={() => runExport(exportRateioGrid, "pieces", "Excel")}
+                              >
+                                <FileSpreadsheet className="w-5 h-5" />
+                                <span className="text-sm font-semibold">Peças</span>
+                                <span className="text-[11px] opacity-80">Excel</span>
+                              </Button>
+                              <Button
+                                variant="default"
+                                className="h-auto py-3 flex flex-col items-center gap-1"
+                                onClick={() => runExport(exportRateioGrid, "pieces_and_kits", "Excel")}
+                              >
+                                <FileSpreadsheet className="w-5 h-5" />
+                                <span className="text-sm font-semibold">Peças e Kits</span>
+                                <span className="text-[11px] opacity-80">Excel</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="h-auto py-3 flex flex-col items-center gap-1"
+                                onClick={() => runExport(exportRateioGridPDF, "pieces", "PDF")}
+                              >
+                                <FileText className="w-5 h-5" />
+                                <span className="text-sm font-semibold">Peças</span>
+                                <span className="text-[11px] opacity-70">PDF</span>
+                              </Button>
+                              <Button
+                                variant="outline"
+                                className="h-auto py-3 flex flex-col items-center gap-1"
+                                onClick={() => runExport(exportRateioGridPDF, "pieces_and_kits", "PDF")}
+                              >
+                                <FileText className="w-5 h-5" />
+                                <span className="text-sm font-semibold">Peças e Kits</span>
+                                <span className="text-[11px] opacity-70">PDF</span>
+                              </Button>
+                            </div>
+                          );
+                        })()}
+                        <AlertDialogFooter>
                           <AlertDialogCancel className="mt-0">Cancelar</AlertDialogCancel>
-                          <Button
-                            variant="outline"
-                            onClick={async () => {
-                              setRateioGridExportOpen(false);
-                              toast.loading("Gerando rateio por loja...", { id: "rateio-grid" });
-                              try {
-                                await exportRateioGrid(
-                                  pieces,
-                                  kits,
-                                  kitPieces,
-                                  activeFilteredStores,
-                                  qtyMap,
-                                  campaign?.name || "Campanha",
-                                  client?.name || "",
-                                  agency?.name || "",
-                                  "pieces",
-                                );
-                                toast.success("Planilha exportada com sucesso!", { id: "rateio-grid" });
-                              } catch (err) {
-                                console.error(err);
-                                toast.error(err instanceof Error ? err.message : "Erro ao exportar rateio.", { id: "rateio-grid" });
-                              }
-                            }}
-                          >
-                            Somente Peças
-                          </Button>
-                          <Button
-                            onClick={async () => {
-                              setRateioGridExportOpen(false);
-                              toast.loading("Gerando rateio por loja...", { id: "rateio-grid" });
-                              try {
-                                await exportRateioGrid(
-                                  pieces,
-                                  kits,
-                                  kitPieces,
-                                  activeFilteredStores,
-                                  qtyMap,
-                                  campaign?.name || "Campanha",
-                                  client?.name || "",
-                                  agency?.name || "",
-                                  "pieces_and_kits",
-                                );
-                                toast.success("Planilha exportada com sucesso!", { id: "rateio-grid" });
-                              } catch (err) {
-                                console.error(err);
-                                toast.error(err instanceof Error ? err.message : "Erro ao exportar rateio.", { id: "rateio-grid" });
-                              }
-                            }}
-                          >
-                            Peças e Kits
-                          </Button>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
