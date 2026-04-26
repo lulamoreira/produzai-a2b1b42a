@@ -88,13 +88,14 @@ export function useCampaignSnapshotContext(campaignId?: string, enabled = true) 
     queryKey: ["campaign_snapshot_context", campaignId],
     enabled: enabled && !!campaignId,
     queryFn: async () => {
-      const piecesRes = await supabase.from("campaign_pieces").select("*").eq("campaign_id", campaignId!);
+      const sb = supabase as any;
+      const piecesRes = await sb.from("campaign_pieces").select("*").eq("campaign_id", campaignId!);
       if (piecesRes.error) throw piecesRes.error;
-      const kitsRes = await supabase.from("campaign_kits").select("*").eq("campaign_id", campaignId!);
+      const kitsRes = await sb.from("campaign_kits").select("*").eq("campaign_id", campaignId!);
       if (kitsRes.error) throw kitsRes.error;
-      const storePiecesRes = await supabase.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!);
+      const storePiecesRes = await sb.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!);
       if (storePiecesRes.error) throw storePiecesRes.error;
-      const csRes = await supabase.from("campaign_stores").select("store_id").eq("campaign_id", campaignId!);
+      const csRes = await sb.from("campaign_stores").select("store_id").eq("campaign_id", campaignId!);
       if (csRes.error) throw csRes.error;
 
       const storeIds = ((csRes.data || []) as any[]).map((cs) => cs.store_id).filter(Boolean);
