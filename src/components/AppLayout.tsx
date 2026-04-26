@@ -29,6 +29,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
   const campaignId = params.campaignId;
 
   const [chatOpen, setChatOpen] = useState(false);
+  const [snapshotsOpen, setSnapshotsOpen] = useState(false);
   const { data: unreadCount = 0 } = useCampaignUnreadCount(campaignId);
 
   // Derive campaign name from last breadcrumb if available
