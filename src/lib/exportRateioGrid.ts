@@ -79,61 +79,7 @@ export async function exportRateioGrid(
   for (const bucket of buckets) {
     const { store, items, totalQuantity } = bucket;
 
-
-  for (const store of stores) {
-    // Build items for this store based on mode
-    const items: Item[] = [];
-
-    for (const p of pieces) {
-      const isKitOnly = (p as any).kit_only === true;
-      // mode=pieces: include all pieces (standalone + kit_only)
-      // mode=pieces_and_kits: only standalone pieces
-      if (mode === "pieces_and_kits" && isKitOnly) continue;
-      const qty = qtyMap[`${store.id}-${p.id}`] || 0;
-      if (qty > 0) {
-        items.push({
-          name: p.name || "",
-          code: p.code || "",
-          category: p.category || "—",
-          quantity: qty,
-          is_new: (p as any).is_new === true,
-          image_url: p.image_url || null,
-        });
-      }
-    }
-
-    if (mode === "pieces_and_kits") {
-      for (const k of kits) {
-        const components = kitPieces.filter((kp) => kp.kit_id === k.id);
-        if (components.length === 0) continue;
-        const kitQty = Math.min(
-          ...components.map((kp) => {
-            const storeQty = qtyMap[`${store.id}-${kp.piece_id}`] || 0;
-            return Math.floor(storeQty / (kp.quantity || 1));
-          }),
-        );
-        if (kitQty > 0) {
-          items.push({
-            name: k.name || "",
-            code: k.code || "",
-            category: k.category || "—",
-            quantity: kitQty,
-            is_new: (k as any).is_new === true,
-            image_url: k.image_url || null,
-          });
-        }
-      }
-    }
-
-    if (items.length === 0) continue;
-
-    items.sort((a, b) => {
-      const c = a.category.localeCompare(b.category, "pt-BR");
-      if (c !== 0) return c;
-      return a.name.localeCompare(b.name, "pt-BR");
-    });
-
-    const totalQuantity = items.reduce((sum, it) => sum + it.quantity, 0);
+    storeIndex += 1;
 
     const ws = wb.addWorksheet(sanitizeSheetName(store.name || "Loja", usedNames), {
       views: [{ showGridLines: false }],
