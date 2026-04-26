@@ -2234,7 +2234,7 @@ const CampaignDetail = () => {
 
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button size="sm" variant="outline" className="text-xs gap-1.5">
+                        <Button size="sm" variant="secondary" className="text-xs gap-1.5 bg-muted hover:bg-muted/70 text-foreground border border-border">
                           <MoreHorizontal className="w-4 h-4" />
                           <span className="hidden sm:inline">{t("common.moreActions") || "Mais ações"}</span>
                         </Button>
