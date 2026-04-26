@@ -254,6 +254,16 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
           campaignName={campaignName}
         />
       )}
+
+      {/* Campaign Snapshots Sheet */}
+      {campaignId && (
+        <CampaignSnapshotsSheet
+          open={snapshotsOpen}
+          onOpenChange={setSnapshotsOpen}
+          campaignId={campaignId}
+          campaignName={campaignName}
+        />
+      )}
     </div>
   );
 }
