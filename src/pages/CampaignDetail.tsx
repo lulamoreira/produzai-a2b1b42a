@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
+import { Fragment, useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -38,11 +38,12 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle } from "lucide-react";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -85,6 +86,105 @@ import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 const PendingOccurrencesDashboard = lazy(() => import("@/components/PendingOccurrencesDashboard"));
 import BudgetTab from "@/components/Budget/BudgetTab";
 import { useOccurrenceMotives, useOccurrenceStatuses } from "@/hooks/useOccurrences";
+
+type StoreDetailCustomField = { key: string; label: string };
+
+const cleanCustomFieldLabel = (label: string) => label.split("|")[0]?.trim() || label;
+
+const hasStoreDetailValue = (value: unknown) => value !== null && value !== undefined && String(value).trim() !== "";
+
+function StoreDetailsPopover({ store, customFieldLabels }: { store: ClientStore; customFieldLabels: StoreDetailCustomField[] }) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const closeDetailsTimer = useRef<number | null>(null);
+  const storeAny = store as any;
+  const locationParts = [store.city, store.state].filter(Boolean).join(" / ");
+  const typeField = customFieldLabels.find((field) => cleanCustomFieldLabel(field.label).toLowerCase().includes("tipo"));
+  const typeValue = typeField ? storeAny[typeField.key] : storeAny.store_type ?? storeAny.type ?? storeAny.tipo;
+  const seenCustomKeys = new Set<string>();
+  const filledCustomFields = [
+    ...customFieldLabels.map((field) => {
+      seenCustomKeys.add(field.key);
+      return { label: cleanCustomFieldLabel(field.label), value: storeAny[field.key] };
+    }),
+    ...Array.from({ length: 10 }, (_, idx) => {
+      const key = `custom_field_${idx + 1}`;
+      return seenCustomKeys.has(key) ? null : { label: `Campo personalizado ${idx + 1}`, value: storeAny[key] };
+    }).filter((field): field is { label: string; value: unknown } => field !== null),
+  ].filter((field) => hasStoreDetailValue(field.value));
+
+  const cancelDetailsClose = () => {
+    if (closeDetailsTimer.current) {
+      window.clearTimeout(closeDetailsTimer.current);
+      closeDetailsTimer.current = null;
+    }
+  };
+  const scheduleDetailsClose = () => {
+    cancelDetailsClose();
+    closeDetailsTimer.current = window.setTimeout(() => setDetailsOpen(false), 160);
+  };
+
+  useEffect(() => () => cancelDetailsClose(), []);
+
+  return (
+    <Popover open={detailsOpen} onOpenChange={setDetailsOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={`Ver detalhes da loja ${store.name}`}
+          onMouseEnter={() => {
+            cancelDetailsClose();
+            setDetailsOpen(true);
+          }}
+          onMouseLeave={scheduleDetailsClose}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            setDetailsOpen(true);
+          }}
+          className="ml-1.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-warning/50 bg-warning/15 text-warning align-middle shadow-sm transition-colors hover:bg-warning/25 focus:outline-none focus:ring-2 focus:ring-warning/40"
+        >
+          <HelpCircle className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        side="right"
+        align="start"
+        className="z-50 w-80 p-3 text-xs"
+        onMouseEnter={cancelDetailsClose}
+        onMouseLeave={scheduleDetailsClose}
+      >
+        <div className="space-y-2">
+          <div>
+            <div className="text-sm font-semibold leading-tight">{store.name}</div>
+            {store.nickname && store.nickname !== store.name && <div className="text-[11px] text-muted-foreground">{store.nickname}</div>}
+          </div>
+          <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+            <span className="text-muted-foreground">Modelo</span>
+            <span className={hasStoreDetailValue(store.store_model) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(store.store_model) ? store.store_model : "Modelo não informado"}</span>
+            <span className="text-muted-foreground">Tipo</span>
+            <span className={hasStoreDetailValue(typeValue) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(typeValue) ? String(typeValue) : "Tipo não informado"}</span>
+            <span className="text-muted-foreground">Vitrines</span>
+            <span className={hasStoreDetailValue(storeAny.showcase_count) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(storeAny.showcase_count) ? String(storeAny.showcase_count) : "Quantidade não informada"}</span>
+            <span className="text-muted-foreground">Localização</span>
+            <span className={locationParts ? "" : "italic text-muted-foreground/70"}>{locationParts || "Localização não informada"}</span>
+            {filledCustomFields.length > 0 ? filledCustomFields.map((field) => (
+              <Fragment key={field.label}>
+                <span className="text-muted-foreground">{field.label}</span>
+                <span className="break-words">{String(field.value)}</span>
+              </Fragment>
+            )) : (
+              <>
+                <span className="text-muted-foreground">Campos personalizados</span>
+                <span className="italic text-muted-foreground/70">Nenhum preenchido</span>
+              </>
+            )}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
   const navigate = useNavigate();
@@ -127,6 +227,11 @@ const CampaignDetail = () => {
   const { hasPermission: canEditInstallations } = useClientPermission(clientId, "can_edit_installations");
   const { hasPermission: canViewCampaigns } = useClientPermission(clientId, "can_view_campaigns");
   const { data: client } = useClient(clientId);
+  const storeDetailCustomFieldLabels = useMemo(() => Array.from({ length: 10 }, (_, idx) => {
+    const i = idx + 1;
+    const label = (client as any)?.[`custom_field_${i}_label`];
+    return label ? { key: `custom_field_${i}`, label } : null;
+  }).filter((field): field is StoreDetailCustomField => field !== null), [client]);
   // Auto-sync language based on client config
   useLanguage((client as any)?.language);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
@@ -2406,6 +2511,7 @@ const CampaignDetail = () => {
                                 <TableCell className="sticky left-0 bg-card z-[5] font-medium">
                                   <div>
                                     <span className="text-sm">{store.name}</span>
+                                    <StoreDetailsPopover store={store} customFieldLabels={storeDetailCustomFieldLabels} />
                                     {store.nickname && store.nickname !== store.name && (
                                       <span className="text-[10px] text-muted-foreground ml-1">({store.nickname})</span>
                                     )}
