@@ -95,10 +95,10 @@ export function useCampaignSnapshotContext(campaignId?: string, enabled = true) 
       if (kitsRes.error) throw kitsRes.error;
       const storePiecesRes = await sb.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!);
       if (storePiecesRes.error) throw storePiecesRes.error;
-      const csRes = await sb.from("campaign_stores").select("store_id").eq("campaign_id", campaignId!);
-      if (csRes.error) throw csRes.error;
 
-      const storeIds = ((csRes.data || []) as any[]).map((cs) => cs.store_id).filter(Boolean);
+      const storeIds = [
+        ...new Set(((storePiecesRes.data || []) as any[]).map((sp: any) => sp.store_id).filter(Boolean)),
+      ];
       let stores: any[] = [];
       if (storeIds.length > 0) {
         const { data: storesData, error: storesErr } = await supabase

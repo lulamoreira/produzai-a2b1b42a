@@ -54,7 +54,7 @@ const CURRENT = "__current__";
 interface PieceLike {
   id: string;
   name?: string | null;
-  code?: string | null;
+  code?: string | number | null;
   category?: string | null;
   specification?: string | null;
 }
@@ -62,7 +62,7 @@ interface PieceLike {
 interface KitLike {
   id: string;
   name?: string | null;
-  code?: string | null;
+  code?: string | number | null;
 }
 
 interface StorePiece {
@@ -173,23 +173,31 @@ export default function CampaignSnapshotsSheet({ open, onOpenChange, campaignId,
     (effectiveB !== CURRENT && snapBQuery.isLoading) ||
     (effectiveA === CURRENT || effectiveB === CURRENT ? loadingCtx : false);
 
-  const piecesDiff = useMemo(() => diffItems(dataA?.pieces || [], dataB?.pieces || [], "piece"), [dataA, dataB]);
+  const piecesDiff = useMemo(
+    () => (open && dataA && dataB ? diffItems(dataA.pieces || [], dataB.pieces || [], "piece") : []),
+    [open, dataA, dataB],
+  );
   const kitsDiff = useMemo(
-    () => diffKits(dataA?.kits || [], dataB?.kits || [], dataA?.kitPieces || [], dataB?.kitPieces || []),
-    [dataA, dataB],
+    () =>
+      open && dataA && dataB
+        ? diffKits(dataA.kits || [], dataB.kits || [], dataA.kitPieces || [], dataB.kitPieces || [])
+        : [],
+    [open, dataA, dataB],
   );
   const rateioDiff = useMemo(
     () =>
-      diffStorePieces(
-        dataA?.storePieces || [],
-        dataB?.storePieces || [],
-        dataA?.pieces || [],
-        dataB?.pieces || [],
-        dataA?.kits || [],
-        dataB?.kits || [],
-        currentCtx?.stores || [],
-      ),
-    [dataA, dataB, currentCtx?.stores],
+      open && dataA && dataB
+        ? diffStorePieces(
+            dataA.storePieces || [],
+            dataB.storePieces || [],
+            dataA.pieces || [],
+            dataB.pieces || [],
+            dataA.kits || [],
+            dataB.kits || [],
+            currentCtx?.stores || [],
+          )
+        : { stores: [], totalChangedItems: 0 },
+    [open, dataA, dataB, currentCtx?.stores],
   );
 
   const handleExport = async () => {
@@ -539,7 +547,10 @@ interface ItemDiff<T> {
 }
 
 function keyOf(item: PieceLike | KitLike) {
-  return item.code?.trim() || item.id;
+  const code = item.code;
+  return code !== null && code !== undefined && String(code).trim() !== ""
+    ? String(code).trim()
+    : item.id;
 }
 
 function diffItems(a: PieceLike[], b: PieceLike[], _kind: "piece"): ItemDiff<PieceLike>[] {
@@ -624,10 +635,10 @@ function diffStorePieces(
   stores: { id: string; name?: string | null }[],
 ): RateioDiff {
   const nameMap = new Map<string, string>();
-  for (const p of piecesA) nameMap.set(`p:${p.id}`, p.name || p.code || "Peça");
-  for (const p of piecesB) nameMap.set(`p:${p.id}`, p.name || p.code || "Peça");
-  for (const k of kitsA) nameMap.set(`k:${k.id}`, `Kit: ${k.name || k.code || ""}`);
-  for (const k of kitsB) nameMap.set(`k:${k.id}`, `Kit: ${k.name || k.code || ""}`);
+  for (const p of piecesA) nameMap.set(`p:${p.id}`, p.name || (p.code != null ? String(p.code) : "") || "Peça");
+  for (const p of piecesB) nameMap.set(`p:${p.id}`, p.name || (p.code != null ? String(p.code) : "") || "Peça");
+  for (const k of kitsA) nameMap.set(`k:${k.id}`, `Kit: ${k.name || (k.code != null ? String(k.code) : "") || ""}`);
+  for (const k of kitsB) nameMap.set(`k:${k.id}`, `Kit: ${k.name || (k.code != null ? String(k.code) : "") || ""}`);
 
   const storeNameMap = new Map(stores.map((s) => [s.id, s.name || "Loja"]));
 
