@@ -462,6 +462,16 @@ const CampaignDetail = () => {
   const [automationOpen, setAutomationOpen] = useState(false);
   const [budgetExportDialogOpen, setBudgetExportDialogOpen] = useState(false);
   const [rateioGridExportOpen, setRateioGridExportOpen] = useState(false);
+  const [matrixToolbarCollapsed, setMatrixToolbarCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem('produzai_matrix_toolbar') === 'collapsed'; } catch { return false; }
+  });
+  const toggleMatrixToolbar = useCallback(() => {
+    setMatrixToolbarCollapsed((v) => {
+      const next = !v;
+      try { localStorage.setItem('produzai_matrix_toolbar', next ? 'collapsed' : 'expanded'); } catch {}
+      return next;
+    });
+  }, []);
 
   const handleFilterSidebarCollapsedChange = useCallback((collapsed: boolean) => {
     setFilterSidebarCollapsed(collapsed);
