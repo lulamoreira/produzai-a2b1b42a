@@ -88,20 +88,27 @@ export function useCampaignSnapshotContext(campaignId?: string, enabled = true) 
     queryKey: ["campaign_snapshot_context", campaignId],
     enabled: enabled && !!campaignId,
     queryFn: async () => {
-      const [piecesRes, kitsRes, storePiecesRes, storesRes] = await Promise.all([
+      const [piecesRes, kitsRes, storePiecesRes, csRes] = await Promise.all([
         supabase.from("campaign_pieces").select("*").eq("campaign_id", campaignId!),
         supabase.from("campaign_kits").select("*").eq("campaign_id", campaignId!),
         supabase.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!),
-        // client_stores filtradas por campanha via campaign_stores
-        supabase
-          .from("campaign_stores")
-          .select("store_id, client_stores(*)")
-          .eq("campaign_id", campaignId!),
+        supabase.from("campaign_stores").select("store_id").eq("campaign_id", campaignId!),
       ]);
       if (piecesRes.error) throw piecesRes.error;
       if (kitsRes.error) throw kitsRes.error;
       if (storePiecesRes.error) throw storePiecesRes.error;
-      if (storesRes.error) throw storesRes.error;
+      if (csRes.error) throw csRes.error;
+
+      const storeIds = ((csRes.data || []) as any[]).map((cs) => cs.store_id).filter(Boolean);
+      let stores: any[] = [];
+      if (storeIds.length > 0) {
+        const { data: storesData, error: storesErr } = await supabase
+          .from("client_stores")
+          .select("*")
+          .in("id", storeIds);
+        if (storesErr) throw storesErr;
+        stores = storesData || [];
+      }
 
       const kitIds = (kitsRes.data || []).map((k: any) => k.id);
       let kitPieces: any[] = [];
