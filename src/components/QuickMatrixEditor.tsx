@@ -859,15 +859,15 @@ const QuickMatrixEditor = ({
                   </TableRow>
                 )}
                 {/* Pieces / Kits header row */}
-                <TableRow className="bg-primary/5">
-                  <TableHead className={`sticky left-0 ${categoryGroups.length > 1 ? "top-[27px]" : "top-0"} bg-primary/5 z-[7] min-w-[180px]`}>Loja</TableHead>
+                <TableRow className="bg-card hover:bg-card">
+                  <TableHead className={`sticky left-0 ${categoryGroups.length > 1 ? "top-7" : "top-0"} bg-card z-[30] min-w-[180px]`}>Loja</TableHead>
                   <SortableContext items={colIds} strategy={horizontalListSortingStrategy}>
                     {matrixColumns.map((col) => {
                       const colId = getColId(col);
                       if (col.type === "piece") {
                         const p = col.data;
                         return (
-                          <DraggableColHeader key={colId} id={colId} stickyTopClass={categoryGroups.length > 1 ? "top-[27px]" : "top-0"}>
+                          <DraggableColHeader key={colId} id={colId} stickyTopClass={categoryGroups.length > 1 ? "top-7" : "top-0"}>
                             <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
                             <span className="text-xs font-bold">{p.code}</span>
                             <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[120px] whitespace-normal break-words">{p.name}</span>
@@ -877,7 +877,7 @@ const QuickMatrixEditor = ({
                       }
                       const kit = col.data;
                       return (
-                        <DraggableColHeader key={colId} id={colId} stickyTopClass={categoryGroups.length > 1 ? "top-[27px]" : "top-0"}>
+                        <DraggableColHeader key={colId} id={colId} stickyTopClass={categoryGroups.length > 1 ? "top-7" : "top-0"}>
                           {kit.image_url ? (
                             <PieceThumbnail imageUrl={kit.image_url} name={kit.name} size="sm" />
                           ) : (
@@ -892,7 +892,7 @@ const QuickMatrixEditor = ({
                       );
                     })}
                   </SortableContext>
-                  <TableHead className={`sticky ${categoryGroups.length > 1 ? "top-[27px]" : "top-0"} z-[6] bg-primary/5 text-center font-bold`}>Total</TableHead>
+                  <TableHead className={`sticky ${categoryGroups.length > 1 ? "top-7" : "top-0"} z-[20] bg-card text-center font-bold`}>Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
