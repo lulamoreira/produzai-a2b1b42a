@@ -43,7 +43,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle } from "lucide-react";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 
 import PieceThumbnail from "@/components/PieceThumbnail";
