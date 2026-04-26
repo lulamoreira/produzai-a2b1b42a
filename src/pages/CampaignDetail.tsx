@@ -2619,9 +2619,12 @@ const CampaignDetail = () => {
                   })
                 : kits;
 
-              if (showOnlyNew) {
+              if (newFilter === "new") {
                 filteredVisiblePieces = filteredVisiblePieces.filter(p => (p as any).is_new === true);
                 filteredKits = filteredKits.filter(k => (k as any).is_new === true);
+              } else if (newFilter === "not_new") {
+                filteredVisiblePieces = filteredVisiblePieces.filter(p => (p as any).is_new !== true);
+                filteredKits = filteredKits.filter(k => (k as any).is_new !== true);
               }
 
               if (filteredVisiblePieces.length === 0 && filteredKits.length === 0) {
