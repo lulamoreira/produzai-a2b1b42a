@@ -869,6 +869,7 @@ const QuickMatrixEditor = ({
                     onSetKitDraft={handleSetKitDraft}
                     onKeyDown={handleKeyDown}
                     inputRefs={inputRefs}
+                    customFieldLabels={customFieldLabels}
                   />
                 ))}
                 {/* Totals */}
