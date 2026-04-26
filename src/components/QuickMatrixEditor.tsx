@@ -6,6 +6,7 @@ import {
 import { Edit3, Save, X, Package, Sparkles, Loader2, Send, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import PieceThumbnail from "@/components/PieceThumbnail";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
