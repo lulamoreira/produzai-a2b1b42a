@@ -55,6 +55,7 @@ import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImpor
 import ImportWizardDialog from "@/components/ImportWizardDialog";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { exportRateioGrid } from "@/lib/exportRateioGrid";
+import { exportRateioGridPDF } from "@/lib/exportRateioGridPDF";
 import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
 import OccurrencesTab from "@/components/OccurrencesTab";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
