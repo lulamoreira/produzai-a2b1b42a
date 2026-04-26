@@ -49,7 +49,7 @@ import StoreContactsCardView from "@/components/StoreContactsCardView";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import AppLayout from "@/components/AppLayout";
-import QuickMatrixEditor from "@/components/QuickMatrixEditor";
+
 import { toast } from "sonner";
 import { findDuplicateName, duplicateNameMessage } from "@/lib/duplicateName";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
@@ -455,7 +455,7 @@ const CampaignDetail = () => {
       return saved === null ? true : saved === 'collapsed';
     } catch { return true; }
   });
-  const [quickEditActive, setQuickEditActive] = useState(false);
+  
   const [matrixCustomExportOpen, setMatrixCustomExportOpen] = useState(false);
   const [resetMatrixOpen, setResetMatrixOpen] = useState(false);
   const [resettingMatrix, setResettingMatrix] = useState(false);
@@ -2088,40 +2088,6 @@ const CampaignDetail = () => {
                   <div className="px-3 pb-2.5">
                   {renderStoreFilters()}
                   <div className="flex items-center gap-2">
-                    <QuickMatrixEditor
-                      stores={activeFilteredStores}
-                      pieces={matrixPieces}
-                      kits={matrixKits}
-                      kitPieces={kitPieces}
-                      qtyMap={qtyMap}
-                      campaignId={campaignId!}
-                      isAdmin={canEditCampaign}
-                      onSaveBatch={async (changes) => {
-                        for (const c of changes) {
-                          await updateStorePiece.mutateAsync({
-                            campaignId: campaignId!, storeId: c.storeId, pieceId: c.pieceId, quantity: c.quantity,
-                          });
-                        }
-                      }}
-                      onEditingChange={setQuickEditActive}
-                      customFieldLabels={Array.from({ length: 10 }, (_, idx) => {
-                        const i = idx + 1;
-                        const label = (client as any)?.[`custom_field_${i}_label`];
-                        return label ? { key: `custom_field_${i}`, label } : null;
-                      }).filter((x): x is { key: string; label: string } => x !== null)}
-                      onReorderColumns={async (reordered) => {
-                        for (const item of reordered) {
-                          if (item.type === "piece") {
-                            await supabase.from("campaign_pieces").update({ display_order: item.display_order }).eq("id", item.id);
-                          } else {
-                            await supabase.from("campaign_kits").update({ display_order: item.display_order }).eq("id", item.id);
-                          }
-                        }
-                        queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
-                        queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
-                      }}
-                    />
-
                     {canEditCampaign && (
                       <Button
                         size="sm"
@@ -2472,8 +2438,8 @@ const CampaignDetail = () => {
                   })()}
                 />
 
-                {/* Matrix Table - hidden during quick edit */}
-                {!quickEditActive && <div className="flex-1 min-h-0 overflow-hidden p-3">
+                {/* Matrix Table */}
+                {<div className="flex-1 min-h-0 overflow-hidden p-3">
                   {pieces.length === 0 ? (
                     <div className="text-center py-20">
                       <Package className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
