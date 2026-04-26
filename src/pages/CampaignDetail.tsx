@@ -468,6 +468,28 @@ const CampaignDetail = () => {
     try { localStorage.setItem('produzai_matrix_filters_open', collapsed ? 'collapsed' : 'expanded'); } catch {}
   }, []);
 
+  // Dynamic height for matrix container — fits to remaining viewport
+  const matrixContainerRef = useRef<HTMLDivElement | null>(null);
+  const [matrixHeight, setMatrixHeight] = useState<number>(() =>
+    typeof window !== "undefined" ? Math.max(400, window.innerHeight - 200) : 600,
+  );
+  useEffect(() => {
+    const recompute = () => {
+      const el = matrixContainerRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      const available = window.innerHeight - top - 16; // small bottom gap
+      setMatrixHeight(Math.max(360, available));
+    };
+    recompute();
+    window.addEventListener("resize", recompute);
+    const id = window.setTimeout(recompute, 50);
+    return () => {
+      window.removeEventListener("resize", recompute);
+      window.clearTimeout(id);
+    };
+  }, [activeSection, filterSidebarCollapsed]);
+
   // ─── Derived data ──────────────────────────────────────
   const qtyMap = useMemo(() => {
     const map: Record<string, number> = {};
@@ -2003,7 +2025,7 @@ const CampaignDetail = () => {
           </>)}
 
           {activeSection === "matrix" && (
-            <div className="flex flex-col lg:flex-row border border-border rounded-xl overflow-hidden bg-card -mx-2 sm:-mx-4" style={{ height: "calc(100vh - 200px)" }}>
+            <div ref={matrixContainerRef} className="flex flex-col lg:flex-row border border-border rounded-xl overflow-hidden bg-card -mx-2 sm:-mx-4" style={{ height: matrixHeight }}>
               {/* Filter Sidebar */}
               <MatrixFilterSidebar
                 pieces={pieces}
