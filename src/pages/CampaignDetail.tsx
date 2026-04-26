@@ -1313,6 +1313,26 @@ const CampaignDetail = () => {
     );
   }, [matrixPieces, matrixKits]);
 
+  const matrixCategoryGroups = useMemo(() => {
+    const groups: { label: string; span: number }[] = [];
+    let currentCat: string | null = null;
+    let currentSpan = 0;
+    matrixColumns.forEach((col) => {
+      const cat = col.type === "piece"
+        ? (col.data.category || "Sem localização")
+        : (getKitCategory(col.data) || "Sem localização");
+      if (cat !== currentCat) {
+        if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
+        currentCat = cat;
+        currentSpan = 1;
+      } else {
+        currentSpan++;
+      }
+    });
+    if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
+    return groups;
+  }, [matrixColumns, getKitCategory]);
+
   // Alternating background tints per column based on location (changes whenever location changes)
   const columnTints = useMemo(() => {
     const tints: string[] = [];
@@ -1983,7 +2003,7 @@ const CampaignDetail = () => {
           </>)}
 
           {activeSection === "matrix" && (
-            <div className="flex flex-col lg:flex-row border border-border rounded-xl overflow-hidden bg-card -mx-2 sm:-mx-4" style={{ minHeight: "calc(100vh - 200px)" }}>
+            <div className="flex flex-col lg:flex-row border border-border rounded-xl overflow-hidden bg-card -mx-2 sm:-mx-4" style={{ height: "calc(100vh - 200px)" }}>
               {/* Filter Sidebar */}
               <MatrixFilterSidebar
                 pieces={pieces}
@@ -2392,7 +2412,7 @@ const CampaignDetail = () => {
                 />
 
                 {/* Matrix Table - hidden during quick edit */}
-                {!quickEditActive && <div className="flex-1 overflow-auto p-3">
+                {!quickEditActive && <div className="flex-1 min-h-0 overflow-hidden p-3">
                   {pieces.length === 0 ? (
                     <div className="text-center py-20">
                       <Package className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
@@ -2414,50 +2434,35 @@ const CampaignDetail = () => {
                         {t("pieces.clearFilters")}
                       </Button>
                     </div>
-                  ) : (
-                     <div className="border border-border rounded-lg overflow-x-auto">
-                      <Table>
+                   ) : (
+                      <div className="h-full border border-border rounded-lg overflow-auto [&>div]:overflow-visible [&>div]:min-w-max">
+                       <Table className="min-w-max border-separate border-spacing-0">
                         <TableHeader>
                           {/* Category group header row */}
                           {(() => {
-                            const groups: { label: string; span: number }[] = [];
-                            let currentCat: string | null = null;
-                            let currentSpan = 0;
-                            matrixColumns.forEach((col) => {
-                              const cat = col.type === "piece"
-                                ? (col.data.category || "Sem localização")
-                                : (getKitCategory(col.data) || "Sem localização");
-                              if (cat !== currentCat) {
-                                if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
-                                currentCat = cat;
-                                currentSpan = 1;
-                              } else {
-                                currentSpan++;
-                              }
-                            });
-                            if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
+                            const groups = matrixCategoryGroups;
                             // Only show if there's more than one group
                             if (groups.length <= 1) return null;
                             return (
-                              <TableRow className="bg-muted/30">
-                                <TableHead className="sticky left-0 bg-muted/30 z-[5]" />
+                              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                                <TableHead className="sticky left-0 top-0 h-7 bg-muted z-[30]" />
                                 {groups.map((g, i) => (
-                                  <TableHead key={i} colSpan={g.span} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-l border-border py-1">
+                                  <TableHead key={i} colSpan={g.span} className="sticky top-0 z-[20] h-7 bg-muted px-2 py-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-l border-border">
                                     {g.label}
                                   </TableHead>
                                 ))}
-                                <TableHead />
+                                <TableHead className="sticky top-0 z-[20] h-7 bg-muted" />
                               </TableRow>
                             );
                           })()}
-                          <TableRow>
-                            <TableHead className="sticky left-0 bg-card z-[5] min-w-[180px]">{t("matrix.store")}</TableHead>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead className={`sticky left-0 ${matrixCategoryGroups.length > 1 ? "top-7" : "top-0"} z-[30] min-w-[180px] bg-card`}>{t("matrix.store")}</TableHead>
                             {matrixColumns.map((col, colIdx) => {
                               const tint = columnTints[colIdx] || "";
                               if (col.type === "piece") {
                                 const p = col.data;
                                 return (
-                                  <TableHead key={p.id} className={`text-center min-w-[72px] sm:min-w-[100px] px-1 sm:px-2 border-l border-border/70 align-top ${tint}`}>
+                                  <TableHead key={p.id} className={`sticky ${matrixCategoryGroups.length > 1 ? "top-7" : "top-0"} z-[20] ${tint} bg-card text-center min-w-[72px] sm:min-w-[100px] px-1 sm:px-2 border-l border-border/70 align-top`}>
                                     <button
                                       className="flex flex-col items-center gap-0.5 w-full hover:opacity-80 transition-opacity"
                                       onClick={() => handleOpenEditPiece(p)}
@@ -2475,7 +2480,7 @@ const CampaignDetail = () => {
                               const kit = col.data;
                               const kitPieceCount = kitPieces.filter(kp => kp.kit_id === kit.id).reduce((s, kp) => s + (kp.quantity || 0), 0);
                               return (
-                                <TableHead key={`kit-${kit.id}`} className={`text-center min-w-[72px] sm:min-w-[100px] px-1 sm:px-2 border-l border-border/70 align-top ${tint}`}>
+                                <TableHead key={`kit-${kit.id}`} className={`sticky ${matrixCategoryGroups.length > 1 ? "top-7" : "top-0"} z-[20] ${tint} bg-card text-center min-w-[72px] sm:min-w-[100px] px-1 sm:px-2 border-l border-border/70 align-top`}>
                                   <button onClick={() => setViewKitDetail(kit)} className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity w-full">
                                     {kit.image_url ? (
                                       <PieceThumbnail imageUrl={kit.image_url} name={kit.name} size="sm" />
@@ -2492,7 +2497,7 @@ const CampaignDetail = () => {
                                 </TableHead>
                               );
                             })}
-                            <TableHead className="text-center font-bold">Total</TableHead>
+                            <TableHead className={`sticky ${matrixCategoryGroups.length > 1 ? "top-7" : "top-0"} z-[20] bg-card text-center font-bold`}>Total</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
