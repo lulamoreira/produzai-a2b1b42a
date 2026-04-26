@@ -99,6 +99,17 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
             size="icon"
             variant="outline"
             className="relative h-8 w-8 bg-card text-foreground border-border shadow-lg hover:bg-accent"
+            onClick={() => setSnapshotsOpen(true)}
+            title="Versões da campanha"
+          >
+            <Layers className="w-3.5 h-3.5" />
+          </Button>
+        )}
+        {campaignId && (
+          <Button
+            size="icon"
+            variant="outline"
+            className="relative h-8 w-8 bg-card text-foreground border-border shadow-lg hover:bg-accent"
             onClick={() => navigate(`${location.pathname.split("?")[0]}?section=history`)}
           >
             <History className="w-3.5 h-3.5" />
