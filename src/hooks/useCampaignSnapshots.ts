@@ -88,15 +88,13 @@ export function useCampaignSnapshotContext(campaignId?: string, enabled = true) 
     queryKey: ["campaign_snapshot_context", campaignId],
     enabled: enabled && !!campaignId,
     queryFn: async () => {
-      const [piecesRes, kitsRes, storePiecesRes, csRes] = await Promise.all([
-        supabase.from("campaign_pieces").select("*").eq("campaign_id", campaignId!),
-        supabase.from("campaign_kits").select("*").eq("campaign_id", campaignId!),
-        supabase.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!),
-        supabase.from("campaign_stores").select("store_id").eq("campaign_id", campaignId!),
-      ]);
+      const piecesRes = await supabase.from("campaign_pieces").select("*").eq("campaign_id", campaignId!);
       if (piecesRes.error) throw piecesRes.error;
+      const kitsRes = await supabase.from("campaign_kits").select("*").eq("campaign_id", campaignId!);
       if (kitsRes.error) throw kitsRes.error;
+      const storePiecesRes = await supabase.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!);
       if (storePiecesRes.error) throw storePiecesRes.error;
+      const csRes = await supabase.from("campaign_stores").select("store_id").eq("campaign_id", campaignId!);
       if (csRes.error) throw csRes.error;
 
       const storeIds = ((csRes.data || []) as any[]).map((cs) => cs.store_id).filter(Boolean);
@@ -110,7 +108,7 @@ export function useCampaignSnapshotContext(campaignId?: string, enabled = true) 
         stores = storesData || [];
       }
 
-      const kitIds = (kitsRes.data || []).map((k: any) => k.id);
+      const kitIds = ((kitsRes.data || []) as any[]).map((k) => k.id);
       let kitPieces: any[] = [];
       if (kitIds.length > 0) {
         const { data: kp, error: kpErr } = await supabase
@@ -120,10 +118,6 @@ export function useCampaignSnapshotContext(campaignId?: string, enabled = true) 
         if (kpErr) throw kpErr;
         kitPieces = kp || [];
       }
-
-      const stores = (storesRes.data || [])
-        .map((cs: any) => cs.client_stores)
-        .filter(Boolean);
 
       return {
         pieces: piecesRes.data || [],
