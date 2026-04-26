@@ -342,7 +342,7 @@ function DraggableColHeader({ id, children, stickyTopClass }: { id: string; chil
     <TableHead
       ref={setNodeRef}
       style={style}
-      className={`text-center min-w-[100px] bg-primary/5 ${stickyTopClass ? `sticky ${stickyTopClass} z-[6]` : ""}`}
+      className={`text-center min-w-[100px] bg-card ${stickyTopClass ? `sticky ${stickyTopClass} z-[20]` : ""}`}
     >
       <div className="flex flex-col items-center gap-0.5">
         <div {...attributes} {...listeners} className="cursor-grab hover:text-primary transition-colors">
@@ -843,19 +843,19 @@ const QuickMatrixEditor = ({
       {/* Quick-edit table */}
       {editing && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <div className="border border-primary/30 rounded-lg bg-card shadow-sm overflow-auto max-h-[calc(100vh-240px)] [&>div]:overflow-visible [&>div]:max-h-none">
-            <Table>
+          <div className="border border-primary/30 rounded-lg bg-card shadow-sm overflow-auto max-h-[calc(100vh-260px)] [&>div]:overflow-visible [&>div]:min-w-max [&>div]:max-h-none">
+            <Table className="min-w-max border-separate border-spacing-0">
               <TableHeader>
                 {/* Category group header row (Localização) */}
                 {categoryGroups.length > 1 && (
-                  <TableRow className="bg-muted/30">
-                    <TableHead className="sticky left-0 top-0 bg-muted/30 z-[7]" />
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableHead className="sticky left-0 top-0 h-7 bg-muted z-[30]" />
                     {categoryGroups.map((g, i) => (
-                      <TableHead key={i} colSpan={g.span} className="sticky top-0 z-[6] bg-muted/30 text-center text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-l border-border py-1">
+                      <TableHead key={i} colSpan={g.span} className="sticky top-0 z-[20] h-7 bg-muted px-2 py-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-l border-border">
                         {g.label}
                       </TableHead>
                     ))}
-                    <TableHead className="sticky top-0 z-[6] bg-muted/30" />
+                    <TableHead className="sticky top-0 z-[20] h-7 bg-muted" />
                   </TableRow>
                 )}
                 {/* Pieces / Kits header row */}
