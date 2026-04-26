@@ -227,6 +227,11 @@ const CampaignDetail = () => {
   const { hasPermission: canEditInstallations } = useClientPermission(clientId, "can_edit_installations");
   const { hasPermission: canViewCampaigns } = useClientPermission(clientId, "can_view_campaigns");
   const { data: client } = useClient(clientId);
+  const storeDetailCustomFieldLabels = useMemo(() => Array.from({ length: 10 }, (_, idx) => {
+    const i = idx + 1;
+    const label = (client as any)?.[`custom_field_${i}_label`];
+    return label ? { key: `custom_field_${i}`, label } : null;
+  }).filter((field): field is StoreDetailCustomField => field !== null), [client]);
   // Auto-sync language based on client config
   useLanguage((client as any)?.language);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
@@ -2506,6 +2511,7 @@ const CampaignDetail = () => {
                                 <TableCell className="sticky left-0 bg-card z-[5] font-medium">
                                   <div>
                                     <span className="text-sm">{store.name}</span>
+                                    <StoreDetailsPopover store={store} customFieldLabels={storeDetailCustomFieldLabels} />
                                     {store.nickname && store.nickname !== store.name && (
                                       <span className="text-[10px] text-muted-foreground ml-1">({store.nickname})</span>
                                     )}
