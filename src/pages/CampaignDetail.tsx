@@ -1246,41 +1246,50 @@ const CampaignDetail = () => {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input placeholder={t("stores.searchStore")} value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="pl-10" />
       </div>
-      <div className="flex flex-wrap gap-2 items-center">
+      <div className="flex flex-wrap gap-3 items-end">
         {uniqueStates.length > 0 && (
-          <Select value={stateFilter} onValueChange={setStateFilter}>
-            <SelectTrigger className="w-[100px] sm:w-[140px] text-xs">
-              <SelectValue placeholder={t("stores.state")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">{t("common.all")}</SelectItem>
-              {uniqueStates.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{t("stores.state")}</label>
+            <Select value={stateFilter} onValueChange={setStateFilter}>
+              <SelectTrigger className="w-[110px] sm:w-[150px] text-xs">
+                <SelectValue placeholder={t("stores.state")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">{t("common.all")}</SelectItem>
+                {uniqueStates.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         )}
         {uniqueCities.length > 0 && (
-          <Select value={cityFilter} onValueChange={setCityFilter}>
-            <SelectTrigger className="w-[110px] sm:w-[180px] text-xs">
-              <SelectValue placeholder={t("stores.city")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">{t("common.allFeminine")}</SelectItem>
-              {uniqueCities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{t("stores.city")}</label>
+            <Select value={cityFilter} onValueChange={setCityFilter}>
+              <SelectTrigger className="w-[120px] sm:w-[190px] text-xs">
+                <SelectValue placeholder={t("stores.city")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">{t("common.allFeminine")}</SelectItem>
+                {uniqueCities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         )}
         {uniqueStoreCategories.length > 0 && (
-          <Select value={storeCategoryFilter} onValueChange={setStoreCategoryFilter}>
-            <SelectTrigger className="w-[110px] sm:w-[180px] text-xs">
-              <SelectValue placeholder="Cat." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__all__">{t("common.allFeminine")}</SelectItem>
-              {uniqueStoreCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Categoria de loja</label>
+            <Select value={storeCategoryFilter} onValueChange={setStoreCategoryFilter}>
+              <SelectTrigger className="w-[120px] sm:w-[190px] text-xs">
+                <SelectValue placeholder="Categoria" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">{t("common.allFeminine")}</SelectItem>
+                {uniqueStoreCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
         )}
-        <span className="text-xs text-muted-foreground">{filteredStores.length} {t("stores.storeCount")}</span>
+        <span className="text-xs text-muted-foreground pb-2">{filteredStores.length} {t("stores.storeCount")}</span>
       </div>
     </div>
   );
