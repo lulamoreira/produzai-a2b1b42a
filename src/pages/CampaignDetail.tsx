@@ -2571,17 +2571,34 @@ const CampaignDetail = () => {
                   </button>
                 )}
               </div>
-              <Button
-                type="button"
-                size="sm"
-                variant={showOnlyNew ? "default" : "outline"}
-                onClick={() => setShowOnlyNew(v => !v)}
-                className={`h-9 text-xs gap-1.5 shrink-0 ${showOnlyNew ? "bg-green-500 hover:bg-green-600 text-white border-0" : ""}`}
-                title="Mostrar apenas itens marcados como NOVO"
-              >
-                <span className={`inline-block w-2 h-2 rounded-full ${showOnlyNew ? "bg-white" : "bg-green-500"}`} />
-                Apenas NOVO
-              </Button>
+              <div className="inline-flex h-9 rounded-md border border-input bg-background p-0.5 shrink-0">
+                {([
+                  { value: "all", label: "Todos" },
+                  { value: "new", label: "Novos" },
+                  { value: "not_new", label: "Não novos" },
+                ] as const).map((opt) => {
+                  const active = newFilter === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setNewFilter(opt.value)}
+                      className={`px-3 text-xs font-medium rounded-sm transition-colors flex items-center gap-1.5 ${
+                        active
+                          ? opt.value === "new"
+                            ? "bg-green-500 text-white"
+                            : "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {opt.value === "new" && (
+                        <span className={`inline-block w-2 h-2 rounded-full ${active ? "bg-white" : "bg-green-500"}`} />
+                      )}
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {(() => {
