@@ -2297,6 +2297,8 @@ const CampaignDetail = () => {
                       }} />
                     )}
                   </div>
+                  </div>
+                  )}
                 </div>
 
                 <ImportMatrixFromCampaignDialog
