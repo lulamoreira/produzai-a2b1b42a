@@ -43,7 +43,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle } from "lucide-react";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -462,6 +462,16 @@ const CampaignDetail = () => {
   const [automationOpen, setAutomationOpen] = useState(false);
   const [budgetExportDialogOpen, setBudgetExportDialogOpen] = useState(false);
   const [rateioGridExportOpen, setRateioGridExportOpen] = useState(false);
+  const [matrixToolbarCollapsed, setMatrixToolbarCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem('produzai_matrix_toolbar') === 'collapsed'; } catch { return false; }
+  });
+  const toggleMatrixToolbar = useCallback(() => {
+    setMatrixToolbarCollapsed((v) => {
+      const next = !v;
+      try { localStorage.setItem('produzai_matrix_toolbar', next ? 'collapsed' : 'expanded'); } catch {}
+      return next;
+    });
+  }, []);
 
   const handleFilterSidebarCollapsedChange = useCallback((collapsed: boolean) => {
     setFilterSidebarCollapsed(collapsed);
@@ -2048,7 +2058,25 @@ const CampaignDetail = () => {
               {/* Matrix Content */}
               <div className="flex-1 flex flex-col overflow-hidden">
                 {/* Toolbar */}
-                <div className="px-3 py-2.5 border-b border-border bg-muted/30">
+                <div className="border-b border-border bg-muted/30">
+                  <div className="flex items-center justify-between px-3 py-1">
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                      {matrixToolbarCollapsed ? "Filtros e ações ocultos" : "Filtros e ações"}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={toggleMatrixToolbar}
+                      className="h-6 px-2 text-xs gap-1"
+                      title={matrixToolbarCollapsed ? "Expandir" : "Recolher"}
+                    >
+                      {matrixToolbarCollapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+                      {matrixToolbarCollapsed ? "Expandir" : "Recolher"}
+                    </Button>
+                  </div>
+                  {!matrixToolbarCollapsed && (
+                  <div className="px-3 pb-2.5">
                   {renderStoreFilters()}
                   <div className="flex items-center gap-2">
                     <QuickMatrixEditor
@@ -2269,6 +2297,8 @@ const CampaignDetail = () => {
                       }} />
                     )}
                   </div>
+                  </div>
+                  )}
                 </div>
 
                 <ImportMatrixFromCampaignDialog
