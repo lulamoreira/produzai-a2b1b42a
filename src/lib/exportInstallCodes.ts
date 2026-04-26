@@ -1,5 +1,5 @@
 import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
+import { saveBlobAs } from "./saveBlobAs";
 import type { Schedule } from "@/types/schedule";
 import type { ClientStore } from "@/hooks/useMultiClientData";
 import type { InstallationTeam, TeamMember } from "@/components/InstallationTeamDialog";
@@ -231,5 +231,10 @@ export async function exportInstallCodes(data: ExportData) {
   const buffer = await wb.xlsx.writeBuffer();
   const dateStr = format(new Date(), "yyyy-MM-dd");
   const fileName = `${campaignName.replace(/[^\w\s-]/g, "")}_codigos_instalacao_${dateStr}.xlsx`;
-  saveAs(new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }), fileName);
+  const xlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  await saveBlobAs(new Blob([buffer], { type: xlsxMime }), fileName, {
+    mimeType: xlsxMime,
+    description: "Planilha Excel (.xlsx)",
+    extension: ".xlsx",
+  });
 }
