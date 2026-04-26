@@ -1,67 +1,48 @@
 ## Objetivo
 
-Permitir que o usuário escolha entre **zerar toda a planilha** (comportamento atual) ou **zerar apenas as colunas (peças/kits) selecionadas** no diálogo de "Zerar planilha".
+Aplicar texto em **letras maiúsculas (UPPERCASE)** em todos os botões da aplicação, de forma global e consistente, sem precisar editar cada botão individualmente.
 
-## Onde mexer (baixo impacto)
+## Abordagem
 
-Apenas dois arquivos são tocados — toda a UI nova fica isolada no diálogo existente:
-
-1. `src/components/Matrix/ResetMatrixDialog.tsx` — adicionar seletor de modo e lista de colunas.
-2. `src/pages/CampaignDetail.tsx` — passar a lista de peças/kits ao diálogo e ajustar o `onConfirm` para receber o que foi selecionado.
-
-Nenhum outro componente, hook, banco ou lógica de exportação é alterado.
-
-## Como funcionará
-
-Ao clicar em **Zerar planilha** (no menu "Mais ações"), o diálogo abre com duas opções via radio:
-
-- **Zerar planilha inteira** *(padrão, igual hoje)* — exige digitar o nome da campanha e apaga tudo.
-- **Zerar apenas colunas selecionadas** — mostra uma lista com checkbox de todas as peças e kits da campanha, agrupados por localização. O usuário marca o que deseja zerar. Confirmar ainda exige digitar o nome da campanha (segurança).
-
-Se nada estiver selecionado no modo "colunas", o botão de confirmar fica desabilitado.
-
-## Fluxo de dados
+Adicionar a classe utilitária `uppercase` (Tailwind) diretamente na base do componente `Button` em `src/components/ui/button.tsx`. Esse componente é a fonte única de verdade para todos os ~484 usos de `<Button>` espalhados pelo app, então uma única alteração propaga a mudança para a aplicação inteira.
 
 ```text
-ResetMatrixDialog
-  ├─ mode: "all" | "columns"
-  ├─ selectedPieceIds: Set<string>
-  ├─ selectedKitIds:   Set<string>
-  └─ onConfirm(payload)
-        payload = { mode: "all" }
-                | { mode: "columns", pieceIds: string[], kitIds: string[] }
+src/components/ui/button.tsx
+   └── buttonVariants base classes
+        └── adicionar: "uppercase"
+              ↓
+   afeta TODOS os <Button> do app automaticamente
 ```
 
-No `CampaignDetail.tsx`, o `onConfirm` decide a query:
+## Detalhes técnicos
 
-- `mode === "all"` → mantém o `delete().eq("campaign_id", id)` atual.
-- `mode === "columns"` →
-  - Se houver `pieceIds`: `delete().eq("campaign_id", id).in("piece_id", pieceIds)` na tabela `campaign_store_pieces`.
-  - Se houver `kitIds`: para cada kit, descobrir as peças que o compõem (via `kitPieces`) e somar ao set de `pieceIds` antes do delete (kits não têm linha própria em `campaign_store_pieces` — eles são quantidades calculadas das peças componentes).
+**Arquivo único alterado:** `src/components/ui/button.tsx`
 
-Após o delete, invalida `["campaign_store_pieces", campaignId]` (já existe).
+Na string base do `cva(...)` (linha 8), adicionar `uppercase` junto às demais classes utilitárias:
 
-## Detalhes de UI
+```ts
+"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium uppercase ring-offset-background ..."
+```
 
-- Radio group no topo do diálogo (shadcn `RadioGroup`).
-- Lista de colunas só aparece quando o modo "colunas" está ativo, com:
-  - Busca rápida por nome.
-  - Botões "Selecionar todas" / "Limpar".
-  - Agrupamento visual por localização (`category`), igual ao quadro.
-  - Checkbox por peça e por kit, com indicador visual (badge) "Kit" para diferenciar.
-- O texto de aviso muda conforme o modo:
-  - "all": mensagem atual ("apaga todas as quantidades…").
-  - "columns": "apaga as quantidades apenas das peças/kits selecionados em todas as lojas."
-- O contador de "registros que serão removidos" continua exibido no modo "all"; no modo "colunas" mostra apenas a contagem de itens selecionados.
+**Cobertura:**
+- Todos os botões usando `<Button>` do shadcn (variantes `default`, `outline`, `secondary`, `ghost`, `destructive`, `link` e tamanhos `sm`, `default`, `lg`, `icon`).
+- Inclui botões em diálogos, toolbars, headers, formulários, exportações etc.
 
-## Segurança
+**Não afetado (intencional):**
+- Botões `<button>` HTML puro (raros, geralmente uso interno do shadcn como close de Dialog — apenas ícones).
+- Texto dentro de `<a>`, `<DropdownMenuItem>`, `<TabsTrigger>`, `<Badge>` — esses não são botões e mantêm a capitalização original.
+- Conteúdo não-textual (ícones SVG) é ignorado naturalmente.
 
-- Mantém a confirmação por digitação do nome da campanha em **ambos os modos**.
-- Botão de confirmar só habilita quando: nome confere **e** (modo "all" **ou** pelo menos 1 coluna selecionada).
-- Toast de sucesso diferenciado: "Planilha zerada" vs. "Quantidades das colunas selecionadas zeradas".
+**Casos especiais a observar após aplicar:**
+- Botões `size="icon"` continuam OK (sem texto).
+- Caso algum botão exiba conteúdo dinâmico onde maiúsculo fique estranho (ex: nomes próprios dentro de botão), o `uppercase` do CSS pode ser sobrescrito pontualmente com `className="normal-case"`. Se você identificar algum, me avisa que eu ajusto.
 
-## Riscos e mitigação
+## Resultado esperado
 
-- **Risco baixo**: a alteração é aditiva — o caminho "all" permanece idêntico ao atual.
-- Kits são virtuais (compostos por peças); deletar kit isolado não faz sentido no banco. Por isso, ao selecionar um kit, zeramos as peças componentes dele. Isso será explicitado num pequeno aviso embaixo da lista quando houver kits selecionados.
-- Nenhuma mudança de schema, RLS ou migração necessária.
+Após a alteração, botões como:
+- "Exportar Rateio" → "EXPORTAR RATEIO"
+- "Automação de Matriz" → "AUTOMAÇÃO DE MATRIZ"
+- "Mais ações" → "MAIS AÇÕES"
+- "Salvar", "Cancelar", "Confirmar" → "SALVAR", "CANCELAR", "CONFIRMAR"
+
+Tudo de uma só vez, sem alterar nenhum texto fonte (i18n, traduções e labels permanecem em title case no código — apenas a renderização visual fica em maiúsculas).
