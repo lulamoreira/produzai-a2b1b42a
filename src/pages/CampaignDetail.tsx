@@ -1313,6 +1313,26 @@ const CampaignDetail = () => {
     );
   }, [matrixPieces, matrixKits]);
 
+  const matrixCategoryGroups = useMemo(() => {
+    const groups: { label: string; span: number }[] = [];
+    let currentCat: string | null = null;
+    let currentSpan = 0;
+    matrixColumns.forEach((col) => {
+      const cat = col.type === "piece"
+        ? (col.data.category || "Sem localização")
+        : (getKitCategory(col.data) || "Sem localização");
+      if (cat !== currentCat) {
+        if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
+        currentCat = cat;
+        currentSpan = 1;
+      } else {
+        currentSpan++;
+      }
+    });
+    if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
+    return groups;
+  }, [matrixColumns, getKitCategory]);
+
   // Alternating background tints per column based on location (changes whenever location changes)
   const columnTints = useMemo(() => {
     const tints: string[] = [];
@@ -2451,13 +2471,13 @@ const CampaignDetail = () => {
                             );
                           })()}
                           <TableRow className="hover:bg-transparent">
-                            <TableHead className={`sticky left-0 ${categoryGroups.length > 1 ? "top-7" : "top-0"} z-[30] min-w-[180px] bg-card`}>{t("matrix.store")}</TableHead>
+                            <TableHead className={`sticky left-0 ${matrixCategoryGroups.length > 1 ? "top-7" : "top-0"} z-[30] min-w-[180px] bg-card`}>{t("matrix.store")}</TableHead>
                             {matrixColumns.map((col, colIdx) => {
                               const tint = columnTints[colIdx] || "";
                               if (col.type === "piece") {
                                 const p = col.data;
                                 return (
-                                  <TableHead key={p.id} className={`sticky ${categoryGroups.length > 1 ? "top-7" : "top-0"} z-[20] bg-card text-center min-w-[72px] sm:min-w-[100px] px-1 sm:px-2 border-l border-border/70 align-top ${tint}`}>
+                                  <TableHead key={p.id} className={`sticky ${matrixCategoryGroups.length > 1 ? "top-7" : "top-0"} z-[20] ${tint} bg-card text-center min-w-[72px] sm:min-w-[100px] px-1 sm:px-2 border-l border-border/70 align-top`}>
                                     <button
                                       className="flex flex-col items-center gap-0.5 w-full hover:opacity-80 transition-opacity"
                                       onClick={() => handleOpenEditPiece(p)}
@@ -2475,7 +2495,7 @@ const CampaignDetail = () => {
                               const kit = col.data;
                               const kitPieceCount = kitPieces.filter(kp => kp.kit_id === kit.id).reduce((s, kp) => s + (kp.quantity || 0), 0);
                               return (
-                                <TableHead key={`kit-${kit.id}`} className={`sticky ${categoryGroups.length > 1 ? "top-7" : "top-0"} z-[20] bg-card text-center min-w-[72px] sm:min-w-[100px] px-1 sm:px-2 border-l border-border/70 align-top ${tint}`}>
+                                <TableHead key={`kit-${kit.id}`} className={`sticky ${matrixCategoryGroups.length > 1 ? "top-7" : "top-0"} z-[20] ${tint} bg-card text-center min-w-[72px] sm:min-w-[100px] px-1 sm:px-2 border-l border-border/70 align-top`}>
                                   <button onClick={() => setViewKitDetail(kit)} className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity w-full">
                                     {kit.image_url ? (
                                       <PieceThumbnail imageUrl={kit.image_url} name={kit.name} size="sm" />
@@ -2492,7 +2512,7 @@ const CampaignDetail = () => {
                                 </TableHead>
                               );
                             })}
-                            <TableHead className={`sticky ${categoryGroups.length > 1 ? "top-7" : "top-0"} z-[20] bg-card text-center font-bold`}>Total</TableHead>
+                            <TableHead className={`sticky ${matrixCategoryGroups.length > 1 ? "top-7" : "top-0"} z-[20] bg-card text-center font-bold`}>Total</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
