@@ -1,5 +1,13 @@
 import type { ClientStore, CampaignPiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
 import { saveBlobAs } from "@/lib/saveBlobAs";
+import {
+  buildRateioGridBuckets,
+  rateioGridFileSuffix,
+  safeProgress,
+  fetchImageBytes,
+  type RateioGridExportMode,
+  type RateioGridProgress,
+} from "@/lib/rateioGridShared";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -12,16 +20,7 @@ const GREY = "FF666666";
 const BORDER = "FFE0D5C8";
 const ROW_ALT = "FFF5F0EB";
 
-export type RateioGridExportMode = "pieces" | "pieces_and_kits";
-
-type Item = {
-  name: string;
-  code: string | number;
-  category: string;
-  quantity: number;
-  is_new: boolean;
-  image_url: string | null;
-};
+export type { RateioGridExportMode };
 
 function sanitizeSheetName(name: string, used: Set<string>) {
   let base = (name || "Loja").replace(/[\\/?*[\]:]/g, "").trim().slice(0, 31) || "Loja";
@@ -36,28 +35,15 @@ function sanitizeSheetName(name: string, used: Set<string>) {
   return candidate;
 }
 
-async function fetchImageBuffer(url: string, timeoutMs = 5000): Promise<{ buffer: ArrayBuffer; ext: "png" | "jpeg" | "gif" } | null> {
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timer);
-    if (!res.ok) return null;
-    const buffer = await res.arrayBuffer();
-    const ct = (res.headers.get("content-type") || "").toLowerCase();
-    let ext: "png" | "jpeg" | "gif" = "png";
-    if (ct.includes("jpeg") || ct.includes("jpg")) ext = "jpeg";
-    else if (ct.includes("gif")) ext = "gif";
-    else if (ct.includes("png")) ext = "png";
-    else {
-      // fallback: detect from URL
-      if (/\.jpe?g(\?|$)/i.test(url)) ext = "jpeg";
-      else if (/\.gif(\?|$)/i.test(url)) ext = "gif";
-    }
-    return { buffer, ext };
-  } catch {
-    return null;
-  }
+async function fetchImageBuffer(
+  url: string,
+  timeoutMs = 5000,
+): Promise<{ buffer: ArrayBuffer; ext: "png" | "jpeg" | "gif" } | null> {
+  const fetched = await fetchImageBytes(url, timeoutMs);
+  if (!fetched) return null;
+  const ext: "png" | "jpeg" | "gif" =
+    fetched.mime === "image/jpeg" ? "jpeg" : fetched.mime === "image/gif" ? "gif" : "png";
+  return { buffer: fetched.buffer, ext };
 }
 
 export async function exportRateioGrid(
@@ -70,7 +56,13 @@ export async function exportRateioGrid(
   clientName: string,
   agencyName: string,
   mode: RateioGridExportMode = "pieces_and_kits",
+  onProgress?: RateioGridProgress,
 ) {
+  const buckets = buildRateioGridBuckets(pieces, kits, kitPieces, stores, qtyMap, mode);
+  if (buckets.length === 0) {
+    throw new Error("Nenhuma loja com quantidades preenchidas para exportar.");
+  }
+
   const ExcelJSModule = await import("exceljs");
   const ExcelJSRuntime = ExcelJSModule.default;
   const wb = new ExcelJSRuntime.Workbook();
@@ -80,6 +72,13 @@ export async function exportRateioGrid(
 
   // Cache image buffers across all sheets to avoid refetching
   const imageCache = new Map<string, { buffer: ArrayBuffer; ext: "png" | "jpeg" | "gif" } | null>();
+
+  const totalStores = buckets.length;
+  let storeIndex = 0;
+
+  for (const bucket of buckets) {
+    const { store, items, totalQuantity } = bucket;
+
 
   for (const store of stores) {
     // Build items for this store based on mode
