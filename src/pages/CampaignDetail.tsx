@@ -2106,7 +2106,7 @@ const CampaignDetail = () => {
                       onClick={() => setBudgetExportDialogOpen(true)}
                     >
                       <FileSpreadsheet className="w-4 h-4" />
-                      <span className="hidden sm:inline">Exportar Orçamento</span>
+                      <span className="hidden sm:inline">Exportar Rateio</span>
                     </Button>
 
                     <Button
