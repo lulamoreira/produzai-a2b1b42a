@@ -355,6 +355,7 @@ const CampaignDetail = () => {
   const [resettingMatrix, setResettingMatrix] = useState(false);
   const [automationOpen, setAutomationOpen] = useState(false);
   const [budgetExportDialogOpen, setBudgetExportDialogOpen] = useState(false);
+  const [rateioGridExportOpen, setRateioGridExportOpen] = useState(false);
 
   const handleFilterSidebarCollapsedChange = useCallback((collapsed: boolean) => {
     setFilterSidebarCollapsed(collapsed);
