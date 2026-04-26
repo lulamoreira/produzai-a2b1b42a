@@ -2340,27 +2340,60 @@ const CampaignDetail = () => {
                 />
 
 
-                {/* Reset Matrix Dialog (zera todas as quantidades do rateio) */}
+                {/* Reset Matrix Dialog (zera quantidades do rateio: tudo ou colunas selecionadas) */}
                 <ResetMatrixDialog
                   open={resetMatrixOpen}
                   onOpenChange={setResetMatrixOpen}
                   campaignName={campaign?.name || ""}
                   totalEntries={storePieces.length}
-                  onConfirm={async () => {
+                  pieces={pieces}
+                  kits={kits}
+                  onConfirm={async (payload) => {
                     if (!campaignId || resettingMatrix) return;
                     setResettingMatrix(true);
-                    const toastId = toast.loading("Zerando planilha do Rateio...");
+                    const isAll = payload.mode === "all";
+                    const toastId = toast.loading(
+                      isAll
+                        ? "Zerando planilha do Rateio..."
+                        : "Zerando colunas selecionadas...",
+                    );
                     try {
-                      const { error } = await supabase
-                        .from("campaign_store_pieces")
-                        .delete()
-                        .eq("campaign_id", campaignId);
-                      if (error) throw error;
+                      if (isAll) {
+                        const { error } = await supabase
+                          .from("campaign_store_pieces")
+                          .delete()
+                          .eq("campaign_id", campaignId);
+                        if (error) throw error;
+                      } else {
+                        // Expande kits → peças componentes e mescla com peças selecionadas
+                        const pieceIdSet = new Set<string>(payload.pieceIds);
+                        for (const kitId of payload.kitIds) {
+                          kitPieces
+                            .filter((kp) => kp.kit_id === kitId)
+                            .forEach((kp) => pieceIdSet.add(kp.piece_id));
+                        }
+                        const finalPieceIds = Array.from(pieceIdSet);
+                        if (finalPieceIds.length === 0) {
+                          toast.error("Nenhuma peça válida para zerar.", { id: toastId });
+                          return;
+                        }
+                        const { error } = await supabase
+                          .from("campaign_store_pieces")
+                          .delete()
+                          .eq("campaign_id", campaignId)
+                          .in("piece_id", finalPieceIds);
+                        if (error) throw error;
+                      }
                       await queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
-                      toast.success("Planilha do Rateio zerada com sucesso.", { id: toastId });
+                      toast.success(
+                        isAll
+                          ? "Planilha do Rateio zerada com sucesso."
+                          : "Quantidades das colunas selecionadas zeradas.",
+                        { id: toastId },
+                      );
                     } catch (err) {
                       console.error(err);
-                      toast.error("Erro ao zerar a planilha. Tente novamente.", { id: toastId });
+                      toast.error("Erro ao zerar. Tente novamente.", { id: toastId });
                     } finally {
                       setResettingMatrix(false);
                     }
