@@ -1,4 +1,5 @@
 import { saveAs } from "file-saver";
+import { toast } from "sonner";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -55,6 +56,7 @@ export async function saveBlobAs(
   }
 
   // Fallback: download tradicional para a pasta de Downloads
+  toast.info("Arquivo salvo na pasta Downloads", { duration: 3000 });
   saveAs(blob, suggestedName);
   return true;
 }

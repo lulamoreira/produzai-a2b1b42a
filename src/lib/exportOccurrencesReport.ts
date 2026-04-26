@@ -1,5 +1,5 @@
 import type * as ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
+import { saveBlobAs } from "./saveBlobAs";
 import type { jsPDF as jsPDFType } from "jspdf";
 type JsPDFCtor = typeof import("jspdf").jsPDF;
 import type { Schedule } from "@/types/schedule";
@@ -568,7 +568,11 @@ export async function exportOccurrencesExcel(data: OccurrenceReportData) {
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
   const fileName = `Ocorrências_${data.campaignName.replace(/[^a-zA-Z0-9À-ú ]/g, "")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
-  saveAs(blob, fileName);
+  await saveBlobAs(blob, fileName, {
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    description: "Planilha Excel (.xlsx)",
+    extension: ".xlsx",
+  });
 }
 
 /* ══════════════════════════════════════════
