@@ -635,10 +635,10 @@ function diffStorePieces(
   stores: { id: string; name?: string | null }[],
 ): RateioDiff {
   const nameMap = new Map<string, string>();
-  for (const p of piecesA) nameMap.set(`p:${p.id}`, p.name || p.code || "Peça");
-  for (const p of piecesB) nameMap.set(`p:${p.id}`, p.name || p.code || "Peça");
-  for (const k of kitsA) nameMap.set(`k:${k.id}`, `Kit: ${k.name || k.code || ""}`);
-  for (const k of kitsB) nameMap.set(`k:${k.id}`, `Kit: ${k.name || k.code || ""}`);
+  for (const p of piecesA) nameMap.set(`p:${p.id}`, p.name || (p.code != null ? String(p.code) : "") || "Peça");
+  for (const p of piecesB) nameMap.set(`p:${p.id}`, p.name || (p.code != null ? String(p.code) : "") || "Peça");
+  for (const k of kitsA) nameMap.set(`k:${k.id}`, `Kit: ${k.name || (k.code != null ? String(k.code) : "") || ""}`);
+  for (const k of kitsB) nameMap.set(`k:${k.id}`, `Kit: ${k.name || (k.code != null ? String(k.code) : "") || ""}`);
 
   const storeNameMap = new Map(stores.map((s) => [s.id, s.name || "Loja"]));
 
