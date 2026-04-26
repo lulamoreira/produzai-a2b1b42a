@@ -1,74 +1,35 @@
-## Pré-validação e diagnóstico de erros na execução de grupos de automação
+# Tooltip de detalhes da loja no Rateio
 
-Hoje, ao clicar em "Executar grupo", o sistema roda cada automação salva em sequência. Se algum problema ocorrer (peça apagada, kit sem componentes, campo customizado removido, erro do banco), o usuário só vê um toast genérico tipo `Erro de execução: …` sem saber qual automação falhou nem como resolver. As únicas opções são desativar o item no grupo ou apagar o template — sem visibilidade do que está quebrado.
+Ao passar o mouse sobre o nome da loja no Rateio, abrir um pequeno painel (HoverCard) com os detalhes. Ao tirar o mouse, o painel some. Sem alterar lógica de negócio, salvamento ou layout da tabela.
 
-### O que será feito
+## O que será exibido no hover
 
-**1. Pré-checagem antes de executar (novo diálogo de revisão)**
+- **Nome** da loja (negrito) e **apelido** (se houver)
+- **Cidade / Estado**
+- **Modelo** (`store_model`) — ex.: "ANTIGO"
+- **Qtd. de vitrines** (`showcase_count`)
+- **Código** da loja (`store_code`), se houver
+- **Campos personalizados** preenchidos (apenas os que tiverem rótulo configurado no cliente E valor na loja) — ex.: `custom_field_1`..`custom_field_10`
 
-Ao clicar em "Executar grupo", abre primeiro um novo diálogo `GroupRunReviewDialog` que valida cada automação habilitada do grupo e mostra:
+Observação: o cliente não tem o campo "tipo de loja" separado de "modelo"; o sistema usa apenas `store_model`. Vou exibir como **Modelo**. Se você quiser um campo "Tipo" distinto, use um dos campos personalizados (já suportado).
 
-- ✅ Automações OK (prontas para rodar)
-- ⚠️ Automações com problemas detectados, listando para cada item problemático:
-  - **Peça apagada** — item referencia `pieceId` que não existe mais em `pieces`
-  - **Kit apagado** — item referencia `kitId` que não existe mais em `kits`
-  - **Kit sem componentes** — kit existe mas `kitPieces` está vazio (causa do warning atual)
-  - **Campo de filtro customizado removido** — `custom_field_X` não está mais configurado no cliente
-  - **Campo base numérico removido** — em modo `by_field`, o campo `base_field` não existe mais nas lojas
-  - **Sem lojas correspondentes ao filtro** — alerta informativo
+## Onde mexer
 
-**2. Ações de recuperação por item problemático**
+Apenas em **`src/components/QuickMatrixEditor.tsx`** (componente que renderiza a tabela do Rateio).
 
-Para cada problema, o usuário poderá:
+1. Adicionar import de `HoverCard`, `HoverCardTrigger`, `HoverCardContent` de `@/components/ui/hover-card`.
+2. No componente `MatrixRow`, adicionar a prop opcional `customFieldLabels` (já existe no nível do componente pai — basta repassar).
+3. Envolver o bloco `<span>{store.name}</span> ... ({nickname})` em um `<HoverCard openDelay={150} closeDelay={80}>` com `<HoverCardTrigger asChild>` aplicado a um `<span className="cursor-default">` contendo o nome, e um `<HoverCardContent side="right" align="start" className="w-72 text-xs">` listando os campos acima em uma grid `label / valor`.
+4. Na chamada de `<MatrixRow ... />` (linha ~805), passar `customFieldLabels={customFieldLabels}`.
 
-- **Substituir item** — abre um seletor de peças/kits válidos para trocar a referência inválida (atualiza `template.items` no banco)
-- **Remover item da automação** — tira só o item problemático mantendo o resto da automação
-- **Desativar automação no grupo** — atalho para o `toggleGroupItem` existente (não roda essa automação agora, mas mantém)
-- **Editar automação** — abre o template no modo de edição para o usuário ajustar manualmente
-- **Ignorar e continuar mesmo assim** — opção para forçar execução com risco de erro
+Apenas leitura: nenhuma mutação, nenhum estilo global, sem alteração nas células de quantidade nem na coluna sticky.
 
-**3. Diálogo de erro detalhado em caso de falha durante a execução**
+## Detalhes técnicos
 
-Mesmo após a revisão, se algum erro ocorrer no banco durante o run (ex.: violação de FK, erro de rede), em vez do toast curto:
+- `HoverCard` (Radix) já está disponível em `src/components/ui/hover-card.tsx`.
+- O `HoverCardContent` usa `z-50` e `pointer-events`, então fecha sozinho ao mover o mouse para fora — exatamente o comportamento pedido.
+- Acesso a campos não tipados (`showcase_count`, `custom_field_N`) via `(store as any)` — mesmo padrão já usado no arquivo (`exportMatrixExcelJS.ts`, `ClientDetail.tsx`).
+- Render condicional: só mostra a linha do campo se o valor não for vazio/nulo.
+- Não muda a coluna sticky, largura, ou clique nas demais células.
 
-- Abre `GroupRunErrorDialog` mostrando:
-  - Nome da automação que falhou
-  - Mensagem do erro do banco (legível, com tradução de erros comuns como FK violation → "peça referenciada não existe mais")
-  - Quantas automações executaram com sucesso antes da falha
-  - Botão "Revisar grupo" (reabre o `GroupRunReviewDialog`)
-  - Botão "Fechar"
-
-**4. Resiliência durante a execução**
-
-- O loop de execução do grupo passa a coletar erros por automação em vez de abortar tudo no primeiro erro.
-- Ao final, mostra resumo: "X automações executadas, Y com erro" com lista das que falharam.
-- Cada falha vai para o `GroupRunErrorDialog` com detalhes.
-
-### Arquivos afetados
-
-- `src/components/MatrixAutomationDialog.tsx` — interceptar `handleRunGroup` para abrir o diálogo de revisão; coletar erros em vez de abortar.
-- `src/components/Matrix/GroupRunReviewDialog.tsx` (novo) — UI de pré-validação e ações de recuperação.
-- `src/components/Matrix/GroupRunErrorDialog.tsx` (novo) — UI de erro detalhado pós-execução.
-- `src/hooks/useAutomationTemplates.ts` — usar o `updateTemplate` existente para persistir substituições/remoções de itens; nenhuma mudança de schema necessária.
-
-### Sem alterações no banco
-
-Tudo é validação no cliente usando os dados já carregados (`pieces`, `kits`, `kitPieces`, `clients` para campos customizados, `stores` para campos numéricos). Persistência usa as mutations já existentes.
-
-### Fluxo visual
-
-```text
-[Botão "Executar grupo"]
-        ↓
-[GroupRunReviewDialog] ─── tudo OK ──→ executa direto
-        │
-        └── há problemas ──→ usuário corrige/desativa/ignora
-                                    ↓
-                          [Confirma execução]
-                                    ↓
-                        executa cada automação
-                                    ↓
-              ┌──── tudo OK ──→ toast de sucesso
-              │
-              └── erros ──→ [GroupRunErrorDialog com detalhes]
-```
+Build será verificado com `tsc --noEmit` ao final.

@@ -6,6 +6,7 @@ import {
 import { Edit3, Save, X, Package, Sparkles, Loader2, Send, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import PieceThumbnail from "@/components/PieceThumbnail";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
@@ -158,6 +159,7 @@ const MatrixRow = React.memo(({
   onSetKitDraft,
   onKeyDown,
   inputRefs,
+  customFieldLabels = [],
 }: {
   store: ClientStore;
   matrixColumns: MatrixCol[];
@@ -171,16 +173,67 @@ const MatrixRow = React.memo(({
   onSetKitDraft: (storeId: string, kitId: string, val: number) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>, key: string) => void;
   inputRefs: React.MutableRefObject<Record<string, HTMLInputElement | null>>;
+  customFieldLabels?: CustomFieldLabel[];
 }) => {
   const getColId = (col: MatrixCol) => col.type === "piece" ? col.data.id : `kit${SEP}${col.data.id}`;
+
+  const storeAny = store as any;
+  const filledCustomFields = customFieldLabels
+    .map((cf) => ({ label: cf.label, value: storeAny[cf.key] }))
+    .filter((f) => f.value !== null && f.value !== undefined && String(f.value).trim() !== "");
+  const locationParts = [store.city, store.state].filter(Boolean).join(" / ");
 
   return (
     <TableRow className={isEmptyStore ? "bg-amber-50/50 dark:bg-amber-950/10" : ""}>
       <TableCell className={`sticky left-0 z-[5] font-medium ${isEmptyStore ? "bg-amber-50/50 dark:bg-amber-950/10" : "bg-card"}`}>
-        <span className="text-sm">{store.name}</span>
-        {store.nickname && store.nickname !== store.name && (
-          <span className="text-[10px] text-muted-foreground ml-1">({store.nickname})</span>
-        )}
+        <HoverCard openDelay={150} closeDelay={80}>
+          <HoverCardTrigger asChild>
+            <span className="cursor-default">
+              <span className="text-sm">{store.name}</span>
+              {store.nickname && store.nickname !== store.name && (
+                <span className="text-[10px] text-muted-foreground ml-1">({store.nickname})</span>
+              )}
+            </span>
+          </HoverCardTrigger>
+          <HoverCardContent side="right" align="start" className="w-72 text-xs p-3">
+            <div className="space-y-2">
+              <div>
+                <div className="font-semibold text-sm leading-tight">{store.name}</div>
+                {store.nickname && store.nickname !== store.name && (
+                  <div className="text-muted-foreground text-[11px]">{store.nickname}</div>
+                )}
+              </div>
+              <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                {locationParts && (
+                  <>
+                    <span className="text-muted-foreground">Localização</span>
+                    <span>{locationParts}</span>
+                  </>
+                )}
+                {store.store_code && (
+                  <>
+                    <span className="text-muted-foreground">Código</span>
+                    <span>{store.store_code}</span>
+                  </>
+                )}
+                {store.store_model && (
+                  <>
+                    <span className="text-muted-foreground">Modelo</span>
+                    <span>{store.store_model}</span>
+                  </>
+                )}
+                <span className="text-muted-foreground">Vitrines</span>
+                <span>{storeAny.showcase_count ?? 0}</span>
+                {filledCustomFields.map((f) => (
+                  <React.Fragment key={f.label}>
+                    <span className="text-muted-foreground">{f.label}</span>
+                    <span className="break-words">{String(f.value)}</span>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          </HoverCardContent>
+        </HoverCard>
         {isEmptyStore && (
           <span className="text-amber-500 ml-1 text-[10px]" title="Loja sem quantidades — preencha manualmente">⚠</span>
         )}
@@ -816,6 +869,7 @@ const QuickMatrixEditor = ({
                     onSetKitDraft={handleSetKitDraft}
                     onKeyDown={handleKeyDown}
                     inputRefs={inputRefs}
+                    customFieldLabels={customFieldLabels}
                   />
                 ))}
                 {/* Totals */}
