@@ -330,7 +330,7 @@ const MatrixRow = React.memo(({
 MatrixRow.displayName = "MatrixRow";
 
 // ─── Draggable column header ──────────────────────────────
-function DraggableColHeader({ id, children }: { id: string; children: React.ReactNode }) {
+function DraggableColHeader({ id, children, stickyTopClass }: { id: string; children: React.ReactNode; stickyTopClass?: string }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -339,7 +339,11 @@ function DraggableColHeader({ id, children }: { id: string; children: React.Reac
     cursor: "grab",
   };
   return (
-    <TableHead ref={setNodeRef} style={style} className="text-center min-w-[100px]">
+    <TableHead
+      ref={setNodeRef}
+      style={style}
+      className={`text-center min-w-[100px] bg-primary/5 ${stickyTopClass ? `sticky ${stickyTopClass} z-[6]` : ""}`}
+    >
       <div className="flex flex-col items-center gap-0.5">
         <div {...attributes} {...listeners} className="cursor-grab hover:text-primary transition-colors">
           <GripVertical className="w-3 h-3 text-muted-foreground" />
@@ -839,30 +843,31 @@ const QuickMatrixEditor = ({
       {/* Quick-edit table */}
       {editing && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <div className="border border-primary/30 rounded-lg overflow-x-auto bg-card shadow-sm">
+          <div className="border border-primary/30 rounded-lg overflow-x-auto bg-card shadow-sm [&>div]:overflow-y-visible">
             <Table>
               <TableHeader>
-                {/* Category group header row */}
+                {/* Category group header row (Localização) */}
                 {categoryGroups.length > 1 && (
                   <TableRow className="bg-muted/30">
-                    <TableHead className="sticky left-0 bg-muted/30 z-[5]" />
+                    <TableHead className="sticky left-0 top-0 bg-muted/30 z-[7]" />
                     {categoryGroups.map((g, i) => (
-                      <TableHead key={i} colSpan={g.span} className="text-center text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-l border-border py-1">
+                      <TableHead key={i} colSpan={g.span} className="sticky top-0 z-[6] bg-muted/30 text-center text-[10px] uppercase tracking-wider text-muted-foreground font-semibold border-l border-border py-1">
                         {g.label}
                       </TableHead>
                     ))}
-                    <TableHead />
+                    <TableHead className="sticky top-0 z-[6] bg-muted/30" />
                   </TableRow>
                 )}
+                {/* Pieces / Kits header row */}
                 <TableRow className="bg-primary/5">
-                  <TableHead className="sticky left-0 bg-primary/5 z-[5] min-w-[180px]">Loja</TableHead>
+                  <TableHead className={`sticky left-0 ${categoryGroups.length > 1 ? "top-[27px]" : "top-0"} bg-primary/5 z-[7] min-w-[180px]`}>Loja</TableHead>
                   <SortableContext items={colIds} strategy={horizontalListSortingStrategy}>
                     {matrixColumns.map((col) => {
                       const colId = getColId(col);
                       if (col.type === "piece") {
                         const p = col.data;
                         return (
-                          <DraggableColHeader key={colId} id={colId}>
+                          <DraggableColHeader key={colId} id={colId} stickyTopClass={categoryGroups.length > 1 ? "top-[27px]" : "top-0"}>
                             <PieceThumbnail imageUrl={p.image_url} name={p.name} size="sm" />
                             <span className="text-xs font-bold">{p.code}</span>
                             <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[120px] whitespace-normal break-words">{p.name}</span>
@@ -872,7 +877,7 @@ const QuickMatrixEditor = ({
                       }
                       const kit = col.data;
                       return (
-                        <DraggableColHeader key={colId} id={colId}>
+                        <DraggableColHeader key={colId} id={colId} stickyTopClass={categoryGroups.length > 1 ? "top-[27px]" : "top-0"}>
                           {kit.image_url ? (
                             <PieceThumbnail imageUrl={kit.image_url} name={kit.name} size="sm" />
                           ) : (
@@ -887,7 +892,7 @@ const QuickMatrixEditor = ({
                       );
                     })}
                   </SortableContext>
-                  <TableHead className="text-center font-bold">Total</TableHead>
+                  <TableHead className={`sticky ${categoryGroups.length > 1 ? "top-[27px]" : "top-0"} z-[6] bg-primary/5 text-center font-bold`}>Total</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
