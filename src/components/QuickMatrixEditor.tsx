@@ -774,7 +774,7 @@ const QuickMatrixEditor = ({
           <Button
             size="sm"
             variant="outline"
-            className="text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+            className="text-xs gap-1.5"
             onClick={startEditing}
           >
             <Edit3 className="w-3.5 h-3.5" /> Edição Rápida
