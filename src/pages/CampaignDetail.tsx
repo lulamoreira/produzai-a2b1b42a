@@ -2438,8 +2438,8 @@ const CampaignDetail = () => {
                   })()}
                 />
 
-                {/* Matrix Table - hidden during quick edit */}
-                {!quickEditActive && <div className="flex-1 min-h-0 overflow-hidden p-3">
+                {/* Matrix Table */}
+                {<div className="flex-1 min-h-0 overflow-hidden p-3">
                   {pieces.length === 0 ? (
                     <div className="text-center py-20">
                       <Package className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
