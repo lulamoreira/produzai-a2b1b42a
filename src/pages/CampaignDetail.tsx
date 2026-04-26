@@ -305,7 +305,7 @@ const CampaignDetail = () => {
   const [activeSection, setActiveSectionState] = useState<string | null>(locationState?.initialSection || sectionFromUrl || null);
   const [pendingInitialFilter, setPendingInitialFilter] = useState<DashboardFilter | null>(null);
   const [pieceSearch, setPieceSearch] = useState("");
-  const [showOnlyNew, setShowOnlyNew] = useState(false);
+  const [newFilter, setNewFilter] = useState<"all" | "new" | "not_new">("all");
 
   // Sync section from URL search params (for sidebar navigation)
   useEffect(() => {
