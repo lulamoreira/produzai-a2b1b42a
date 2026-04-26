@@ -330,7 +330,7 @@ const MatrixRow = React.memo(({
 MatrixRow.displayName = "MatrixRow";
 
 // ─── Draggable column header ──────────────────────────────
-function DraggableColHeader({ id, children }: { id: string; children: React.ReactNode }) {
+function DraggableColHeader({ id, children, stickyTopClass }: { id: string; children: React.ReactNode; stickyTopClass?: string }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -339,7 +339,11 @@ function DraggableColHeader({ id, children }: { id: string; children: React.Reac
     cursor: "grab",
   };
   return (
-    <TableHead ref={setNodeRef} style={style} className="text-center min-w-[100px]">
+    <TableHead
+      ref={setNodeRef}
+      style={style}
+      className={`text-center min-w-[100px] bg-primary/5 ${stickyTopClass ? `sticky ${stickyTopClass} z-[6]` : ""}`}
+    >
       <div className="flex flex-col items-center gap-0.5">
         <div {...attributes} {...listeners} className="cursor-grab hover:text-primary transition-colors">
           <GripVertical className="w-3 h-3 text-muted-foreground" />
