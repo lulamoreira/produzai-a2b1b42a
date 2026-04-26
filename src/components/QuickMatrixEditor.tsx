@@ -769,42 +769,40 @@ const QuickMatrixEditor = ({
   return (
     <>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        {!editing ? (
+      {!editing ? (
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-xs gap-1.5"
+          onClick={startEditing}
+        >
+          <Edit3 className="w-3.5 h-3.5" /> Edição Rápida
+        </Button>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             size="sm"
-            variant="outline"
             className="text-xs gap-1.5"
-            onClick={startEditing}
+            onClick={handleSave}
+            disabled={saving || changedCount === 0}
           >
-            <Edit3 className="w-3.5 h-3.5" /> Edição Rápida
+            <Save className="w-3.5 h-3.5" />
+            {saving ? "Salvando..." : `Salvar (${changedCount})`}
           </Button>
-        ) : (
-          <>
-            <Button
-              size="sm"
-              className="text-xs gap-1.5"
-              onClick={handleSave}
-              disabled={saving || changedCount === 0}
-            >
-              <Save className="w-3.5 h-3.5" />
-              {saving ? "Salvando..." : `Salvar (${changedCount})`}
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-xs gap-1"
-              onClick={cancelEditing}
-              disabled={saving}
-            >
-              <X className="w-3.5 h-3.5" /> Cancelar
-            </Button>
-            <span className="text-[10px] text-muted-foreground hidden sm:inline ml-2">
-              Tab/Enter = próxima · Setas = navegar · Esc = cancelar
-            </span>
-          </>
-        )}
-      </div>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-xs gap-1"
+            onClick={cancelEditing}
+            disabled={saving}
+          >
+            <X className="w-3.5 h-3.5" /> Cancelar
+          </Button>
+          <span className="text-[10px] text-muted-foreground hidden sm:inline ml-2">
+            Tab/Enter = próxima · Setas = navegar · Esc = cancelar
+          </span>
+        </div>
+      )}
 
       {/* AI Prompt */}
       {editing && (
