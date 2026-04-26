@@ -1,35 +1,67 @@
-# Tooltip de detalhes da loja no Rateio
+## Objetivo
 
-Ao passar o mouse sobre o nome da loja no Rateio, abrir um pequeno painel (HoverCard) com os detalhes. Ao tirar o mouse, o painel some. Sem alterar lógica de negócio, salvamento ou layout da tabela.
+Permitir que o usuário escolha entre **zerar toda a planilha** (comportamento atual) ou **zerar apenas as colunas (peças/kits) selecionadas** no diálogo de "Zerar planilha".
 
-## O que será exibido no hover
+## Onde mexer (baixo impacto)
 
-- **Nome** da loja (negrito) e **apelido** (se houver)
-- **Cidade / Estado**
-- **Modelo** (`store_model`) — ex.: "ANTIGO"
-- **Qtd. de vitrines** (`showcase_count`)
-- **Código** da loja (`store_code`), se houver
-- **Campos personalizados** preenchidos (apenas os que tiverem rótulo configurado no cliente E valor na loja) — ex.: `custom_field_1`..`custom_field_10`
+Apenas dois arquivos são tocados — toda a UI nova fica isolada no diálogo existente:
 
-Observação: o cliente não tem o campo "tipo de loja" separado de "modelo"; o sistema usa apenas `store_model`. Vou exibir como **Modelo**. Se você quiser um campo "Tipo" distinto, use um dos campos personalizados (já suportado).
+1. `src/components/Matrix/ResetMatrixDialog.tsx` — adicionar seletor de modo e lista de colunas.
+2. `src/pages/CampaignDetail.tsx` — passar a lista de peças/kits ao diálogo e ajustar o `onConfirm` para receber o que foi selecionado.
 
-## Onde mexer
+Nenhum outro componente, hook, banco ou lógica de exportação é alterado.
 
-Apenas em **`src/components/QuickMatrixEditor.tsx`** (componente que renderiza a tabela do Rateio).
+## Como funcionará
 
-1. Adicionar import de `HoverCard`, `HoverCardTrigger`, `HoverCardContent` de `@/components/ui/hover-card`.
-2. No componente `MatrixRow`, adicionar a prop opcional `customFieldLabels` (já existe no nível do componente pai — basta repassar).
-3. Envolver o bloco `<span>{store.name}</span> ... ({nickname})` em um `<HoverCard openDelay={150} closeDelay={80}>` com `<HoverCardTrigger asChild>` aplicado a um `<span className="cursor-default">` contendo o nome, e um `<HoverCardContent side="right" align="start" className="w-72 text-xs">` listando os campos acima em uma grid `label / valor`.
-4. Na chamada de `<MatrixRow ... />` (linha ~805), passar `customFieldLabels={customFieldLabels}`.
+Ao clicar em **Zerar planilha** (no menu "Mais ações"), o diálogo abre com duas opções via radio:
 
-Apenas leitura: nenhuma mutação, nenhum estilo global, sem alteração nas células de quantidade nem na coluna sticky.
+- **Zerar planilha inteira** *(padrão, igual hoje)* — exige digitar o nome da campanha e apaga tudo.
+- **Zerar apenas colunas selecionadas** — mostra uma lista com checkbox de todas as peças e kits da campanha, agrupados por localização. O usuário marca o que deseja zerar. Confirmar ainda exige digitar o nome da campanha (segurança).
 
-## Detalhes técnicos
+Se nada estiver selecionado no modo "colunas", o botão de confirmar fica desabilitado.
 
-- `HoverCard` (Radix) já está disponível em `src/components/ui/hover-card.tsx`.
-- O `HoverCardContent` usa `z-50` e `pointer-events`, então fecha sozinho ao mover o mouse para fora — exatamente o comportamento pedido.
-- Acesso a campos não tipados (`showcase_count`, `custom_field_N`) via `(store as any)` — mesmo padrão já usado no arquivo (`exportMatrixExcelJS.ts`, `ClientDetail.tsx`).
-- Render condicional: só mostra a linha do campo se o valor não for vazio/nulo.
-- Não muda a coluna sticky, largura, ou clique nas demais células.
+## Fluxo de dados
 
-Build será verificado com `tsc --noEmit` ao final.
+```text
+ResetMatrixDialog
+  ├─ mode: "all" | "columns"
+  ├─ selectedPieceIds: Set<string>
+  ├─ selectedKitIds:   Set<string>
+  └─ onConfirm(payload)
+        payload = { mode: "all" }
+                | { mode: "columns", pieceIds: string[], kitIds: string[] }
+```
+
+No `CampaignDetail.tsx`, o `onConfirm` decide a query:
+
+- `mode === "all"` → mantém o `delete().eq("campaign_id", id)` atual.
+- `mode === "columns"` →
+  - Se houver `pieceIds`: `delete().eq("campaign_id", id).in("piece_id", pieceIds)` na tabela `campaign_store_pieces`.
+  - Se houver `kitIds`: para cada kit, descobrir as peças que o compõem (via `kitPieces`) e somar ao set de `pieceIds` antes do delete (kits não têm linha própria em `campaign_store_pieces` — eles são quantidades calculadas das peças componentes).
+
+Após o delete, invalida `["campaign_store_pieces", campaignId]` (já existe).
+
+## Detalhes de UI
+
+- Radio group no topo do diálogo (shadcn `RadioGroup`).
+- Lista de colunas só aparece quando o modo "colunas" está ativo, com:
+  - Busca rápida por nome.
+  - Botões "Selecionar todas" / "Limpar".
+  - Agrupamento visual por localização (`category`), igual ao quadro.
+  - Checkbox por peça e por kit, com indicador visual (badge) "Kit" para diferenciar.
+- O texto de aviso muda conforme o modo:
+  - "all": mensagem atual ("apaga todas as quantidades…").
+  - "columns": "apaga as quantidades apenas das peças/kits selecionados em todas as lojas."
+- O contador de "registros que serão removidos" continua exibido no modo "all"; no modo "colunas" mostra apenas a contagem de itens selecionados.
+
+## Segurança
+
+- Mantém a confirmação por digitação do nome da campanha em **ambos os modos**.
+- Botão de confirmar só habilita quando: nome confere **e** (modo "all" **ou** pelo menos 1 coluna selecionada).
+- Toast de sucesso diferenciado: "Planilha zerada" vs. "Quantidades das colunas selecionadas zeradas".
+
+## Riscos e mitigação
+
+- **Risco baixo**: a alteração é aditiva — o caminho "all" permanece idêntico ao atual.
+- Kits são virtuais (compostos por peças); deletar kit isolado não faz sentido no banco. Por isso, ao selecionar um kit, zeramos as peças componentes dele. Isso será explicitado num pequeno aviso embaixo da lista quando houver kits selecionados.
+- Nenhuma mudança de schema, RLS ou migração necessária.
