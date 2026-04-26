@@ -54,6 +54,7 @@ import { findDuplicateName, duplicateNameMessage } from "@/lib/duplicateName";
 import { exportCampaignPieces, parsePiecesImport, exportMatrix, parseMatrixImport } from "@/lib/exportMultiClient";
 import ImportWizardDialog from "@/components/ImportWizardDialog";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
+import { exportRateioGrid } from "@/lib/exportRateioGrid";
 import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
 import OccurrencesTab from "@/components/OccurrencesTab";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
@@ -1954,6 +1955,34 @@ const CampaignDetail = () => {
                     >
                       <FileSpreadsheet className="w-4 h-4" />
                       <span className="hidden sm:inline">Exportar Orçamento</span>
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs gap-1.5"
+                      onClick={async () => {
+                        toast.loading("Gerando rateio por loja...", { id: "rateio-grid" });
+                        try {
+                          await exportRateioGrid(
+                            pieces,
+                            kits,
+                            kitPieces,
+                            activeFilteredStores,
+                            qtyMap,
+                            campaign?.name || "Campanha",
+                            client?.name || "",
+                            agency?.name || "",
+                          );
+                          toast.success("Planilha exportada com sucesso!", { id: "rateio-grid" });
+                        } catch (err) {
+                          console.error(err);
+                          toast.error(err instanceof Error ? err.message : "Erro ao exportar rateio.", { id: "rateio-grid" });
+                        }
+                      }}
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                      <span className="hidden sm:inline">Exportar por Loja</span>
                     </Button>
 
                     <DropdownMenu>
