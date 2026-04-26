@@ -843,7 +843,7 @@ const QuickMatrixEditor = ({
       {/* Quick-edit table */}
       {editing && (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <div className="border border-primary/30 rounded-lg overflow-x-auto bg-card shadow-sm [&>div]:overflow-y-visible">
+          <div className="border border-primary/30 rounded-lg bg-card shadow-sm overflow-auto max-h-[calc(100vh-240px)] [&>div]:overflow-visible [&>div]:max-h-none">
             <Table>
               <TableHeader>
                 {/* Category group header row (Localização) */}
