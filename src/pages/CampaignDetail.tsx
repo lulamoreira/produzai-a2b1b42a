@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
+import { Fragment, useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -168,10 +168,10 @@ function StoreDetailsPopover({ store, customFieldLabels }: { store: ClientStore;
             <span className="text-muted-foreground">Localização</span>
             <span className={locationParts ? "" : "italic text-muted-foreground/70"}>{locationParts || "Localização não informada"}</span>
             {filledCustomFields.length > 0 ? filledCustomFields.map((field) => (
-              <React.Fragment key={field.label}>
+              <Fragment key={field.label}>
                 <span className="text-muted-foreground">{field.label}</span>
                 <span className="break-words">{String(field.value)}</span>
-              </React.Fragment>
+              </Fragment>
             )) : (
               <>
                 <span className="text-muted-foreground">Campos personalizados</span>
