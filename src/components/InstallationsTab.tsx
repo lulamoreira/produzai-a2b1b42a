@@ -1439,6 +1439,240 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                     </div>
                   )}
 
+                  {/* Manual Check-in / Check-out — always available, ignores card lock */}
+                  {schedule && canEdit && (() => {
+                    const mIn = schedule.manual_checkin_at;
+                    const mOut = schedule.manual_checkout_at;
+                    const gpsIn = schedule.checkin_timestamp;
+                    const hasAnyCheckin = !!(mIn || gpsIn);
+                    const userName = user?.user_metadata?.display_name || user?.email || "Usuário";
+
+                    const doCheckin = async () => {
+                      if (!user?.id) return;
+                      try {
+                        const { error } = await supabase
+                          .from("campaign_schedules")
+                          .update({
+                            manual_checkin_at: new Date().toISOString(),
+                            manual_checkin_by: user.id,
+                            manual_checkin_by_name: userName,
+                          } as any)
+                          .eq("id", schedule.id);
+                        if (error) throw error;
+                        queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                        logActivity.mutate({
+                          campaign_id: campaignId,
+                          store_id: store.id,
+                          module: "installations",
+                          action: "manual_checkin",
+                          details: `Check-in manual registrado por ${userName}`,
+                        });
+                        logCampaignActivity.mutate({
+                          campaign_id: campaignId,
+                          store_id: store.id,
+                          actor_name: userName,
+                          actor_type: "user",
+                          action: "manual_checkin",
+                          description: `${userName} registrou check-in manual em ${store.name}`,
+                        });
+                        toast.success("Check-in manual registrado");
+                      } catch {
+                        toast.error("Erro ao registrar check-in");
+                      }
+                    };
+
+                    const doCheckout = async () => {
+                      if (!user?.id) return;
+                      if (!hasAnyCheckin) {
+                        toast.error("Registre o check-in antes do check-out");
+                        return;
+                      }
+                      try {
+                        const { error } = await supabase
+                          .from("campaign_schedules")
+                          .update({
+                            manual_checkout_at: new Date().toISOString(),
+                            manual_checkout_by: user.id,
+                            manual_checkout_by_name: userName,
+                          } as any)
+                          .eq("id", schedule.id);
+                        if (error) throw error;
+                        queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                        logActivity.mutate({
+                          campaign_id: campaignId,
+                          store_id: store.id,
+                          module: "installations",
+                          action: "manual_checkout",
+                          details: `Check-out manual registrado por ${userName}`,
+                        });
+                        logCampaignActivity.mutate({
+                          campaign_id: campaignId,
+                          store_id: store.id,
+                          actor_name: userName,
+                          actor_type: "user",
+                          action: "manual_checkout",
+                          description: `${userName} registrou check-out manual em ${store.name}`,
+                        });
+                        toast.success("Check-out manual registrado");
+                      } catch {
+                        toast.error("Erro ao registrar check-out");
+                      }
+                    };
+
+                    const undoCheckin = async () => {
+                      if (!confirm("Desfazer o check-in manual? O check-out também será removido.")) return;
+                      try {
+                        const { error } = await supabase
+                          .from("campaign_schedules")
+                          .update({
+                            manual_checkin_at: null,
+                            manual_checkin_by: null,
+                            manual_checkin_by_name: null,
+                            manual_checkout_at: null,
+                            manual_checkout_by: null,
+                            manual_checkout_by_name: null,
+                          } as any)
+                          .eq("id", schedule.id);
+                        if (error) throw error;
+                        queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                        logActivity.mutate({
+                          campaign_id: campaignId,
+                          store_id: store.id,
+                          module: "installations",
+                          action: "manual_checkin_undone",
+                          details: `${userName} desfez o check-in manual`,
+                        });
+                        toast.success("Check-in desfeito");
+                      } catch {
+                        toast.error("Erro ao desfazer check-in");
+                      }
+                    };
+
+                    const undoCheckout = async () => {
+                      if (!confirm("Desfazer o check-out manual?")) return;
+                      try {
+                        const { error } = await supabase
+                          .from("campaign_schedules")
+                          .update({
+                            manual_checkout_at: null,
+                            manual_checkout_by: null,
+                            manual_checkout_by_name: null,
+                          } as any)
+                          .eq("id", schedule.id);
+                        if (error) throw error;
+                        queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+                        logActivity.mutate({
+                          campaign_id: campaignId,
+                          store_id: store.id,
+                          module: "installations",
+                          action: "manual_checkout_undone",
+                          details: `${userName} desfez o check-out manual`,
+                        });
+                        toast.success("Check-out desfeito");
+                      } catch {
+                        toast.error("Erro ao desfazer check-out");
+                      }
+                    };
+
+                    let durationLabel: string | null = null;
+                    if (mIn && mOut) {
+                      const diffMs = new Date(mOut).getTime() - new Date(mIn).getTime();
+                      if (diffMs > 0) {
+                        const totalMin = Math.floor(diffMs / 60000);
+                        const h = Math.floor(totalMin / 60);
+                        const m = totalMin % 60;
+                        durationLabel = `${h}h ${String(m).padStart(2, "0")}min`;
+                      }
+                    }
+
+                    return (
+                      <div style={{ margin: "12px 0" }}>
+                        <p style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: 6 }}>
+                          REGISTRO MANUAL DE PRESENÇA
+                        </p>
+
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-9 text-xs gap-1.5"
+                            disabled={!!mIn}
+                            onClick={(e) => { e.stopPropagation(); doCheckin(); }}
+                          >
+                            <LogIn className="w-3.5 h-3.5" /> Registrar Check-in
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-9 text-xs gap-1.5"
+                            disabled={!hasAnyCheckin || !!mOut}
+                            onClick={(e) => { e.stopPropagation(); doCheckout(); }}
+                          >
+                            <LogOut className="w-3.5 h-3.5" /> Registrar Check-out
+                          </Button>
+                        </div>
+
+                        <div className="space-y-1 text-xs">
+                          {gpsIn && !mIn && (
+                            <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[var(--s-success)]" />
+                              <span>Check-in via app: {format(new Date(gpsIn), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                            </div>
+                          )}
+                          {mIn && (
+                            <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[var(--s-success)]" />
+                              <span>
+                                Check-in manual: {format(new Date(mIn), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                {schedule.manual_checkin_by_name && ` por ${schedule.manual_checkin_by_name}`}
+                              </span>
+                              {isAdminOrMaster && (
+                                <button
+                                  type="button"
+                                  className="text-[var(--text-muted)] hover:text-[var(--s-danger)] ml-1"
+                                  title="Desfazer check-in"
+                                  onClick={(e) => { e.stopPropagation(); undoCheckin(); }}
+                                >
+                                  <Undo2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {mOut && (
+                            <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-[var(--s-success)]" />
+                              <span>
+                                Check-out manual: {format(new Date(mOut), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                {schedule.manual_checkout_by_name && ` por ${schedule.manual_checkout_by_name}`}
+                              </span>
+                              {isAdminOrMaster && (
+                                <button
+                                  type="button"
+                                  className="text-[var(--text-muted)] hover:text-[var(--s-danger)] ml-1"
+                                  title="Desfazer check-out"
+                                  onClick={(e) => { e.stopPropagation(); undoCheckout(); }}
+                                >
+                                  <Undo2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          )}
+                          {durationLabel && (
+                            <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>Duração: {durationLabel}</span>
+                            </div>
+                          )}
+                          {!mIn && !gpsIn && (
+                            <p className="text-[var(--text-muted)] italic">Nenhum check-in registrado.</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* Install code section — admin/master only */}
                   {isAdminOrMaster && schedule && (
                     <div style={{ margin: "12px 0" }}>
