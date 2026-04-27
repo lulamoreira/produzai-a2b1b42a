@@ -502,3 +502,102 @@ function CampaignAccessRow({ access, clients, agencies, categories, onChangeCate
   );
 }
 
+// Sub-component to fetch and display user's full profile data
+function UserProfileDetails({ userId, agencies, clients }: {
+  userId: string;
+  agencies: Array<{ id: string; name: string }>;
+  clients: Array<{ id: string; name: string; agency_id: string }>;
+}) {
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["user_profile_details", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name, nickname, phone, phone_is_whatsapp, job_title, company, preferred_language, theme_hue, created_at, updated_at, approval_status, name_confirmed, avatar_url, agency_id, client_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 60_000,
+  });
+
+  const { data: email } = useQuery({
+    queryKey: ["user_email", userId],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_user_email" as any, { _user_id: userId });
+      return (data as string) ?? null;
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="px-5 py-3 bg-muted/10 border-b border-border">
+        <p className="text-xs text-muted-foreground">Carregando dados...</p>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="px-5 py-3 bg-muted/10 border-b border-border">
+        <p className="text-xs text-muted-foreground italic">Perfil não encontrado.</p>
+      </div>
+    );
+  }
+
+  const fmtDate = (d?: string | null) =>
+    d ? new Date(d).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—";
+  const langLabel: Record<string, string> = { "pt-BR": "Português (BR)", en: "English", es: "Español" };
+  const agencyName = profile.agency_id ? agencies.find(a => a.id === profile.agency_id)?.name : null;
+  const clientName = profile.client_id ? clients.find(c => c.id === profile.client_id)?.name : null;
+
+  const Field = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) => (
+    <div className="flex items-start gap-2 min-w-0">
+      <div className="mt-0.5 text-muted-foreground shrink-0">{icon}</div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{label}</p>
+        <p className="text-xs text-foreground truncate">{value || <span className="text-muted-foreground italic">—</span>}</p>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="px-5 py-4 bg-muted/10 border-b border-border">
+      <div className="flex items-center gap-2 mb-3">
+        <IdCard className="w-4 h-4 text-primary" />
+        <h4 className="text-sm font-semibold text-foreground">Dados do usuário</h4>
+        <Badge variant="outline" className="text-[10px] ml-auto">
+          {profile.approval_status === "approved" ? "Aprovado" : profile.approval_status === "pending" ? "Pendente" : profile.approval_status || "—"}
+        </Badge>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <Field icon={<UserIcon className="w-3.5 h-3.5" />} label="Nome" value={profile.display_name} />
+        <Field icon={<UserIcon className="w-3.5 h-3.5" />} label="Apelido" value={profile.nickname} />
+        <Field icon={<Mail className="w-3.5 h-3.5" />} label="E-mail" value={email} />
+        <Field
+          icon={<Phone className="w-3.5 h-3.5" />}
+          label="Telefone"
+          value={
+            profile.phone ? (
+              <span className="inline-flex items-center gap-1">
+                {profile.phone}
+                {profile.phone_is_whatsapp && <MessageCircle className="w-3 h-3 text-green-600" />}
+              </span>
+            ) : null
+          }
+        />
+        <Field icon={<Briefcase className="w-3.5 h-3.5" />} label="Cargo" value={profile.job_title} />
+        <Field icon={<Building2 className="w-3.5 h-3.5" />} label="Empresa" value={profile.company} />
+        <Field icon={<Languages className="w-3.5 h-3.5" />} label="Idioma" value={profile.preferred_language ? langLabel[profile.preferred_language] || profile.preferred_language : null} />
+        <Field icon={<Palette className="w-3.5 h-3.5" />} label="Tema (matiz)" value={profile.theme_hue != null ? `${profile.theme_hue}°` : null} />
+        <Field icon={<Building2 className="w-3.5 h-3.5" />} label="Agência vinculada" value={agencyName} />
+        <Field icon={<KeyRound className="w-3.5 h-3.5" />} label="Cliente vinculado" value={clientName} />
+        <Field icon={<Calendar className="w-3.5 h-3.5" />} label="Cadastrado em" value={fmtDate(profile.created_at)} />
+        <Field icon={<Calendar className="w-3.5 h-3.5" />} label="Atualizado em" value={fmtDate(profile.updated_at)} />
+      </div>
+    </div>
+  );
+}
+
