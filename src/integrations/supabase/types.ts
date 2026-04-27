@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      _backup_showcase_count: {
+        Row: {
+          backed_up_at: string
+          backup_id: string
+          client_id: string
+          previous_showcase_count: number | null
+          store_id: string
+        }
+        Insert: {
+          backed_up_at?: string
+          backup_id: string
+          client_id: string
+          previous_showcase_count?: number | null
+          store_id: string
+        }
+        Update: {
+          backed_up_at?: string
+          backup_id?: string
+          client_id?: string
+          previous_showcase_count?: number | null
+          store_id?: string
+        }
+        Relationships: []
+      }
       activity_logs: {
         Row: {
           action: string
