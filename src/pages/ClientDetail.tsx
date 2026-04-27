@@ -1183,10 +1183,40 @@ const ClientDetail = () => {
                     <form onSubmit={handleEditStore} className="space-y-4">
                       {renderStoreFormFields(editStoreForm, setEditStoreForm)}
                       <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} storeName={editStoreForm.nickname || editStoreForm.name} countryCode={client?.country_code} />
-                      <Button type="submit" className="w-full" disabled={updateStore.isPending}>Salvar Alterações</Button>
+                      <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between pt-2">
+                        {isAdminOrMaster && editStoreId ? (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={() => setDeleteStoreDialogOpen(true)}
+                            disabled={updateStore.isPending || deleteStore.isPending}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Excluir loja
+                          </Button>
+                        ) : <span />}
+                        <Button type="submit" disabled={updateStore.isPending} className="sm:flex-1 sm:max-w-xs">
+                          Salvar Alterações
+                        </Button>
+                      </div>
                     </form>
                   </DialogContent>
                 </Dialog>
+
+                <DeleteStoreDialog
+                  open={deleteStoreDialogOpen}
+                  onOpenChange={setDeleteStoreDialogOpen}
+                  storeId={editStoreId}
+                  storeName={editStoreForm.nickname || editStoreForm.name}
+                  isDeleting={deleteStore.isPending}
+                  onConfirm={async () => {
+                    if (!editStoreId) return;
+                    await deleteStore.mutateAsync(editStoreId);
+                    setDeleteStoreDialogOpen(false);
+                    setEditStoreDialogOpen(false);
+                    setEditStoreId(null);
+                  }}
+                />
+
               </div>
             )}
 
