@@ -1233,6 +1233,16 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                     }
                     return <span className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">○ Código não gerado</span>;
                   })()}
+                  {schedule?.manual_checkin_at && (
+                    <span className="flex items-center gap-1 text-[10px] font-medium text-[var(--s-success)]">
+                      ✔ Check-in manual {format(new Date(schedule.manual_checkin_at), "dd/MM HH:mm")}
+                    </span>
+                  )}
+                  {schedule?.manual_checkout_at && (
+                    <span className="flex items-center gap-1 text-[10px] font-medium text-[var(--s-success)]">
+                      ✔ Check-out {format(new Date(schedule.manual_checkout_at), "dd/MM HH:mm")}
+                    </span>
+                  )}
                 </div>
 
                 {/* Row 4: Photo thumbnails + Complete button + Expand toggle */}
