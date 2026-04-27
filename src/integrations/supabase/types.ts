@@ -927,6 +927,12 @@ export type Database = {
           installation_os: string | null
           installation_preference: string | null
           locked: boolean
+          manual_checkin_at: string | null
+          manual_checkin_by: string | null
+          manual_checkin_by_name: string | null
+          manual_checkout_at: string | null
+          manual_checkout_by: string | null
+          manual_checkout_by_name: string | null
           photo_checkin: boolean
           photo_checkin_at: string | null
           reschedule_date: string | null
@@ -980,6 +986,12 @@ export type Database = {
           installation_os?: string | null
           installation_preference?: string | null
           locked?: boolean
+          manual_checkin_at?: string | null
+          manual_checkin_by?: string | null
+          manual_checkin_by_name?: string | null
+          manual_checkout_at?: string | null
+          manual_checkout_by?: string | null
+          manual_checkout_by_name?: string | null
           photo_checkin?: boolean
           photo_checkin_at?: string | null
           reschedule_date?: string | null
@@ -1033,6 +1045,12 @@ export type Database = {
           installation_os?: string | null
           installation_preference?: string | null
           locked?: boolean
+          manual_checkin_at?: string | null
+          manual_checkin_by?: string | null
+          manual_checkin_by_name?: string | null
+          manual_checkout_at?: string | null
+          manual_checkout_by?: string | null
+          manual_checkout_by_name?: string | null
           photo_checkin?: boolean
           photo_checkin_at?: string | null
           reschedule_date?: string | null
