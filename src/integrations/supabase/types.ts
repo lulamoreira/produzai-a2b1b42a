@@ -3962,6 +3962,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_user_email: { Args: { _user_id: string }; Returns: string }
       has_campaign_access: {
         Args: { _campaign_id: string; _user_id: string }
         Returns: boolean
