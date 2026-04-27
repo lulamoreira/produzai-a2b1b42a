@@ -48,6 +48,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import ComboboxInput from "@/components/ComboboxInput";
 import { getStateColor } from "@/lib/stateColors";
+import DeleteStoreDialog from "@/components/DeleteStoreDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -411,6 +413,8 @@ const ClientDetail = () => {
   const [editStoreDialogOpen, setEditStoreDialogOpen] = useState(false);
   const [editStoreForm, setEditStoreForm] = useState({ ...emptyStoreForm });
   const [editStoreId, setEditStoreId] = useState<string | null>(null);
+  const [deleteStoreDialogOpen, setDeleteStoreDialogOpen] = useState(false);
+  const { isAdminOrMaster } = useUserRole();
 
   // Custom field labels
   const [customLabels, setCustomLabels] = useState<Record<string, string>>({
@@ -1179,10 +1183,40 @@ const ClientDetail = () => {
                     <form onSubmit={handleEditStore} className="space-y-4">
                       {renderStoreFormFields(editStoreForm, setEditStoreForm)}
                       <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} storeName={editStoreForm.nickname || editStoreForm.name} countryCode={client?.country_code} />
-                      <Button type="submit" className="w-full" disabled={updateStore.isPending}>Salvar Alterações</Button>
+                      <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between pt-2">
+                        {isAdminOrMaster && editStoreId ? (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={() => setDeleteStoreDialogOpen(true)}
+                            disabled={updateStore.isPending || deleteStore.isPending}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" /> Excluir loja
+                          </Button>
+                        ) : <span />}
+                        <Button type="submit" disabled={updateStore.isPending} className="sm:flex-1 sm:max-w-xs">
+                          Salvar Alterações
+                        </Button>
+                      </div>
                     </form>
                   </DialogContent>
                 </Dialog>
+
+                <DeleteStoreDialog
+                  open={deleteStoreDialogOpen}
+                  onOpenChange={setDeleteStoreDialogOpen}
+                  storeId={editStoreId}
+                  storeName={editStoreForm.nickname || editStoreForm.name}
+                  isDeleting={deleteStore.isPending}
+                  onConfirm={async () => {
+                    if (!editStoreId) return;
+                    await deleteStore.mutateAsync(editStoreId);
+                    setDeleteStoreDialogOpen(false);
+                    setEditStoreDialogOpen(false);
+                    setEditStoreId(null);
+                  }}
+                />
+
               </div>
             )}
 
