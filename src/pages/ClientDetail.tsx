@@ -48,6 +48,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import ComboboxInput from "@/components/ComboboxInput";
 import { getStateColor } from "@/lib/stateColors";
+import DeleteStoreDialog from "@/components/DeleteStoreDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
 import { useLanguage } from "@/hooks/useLanguage";
