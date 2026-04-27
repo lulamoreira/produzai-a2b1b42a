@@ -53,4 +53,11 @@ export type Schedule = {
   checkin_accuracy: number | null;
   checkin_timestamp: string | null;
   checkin_device_info: any;
+  // Manual check-in / check-out (registered by agency staff)
+  manual_checkin_at: string | null;
+  manual_checkin_by: string | null;
+  manual_checkin_by_name: string | null;
+  manual_checkout_at: string | null;
+  manual_checkout_by: string | null;
+  manual_checkout_by_name: string | null;
 };
