@@ -245,6 +245,9 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
       {/* Expanded Content */}
       {expanded && (
         <div className="border-t border-border">
+          {/* Profile Details */}
+          <UserProfileDetails userId={userInfo.user_id} agencies={agencies} clients={clients} />
+
           {/* Role Selector */}
           {canChangeRole && (
             <div className="px-5 py-3 bg-muted/20 border-b border-border flex items-center gap-3">
