@@ -1,48 +1,62 @@
 ## Objetivo
 
-Aplicar texto em **letras maiúsculas (UPPERCASE)** em todos os botões da aplicação, de forma global e consistente, sem precisar editar cada botão individualmente.
+Permitir que **Admin** e **Master** (Global ou de Cliente com acesso) excluam qualquer loja do cadastro do cliente, com diálogo de confirmação que mostra **exatamente** o que será apagado em cascata.
 
-## Abordagem
+## Importante: o que será apagado junto
 
-Adicionar a classe utilitária `uppercase` (Tailwind) diretamente na base do componente `Button` em `src/components/ui/button.tsx`. Esse componente é a fonte única de verdade para todos os ~484 usos de `<Button>` espalhados pelo app, então uma única alteração propaga a mudança para a aplicação inteira.
+A loja no banco já tem `ON DELETE CASCADE` configurado em várias tabelas. Por isso, ao excluir uma loja, são removidos automaticamente:
 
-```text
-src/components/ui/button.tsx
-   └── buttonVariants base classes
-        └── adicionar: "uppercase"
-              ↓
-   afeta TODOS os <Button> do app automaticamente
-```
+- Quantidades de peças por loja (Rateio) em todas as campanhas
+- Status da loja por campanha
+- Ocorrências da loja
+- Agendamentos e histórico de agendamento
+- Fotos de instalação
+- Logs de acesso de instalação
+- Contatos da loja
+- Registros do Loja a Loja, portal da loja, tokens, conformidade, manutenção, reposição
+- Notificações ligadas (mantidas, com store_id zerado)
 
-## Detalhes técnicos
+> Não é possível "apagar só a loja e o Rateio" mantendo o resto órfão sem alterar o esquema do banco. Por isso o diálogo vai **listar a contagem de cada item** e exigir confirmação dupla.
 
-**Arquivo único alterado:** `src/components/ui/button.tsx`
+## O que será feito
 
-Na string base do `cva(...)` (linha 8), adicionar `uppercase` junto às demais classes utilitárias:
+**1. Botão "Excluir loja" no diálogo "Editar Loja"** (`ClientDetail.tsx`)
+- Aparece em vermelho, no rodapé do formulário, ao lado do "Salvar Alterações"
+- Visível apenas para Admin / Master
 
-```ts
-"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium uppercase ring-offset-background ..."
-```
+**2. Diálogo de confirmação dedicado**
+- Título: "Excluir loja **[Nome]**?"
+- Lista com contagem do que será apagado:
+  - X registros de Rateio (quantidades de peças)
+  - Y ocorrências
+  - Z agendamentos
+  - N fotos de instalação
+  - M contatos
+  - K registros de Loja a Loja / portal
+- Campo de texto: digitar o nome da loja para liberar o botão
+- Botão final: "Excluir definitivamente"
 
-**Cobertura:**
-- Todos os botões usando `<Button>` do shadcn (variantes `default`, `outline`, `secondary`, `ghost`, `destructive`, `link` e tamanhos `sm`, `default`, `lg`, `icon`).
-- Inclui botões em diálogos, toolbars, headers, formulários, exportações etc.
+**3. Permissão**
+- Reutiliza o helper `useUserRole` e checa: `role === 'admin'` ou `role === 'master'`
+- Não usa `can_delete_stores` do permission_categories (esse é para perfis Editor/Viewer)
 
-**Não afetado (intencional):**
-- Botões `<button>` HTML puro (raros, geralmente uso interno do shadcn como close de Dialog — apenas ícones).
-- Texto dentro de `<a>`, `<DropdownMenuItem>`, `<TabsTrigger>`, `<Badge>` — esses não são botões e mantêm a capitalização original.
-- Conteúdo não-textual (ícones SVG) é ignorado naturalmente.
+**4. Reaproveita o hook existente**
+- `useDeleteClientStore` em `src/hooks/useMultiClientData.ts` já faz o DELETE; nada novo no banco
+- Após sucesso: invalida queries, fecha diálogos, toast "Loja removida"
 
-**Casos especiais a observar após aplicar:**
-- Botões `size="icon"` continuam OK (sem texto).
-- Caso algum botão exiba conteúdo dinâmico onde maiúsculo fique estranho (ex: nomes próprios dentro de botão), o `uppercase` do CSS pode ser sobrescrito pontualmente com `className="normal-case"`. Se você identificar algum, me avisa que eu ajusto.
+## Arquivos alterados
 
-## Resultado esperado
+- `src/pages/ClientDetail.tsx` — adiciona botão + AlertDialog de confirmação dentro do diálogo "Editar Loja"
+- Novo componente `src/components/DeleteStoreDialog.tsx` — encapsula a contagem prévia (queries paralelas) e a confirmação por digitação
 
-Após a alteração, botões como:
-- "Exportar Rateio" → "EXPORTAR RATEIO"
-- "Automação de Matriz" → "AUTOMAÇÃO DE MATRIZ"
-- "Mais ações" → "MAIS AÇÕES"
-- "Salvar", "Cancelar", "Confirmar" → "SALVAR", "CANCELAR", "CONFIRMAR"
+## Sem mudanças no banco
 
-Tudo de uma só vez, sem alterar nenhum texto fonte (i18n, traduções e labels permanecem em title case no código — apenas a renderização visual fica em maiúsculas).
+Nenhuma migração — o cascade já existe e o hook já existe. Só UI + permissão.
+
+## Como reverter
+
+Se algo der errado, use o histórico de versões:
+
+<lov-actions>
+  <lov-open-history>Ver histórico</lov-open-history>
+</lov-actions>
