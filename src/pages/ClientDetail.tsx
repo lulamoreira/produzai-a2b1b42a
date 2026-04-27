@@ -413,6 +413,8 @@ const ClientDetail = () => {
   const [editStoreDialogOpen, setEditStoreDialogOpen] = useState(false);
   const [editStoreForm, setEditStoreForm] = useState({ ...emptyStoreForm });
   const [editStoreId, setEditStoreId] = useState<string | null>(null);
+  const [deleteStoreDialogOpen, setDeleteStoreDialogOpen] = useState(false);
+  const { isAdminOrMaster } = useUserRole();
 
   // Custom field labels
   const [customLabels, setCustomLabels] = useState<Record<string, string>>({
