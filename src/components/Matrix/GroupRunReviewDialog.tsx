@@ -66,8 +66,8 @@ export function GroupRunReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Play className="w-5 h-5 text-primary" />
             Revisar grupo: {groupName}
@@ -77,7 +77,7 @@ export function GroupRunReviewDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex items-center gap-3 px-1 py-2 border-y">
+        <div className="shrink-0 flex items-center gap-3 px-1 py-2 border-y">
           <Badge variant="outline" className="gap-1.5 bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30">
             <CheckCircle2 className="w-3.5 h-3.5" /> {okCount} sem problemas
           </Badge>
@@ -91,8 +91,8 @@ export function GroupRunReviewDialog({
           )}
         </div>
 
-        <ScrollArea className="flex-1 min-h-0 -mx-6 px-6 max-h-[60vh]">
-          <div className="space-y-3 py-2">
+        <div className="flex-1 min-h-0 -mx-6 overflow-y-auto overscroll-contain px-6 pr-4">
+          <div className="space-y-3 py-2 pr-2">
             {validations.map((v) => (
               <TemplateValidationCard
                 key={v.groupItemId}
@@ -111,9 +111,9 @@ export function GroupRunReviewDialog({
               </p>
             )}
           </div>
-        </ScrollArea>
+        </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="shrink-0 gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
