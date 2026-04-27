@@ -1,62 +1,85 @@
 ## Objetivo
 
-Permitir que **Admin** e **Master** (Global ou de Cliente com acesso) excluam qualquer loja do cadastro do cliente, com diálogo de confirmação que mostra **exatamente** o que será apagado em cascata.
+Permitir que usuários autorizados registrem manualmente o **Check-in** (chegada) e **Check-out** (saída) do instalador em cada loja, diretamente no card da aba **Instalações**, para casos em que o instalador não possui celular ou meio digital próprio. Cada registro grava **data/hora** e **quem fez** o lançamento.
 
-## Importante: o que será apagado junto
+## Regras
 
-A loja no banco já tem `ON DELETE CASCADE` configurado em várias tabelas. Por isso, ao excluir uma loja, são removidos automaticamente:
+- **Check-in manual** e **Check-out manual** são ações **sempre disponíveis**, mesmo que o card esteja **bloqueado** (lock). Igualmente, **upload de fotos** e o **check-in fotográfico** continuam liberados em cards bloqueados (essas três ações nunca são bloqueáveis).
+- Demais campos do card continuam respeitando o lock atual.
+- Quem pode acionar: qualquer usuário com permissão de edição da campanha (mesma regra do botão "Marcar como concluída"). Admin/Master sempre podem.
+- O **check-out** só pode ser feito se houver **check-in** registrado (manual ou via GPS do app do instalador).
+- Cada ação pode ser **desfeita** por Admin/Master (botão pequeno "desfazer"), com confirmação. Reabertura registra log.
+- Toda ação grava em `activity_logs` (log do card) e em `campaign_activity_log` (histórico global da campanha) com nome do usuário.
 
-- Quantidades de peças por loja (Rateio) em todas as campanhas
-- Status da loja por campanha
-- Ocorrências da loja
-- Agendamentos e histórico de agendamento
-- Fotos de instalação
-- Logs de acesso de instalação
-- Contatos da loja
-- Registros do Loja a Loja, portal da loja, tokens, conformidade, manutenção, reposição
-- Notificações ligadas (mantidas, com store_id zerado)
+## Banco de dados (migration)
 
-> Não é possível "apagar só a loja e o Rateio" mantendo o resto órfão sem alterar o esquema do banco. Por isso o diálogo vai **listar a contagem de cada item** e exigir confirmação dupla.
+Adicionar colunas na tabela `campaign_schedules`:
 
-## O que será feito
+- `manual_checkin_at timestamptz`
+- `manual_checkin_by uuid` (referência lógica a `auth.users.id`, sem FK)
+- `manual_checkin_by_name text` (snapshot do nome para histórico)
+- `manual_checkout_at timestamptz`
+- `manual_checkout_by uuid`
+- `manual_checkout_by_name text`
 
-**1. Botão "Excluir loja" no diálogo "Editar Loja"** (`ClientDetail.tsx`)
-- Aparece em vermelho, no rodapé do formulário, ao lado do "Salvar Alterações"
-- Visível apenas para Admin / Master
+Sem CHECK constraints (regra de "checkout exige checkin" é validada no client + log). RLS existente da tabela já cobre.
 
-**2. Diálogo de confirmação dedicado**
-- Título: "Excluir loja **[Nome]**?"
-- Lista com contagem do que será apagado:
-  - X registros de Rateio (quantidades de peças)
-  - Y ocorrências
-  - Z agendamentos
-  - N fotos de instalação
-  - M contatos
-  - K registros de Loja a Loja / portal
-- Campo de texto: digitar o nome da loja para liberar o botão
-- Botão final: "Excluir definitivamente"
+## UI — Card de Instalação (`src/components/InstallationsTab.tsx`)
 
-**3. Permissão**
-- Reutiliza o helper `useUserRole` e checa: `role === 'admin'` ou `role === 'master'`
-- Não usa `can_delete_stores` do permission_categories (esse é para perfis Editor/Viewer)
+Adicionar uma nova seção no corpo expandido do card, logo abaixo do bloco "Check-in de fotos para ocorrências" e antes de "CÓDIGO DE ACESSO":
 
-**4. Reaproveita o hook existente**
-- `useDeleteClientStore` em `src/hooks/useMultiClientData.ts` já faz o DELETE; nada novo no banco
-- Após sucesso: invalida queries, fecha diálogos, toast "Loja removida"
+```text
+REGISTRO MANUAL DE PRESENÇA
+┌──────────────────────────────────────────────────────────┐
+│  [▶ Registrar Check-in]   [■ Registrar Check-out]        │
+│                                                          │
+│  ✔ Check-in manual: 27/04/2026 às 09:14 por João Silva   │
+│  ✔ Check-out manual: 27/04/2026 às 17:22 por João Silva  │
+│  ⏱ Duração: 8h 08min                                     │
+└──────────────────────────────────────────────────────────┘
+```
 
-## Arquivos alterados
+Comportamento:
+- Botão **Check-in**: desabilitado se `manual_checkin_at` (ou `checkin_timestamp` GPS) já existir. Ao clicar → confirma → grava `manual_checkin_at = now()`, `manual_checkin_by = user.id`, `manual_checkin_by_name = display_name`. Toast + invalidate.
+- Botão **Check-out**: desabilitado enquanto não houver check-in (manual OU GPS). Após click → grava `manual_checkout_at`, etc.
+- Linhas de status mostram nome + data/hora formatada (`dd/MM/yyyy 'às' HH:mm`).
+- Pequeno ícone "↺ desfazer" ao lado de cada linha, visível só para Admin/Master, com `confirm()` antes de limpar os campos.
+- Se houver **check-in GPS** do instalador, exibir junto na mesma seção como informativo ("Check-in via app: …") para evitar duplicidade de registro.
 
-- `src/pages/ClientDetail.tsx` — adiciona botão + AlertDialog de confirmação dentro do diálogo "Editar Loja"
-- Novo componente `src/components/DeleteStoreDialog.tsx` — encapsula a contagem prévia (queries paralelas) e a confirmação por digitação
+A seção inteira ignora `isCardLocked` (renderiza e os botões funcionam mesmo bloqueado), seguindo a regra do enunciado.
 
-## Sem mudanças no banco
+## Indicador no cabeçalho do card (linha colapsada)
 
-Nenhuma migração — o cascade já existe e o hook já existe. Só UI + permissão.
+Acrescentar, ao lado do indicador de check-in existente (linha "Row 3"), uma marca curta quando houver check-out:
 
-## Como reverter
+`✔ Check-out 27/04 17:22`
 
-Se algo der errado, use o histórico de versões:
+Pinta em verde se duração ≥ 30min, neutro caso contrário.
 
-<lov-actions>
-  <lov-open-history>Ver histórico</lov-open-history>
-</lov-actions>
+## Filtros e dashboard
+
+- Adicionar opção no filtro "Check-in" existente: `Sem check-out` (lojas com check-in mas sem check-out registrado).
+- KPI opcional no `CampaignStatusDashboard`: contagem de instalações **em andamento** (com check-in e sem check-out). Implementação simples; pode ser entregue numa segunda iteração se preferir.
+
+## Logs
+
+Para cada ação:
+- `activity_logs` (log do card): `action: "manual_checkin" | "manual_checkout" | "manual_checkin_undone" | "manual_checkout_undone"`, com detalhe textual.
+- `campaign_activity_log` (histórico global): descrição "Fulano registrou check-in manual em LOJA X às 09:14".
+
+## Tipos
+
+Atualizar `src/types/schedule.ts` adicionando os 6 campos novos (opcionais, nullables) ao tipo `Schedule`. `types.ts` do Supabase é regenerado automaticamente.
+
+## Arquivos afetados
+
+- **Migration nova** em `supabase/migrations/` — adiciona as 6 colunas.
+- **Edita** `src/types/schedule.ts` — adiciona campos.
+- **Edita** `src/components/InstallationsTab.tsx` — nova seção no card, indicador no cabeçalho, opção de filtro.
+- (Opcional) **Edita** `src/components/CampaignStatusDashboard.tsx` — KPI "Em andamento".
+
+## Fora do escopo
+
+- Não altera fluxo do app/portal do instalador (GPS check-in segue como está).
+- Não altera lógica de bloqueio dos demais campos do card.
+- Não cria relatório dedicado; valores ficam visíveis no card e exportáveis numa próxima iteração se solicitado.
