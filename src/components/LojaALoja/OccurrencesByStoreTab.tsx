@@ -66,7 +66,7 @@ function formatDate(d: string | null) {
   return new Date(d).toLocaleDateString("pt-BR");
 }
 
-export default function OccurrencesByStoreTab({ campaignId }: Props) {
+export default function OccurrencesByStoreTab({ campaignId, permissions }: Props) {
   const { data, isLoading } = useOccurrencesByStore(campaignId);
 
   const [filterStore, setFilterStore] = useState<string>("__all__");
