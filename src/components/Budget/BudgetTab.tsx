@@ -82,6 +82,22 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
 
+  // Materiais de apoio marcados como "compartilhar com fornecedor"
+  const { data: sharedMaterials = [] } = useQuery({
+    queryKey: ["shared_support_materials", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_support_materials")
+        .select("id, title, file_url, file_name")
+        .eq("campaign_id", campaignId)
+        .eq("share_with_supplier", true as never)
+        .not("file_url", "is", null)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
   // Currency-aware formatter (depends on settings)
   const settingsTyped = settings as { currency_code?: string; currency_locked?: boolean } | null | undefined;
   const currencyCode = settingsTyped?.currency_code || "BRL";
