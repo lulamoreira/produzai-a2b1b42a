@@ -75,6 +75,7 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [selectedOccurrence, setSelectedOccurrence] = useState<any | null>(null);
   const [openStores, setOpenStores] = useState<Record<string, boolean>>({});
 
