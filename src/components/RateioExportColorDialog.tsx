@@ -1,4 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+const STORAGE_KEY = "rateio-export:selected-store-fields";
+const PALETTE_STORAGE_KEY = "rateio-export:selected-palette";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -87,10 +90,44 @@ interface Props {
 export default function RateioExportColorDialog({
   open, onOpenChange, onExport, customFieldLabels = [],
 }: Props) {
-  const [selected, setSelected] = useState<ColorPalette>(PRESETS[0]);
+  const [selected, setSelected] = useState<ColorPalette>(() => {
+    try {
+      const saved = localStorage.getItem(PALETTE_STORAGE_KEY);
+      if (saved) {
+        const found = PRESETS.find((p) => p.name === saved);
+        if (found) return found;
+      }
+    } catch {}
+    return PRESETS[0];
+  });
   const [fieldsOpen, setFieldsOpen] = useState(false);
   // null = use defaults; Set = user explicitly chose fields
-  const [chosen, setChosen] = useState<Set<StoreFieldKey> | null>(null);
+  const [chosen, setChosen] = useState<Set<StoreFieldKey> | null>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const arr = JSON.parse(raw) as StoreFieldKey[];
+        if (Array.isArray(arr) && arr.length > 0) return new Set(arr);
+      }
+    } catch {}
+    return null;
+  });
+
+  // Persist palette
+  useEffect(() => {
+    try { localStorage.setItem(PALETTE_STORAGE_KEY, selected.name); } catch {}
+  }, [selected]);
+
+  // Persist field selection (null/empty → remove key, restoring default)
+  useEffect(() => {
+    try {
+      if (chosen === null || chosen.size === 0) {
+        localStorage.removeItem(STORAGE_KEY);
+      } else {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(chosen)));
+      }
+    } catch {}
+  }, [chosen]);
 
   const allFields: StoreFieldDef[] = useMemo(
     () => [...STANDARD_FIELDS, ...customFieldLabels],
