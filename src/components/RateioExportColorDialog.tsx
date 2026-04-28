@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, Check } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Download, Check, ChevronDown, ChevronRight } from "lucide-react";
 
 export interface ColorPalette {
   name: string;
@@ -11,6 +15,51 @@ export interface ColorPalette {
   secondary: string;
   light: string;
 }
+
+// All store fields available for export
+export type StoreFieldKey =
+  | "name" | "nickname" | "store_code" | "store_model" | "city" | "state"
+  | "country" | "showcase_count" | "cnpj" | "state_registration"
+  | "zip_code" | "street" | "number" | "complement" | "neighborhood"
+  | "phone" | "email" | "manager_name" | "observations"
+  | "custom_field_1" | "custom_field_2" | "custom_field_3" | "custom_field_4"
+  | "custom_field_5" | "custom_field_6" | "custom_field_7" | "custom_field_8"
+  | "custom_field_9" | "custom_field_10";
+
+export interface StoreFieldDef {
+  key: StoreFieldKey;
+  label: string;
+}
+
+// Default fields = current behavior (NOME DA LOJA, CIDADE, UF, VITRINES)
+export const DEFAULT_STORE_FIELDS: StoreFieldDef[] = [
+  { key: "name", label: "NOME DA LOJA" },
+  { key: "city", label: "CIDADE" },
+  { key: "state", label: "UF" },
+  { key: "showcase_count", label: "VITRINES" },
+];
+
+const STANDARD_FIELDS: StoreFieldDef[] = [
+  { key: "name", label: "Nome da Loja" },
+  { key: "nickname", label: "Apelido" },
+  { key: "store_code", label: "Código da Loja" },
+  { key: "store_model", label: "Modelo" },
+  { key: "city", label: "Cidade" },
+  { key: "state", label: "UF" },
+  { key: "country", label: "País" },
+  { key: "showcase_count", label: "Vitrines" },
+  { key: "cnpj", label: "CNPJ" },
+  { key: "state_registration", label: "Insc. Estadual" },
+  { key: "zip_code", label: "CEP" },
+  { key: "street", label: "Rua" },
+  { key: "number", label: "Número" },
+  { key: "complement", label: "Complemento" },
+  { key: "neighborhood", label: "Bairro" },
+  { key: "phone", label: "Telefone" },
+  { key: "email", label: "E-mail" },
+  { key: "manager_name", label: "Gerente" },
+  { key: "observations", label: "Observações" },
+];
 
 const PRESETS: ColorPalette[] = [
   { name: "Azul oceano",   primary: "#1A3A5C", secondary: "#2E6DA4", light: "#D6E8F7" },
@@ -26,19 +75,61 @@ const PRESETS: ColorPalette[] = [
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onExport: (palette: ColorPalette) => void;
+  /** Custom field labels from the client (only those with a configured label appear) */
+  customFieldLabels?: Array<{ key: StoreFieldKey; label: string }>;
+  /**
+   * If `selectedFields` is undefined → use DEFAULT_STORE_FIELDS (current behavior).
+   * If provided → use exactly these fields/order in the export.
+   */
+  onExport: (palette: ColorPalette, selectedFields?: StoreFieldDef[]) => void;
 }
 
-export default function RateioExportColorDialog({ open, onOpenChange, onExport }: Props) {
+export default function RateioExportColorDialog({
+  open, onOpenChange, onExport, customFieldLabels = [],
+}: Props) {
   const [selected, setSelected] = useState<ColorPalette>(PRESETS[0]);
+  const [fieldsOpen, setFieldsOpen] = useState(false);
+  // null = use defaults; Set = user explicitly chose fields
+  const [chosen, setChosen] = useState<Set<StoreFieldKey> | null>(null);
+
+  const allFields: StoreFieldDef[] = useMemo(
+    () => [...STANDARD_FIELDS, ...customFieldLabels],
+    [customFieldLabels],
+  );
+
+  const toggle = (key: StoreFieldKey) => {
+    setChosen((prev) => {
+      const next = new Set(prev ?? []);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const selectAll = () => setChosen(new Set(allFields.map((f) => f.key)));
+  const clearAll = () => setChosen(new Set());
+  const resetDefault = () => setChosen(null);
+
+  const handleExport = () => {
+    if (chosen === null || chosen.size === 0) {
+      onExport(selected, undefined); // default behavior
+    } else {
+      // Preserve the order from allFields
+      const ordered = allFields.filter((f) => chosen.has(f.key));
+      onExport(selected, ordered);
+    }
+  };
+
+  const chosenCount = chosen?.size ?? 0;
+  const usingDefaults = chosen === null || chosen.size === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Exportar Rateio</DialogTitle>
           <DialogDescription>
-            Escolha a paleta de cores da planilha antes de exportar.
+            Escolha a paleta de cores e, opcionalmente, os campos das lojas.
           </DialogDescription>
         </DialogHeader>
 
@@ -83,9 +174,62 @@ export default function RateioExportColorDialog({ open, onOpenChange, onExport }
           </div>
         </div>
 
+        {/* Store fields selector */}
+        <Collapsible open={fieldsOpen} onOpenChange={setFieldsOpen}>
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-border bg-muted/40 hover:bg-muted/60 transition-colors text-xs"
+            >
+              <span className="flex items-center gap-1.5 font-medium">
+                {fieldsOpen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                Campos das lojas a exportar
+              </span>
+              <span className="text-muted-foreground">
+                {usingDefaults ? "Padrão (4 campos)" : `${chosenCount} selecionado${chosenCount === 1 ? "" : "s"}`}
+              </span>
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2">
+            <div className="flex gap-1.5 mb-2">
+              <Button type="button" size="sm" variant="outline" className="h-7 text-[11px]" onClick={selectAll}>
+                Marcar todos
+              </Button>
+              <Button type="button" size="sm" variant="outline" className="h-7 text-[11px]" onClick={clearAll}>
+                Desmarcar todos
+              </Button>
+              <Button type="button" size="sm" variant="ghost" className="h-7 text-[11px] ml-auto" onClick={resetDefault}>
+                Usar padrão
+              </Button>
+            </div>
+            <ScrollArea className="h-48 rounded-md border border-border p-2">
+              <div className="grid grid-cols-2 gap-1.5">
+                {allFields.map((f) => {
+                  const checked = chosen?.has(f.key) ?? false;
+                  return (
+                    <label
+                      key={f.key}
+                      className="flex items-center gap-2 text-xs px-1.5 py-1 rounded hover:bg-muted cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => toggle(f.key)}
+                      />
+                      <span className="leading-tight">{f.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+            <p className="text-[10px] text-muted-foreground mt-1.5">
+              Se nenhum campo for marcado, exportamos os 4 campos padrão (Nome, Cidade, UF, Vitrines).
+            </p>
+          </CollapsibleContent>
+        </Collapsible>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={() => onExport(selected)} className="gap-1.5">
+          <Button onClick={handleExport} className="gap-1.5">
             <Download className="w-3.5 h-3.5" />
             Exportar
           </Button>

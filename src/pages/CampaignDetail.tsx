@@ -2347,11 +2347,16 @@ const CampaignDetail = () => {
                 <RateioExportColorDialog
                   open={budgetExportDialogOpen}
                   onOpenChange={setBudgetExportDialogOpen}
-                  onExport={async (palette: ColorPalette) => {
+                  customFieldLabels={Array.from({ length: 10 }, (_, idx) => {
+                    const i = idx + 1;
+                    const label = (client as any)?.[`custom_field_${i}_label`];
+                    return label ? { key: `custom_field_${i}` as any, label } : null;
+                  }).filter((x): x is { key: any; label: string } => x !== null)}
+                  onExport={async (palette: ColorPalette, selectedFields) => {
                     setBudgetExportDialogOpen(false);
                     toast.loading("Gerando planilha com imagens...", { id: "matrix-excel" });
                     try {
-                      await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces, palette, pieceLocations, pieceSubLocations, pieces, agency?.name, client?.name);
+                      await exportMatrixExcelJS(activeFilteredStores, matrixPieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces, palette, pieceLocations, pieceSubLocations, pieces, agency?.name, client?.name, selectedFields);
                       toast.success("Planilha exportada com sucesso!", { id: "matrix-excel" });
                     } catch (err) {
                       console.error(err);
