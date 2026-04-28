@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
+import { getStateColor } from "@/lib/stateColors";
 
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -2608,6 +2609,14 @@ const CampaignDetail = () => {
                                 <TableCell className="sticky left-0 bg-card z-[5] font-medium">
                                   <div>
                                     <span className="text-sm">{store.name}</span>
+                                    {store.state && (
+                                      <span
+                                        className="ml-1.5 inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                                        style={{ backgroundColor: getStateColor(store.state).bg, color: getStateColor(store.state).text }}
+                                      >
+                                        {store.state}
+                                      </span>
+                                    )}
                                     <StoreDetailsPopover store={store} customFieldLabels={storeDetailCustomFieldLabels} />
                                     {store.nickname && store.nickname !== store.name && (
                                       <span className="text-[10px] text-muted-foreground ml-1">({store.nickname})</span>
