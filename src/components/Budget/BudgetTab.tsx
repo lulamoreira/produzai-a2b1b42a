@@ -169,35 +169,58 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     return map;
   }, [kits, kitPieces, pieceTotals]);
 
-  // ─── Compute supplier grand totals (per-piece pricing) ─
-  const supplierTotals = useMemo(() => {
-    const result: Record<string, number> = {};
+  // ─── Compute supplier totals (per-piece pricing) ──────
+  // Partial: para TODOS os fornecedores, mesmo em preenchimento.
+  // Final (supplierTotals): apenas status "enviado".
+  const supplierPartialTotals = useMemo(() => {
+    const result: Record<string, { total: number; installation: number; freight: number; pricedPieces: number; totalPiecesNeeded: number; pct: number }> = {};
     suppliers.forEach((sup) => {
-      if (sup.status !== "enviado") return;
       let total = 0;
-      // Standalone pieces
-      prices.filter((pr) => pr.supplier_id === sup.id && pr.piece_id).forEach((pr) => {
-        // Check if this piece is standalone or part of a kit
-        const piece = pieces.find((p) => p.id === pr.piece_id);
-        if (piece && !piece.kit_only) {
-          const qty = pieceTotals[pr.piece_id!] || 0;
-          total += (Number(pr.unit_price) || 0) * qty;
+      let pricedPieces = 0;
+      let totalPiecesNeeded = 0;
+      const counted = new Set<string>();
+      pieces.filter((p) => !p.kit_only).forEach((piece) => {
+        const qty = pieceTotals[piece.id] || 0;
+        if (qty <= 0) return;
+        totalPiecesNeeded += 1;
+        const pr = prices.find((x) => x.supplier_id === sup.id && x.piece_id === piece.id);
+        if (pr && Number(pr.unit_price) > 0) {
+          total += Number(pr.unit_price) * qty;
+          pricedPieces += 1;
+          counted.add(piece.id);
         }
-        // Kit pieces: find in kitPieceTotals
-        Object.values(kitPieceTotals).forEach((kpItems) => {
-          const match = kpItems.find((kpi) => kpi.pieceId === pr.piece_id);
-          if (match) {
-            total += (Number(pr.unit_price) || 0) * match.qty;
+      });
+      Object.values(kitPieceTotals).forEach((kpItems) => {
+        kpItems.forEach((kpi) => {
+          if (counted.has(kpi.pieceId)) return;
+          if (kpi.qty <= 0) return;
+          totalPiecesNeeded += 1;
+          const pr = prices.find((x) => x.supplier_id === sup.id && x.piece_id === kpi.pieceId);
+          if (pr && Number(pr.unit_price) > 0) {
+            total += Number(pr.unit_price) * kpi.qty;
+            pricedPieces += 1;
+            counted.add(kpi.pieceId);
           }
         });
       });
       const ec = extraCosts.find((e) => e.supplier_id === sup.id);
-      total += Number(ec?.installation_value) || 0;
-      total += Number(ec?.freight_value) || 0;
-      result[sup.id] = total;
+      const installation = Number(ec?.installation_value) || 0;
+      const freight = Number(ec?.freight_value) || 0;
+      total += installation + freight;
+      const pct = totalPiecesNeeded > 0 ? Math.round((pricedPieces / totalPiecesNeeded) * 100) : 0;
+      result[sup.id] = { total, installation, freight, pricedPieces, totalPiecesNeeded, pct };
     });
     return result;
   }, [suppliers, prices, extraCosts, pieceTotals, kitPieceTotals, pieces]);
+
+  const supplierTotals = useMemo(() => {
+    const result: Record<string, number> = {};
+    suppliers.forEach((sup) => {
+      if (sup.status !== "enviado") return;
+      result[sup.id] = supplierPartialTotals[sup.id]?.total ?? 0;
+    });
+    return result;
+  }, [suppliers, supplierPartialTotals]);
 
   const bestSupplier = useMemo(() => {
     let best: { id: string; total: number; name: string } | null = null;
