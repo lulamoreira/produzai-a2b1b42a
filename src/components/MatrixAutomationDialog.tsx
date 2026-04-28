@@ -1078,7 +1078,10 @@ export default function MatrixAutomationDialog({
 
               {/* Multi-filter section */}
               <div>
-                <Label className="text-sm font-semibold mb-2 block">Filtros de Lojas</Label>
+                <Label className="text-sm font-semibold mb-1 block">Filtros de Lojas</Label>
+                <p className="text-[11px] text-muted-foreground mb-2">
+                  💡 Deixe os filtros de lojas vazios para aplicar a <span className="font-semibold text-foreground">todas as lojas</span>{kind === "by_field" ? " que tiverem valor no campo base" : ""}.
+                </p>
 
                 {filterGroup.filtros.map((filtro, index) => {
                   const fieldValues = getFieldValues(filtro.campo);
@@ -1211,9 +1214,6 @@ export default function MatrixAutomationDialog({
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-1.5">
-                  💡 Deixe os filtros vazios para aplicar a <span className="font-semibold text-foreground">todas as lojas</span>{kind === "by_field" ? " que tiverem valor no campo base" : ""}.
-                </p>
               </div>
 
               {/* Items selection */}
