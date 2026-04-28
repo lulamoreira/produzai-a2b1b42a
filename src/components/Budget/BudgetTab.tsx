@@ -345,7 +345,7 @@ ${sharedMaterials.map((m: any) => `🔸 ${m.title || m.file_name}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 👉 ${portalUrl}
-${deadlineBlock}${timelineBlock}
+${deadlineBlock}${timelineBlock}${materialsBlock}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 💼 Este convite foi enviado em nome da ${agencyName}.
