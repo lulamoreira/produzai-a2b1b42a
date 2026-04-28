@@ -1,3 +1,6 @@
+// @deprecated [REMOVE-CANDIDATE] Módulo antigo de Ocorrências — desabilitado da UI.
+// Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
+
 import { useParams } from "react-router-dom";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";

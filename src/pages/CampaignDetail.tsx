@@ -1507,12 +1507,13 @@ const CampaignDetail = () => {
               }}
             />
 
-            {/* Pending occurrences dashboard button */}
+            {/* [REMOVE-CANDIDATE] Botão "Pendências" do módulo antigo de Ocorrências — desabilitado.
             {canViewOccurrences && (
               <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => setPendingDashOpen(true)}>
                 <AlertTriangle className="w-3.5 h-3.5" /> Pendências
               </Button>
             )}
+            */}
 
             <SupportMaterialsSection campaignId={campaignId!} canEdit={canEditCampaign} />
 
@@ -1523,7 +1524,8 @@ const CampaignDetail = () => {
                 { key: "installations", label: t("modules.installations"), icon: Camera, visible: canViewInstallations, color: "#7B5E3A" },
                 { key: "loja_a_loja", label: t("modules.loja_a_loja"), icon: LayoutGrid, visible: lalPerms.canViewModule, color: "#5B7B5E", badge: "Beta" },
                 { key: "stores", label: t("modules.stores"), icon: Store, visible: canViewStores || canViewCampaignStores, color: "#6B4F2E" },
-                { key: "occurrences", label: t("modules.occurrences"), icon: AlertTriangle, visible: canViewOccurrences, color: "#7A3B2E" },
+                // [REMOVE-CANDIDATE] Card do módulo antigo de Ocorrências — desabilitado da UI.
+                // { key: "occurrences", label: t("modules.occurrences"), icon: AlertTriangle, visible: canViewOccurrences, color: "#7A3B2E" },
                 { key: "budgets", label: t("modules.budgets"), icon: DollarSign, visible: isAdmin, color: "#4A5568" },
                 { key: "pieces", label: t("modules.pieces"), icon: LayoutList, visible: canViewPieces, color: "#A07850" },
                 { key: "matrix", label: t("modules.matrix"), icon: Grid3X3, visible: canViewCampaignStores, color: "#8C6F4E" },

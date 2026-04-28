@@ -1,3 +1,6 @@
+// @deprecated [REMOVE-CANDIDATE] Módulo antigo de Ocorrências — desabilitado da UI.
+// Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
+
 /**
  * Parse a date-only string (YYYY-MM-DD) into a local-midnight Date,
  * avoiding the UTC-parse pitfall of `new Date("YYYY-MM-DD")`.

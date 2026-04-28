@@ -1,3 +1,6 @@
+// @deprecated [REMOVE-CANDIDATE] Módulo antigo de Ocorrências — desabilitado da UI.
+// Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
+
 import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
