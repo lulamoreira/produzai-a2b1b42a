@@ -6,7 +6,7 @@ import { compressImage } from "@/lib/compressImage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Plus, Upload, Trash2, FileText, Image, File, Download, Pencil, Check, X, ExternalLink, Video } from "lucide-react";
+import { Plus, Upload, Trash2, FileText, Image, File, Download, Pencil, Check, X, ExternalLink, Video, Share2 } from "lucide-react";
 
 interface SupportMaterial {
   id: string;
@@ -16,6 +16,7 @@ interface SupportMaterial {
   file_name: string | null;
   file_type: string | null;
   display_order: number;
+  share_with_supplier: boolean;
   created_at: string;
 }
 
