@@ -388,6 +388,52 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
           </a>
         </div>
       )}
+
+      {/* Check-in fotográfico da loja */}
+      <Dialog open={checkinOpen} onOpenChange={setCheckinOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Check-in fotográfico — {storeName}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-2">
+            {checkinQuery.isLoading ? (
+              <div className="flex items-center justify-center py-12 text-muted-foreground">
+                <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando fotos...
+              </div>
+            ) : (checkinQuery.data ?? []).length === 0 ? (
+              <div className="text-center py-10 text-sm text-muted-foreground">
+                Nenhuma foto de check-in registrada para esta loja nesta campanha.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {(checkinQuery.data ?? []).map((p: any) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setLightboxUrl(p.photo_url)}
+                    className="group relative aspect-square rounded-md overflow-hidden border border-border hover:border-primary transition"
+                    title={p.caption || p.category || ""}
+                  >
+                    <img
+                      src={getThumbnailUrl(p.photo_url, 400)}
+                      alt={p.caption || ""}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                    />
+                    {(p.caption || p.category) && (
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[10px] text-white text-left">
+                        <div className="truncate">{p.caption || p.category}</div>
+                        <div className="opacity-70">{formatDateTime(p.created_at)}</div>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
