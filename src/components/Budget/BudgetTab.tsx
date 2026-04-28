@@ -643,6 +643,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {suppliers.map((sup) => {
               const st = STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
+              const partial = supplierPartialTotals[sup.id];
+              const inProgress = partial && partial.pricedPieces > 0 && sup.status !== "enviado";
               return (
                 <Card key={sup.id} className="relative">
                   <CardContent className="pt-4 pb-3 space-y-2">
@@ -668,6 +670,40 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                         </p>
                       )}
                     </div>
+                    {/* Resumo de preenchimento (visível mesmo em andamento) */}
+                    {partial && partial.totalPiecesNeeded > 0 && (
+                      <div className="rounded-md border border-border/60 bg-muted/30 p-2 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Preenchimento</span>
+                          <span className="font-semibold text-foreground">
+                            {partial.pricedPieces}/{partial.totalPiecesNeeded} ({partial.pct}%)
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={cn("h-full transition-all", sup.status === "enviado" ? "bg-emerald-500" : "bg-primary")}
+                            style={{ width: `${partial.pct}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] pt-0.5">
+                          <span className="text-muted-foreground">
+                            {sup.status === "enviado" ? "Total" : inProgress ? "Parcial" : "Sem valores"}
+                          </span>
+                          <span className={cn(
+                            "font-bold",
+                            sup.status === "enviado" ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
+                          )}>
+                            {fmtCurrency(partial.total)}
+                          </span>
+                        </div>
+                        {(partial.installation > 0 || partial.freight > 0) && (
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>Frete + Inst.</span>
+                            <span>{fmtCurrency(partial.installation + partial.freight)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {/* Actions */}
                     <div className="flex items-center gap-1 pt-1">
                       <Button
@@ -710,6 +746,83 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               );
             })}
           </div>
+        )}
+
+        {/* ═══ COMPARATIVO DE FORNECEDORES (mesmo em preenchimento) ═══ */}
+        {suppliers.length > 0 && (
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">Comparativo lado a lado</h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Acompanhe o preenchimento parcial de todos os fornecedores em tempo real.
+                  </p>
+                </div>
+                {bestSupplier && (
+                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px]">
+                    Melhor proposta enviada: {bestSupplier.name}
+                  </Badge>
+                )}
+              </div>
+              <div className="overflow-x-auto">
+                <Table className="text-xs">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Fornecedor</TableHead>
+                      <TableHead className="text-xs">Status</TableHead>
+                      <TableHead className="text-xs text-center">Preenchimento</TableHead>
+                      <TableHead className="text-xs text-right">Σ Peças</TableHead>
+                      <TableHead className="text-xs text-right">Instalação</TableHead>
+                      <TableHead className="text-xs text-right">Frete</TableHead>
+                      <TableHead className="text-xs text-right">Total Geral</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {suppliers.map((sup) => {
+                      const st = STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
+                      const p = supplierPartialTotals[sup.id];
+                      if (!p) return null;
+                      const piecesTotal = p.total - p.installation - p.freight;
+                      const isBest = bestSupplier?.id === sup.id;
+                      return (
+                        <TableRow key={sup.id} className={cn(isBest && "bg-emerald-50/60 dark:bg-emerald-900/10")}>
+                          <TableCell className="font-medium text-foreground">
+                            <button onClick={() => setDetailSupplier(sup.id)} className="hover:underline text-left">
+                              {sup.company_name}
+                            </button>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={cn("text-[10px]", st.color)}>{st.label}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col items-center gap-1 min-w-[100px]">
+                              <span className="text-[11px] font-medium">{p.pricedPieces}/{p.totalPiecesNeeded} · {p.pct}%</span>
+                              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className={cn("h-full", sup.status === "enviado" ? "bg-emerald-500" : "bg-primary")}
+                                  style={{ width: `${p.pct}%` }}
+                                />
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">{piecesTotal > 0 ? fmtCurrency(piecesTotal) : "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums">{p.installation > 0 ? fmtCurrency(p.installation) : "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums">{p.freight > 0 ? fmtCurrency(p.freight) : "—"}</TableCell>
+                          <TableCell className={cn(
+                            "text-right tabular-nums font-semibold",
+                            isBest && "text-emerald-600 dark:text-emerald-400"
+                          )}>
+                            {p.total > 0 ? fmtCurrency(p.total) : "—"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 
