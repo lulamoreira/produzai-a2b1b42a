@@ -981,13 +981,13 @@ const SupplierPortal = () => {
               </Button>
             </div>
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="min-w-[760px] table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[240px] sticky left-0 z-[5] bg-card">Item</TableHead>
-                    <TableHead className="text-center w-[90px]">Qtd Total</TableHead>
-                    <TableHead className="text-center w-[150px] bg-primary/5 text-primary font-semibold">Preço Unitário ({currencyCode})</TableHead>
-                    <TableHead className="text-right w-[140px]">Total da Peça</TableHead>
+                    <TableHead className="sticky left-0 z-[5] bg-card w-[46%] min-w-[300px]">Item</TableHead>
+                    <TableHead className="text-center w-[12%] min-w-[92px]">Qtd Total</TableHead>
+                    <TableHead className="text-center w-[24%] min-w-[190px] bg-primary/5 text-primary font-semibold">Preço Unitário ({currencyCode})</TableHead>
+                    <TableHead className="text-right w-[18%] min-w-[150px]">Total da Peça</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1069,25 +1069,31 @@ const SupplierPortal = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-center font-mono text-sm">{row.totalQty}</TableCell>
-                          <TableCell className="text-center bg-primary/5">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0,00"
-                              className="w-[130px] mx-auto text-right border-primary/40 focus-visible:ring-primary/40 bg-background"
-                              disabled={isLocked}
-                              value={unitPrice ?? ""}
-                              onFocus={markFilling}
-                              onChange={(e) => {
-                                if (!row.pieceId) return;
-                                const val = e.target.value === "" ? null : parseFloat(e.target.value);
-                                setPrices((prev) => ({ ...prev, [row.pieceId!]: val }));
-                              }}
-                              onBlur={() => {
-                                if (row.pieceId) savePrice(row.pieceId, prices[row.pieceId] ?? null);
-                              }}
-                            />
+                          <TableCell className="bg-primary/5 px-3">
+                            <div className="flex min-w-[160px] items-center rounded-md border border-primary/40 bg-background shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
+                              <span className="px-2 text-xs font-medium text-muted-foreground">{currencyCode}</span>
+                              <Input
+                                inputMode="decimal"
+                                placeholder="0,00"
+                                className="h-10 min-w-0 flex-1 border-0 bg-transparent px-2 text-right font-semibold text-foreground shadow-none focus-visible:ring-0"
+                                disabled={isLocked}
+                                value={row.pieceId ? priceInputs[row.pieceId] ?? "" : ""}
+                                onFocus={markFilling}
+                                onChange={(e) => {
+                                  if (!row.pieceId) return;
+                                  const raw = e.target.value.replace(/[^0-9.,]/g, "");
+                                  const val = parsePriceInput(raw);
+                                  setPriceInputs((prev) => ({ ...prev, [row.pieceId!]: raw }));
+                                  setPrices((prev) => ({ ...prev, [row.pieceId!]: val }));
+                                }}
+                                onBlur={() => {
+                                  if (!row.pieceId) return;
+                                  const value = prices[row.pieceId] ?? null;
+                                  setPriceInputs((prev) => ({ ...prev, [row.pieceId!]: priceToInput(value) }));
+                                  savePrice(row.pieceId, value);
+                                }}
+                              />
+                            </div>
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm font-semibold text-primary">
                             {unitPrice != null ? fmt(lineTotal) : <span className="text-muted-foreground font-normal">—</span>}
