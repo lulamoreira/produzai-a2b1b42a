@@ -562,6 +562,7 @@ export default function MatrixAutomationDialog({
     items: SelectedItem[],
     k: AutomationKind = "fixed",
     bf: string | null = null,
+    op: Operation = "multiply",
   ): Promise<{ updated: number; kept: number; zeroed: number }> => {
     const matching = filtrarLojas(stores, fg);
     const matchingIds = new Set(matching.map(s => s.id));
@@ -573,7 +574,7 @@ export default function MatrixAutomationDialog({
 
     for (const store of matching) {
       const resolvedPieces = k === "by_field" && bf
-        ? resolveItemsForStore(items, store, bf)
+        ? resolveItemsForStore(items, store, bf, op)
         : resolveItemsToPieces(items);
       if (resolvedPieces.length === 0) continue;
       touchedStores++;
