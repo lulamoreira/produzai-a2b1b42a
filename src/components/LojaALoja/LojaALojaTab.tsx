@@ -186,6 +186,11 @@ export default function LojaALojaTab({ campaignId, clientId, permissions }: Prop
           <PortalDashboard campaignId={campaignId} clientId={clientId} permissions={permissions.ocorrencias} />
         </TabsContent>
       )}
+      {visibleTabs.includes("por-loja") && (
+        <TabsContent value="por-loja">
+          <OccurrencesByStoreTab campaignId={campaignId} clientId={clientId} permissions={permissions.ocorrencias} />
+        </TabsContent>
+      )}
       {visibleTabs.includes("tipos") && (
         <TabsContent value="tipos">
           <TiposManager campaignId={campaignId} permissions={permissions.estrutura} />
