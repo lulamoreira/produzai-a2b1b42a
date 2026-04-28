@@ -654,7 +654,6 @@ export function KitDetailDialog({
         )}
 
         {(() => {
-          const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
           const canReorder = !!canEdit && !!onReorderKitPieces && piecesInKit.length > 1;
 
           const handleDragEnd = async (e: DragEndEvent) => {
