@@ -6,6 +6,7 @@ import LojaALojaDashboard from "@/components/LojaALoja/LojaALojaDashboard";
 import PortaisManager from "@/components/LojaALoja/PortaisManager";
 import PortalDashboard from "@/components/LojaALoja/PortalDashboard";
 import PortalConfigTab from "@/components/LojaALoja/PortalConfigTab";
+import OccurrencesByStoreTab from "@/components/LojaALoja/OccurrencesByStoreTab";
 import {
   LayoutGrid,
   Store,
@@ -14,6 +15,7 @@ import {
   LayoutDashboard,
   Settings,
   GripVertical,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
