@@ -614,13 +614,39 @@ export function KitDetailDialog({
           </div>
         )}
 
-        {piecesInKit.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">Nenhuma peça neste kit.</p>
-        ) : (
-          <div className="space-y-2 max-h-[350px] overflow-y-auto">
-            {piecesInKit.map((kp, idx) => {
-              const p = kp.piece!;
-              const isEditing = editingPieceId === p.id;
+        {(() => {
+          const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+          const canReorder = !!canEdit && !!onReorderKitPieces && piecesInKit.length > 1;
+
+          const handleDragEnd = async (e: DragEndEvent) => {
+            const { active, over } = e;
+            if (!over || active.id === over.id) return;
+            const oldIndex = piecesInKit.findIndex(kp => kp.id === active.id);
+            const newIndex = piecesInKit.findIndex(kp => kp.id === over.id);
+            if (oldIndex < 0 || newIndex < 0) return;
+            const reordered = arrayMove(piecesInKit, oldIndex, newIndex);
+            const updates = reordered.map((kp, i) => ({ id: kp.id, display_order: i }));
+            await onReorderKitPieces?.(updates);
+          };
+
+          if (piecesInKit.length === 0) {
+            return <p className="text-sm text-muted-foreground text-center py-6">Nenhuma peça neste kit.</p>;
+          }
+
+          return (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={piecesInKit.map(kp => kp.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2 max-h-[350px] overflow-y-auto">
+                  {piecesInKit.map((kp, idx) => (
+                    <SortableKitPieceRow
+                      key={kp.id}
+                      kp={kp}
+                      idx={idx}
+                      canDrag={canReorder}
+                    >
+                      {(() => {
+                        const p = kp.piece!;
+                        const isEditing = editingPieceId === p.id;
 
               if (isEditing && canEdit && onUpdatePiece) {
                 return (
