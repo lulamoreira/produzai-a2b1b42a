@@ -577,6 +577,7 @@ const SupplierPortal = () => {
           totalQty: r.totalQty,
           unitPrice,
           lineTotal,
+          image_url: r.image_url ?? null,
         };
       });
 
