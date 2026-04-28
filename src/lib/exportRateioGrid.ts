@@ -90,7 +90,7 @@ export async function exportRateioGrid(
     }
 
     // ─── Header rows 1–5 ───
-    ws.mergeCells("A1:H1");
+    ws.mergeCells("A1:L1");
     const r1 = ws.getCell("A1");
     r1.value = [agencyName, clientName].filter(Boolean).join(" | ");
     r1.font = { name: "Arial", size: 10, color: { argb: WHITE } };
@@ -98,7 +98,7 @@ export async function exportRateioGrid(
     r1.alignment = { horizontal: "center", vertical: "middle" };
     ws.getRow(1).height = 20;
 
-    ws.mergeCells("A2:H2");
+    ws.mergeCells("A2:L2");
     const r2 = ws.getCell("A2");
     r2.value = (campaignName || "").toUpperCase();
     r2.font = { name: "Arial", size: 14, bold: true, color: { argb: WHITE } };
@@ -106,7 +106,7 @@ export async function exportRateioGrid(
     r2.alignment = { horizontal: "center", vertical: "middle" };
     ws.getRow(2).height = 24;
 
-    ws.mergeCells("A3:H3");
+    ws.mergeCells("A3:L3");
     const r3 = ws.getCell("A3");
     r3.value = store.name || "";
     r3.font = { name: "Arial", size: 18, bold: true, color: { argb: DARK } };
@@ -114,7 +114,7 @@ export async function exportRateioGrid(
     r3.alignment = { horizontal: "center", vertical: "middle" };
     ws.getRow(3).height = 30;
 
-    ws.mergeCells("A4:H4");
+    ws.mergeCells("A4:L4");
     const r4 = ws.getCell("A4");
     const cityState = [store.city, store.state].filter(Boolean).join(", ");
     r4.value = `Código: ${store.store_code || "—"} | ${cityState || "—"}`;
