@@ -200,10 +200,33 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const deadlineDate = settings?.deadline ? new Date(settings.deadline) : undefined;
 
   const handleSaveDeadline = (date: Date | undefined) => {
+    let final: Date | null = null;
+    if (date) {
+      final = new Date(date);
+      // Preserva hora existente OU usa padrão 15:00
+      if (deadlineDate) {
+        final.setHours(deadlineDate.getHours(), deadlineDate.getMinutes(), 0, 0);
+      } else {
+        final.setHours(15, 0, 0, 0);
+      }
+    }
     saveSettings.mutate({
       campaign_id: campaignId,
       budget_amount: budgetAmount,
-      deadline: date ? date.toISOString() : null,
+      deadline: final ? final.toISOString() : null,
+    });
+  };
+
+  const handleSaveDeadlineTime = (timeStr: string) => {
+    if (!deadlineDate || !timeStr) return;
+    const [hh, mm] = timeStr.split(":").map((n) => parseInt(n, 10));
+    if (isNaN(hh) || isNaN(mm)) return;
+    const final = new Date(deadlineDate);
+    final.setHours(hh, mm, 0, 0);
+    saveSettings.mutate({
+      campaign_id: campaignId,
+      budget_amount: budgetAmount,
+      deadline: final.toISOString(),
     });
   };
 
@@ -419,7 +442,7 @@ ${deadlineBlock}${timelineBlock}
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className={cn("h-7 text-xs gap-1", !deadlineDate && "text-muted-foreground")}>
                     <CalendarIcon className="w-3 h-3" />
-                    {deadlineDate ? format(deadlineDate, "dd/MM/yyyy") : "Prazo"}
+                    {deadlineDate ? format(deadlineDate, "dd/MM/yyyy 'às' HH:mm") : "Prazo"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -430,6 +453,17 @@ ${deadlineBlock}${timelineBlock}
                     locale={ptBR}
                     className="p-3 pointer-events-auto"
                   />
+                  {deadlineDate && (
+                    <div className="border-t border-border p-3 flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Horário:</span>
+                      <Input
+                        type="time"
+                        value={format(deadlineDate, "HH:mm")}
+                        onChange={(e) => handleSaveDeadlineTime(e.target.value)}
+                        className="h-7 text-xs w-28"
+                      />
+                    </div>
+                  )}
                 </PopoverContent>
               </Popover>
               {currencyLocked ? (
