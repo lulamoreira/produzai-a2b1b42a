@@ -2387,6 +2387,24 @@ const CampaignDetail = () => {
                   }}
                 />
 
+                <CopyQuantitiesDialog
+                  open={copyQtyOpen}
+                  onOpenChange={setCopyQtyOpen}
+                  campaignId={campaignId!}
+                  stores={activeFilteredStores}
+                  pieces={pieces}
+                  kits={kits}
+                  kitPieces={kitPieces}
+                  qtyMap={qtyMap}
+                  onComplete={async () => {
+                    await queryClient.refetchQueries({
+                      queryKey: ["campaign_store_pieces", campaignId],
+                      exact: true,
+                      type: "active",
+                    });
+                  }}
+                />
+
 
                 {/* Reset Matrix Dialog (zera quantidades do rateio: tudo ou colunas selecionadas) */}
                 <ResetMatrixDialog
