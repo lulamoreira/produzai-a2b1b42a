@@ -1407,11 +1407,31 @@ export function useCampaignKitPieces(campaignId: string | undefined) {
       const { data, error } = await supabase
         .from("campaign_kit_pieces")
         .select("*")
-        .in("kit_id", kitIds);
+        .in("kit_id", kitIds)
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return data as CampaignKitPiece[];
     },
     enabled: !!campaignId,
+  });
+}
+
+export function useReorderCampaignKitPieces() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (updates: { id: string; display_order: number }[]) => {
+      // Update sequentially in small batches
+      for (const u of updates) {
+        const { error } = await supabase
+          .from("campaign_kit_pieces")
+          .update({ display_order: u.display_order })
+          .eq("id", u.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] }); },
+    onError: (e: any) => toast.error("Erro ao reordenar: " + e.message),
   });
 }
 
