@@ -16,14 +16,14 @@ function useCampaignStats(campaignId: string) {
   return useQuery({
     queryKey: ["campaign_stats", campaignId],
     queryFn: async () => {
-      const [schedulesRes, occurrencesRes, photosRes] = await Promise.all([
+      const [schedulesRes, lalOccurrencesRes, photosRes] = await Promise.all([
         supabase
           .from("campaign_schedules")
-          .select("id, completed_at, checkin_timestamp, scheduled_date")
+          .select("id, store_id, completed_at, checkin_timestamp, manual_checkin_at, manual_checkout_at, scheduled_date")
           .eq("campaign_id", campaignId),
         supabase
-          .from("occurrences")
-          .select("id, store_id, status")
+          .from("store_occurrence_reports")
+          .select("id, store_id, tratativa_status")
           .eq("campaign_id", campaignId),
         supabase
           .from("installation_photos")
@@ -32,18 +32,22 @@ function useCampaignStats(campaignId: string) {
       ]);
 
       const schedules = schedulesRes.data ?? [];
-      const occurrences = occurrencesRes.data ?? [];
+      const lalOccurrences = lalOccurrencesRes.data ?? [];
       const photos = photosRes.data ?? [];
 
-      const openOccurrences = occurrences.filter(
-        (o) => o.status !== "resolved" && o.status !== "nao_procede"
+      // Loja a Loja: open occurrences = tratativa_status != 'resolvida'
+      const openLalOccurrences = lalOccurrences.filter(
+        (o) => (o.tratativa_status ?? "aberta") !== "resolvida"
       );
-      const storesWithOccurrence = new Set(openOccurrences.map((o) => o.store_id)).size;
+      const storesWithOccurrence = new Set(openLalOccurrences.map((o) => o.store_id)).size;
 
       const completed = schedules.filter((s) => s.completed_at);
       const pending = schedules.filter((s) => !s.completed_at);
-      const withCheckin = schedules.filter((s) => s.checkin_timestamp);
-      const withoutCheckin = schedules.filter((s) => !s.checkin_timestamp);
+      // Check-in counts ANY check-in: GPS (checkin_timestamp), manual check-in OR manual check-out
+      const hasAnyCheckin = (s: typeof schedules[number]) =>
+        !!(s.checkin_timestamp || s.manual_checkin_at || s.manual_checkout_at);
+      const withCheckin = schedules.filter(hasAnyCheckin);
+      const withoutCheckin = schedules.filter((s) => !hasAnyCheckin(s));
       const scheduled = schedules.filter((s) => s.scheduled_date);
 
       return {
