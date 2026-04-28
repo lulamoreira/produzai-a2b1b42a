@@ -241,6 +241,7 @@ export default function MatrixAutomationDialog({
       setOverwriteDialog({ open: false, count: 0 });
       setKind("fixed");
       setBaseField("");
+      setOperation("multiply");
       setEditingId(null);
     }
   }, [open]);
