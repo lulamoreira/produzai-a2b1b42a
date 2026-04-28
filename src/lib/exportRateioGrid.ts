@@ -201,8 +201,8 @@ export async function exportRateioGrid(
           font: { name: "Arial", size: 9, bold: true, color: { argb: BROWN } },
         },
         {
-          value: `${item.is_new ? "🆕 " : ""}${item.name}`,
-          font: { name: "Arial", size: 11, bold: true, color: { argb: DARK } },
+          value: `${item.is_mockup ? "🎭 MOCKUP — " : ""}${item.is_new ? "🆕 " : ""}${item.name}`,
+          font: { name: "Arial", size: 11, bold: true, color: { argb: item.is_mockup ? BROWN : DARK } },
         },
         {
           value: `Cód: ${item.code || "—"}`,
