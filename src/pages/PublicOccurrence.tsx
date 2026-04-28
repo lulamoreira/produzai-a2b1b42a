@@ -333,14 +333,26 @@ const PublicOccurrence = () => {
   const clientName = (campaign as any).clients?.name || "";
 
   if (!isWithinOccurrenceWindow) {
+    const isEnded = windowStatus === 'ended';
+    const isNotStarted = windowStatus === 'not_started';
+    const title = isEnded
+      ? 'Prazo encerrado'
+      : isNotStarted
+        ? 'Período ainda não iniciado'
+        : 'Período não configurado';
+    const message = isEnded
+      ? 'O prazo para registro de ocorrências terminou. Para informar qualquer problema na loja, procure os responsáveis pela campanha, por favor.'
+      : isNotStarted
+        ? 'Nenhuma loja com acesso liberado no momento. O período para registro de ocorrências ainda não foi iniciado — verifique a data de agendamento configurada para esta campanha.'
+        : 'Nenhuma loja com acesso liberado no momento. O período para registro de ocorrências não foi configurado para esta campanha. Procure os responsáveis pela campanha.';
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center p-8 max-w-md">
           <div className="w-16 h-16 rounded-full bg-destructive/15 flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
-          <h1 className="text-lg font-bold text-foreground mb-2">Período encerrado</h1>
-          <p className="text-sm text-muted-foreground">Infelizmente o período de inclusão de ocorrências terminou, procure contato através do WhatsApp ou e-mail.</p>
+          <h1 className="text-lg font-bold text-foreground mb-2">{title}</h1>
+          <p className="text-sm text-muted-foreground">{message}</p>
           <Button variant="outline" className="mt-6" onClick={() => window.close()}>Fechar</Button>
         </div>
       </div>
