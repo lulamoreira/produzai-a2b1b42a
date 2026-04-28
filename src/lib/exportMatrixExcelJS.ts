@@ -139,6 +139,7 @@ async function buildTransposedSheet(
   colors: ReturnType<typeof makeColors>,
   locData: LocationData,
   kitSheetNames?: Map<string, string>, // id -> sheet name, for hyperlinks
+  storeFields: StoreFieldDef[] = DEFAULT_STORE_FIELDS,
 ) {
   const { PRIMARY, SECONDARY, LIGHT, BORDER } = colors;
   const whiteFont: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: true };
@@ -148,7 +149,7 @@ async function buildTransposedSheet(
   const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
   const allWhiteBorders = { top: whiteBorder, bottom: whiteBorder, left: whiteBorder, right: whiteBorder };
 
-  const STORE_META_COLS = 4;
+  const STORE_META_COLS = Math.max(storeFields.length, 1);
   const colCount = items.length + STORE_META_COLS;
   const IMAGE_ROW_HEIGHT = 120;
 
