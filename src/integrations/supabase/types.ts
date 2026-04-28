@@ -1421,6 +1421,11 @@ export type Database = {
           created_at: string
           custom_field_1: string | null
           custom_field_10: string | null
+          custom_field_11: string | null
+          custom_field_12: string | null
+          custom_field_13: string | null
+          custom_field_14: string | null
+          custom_field_15: string | null
           custom_field_2: string | null
           custom_field_3: string | null
           custom_field_4: string | null
@@ -1459,6 +1464,11 @@ export type Database = {
           created_at?: string
           custom_field_1?: string | null
           custom_field_10?: string | null
+          custom_field_11?: string | null
+          custom_field_12?: string | null
+          custom_field_13?: string | null
+          custom_field_14?: string | null
+          custom_field_15?: string | null
           custom_field_2?: string | null
           custom_field_3?: string | null
           custom_field_4?: string | null
@@ -1497,6 +1507,11 @@ export type Database = {
           created_at?: string
           custom_field_1?: string | null
           custom_field_10?: string | null
+          custom_field_11?: string | null
+          custom_field_12?: string | null
+          custom_field_13?: string | null
+          custom_field_14?: string | null
+          custom_field_15?: string | null
           custom_field_2?: string | null
           custom_field_3?: string | null
           custom_field_4?: string | null
@@ -1588,6 +1603,11 @@ export type Database = {
           currency_code: string | null
           custom_field_1_label: string | null
           custom_field_10_label: string | null
+          custom_field_11_label: string | null
+          custom_field_12_label: string | null
+          custom_field_13_label: string | null
+          custom_field_14_label: string | null
+          custom_field_15_label: string | null
           custom_field_2_label: string | null
           custom_field_3_label: string | null
           custom_field_4_label: string | null
@@ -1609,6 +1629,11 @@ export type Database = {
           currency_code?: string | null
           custom_field_1_label?: string | null
           custom_field_10_label?: string | null
+          custom_field_11_label?: string | null
+          custom_field_12_label?: string | null
+          custom_field_13_label?: string | null
+          custom_field_14_label?: string | null
+          custom_field_15_label?: string | null
           custom_field_2_label?: string | null
           custom_field_3_label?: string | null
           custom_field_4_label?: string | null
@@ -1630,6 +1655,11 @@ export type Database = {
           currency_code?: string | null
           custom_field_1_label?: string | null
           custom_field_10_label?: string | null
+          custom_field_11_label?: string | null
+          custom_field_12_label?: string | null
+          custom_field_13_label?: string | null
+          custom_field_14_label?: string | null
+          custom_field_15_label?: string | null
           custom_field_2_label?: string | null
           custom_field_3_label?: string | null
           custom_field_4_label?: string | null
