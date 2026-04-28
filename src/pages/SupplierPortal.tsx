@@ -98,6 +98,21 @@ const daysUntil = (d: string | null) => {
   return Math.ceil((new Date(d).getTime() - Date.now()) / 86400000);
 };
 
+const parsePriceInput = (value: string): number | null => {
+  const cleaned = value.trim();
+  if (!cleaned) return null;
+  const normalized = cleaned.includes(",")
+    ? cleaned.replace(/\./g, "").replace(",", ".")
+    : cleaned.replace(/,/g, "");
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+};
+
+const priceToInput = (value: number | null | undefined) => {
+  if (value == null) return "";
+  return value.toLocaleString("pt-BR", { maximumFractionDigits: 4 });
+};
+
 /* ─── CSS confetti keyframes ─────────────────────────────── */
 const confettiCSS = `
 @keyframes confetti-fall {
@@ -137,6 +152,7 @@ const SupplierPortal = () => {
   const [storePieceQtyMap, setStorePieceQtyMap] = useState<Record<string, number>>({});
 
   const [prices, setPrices] = useState<Record<string, number | null>>({}); // keyed by piece_id
+  const [priceInputs, setPriceInputs] = useState<Record<string, string>>({});
   const [extraCosts, setExtraCosts] = useState<ExtraCosts>({ supplier_id: "", installation_value: null, freight_value: null });
   const [submitted, setSubmitted] = useState(false);
   const [showConfirm1, setShowConfirm1] = useState(false);
@@ -328,6 +344,7 @@ const SupplierPortal = () => {
           if (p.piece_id) priceMap[p.piece_id] = p.unit_price;
         });
         setPrices(priceMap);
+        setPriceInputs(Object.fromEntries(Object.entries(priceMap).map(([pieceId, value]) => [pieceId, priceToInput(value)])));
 
         // 9) Extra costs
         const { data: ecData } = await supabase
