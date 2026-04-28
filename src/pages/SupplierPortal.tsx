@@ -129,6 +129,7 @@ const SupplierPortal = () => {
   const [deadline, setDeadline] = useState<string | null>(null);
   const [currencyCode, setCurrencyCode] = useState<string>("BRL");
   const [timelineEntries, setTimelineEntries] = useState<{ id: string; entry_date: string; description: string }[]>([]);
+  const [supportMaterials, setSupportMaterials] = useState<{ id: string; title: string; file_url: string; file_name: string | null; file_type: string | null }[]>([]);
 
   const [allPieces, setAllPieces] = useState<PieceData[]>([]);
   const [kitsData, setKitsData] = useState<KitData[]>([]);
