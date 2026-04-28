@@ -362,7 +362,9 @@ export async function exportMatrixExcelJS(
   allPieces?: CampaignPiece[],
   agencyName?: string,
   clientName?: string,
+  storeFields?: StoreFieldDef[],
 ) {
+  const effectiveStoreFields = storeFields && storeFields.length > 0 ? storeFields : DEFAULT_STORE_FIELDS;
   const ExcelJSModule = await import("exceljs");
   const ExcelJSRuntime = ExcelJSModule.default;
   const wb = new ExcelJSRuntime.Workbook();
