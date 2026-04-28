@@ -1072,9 +1072,9 @@ export default function MatrixAutomationDialog({
                     }`}
                     title={numericFields.length === 0 ? "Nenhum campo numérico disponível" : undefined}
                   >
-                    <p className="text-sm font-medium">Multiplicar por campo da loja</p>
+                    <p className="text-sm font-medium">Calcular por campo da loja</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Quantidade = valor do campo × fator por item
+                      Quantidade calculada a partir de um campo numérico da loja
                     </p>
                   </button>
                 </div>
