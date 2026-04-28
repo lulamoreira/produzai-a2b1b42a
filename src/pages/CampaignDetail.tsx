@@ -543,7 +543,7 @@ const CampaignDetail = () => {
       if (sf.city.size > 0) storeChecks.push(!!s.city && sf.city.has(s.city));
       if (sf.state.size > 0) storeChecks.push(!!s.state && sf.state.has(s.state.trim()));
       if (sf.store_model.size > 0) storeChecks.push(!!s.store_model && sf.store_model.has(s.store_model));
-      for (let i = 1; i <= 10; i++) {
+      for (let i = 1; i <= 15; i++) {
         const key = `custom_field_${i}` as keyof typeof sf;
         const set = (sf as any)[key] as Set<string> | undefined;
         if (set && set.size > 0) {
