@@ -175,7 +175,8 @@ async function buildTransposedSheet(
 
   // Meta rows
   for (let mi = 0; mi < META_ROW_COUNT; mi++) {
-    const values: (string | number)[] = [META_LABELS[mi], "", "", ""];
+    const values: (string | number)[] = [META_LABELS[mi]];
+    for (let pad = 1; pad < STORE_META_COLS; pad++) values.push("");
     for (const p of items) {
       switch (mi) {
         case 0: values.push(""); break;
@@ -265,7 +266,8 @@ async function buildTransposedSheet(
 
   // Stores header
   const storesHeaderRowNum = META_ROW_COUNT + 2;
-  const storeHeaderValues: (string | number)[] = ["NOME DA LOJA", "CIDADE", "UF", "VITRINES"];
+  const storeHeaderValues: (string | number)[] = storeFields.map((f) => f.label.toUpperCase());
+  while (storeHeaderValues.length < STORE_META_COLS) storeHeaderValues.push("");
   for (const _p of items) storeHeaderValues.push("");
   const storeHeaderRow = ws.addRow(storeHeaderValues);
   storeHeaderRow.height = 30;
@@ -280,7 +282,8 @@ async function buildTransposedSheet(
   const firstStoreRowNum = storesHeaderRowNum + 1;
   for (let si = 0; si < stores.length; si++) {
     const s = stores[si];
-    const rowValues: (string | number)[] = [s.name, (s as any).city || "", (s as any).state || "", (s as any).showcase_count ?? 0];
+    const rowValues: (string | number)[] = storeFields.map((f) => getStoreFieldValue(s, f.key));
+    while (rowValues.length < STORE_META_COLS) rowValues.push("");
     for (const p of items) {
       rowValues.push(qtyMap[qtyKeyFn(s.id, p.id)] || 0);
     }
@@ -301,7 +304,9 @@ async function buildTransposedSheet(
 
   // Totals with SUM formulas
   const lastStoreRowNum = firstStoreRowNum + stores.length - 1;
-  const totalsRow = ws.addRow(["TOTAL", "", "", ""]);
+  const totalsRowValues: (string | number)[] = ["TOTAL"];
+  for (let pad = 1; pad < STORE_META_COLS; pad++) totalsRowValues.push("");
+  const totalsRow = ws.addRow(totalsRowValues);
   for (let pi = 0; pi < items.length; pi++) {
     const colLetter = getExcelColumnLetter(STORE_META_COLS + pi + 1);
     const cell = totalsRow.getCell(STORE_META_COLS + pi + 1);
@@ -316,10 +321,25 @@ async function buildTransposedSheet(
   });
 
   // Column widths
-  ws.getColumn(1).width = 30;
-  ws.getColumn(2).width = 18;
-  ws.getColumn(3).width = 8;
-  ws.getColumn(4).width = 10;
+  for (let i = 1; i <= STORE_META_COLS; i++) {
+    const f = storeFields[i - 1];
+    let w = 16;
+    if (f) {
+      switch (f.key) {
+        case "name": w = 30; break;
+        case "state": w = 8; break;
+        case "showcase_count": w = 10; break;
+        case "city": case "country": case "store_code": case "store_model":
+        case "nickname": case "phone": case "manager_name":
+          w = 18; break;
+        case "observations": case "street": case "email":
+          w = 28; break;
+        default:
+          w = Math.max(14, Math.min(28, f.label.length + 4));
+      }
+    }
+    ws.getColumn(i).width = w;
+  }
   for (let i = STORE_META_COLS + 1; i <= colCount; i++) {
     const item = items[i - STORE_META_COLS - 1];
     const nameLen = item?.name?.length || 10;
