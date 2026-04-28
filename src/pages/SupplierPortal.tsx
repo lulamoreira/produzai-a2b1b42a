@@ -271,15 +271,30 @@ const SupplierPortal = () => {
         setKitPiecesData(kpData);
 
         // 7) Store pieces for qty totals + store data for Excel
-        const { data: storePieces } = await supabase
-          .from("campaign_store_pieces")
-          .select("piece_id, quantity, store_id")
-          .eq("campaign_id", sup.campaign_id);
+        // ⚠️ Paginação obrigatória: Supabase limita a 1000 linhas por query.
+        // Em campanhas grandes (muitas lojas × peças) isso corta os dados
+        // e o total fica errado / só aparecem as primeiras lojas.
+        const PAGE_SIZE = 1000;
+        let from = 0;
+        const allStorePieces: { piece_id: string; quantity: number; store_id: string }[] = [];
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          const { data: page, error: pageErr } = await supabase
+            .from("campaign_store_pieces")
+            .select("piece_id, quantity, store_id")
+            .eq("campaign_id", sup.campaign_id)
+            .range(from, from + PAGE_SIZE - 1);
+          if (pageErr) throw pageErr;
+          const rows = (page ?? []) as { piece_id: string; quantity: number; store_id: string }[];
+          allStorePieces.push(...rows);
+          if (rows.length < PAGE_SIZE) break;
+          from += PAGE_SIZE;
+        }
 
         const spQtyMap: Record<string, number> = {};
         const fullQMap: Record<string, number> = {};
         const storeIds = new Set<string>();
-        (storePieces ?? []).forEach((sp) => {
+        allStorePieces.forEach((sp) => {
           spQtyMap[sp.piece_id] = (spQtyMap[sp.piece_id] || 0) + sp.quantity;
           fullQMap[`${sp.store_id}-${sp.piece_id}`] = sp.quantity;
           storeIds.add(sp.store_id);
@@ -287,13 +302,19 @@ const SupplierPortal = () => {
         setStorePieceQtyMap(spQtyMap);
         setFullQtyMap(fullQMap);
 
-        // Fetch store details for Excel
+        // Fetch store details for Excel — também paginado para >1000 lojas
         if (storeIds.size > 0) {
-          const { data: storesRaw } = await supabase
-            .from("client_stores")
-            .select("id, name, city, state, showcase_count")
-            .in("id", Array.from(storeIds));
-          setStoreData((storesRaw ?? []) as any);
+          const ids = Array.from(storeIds);
+          const allStores: any[] = [];
+          for (let i = 0; i < ids.length; i += PAGE_SIZE) {
+            const chunk = ids.slice(i, i + PAGE_SIZE);
+            const { data: storesRaw } = await supabase
+              .from("client_stores")
+              .select("id, name, city, state, showcase_count")
+              .in("id", chunk);
+            if (storesRaw) allStores.push(...storesRaw);
+          }
+          setStoreData(allStores as any);
         }
 
         // 8) Existing prices (keyed by piece_id now)
