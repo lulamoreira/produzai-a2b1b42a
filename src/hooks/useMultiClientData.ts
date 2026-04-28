@@ -117,6 +117,7 @@ export type CampaignKitPiece = {
   kit_id: string;
   piece_id: string;
   quantity: number;
+  display_order: number;
   created_at: string;
 };
 
