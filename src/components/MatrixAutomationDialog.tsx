@@ -716,7 +716,7 @@ export default function MatrixAutomationDialog({
       const payload = {
         name: saveName.trim(),
         filter_field: "__multi_v2__",
-        filter_value: JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes }),
+        filter_value: JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes, operation }),
         items: selectedItems,
         outside_action: "keep",
         kind,
