@@ -263,6 +263,7 @@ const CampaignDetail = () => {
   const addKitPiece = useAddCampaignKitPiece();
   const deleteKitPiece = useDeleteCampaignKitPiece();
   const updateKitPiece = useUpdateCampaignKitPiece();
+  const reorderKitPieces = useReorderCampaignKitPieces();
 
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
 
