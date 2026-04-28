@@ -70,6 +70,29 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
 
   useEffect(() => { loadReports(); }, [loadReports]);
 
+  // Realtime sync — atualiza a lista assim que o status da ocorrência muda no painel admin
+  useEffect(() => {
+    const channel = supabase
+      .channel(`store-occ-${data.campaign.id}-${data.store.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "store_occurrence_reports",
+          filter: `store_id=eq.${data.store.id}`,
+        },
+        (payload) => {
+          const row: any = (payload.new ?? payload.old) || {};
+          if (row.campaign_id === data.campaign.id) {
+            loadReports();
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [data.campaign.id, data.store.id, loadReports]);
+
   const badgeCounts: Record<string, number> = {};
   reports.forEach(r => {
     if (r.loja_a_loja_peca_id) {
