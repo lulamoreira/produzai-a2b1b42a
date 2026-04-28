@@ -132,23 +132,26 @@ export async function exportRateioGrid(
       ["C", "D"],
       ["E", "F"],
       ["G", "H"],
+      ["I", "J"],
+      ["K", "L"],
     ];
+    const CARDS_PER_ROW = 6;
 
     let lastDataRow = 5;
 
     // Process items sequentially (for image fetching)
     for (let idx = 0; idx < items.length; idx++) {
       const item = items[idx];
-      const gridRow = Math.floor(idx / 4);
-      const gridCol = idx % 4;
+      const gridRow = Math.floor(idx / CARDS_PER_ROW);
+      const gridCol = idx % CARDS_PER_ROW;
       const top = 6 + gridRow * 6; // 5 data rows + 1 spacer
       const [colL, colR] = cardCols[gridCol];
 
       // Set row heights once per gridRow (when first card in row is processed)
       if (gridCol === 0) {
-        ws.getRow(top + 0).height = 50; // photo
-        for (let i = 1; i <= 4; i++) ws.getRow(top + i).height = 18;
-        ws.getRow(top + 5).height = 8; // spacer
+        ws.getRow(top + 0).height = 42; // photo
+        for (let i = 1; i <= 4; i++) ws.getRow(top + i).height = 15;
+        ws.getRow(top + 5).height = 6; // spacer
       }
 
       const isAlt = gridRow % 2 === 1;
