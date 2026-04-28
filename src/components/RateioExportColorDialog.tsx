@@ -1,4 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+const STORAGE_KEY = "rateio-export:selected-store-fields";
+const PALETTE_STORAGE_KEY = "rateio-export:selected-palette";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
