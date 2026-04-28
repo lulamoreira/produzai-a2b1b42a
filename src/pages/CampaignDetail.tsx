@@ -77,6 +77,7 @@ import CampaignStatusDashboard, { type DashboardFilter } from "@/components/Camp
 
 import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
+import CopyQuantitiesDialog from "@/components/Matrix/CopyQuantitiesDialog";
 import { ResetMatrixDialog } from "@/components/Matrix/ResetMatrixDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
@@ -463,6 +464,7 @@ const CampaignDetail = () => {
   const [resetMatrixOpen, setResetMatrixOpen] = useState(false);
   const [resettingMatrix, setResettingMatrix] = useState(false);
   const [automationOpen, setAutomationOpen] = useState(false);
+  const [copyQtyOpen, setCopyQtyOpen] = useState(false);
   const [budgetExportDialogOpen, setBudgetExportDialogOpen] = useState(false);
   const [rateioGridExportOpen, setRateioGridExportOpen] = useState(false);
   const [rateioView, setRateioView] = useState<"planilha" | "dashboard">(() => {
@@ -2128,6 +2130,18 @@ const CampaignDetail = () => {
                         <span className="hidden sm:inline">{t("automation.title")}</span>
                       </Button>
                     )}
+                    {canEditCampaign && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs gap-1.5 border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/50"
+                        onClick={() => setCopyQtyOpen(true)}
+                        title="Copiar quantidades de uma peça/kit para outra"
+                      >
+                        <Copy className="w-4 h-4" />
+                        <span className="hidden sm:inline">Copiar quantidades</span>
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
@@ -2370,6 +2384,24 @@ const CampaignDetail = () => {
                         toast.error("Erro ao exportar planilha", { id: "matrix-excel" });
                       }
                     }
+                  }}
+                />
+
+                <CopyQuantitiesDialog
+                  open={copyQtyOpen}
+                  onOpenChange={setCopyQtyOpen}
+                  campaignId={campaignId!}
+                  stores={activeFilteredStores}
+                  pieces={pieces}
+                  kits={kits}
+                  kitPieces={kitPieces}
+                  qtyMap={qtyMap}
+                  onComplete={async () => {
+                    await queryClient.refetchQueries({
+                      queryKey: ["campaign_store_pieces", campaignId],
+                      exact: true,
+                      type: "active",
+                    });
                   }}
                 />
 
