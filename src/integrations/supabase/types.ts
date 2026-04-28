@@ -3414,6 +3414,7 @@ export type Database = {
           created_at: string | null
           descricao: string
           id: string
+          sort_order: number
         }
         Insert: {
           ativo?: boolean
@@ -3421,6 +3422,7 @@ export type Database = {
           created_at?: string | null
           descricao: string
           id?: string
+          sort_order?: number
         }
         Update: {
           ativo?: boolean
@@ -3428,6 +3430,7 @@ export type Database = {
           created_at?: string | null
           descricao?: string
           id?: string
+          sort_order?: number
         }
         Relationships: [
           {
