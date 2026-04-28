@@ -305,6 +305,22 @@ ${timelineEntries.map(e => `🔸 ${new Date(e.entry_date + 'T00:00:00').toLocale
 `
       : '';
 
+    const materialsBlock = sharedMaterials.length > 0
+      ? `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📎 MATERIAL DE APOIO
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Os arquivos abaixo estão disponíveis para download direto:
+
+${sharedMaterials.map((m: any) => `🔸 ${m.title || m.file_name}
+   ${m.file_url}`).join('\n\n')}
+
+💡 Você também encontrará todos esses materiais dentro do portal de cotação.
+`
+      : '';
+
     const body = `━━━━━━━━━━━━━━━━━━━━━━━━━━
   📋 CONVITE PARA COTAÇÃO
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
