@@ -180,9 +180,15 @@ export default function MatrixAutomationDialog({
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [itemSearch, setItemSearch] = useState("");
 
-  // Automation kind: 'fixed' = quantity per item; 'by_field' = store_field × factor
+  // Automation kind: 'fixed' = quantity per item; 'by_field' = computed from store_field
   const [kind, setKind] = useState<AutomationKind>("fixed");
   const [baseField, setBaseField] = useState<string>("");
+  const [operation, setOperation] = useState<Operation>("multiply");
+
+  // Reset operation when leaving by_field mode
+  useEffect(() => {
+    if (kind !== "by_field") setOperation("multiply");
+  }, [kind]);
 
   // Step 2 state
   const [preview, setPreview] = useState<PreviewRow[]>([]);
