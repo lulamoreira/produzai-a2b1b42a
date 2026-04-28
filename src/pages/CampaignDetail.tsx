@@ -3233,6 +3233,7 @@ const CampaignDetail = () => {
         onUpdatePiece={async (piece) => { await updatePiece.mutateAsync(piece as any); }}
         onDeletePiece={(id) => deletePiece.mutate(id)}
         onUpdateKitPiece={async (update) => { await updateKitPiece.mutateAsync(update); }}
+        onReorderKitPieces={async (updates) => { await reorderKitPieces.mutateAsync(updates); }}
         onDuplicatePiece={async (piece) => {
           const origOrder = piece.display_order;
           const maxCode = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;
