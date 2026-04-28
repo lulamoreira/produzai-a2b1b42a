@@ -85,7 +85,8 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
         <button
           type="button"
           onClick={handleBack}
-          className="lg:hidden fixed bottom-6 left-4 z-[100] pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl active:scale-95 transition-transform mobile-back-btn"
+          className="lg:hidden fixed left-3 z-[100] pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl active:scale-95 transition-transform mobile-back-btn"
+          style={{ bottom: "calc(1rem + env(safe-area-inset-bottom))" }}
           aria-label="Voltar"
         >
           <ChevronLeft className="w-6 h-6" />
@@ -98,31 +99,31 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
           <Button
             size="icon"
             variant="outline"
-            className="relative h-8 w-8 bg-card text-foreground border-border shadow-lg hover:bg-accent"
+            className="relative h-11 w-11 bg-card text-foreground border-border shadow-lg hover:bg-accent"
             onClick={() => setSnapshotsOpen(true)}
             title="Versões da campanha"
           >
-            <Layers className="w-3.5 h-3.5" />
+            <Layers className="w-5 h-5" />
           </Button>
         )}
         {campaignId && (
           <Button
             size="icon"
             variant="outline"
-            className="relative h-8 w-8 bg-card text-foreground border-border shadow-lg hover:bg-accent"
+            className="relative h-11 w-11 bg-card text-foreground border-border shadow-lg hover:bg-accent"
             onClick={() => navigate(`${location.pathname.split("?")[0]}?section=history`)}
           >
-            <History className="w-3.5 h-3.5" />
+            <History className="w-5 h-5" />
           </Button>
         )}
         {campaignId && (
           <Button
             size="icon"
             variant="outline"
-            className="relative h-8 w-8 bg-card text-foreground border-border shadow-lg hover:bg-accent"
+            className="relative h-11 w-11 bg-card text-foreground border-border shadow-lg hover:bg-accent"
             onClick={() => setChatOpen(true)}
           >
-            <MessageSquare className="w-3.5 h-3.5" />
+            <MessageSquare className="w-5 h-5" />
             {unreadCount > 0 && (
               <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-destructive rounded-full">
                 {unreadCount > 9 ? "9+" : unreadCount}
@@ -135,7 +136,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
 
       <div className={`min-h-dvh transition-all duration-300 ${collapsed ? "lg:pl-[60px]" : "lg:pl-[220px]"}`}>
         {/* Always-visible desktop header bar */}
-        <header className={`sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border pl-4 ${campaignId ? "pr-28" : "pr-14"} sm:px-6 py-2`}>
+        <header className={`sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border pl-4 sm:pl-6 ${campaignId ? "pr-28 lg:pr-6" : "pr-14 lg:pr-6"} py-2`}>
           <div className="flex items-center justify-between gap-3">
             {!isRootPage && (
               <button
