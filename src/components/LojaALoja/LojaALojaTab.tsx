@@ -45,6 +45,7 @@ interface Props {
   campaignId: string;
   clientId: string;
   permissions: LalPermissions;
+  initialTab?: string;
 }
 
 const TAB_META: Record<
@@ -104,7 +105,7 @@ function SortableTab({ id }: { id: string }) {
   );
 }
 
-export default function LojaALojaTab({ campaignId, clientId, permissions }: Props) {
+export default function LojaALojaTab({ campaignId, clientId, permissions, initialTab }: Props) {
   const { order, saveOrder, loaded } = useLojaALojaTabOrder();
 
   // Filter tabs by per-area view permission
@@ -123,7 +124,9 @@ export default function LojaALojaTab({ campaignId, clientId, permissions }: Prop
     });
   }, [order, permissions]);
 
-  const [active, setActive] = useState<string>(visibleTabs[0] ?? DEFAULT_LOJA_A_LOJA_TABS[0]);
+  const [active, setActive] = useState<string>(
+    (initialTab && visibleTabs.includes(initialTab)) ? initialTab : (visibleTabs[0] ?? DEFAULT_LOJA_A_LOJA_TABS[0])
+  );
 
   useEffect(() => {
     if (!loaded) return;
@@ -133,9 +136,14 @@ export default function LojaALojaTab({ campaignId, clientId, permissions }: Prop
   }, [loaded, visibleTabs, active]);
 
   useEffect(() => {
-    if (loaded && visibleTabs[0]) setActive(visibleTabs[0]);
+    if (!loaded) return;
+    if (initialTab && visibleTabs.includes(initialTab)) {
+      setActive(initialTab);
+    } else if (visibleTabs[0]) {
+      setActive(visibleTabs[0]);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded]);
+  }, [loaded, initialTab]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
