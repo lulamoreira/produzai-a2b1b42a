@@ -1073,7 +1073,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
       {/* ═══ SUPPLIER DETAIL SHEET ═══ */}
       <Sheet open={!!detailSupplier} onOpenChange={(o) => !o && setDetailSupplier(null)}>
-        <SheetContent className="sm:max-w-2xl overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-[min(96vw,1100px)] overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               {detailSup?.company_name}
@@ -1117,14 +1117,14 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
           <div className="mt-6 space-y-4">
             {/* Pieces table */}
-            <div className="border rounded-md overflow-x-auto">
-              <Table>
+            <div className="border rounded-md">
+              <Table className="table-fixed w-full">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs">Peça</TableHead>
-                    <TableHead className="text-xs text-right">Qtd Total</TableHead>
-                    <TableHead className="text-xs text-right">Preço Unit.</TableHead>
-                    <TableHead className="text-xs text-right">Total</TableHead>
+                    <TableHead className="text-xs text-right w-20">Qtd</TableHead>
+                    <TableHead className="text-xs text-right w-28">Preço Unit.</TableHead>
+                    <TableHead className="text-xs text-right w-28">Total</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
