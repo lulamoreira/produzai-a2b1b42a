@@ -433,7 +433,7 @@ export default function MatrixAutomationDialog({
     }
 
     if (kind === "by_field" && !baseField) {
-      toast.error("Selecione o campo base para multiplicação.");
+      toast.error("Selecione o campo base para o cálculo.");
       return;
     }
 
