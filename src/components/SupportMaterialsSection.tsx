@@ -280,6 +280,15 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
                               style={{ color: "var(--text-muted)" }}
                             />
                           )}
+                          {mat.share_with_supplier && (
+                            <span
+                              className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded flex-shrink-0"
+                              style={{ background: "var(--brand, #8C6F4E)", color: "#fff" }}
+                              title="Será disponibilizado ao fornecedor de orçamento"
+                            >
+                              Fornecedor
+                            </span>
+                          )}
                         </div>
                         <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
                           {mat.file_name
