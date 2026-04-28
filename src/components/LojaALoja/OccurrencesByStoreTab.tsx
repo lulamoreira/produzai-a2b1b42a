@@ -412,6 +412,8 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
         open={!!selectedOccurrence}
         onOpenChange={(open) => !open && setSelectedOccurrence(null)}
         campaignId={campaignId}
+        canEdit={permissions.canEdit}
+        canDelete={permissions.canDelete}
       />
     </div>
   );
