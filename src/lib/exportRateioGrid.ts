@@ -179,7 +179,7 @@ export async function exportRateioGrid(
             const colIdxL = colL.charCodeAt(0) - 65; // A=0
             ws.addImage(imageId, {
               tl: { col: colIdxL + 0.5, row: photoRow - 1 + 0.05 } as any,
-              ext: { width: 60, height: 60 },
+              ext: { width: 50, height: 50 },
               editAs: "oneCell",
             });
             imageInserted = true;
