@@ -85,8 +85,8 @@ export async function exportRateioGrid(
       views: [{ showGridLines: false }],
     });
 
-    for (let c = 1; c <= 8; c++) {
-      ws.getColumn(c).width = 18;
+    for (let c = 1; c <= 12; c++) {
+      ws.getColumn(c).width = 12;
     }
 
     // ─── Header rows 1–5 ───
