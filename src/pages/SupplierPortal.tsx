@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
+import { exportSupplierBudget } from "@/lib/exportSupplierBudget";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
 
