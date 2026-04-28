@@ -442,7 +442,7 @@ ${deadlineBlock}${timelineBlock}
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className={cn("h-7 text-xs gap-1", !deadlineDate && "text-muted-foreground")}>
                     <CalendarIcon className="w-3 h-3" />
-                    {deadlineDate ? format(deadlineDate, "dd/MM/yyyy") : "Prazo"}
+                    {deadlineDate ? format(deadlineDate, "dd/MM/yyyy 'às' HH:mm") : "Prazo"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -453,6 +453,17 @@ ${deadlineBlock}${timelineBlock}
                     locale={ptBR}
                     className="p-3 pointer-events-auto"
                   />
+                  {deadlineDate && (
+                    <div className="border-t border-border p-3 flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Horário:</span>
+                      <Input
+                        type="time"
+                        value={format(deadlineDate, "HH:mm")}
+                        onChange={(e) => handleSaveDeadlineTime(e.target.value)}
+                        className="h-7 text-xs w-28"
+                      />
+                    </div>
+                  )}
                 </PopoverContent>
               </Popover>
               {currencyLocked ? (
