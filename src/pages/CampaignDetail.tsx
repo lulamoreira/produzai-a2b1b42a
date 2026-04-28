@@ -2959,6 +2959,7 @@ const CampaignDetail = () => {
                 })}
               </div>
             </div>
+            </div>
 
             {(() => {
               const search = pieceSearch.toLowerCase().trim();
