@@ -211,6 +211,18 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
       const ws2 = XLSX.utils.json_to_sheet(summary);
       XLSX.utils.book_append_sheet(wb, ws2, "Resumo por Loja");
 
+      // Resumo por motivo (contagem desc)
+      const motiveCounts = new Map<string, number>();
+      filtered.forEach((o) => {
+        const desc = (o.store_portal_motivos as any)?.descricao ?? "Sem motivo";
+        motiveCounts.set(desc, (motiveCounts.get(desc) ?? 0) + 1);
+      });
+      const motiveSummary = Array.from(motiveCounts.entries())
+        .map(([Motivo, Total]) => ({ Motivo, Total }))
+        .sort((a, b) => b.Total - a.Total);
+      const ws3 = XLSX.utils.json_to_sheet(motiveSummary);
+      XLSX.utils.book_append_sheet(wb, ws3, "Resumo por Motivo");
+
       const fileName = `ocorrencias-por-loja-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`;
       XLSX.writeFile(wb, fileName);
       toast.success("Excel exportado");
