@@ -1097,6 +1097,39 @@ export default function MatrixAutomationDialog({
                   <p className="text-[11px] text-muted-foreground mt-1">
                     Lojas sem valor neste campo serão ignoradas pela automação.
                   </p>
+
+                  {/* ── Operação (Multiplicar / Dividir) ── */}
+                  <Label className="text-sm font-semibold mt-3 mb-2 block">Operação</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setOperation("multiply")}
+                      className={`text-left p-2.5 rounded-lg border transition-all ${
+                        operation === "multiply"
+                          ? "border-primary bg-primary/5 ring-1 ring-primary"
+                          : "border-border bg-background hover:border-primary/40"
+                      }`}
+                    >
+                      <p className="text-sm font-medium">Multiplicar</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        fator × valor do campo
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOperation("divide")}
+                      className={`text-left p-2.5 rounded-lg border transition-all ${
+                        operation === "divide"
+                          ? "border-primary bg-primary/5 ring-1 ring-primary"
+                          : "border-border bg-background hover:border-primary/40"
+                      }`}
+                    >
+                      <p className="text-sm font-medium">Dividir</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        fator ÷ valor do campo (arredonda p/ cima)
+                      </p>
+                    </button>
+                  </div>
                 </div>
               )}
 
