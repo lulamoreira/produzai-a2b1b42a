@@ -77,6 +77,7 @@ import CampaignStatusDashboard, { type DashboardFilter } from "@/components/Camp
 
 import StoreContactsSection from "@/components/StoreContactsSection";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
+import CopyQuantitiesDialog from "@/components/Matrix/CopyQuantitiesDialog";
 import { ResetMatrixDialog } from "@/components/Matrix/ResetMatrixDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
