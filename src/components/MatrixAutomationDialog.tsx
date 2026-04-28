@@ -112,14 +112,17 @@ function filtrarLojas(stores: ClientStore[], grupo: FilterGroup): ClientStore[] 
   });
 }
 
+type Operation = "multiply" | "divide";
+
 /** Migrate legacy single-filter template to multi-filter format */
-function migrateTemplate(tpl: any): { filtros: AutomationFilter[]; condicoes: FilterCondition[] } {
+function migrateTemplate(tpl: any): { filtros: AutomationFilter[]; condicoes: FilterCondition[]; operation: Operation } {
   if (tpl.filter_field === "__multi_v2__") {
     try {
       const parsed = JSON.parse(tpl.filter_value);
-      return { filtros: parsed.filtros || [], condicoes: parsed.condicoes || [] };
+      const op: Operation = parsed.operation === "divide" ? "divide" : "multiply";
+      return { filtros: parsed.filtros || [], condicoes: parsed.condicoes || [], operation: op };
     } catch {
-      return { filtros: [createEmptyFilter()], condicoes: [] };
+      return { filtros: [createEmptyFilter()], condicoes: [], operation: "multiply" };
     }
   }
   // Legacy single filter
@@ -131,6 +134,7 @@ function migrateTemplate(tpl: any): { filtros: AutomationFilter[]; condicoes: Fi
       valor: tpl.filter_value,
     }],
     condicoes: [],
+    operation: "multiply",
   };
 }
 
