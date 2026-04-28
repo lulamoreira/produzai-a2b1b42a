@@ -97,7 +97,7 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return occList.filter((o) => {
+    const result = occList.filter((o) => {
       if (filterStore !== "__all__" && o.store_id !== filterStore) return false;
       if (filterMotive !== "__all__" && o.motive_id !== filterMotive) return false;
       const st = o.tratativa_status ?? "aberta";
@@ -119,7 +119,13 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
       }
       return true;
     });
-  }, [occList, filterStore, filterMotive, filterStatus, dateFrom, dateTo, search]);
+    result.sort((a, b) => {
+      const ta = new Date(a.created_at).getTime();
+      const tb = new Date(b.created_at).getTime();
+      return sortOrder === "desc" ? tb - ta : ta - tb;
+    });
+    return result;
+  }, [occList, filterStore, filterMotive, filterStatus, dateFrom, dateTo, search, sortOrder]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { storeId: string; storeName: string; city: string; state: string; items: any[] }>();
