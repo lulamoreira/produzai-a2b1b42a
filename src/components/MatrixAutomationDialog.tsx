@@ -1392,11 +1392,15 @@ export default function MatrixAutomationDialog({
                         {getTemplateFilterSummary(tpl)}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {tpl.items.map(it => (
-                          <Badge key={`${it.type}-${it.id}`} variant="secondary" className="text-[10px]">
-                            {it.type === "kit" ? "Kit" : ""} {it.code} {(tpl.kind ?? "fixed") === "by_field" ? "f×" : "×"} {it.quantity}
-                          </Badge>
-                        ))}
+                        {(() => {
+                          const tplOp = (tpl.kind ?? "fixed") === "by_field" ? migrateTemplate(tpl).operation : "multiply";
+                          const sym = (tpl.kind ?? "fixed") === "by_field" ? (tplOp === "divide" ? "f÷" : "f×") : "×";
+                          return tpl.items.map(it => (
+                            <Badge key={`${it.type}-${it.id}`} variant="secondary" className="text-[10px]">
+                              {it.type === "kit" ? "Kit" : ""} {it.code} {sym} {it.quantity}
+                            </Badge>
+                          ));
+                        })()}
                       </div>
                     </div>
                     <div className="flex gap-1 shrink-0">
