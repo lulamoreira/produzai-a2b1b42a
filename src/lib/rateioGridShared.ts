@@ -8,6 +8,7 @@ export type RateioGridItem = {
   category: string;
   quantity: number;
   is_new: boolean;
+  is_mockup: boolean;
   image_url: string | null;
 };
 
@@ -48,6 +49,7 @@ export function buildRateioGridBuckets(
           category: p.category || "—",
           quantity: qty,
           is_new: (p as any).is_new === true,
+          is_mockup: (p as any).is_mockup === true,
           image_url: p.image_url || null,
         });
       }
@@ -70,6 +72,7 @@ export function buildRateioGridBuckets(
             category: k.category || "—",
             quantity: kitQty,
             is_new: (k as any).is_new === true,
+            is_mockup: (k as any).is_mockup === true,
             image_url: k.image_url || null,
           });
         }
