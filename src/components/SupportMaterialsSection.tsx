@@ -111,6 +111,21 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
     onError: (e: any) => toast.error(t("supportMaterials.errorRemove") + ": " + e.message),
   });
 
+  const toggleShare = useMutation({
+    mutationFn: async ({ id, share }: { id: string; share: boolean }) => {
+      const { error } = await supabase
+        .from("campaign_support_materials")
+        .update({ share_with_supplier: share } as never)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      queryClient.invalidateQueries({ queryKey: ["campaign_support_materials", campaignId] });
+      toast.success(v.share ? "Compartilhado com o fornecedor" : "Removido do compartilhamento");
+    },
+    onError: (e: any) => toast.error("Erro ao atualizar: " + e.message),
+  });
+
   const handleFileUpload = async (materialId: string, file: globalThis.File) => {
     setUploadingId(materialId);
     try {
