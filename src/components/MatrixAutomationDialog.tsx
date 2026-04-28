@@ -356,7 +356,7 @@ export default function MatrixAutomationDialog({
     const result: { pieceId: string; pieceName: string; quantity: number }[] = [];
     for (const item of items) {
       if (item.type === "piece") {
-        result.push({ pieceId: item.id, pieceName: item.name, quantity: item.quantity });
+        result.push({ pieceId: item.id, pieceName: item.name, quantity: Math.ceil(item.quantity) });
       } else {
         const components = kitPieces.filter(kp => kp.kit_id === item.id);
         if (components.length === 0) {
@@ -364,7 +364,7 @@ export default function MatrixAutomationDialog({
           result.push({
             pieceId: item.id,
             pieceName: `[KIT sem componentes] ${item.name}`,
-            quantity: item.quantity,
+            quantity: Math.ceil(item.quantity),
           });
           continue;
         }
@@ -384,7 +384,8 @@ export default function MatrixAutomationDialog({
         }
       }
     }
-    return result;
+    // Final ceil pass to ensure no decimals leak through (kit aggregates above use raw sums).
+    return result.map(r => ({ ...r, quantity: Math.ceil(r.quantity) }));
   }, [kitPieces, pieces]);
 
   /**
