@@ -392,7 +392,9 @@ export default function MatrixAutomationDialog({
    * Resolve items computed from a numeric store field (BY_FIELD mode).
    * Supports two operations:
    *   - multiply: Math.ceil(item.quantity * baseValue)
-   *   - divide:   Math.ceil(item.quantity / baseValue)  (skips when baseValue == 0)
+   *   - divide:   Math.ceil(baseValue / item.quantity)  (divides the store
+   *               field value by the user-provided factor; rounds UP, e.g.
+   *               12/3 → 4, 8/3 → 3)
    * Returns [] when the store has no valid numeric value (or division-by-zero) —
    * the store is then skipped entirely from the automation.
    */
@@ -402,9 +404,11 @@ export default function MatrixAutomationDialog({
       const baseValue = Number(raw);
       if (!Number.isFinite(baseValue) || baseValue <= 0) return [];
       const computed = items.map(it => {
+        const factor = Number(it.quantity);
+        if (!Number.isFinite(factor) || factor <= 0) return { ...it, quantity: 0 };
         const q = op === "divide"
-          ? Math.ceil(it.quantity / baseValue)
-          : Math.ceil(it.quantity * baseValue);
+          ? Math.ceil(baseValue / factor)
+          : Math.ceil(factor * baseValue);
         return { ...it, quantity: q };
       }).filter(it => it.quantity > 0);
       return resolveItemsToPieces(computed);
