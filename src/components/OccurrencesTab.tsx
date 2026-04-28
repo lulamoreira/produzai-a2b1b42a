@@ -1,3 +1,6 @@
+// @deprecated [REMOVE-CANDIDATE] Módulo antigo de Ocorrências — desabilitado da UI.
+// Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
+
 import { useState, useRef, useMemo, useEffect, useCallback, lazy, Suspense } from "react";
 import EmptyState from "@/components/EmptyState";
 import { CardSkeleton, ListSkeleton } from "@/components/CardSkeleton";

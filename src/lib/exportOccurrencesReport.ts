@@ -1,3 +1,6 @@
+// @deprecated [REMOVE-CANDIDATE] Módulo antigo de Ocorrências — desabilitado da UI.
+// Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
+
 import type * as ExcelJS from "exceljs";
 import { saveBlobAs } from "./saveBlobAs";
 import type { jsPDF as jsPDFType } from "jspdf";

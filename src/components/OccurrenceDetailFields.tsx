@@ -1,3 +1,6 @@
+// @deprecated [REMOVE-CANDIDATE] Módulo antigo de Ocorrências — desabilitado da UI.
+// Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
+
 import { useState, useRef } from "react";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { format } from "date-fns";

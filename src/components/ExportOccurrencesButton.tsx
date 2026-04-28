@@ -1,3 +1,6 @@
+// @deprecated [REMOVE-CANDIDATE] Módulo antigo de Ocorrências — desabilitado da UI.
+// Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
+
 import { useState } from "react";
 import { FileSpreadsheet, FileText, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";

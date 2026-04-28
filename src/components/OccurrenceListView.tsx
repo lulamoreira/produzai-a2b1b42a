@@ -1,3 +1,6 @@
+// @deprecated [REMOVE-CANDIDATE] Módulo antigo de Ocorrências — desabilitado da UI.
+// Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
+
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import type { Occurrence } from "@/hooks/useOccurrences";
@@ -182,4 +185,3 @@ export default function OccurrenceListView({
     </>
   );
 }
-
