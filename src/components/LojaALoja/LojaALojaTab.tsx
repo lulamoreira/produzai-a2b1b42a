@@ -113,6 +113,7 @@ export default function LojaALojaTab({ campaignId, clientId, permissions }: Prop
       switch (id) {
         case "dashboard": return permissions.canViewModule;
         case "portal-dashboard": return permissions.ocorrencias.canView;
+        case "por-loja": return permissions.ocorrencias.canView;
         case "tipos": return permissions.estrutura.canView;
         case "lojas": return permissions.classificacao.canView;
         case "portais": return permissions.acessos.canView;
