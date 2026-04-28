@@ -446,7 +446,7 @@ export async function exportMatrixExcelJS(
 
   // ABA 1 – Main matrix
   const ws = wb.addWorksheet("Matriz Lojas x Peças");
-  await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames);
+  await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames, effectiveStoreFields);
 
   // Kit tabs
   for (const kit of kits) {
@@ -478,7 +478,7 @@ export async function exportMatrixExcelJS(
 
     const sheetName = kitSheetNames.get(kit.id)!;
     const kitWs = wb.addWorksheet(sheetName);
-    await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`, colors, locData);
+    await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`, colors, locData, undefined, effectiveStoreFields);
   }
 
   // Dashboard tab
