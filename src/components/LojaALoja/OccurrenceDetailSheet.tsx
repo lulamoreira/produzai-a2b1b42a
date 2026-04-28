@@ -106,6 +106,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const photoUrls: string[] = Array.isArray(occurrence.photo_urls) ? occurrence.photo_urls : [];
   const storeName = occurrence.client_stores?.name ?? "—";
   const pieceName = occurrence.loja_a_loja_pecas?.nome ?? "—";
+  const pieceImageUrl: string | null = occurrence.loja_a_loja_pecas?.image_url ?? null;
   const motivoDesc = occurrence.store_portal_motivos?.descricao ?? "—";
 
   const reporterLabel = (() => {
