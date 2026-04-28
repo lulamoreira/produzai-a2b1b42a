@@ -53,34 +53,45 @@ function TimelineRow({ entry, campaignId, onDelete }: RowProps) {
     entry.entry_date ? new Date(entry.entry_date + "T00:00:00") : undefined,
   );
   const [description, setDescription] = useState(entry.description);
-  const debounceRef = useRef<number | null>(null);
+  const isFocusedRef = useRef(false);
+  const lastSavedRef = useRef(entry.description);
+  const lastSavedDateRef = useRef(entry.entry_date);
 
-  // Sync external changes
+  // Sync external changes ONLY when not focused and value actually differs from what we saved
+  // This prevents the input from being overwritten while the user is typing.
   useEffect(() => {
-    setDate(entry.entry_date ? new Date(entry.entry_date + "T00:00:00") : undefined);
-    setDescription(entry.description);
-  }, [entry.entry_date, entry.description]);
+    if (!isFocusedRef.current && entry.description !== lastSavedRef.current) {
+      setDescription(entry.description);
+      lastSavedRef.current = entry.description;
+    }
+  }, [entry.description]);
+
+  useEffect(() => {
+    if (entry.entry_date !== lastSavedDateRef.current) {
+      setDate(entry.entry_date ? new Date(entry.entry_date + "T00:00:00") : undefined);
+      lastSavedDateRef.current = entry.entry_date;
+    }
+  }, [entry.entry_date]);
 
   const persist = (updates: Partial<Pick<BudgetTimelineEntry, "entry_date" | "description">>) => {
+    if (updates.description !== undefined) lastSavedRef.current = updates.description;
+    if (updates.entry_date !== undefined) lastSavedDateRef.current = updates.entry_date;
     updateEntry.mutate({ id: entry.id, campaign_id: campaignId, updates });
   };
 
   const handleDescriptionBlur = () => {
-    if (debounceRef.current) {
-      window.clearTimeout(debounceRef.current);
-      debounceRef.current = null;
-    }
-    if (description !== entry.description) {
+    isFocusedRef.current = false;
+    if (description !== lastSavedRef.current) {
       persist({ description });
     }
   };
 
+  const handleDescriptionFocus = () => {
+    isFocusedRef.current = true;
+  };
+
   const handleDescriptionChange = (val: string) => {
     setDescription(val);
-    if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    debounceRef.current = window.setTimeout(() => {
-      if (val !== entry.description) persist({ description: val });
-    }, 500);
   };
 
   const handleDateChange = (d: Date | undefined) => {
