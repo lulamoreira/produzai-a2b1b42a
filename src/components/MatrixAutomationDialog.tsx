@@ -456,7 +456,7 @@ export default function MatrixAutomationDialog({
     const filtered = filtrarLojas(stores, filterGroup);
     let overwriteCount = 0;
     for (const store of filtered) {
-      const resolvedPieces = resolveForStore(store, selectedItems, kind, baseField);
+      const resolvedPieces = resolveForStore(store, selectedItems, kind, baseField, operation);
       for (const rp of resolvedPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
         if (currentQty > 0) overwriteCount++;
@@ -484,7 +484,7 @@ export default function MatrixAutomationDialog({
     const actions: Record<string, OutsideFilterAction> = {};
 
     for (const store of filtered) {
-      const resolvedPieces = resolveForStore(store, selectedItems, kind, baseField);
+      const resolvedPieces = resolveForStore(store, selectedItems, kind, baseField, operation);
       // by_field: store sem valor numérico válido cai como ignorada (1 linha agregada)
       if (resolvedPieces.length === 0 && kind === "by_field") {
         rows.push({
@@ -708,7 +708,7 @@ export default function MatrixAutomationDialog({
   const handleSaveTemplate = async () => {
     if (!saveName.trim()) return;
     if (kind === "by_field" && !baseField) {
-      toast.error("Selecione o campo base para multiplicação.");
+      toast.error("Selecione o campo base para o cálculo.");
       return;
     }
     try {
