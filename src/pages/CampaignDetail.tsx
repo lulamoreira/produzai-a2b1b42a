@@ -464,6 +464,7 @@ const CampaignDetail = () => {
   const [resetMatrixOpen, setResetMatrixOpen] = useState(false);
   const [resettingMatrix, setResettingMatrix] = useState(false);
   const [automationOpen, setAutomationOpen] = useState(false);
+  const [copyQtyOpen, setCopyQtyOpen] = useState(false);
   const [budgetExportDialogOpen, setBudgetExportDialogOpen] = useState(false);
   const [rateioGridExportOpen, setRateioGridExportOpen] = useState(false);
   const [rateioView, setRateioView] = useState<"planilha" | "dashboard">(() => {
