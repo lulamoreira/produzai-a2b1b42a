@@ -1,33 +1,42 @@
+# Corrigir cálculo da automação de divisão (Rateio)
+
 ## Problema
 
-No portal do lojista (`StorePortal` → aba Ocorrências), a lista "Ocorrências abertas" só é carregada uma vez quando a página abre. Quando alguém (admin/instalador) atualiza o status da ocorrência no painel principal, o lojista não vê a mudança — precisa dar F5 manualmente.
+Na automação de Rateio em modo "Por campo da loja" + operação **Dividir**, o preview mostra valores errados.
 
-Além disso, a lista atual filtra `status != 'resolvido'`, então ocorrências resolvidas somem da visualização do lojista (sem feedback de que foi resolvida).
+**Exemplo do usuário:** loja "Shopping Salvador" tem campo = 12, fator informado = 3.
+- Esperado: `12 ÷ 3 = 4`
+- Atual (bug): mostra `1`
 
-## Solução
+**Causa raiz:** em `src/components/MatrixAutomationDialog.tsx` (linhas 399–409), a função `resolveItemsForStore` está dividindo o **fator do item** pelo **valor do campo da loja**, quando deveria ser o inverso:
 
-Adicionar **realtime sync** na tabela `store_occurrence_reports` dentro do `OcorrenciasTab`, para que qualquer INSERT/UPDATE/DELETE de ocorrência daquela loja+campanha atualize a lista automaticamente.
+```ts
+// ATUAL (errado)
+Math.ceil(it.quantity / baseValue)   // 3 / 12 = 0.25 → ceil = 1
+```
 
-### Mudanças
+## Correção
 
-**1. `src/components/StorePortal/OcorrenciasTab.tsx`**
-- Adicionar `useEffect` com `supabase.channel(...)` escutando `postgres_changes` na tabela `store_occurrence_reports` filtrando por `campaign_id` e `store_id`.
-- Em qualquer mudança (INSERT/UPDATE/DELETE), chamar `loadReports()`.
-- Cleanup com `supabase.removeChannel()` ao desmontar.
-- Mostrar também ocorrências resolvidas recentes (últimas 24h) com badge "Resolvida" verde, para que o lojista veja o feedback antes de sumirem da lista. *(opcional — confirmar se quer)*
+Inverter a divisão: dividir **o valor do campo da loja** pelo **fator informado pelo usuário**, mantendo o arredondamento para cima (ceil).
 
-**2. Migration SQL** (se necessário)
-- Garantir que a tabela `store_occurrence_reports` está na publicação `supabase_realtime`:
-  ```sql
-  ALTER PUBLICATION supabase_realtime ADD TABLE public.store_occurrence_reports;
-  ALTER TABLE public.store_occurrence_reports REPLICA IDENTITY FULL;
-  ```
-- Verificar se o `RLS`/anon role permite SELECT via token (já permitido pois `loadReports` já funciona).
+```ts
+// NOVO (correto)
+Math.ceil(baseValue / factor)        // 12 / 3 = 4    → ceil = 4
+                                     //  8 / 3 = 2.66 → ceil = 3
+```
 
-### Resultado
+Casos preservados:
+- `factor <= 0` ou inválido → item descartado (quantity = 0).
+- `baseValue <= 0` → loja já é pulada (comportamento existente, mantido).
+- `multiply` continua igual: `Math.ceil(factor * baseValue)`.
 
-Assim que o status da ocorrência for alterado em qualquer painel, a tela do lojista atualiza sozinha, sem refresh manual.
+## Arquivos afetados
 
-### Pergunta
+- `src/components/MatrixAutomationDialog.tsx` — ajuste na função `resolveItemsForStore` (≈10 linhas). Sem mudanças em UI, schema, RLS ou em outros consumidores.
 
-Quer que ocorrências **resolvidas** também apareçam na lista do lojista (com badge verde "Resolvida") por algum tempo, ou devem continuar sumindo imediatamente após resolução?
+## Validação
+
+- Campo=12, fator=3 → 4 ✓
+- Campo=8, fator=3 → 3 ✓ (arredonda 2.6666 para cima)
+- Campo=10, fator=2 → 5 ✓
+- Campo=0 ou vazio → loja pulada ✓
