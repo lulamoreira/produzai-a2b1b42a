@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Camera, X, Loader2, ExternalLink, RotateCw } from "lucide-react";
+import { Camera, X, Loader2, ExternalLink, RotateCw, ImageIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useQuery } from "@tanstack/react-query";
 import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
 
@@ -65,7 +67,24 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [checkinOpen, setCheckinOpen] = useState(false);
   const [initialized, setInitialized] = useState<string | null>(null);
+
+  // Photo check-in for this campaign + store (lazy: only when user opens the modal)
+  const checkinQuery = useQuery({
+    queryKey: ["installation-photos-checkin", campaignId, occurrence?.store_id],
+    enabled: checkinOpen && !!occurrence?.store_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("installation_photos")
+        .select("id, photo_url, category, caption, created_at, media_type")
+        .eq("campaign_id", campaignId)
+        .eq("store_id", occurrence.store_id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   // Init when occurrence changes
   useMemo(() => {
@@ -87,6 +106,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const photoUrls: string[] = Array.isArray(occurrence.photo_urls) ? occurrence.photo_urls : [];
   const storeName = occurrence.client_stores?.name ?? "—";
   const pieceName = occurrence.loja_a_loja_pecas?.nome ?? "—";
+  const pieceImageUrl: string | null = occurrence.loja_a_loja_pecas?.image_url ?? null;
   const motivoDesc = occurrence.store_portal_motivos?.descricao ?? "—";
 
   const reporterLabel = (() => {
@@ -171,8 +191,36 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
             {/* IDENTIFICAÇÃO */}
             <section className="space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Identificação</h3>
-              <Field label="Loja" value={storeName} />
-              <Field label="Peça" value={pieceName} />
+              <div className="flex items-start justify-between gap-3">
+                <Field label="Loja" value={storeName} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 flex-shrink-0"
+                  onClick={() => setCheckinOpen(true)}
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  Check-in da loja
+                </Button>
+              </div>
+
+              <div className="flex items-start gap-3">
+                {pieceImageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setLightboxUrl(pieceImageUrl)}
+                    className="w-16 h-16 rounded-md overflow-hidden border border-border flex-shrink-0 hover:opacity-80 transition"
+                    title="Ampliar imagem da peça"
+                  >
+                    <img src={getThumbnailUrl(pieceImageUrl, 200)} alt={pieceName} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  </button>
+                )}
+                <div className="flex-1 min-w-0">
+                  <Field label="Peça" value={pieceName} />
+                </div>
+              </div>
+
               <Field label="Motivo" value={motivoDesc} />
               <Field label="Reportado por" value={reporterLabel} />
               <Field label="Data de abertura" value={formatDateTime(occurrence.created_at)} />
@@ -340,6 +388,52 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
           </a>
         </div>
       )}
+
+      {/* Check-in fotográfico da loja */}
+      <Dialog open={checkinOpen} onOpenChange={setCheckinOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Check-in fotográfico — {storeName}</DialogTitle>
+          </DialogHeader>
+          <div className="mt-2">
+            {checkinQuery.isLoading ? (
+              <div className="flex items-center justify-center py-12 text-muted-foreground">
+                <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando fotos...
+              </div>
+            ) : (checkinQuery.data ?? []).length === 0 ? (
+              <div className="text-center py-10 text-sm text-muted-foreground">
+                Nenhuma foto de check-in registrada para esta loja nesta campanha.
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {(checkinQuery.data ?? []).map((p: any) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setLightboxUrl(p.photo_url)}
+                    className="group relative aspect-square rounded-md overflow-hidden border border-border hover:border-primary transition"
+                    title={p.caption || p.category || ""}
+                  >
+                    <img
+                      src={getThumbnailUrl(p.photo_url, 400)}
+                      alt={p.caption || ""}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                    />
+                    {(p.caption || p.category) && (
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[10px] text-white text-left">
+                        <div className="truncate">{p.caption || p.category}</div>
+                        <div className="opacity-70">{formatDateTime(p.created_at)}</div>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
