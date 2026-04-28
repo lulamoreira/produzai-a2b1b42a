@@ -2079,6 +2079,20 @@ const CampaignDetail = () => {
 
               {/* Matrix Content */}
               <div className="flex-1 flex flex-col overflow-hidden">
+                <Tabs value={rateioView} onValueChange={handleRateioViewChange} className="flex-1 flex flex-col overflow-hidden">
+                  <div className="border-b border-border bg-muted/20 px-2 sm:px-3 pt-2">
+                    <TabsList className="h-8 bg-muted/60">
+                      <TabsTrigger value="planilha" className="text-xs gap-1.5 h-6 px-2.5">
+                        <Table2 className="w-3.5 h-3.5" />
+                        Planilha
+                      </TabsTrigger>
+                      <TabsTrigger value="dashboard" className="text-xs gap-1.5 h-6 px-2.5">
+                        <BarChart3Icon className="w-3.5 h-3.5" />
+                        Dashboard
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+                  <TabsContent value="planilha" className="flex-1 flex flex-col overflow-hidden mt-0 data-[state=inactive]:hidden">
                 {/* Toolbar */}
                 <div className="border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between px-3 py-1">
