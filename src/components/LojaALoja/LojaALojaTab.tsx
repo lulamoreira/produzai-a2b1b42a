@@ -53,6 +53,7 @@ const TAB_META: Record<
 > = {
   dashboard: { label: "Dashboard", icon: BarChart3 },
   "portal-dashboard": { label: "Ocorrências", icon: LayoutDashboard },
+  "por-loja": { label: "Por Loja", icon: Building2 },
   tipos: { label: "Loja a Loja", icon: LayoutGrid },
   lojas: { label: "Classificação", icon: Store },
   portais: { label: "Acessos", icon: Settings2 },
