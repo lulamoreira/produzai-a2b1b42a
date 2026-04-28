@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
+import { getStateColor } from "@/lib/stateColors";
 
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
