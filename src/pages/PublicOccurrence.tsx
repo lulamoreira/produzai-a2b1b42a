@@ -55,17 +55,18 @@ const PublicOccurrence = () => {
   });
 
   // Check if occurrence submission is within allowed date window
-  const isWithinOccurrenceWindow = useMemo(() => {
-    if (!campaign) return true;
+  // Returns: 'ok' | 'not_configured' | 'not_started' | 'ended'
+  const windowStatus = useMemo<'ok' | 'not_configured' | 'not_started' | 'ended'>(() => {
+    if (!campaign) return 'ok';
     const startDate = (campaign as any).occurrence_start_date;
     const endDate = (campaign as any).occurrence_end_date;
-    // If no period configured, block submissions
-    if (!startDate && !endDate) return false;
+    if (!startDate && !endDate) return 'not_configured';
     const today = new Date().toISOString().slice(0, 10);
-    if (startDate && today < startDate) return false;
-    if (endDate && today > endDate) return false;
-    return true;
+    if (endDate && today > endDate) return 'ended';
+    if (startDate && today < startDate) return 'not_started';
+    return 'ok';
   }, [campaign]);
+  const isWithinOccurrenceWindow = windowStatus === 'ok';
 
   const { data: stores = [] } = useQuery({
     queryKey: ["public_stores", campaign?.client_id],
