@@ -407,8 +407,7 @@ export default function MatrixAutomationDialog({
   // Check for overwrite before preview
   const handlePreviewClick = async () => {
     const validFilters = filterGroup.filtros.filter(f => f.campo && f.valor);
-    const allowNoFilters = kind === "by_field"; // Modo "Multiplicar por campo": permite aplicar a TODAS as lojas
-    if ((validFilters.length === 0 && !allowNoFilters) || selectedItems.length === 0) {
+    if (selectedItems.length === 0) {
       toast.error(t("automation.fillAllFields"));
       return;
     }
@@ -930,10 +929,9 @@ export default function MatrixAutomationDialog({
   const getNumericFieldLabel = (key: string) => numericFields.find(f => f.key === key)?.label || key;
 
   const hasValidFilters = filterGroup.filtros.some(f => f.campo && f.valor);
-  // No modo "by_field", se nenhum filtro foi preenchido, a automação é aplicada a TODAS as lojas
-  // (filtrando depois por valor numérico válido no campo base). Isso permite uma "automação global".
-  const canProceed = kind === "by_field" ? (!!baseField && (hasValidFilters || filterGroup.filtros.every(f => !f.campo && !f.valor))) : hasValidFilters;
-  const applyingToAll = kind === "by_field" && !hasValidFilters;
+  // Filtros vazios aplicam a TODAS as lojas em ambos os modos (fixed e by_field).
+  const canProceed = selectedItems.length > 0 && (kind === "fixed" || !!baseField);
+  const applyingToAll = !hasValidFilters;
 
   // Stores within filter that have a valid numeric value in baseField
   const matchingStoresWithValue = useMemo(() => {
@@ -1213,11 +1211,9 @@ export default function MatrixAutomationDialog({
                     </span>
                   )}
                 </div>
-                {kind === "by_field" && (
-                  <p className="text-[11px] text-muted-foreground mt-1.5">
-                    💡 Deixe os filtros vazios para aplicar a <span className="font-semibold text-foreground">todas as lojas</span> que tiverem valor no campo base.
-                  </p>
-                )}
+                <p className="text-[11px] text-muted-foreground mt-1.5">
+                  💡 Deixe os filtros vazios para aplicar a <span className="font-semibold text-foreground">todas as lojas</span>{kind === "by_field" ? " que tiverem valor no campo base" : ""}.
+                </p>
               </div>
 
               {/* Items selection */}
