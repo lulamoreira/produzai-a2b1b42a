@@ -302,6 +302,42 @@ export function CreateKitDialog({
 
 // ─── Kit Detail Dialog (full editing) ────────────────────
 
+function SortableKitPieceRow({
+  kp,
+  idx,
+  canDrag,
+  children,
+}: {
+  kp: { id: string };
+  idx: number;
+  canDrag: boolean;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: kp.id, disabled: !canDrag });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      {canDrag && (
+        <button
+          type="button"
+          className="absolute left-1 top-1/2 -translate-y-1/2 z-10 p-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+          aria-label="Arrastar para reordenar"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+      )}
+      <div className={canDrag ? "pl-6" : ""}>{children}</div>
+    </div>
+  );
+}
+
+
 interface KitDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
