@@ -134,6 +134,7 @@ type CardData = {
   category: string;
   name: string;
   is_new: boolean;
+  is_mockup: boolean;
   code: string | number;
   quantity: number;
   image_url: string | null;
@@ -204,8 +205,9 @@ async function drawCard(
   // Line 2: name — bold dark, single line truncated
   doc.setFont("helvetica", "bold");
   doc.setFontSize(7.5);
-  doc.setTextColor(...DARK);
-  const nameRaw = `${card.is_new ? "[N] " : ""}${card.name || "—"}`;
+  doc.setTextColor(...(card.is_mockup ? BROWN : DARK));
+  const mockupPrefix = card.is_mockup ? "[MOCKUP] " : "";
+  const nameRaw = `${mockupPrefix}${card.is_new ? "[N] " : ""}${card.name || "—"}`;
   const nameLines = doc.splitTextToSize(nameRaw, textW);
   doc.text(nameLines.slice(0, 1), textX, textY);
   textY += 3.5;
@@ -297,6 +299,7 @@ export async function exportRateioGridPDF(
           category: items[idx].category,
           name: items[idx].name,
           is_new: items[idx].is_new,
+          is_mockup: items[idx].is_mockup,
           code: items[idx].code,
           quantity: items[idx].quantity,
           image_url: items[idx].image_url,
