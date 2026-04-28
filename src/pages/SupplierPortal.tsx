@@ -945,10 +945,10 @@ const SupplierPortal = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[280px] sticky left-0 z-[5] bg-card">Item</TableHead>
-                    <TableHead className="text-center w-[100px]">Qtd Total</TableHead>
-                    <TableHead className="text-center w-[160px]">Preço Unitário</TableHead>
-                    <TableHead className="text-right w-[140px]">Total</TableHead>
+                    <TableHead className="min-w-[240px] sticky left-0 z-[5] bg-card">Item</TableHead>
+                    <TableHead className="text-center w-[90px]">Qtd Total</TableHead>
+                    <TableHead className="text-center w-[150px] bg-primary/5 text-primary font-semibold">Preço Unitário ({currencyCode})</TableHead>
+                    <TableHead className="text-right w-[140px]">Total da Peça</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
