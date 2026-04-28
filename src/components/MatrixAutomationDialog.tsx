@@ -837,6 +837,7 @@ export default function MatrixAutomationDialog({
           tpl.items,
           tpl.kind ?? "fixed",
           tpl.base_field ?? null,
+          migrated.operation,
         );
         results.push({
           templateId: tpl.id,
