@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 export const DEFAULT_LOJA_A_LOJA_TABS = [
   "dashboard",
   "portal-dashboard",
+  "por-loja",
   "tipos",
   "lojas",
   "portais",

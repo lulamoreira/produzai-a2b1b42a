@@ -6,6 +6,7 @@ import LojaALojaDashboard from "@/components/LojaALoja/LojaALojaDashboard";
 import PortaisManager from "@/components/LojaALoja/PortaisManager";
 import PortalDashboard from "@/components/LojaALoja/PortalDashboard";
 import PortalConfigTab from "@/components/LojaALoja/PortalConfigTab";
+import OccurrencesByStoreTab from "@/components/LojaALoja/OccurrencesByStoreTab";
 import {
   LayoutGrid,
   Store,
@@ -14,6 +15,7 @@ import {
   LayoutDashboard,
   Settings,
   GripVertical,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -51,6 +53,7 @@ const TAB_META: Record<
 > = {
   dashboard: { label: "Dashboard", icon: BarChart3 },
   "portal-dashboard": { label: "Ocorrências", icon: LayoutDashboard },
+  "por-loja": { label: "Por Loja", icon: Building2 },
   tipos: { label: "Loja a Loja", icon: LayoutGrid },
   lojas: { label: "Classificação", icon: Store },
   portais: { label: "Acessos", icon: Settings2 },
@@ -110,6 +113,7 @@ export default function LojaALojaTab({ campaignId, clientId, permissions }: Prop
       switch (id) {
         case "dashboard": return permissions.canViewModule;
         case "portal-dashboard": return permissions.ocorrencias.canView;
+        case "por-loja": return permissions.ocorrencias.canView;
         case "tipos": return permissions.estrutura.canView;
         case "lojas": return permissions.classificacao.canView;
         case "portais": return permissions.acessos.canView;
@@ -180,6 +184,11 @@ export default function LojaALojaTab({ campaignId, clientId, permissions }: Prop
       {visibleTabs.includes("portal-dashboard") && (
         <TabsContent value="portal-dashboard">
           <PortalDashboard campaignId={campaignId} clientId={clientId} permissions={permissions.ocorrencias} />
+        </TabsContent>
+      )}
+      {visibleTabs.includes("por-loja") && (
+        <TabsContent value="por-loja">
+          <OccurrencesByStoreTab campaignId={campaignId} clientId={clientId} permissions={permissions.ocorrencias} />
         </TabsContent>
       )}
       {visibleTabs.includes("tipos") && (
