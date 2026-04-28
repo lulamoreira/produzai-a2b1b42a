@@ -1327,13 +1327,13 @@ export default function MatrixAutomationDialog({
                         <span className="font-mono text-xs">{item.code}</span>
                         <span className="text-sm truncate flex-1">{item.name}</span>
                         {kind === "by_field" && (
-                          <span className="text-xs text-muted-foreground font-semibold">×</span>
+                          <span className="text-xs text-muted-foreground font-semibold">{operation === "divide" ? "÷" : "×"}</span>
                         )}
                         <Input
                           type="number" min={1} value={item.quantity}
                           onChange={e => updateItemQty(idx, parseInt(e.target.value) || 1)}
                           className="w-20 h-7 text-xs"
-                          title={kind === "by_field" ? "Fator multiplicador" : "Quantidade"}
+                          title={kind === "by_field" ? (operation === "divide" ? "Fator (será dividido pelo valor do campo)" : "Fator multiplicador") : "Quantidade"}
                         />
                         <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeItem(idx)}>
                           <Trash2 className="w-3 h-3" />
