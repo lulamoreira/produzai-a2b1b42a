@@ -430,6 +430,11 @@ const ClientDetail = () => {
     custom_field_8_label: client?.custom_field_8_label || "",
     custom_field_9_label: client?.custom_field_9_label || "",
     custom_field_10_label: client?.custom_field_10_label || "",
+    custom_field_11_label: (client as any)?.custom_field_11_label || "",
+    custom_field_12_label: (client as any)?.custom_field_12_label || "",
+    custom_field_13_label: (client as any)?.custom_field_13_label || "",
+    custom_field_14_label: (client as any)?.custom_field_14_label || "",
+    custom_field_15_label: (client as any)?.custom_field_15_label || "",
   });
 
   // Country / currency / language
