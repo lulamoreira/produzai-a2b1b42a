@@ -189,6 +189,10 @@ const SupplierPortal = () => {
           .order("display_order", { ascending: true });
         setTimelineEntries(timeline ?? []);
 
+        // 2c) Materiais de apoio compartilhados com o fornecedor (via RPC segura por token)
+        const { data: materialsData } = await supabase.rpc("get_supplier_support_materials" as never, { p_token: token } as never);
+        setSupportMaterials((materialsData as any[] | null) ?? []);
+
         if (dl && new Date(dl) < new Date() && sup.status !== "enviado") {
           await supabase.from("budget_suppliers").update({ status: "prazo_encerrado" }).eq("id", sup.id);
           sup.status = "prazo_encerrado";
