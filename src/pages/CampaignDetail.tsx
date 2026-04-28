@@ -2347,7 +2347,7 @@ const CampaignDetail = () => {
                   kits={kits}
                   kitPieces={kitPieces}
                   qtyMap={qtyMap}
-                  customFieldLabels={Array.from({ length: 10 }, (_, idx) => {
+                  customFieldLabels={Array.from({ length: 15 }, (_, idx) => {
                     const i = idx + 1;
                     const label = (client as any)?.[`custom_field_${i}_label`];
                     return label ? { key: `custom_field_${i}`, label, index: i } : null;
