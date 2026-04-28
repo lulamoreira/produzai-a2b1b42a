@@ -540,6 +540,11 @@ const ClientDetail = () => {
       custom_field_8: (store as any).custom_field_8 || "",
       custom_field_9: (store as any).custom_field_9 || "",
       custom_field_10: (store as any).custom_field_10 || "",
+      custom_field_11: (store as any).custom_field_11 || "",
+      custom_field_12: (store as any).custom_field_12 || "",
+      custom_field_13: (store as any).custom_field_13 || "",
+      custom_field_14: (store as any).custom_field_14 || "",
+      custom_field_15: (store as any).custom_field_15 || "",
       observations: (store as any).observations || "",
       showcase_count: String((store as any).showcase_count ?? 0),
     });
