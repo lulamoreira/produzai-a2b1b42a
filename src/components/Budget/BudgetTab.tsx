@@ -200,10 +200,33 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const deadlineDate = settings?.deadline ? new Date(settings.deadline) : undefined;
 
   const handleSaveDeadline = (date: Date | undefined) => {
+    let final: Date | null = null;
+    if (date) {
+      final = new Date(date);
+      // Preserva hora existente OU usa padrão 15:00
+      if (deadlineDate) {
+        final.setHours(deadlineDate.getHours(), deadlineDate.getMinutes(), 0, 0);
+      } else {
+        final.setHours(15, 0, 0, 0);
+      }
+    }
     saveSettings.mutate({
       campaign_id: campaignId,
       budget_amount: budgetAmount,
-      deadline: date ? date.toISOString() : null,
+      deadline: final ? final.toISOString() : null,
+    });
+  };
+
+  const handleSaveDeadlineTime = (timeStr: string) => {
+    if (!deadlineDate || !timeStr) return;
+    const [hh, mm] = timeStr.split(":").map((n) => parseInt(n, 10));
+    if (isNaN(hh) || isNaN(mm)) return;
+    const final = new Date(deadlineDate);
+    final.setHours(hh, mm, 0, 0);
+    saveSettings.mutate({
+      campaign_id: campaignId,
+      budget_amount: budgetAmount,
+      deadline: final.toISOString(),
     });
   };
 
