@@ -319,6 +319,7 @@ interface KitDetailDialogProps {
   onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
   onDeletePiece?: (id: string) => void;
   onUpdateKitPiece?: (update: { id: string; quantity: number }) => Promise<void>;
+  onReorderKitPieces?: (updates: { id: string; display_order: number }[]) => Promise<void>;
   onDuplicatePiece?: (piece: CampaignPiece) => Promise<void>;
 }
 
