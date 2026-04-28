@@ -2840,6 +2840,7 @@ const CampaignDetail = () => {
 
           {/* ─── SECTION: PEÇAS ─── */}
           {activeSection === "pieces" && (<>
+            <div className="sticky top-0 z-30 bg-background -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-2 border-b border-border/40">
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
               {/* Group 1 — Counter (left) */}
               <span className="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-accent/15 text-accent-foreground">
@@ -2957,6 +2958,7 @@ const CampaignDetail = () => {
                   );
                 })}
               </div>
+            </div>
             </div>
 
             {(() => {
