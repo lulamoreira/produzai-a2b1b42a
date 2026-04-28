@@ -389,27 +389,35 @@ export default function MatrixAutomationDialog({
   }, [kitPieces, pieces]);
 
   /**
-   * Resolve items multiplied by a numeric store field (BY_FIELD mode).
-   * Returns [] when the store has no valid numeric value in the base field
-   * (the store should then be skipped entirely from the automation).
+   * Resolve items computed from a numeric store field (BY_FIELD mode).
+   * Supports two operations:
+   *   - multiply: Math.ceil(item.quantity * baseValue)
+   *   - divide:   Math.ceil(item.quantity / baseValue)  (skips when baseValue == 0)
+   * Returns [] when the store has no valid numeric value (or division-by-zero) —
+   * the store is then skipped entirely from the automation.
    */
   const resolveItemsForStore = useCallback(
-    (items: SelectedItem[], store: ClientStore, field: string): { pieceId: string; pieceName: string; quantity: number }[] => {
+    (items: SelectedItem[], store: ClientStore, field: string, op: Operation = "multiply"): { pieceId: string; pieceName: string; quantity: number }[] => {
       const raw = (store as any)[field];
       const baseValue = Number(raw);
       if (!Number.isFinite(baseValue) || baseValue <= 0) return [];
-      const multiplied = items.map(it => ({ ...it, quantity: it.quantity * baseValue }));
-      return resolveItemsToPieces(multiplied);
+      const computed = items.map(it => {
+        const q = op === "divide"
+          ? Math.ceil(it.quantity / baseValue)
+          : Math.ceil(it.quantity * baseValue);
+        return { ...it, quantity: q };
+      }).filter(it => it.quantity > 0);
+      return resolveItemsToPieces(computed);
     },
     [resolveItemsToPieces],
   );
 
-  // Compute resolved pieces for a single store, respecting current `kind`/`baseField`.
+  // Compute resolved pieces for a single store, respecting current `kind`/`baseField`/`operation`.
   const resolveForStore = useCallback(
-    (store: ClientStore, items: SelectedItem[], k: AutomationKind, bf: string) => {
+    (store: ClientStore, items: SelectedItem[], k: AutomationKind, bf: string, op: Operation = "multiply") => {
       if (k === "by_field") {
         if (!bf) return [];
-        return resolveItemsForStore(items, store, bf);
+        return resolveItemsForStore(items, store, bf, op);
       }
       return resolveItemsToPieces(items);
     },
