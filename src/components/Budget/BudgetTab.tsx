@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -81,6 +82,22 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const { data: prices = [] } = useBudgetPrices(campaignId);
   const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
+
+  // Materiais de apoio marcados como "compartilhar com fornecedor"
+  const { data: sharedMaterials = [] } = useQuery({
+    queryKey: ["shared_support_materials", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_support_materials")
+        .select("id, title, file_url, file_name")
+        .eq("campaign_id", campaignId)
+        .eq("share_with_supplier", true as never)
+        .not("file_url", "is", null)
+        .order("display_order", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   // Currency-aware formatter (depends on settings)
   const settingsTyped = settings as { currency_code?: string; currency_locked?: boolean } | null | undefined;
@@ -288,6 +305,22 @@ ${timelineEntries.map(e => `🔸 ${new Date(e.entry_date + 'T00:00:00').toLocale
 `
       : '';
 
+    const materialsBlock = sharedMaterials.length > 0
+      ? `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📎 MATERIAL DE APOIO
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Os arquivos abaixo estão disponíveis para download direto:
+
+${sharedMaterials.map((m: any) => `🔸 ${m.title || m.file_name}
+   ${m.file_url}`).join('\n\n')}
+
+💡 Você também encontrará todos esses materiais dentro do portal de cotação.
+`
+      : '';
+
     const body = `━━━━━━━━━━━━━━━━━━━━━━━━━━
   📋 CONVITE PARA COTAÇÃO
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -312,7 +345,7 @@ ${timelineEntries.map(e => `🔸 ${new Date(e.entry_date + 'T00:00:00').toLocale
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 👉 ${portalUrl}
-${deadlineBlock}${timelineBlock}
+${deadlineBlock}${timelineBlock}${materialsBlock}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 💼 Este convite foi enviado em nome da ${agencyName}.
@@ -326,7 +359,10 @@ ${deadlineBlock}${timelineBlock}
   const buildWhatsAppUrl = (sup: typeof suppliers[0]) => {
     const portalUrl = `${window.location.origin}/orcamento/${sup.access_token}`;
     const deadlineStr = deadlineDate ? format(deadlineDate, "dd/MM/yyyy 'às' HH:mm") : "não definido";
-    const msg = `Olá ${sup.contact_name}! A ${agencyName} convidou ${sup.company_name} para participar do processo de cotação da campanha ${campaignName}.\n\nPara acessar a planilha e preencher seus preços, acesse o link abaixo:\n${portalUrl}\n\nPrazo para envio: ${deadlineStr}\n\nInstruções:\n1) Acesse o link acima\n2) Preencha o preço unitário de cada peça\n3) Informe os valores de instalação e frete\n4) Clique em ENVIAR quando concluir\n\nDúvidas? Entre em contato conosco.`;
+    const materialsLine = sharedMaterials.length > 0
+      ? `\n\n📎 Material de apoio para download:\n${sharedMaterials.map((m: any) => `• ${m.title || m.file_name}: ${m.file_url}`).join('\n')}`
+      : '';
+    const msg = `Olá ${sup.contact_name}! A ${agencyName} convidou ${sup.company_name} para participar do processo de cotação da campanha ${campaignName}.\n\nPara acessar a planilha e preencher seus preços, acesse o link abaixo:\n${portalUrl}\n\nPrazo para envio: ${deadlineStr}${materialsLine}\n\nInstruções:\n1) Acesse o link acima\n2) Preencha o preço unitário de cada peça\n3) Informe os valores de instalação e frete\n4) Clique em ENVIAR quando concluir\n\nDúvidas? Entre em contato conosco.`;
     const phone = sup.phone.replace(/\D/g, "");
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
   };

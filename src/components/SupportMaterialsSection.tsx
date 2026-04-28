@@ -6,7 +6,7 @@ import { compressImage } from "@/lib/compressImage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Plus, Upload, Trash2, FileText, Image, File, Download, Pencil, Check, X, ExternalLink, Video } from "lucide-react";
+import { Plus, Upload, Trash2, FileText, Image, File, Download, Pencil, Check, X, ExternalLink, Video, Share2 } from "lucide-react";
 
 interface SupportMaterial {
   id: string;
@@ -16,6 +16,7 @@ interface SupportMaterial {
   file_name: string | null;
   file_type: string | null;
   display_order: number;
+  share_with_supplier: boolean;
   created_at: string;
 }
 
@@ -108,6 +109,21 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["campaign_support_materials", campaignId] }),
     onError: (e: any) => toast.error(t("supportMaterials.errorRemove") + ": " + e.message),
+  });
+
+  const toggleShare = useMutation({
+    mutationFn: async ({ id, share }: { id: string; share: boolean }) => {
+      const { error } = await supabase
+        .from("campaign_support_materials")
+        .update({ share_with_supplier: share } as never)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      queryClient.invalidateQueries({ queryKey: ["campaign_support_materials", campaignId] });
+      toast.success(v.share ? "Compartilhado com o fornecedor" : "Removido do compartilhamento");
+    },
+    onError: (e: any) => toast.error("Erro ao atualizar: " + e.message),
   });
 
   const handleFileUpload = async (materialId: string, file: globalThis.File) => {
@@ -264,6 +280,15 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
                               style={{ color: "var(--text-muted)" }}
                             />
                           )}
+                          {mat.share_with_supplier && (
+                            <span
+                              className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded flex-shrink-0"
+                              style={{ background: "var(--brand, #8C6F4E)", color: "#fff" }}
+                              title="Será disponibilizado ao fornecedor de orçamento"
+                            >
+                              Fornecedor
+                            </span>
+                          )}
                         </div>
                         <p className="text-[11px] mt-0.5" style={{ color: "var(--text-muted)" }}>
                           {mat.file_name
@@ -316,6 +341,17 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
                         </Button>
                       </div>
                     ) : null}
+
+                    {canEdit && mat.file_url && (
+                      <button
+                        onClick={() => toggleShare.mutate({ id: mat.id, share: !mat.share_with_supplier })}
+                        className="p-1.5 rounded-md transition-colors hover:bg-accent"
+                        title={mat.share_with_supplier ? "Compartilhado com fornecedor (clique para remover)" : "Compartilhar com fornecedor de orçamento"}
+                        style={{ color: mat.share_with_supplier ? "var(--brand, #8C6F4E)" : "var(--text-muted)" }}
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
 
                     {canEdit && (
                       <button

@@ -129,6 +129,7 @@ const SupplierPortal = () => {
   const [deadline, setDeadline] = useState<string | null>(null);
   const [currencyCode, setCurrencyCode] = useState<string>("BRL");
   const [timelineEntries, setTimelineEntries] = useState<{ id: string; entry_date: string; description: string }[]>([]);
+  const [supportMaterials, setSupportMaterials] = useState<{ id: string; title: string; file_url: string; file_name: string | null; file_type: string | null }[]>([]);
 
   const [allPieces, setAllPieces] = useState<PieceData[]>([]);
   const [kitsData, setKitsData] = useState<KitData[]>([]);
@@ -187,6 +188,10 @@ const SupplierPortal = () => {
           .eq("campaign_id", sup.campaign_id)
           .order("display_order", { ascending: true });
         setTimelineEntries(timeline ?? []);
+
+        // 2c) Materiais de apoio compartilhados com o fornecedor (via RPC segura por token)
+        const { data: materialsData } = await supabase.rpc("get_supplier_support_materials" as never, { p_token: token } as never);
+        setSupportMaterials((materialsData as any[] | null) ?? []);
 
         if (dl && new Date(dl) < new Date() && sup.status !== "enviado") {
           await supabase.from("budget_suppliers").update({ status: "prazo_encerrado" }).eq("id", sup.id);
@@ -833,6 +838,61 @@ const SupplierPortal = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Material de Apoio compartilhado pelo escritório */}
+        {supportMaterials.length > 0 && (
+          <Card>
+            <CardContent className="p-5 space-y-4">
+              <div>
+                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                  📎 Material de Apoio
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Arquivos disponibilizados pela agência para apoiar sua cotação. Clique em baixar quando precisar.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {supportMaterials.map((mat) => {
+                  const isImage = mat.file_type?.startsWith("image/");
+                  const isVideo = mat.file_type?.startsWith("video/");
+                  const isPdf = mat.file_type === "application/pdf";
+                  const icon = isImage ? "🖼️" : isVideo ? "🎬" : isPdf ? "📄" : "📁";
+                  return (
+                    <div
+                      key={mat.id}
+                      className="flex items-center gap-3 rounded-lg border border-border bg-card p-3 hover:border-primary/40 transition-colors"
+                    >
+                      <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center text-lg shrink-0">
+                        {icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {mat.title || mat.file_name}
+                        </p>
+                        {mat.file_name && mat.title && (
+                          <p className="text-[11px] text-muted-foreground truncate">{mat.file_name}</p>
+                        )}
+                      </div>
+                      <a
+                        href={mat.file_url}
+                        download={mat.file_name || "arquivo"}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0"
+                      >
+                        <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs">
+                          <Download className="w-3.5 h-3.5" />
+                          Baixar
+                        </Button>
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Timeline / Cronograma */}
         {timelineEntries.length > 0 && (

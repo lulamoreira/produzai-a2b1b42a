@@ -1245,6 +1245,7 @@ export type Database = {
           file_type: string | null
           file_url: string | null
           id: string
+          share_with_supplier: boolean
           title: string
         }
         Insert: {
@@ -1255,6 +1256,7 @@ export type Database = {
           file_type?: string | null
           file_url?: string | null
           id?: string
+          share_with_supplier?: boolean
           title?: string
         }
         Update: {
@@ -1265,6 +1267,7 @@ export type Database = {
           file_type?: string | null
           file_url?: string | null
           id?: string
+          share_with_supplier?: boolean
           title?: string
         }
         Relationships: [
@@ -4015,6 +4018,18 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_supplier_support_materials: {
+        Args: { p_token: string }
+        Returns: {
+          created_at: string
+          display_order: number
+          file_name: string
+          file_type: string
+          file_url: string
+          id: string
+          title: string
+        }[]
       }
       get_user_email: { Args: { _user_id: string }; Returns: string }
       has_campaign_access: {
