@@ -215,7 +215,7 @@ const MatrixFilterSidebar = ({
     const states = [...new Set(stores.map((s) => s.state?.trim()).filter(Boolean) as string[])].sort();
     const models = [...new Set(stores.map((s) => s.store_model).filter(Boolean) as string[])].sort();
     const customs: Record<string, string[]> = {};
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 15; i++) {
       const key = `custom_field_${i}`;
       customs[key] = [...new Set(stores.map((s) => (s as any)[key]).filter(Boolean) as string[])].sort();
     }
