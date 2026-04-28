@@ -2775,6 +2775,17 @@ const CampaignDetail = () => {
                     </div>
                   )}
                 </div>}
+                  </TabsContent>
+                  <TabsContent value="dashboard" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
+                    <MatrixDistributionDashboard
+                      stores={activeFilteredStores}
+                      pieces={pieces}
+                      kits={kits}
+                      kitPieces={kitPieces}
+                      qtyMap={qtyMap}
+                    />
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
           )}
