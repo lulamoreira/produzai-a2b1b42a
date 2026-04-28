@@ -819,9 +819,14 @@ export function KitDetailDialog({
                   )}
                 </div>
               );
-            })}
-          </div>
-        )}
+                      })()}
+                    </SortableKitPieceRow>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          );
+        })()}
 
         {/* Add more pieces */}
         {canEdit && onAddKitPiece && (
