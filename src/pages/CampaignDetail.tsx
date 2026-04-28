@@ -464,6 +464,17 @@ const CampaignDetail = () => {
   const [automationOpen, setAutomationOpen] = useState(false);
   const [budgetExportDialogOpen, setBudgetExportDialogOpen] = useState(false);
   const [rateioGridExportOpen, setRateioGridExportOpen] = useState(false);
+  const [rateioView, setRateioView] = useState<"planilha" | "dashboard">(() => {
+    try {
+      const v = localStorage.getItem("produzai_rateio_view");
+      return v === "dashboard" ? "dashboard" : "planilha";
+    } catch { return "planilha"; }
+  });
+  const handleRateioViewChange = useCallback((v: string) => {
+    const next = v === "dashboard" ? "dashboard" : "planilha";
+    setRateioView(next);
+    try { localStorage.setItem("produzai_rateio_view", next); } catch {}
+  }, []);
   const [matrixToolbarCollapsed, setMatrixToolbarCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem('produzai_matrix_toolbar') === 'collapsed'; } catch { return false; }
   });
