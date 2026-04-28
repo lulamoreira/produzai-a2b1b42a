@@ -326,7 +326,7 @@ interface KitDetailDialogProps {
 export function KitDetailDialog({
   open, onOpenChange, kit, kitPieces, allPieces, existingKits = [], canEdit,
   pieceLocations = [], pieceSubLocations = [],
-  onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece, onDuplicatePiece,
+  onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece, onReorderKitPieces, onDuplicatePiece,
 }: KitDetailDialogProps) {
   const [editingPieceId, setEditingPieceId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
