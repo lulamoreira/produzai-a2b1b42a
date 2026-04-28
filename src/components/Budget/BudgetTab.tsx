@@ -1085,6 +1085,36 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             </SheetDescription>
           </SheetHeader>
 
+          {/* Resumo de preenchimento (sempre visível, mesmo em andamento) */}
+          {detailSupplier && supplierPartialTotals[detailSupplier] && (
+            <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground font-medium">Preenchimento do fornecedor</span>
+                <span className="font-semibold text-foreground">
+                  {supplierPartialTotals[detailSupplier].pricedPieces}/{supplierPartialTotals[detailSupplier].totalPiecesNeeded} peças
+                  ({supplierPartialTotals[detailSupplier].pct}%)
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className={cn("h-full transition-all", detailSup?.status === "enviado" ? "bg-emerald-500" : "bg-primary")}
+                  style={{ width: `${supplierPartialTotals[detailSupplier].pct}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs text-muted-foreground">
+                  {detailSup?.status === "enviado" ? "Total final" : "Total parcial (em preenchimento)"}
+                </span>
+                <span className={cn(
+                  "text-base font-bold",
+                  detailSup?.status === "enviado" ? "text-emerald-600 dark:text-emerald-400" : "text-primary"
+                )}>
+                  {fmtCurrency(supplierPartialTotals[detailSupplier].total)}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="mt-6 space-y-4">
             {/* Pieces table */}
             <div className="border rounded-md overflow-x-auto">
