@@ -1030,13 +1030,13 @@ const SupplierPortal = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-center font-mono text-sm">{row.totalQty}</TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center bg-primary/5">
                             <Input
                               type="number"
                               step="0.01"
                               min="0"
                               placeholder="0,00"
-                              className="w-[130px] mx-auto text-right"
+                              className="w-[130px] mx-auto text-right border-primary/40 focus-visible:ring-primary/40 bg-background"
                               disabled={isLocked}
                               value={unitPrice ?? ""}
                               onFocus={markFilling}
@@ -1050,8 +1050,8 @@ const SupplierPortal = () => {
                               }}
                             />
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm font-medium">
-                            {unitPrice != null ? fmt(lineTotal) : "—"}
+                          <TableCell className="text-right font-mono text-sm font-semibold text-primary">
+                            {unitPrice != null ? fmt(lineTotal) : <span className="text-muted-foreground font-normal">—</span>}
                           </TableCell>
                         </TableRow>
                         {/* Inline suggestion form */}
