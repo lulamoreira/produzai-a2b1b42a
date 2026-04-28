@@ -25,10 +25,10 @@ const PAGE_MARGIN_X = 10;
 const PAGE_MARGIN_TOP = 0; // header is full-width to top
 const PAGE_MARGIN_BOTTOM = 12; // footer reserved
 const HEADER_TOTAL_HEIGHT = 38; // 4 stacked bars
-const CARD_GAP = 4;
-const CARDS_PER_ROW = 3;
-const CARD_HEIGHT = 60; // mm — fits photo + 4 text lines
-const PHOTO_SIZE = 22; // mm (visual ~40px target)
+const CARD_GAP = 3;
+const CARDS_PER_ROW = 6;
+const CARD_HEIGHT = 42; // mm — compact card, ~4 rows per page in landscape A4
+const PHOTO_SIZE = 16; // mm
 
 type ImageCacheEntry = { dataUrl: string; format: "PNG" | "JPEG" | "GIF" } | null;
 
