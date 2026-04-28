@@ -383,16 +383,24 @@ export default function AppSidebar() {
                     const campBasePath = `/agency/${group.agencyId}/clients/${group.clientId}/campaigns/${camp.campaignId}`;
                     return (
                       <div key={camp.campaignId}>
-                        <button
-                          onClick={() => toggleCampaignExpanded(camp.campaignId)}
-                          className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[12px] font-semibold uppercase tracking-wider transition-all"
-                          style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
-                          onMouseEnter={e => { e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
-                          onMouseLeave={e => { if (!isActiveCampaign) e.currentTarget.style.color = "var(--brand-300, #C4AD92)"; }}
-                        >
-                          <span className="truncate flex-1 text-left">{camp.campaignName}</span>
-                          <ChevronDown className="w-3 h-3 flex-shrink-0 opacity-40 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }} />
-                        </button>
+                        <div className="flex items-center gap-0.5">
+                          <button
+                            onClick={() => handleNavigate(campBasePath)}
+                            className="flex-1 truncate text-left px-2 py-1.5 rounded-md text-[12px] font-semibold uppercase tracking-wider transition-all"
+                            style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
+                            onMouseEnter={e => { e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
+                            onMouseLeave={e => { if (!isActiveCampaign) e.currentTarget.style.color = "var(--brand-300, #C4AD92)"; }}
+                          >
+                            {camp.campaignName}
+                          </button>
+                          <button
+                            onClick={() => toggleCampaignExpanded(camp.campaignId)}
+                            className="flex-shrink-0 p-1 rounded transition-all"
+                            style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
+                          >
+                            <ChevronDown className="w-3 h-3 opacity-40 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }} />
+                          </button>
+                        </div>
                         {isExpanded && (
                           <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
                             {CAMPAIGN_MODULE_KEYS.filter(mod => {
