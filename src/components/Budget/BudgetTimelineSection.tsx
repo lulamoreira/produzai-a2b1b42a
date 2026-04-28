@@ -156,6 +156,7 @@ function TimelineRow({ entry, campaignId, onDelete }: RowProps) {
       <Textarea
         value={description}
         onChange={(e) => handleDescriptionChange(e.target.value)}
+        onFocus={handleDescriptionFocus}
         onBlur={handleDescriptionBlur}
         placeholder="Descrição da entrega (ex: Aprovação da arte final)"
         className="flex-1 min-h-[40px] text-sm resize-y"
