@@ -331,7 +331,16 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
                 className="pl-8"
               />
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
+              <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "desc" | "asc")}>
+                <SelectTrigger className="h-9 w-[170px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">Mais recentes primeiro</SelectItem>
+                  <SelectItem value="asc">Mais antigas primeiro</SelectItem>
+                </SelectContent>
+              </Select>
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={clearFilters}>
                   <X className="h-4 w-4 mr-1" /> Limpar
