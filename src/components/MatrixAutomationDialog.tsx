@@ -112,14 +112,17 @@ function filtrarLojas(stores: ClientStore[], grupo: FilterGroup): ClientStore[] 
   });
 }
 
+type Operation = "multiply" | "divide";
+
 /** Migrate legacy single-filter template to multi-filter format */
-function migrateTemplate(tpl: any): { filtros: AutomationFilter[]; condicoes: FilterCondition[] } {
+function migrateTemplate(tpl: any): { filtros: AutomationFilter[]; condicoes: FilterCondition[]; operation: Operation } {
   if (tpl.filter_field === "__multi_v2__") {
     try {
       const parsed = JSON.parse(tpl.filter_value);
-      return { filtros: parsed.filtros || [], condicoes: parsed.condicoes || [] };
+      const op: Operation = parsed.operation === "divide" ? "divide" : "multiply";
+      return { filtros: parsed.filtros || [], condicoes: parsed.condicoes || [], operation: op };
     } catch {
-      return { filtros: [createEmptyFilter()], condicoes: [] };
+      return { filtros: [createEmptyFilter()], condicoes: [], operation: "multiply" };
     }
   }
   // Legacy single filter
@@ -131,6 +134,7 @@ function migrateTemplate(tpl: any): { filtros: AutomationFilter[]; condicoes: Fi
       valor: tpl.filter_value,
     }],
     condicoes: [],
+    operation: "multiply",
   };
 }
 
@@ -176,9 +180,15 @@ export default function MatrixAutomationDialog({
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [itemSearch, setItemSearch] = useState("");
 
-  // Automation kind: 'fixed' = quantity per item; 'by_field' = store_field × factor
+  // Automation kind: 'fixed' = quantity per item; 'by_field' = computed from store_field
   const [kind, setKind] = useState<AutomationKind>("fixed");
   const [baseField, setBaseField] = useState<string>("");
+  const [operation, setOperation] = useState<Operation>("multiply");
+
+  // Reset operation when leaving by_field mode
+  useEffect(() => {
+    if (kind !== "by_field") setOperation("multiply");
+  }, [kind]);
 
   // Step 2 state
   const [preview, setPreview] = useState<PreviewRow[]>([]);
@@ -231,6 +241,7 @@ export default function MatrixAutomationDialog({
       setOverwriteDialog({ open: false, count: 0 });
       setKind("fixed");
       setBaseField("");
+      setOperation("multiply");
       setEditingId(null);
     }
   }, [open]);
@@ -345,7 +356,7 @@ export default function MatrixAutomationDialog({
     const result: { pieceId: string; pieceName: string; quantity: number }[] = [];
     for (const item of items) {
       if (item.type === "piece") {
-        result.push({ pieceId: item.id, pieceName: item.name, quantity: item.quantity });
+        result.push({ pieceId: item.id, pieceName: item.name, quantity: Math.ceil(item.quantity) });
       } else {
         const components = kitPieces.filter(kp => kp.kit_id === item.id);
         if (components.length === 0) {
@@ -353,7 +364,7 @@ export default function MatrixAutomationDialog({
           result.push({
             pieceId: item.id,
             pieceName: `[KIT sem componentes] ${item.name}`,
-            quantity: item.quantity,
+            quantity: Math.ceil(item.quantity),
           });
           continue;
         }
@@ -373,31 +384,40 @@ export default function MatrixAutomationDialog({
         }
       }
     }
-    return result;
+    // Final ceil pass to ensure no decimals leak through (kit aggregates above use raw sums).
+    return result.map(r => ({ ...r, quantity: Math.ceil(r.quantity) }));
   }, [kitPieces, pieces]);
 
   /**
-   * Resolve items multiplied by a numeric store field (BY_FIELD mode).
-   * Returns [] when the store has no valid numeric value in the base field
-   * (the store should then be skipped entirely from the automation).
+   * Resolve items computed from a numeric store field (BY_FIELD mode).
+   * Supports two operations:
+   *   - multiply: Math.ceil(item.quantity * baseValue)
+   *   - divide:   Math.ceil(item.quantity / baseValue)  (skips when baseValue == 0)
+   * Returns [] when the store has no valid numeric value (or division-by-zero) —
+   * the store is then skipped entirely from the automation.
    */
   const resolveItemsForStore = useCallback(
-    (items: SelectedItem[], store: ClientStore, field: string): { pieceId: string; pieceName: string; quantity: number }[] => {
+    (items: SelectedItem[], store: ClientStore, field: string, op: Operation = "multiply"): { pieceId: string; pieceName: string; quantity: number }[] => {
       const raw = (store as any)[field];
       const baseValue = Number(raw);
       if (!Number.isFinite(baseValue) || baseValue <= 0) return [];
-      const multiplied = items.map(it => ({ ...it, quantity: it.quantity * baseValue }));
-      return resolveItemsToPieces(multiplied);
+      const computed = items.map(it => {
+        const q = op === "divide"
+          ? Math.ceil(it.quantity / baseValue)
+          : Math.ceil(it.quantity * baseValue);
+        return { ...it, quantity: q };
+      }).filter(it => it.quantity > 0);
+      return resolveItemsToPieces(computed);
     },
     [resolveItemsToPieces],
   );
 
-  // Compute resolved pieces for a single store, respecting current `kind`/`baseField`.
+  // Compute resolved pieces for a single store, respecting current `kind`/`baseField`/`operation`.
   const resolveForStore = useCallback(
-    (store: ClientStore, items: SelectedItem[], k: AutomationKind, bf: string) => {
+    (store: ClientStore, items: SelectedItem[], k: AutomationKind, bf: string, op: Operation = "multiply") => {
       if (k === "by_field") {
         if (!bf) return [];
-        return resolveItemsForStore(items, store, bf);
+        return resolveItemsForStore(items, store, bf, op);
       }
       return resolveItemsToPieces(items);
     },
@@ -413,7 +433,7 @@ export default function MatrixAutomationDialog({
     }
 
     if (kind === "by_field" && !baseField) {
-      toast.error("Selecione o campo base para multiplicação.");
+      toast.error("Selecione o campo base para o cálculo.");
       return;
     }
 
@@ -436,7 +456,7 @@ export default function MatrixAutomationDialog({
     const filtered = filtrarLojas(stores, filterGroup);
     let overwriteCount = 0;
     for (const store of filtered) {
-      const resolvedPieces = resolveForStore(store, selectedItems, kind, baseField);
+      const resolvedPieces = resolveForStore(store, selectedItems, kind, baseField, operation);
       for (const rp of resolvedPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
         if (currentQty > 0) overwriteCount++;
@@ -464,7 +484,7 @@ export default function MatrixAutomationDialog({
     const actions: Record<string, OutsideFilterAction> = {};
 
     for (const store of filtered) {
-      const resolvedPieces = resolveForStore(store, selectedItems, kind, baseField);
+      const resolvedPieces = resolveForStore(store, selectedItems, kind, baseField, operation);
       // by_field: store sem valor numérico válido cai como ignorada (1 linha agregada)
       if (resolvedPieces.length === 0 && kind === "by_field") {
         rows.push({
@@ -542,6 +562,7 @@ export default function MatrixAutomationDialog({
     items: SelectedItem[],
     k: AutomationKind = "fixed",
     bf: string | null = null,
+    op: Operation = "multiply",
   ): Promise<{ updated: number; kept: number; zeroed: number }> => {
     const matching = filtrarLojas(stores, fg);
     const matchingIds = new Set(matching.map(s => s.id));
@@ -553,7 +574,7 @@ export default function MatrixAutomationDialog({
 
     for (const store of matching) {
       const resolvedPieces = k === "by_field" && bf
-        ? resolveItemsForStore(items, store, bf)
+        ? resolveItemsForStore(items, store, bf, op)
         : resolveItemsToPieces(items);
       if (resolvedPieces.length === 0) continue;
       touchedStores++;
@@ -688,14 +709,14 @@ export default function MatrixAutomationDialog({
   const handleSaveTemplate = async () => {
     if (!saveName.trim()) return;
     if (kind === "by_field" && !baseField) {
-      toast.error("Selecione o campo base para multiplicação.");
+      toast.error("Selecione o campo base para o cálculo.");
       return;
     }
     try {
       const payload = {
         name: saveName.trim(),
         filter_field: "__multi_v2__",
-        filter_value: JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes }),
+        filter_value: JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes, operation }),
         items: selectedItems,
         outside_action: "keep",
         kind,
@@ -719,10 +740,11 @@ export default function MatrixAutomationDialog({
   // Load template into form (read-only "carregar" — não entra em modo edição)
   const loadTemplate = (tpl: typeof templates[0]) => {
     const migrated = migrateTemplate(tpl);
-    setFilterGroup(migrated);
+    setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
     setSelectedItems(tpl.items);
     setKind(tpl.kind ?? "fixed");
     setBaseField(tpl.base_field ?? "");
+    setOperation(migrated.operation);
     setEditingId(null);
     setMainTab("new");
     setStep(1);
@@ -731,10 +753,11 @@ export default function MatrixAutomationDialog({
   // Edit template: load into form AND mark as editing so save updates in place
   const editTemplate = (tpl: typeof templates[0]) => {
     const migrated = migrateTemplate(tpl);
-    setFilterGroup(migrated);
+    setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
     setSelectedItems(tpl.items);
     setKind(tpl.kind ?? "fixed");
     setBaseField(tpl.base_field ?? "");
+    setOperation(migrated.operation);
     setEditingId(tpl.id);
     setSaveName(tpl.name);
     setShowSaveInput(true);
@@ -814,6 +837,7 @@ export default function MatrixAutomationDialog({
           tpl.items,
           tpl.kind ?? "fixed",
           tpl.base_field ?? null,
+          migrated.operation,
         );
         results.push({
           templateId: tpl.id,
@@ -963,7 +987,10 @@ export default function MatrixAutomationDialog({
       base = `${getFieldLabel(tpl.filter_field)} = ${tpl.filter_value}`;
     }
     if ((tpl.kind ?? "fixed") === "by_field" && tpl.base_field) {
-      base += ` · usar ${getNumericFieldLabel(tpl.base_field)} × fator`;
+      const op = migrateTemplate(tpl).operation;
+      const sym = op === "divide" ? "÷" : "×";
+      const verb = op === "divide" ? "dividir por" : "multiplicar por";
+      base += ` · ${verb} ${getNumericFieldLabel(tpl.base_field)} (fator ${sym} valor)`;
     }
     return base;
   };
@@ -1048,9 +1075,9 @@ export default function MatrixAutomationDialog({
                     }`}
                     title={numericFields.length === 0 ? "Nenhum campo numérico disponível" : undefined}
                   >
-                    <p className="text-sm font-medium">Multiplicar por campo da loja</p>
+                    <p className="text-sm font-medium">Calcular por campo da loja</p>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Quantidade = valor do campo × fator por item
+                      Quantidade calculada a partir de um campo numérico da loja
                     </p>
                   </button>
                 </div>
@@ -1073,6 +1100,39 @@ export default function MatrixAutomationDialog({
                   <p className="text-[11px] text-muted-foreground mt-1">
                     Lojas sem valor neste campo serão ignoradas pela automação.
                   </p>
+
+                  {/* ── Operação (Multiplicar / Dividir) ── */}
+                  <Label className="text-sm font-semibold mt-3 mb-2 block">Operação</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setOperation("multiply")}
+                      className={`text-left p-2.5 rounded-lg border transition-all ${
+                        operation === "multiply"
+                          ? "border-primary bg-primary/5 ring-1 ring-primary"
+                          : "border-border bg-background hover:border-primary/40"
+                      }`}
+                    >
+                      <p className="text-sm font-medium">Multiplicar</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        fator × valor do campo
+                      </p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOperation("divide")}
+                      className={`text-left p-2.5 rounded-lg border transition-all ${
+                        operation === "divide"
+                          ? "border-primary bg-primary/5 ring-1 ring-primary"
+                          : "border-border bg-background hover:border-primary/40"
+                      }`}
+                    >
+                      <p className="text-sm font-medium">Dividir</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">
+                        fator ÷ valor do campo (arredonda p/ cima)
+                      </p>
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -1221,7 +1281,11 @@ export default function MatrixAutomationDialog({
                 <Label className="text-sm font-medium">{t("automation.selectItems")}</Label>
                 {kind === "by_field" && baseField && (
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Quantidade por loja = <span className="font-semibold text-foreground">{getNumericFieldLabel(baseField)}</span> × fator do item (abaixo)
+                    Quantidade por loja = {operation === "divide" ? (
+                      <>fator do item ÷ <span className="font-semibold text-foreground">{getNumericFieldLabel(baseField)}</span> (arredondado p/ cima; lojas com valor 0 são ignoradas)</>
+                    ) : (
+                      <><span className="font-semibold text-foreground">{getNumericFieldLabel(baseField)}</span> × fator do item (abaixo)</>
+                    )}
                   </p>
                 )}
                 <div className="relative mt-1">
@@ -1263,13 +1327,13 @@ export default function MatrixAutomationDialog({
                         <span className="font-mono text-xs">{item.code}</span>
                         <span className="text-sm truncate flex-1">{item.name}</span>
                         {kind === "by_field" && (
-                          <span className="text-xs text-muted-foreground font-semibold">×</span>
+                          <span className="text-xs text-muted-foreground font-semibold">{operation === "divide" ? "÷" : "×"}</span>
                         )}
                         <Input
                           type="number" min={1} value={item.quantity}
                           onChange={e => updateItemQty(idx, parseInt(e.target.value) || 1)}
                           className="w-20 h-7 text-xs"
-                          title={kind === "by_field" ? "Fator multiplicador" : "Quantidade"}
+                          title={kind === "by_field" ? (operation === "divide" ? "Fator (será dividido pelo valor do campo)" : "Fator multiplicador") : "Quantidade"}
                         />
                         <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => removeItem(idx)}>
                           <Trash2 className="w-3 h-3" />
@@ -1328,11 +1392,15 @@ export default function MatrixAutomationDialog({
                         {getTemplateFilterSummary(tpl)}
                       </p>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {tpl.items.map(it => (
-                          <Badge key={`${it.type}-${it.id}`} variant="secondary" className="text-[10px]">
-                            {it.type === "kit" ? "Kit" : ""} {it.code} {(tpl.kind ?? "fixed") === "by_field" ? "f×" : "×"} {it.quantity}
-                          </Badge>
-                        ))}
+                        {(() => {
+                          const tplOp = (tpl.kind ?? "fixed") === "by_field" ? migrateTemplate(tpl).operation : "multiply";
+                          const sym = (tpl.kind ?? "fixed") === "by_field" ? (tplOp === "divide" ? "f÷" : "f×") : "×";
+                          return tpl.items.map(it => (
+                            <Badge key={`${it.type}-${it.id}`} variant="secondary" className="text-[10px]">
+                              {it.type === "kit" ? "Kit" : ""} {it.code} {sym} {it.quantity}
+                            </Badge>
+                          ));
+                        })()}
                       </div>
                     </div>
                     <div className="flex gap-1 shrink-0">
