@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Camera, X, Loader2, ExternalLink, RotateCw } from "lucide-react";
+import { Camera, X, Loader2, ExternalLink, RotateCw, ImageIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useQuery } from "@tanstack/react-query";
 import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
 
