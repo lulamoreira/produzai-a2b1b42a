@@ -333,6 +333,17 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
                       </div>
                     ) : null}
 
+                    {canEdit && mat.file_url && (
+                      <button
+                        onClick={() => toggleShare.mutate({ id: mat.id, share: !mat.share_with_supplier })}
+                        className="p-1.5 rounded-md transition-colors hover:bg-accent"
+                        title={mat.share_with_supplier ? "Compartilhado com fornecedor (clique para remover)" : "Compartilhar com fornecedor de orçamento"}
+                        style={{ color: mat.share_with_supplier ? "var(--brand, #8C6F4E)" : "var(--text-muted)" }}
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
                     {canEdit && (
                       <button
                         onClick={() => deleteCard.mutate(mat.id)}
