@@ -163,7 +163,7 @@ async function drawCard(
   doc.roundedRect(x, y, w, h, 1.5, 1.5, "S");
 
   // Photo area (top-centered)
-  const photoY = y + 4;
+  const photoY = y + 2.5;
   const photoX = x + (w - PHOTO_SIZE) / 2;
   let imageDrawn = false;
   if (card.image_url) {
@@ -178,44 +178,41 @@ async function drawCard(
     }
   }
   if (!imageDrawn) {
-    // Placeholder rectangle with "(sem foto)" label
     doc.setDrawColor(...BORDER);
     doc.setFillColor(...BEIGE);
     doc.roundedRect(photoX, photoY, PHOTO_SIZE, PHOTO_SIZE, 1, 1, "FD");
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(7);
+    doc.setFontSize(6);
     doc.setTextColor(...GREY);
     doc.text("(sem foto)", photoX + PHOTO_SIZE / 2, photoY + PHOTO_SIZE / 2 + 1, { align: "center" });
     doc.setTextColor(0, 0, 0);
   }
 
   // Text block (below photo)
-  let textY = photoY + PHOTO_SIZE + 5;
-  const textX = x + 4;
-  const textW = w - 8;
+  let textY = photoY + PHOTO_SIZE + 3.5;
+  const textX = x + 2;
+  const textW = w - 4;
 
   // Line 1: Local: category (small brown bold)
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
+  doc.setFontSize(6.5);
   doc.setTextColor(...BROWN);
   const catLine = `Local: ${card.category}`;
   doc.text(doc.splitTextToSize(catLine, textW)[0] || catLine, textX, textY);
-  textY += 5;
+  textY += 3.2;
 
-  // Line 2: name (with [NOVO] prefix if new) — bold dark
+  // Line 2: name — bold dark, single line truncated
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
+  doc.setFontSize(7.5);
   doc.setTextColor(...DARK);
-  const nameRaw = `${card.is_new ? "[NOVO] " : ""}${card.name || "—"}`;
+  const nameRaw = `${card.is_new ? "[N] " : ""}${card.name || "—"}`;
   const nameLines = doc.splitTextToSize(nameRaw, textW);
-  // Limit to 2 lines to keep card height stable
-  const trimmedName = nameLines.slice(0, 2);
-  doc.text(trimmedName, textX, textY);
-  textY += 5 * trimmedName.length;
+  doc.text(nameLines.slice(0, 1), textX, textY);
+  textY += 3.5;
 
-  // Line 3: Cód | Qtd  on same line
+  // Line 3: Cód | Qtd
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(7);
   doc.setTextColor(...DARK);
   const summary = `Cod: ${card.code || "—"}  |  Qtd: ${card.quantity}`;
   doc.text(summary, textX, textY);
