@@ -150,17 +150,12 @@ export default function AppSidebar() {
     staleTime: 2 * 60 * 1000,
   });
 
-  // Auto-expand active campaign on mount/change
+  // Auto-expand the active campaign and collapse all others.
+  // Manual toggles via toggleCampaignExpanded still override this until campaignId changes again.
   useEffect(() => {
     if (campaignId) {
-      setCampaignExpanded(prev => {
-        // If not yet tracked, init from localStorage or default open
-        if (prev[campaignId] === undefined) {
-          const stored = getStoredBool(`produzai_campanha_${campaignId}_open`, true);
-          return { ...prev, [campaignId]: stored };
-        }
-        return prev;
-      });
+      setCampaignExpanded({ [campaignId]: true });
+      try { setStoredBool(`produzai_campanha_${campaignId}_open`, true); } catch {}
     }
   }, [campaignId]);
 
