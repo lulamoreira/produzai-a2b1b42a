@@ -255,7 +255,7 @@ export async function exportRateioGrid(
     const totalRow = lastDataRow + 3;
     ws.getRow(spacer1).height = 8;
     ws.getRow(spacer2).height = 8;
-    ws.mergeCells(`A${totalRow}:H${totalRow}`);
+    ws.mergeCells(`A${totalRow}:L${totalRow}`);
     const tCell = ws.getCell(`A${totalRow}`);
     tCell.value = `Total de peças: ${totalQuantity}`;
     tCell.font = { name: "Arial", size: 14, bold: true, color: { argb: WHITE } };
