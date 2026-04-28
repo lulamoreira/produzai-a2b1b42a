@@ -191,8 +191,36 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
             {/* IDENTIFICAÇÃO */}
             <section className="space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Identificação</h3>
-              <Field label="Loja" value={storeName} />
-              <Field label="Peça" value={pieceName} />
+              <div className="flex items-start justify-between gap-3">
+                <Field label="Loja" value={storeName} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 flex-shrink-0"
+                  onClick={() => setCheckinOpen(true)}
+                >
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  Check-in da loja
+                </Button>
+              </div>
+
+              <div className="flex items-start gap-3">
+                {pieceImageUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setLightboxUrl(pieceImageUrl)}
+                    className="w-16 h-16 rounded-md overflow-hidden border border-border flex-shrink-0 hover:opacity-80 transition"
+                    title="Ampliar imagem da peça"
+                  >
+                    <img src={getThumbnailUrl(pieceImageUrl, 200)} alt={pieceName} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  </button>
+                )}
+                <div className="flex-1 min-w-0">
+                  <Field label="Peça" value={pieceName} />
+                </div>
+              </div>
+
               <Field label="Motivo" value={motivoDesc} />
               <Field label="Reportado por" value={reporterLabel} />
               <Field label="Data de abertura" value={formatDateTime(occurrence.created_at)} />
