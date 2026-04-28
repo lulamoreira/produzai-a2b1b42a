@@ -169,35 +169,58 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     return map;
   }, [kits, kitPieces, pieceTotals]);
 
-  // ─── Compute supplier grand totals (per-piece pricing) ─
-  const supplierTotals = useMemo(() => {
-    const result: Record<string, number> = {};
+  // ─── Compute supplier totals (per-piece pricing) ──────
+  // Partial: para TODOS os fornecedores, mesmo em preenchimento.
+  // Final (supplierTotals): apenas status "enviado".
+  const supplierPartialTotals = useMemo(() => {
+    const result: Record<string, { total: number; installation: number; freight: number; pricedPieces: number; totalPiecesNeeded: number; pct: number }> = {};
     suppliers.forEach((sup) => {
-      if (sup.status !== "enviado") return;
       let total = 0;
-      // Standalone pieces
-      prices.filter((pr) => pr.supplier_id === sup.id && pr.piece_id).forEach((pr) => {
-        // Check if this piece is standalone or part of a kit
-        const piece = pieces.find((p) => p.id === pr.piece_id);
-        if (piece && !piece.kit_only) {
-          const qty = pieceTotals[pr.piece_id!] || 0;
-          total += (Number(pr.unit_price) || 0) * qty;
+      let pricedPieces = 0;
+      let totalPiecesNeeded = 0;
+      const counted = new Set<string>();
+      pieces.filter((p) => !p.kit_only).forEach((piece) => {
+        const qty = pieceTotals[piece.id] || 0;
+        if (qty <= 0) return;
+        totalPiecesNeeded += 1;
+        const pr = prices.find((x) => x.supplier_id === sup.id && x.piece_id === piece.id);
+        if (pr && Number(pr.unit_price) > 0) {
+          total += Number(pr.unit_price) * qty;
+          pricedPieces += 1;
+          counted.add(piece.id);
         }
-        // Kit pieces: find in kitPieceTotals
-        Object.values(kitPieceTotals).forEach((kpItems) => {
-          const match = kpItems.find((kpi) => kpi.pieceId === pr.piece_id);
-          if (match) {
-            total += (Number(pr.unit_price) || 0) * match.qty;
+      });
+      Object.values(kitPieceTotals).forEach((kpItems) => {
+        kpItems.forEach((kpi) => {
+          if (counted.has(kpi.pieceId)) return;
+          if (kpi.qty <= 0) return;
+          totalPiecesNeeded += 1;
+          const pr = prices.find((x) => x.supplier_id === sup.id && x.piece_id === kpi.pieceId);
+          if (pr && Number(pr.unit_price) > 0) {
+            total += Number(pr.unit_price) * kpi.qty;
+            pricedPieces += 1;
+            counted.add(kpi.pieceId);
           }
         });
       });
       const ec = extraCosts.find((e) => e.supplier_id === sup.id);
-      total += Number(ec?.installation_value) || 0;
-      total += Number(ec?.freight_value) || 0;
-      result[sup.id] = total;
+      const installation = Number(ec?.installation_value) || 0;
+      const freight = Number(ec?.freight_value) || 0;
+      total += installation + freight;
+      const pct = totalPiecesNeeded > 0 ? Math.round((pricedPieces / totalPiecesNeeded) * 100) : 0;
+      result[sup.id] = { total, installation, freight, pricedPieces, totalPiecesNeeded, pct };
     });
     return result;
   }, [suppliers, prices, extraCosts, pieceTotals, kitPieceTotals, pieces]);
+
+  const supplierTotals = useMemo(() => {
+    const result: Record<string, number> = {};
+    suppliers.forEach((sup) => {
+      if (sup.status !== "enviado") return;
+      result[sup.id] = supplierPartialTotals[sup.id]?.total ?? 0;
+    });
+    return result;
+  }, [suppliers, supplierPartialTotals]);
 
   const bestSupplier = useMemo(() => {
     let best: { id: string; total: number; name: string } | null = null;
@@ -620,6 +643,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {suppliers.map((sup) => {
               const st = STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
+              const partial = supplierPartialTotals[sup.id];
+              const inProgress = partial && partial.pricedPieces > 0 && sup.status !== "enviado";
               return (
                 <Card key={sup.id} className="relative">
                   <CardContent className="pt-4 pb-3 space-y-2">
@@ -645,6 +670,40 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                         </p>
                       )}
                     </div>
+                    {/* Resumo de preenchimento (visível mesmo em andamento) */}
+                    {partial && partial.totalPiecesNeeded > 0 && (
+                      <div className="rounded-md border border-border/60 bg-muted/30 p-2 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Preenchimento</span>
+                          <span className="font-semibold text-foreground">
+                            {partial.pricedPieces}/{partial.totalPiecesNeeded} ({partial.pct}%)
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={cn("h-full transition-all", sup.status === "enviado" ? "bg-emerald-500" : "bg-primary")}
+                            style={{ width: `${partial.pct}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] pt-0.5">
+                          <span className="text-muted-foreground">
+                            {sup.status === "enviado" ? "Total" : inProgress ? "Parcial" : "Sem valores"}
+                          </span>
+                          <span className={cn(
+                            "font-bold",
+                            sup.status === "enviado" ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
+                          )}>
+                            {fmtCurrency(partial.total)}
+                          </span>
+                        </div>
+                        {(partial.installation > 0 || partial.freight > 0) && (
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>Frete + Inst.</span>
+                            <span>{fmtCurrency(partial.installation + partial.freight)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                     {/* Actions */}
                     <div className="flex items-center gap-1 pt-1">
                       <Button
@@ -687,6 +746,83 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               );
             })}
           </div>
+        )}
+
+        {/* ═══ COMPARATIVO DE FORNECEDORES (mesmo em preenchimento) ═══ */}
+        {suppliers.length > 0 && (
+          <Card>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground">Comparativo lado a lado</h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Acompanhe o preenchimento parcial de todos os fornecedores em tempo real.
+                  </p>
+                </div>
+                {bestSupplier && (
+                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px]">
+                    Melhor proposta enviada: {bestSupplier.name}
+                  </Badge>
+                )}
+              </div>
+              <div className="overflow-x-auto">
+                <Table className="text-xs">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Fornecedor</TableHead>
+                      <TableHead className="text-xs">Status</TableHead>
+                      <TableHead className="text-xs text-center">Preenchimento</TableHead>
+                      <TableHead className="text-xs text-right">Σ Peças</TableHead>
+                      <TableHead className="text-xs text-right">Instalação</TableHead>
+                      <TableHead className="text-xs text-right">Frete</TableHead>
+                      <TableHead className="text-xs text-right">Total Geral</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {suppliers.map((sup) => {
+                      const st = STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
+                      const p = supplierPartialTotals[sup.id];
+                      if (!p) return null;
+                      const piecesTotal = p.total - p.installation - p.freight;
+                      const isBest = bestSupplier?.id === sup.id;
+                      return (
+                        <TableRow key={sup.id} className={cn(isBest && "bg-emerald-50/60 dark:bg-emerald-900/10")}>
+                          <TableCell className="font-medium text-foreground">
+                            <button onClick={() => setDetailSupplier(sup.id)} className="hover:underline text-left">
+                              {sup.company_name}
+                            </button>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={cn("text-[10px]", st.color)}>{st.label}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col items-center gap-1 min-w-[100px]">
+                              <span className="text-[11px] font-medium">{p.pricedPieces}/{p.totalPiecesNeeded} · {p.pct}%</span>
+                              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className={cn("h-full", sup.status === "enviado" ? "bg-emerald-500" : "bg-primary")}
+                                  style={{ width: `${p.pct}%` }}
+                                />
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">{piecesTotal > 0 ? fmtCurrency(piecesTotal) : "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums">{p.installation > 0 ? fmtCurrency(p.installation) : "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums">{p.freight > 0 ? fmtCurrency(p.freight) : "—"}</TableCell>
+                          <TableCell className={cn(
+                            "text-right tabular-nums font-semibold",
+                            isBest && "text-emerald-600 dark:text-emerald-400"
+                          )}>
+                            {p.total > 0 ? fmtCurrency(p.total) : "—"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 
@@ -948,6 +1084,36 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               {detailSup?.contact_name} · {detailSup?.email} · {detailSup?.phone}
             </SheetDescription>
           </SheetHeader>
+
+          {/* Resumo de preenchimento (sempre visível, mesmo em andamento) */}
+          {detailSupplier && supplierPartialTotals[detailSupplier] && (
+            <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground font-medium">Preenchimento do fornecedor</span>
+                <span className="font-semibold text-foreground">
+                  {supplierPartialTotals[detailSupplier].pricedPieces}/{supplierPartialTotals[detailSupplier].totalPiecesNeeded} peças
+                  ({supplierPartialTotals[detailSupplier].pct}%)
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className={cn("h-full transition-all", detailSup?.status === "enviado" ? "bg-emerald-500" : "bg-primary")}
+                  style={{ width: `${supplierPartialTotals[detailSupplier].pct}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs text-muted-foreground">
+                  {detailSup?.status === "enviado" ? "Total final" : "Total parcial (em preenchimento)"}
+                </span>
+                <span className={cn(
+                  "text-base font-bold",
+                  detailSup?.status === "enviado" ? "text-emerald-600 dark:text-emerald-400" : "text-primary"
+                )}>
+                  {fmtCurrency(supplierPartialTotals[detailSupplier].total)}
+                </span>
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 space-y-4">
             {/* Pieces table */}
