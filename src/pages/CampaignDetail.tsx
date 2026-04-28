@@ -2130,6 +2130,18 @@ const CampaignDetail = () => {
                         <span className="hidden sm:inline">{t("automation.title")}</span>
                       </Button>
                     )}
+                    {canEditCampaign && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs gap-1.5 border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/50"
+                        onClick={() => setCopyQtyOpen(true)}
+                        title="Copiar quantidades de uma peça/kit para outra"
+                      >
+                        <Copy className="w-4 h-4" />
+                        <span className="hidden sm:inline">Copiar quantidades</span>
+                      </Button>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
