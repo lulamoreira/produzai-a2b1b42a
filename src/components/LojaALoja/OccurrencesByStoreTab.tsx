@@ -75,6 +75,7 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [selectedOccurrence, setSelectedOccurrence] = useState<any | null>(null);
   const [openStores, setOpenStores] = useState<Record<string, boolean>>({});
 
@@ -96,7 +97,7 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return occList.filter((o) => {
+    const result = occList.filter((o) => {
       if (filterStore !== "__all__" && o.store_id !== filterStore) return false;
       if (filterMotive !== "__all__" && o.motive_id !== filterMotive) return false;
       const st = o.tratativa_status ?? "aberta";
@@ -118,7 +119,13 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
       }
       return true;
     });
-  }, [occList, filterStore, filterMotive, filterStatus, dateFrom, dateTo, search]);
+    result.sort((a, b) => {
+      const ta = new Date(a.created_at).getTime();
+      const tb = new Date(b.created_at).getTime();
+      return sortOrder === "desc" ? tb - ta : ta - tb;
+    });
+    return result;
+  }, [occList, filterStore, filterMotive, filterStatus, dateFrom, dateTo, search, sortOrder]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { storeId: string; storeName: string; city: string; state: string; items: any[] }>();
@@ -203,6 +210,18 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
       }));
       const ws2 = XLSX.utils.json_to_sheet(summary);
       XLSX.utils.book_append_sheet(wb, ws2, "Resumo por Loja");
+
+      // Resumo por motivo (contagem desc)
+      const motiveCounts = new Map<string, number>();
+      filtered.forEach((o) => {
+        const desc = (o.store_portal_motivos as any)?.descricao ?? "Sem motivo";
+        motiveCounts.set(desc, (motiveCounts.get(desc) ?? 0) + 1);
+      });
+      const motiveSummary = Array.from(motiveCounts.entries())
+        .map(([Motivo, Total]) => ({ Motivo, Total }))
+        .sort((a, b) => b.Total - a.Total);
+      const ws3 = XLSX.utils.json_to_sheet(motiveSummary);
+      XLSX.utils.book_append_sheet(wb, ws3, "Resumo por Motivo");
 
       const fileName = `ocorrencias-por-loja-${format(new Date(), "yyyyMMdd-HHmm")}.xlsx`;
       XLSX.writeFile(wb, fileName);
@@ -312,7 +331,16 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
                 className="pl-8"
               />
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
+              <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as "desc" | "asc")}>
+                <SelectTrigger className="h-9 w-[170px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">Mais recentes primeiro</SelectItem>
+                  <SelectItem value="asc">Mais antigas primeiro</SelectItem>
+                </SelectContent>
+              </Select>
               {hasActiveFilters && (
                 <Button variant="ghost" size="sm" onClick={clearFilters}>
                   <X className="h-4 w-4 mr-1" /> Limpar
