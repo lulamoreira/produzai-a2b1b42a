@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
+import { exportSupplierBudget } from "@/lib/exportSupplierBudget";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
 
@@ -539,57 +539,44 @@ const SupplierPortal = () => {
     return itemsTotal + (extraCosts.installation_value || 0) + (extraCosts.freight_value || 0);
   }, [lineTotals, extraCosts]);
 
-  // ─── Excel download ────────────────────────────────────
+  // ─── Excel download (matches on-screen budget) ─────────
   const handleDownloadExcel = useCallback(async () => {
     if (!supplier) return;
     setDownloadingExcel(true);
     try {
-      const piecesForExport = allPieces.map((p) => ({
-        ...p,
-        campaign_id: supplier.campaign_id,
-        is_mockup: false,
-      })) as unknown as CampaignPiece[];
+      const exportRows = displayRows.map((r) => {
+        const unitPrice = r.editable && r.pieceId ? prices[r.pieceId] ?? null : null;
+        const lineTotal = unitPrice != null ? unitPrice * r.totalQty : 0;
+        return {
+          type: r.type,
+          name: r.name,
+          code: r.code,
+          specification: r.specification,
+          size: r.size,
+          totalQty: r.totalQty,
+          unitPrice,
+          lineTotal,
+        };
+      });
 
-      const kitsForExport = kitsData.map((k) => ({
-        ...k,
-        campaign_id: supplier.campaign_id,
-        is_mockup: false,
-      })) as unknown as CampaignKit[];
-
-      const kitPiecesForExport = kitPiecesData.map((kp) => ({
-        ...kp,
-        created_at: "",
-      })) as CampaignKitPiece[];
-
-      const storesForExport = storeData.map((s) => ({
-        ...s,
-        client_id: "",
-        created_at: "",
-        auto_distribute: false,
-        show_in_scheduling: true,
-        showcase_count: s.showcase_count ?? 0,
-      })) as any;
-
-      await exportMatrixExcelJS(
-        storesForExport,
-        piecesForExport.filter((p) => !p.kit_only),
-        fullQtyMap,
+      await exportSupplierBudget({
         campaignName,
-        kitsForExport,
-        kitPiecesForExport,
-        { name: "ProduzAI", primary: "#8C6F4E", secondary: "#A0845C", light: "#E8D5C0" },
-        [] as CampaignPieceLocation[],
-        [] as CampaignPieceSubLocation[],
-        piecesForExport,
         agencyName,
         clientName,
-      );
+        supplierName: supplier.company_name,
+        currencyCode,
+        rows: exportRows,
+        installation: extraCosts.installation_value,
+        freight: extraCosts.freight_value,
+        grandTotal,
+      });
     } catch (e) {
       console.error("Excel export error:", e);
+      toast.error("Erro ao gerar planilha.");
     } finally {
       setDownloadingExcel(false);
     }
-  }, [supplier, allPieces, kitsData, kitPiecesData, storeData, fullQtyMap, campaignName, agencyName, clientName]);
+  }, [supplier, displayRows, prices, campaignName, agencyName, clientName, currencyCode, extraCosts, grandTotal]);
 
   // ─── Submit ────────────────────────────────────────────
   const handleSubmit = async () => {
@@ -958,10 +945,10 @@ const SupplierPortal = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[280px] sticky left-0 z-[5] bg-card">Item</TableHead>
-                    <TableHead className="text-center w-[100px]">Qtd Total</TableHead>
-                    <TableHead className="text-center w-[160px]">Preço Unitário</TableHead>
-                    <TableHead className="text-right w-[140px]">Total</TableHead>
+                    <TableHead className="min-w-[240px] sticky left-0 z-[5] bg-card">Item</TableHead>
+                    <TableHead className="text-center w-[90px]">Qtd Total</TableHead>
+                    <TableHead className="text-center w-[150px] bg-primary/5 text-primary font-semibold">Preço Unitário ({currencyCode})</TableHead>
+                    <TableHead className="text-right w-[140px]">Total da Peça</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1043,13 +1030,13 @@ const SupplierPortal = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-center font-mono text-sm">{row.totalQty}</TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center bg-primary/5">
                             <Input
                               type="number"
                               step="0.01"
                               min="0"
                               placeholder="0,00"
-                              className="w-[130px] mx-auto text-right"
+                              className="w-[130px] mx-auto text-right border-primary/40 focus-visible:ring-primary/40 bg-background"
                               disabled={isLocked}
                               value={unitPrice ?? ""}
                               onFocus={markFilling}
@@ -1063,8 +1050,8 @@ const SupplierPortal = () => {
                               }}
                             />
                           </TableCell>
-                          <TableCell className="text-right font-mono text-sm font-medium">
-                            {unitPrice != null ? fmt(lineTotal) : "—"}
+                          <TableCell className="text-right font-mono text-sm font-semibold text-primary">
+                            {unitPrice != null ? fmt(lineTotal) : <span className="text-muted-foreground font-normal">—</span>}
                           </TableCell>
                         </TableRow>
                         {/* Inline suggestion form */}
