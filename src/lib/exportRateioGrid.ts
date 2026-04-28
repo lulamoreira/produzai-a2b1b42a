@@ -85,12 +85,12 @@ export async function exportRateioGrid(
       views: [{ showGridLines: false }],
     });
 
-    for (let c = 1; c <= 8; c++) {
-      ws.getColumn(c).width = 18;
+    for (let c = 1; c <= 12; c++) {
+      ws.getColumn(c).width = 12;
     }
 
     // ─── Header rows 1–5 ───
-    ws.mergeCells("A1:H1");
+    ws.mergeCells("A1:L1");
     const r1 = ws.getCell("A1");
     r1.value = [agencyName, clientName].filter(Boolean).join(" | ");
     r1.font = { name: "Arial", size: 10, color: { argb: WHITE } };
@@ -98,7 +98,7 @@ export async function exportRateioGrid(
     r1.alignment = { horizontal: "center", vertical: "middle" };
     ws.getRow(1).height = 20;
 
-    ws.mergeCells("A2:H2");
+    ws.mergeCells("A2:L2");
     const r2 = ws.getCell("A2");
     r2.value = (campaignName || "").toUpperCase();
     r2.font = { name: "Arial", size: 14, bold: true, color: { argb: WHITE } };
@@ -106,7 +106,7 @@ export async function exportRateioGrid(
     r2.alignment = { horizontal: "center", vertical: "middle" };
     ws.getRow(2).height = 24;
 
-    ws.mergeCells("A3:H3");
+    ws.mergeCells("A3:L3");
     const r3 = ws.getCell("A3");
     r3.value = store.name || "";
     r3.font = { name: "Arial", size: 18, bold: true, color: { argb: DARK } };
@@ -114,7 +114,7 @@ export async function exportRateioGrid(
     r3.alignment = { horizontal: "center", vertical: "middle" };
     ws.getRow(3).height = 30;
 
-    ws.mergeCells("A4:H4");
+    ws.mergeCells("A4:L4");
     const r4 = ws.getCell("A4");
     const cityState = [store.city, store.state].filter(Boolean).join(", ");
     r4.value = `Código: ${store.store_code || "—"} | ${cityState || "—"}`;
@@ -132,23 +132,26 @@ export async function exportRateioGrid(
       ["C", "D"],
       ["E", "F"],
       ["G", "H"],
+      ["I", "J"],
+      ["K", "L"],
     ];
+    const CARDS_PER_ROW = 6;
 
     let lastDataRow = 5;
 
     // Process items sequentially (for image fetching)
     for (let idx = 0; idx < items.length; idx++) {
       const item = items[idx];
-      const gridRow = Math.floor(idx / 4);
-      const gridCol = idx % 4;
+      const gridRow = Math.floor(idx / CARDS_PER_ROW);
+      const gridCol = idx % CARDS_PER_ROW;
       const top = 6 + gridRow * 6; // 5 data rows + 1 spacer
       const [colL, colR] = cardCols[gridCol];
 
       // Set row heights once per gridRow (when first card in row is processed)
       if (gridCol === 0) {
-        ws.getRow(top + 0).height = 50; // photo
-        for (let i = 1; i <= 4; i++) ws.getRow(top + i).height = 18;
-        ws.getRow(top + 5).height = 8; // spacer
+        ws.getRow(top + 0).height = 42; // photo
+        for (let i = 1; i <= 4; i++) ws.getRow(top + i).height = 15;
+        ws.getRow(top + 5).height = 6; // spacer
       }
 
       const isAlt = gridRow % 2 === 1;
@@ -176,7 +179,7 @@ export async function exportRateioGrid(
             const colIdxL = colL.charCodeAt(0) - 65; // A=0
             ws.addImage(imageId, {
               tl: { col: colIdxL + 0.5, row: photoRow - 1 + 0.05 } as any,
-              ext: { width: 60, height: 60 },
+              ext: { width: 50, height: 50 },
               editAs: "oneCell",
             });
             imageInserted = true;
@@ -252,7 +255,7 @@ export async function exportRateioGrid(
     const totalRow = lastDataRow + 3;
     ws.getRow(spacer1).height = 8;
     ws.getRow(spacer2).height = 8;
-    ws.mergeCells(`A${totalRow}:H${totalRow}`);
+    ws.mergeCells(`A${totalRow}:L${totalRow}`);
     const tCell = ws.getCell(`A${totalRow}`);
     tCell.value = `Total de peças: ${totalQuantity}`;
     tCell.font = { name: "Arial", size: 14, bold: true, color: { argb: WHITE } };
