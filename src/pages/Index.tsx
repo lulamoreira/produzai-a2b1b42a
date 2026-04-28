@@ -171,7 +171,7 @@ const Index = () => {
       </header>
 
       {/* Main content */}
-      <div className="max-w-7xl mx-auto flex min-h-[calc(100vh-73px)]">
+      <div className="max-w-7xl mx-auto flex min-h-[calc(100vh-52px)]">
         {/* Sidebar */}
         <aside
           className={`w-full md:w-80 lg:w-96 border-r border-border p-4 md:block shrink-0 ${

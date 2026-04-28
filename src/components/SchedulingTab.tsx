@@ -869,7 +869,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         return (
           <>
             <div
-              className="flex items-baseline overflow-x-auto"
+              className="flex flex-nowrap whitespace-nowrap items-baseline overflow-x-auto"
               style={{
                 padding: "10px 16px",
                 background: "var(--bg-surface)",

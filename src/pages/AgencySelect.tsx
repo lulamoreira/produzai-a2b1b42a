@@ -329,7 +329,7 @@ const AgencySelect = () => {
         )}
 
         <div className="text-center mb-10">
-          <h2 className="text-2xl font-bold text-foreground mb-2">Agências</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">Agências</h2>
           <p className="text-muted-foreground text-sm">Selecione uma agência para gerenciar seus clientes e campanhas.</p>
         </div>
 

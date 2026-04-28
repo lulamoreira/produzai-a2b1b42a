@@ -17,7 +17,7 @@ const Favorites = () => {
         {/* Favorites section */}
         <div className="flex items-center gap-3 mb-6">
           <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" />
-          <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
+          <h1 className="text-xl sm:text-2xl font-bold" style={{ color: "var(--text-primary)" }}>
             {t("sidebar.favorites", "Favoritos")}
           </h1>
         </div>

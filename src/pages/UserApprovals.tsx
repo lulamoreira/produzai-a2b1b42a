@@ -199,7 +199,7 @@ const UserApprovals = () => {
                                   updateStatus.mutate({ userId: u.user_id, status: val as ApprovalStatus })
                                 }
                               >
-                                <SelectTrigger className="w-[140px] h-8 text-xs">
+                                <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
