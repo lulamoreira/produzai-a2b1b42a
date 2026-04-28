@@ -400,6 +400,9 @@ export function KitDetailDialog({
     );
   }, [kitOnlyPiecesNotInKit, addPieceSearch]);
 
+  // DnD sensors must be created at the top level (Rules of Hooks)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
   if (!kit) return null;
 
   const startEditPiece = (p: CampaignPiece) => {
