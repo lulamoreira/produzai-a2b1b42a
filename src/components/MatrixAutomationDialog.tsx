@@ -987,7 +987,10 @@ export default function MatrixAutomationDialog({
       base = `${getFieldLabel(tpl.filter_field)} = ${tpl.filter_value}`;
     }
     if ((tpl.kind ?? "fixed") === "by_field" && tpl.base_field) {
-      base += ` · usar ${getNumericFieldLabel(tpl.base_field)} × fator`;
+      const op = migrateTemplate(tpl).operation;
+      const sym = op === "divide" ? "÷" : "×";
+      const verb = op === "divide" ? "dividir por" : "multiplicar por";
+      base += ` · ${verb} ${getNumericFieldLabel(tpl.base_field)} (fator ${sym} valor)`;
     }
     return base;
   };
