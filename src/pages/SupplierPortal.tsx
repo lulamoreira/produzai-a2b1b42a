@@ -539,57 +539,44 @@ const SupplierPortal = () => {
     return itemsTotal + (extraCosts.installation_value || 0) + (extraCosts.freight_value || 0);
   }, [lineTotals, extraCosts]);
 
-  // ─── Excel download ────────────────────────────────────
+  // ─── Excel download (matches on-screen budget) ─────────
   const handleDownloadExcel = useCallback(async () => {
     if (!supplier) return;
     setDownloadingExcel(true);
     try {
-      const piecesForExport = allPieces.map((p) => ({
-        ...p,
-        campaign_id: supplier.campaign_id,
-        is_mockup: false,
-      })) as unknown as CampaignPiece[];
+      const exportRows = displayRows.map((r) => {
+        const unitPrice = r.editable && r.pieceId ? prices[r.pieceId] ?? null : null;
+        const lineTotal = unitPrice != null ? unitPrice * r.totalQty : 0;
+        return {
+          type: r.type,
+          name: r.name,
+          code: r.code,
+          specification: r.specification,
+          size: r.size,
+          totalQty: r.totalQty,
+          unitPrice,
+          lineTotal,
+        };
+      });
 
-      const kitsForExport = kitsData.map((k) => ({
-        ...k,
-        campaign_id: supplier.campaign_id,
-        is_mockup: false,
-      })) as unknown as CampaignKit[];
-
-      const kitPiecesForExport = kitPiecesData.map((kp) => ({
-        ...kp,
-        created_at: "",
-      })) as CampaignKitPiece[];
-
-      const storesForExport = storeData.map((s) => ({
-        ...s,
-        client_id: "",
-        created_at: "",
-        auto_distribute: false,
-        show_in_scheduling: true,
-        showcase_count: s.showcase_count ?? 0,
-      })) as any;
-
-      await exportMatrixExcelJS(
-        storesForExport,
-        piecesForExport.filter((p) => !p.kit_only),
-        fullQtyMap,
+      await exportSupplierBudget({
         campaignName,
-        kitsForExport,
-        kitPiecesForExport,
-        { name: "ProduzAI", primary: "#8C6F4E", secondary: "#A0845C", light: "#E8D5C0" },
-        [] as CampaignPieceLocation[],
-        [] as CampaignPieceSubLocation[],
-        piecesForExport,
         agencyName,
         clientName,
-      );
+        supplierName: supplier.company_name,
+        currencyCode,
+        rows: exportRows,
+        installation: extraCosts.installation_value,
+        freight: extraCosts.freight_value,
+        grandTotal,
+      });
     } catch (e) {
       console.error("Excel export error:", e);
+      toast.error("Erro ao gerar planilha.");
     } finally {
       setDownloadingExcel(false);
     }
-  }, [supplier, allPieces, kitsData, kitPiecesData, storeData, fullQtyMap, campaignName, agencyName, clientName]);
+  }, [supplier, displayRows, prices, campaignName, agencyName, clientName, currencyCode, extraCosts, grandTotal]);
 
   // ─── Submit ────────────────────────────────────────────
   const handleSubmit = async () => {
