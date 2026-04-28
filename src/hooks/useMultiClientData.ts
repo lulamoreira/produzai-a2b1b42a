@@ -117,6 +117,7 @@ export type CampaignKitPiece = {
   kit_id: string;
   piece_id: string;
   quantity: number;
+  display_order: number;
   created_at: string;
 };
 
@@ -1406,7 +1407,9 @@ export function useCampaignKitPieces(campaignId: string | undefined) {
       const { data, error } = await supabase
         .from("campaign_kit_pieces")
         .select("*")
-        .in("kit_id", kitIds);
+        .in("kit_id", kitIds)
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: true });
       if (error) throw error;
       return data as CampaignKitPiece[];
     },
@@ -1414,14 +1417,41 @@ export function useCampaignKitPieces(campaignId: string | undefined) {
   });
 }
 
+export function useReorderCampaignKitPieces() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (updates: { id: string; display_order: number }[]) => {
+      // Update sequentially in small batches
+      for (const u of updates) {
+        const { error } = await supabase
+          .from("campaign_kit_pieces")
+          .update({ display_order: u.display_order })
+          .eq("id", u.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] }); },
+    onError: (e: any) => toast.error("Erro ao reordenar: " + e.message),
+  });
+}
+
 export function useAddCampaignKitPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (kitPiece: { kit_id: string; piece_id: string; quantity?: number }) => {
+      // Compute next display_order for this kit
+      const { data: existing } = await supabase
+        .from("campaign_kit_pieces")
+        .select("display_order")
+        .eq("kit_id", kitPiece.kit_id)
+        .order("display_order", { ascending: false })
+        .limit(1);
+      const nextOrder = (existing && existing[0]?.display_order != null) ? existing[0].display_order + 1 : 0;
       const { error } = await supabase.from("campaign_kit_pieces").insert({
         kit_id: kitPiece.kit_id,
         piece_id: kitPiece.piece_id,
         quantity: kitPiece.quantity ?? 1,
+        display_order: nextOrder,
       });
       if (error) throw error;
     },

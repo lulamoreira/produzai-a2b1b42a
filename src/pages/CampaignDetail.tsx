@@ -15,7 +15,7 @@ import {
   useCampaignStoreStatus, useUpsertCampaignStoreStatus, useBulkUpsertCampaignStoreStatus,
   useClientStoreModels,
   useCampaignKits, useAddCampaignKit, useDeleteCampaignKit, useUpdateCampaignKit,
-  useCampaignKitPieces, useAddCampaignKitPiece, useDeleteCampaignKitPiece, useUpdateCampaignKitPiece,
+  useCampaignKitPieces, useAddCampaignKitPiece, useDeleteCampaignKitPiece, useUpdateCampaignKitPiece, useReorderCampaignKitPieces,
   useBulkUpdateCampaignStorePieces,
   type CampaignPiece, type ClientStore, type CampaignKit, type CampaignStorePiece,
 } from "@/hooks/useMultiClientData";
@@ -263,6 +263,7 @@ const CampaignDetail = () => {
   const addKitPiece = useAddCampaignKitPiece();
   const deleteKitPiece = useDeleteCampaignKitPiece();
   const updateKitPiece = useUpdateCampaignKitPiece();
+  const reorderKitPieces = useReorderCampaignKitPieces();
 
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
 
@@ -3232,6 +3233,7 @@ const CampaignDetail = () => {
         onUpdatePiece={async (piece) => { await updatePiece.mutateAsync(piece as any); }}
         onDeletePiece={(id) => deletePiece.mutate(id)}
         onUpdateKitPiece={async (update) => { await updateKitPiece.mutateAsync(update); }}
+        onReorderKitPieces={async (updates) => { await reorderKitPieces.mutateAsync(updates); }}
         onDuplicatePiece={async (piece) => {
           const origOrder = piece.display_order;
           const maxCode = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;

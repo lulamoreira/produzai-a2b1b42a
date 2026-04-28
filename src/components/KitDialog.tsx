@@ -11,7 +11,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Plus, Trash2, Package, Edit3, Upload, Link, X, Image, Minus, Copy } from "lucide-react";
+import { Plus, Trash2, Package, Edit3, Upload, Link, X, Image, Minus, Copy, GripVertical } from "lucide-react";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import { supabase } from "@/integrations/supabase/client";
 import { compressImage } from "@/lib/compressImage";
@@ -299,6 +302,42 @@ export function CreateKitDialog({
 
 // ─── Kit Detail Dialog (full editing) ────────────────────
 
+function SortableKitPieceRow({
+  kp,
+  idx,
+  canDrag,
+  children,
+}: {
+  kp: { id: string };
+  idx: number;
+  canDrag: boolean;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: kp.id, disabled: !canDrag });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.6 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="relative">
+      {canDrag && (
+        <button
+          type="button"
+          className="absolute left-1 top-1/2 -translate-y-1/2 z-10 p-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+          aria-label="Arrastar para reordenar"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-4 h-4" />
+        </button>
+      )}
+      <div className={canDrag ? "pl-6" : ""}>{children}</div>
+    </div>
+  );
+}
+
+
 interface KitDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -316,13 +355,14 @@ interface KitDetailDialogProps {
   onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
   onDeletePiece?: (id: string) => void;
   onUpdateKitPiece?: (update: { id: string; quantity: number }) => Promise<void>;
+  onReorderKitPieces?: (updates: { id: string; display_order: number }[]) => Promise<void>;
   onDuplicatePiece?: (piece: CampaignPiece) => Promise<void>;
 }
 
 export function KitDetailDialog({
   open, onOpenChange, kit, kitPieces, allPieces, existingKits = [], canEdit,
   pieceLocations = [], pieceSubLocations = [],
-  onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece, onDuplicatePiece,
+  onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece, onReorderKitPieces, onDuplicatePiece,
 }: KitDetailDialogProps) {
   const [editingPieceId, setEditingPieceId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
@@ -610,13 +650,39 @@ export function KitDetailDialog({
           </div>
         )}
 
-        {piecesInKit.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">Nenhuma peça neste kit.</p>
-        ) : (
-          <div className="space-y-2 max-h-[350px] overflow-y-auto">
-            {piecesInKit.map((kp, idx) => {
-              const p = kp.piece!;
-              const isEditing = editingPieceId === p.id;
+        {(() => {
+          const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+          const canReorder = !!canEdit && !!onReorderKitPieces && piecesInKit.length > 1;
+
+          const handleDragEnd = async (e: DragEndEvent) => {
+            const { active, over } = e;
+            if (!over || active.id === over.id) return;
+            const oldIndex = piecesInKit.findIndex(kp => kp.id === active.id);
+            const newIndex = piecesInKit.findIndex(kp => kp.id === over.id);
+            if (oldIndex < 0 || newIndex < 0) return;
+            const reordered = arrayMove(piecesInKit, oldIndex, newIndex);
+            const updates = reordered.map((kp, i) => ({ id: kp.id, display_order: i }));
+            await onReorderKitPieces?.(updates);
+          };
+
+          if (piecesInKit.length === 0) {
+            return <p className="text-sm text-muted-foreground text-center py-6">Nenhuma peça neste kit.</p>;
+          }
+
+          return (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={piecesInKit.map(kp => kp.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2 max-h-[350px] overflow-y-auto">
+                  {piecesInKit.map((kp, idx) => (
+                    <SortableKitPieceRow
+                      key={kp.id}
+                      kp={kp}
+                      idx={idx}
+                      canDrag={canReorder}
+                    >
+                      {(() => {
+                        const p = kp.piece!;
+                        const isEditing = editingPieceId === p.id;
 
               if (isEditing && canEdit && onUpdatePiece) {
                 return (
@@ -789,9 +855,14 @@ export function KitDetailDialog({
                   )}
                 </div>
               );
-            })}
-          </div>
-        )}
+                      })()}
+                    </SortableKitPieceRow>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          );
+        })()}
 
         {/* Add more pieces */}
         {canEdit && onAddKitPiece && (
