@@ -740,10 +740,11 @@ export default function MatrixAutomationDialog({
   // Load template into form (read-only "carregar" — não entra em modo edição)
   const loadTemplate = (tpl: typeof templates[0]) => {
     const migrated = migrateTemplate(tpl);
-    setFilterGroup(migrated);
+    setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
     setSelectedItems(tpl.items);
     setKind(tpl.kind ?? "fixed");
     setBaseField(tpl.base_field ?? "");
+    setOperation(migrated.operation);
     setEditingId(null);
     setMainTab("new");
     setStep(1);
@@ -752,10 +753,11 @@ export default function MatrixAutomationDialog({
   // Edit template: load into form AND mark as editing so save updates in place
   const editTemplate = (tpl: typeof templates[0]) => {
     const migrated = migrateTemplate(tpl);
-    setFilterGroup(migrated);
+    setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
     setSelectedItems(tpl.items);
     setKind(tpl.kind ?? "fixed");
     setBaseField(tpl.base_field ?? "");
+    setOperation(migrated.operation);
     setEditingId(tpl.id);
     setSaveName(tpl.name);
     setShowSaveInput(true);
