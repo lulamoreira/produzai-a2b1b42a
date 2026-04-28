@@ -39,6 +39,11 @@ export type StoreFilters = {
   custom_field_8: Set<string>;
   custom_field_9: Set<string>;
   custom_field_10: Set<string>;
+  custom_field_11: Set<string>;
+  custom_field_12: Set<string>;
+  custom_field_13: Set<string>;
+  custom_field_14: Set<string>;
+  custom_field_15: Set<string>;
 };
 
 const EMPTY_FILTERS: PieceFilters = {
