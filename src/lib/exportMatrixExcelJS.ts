@@ -1,7 +1,14 @@
 import type * as ExcelJS from "exceljs";
 import { saveXlsxAs } from "./saveBlobAs";
 import type { ClientStore, CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
-import type { ColorPalette } from "@/components/RateioExportColorDialog";
+import type { ColorPalette, StoreFieldDef } from "@/components/RateioExportColorDialog";
+import { DEFAULT_STORE_FIELDS } from "@/components/RateioExportColorDialog";
+
+function getStoreFieldValue(store: ClientStore, key: string): string | number {
+  const v = (store as any)[key];
+  if (key === "showcase_count") return typeof v === "number" ? v : 0;
+  return v ?? "";
+}
 
 // ─── Helpers ─────────────────────────────────────────────
 
