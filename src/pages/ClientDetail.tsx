@@ -88,6 +88,7 @@ function capitalizeStoreFields<T extends Record<string, any>>(data: T): T {
     "manager_name", "country", "observations",
     "custom_field_1", "custom_field_2", "custom_field_3", "custom_field_4", "custom_field_5",
     "custom_field_6", "custom_field_7", "custom_field_8", "custom_field_9", "custom_field_10",
+    "custom_field_11", "custom_field_12", "custom_field_13", "custom_field_14", "custom_field_15",
   ];
   const result = { ...data };
   for (const key of CAPITALIZE_KEYS) {
@@ -122,6 +123,7 @@ const emptyStoreForm = {
   store_model: "", country: "", store_code: "", email: "",
   custom_field_1: "", custom_field_2: "", custom_field_3: "", custom_field_4: "", custom_field_5: "",
   custom_field_6: "", custom_field_7: "", custom_field_8: "", custom_field_9: "", custom_field_10: "",
+  custom_field_11: "", custom_field_12: "", custom_field_13: "", custom_field_14: "", custom_field_15: "",
   observations: "", showcase_count: "0",
 };
 
@@ -428,6 +430,11 @@ const ClientDetail = () => {
     custom_field_8_label: client?.custom_field_8_label || "",
     custom_field_9_label: client?.custom_field_9_label || "",
     custom_field_10_label: client?.custom_field_10_label || "",
+    custom_field_11_label: (client as any)?.custom_field_11_label || "",
+    custom_field_12_label: (client as any)?.custom_field_12_label || "",
+    custom_field_13_label: (client as any)?.custom_field_13_label || "",
+    custom_field_14_label: (client as any)?.custom_field_14_label || "",
+    custom_field_15_label: (client as any)?.custom_field_15_label || "",
   });
 
   // Country / currency / language
@@ -538,6 +545,11 @@ const ClientDetail = () => {
       custom_field_8: (store as any).custom_field_8 || "",
       custom_field_9: (store as any).custom_field_9 || "",
       custom_field_10: (store as any).custom_field_10 || "",
+      custom_field_11: (store as any).custom_field_11 || "",
+      custom_field_12: (store as any).custom_field_12 || "",
+      custom_field_13: (store as any).custom_field_13 || "",
+      custom_field_14: (store as any).custom_field_14 || "",
+      custom_field_15: (store as any).custom_field_15 || "",
       observations: (store as any).observations || "",
       showcase_count: String((store as any).showcase_count ?? 0),
     });
@@ -717,6 +729,11 @@ const ClientDetail = () => {
     client?.custom_field_8_label,
     client?.custom_field_9_label,
     client?.custom_field_10_label,
+    (client as any)?.custom_field_11_label,
+    (client as any)?.custom_field_12_label,
+    (client as any)?.custom_field_13_label,
+    (client as any)?.custom_field_14_label,
+    (client as any)?.custom_field_15_label,
   ];
   const customFieldsParsed = customFieldLabelsRaw.map(parseFieldLabel);
 
@@ -1067,6 +1084,11 @@ const ClientDetail = () => {
                         custom_field_8_label: client.custom_field_8_label || "",
                         custom_field_9_label: client.custom_field_9_label || "",
                         custom_field_10_label: client.custom_field_10_label || "",
+                        custom_field_11_label: (client as any).custom_field_11_label || "",
+                        custom_field_12_label: (client as any).custom_field_12_label || "",
+                        custom_field_13_label: (client as any).custom_field_13_label || "",
+                        custom_field_14_label: (client as any).custom_field_14_label || "",
+                        custom_field_15_label: (client as any).custom_field_15_label || "",
                       });
                       setCountryCode(client.country_code || "BR");
                       setCurrencyCode(client.currency_code || "BRL");
@@ -1119,7 +1141,7 @@ const ClientDetail = () => {
                     <p className="text-xs font-semibold text-muted-foreground uppercase pt-1">Campos Personalizáveis</p>
                     <p className="text-xs text-muted-foreground mb-2">Defina os nomes dos campos extras para as lojas deste cliente.</p>
                     <div className="space-y-3">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => {
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((i) => {
                         const parsed = parseFieldLabel((customLabels as any)[`custom_field_${i}_label`]);
                         return (
                           <div key={i} className="space-y-1">

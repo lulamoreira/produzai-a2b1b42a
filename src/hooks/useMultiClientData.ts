@@ -21,6 +21,11 @@ export type Client = {
   custom_field_8_label: string | null;
   custom_field_9_label: string | null;
   custom_field_10_label: string | null;
+  custom_field_11_label: string | null;
+  custom_field_12_label: string | null;
+  custom_field_13_label: string | null;
+  custom_field_14_label: string | null;
+  custom_field_15_label: string | null;
   country_code: string | null;
   currency_code: string | null;
   created_at: string;
@@ -65,6 +70,11 @@ export type ClientStore = {
   custom_field_8: string | null;
   custom_field_9: string | null;
   custom_field_10: string | null;
+  custom_field_11: string | null;
+  custom_field_12: string | null;
+  custom_field_13: string | null;
+  custom_field_14: string | null;
+  custom_field_15: string | null;
   observations: string | null;
   auto_distribute: boolean;
   show_in_scheduling: boolean;
@@ -185,7 +195,8 @@ export function useAddClient() {
   return useMutation({
     mutationFn: async (client: { name: string; agency_id: string } & Partial<Pick<Client,
       "custom_field_1_label" | "custom_field_2_label" | "custom_field_3_label" | "custom_field_4_label" | "custom_field_5_label" |
-      "custom_field_6_label" | "custom_field_7_label" | "custom_field_8_label" | "custom_field_9_label" | "custom_field_10_label"
+      "custom_field_6_label" | "custom_field_7_label" | "custom_field_8_label" | "custom_field_9_label" | "custom_field_10_label" |
+      "custom_field_11_label" | "custom_field_12_label" | "custom_field_13_label" | "custom_field_14_label" | "custom_field_15_label"
     >>) => {
       const { data, error } = await supabase.from("clients").insert(client).select().single();
       if (error) throw error;
@@ -210,6 +221,11 @@ export function useAddClient() {
         custom_field_8_label: newClient.custom_field_8_label || null,
         custom_field_9_label: newClient.custom_field_9_label || null,
         custom_field_10_label: newClient.custom_field_10_label || null,
+        custom_field_11_label: newClient.custom_field_11_label || null,
+        custom_field_12_label: newClient.custom_field_12_label || null,
+        custom_field_13_label: newClient.custom_field_13_label || null,
+        custom_field_14_label: newClient.custom_field_14_label || null,
+        custom_field_15_label: newClient.custom_field_15_label || null,
         country_code: null,
         currency_code: null,
         created_at: new Date().toISOString(),

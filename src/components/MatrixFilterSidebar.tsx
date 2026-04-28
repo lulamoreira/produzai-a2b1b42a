@@ -39,6 +39,11 @@ export type StoreFilters = {
   custom_field_8: Set<string>;
   custom_field_9: Set<string>;
   custom_field_10: Set<string>;
+  custom_field_11: Set<string>;
+  custom_field_12: Set<string>;
+  custom_field_13: Set<string>;
+  custom_field_14: Set<string>;
+  custom_field_15: Set<string>;
 };
 
 const EMPTY_FILTERS: PieceFilters = {
@@ -66,6 +71,11 @@ const EMPTY_STORE_FILTERS: StoreFilters = {
   custom_field_8: new Set(),
   custom_field_9: new Set(),
   custom_field_10: new Set(),
+  custom_field_11: new Set(),
+  custom_field_12: new Set(),
+  custom_field_13: new Set(),
+  custom_field_14: new Set(),
+  custom_field_15: new Set(),
 };
 
 interface FilterGroupProps {
@@ -205,7 +215,7 @@ const MatrixFilterSidebar = ({
     const states = [...new Set(stores.map((s) => s.state?.trim()).filter(Boolean) as string[])].sort();
     const models = [...new Set(stores.map((s) => s.store_model).filter(Boolean) as string[])].sort();
     const customs: Record<string, string[]> = {};
-    for (let i = 1; i <= 10; i++) {
+    for (let i = 1; i <= 15; i++) {
       const key = `custom_field_${i}`;
       customs[key] = [...new Set(stores.map((s) => (s as any)[key]).filter(Boolean) as string[])].sort();
     }
