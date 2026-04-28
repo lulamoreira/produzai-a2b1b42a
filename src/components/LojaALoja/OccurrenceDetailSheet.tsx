@@ -67,7 +67,24 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [checkinOpen, setCheckinOpen] = useState(false);
   const [initialized, setInitialized] = useState<string | null>(null);
+
+  // Photo check-in for this campaign + store (lazy: only when user opens the modal)
+  const checkinQuery = useQuery({
+    queryKey: ["installation-photos-checkin", campaignId, occurrence?.store_id],
+    enabled: checkinOpen && !!occurrence?.store_id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("installation_photos")
+        .select("id, photo_url, category, caption, created_at, media_type")
+        .eq("campaign_id", campaignId)
+        .eq("store_id", occurrence.store_id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   // Init when occurrence changes
   useMemo(() => {
