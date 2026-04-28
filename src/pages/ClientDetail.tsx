@@ -894,36 +894,36 @@ const ClientDetail = () => {
         {!new URLSearchParams(location.search).has("tab") && (
           <>
             {/* Stats cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              <div className="card-kpi flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}`)}>
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+              <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}`)}>
                 <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
                   <Megaphone className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{campaigns.length}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-foreground">{campaigns.length}</p>
                   <p className="text-[11px] text-muted-foreground">{t("clientDashboard.campaignCount")}</p>
                 </div>
               </div>
-              <div className="card-kpi flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}>
+              <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}>
                 <div className="w-10 h-10 rounded-lg bg-primary/80 flex items-center justify-center">
                   <Store className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{stores.length}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-foreground">{stores.length}</p>
                   <p className="text-[11px] text-muted-foreground">{t("clientDashboard.storeCount")}</p>
                 </div>
               </div>
-              <div className="card-kpi flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=suppliers`)}>
+              <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=suppliers`)}>
                 <div className="w-10 h-10 rounded-lg bg-primary/60 flex items-center justify-center">
                   <Building2 className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{suppliers.length}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-foreground">{suppliers.length}</p>
                   <p className="text-[11px] text-muted-foreground">Fornecedores</p>
                 </div>
               </div>
               {canEditCampaigns && (
-                <div className="card-kpi col-span-2 sm:col-span-1 flex items-center justify-center">
+                <div className="card-kpi p-3 sm:p-4 col-span-2 sm:col-span-2 md:col-span-1 flex items-center justify-center">
                   <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
                     <DialogTrigger asChild>
                       <Button size="lg" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md font-bold text-sm px-6">

@@ -893,7 +893,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
       {/* KPI Summary Strip — inline */}
       <div
-        className="flex items-baseline overflow-x-auto"
+        className="flex flex-nowrap whitespace-nowrap items-baseline overflow-x-auto"
         style={{
           padding: "10px 16px",
           background: "var(--bg-surface)",

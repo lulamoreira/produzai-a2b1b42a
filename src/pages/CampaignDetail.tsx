@@ -2114,7 +2114,7 @@ const CampaignDetail = () => {
                   {!matrixToolbarCollapsed && (
                   <div className="px-3 pb-2.5">
                   {renderStoreFilters()}
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     {canEditCampaign && (
                       <Button
                         size="sm"

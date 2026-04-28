@@ -997,7 +997,7 @@ export default function MatrixAutomationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t("automation.title")}</DialogTitle>
           <DialogDescription>
@@ -1691,7 +1691,7 @@ export default function MatrixAutomationDialog({
 
       {/* ──── Overwrite confirmation dialog ──── */}
       <Dialog open={overwriteDialog.open} onOpenChange={(o) => setOverwriteDialog({ ...overwriteDialog, open: o })}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="w-full max-w-sm">
           <DialogHeader>
             <DialogTitle>Valores existentes encontrados</DialogTitle>
           </DialogHeader>

@@ -687,7 +687,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
           <>
             {/* Desktop: full strip */}
             <div
-              className="hidden sm:flex items-baseline overflow-x-auto max-w-full"
+              className="flex flex-nowrap whitespace-nowrap items-baseline overflow-x-auto max-w-full"
               style={{
                 padding: "10px 12px",
                 background: "var(--bg-surface)",
@@ -1091,7 +1091,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   placeholder={t("occurrences.statusValue")}
                   value={newStatusValue}
                   onChange={(e) => setNewStatusValue(e.target.value.toLowerCase().replace(/\s+/g, '_'))}
-                  className="w-[120px]"
+                  className="w-full sm:w-[120px]"
                 />
                 <input
                   type="color"
