@@ -85,6 +85,8 @@ import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 // Lazy: defers recharts (~80KB) until the user opens the pending dashboard
 const PendingOccurrencesDashboard = lazy(() => import("@/components/PendingOccurrencesDashboard"));
 import BudgetTab from "@/components/Budget/BudgetTab";
+import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
+import { Table2, BarChart3 as BarChart3Icon } from "lucide-react";
 import { useOccurrenceMotives, useOccurrenceStatuses } from "@/hooks/useOccurrences";
 
 type StoreDetailCustomField = { key: string; label: string };
@@ -462,6 +464,17 @@ const CampaignDetail = () => {
   const [automationOpen, setAutomationOpen] = useState(false);
   const [budgetExportDialogOpen, setBudgetExportDialogOpen] = useState(false);
   const [rateioGridExportOpen, setRateioGridExportOpen] = useState(false);
+  const [rateioView, setRateioView] = useState<"planilha" | "dashboard">(() => {
+    try {
+      const v = localStorage.getItem("produzai_rateio_view");
+      return v === "dashboard" ? "dashboard" : "planilha";
+    } catch { return "planilha"; }
+  });
+  const handleRateioViewChange = useCallback((v: string) => {
+    const next = v === "dashboard" ? "dashboard" : "planilha";
+    setRateioView(next);
+    try { localStorage.setItem("produzai_rateio_view", next); } catch {}
+  }, []);
   const [matrixToolbarCollapsed, setMatrixToolbarCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem('produzai_matrix_toolbar') === 'collapsed'; } catch { return false; }
   });
@@ -2066,6 +2079,20 @@ const CampaignDetail = () => {
 
               {/* Matrix Content */}
               <div className="flex-1 flex flex-col overflow-hidden">
+                <Tabs value={rateioView} onValueChange={handleRateioViewChange} className="flex-1 flex flex-col overflow-hidden">
+                  <div className="border-b border-border bg-muted/20 px-2 sm:px-3 pt-2">
+                    <TabsList className="h-8 bg-muted/60">
+                      <TabsTrigger value="planilha" className="text-xs gap-1.5 h-6 px-2.5">
+                        <Table2 className="w-3.5 h-3.5" />
+                        Planilha
+                      </TabsTrigger>
+                      <TabsTrigger value="dashboard" className="text-xs gap-1.5 h-6 px-2.5">
+                        <BarChart3Icon className="w-3.5 h-3.5" />
+                        Dashboard
+                      </TabsTrigger>
+                    </TabsList>
+                  </div>
+                  <TabsContent value="planilha" className="flex-1 flex flex-col overflow-hidden mt-0 data-[state=inactive]:hidden">
                 {/* Toolbar */}
                 <div className="border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between px-3 py-1">
@@ -2748,6 +2775,17 @@ const CampaignDetail = () => {
                     </div>
                   )}
                 </div>}
+                  </TabsContent>
+                  <TabsContent value="dashboard" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
+                    <MatrixDistributionDashboard
+                      stores={activeFilteredStores}
+                      pieces={pieces}
+                      kits={kits}
+                      kitPieces={kitPieces}
+                      qtyMap={qtyMap}
+                    />
+                  </TabsContent>
+                </Tabs>
               </div>
             </div>
           )}
