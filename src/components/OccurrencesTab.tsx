@@ -700,9 +700,9 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
               {kpiItems.map((item, idx) => renderKpiButton(item, idx, kpiItems.length))}
             </div>
 
-            {/* Mobile: compact summary + Ver mais */}
+            {/* Mobile: compact summary + Ver mais (hidden — strip above is now scrollable on mobile) */}
             <div
-              className="flex sm:hidden items-baseline w-full"
+              className="hidden items-baseline w-full"
               style={{
                 padding: "10px 12px",
                 background: "var(--bg-surface)",
