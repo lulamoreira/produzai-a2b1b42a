@@ -45,6 +45,7 @@ import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppl
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
+import { exportSupplierBudget, type SupplierExportRow } from "@/lib/exportSupplierBudget";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
