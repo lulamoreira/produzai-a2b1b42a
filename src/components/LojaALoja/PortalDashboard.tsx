@@ -220,7 +220,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
     new Date(o.expected_resolution_date).getTime() < Date.now() &&
     o.tratativa_status !== "resolvida"
   ).length;
-  const reinst = occList.filter((o) => o.needs_reinstallation).length;
+  const reinst = occList.filter((o) => o.needs_reinstallation && o.tratativa_status !== "resolvida").length;
 
   const storeOptions = useMemo(() => {
     const m = new Map<string, string>();
