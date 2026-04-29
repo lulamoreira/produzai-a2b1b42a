@@ -17,6 +17,7 @@ import { ptBR } from "date-fns/locale";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
+import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 
 interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
 interface Props {
@@ -68,6 +69,7 @@ function formatDate(d: string | null) {
 
 export default function OccurrencesByStoreTab({ campaignId, permissions }: Props) {
   const { data, isLoading } = useOccurrencesByStore(campaignId);
+  useRealtimeStoreOccurrences(campaignId);
 
   const [filterStore, setFilterStore] = useState<string>("__all__");
   const [filterMotive, setFilterMotive] = useState<string>("__all__");

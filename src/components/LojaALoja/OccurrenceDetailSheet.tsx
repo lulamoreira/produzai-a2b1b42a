@@ -170,6 +170,9 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
 
       toast.success("Ocorrência atualizada.");
       qc.invalidateQueries({ queryKey: ["portal-occurrences-v2", campaignId] });
+      qc.invalidateQueries({ queryKey: ["portal-occurrences-by-store", campaignId] });
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-dashboard", campaignId] });
+      qc.invalidateQueries({ queryKey: ["campaign-status-dashboard", campaignId] });
       setInitialized(null);
       onOpenChange(false);
     } catch (e: any) {

@@ -25,6 +25,7 @@ import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
 import { useTableSort } from "@/hooks/useTableSort";
 import SortableHeader from "./SortableHeader";
 import { useStorePortalConfig } from "@/hooks/useStorePortalConfig";
+import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 
 interface CollapsibleCardProps {
   title: string;
@@ -194,6 +195,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   const { data: portalConfig } = useStorePortalConfig(campaignId);
   const showPriority = (portalConfig as any)?.show_priority !== false;
   const qc = useQueryClient();
+  useRealtimeStoreOccurrences(campaignId);
 
   const [confirmAction, setConfirmAction] = useState<{ id: string; status: "aprovada" | "rejeitada"; storeId: string } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);

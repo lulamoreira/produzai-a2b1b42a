@@ -15,6 +15,7 @@ import {
 import { useClientStores } from "@/hooks/useMultiClientData";
 import { useTableSort } from "@/hooks/useTableSort";
 import SortableHeader from "./SortableHeader";
+import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 
 interface Props {
   campaignId: string;
@@ -47,6 +48,7 @@ function isStoreActiveForTipo(
 }
 
 export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
+  useRealtimeStoreOccurrences(campaignId);
   const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: allPecas, isLoading: loadingPecas } = useAllLojaALojaPecas(campaignId);
   const { data: lojas, isLoading: loadingLojas } = useLojaALojaLojas(campaignId);
