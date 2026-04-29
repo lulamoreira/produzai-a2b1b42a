@@ -48,6 +48,7 @@ function isStoreActiveForTipo(
 }
 
 export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
+  useRealtimeStoreOccurrences(campaignId);
   const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: allPecas, isLoading: loadingPecas } = useAllLojaALojaPecas(campaignId);
   const { data: lojas, isLoading: loadingLojas } = useLojaALojaLojas(campaignId);
