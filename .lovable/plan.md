@@ -1,50 +1,67 @@
-## Objetivo
+## Mudanças no card do fornecedor (BudgetTab.tsx)
 
-Desabilitar o módulo antigo de **Ocorrências** (não confundir com o módulo dentro de "Loja a Loja") na interface do sistema, mantendo o código intacto para preservar histórico/dados, e marcá-lo como "pode ser apagado" para um futuro relatório/limpeza.
+### 1. Substituir menu kebab (3 pontinhos) por ícones de ação
 
-## O que será alterado
+No card do fornecedor (linhas ~870–908), remover o `DropdownMenu`/`MoreVertical` e adicionar 3 botões de ícone na mesma linha dos ícones existentes (chat/email/eye):
 
-### 1. Sidebar (`src/components/AppSidebar.tsx`)
-- Remover a entrada `occurrences` da constante `CAMPAIGN_MODULE_KEYS` (linha 35), para que o item não apareça mais no menu lateral expandido de cada campanha.
+- **Editar dados** → ícone `Pencil` (tooltip "Editar dados")
+- **Baixar planilha preenchida** → ícone `Download` (tooltip "Baixar planilha preenchida"), com estado de loading
+- **Excluir fornecedor** → ícone `Trash2` em cor `text-destructive` (tooltip "Excluir fornecedor"), alinhado à direita com `ml-auto`
 
-### 2. Hub da Campanha (`src/pages/CampaignDetail.tsx`)
-- Remover o card **"occurrences"** do `ModuleGrid` (linha 1526), para que o atalho não apareça na tela inicial da campanha.
-- Remover o botão flutuante **"Pendências"** (linhas 1510–1515) que abre o `PendingOccurrencesDashboard`, já que ele depende do módulo antigo.
-- Manter a rota interna `activeSection === "occurrences"` e o `<OccurrencesTab />` (linha 3058) **comentados / inativos** — sem entradas que levem até eles, ficam inacessíveis pela UI mas o código permanece preservado para consulta histórica.
+Manter o mesmo padrão visual `h-7 w-7 p-0` dos outros ícones para consistência.
 
-### 3. Marcação "pode ser apagado"
-Adicionar um comentário-marcador padronizado no topo dos arquivos do módulo antigo, para que apareçam claramente no próximo relatório de limpeza do sistema:
+### 2. Indicador de progresso ao baixar planilha do fornecedor
 
+Adicionar:
+- Estado `downloadingSupplierId: string | null` no componente.
+- Em `handleDownloadSupplierSheet`: setar o id antes do `await`, limpar no `finally`.
+- O botão `Download` mostra um `Loader2` girando (`animate-spin`) enquanto `downloadingSupplierId === sup.id`, fica `disabled` e exibe um toast de progresso (`toast.loading("Gerando planilha...")` → `toast.success` no final / `toast.error` em caso de falha), usando `toast.dismiss(toastId)` para substituir.
+
+## Segunda aba "Rateio por Loja" na planilha do fornecedor
+
+### 3. Estender `exportSupplierBudget.ts` para receber dados de rateio
+
+Adicionar parâmetros opcionais ao tipo `Params`:
+
+```ts
+rateio?: {
+  pieces: CampaignPiece[];
+  kits: CampaignKit[];
+  kitPieces: CampaignKitPiece[];
+  stores: ClientStore[]; // já com city/state
+  qtyMap: Record<string, number>;
+  campaignName: string;
+  clientName: string;
+  agencyName: string;
+};
 ```
-// @deprecated [REMOVE-CANDIDATE] Módulo antigo de Ocorrências — desabilitado da UI.
-// Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
-```
 
-Arquivos que receberão o marcador:
-- `src/components/OccurrencesTab.tsx`
-- `src/components/OccurrenceCard.tsx`
-- `src/components/OccurrenceListView.tsx`
-- `src/components/OccurrenceDetailSheet.tsx`
-- `src/components/OccurrenceDetailFields.tsx`
-- `src/components/PendingOccurrencesDashboard.tsx`
-- `src/components/ExportOccurrencesButton.tsx`
-- `src/lib/exportOccurrencesReport.ts`
-- `src/lib/exportPendingOccurrences.ts`
-- `src/lib/occurrenceHelpers.ts`
-- `src/hooks/useOccurrences.ts`
-- `src/hooks/useOccurrenceStatusSync.ts`
-- `src/pages/OccurrencesPortal.tsx`
-- `src/pages/PublicOccurrence.tsx` e `src/pages/PublicOccurrenceDetail.tsx` (avaliar — podem estar atrelados a links públicos antigos; serão marcados mas mantidos ativos por segurança)
+Quando `rateio` for fornecido, após criar a worksheet "Orçamento", criar uma segunda worksheet **"Rateio por Loja"** dentro do mesmo workbook. Vou extrair a lógica de renderização de uma loja do `exportRateioGrid.ts` para uma função reutilizável `renderStoreRateioSheet(wb, bucket, ..., imageCache)` em `rateioGridShared.ts`, mantendo o cache de imagens compartilhado entre as abas (ganho de tempo: as fotos das peças já baixadas no rateio reaproveitam o cache da aba Orçamento, e vice-versa).
 
-## O que NÃO será alterado
+### 4. Incluir cidade e estado no cabeçalho da aba
 
-- **Módulo de Ocorrências dentro de "Loja a Loja"** (`PortalDashboard`, `OccurrencesByStoreTab`, `LojaALoja/OccurrenceDetailSheet.tsx`, `useLojaALoja`, etc.) — fica 100% intacto.
-- Tabelas no banco (`occurrences`, `occurrence_motives`, etc.) — preservadas para consulta de dados históricos.
-- Permissões `can_view_occurrences` / `can_edit_occurrences` no banco — preservadas (apenas deixam de ter efeito visual no hub e na sidebar).
-- Edge function `notify-occurrence` — mantida, pois pode ser reutilizada pelo módulo novo.
+A linha 4 do cabeçalho de cada loja já mostra `Código: X | Cidade, Estado` (linha 119–120 de `exportRateioGrid.ts`). Vou garantir que `stores` passado para o export inclua os campos `city` e `state` — atualmente `BudgetTab` recebe `stores: { id; name }[]` (props simplificadas). Preciso buscar `city`/`state` via consulta adicional ou ampliar o tipo da prop.
 
-## Como ficará
+**Solução**: dentro de `handleDownloadSupplierSheet`, fazer um `supabase.from("client_stores").select("id, name, city, state, store_code").in("id", storeIds)` para obter os dados completos das lojas usadas no rateio (evita mexer nas props do componente).
 
-- Na sidebar de cada campanha, somente: Agendamento, Instalações, Loja a Loja, Lojas, Orçamentos, Peças, Rateio.
-- No hub da campanha, o card vermelho de "Ocorrências" e o botão "Pendências" desaparecem.
-- Quando você pedir o relatório do sistema, todos os arquivos do módulo antigo aparecerão listados como `[REMOVE-CANDIDATE]`, prontos para deleção definitiva quando você autorizar.
+### 5. Modo de rateio
+
+Usar `mode = "pieces_and_kits"` (mesmo padrão do botão de exportação do módulo Rateio) para incluir peças standalone + kits.
+
+### 6. Compartilhamento de cache de imagens entre abas
+
+A função `renderStoreRateioSheet` aceitará um `imageCache: Map<string, ...>` opcional. O `exportSupplierBudget` cria um único cache no início e passa para ambas as funções (aba orçamento já usa cache local — vou unificar). Assim, imagens das peças baixadas para a aba Orçamento são reaproveitadas na aba Rateio.
+
+## Arquivos afetados
+
+- `src/components/Budget/BudgetTab.tsx` — substituir kebab por ícones, adicionar loading state, buscar dados de lojas e passar `rateio` para o export.
+- `src/lib/exportSupplierBudget.ts` — aceitar parâmetro `rateio`, gerar segunda aba reutilizando a função compartilhada.
+- `src/lib/rateioGridShared.ts` — adicionar função `renderStoreRateioSheet(wb, bucket, opts, imageCache)` extraindo a lógica de renderização de `exportRateioGrid.ts`.
+- `src/lib/exportRateioGrid.ts` — refatorar para usar a nova função compartilhada (sem mudança de comportamento).
+
+## Resumo do resultado para o usuário
+
+- Card do fornecedor passa a ter 3 ícones diretos (editar, baixar, excluir) em vez do menu de 3 pontinhos.
+- Ao clicar em baixar, o ícone mostra spinner e um toast "Gerando planilha..." aparece até o download iniciar.
+- A planilha do fornecedor passa a ter 2 abas: **Orçamento** (atual) e **Rateio por Loja** (igual ao módulo Rateio, com cidade e estado no cabeçalho de cada loja).
+- Imagens são baixadas uma única vez e reaproveitadas entre as abas, acelerando a geração.
