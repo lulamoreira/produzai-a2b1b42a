@@ -17,6 +17,7 @@ import { ptBR } from "date-fns/locale";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
+import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 
 interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
 interface Props {
