@@ -187,6 +187,11 @@ export default function AppSidebar() {
     navigate(href);
   }, [navigate]);
 
+  const handleCampaignHomeNavigate = useCallback((href: string) => {
+    setMobileOpen(false);
+    navigate(href, { replace: href === `${location.pathname}${location.search}` });
+  }, [location.pathname, location.search, navigate]);
+
   const roleBadge = isAdmin ? "Admin" : isMaster ? "Master" : "Usuário";
   const homePath = isAdminOrMaster ? "/agencies" : "/my-campaigns";
 
@@ -380,7 +385,7 @@ export default function AppSidebar() {
                       <div key={camp.campaignId}>
                         <div className="flex items-center gap-0.5">
                           <button
-                            onClick={() => handleNavigate(campBasePath)}
+                            onClick={() => handleCampaignHomeNavigate(campBasePath)}
                             className="flex-1 truncate text-left px-2 py-1.5 rounded-md text-[12px] font-semibold uppercase tracking-wider transition-all"
                             style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
                             onMouseEnter={e => { e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
@@ -466,7 +471,7 @@ export default function AppSidebar() {
                   <div key={camp.id}>
                     <div className="flex items-center gap-0.5">
                       <button
-                        onClick={() => handleNavigate(campBasePath)}
+                        onClick={() => handleCampaignHomeNavigate(campBasePath)}
                         className="flex-1 truncate text-left px-2 py-1.5 rounded-md text-[12px] font-semibold uppercase tracking-wider transition-all"
                         style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
                         onMouseEnter={e => { e.currentTarget.style.color = "var(--sidebar-text-active)"; }}

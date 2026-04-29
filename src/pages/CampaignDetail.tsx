@@ -419,21 +419,17 @@ const CampaignDetail = () => {
   const [pieceSearch, setPieceSearch] = useState("");
   const [newFilter, setNewFilter] = useState<"all" | "new" | "not_new">("all");
 
-  // Sync section from URL search params (for sidebar navigation)
+  // Sync section from router state/search/path. Campaign changes without ?section must always open the campaign hub.
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const urlSection = params.get("section");
-    if (urlSection && urlSection !== activeSection) {
-      setActiveSectionState(urlSection);
-    } else if (!urlSection && activeSection) {
-      // URL não tem section → voltar para o hub inicial da campanha
-      setActiveSectionState(null);
-    }
-  }, [location.search]);
+    const nextSection = params.get("section") || locationState?.initialSection || null;
+    setActiveSectionState((current) => current === nextSection ? current : nextSection);
+    if (!nextSection) setPendingInitialFilter(null);
+  }, [campaignId, location.pathname, location.search, locationState?.initialSection]);
 
   const setActiveSection = useCallback((section: string | null) => {
     setActiveSectionState(section);
-    // Update URL without full navigation
+    // Keep React Router location in sync so changing campaigns can reset to the hub reliably.
     const params = new URLSearchParams(location.search);
     if (section) {
       params.set("section", section);
@@ -441,8 +437,8 @@ const CampaignDetail = () => {
       params.delete("section");
     }
     const newUrl = `${location.pathname}${params.toString() ? `?${params}` : ""}`;
-    window.history.replaceState(null, "", newUrl);
-  }, [location.pathname, location.search]);
+    navigate(newUrl, { replace: true, state: location.state });
+  }, [location.pathname, location.search, location.state, navigate]);
 
   // ─── Matrix editing ────────────────────────────────────
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
