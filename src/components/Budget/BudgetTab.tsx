@@ -133,6 +133,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyCode);
   const [showLockConfirm, setShowLockConfirm] = useState(false);
   const [exportingBudget, setExportingBudget] = useState(false);
+  const [downloadingSupplierId, setDownloadingSupplierId] = useState<string | null>(null);
 
   // Client suppliers picker
   const { data: clientSuppliers = [] } = useClientSuppliers(clientId);
