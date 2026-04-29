@@ -69,6 +69,7 @@ function formatDate(d: string | null) {
 
 export default function OccurrencesByStoreTab({ campaignId, permissions }: Props) {
   const { data, isLoading } = useOccurrencesByStore(campaignId);
+  useRealtimeStoreOccurrences(campaignId);
 
   const [filterStore, setFilterStore] = useState<string>("__all__");
   const [filterMotive, setFilterMotive] = useState<string>("__all__");
