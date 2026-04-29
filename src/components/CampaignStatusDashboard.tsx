@@ -81,6 +81,7 @@ export default function CampaignStatusDashboard({
   onNavigate,
 }: CampaignStatusDashboardProps) {
   const { data: stats, isLoading } = useCampaignStats(campaignId);
+  useRealtimeStoreOccurrences(campaignId);
 
   if (isLoading) {
     return (
