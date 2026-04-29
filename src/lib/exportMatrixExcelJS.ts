@@ -88,16 +88,10 @@ function solidFill(color: string): ExcelJS.Fill {
   return { type: "pattern", pattern: "solid", fgColor: { argb: `FF${color}` } };
 }
 
-function gradientFill(from: string, to: string, degree = 0): ExcelJS.FillGradientAngle {
-  return {
-    type: "gradient",
-    gradient: "angle",
-    degree,
-    stops: [
-      { position: 0, color: { argb: `FF${from}` } },
-      { position: 1, color: { argb: `FF${to}` } },
-    ],
-  };
+function gradientFill(from: string, _to: string, _degree = 0): ExcelJS.Fill {
+  // Gradients removed by request — use a solid fill of the primary color instead.
+  // Row alternation (lighter/darker tones) is handled separately via solidFill(LIGHT) vs solidFill("FFFFFF").
+  return { type: "pattern", pattern: "solid", fgColor: { argb: `FF${from}` } } as ExcelJS.Fill;
 }
 
 // ─── Types ───────────────────────────────────────────────
