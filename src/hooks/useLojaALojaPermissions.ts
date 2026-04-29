@@ -87,11 +87,21 @@ export function useLojaALojaPermissions(
 
       const rows: PCRow[] = [];
 
+      // Master flag: legacy can_edit on client/agency access grants full LAL access
+      const masterRow: PCRow = {
+        can_view_loja_a_loja: true, can_edit_loja_a_loja: true, can_delete_loja_a_loja: true,
+        can_view_lal_estrutura: true, can_edit_lal_estrutura: true, can_delete_lal_estrutura: true,
+        can_view_lal_classificacao: true, can_edit_lal_classificacao: true, can_delete_lal_classificacao: true,
+        can_view_lal_acessos: true, can_edit_lal_acessos: true, can_delete_lal_acessos: true,
+        can_view_lal_config: true, can_edit_lal_config: true, can_delete_lal_config: true,
+        can_view_lal_ocorrencias: true, can_edit_lal_ocorrencias: true, can_delete_lal_ocorrencias: true,
+      };
+
       // Direct client access
       if (clientId) {
         const { data: clientAccess } = await supabase
           .from("user_client_access")
-          .select("suspended, permission_categories(*)")
+          .select("suspended, can_edit, permission_categories(*)")
           .eq("user_id", user.id)
           .eq("client_id", clientId)
           .eq("suspended", false)
@@ -99,6 +109,7 @@ export function useLojaALojaPermissions(
         if (clientAccess?.permission_categories) {
           rows.push(clientAccess.permission_categories as PCRow);
         }
+        if (clientAccess?.can_edit) rows.push(masterRow);
 
         // Agency-level access (inherited)
         const { data: client } = await supabase
@@ -109,7 +120,7 @@ export function useLojaALojaPermissions(
         if (client?.agency_id) {
           const { data: agencyAccess } = await supabase
             .from("user_agency_access")
-            .select("suspended, permission_categories(*)")
+            .select("suspended, can_edit, permission_categories(*)")
             .eq("user_id", user.id)
             .eq("agency_id", client.agency_id)
             .eq("suspended", false)
@@ -117,6 +128,7 @@ export function useLojaALojaPermissions(
           if (agencyAccess?.permission_categories) {
             rows.push(agencyAccess.permission_categories as PCRow);
           }
+          if (agencyAccess?.can_edit) rows.push(masterRow);
         }
       }
 
