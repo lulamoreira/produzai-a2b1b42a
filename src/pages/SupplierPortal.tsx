@@ -414,8 +414,9 @@ const SupplierPortal = () => {
 
         if (sup.locked) setSubmitted(true);
       } catch (e: unknown) {
-        console.error(e);
-        setError("Erro ao carregar dados.");
+        console.error("[SupplierPortal] Erro crítico ao carregar:", e);
+        const msg = e instanceof Error ? e.message : String(e);
+        setError(`Não foi possível carregar o orçamento. ${msg ? `Detalhe: ${msg}. ` : ""}Recarregue a página ou tente novamente mais tarde.`);
       } finally {
         setLoading(false);
       }
