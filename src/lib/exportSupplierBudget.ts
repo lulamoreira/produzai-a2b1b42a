@@ -1,13 +1,15 @@
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildExportFileName } from "@/lib/exportFileName";
-import {
-  fetchImageBytes,
-  buildRateioGridBuckets,
-  renderStoreRateioSheet,
-  sanitizeSheetName,
-  type RateioImageCache,
-} from "@/lib/rateioGridShared";
-import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
+import { fetchImageBytes, type RateioImageCache } from "@/lib/rateioGridShared";
+import { appendMatrixSheets } from "@/lib/exportMatrixExcelJS";
+import type {
+  CampaignPiece,
+  CampaignKit,
+  CampaignKitPiece,
+  ClientStore,
+  CampaignPieceLocation,
+  CampaignPieceSubLocation,
+} from "@/hooks/useMultiClientData";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -41,13 +43,15 @@ type Params = {
   installation: number | null;
   freight: number | null;
   grandTotal: number;
-  /** Optional: include a second tab with per-store rateio (same layout as the Rateio module). */
+  /** Optional: include the full Rateio module export (Matriz Lojas x Peças + Kit tabs) as additional sheets. */
   rateio?: {
     pieces: CampaignPiece[];
     kits: CampaignKit[];
     kitPieces: CampaignKitPiece[];
     stores: ClientStore[];
     qtyMap: Record<string, number>;
+    locations?: CampaignPieceLocation[];
+    subLocations?: CampaignPieceSubLocation[];
   };
 };
 
@@ -227,34 +231,23 @@ export async function exportSupplierBudget(params: Params) {
   ];
   ws.views = [{ state: "frozen", ySplit: headerRowIdx }];
 
-  // ─── Optional second tab: Rateio por Loja ───
+  // ─── Optional: append the full Rateio module export (Matriz Lojas x Peças + Kit tabs) ───
   if (params.rateio) {
-    const buckets = buildRateioGridBuckets(
-      params.rateio.pieces,
-      params.rateio.kits,
-      params.rateio.kitPieces,
-      params.rateio.stores,
-      params.rateio.qtyMap,
-      "pieces_and_kits",
-    );
-    if (buckets.length > 0) {
-      const usedNames = new Set<string>(["Orçamento".toLowerCase()]);
-      for (const bucket of buckets) {
-        const sheetName = sanitizeSheetName(bucket.store.name || "Loja", usedNames);
-        const rws = wb.addWorksheet(sheetName, { views: [{ showGridLines: false }] });
-        await renderStoreRateioSheet(
-          wb,
-          rws,
-          bucket,
-          {
-            campaignName: params.campaignName,
-            clientName: params.clientName || "",
-            agencyName: params.agencyName || "",
-          },
-          imageCache,
-        );
-      }
-    }
+    await appendMatrixSheets(wb, {
+      stores: params.rateio.stores,
+      pieces: params.rateio.pieces,
+      qtyMap: params.rateio.qtyMap,
+      campaignName: params.campaignName,
+      kits: params.rateio.kits,
+      kitPieces: params.rateio.kitPieces,
+      locations: params.rateio.locations ?? [],
+      subLocations: params.rateio.subLocations ?? [],
+      allPieces: params.rateio.pieces,
+      agencyName: params.agencyName,
+      clientName: params.clientName,
+      reservedSheetNames: new Set(["orçamento"]),
+      skipDashboard: true,
+    });
   }
 
   const buffer = await wb.xlsx.writeBuffer();

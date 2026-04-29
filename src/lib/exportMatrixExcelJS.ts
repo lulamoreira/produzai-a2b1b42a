@@ -349,26 +349,51 @@ async function buildTransposedSheet(
 
 // ─── Main export ─────────────────────────────────────────
 
-export async function exportMatrixExcelJS(
-  stores: ClientStore[],
-  pieces: CampaignPiece[],
-  qtyMap: Record<string, number>,
-  campaignName: string,
-  kits: CampaignKit[] = [],
-  kitPieces: CampaignKitPiece[] = [],
-  palette?: ColorPalette,
-  locations: CampaignPieceLocation[] = [],
-  subLocations: CampaignPieceSubLocation[] = [],
-  allPieces?: CampaignPiece[],
-  agencyName?: string,
-  clientName?: string,
-  storeFields?: StoreFieldDef[],
-) {
+export type AppendMatrixParams = {
+  stores: ClientStore[];
+  pieces: CampaignPiece[];
+  qtyMap: Record<string, number>;
+  campaignName: string;
+  kits?: CampaignKit[];
+  kitPieces?: CampaignKitPiece[];
+  palette?: ColorPalette;
+  locations?: CampaignPieceLocation[];
+  subLocations?: CampaignPieceSubLocation[];
+  allPieces?: CampaignPiece[];
+  agencyName?: string;
+  clientName?: string;
+  storeFields?: StoreFieldDef[];
+  /** When provided, sheet names already used in the workbook (lowercased) — to avoid collisions. */
+  reservedSheetNames?: Set<string>;
+  /** When true, skip the Dashboard tab. Useful when appending to another workbook. */
+  skipDashboard?: boolean;
+};
+
+/**
+ * Appends the Rateio matrix sheets (Matriz Lojas x Peças, kit tabs, optional Dashboard)
+ * to an EXISTING workbook. Used by both the standalone Rateio export and the
+ * Supplier Budget export (which appends these sheets after its own "Orçamento" tab).
+ */
+export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMatrixParams) {
+  const {
+    stores,
+    pieces,
+    qtyMap,
+    campaignName,
+    kits = [],
+    kitPieces = [],
+    palette,
+    locations = [],
+    subLocations = [],
+    allPieces,
+    agencyName,
+    clientName,
+    storeFields,
+    reservedSheetNames,
+    skipDashboard,
+  } = params;
+
   const effectiveStoreFields = storeFields && storeFields.length > 0 ? storeFields : DEFAULT_STORE_FIELDS;
-  const ExcelJSModule = await import("exceljs");
-  const ExcelJSRuntime = ExcelJSModule.default;
-  const wb = new ExcelJSRuntime.Workbook();
-  wb.creator = "ProduzAI";
   const colors = makeColors(palette);
   const locData: LocationData = { locations, subLocations };
 
@@ -406,9 +431,7 @@ export async function exportMatrixExcelJS(
   // Build kit sheet names map first.
   // Excel forbids \ / ? * [ ] : in sheet names and limits length to 31 chars.
   // Also deduplicate names (truncation can collide, e.g. "Kit 111 - KIT Revestimento Cubo" / "Kit 114 - ...").
-  const usedSheetNames = new Set<string>();
-  usedSheetNames.add("matriz lojas x peças");
-  usedSheetNames.add("dashboard");
+  const usedSheetNames = new Set<string>(reservedSheetNames ? Array.from(reservedSheetNames) : []);
   const safeSheetName = (raw: string): string => {
     let base = raw.replace(/[\\/?*\[\]:]/g, "-").replace(/\s+/g, " ").slice(0, 31).trim();
     if (!base) base = "Sheet";
@@ -421,6 +444,8 @@ export async function exportMatrixExcelJS(
     usedSheetNames.add(name.toLowerCase());
     return name;
   };
+  const mainSheetName = safeSheetName("Matriz Lojas x Peças");
+  const dashboardSheetName = skipDashboard ? null : safeSheetName("Dashboard");
   const kitSheetNames = new Map<string, string>();
   for (const kit of kits) {
     const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
@@ -445,7 +470,7 @@ export async function exportMatrixExcelJS(
   }
 
   // ABA 1 – Main matrix
-  const ws = wb.addWorksheet("Matriz Lojas x Peças");
+  const ws = wb.addWorksheet(mainSheetName);
   await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames, effectiveStoreFields);
 
   // Kit tabs
@@ -481,6 +506,8 @@ export async function exportMatrixExcelJS(
     await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`, colors, locData, undefined, effectiveStoreFields);
   }
 
+  if (skipDashboard || !dashboardSheetName) return;
+
   // Dashboard tab
   const { PRIMARY, SECONDARY, LIGHT, BORDER } = colors;
   const whiteFont: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: true };
@@ -490,7 +517,7 @@ export async function exportMatrixExcelJS(
   const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
   const allWhiteBorders = { top: whiteBorder, bottom: whiteBorder, left: whiteBorder, right: whiteBorder };
 
-  const dash = wb.addWorksheet("Dashboard");
+  const dash = wb.addWorksheet(dashboardSheetName);
   let currentRow = 1;
 
   function addSectionTitle(title: string, cols: number) {
@@ -568,8 +595,46 @@ export async function exportMatrixExcelJS(
   dash.getColumn(1).width = 12;
   dash.getColumn(2).width = 40;
   dash.getColumn(3).width = 20;
+}
 
-  // Generate and download (com diálogo "Salvar como" quando suportado)
+// ─── Thin wrapper: standalone Rateio export (creates workbook + saves) ───
+
+export async function exportMatrixExcelJS(
+  stores: ClientStore[],
+  pieces: CampaignPiece[],
+  qtyMap: Record<string, number>,
+  campaignName: string,
+  kits: CampaignKit[] = [],
+  kitPieces: CampaignKitPiece[] = [],
+  palette?: ColorPalette,
+  locations: CampaignPieceLocation[] = [],
+  subLocations: CampaignPieceSubLocation[] = [],
+  allPieces?: CampaignPiece[],
+  agencyName?: string,
+  clientName?: string,
+  storeFields?: StoreFieldDef[],
+) {
+  const ExcelJSModule = await import("exceljs");
+  const ExcelJSRuntime = ExcelJSModule.default;
+  const wb = new ExcelJSRuntime.Workbook();
+  wb.creator = "ProduzAI";
+
+  await appendMatrixSheets(wb, {
+    stores,
+    pieces,
+    qtyMap,
+    campaignName,
+    kits,
+    kitPieces,
+    palette,
+    locations,
+    subLocations,
+    allPieces,
+    agencyName,
+    clientName,
+    storeFields,
+  });
+
   const buffer = await wb.xlsx.writeBuffer();
   const fileName = `Rateio_${campaignName.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
   await saveXlsxAs(buffer as ArrayBuffer, fileName);
