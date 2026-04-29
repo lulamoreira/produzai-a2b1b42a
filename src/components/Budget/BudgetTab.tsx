@@ -43,6 +43,7 @@ import {
 } from "@/hooks/useBudget";
 import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppliers";
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
+import { useRealtimeBudget } from "@/hooks/useRealtimeBudget";
 import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
 import { exportSupplierBudget, type SupplierExportRow } from "@/lib/exportSupplierBudget";
