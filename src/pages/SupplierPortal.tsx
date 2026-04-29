@@ -662,10 +662,17 @@ const SupplierPortal = () => {
     if (!supplier) return;
     setSubmitting(true);
     try {
-      await supabase
+      const { data: updated, error: updErr } = await supabase
         .from("budget_suppliers")
         .update({ status: "enviado", locked: true, submitted_at: new Date().toISOString() })
-        .eq("id", supplier.id);
+        .eq("id", supplier.id)
+        .select("id")
+        .maybeSingle();
+      if (updErr) throw updErr;
+      if (!updated) {
+        // RLS bloqueou o update — não devemos exibir tela de sucesso falsa
+        throw new Error("Não foi possível registrar o envio. Atualize a página e tente novamente.");
+      }
 
       const { data: campaign } = await supabase
         .from("campaigns")
