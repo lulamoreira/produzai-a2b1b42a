@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 
 export type DashboardFilter =
   | { type: "status"; value: "completed" | "pending" }
