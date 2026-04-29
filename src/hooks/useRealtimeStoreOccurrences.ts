@@ -26,7 +26,7 @@ export function useRealtimeStoreOccurrences(campaignId?: string) {
           qc.invalidateQueries({ queryKey: ["portal-occurrences-v2", campaignId] });
           qc.invalidateQueries({ queryKey: ["portal-occurrences-by-store", campaignId] });
           qc.invalidateQueries({ queryKey: ["loja-a-loja-dashboard", campaignId] });
-          qc.invalidateQueries({ queryKey: ["campaign-status-dashboard", campaignId] });
+          qc.invalidateQueries({ queryKey: ["campaign_stats", campaignId] });
           qc.invalidateQueries({ queryKey: ["store-portal-occurrences", campaignId] });
           qc.invalidateQueries({ queryKey: ["store-portal-conformidade", campaignId] });
         }
