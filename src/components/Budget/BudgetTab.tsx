@@ -1068,6 +1068,82 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         </DialogContent>
       </Dialog>
 
+      {/* ═══ EDIT SUPPLIER DIALOG ═══ */}
+      <Dialog open={!!editSupplierId} onOpenChange={(o) => !o && setEditSupplierId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar fornecedor</DialogTitle>
+            <DialogDescription>Atualize os dados de contato do fornecedor.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Empresa</Label>
+              <Input
+                value={editSupplierDraft.company_name}
+                onChange={(e) => setEditSupplierDraft((d) => ({ ...d, company_name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Contato</Label>
+              <Input
+                value={editSupplierDraft.contact_name}
+                onChange={(e) => setEditSupplierDraft((d) => ({ ...d, contact_name: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Telefone</Label>
+                <Input
+                  value={editSupplierDraft.phone}
+                  onChange={(e) => setEditSupplierDraft((d) => ({ ...d, phone: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">E-mail</Label>
+                <Input
+                  type="email"
+                  value={editSupplierDraft.email}
+                  onChange={(e) => setEditSupplierDraft((d) => ({ ...d, email: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditSupplierId(null)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (!editSupplierId) return;
+                if (!editSupplierDraft.company_name.trim() || !editSupplierDraft.email.trim()) {
+                  toast.error("Empresa e e-mail são obrigatórios.");
+                  return;
+                }
+                updateSupplier.mutate(
+                  {
+                    id: editSupplierId,
+                    campaign_id: campaignId,
+                    updates: {
+                      company_name: editSupplierDraft.company_name.trim(),
+                      contact_name: editSupplierDraft.contact_name.trim(),
+                      phone: editSupplierDraft.phone.trim(),
+                      email: editSupplierDraft.email.trim(),
+                    },
+                  },
+                  {
+                    onSuccess: () => {
+                      toast.success("Fornecedor atualizado.");
+                      setEditSupplierId(null);
+                    },
+                    onError: (e: any) => toast.error("Erro: " + (e?.message || "")),
+                  }
+                );
+              }}
+            >
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ═══ DELETE CONFIRMATION ═══ */}
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
         <AlertDialogContent>
