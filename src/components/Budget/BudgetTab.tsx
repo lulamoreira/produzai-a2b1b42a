@@ -121,6 +121,8 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [addOpen, setAddOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detailSupplier, setDetailSupplier] = useState<string | null>(null);
+  const [editSupplierId, setEditSupplierId] = useState<string | null>(null);
+  const [editSupplierDraft, setEditSupplierDraft] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
   const [newSupplier, setNewSupplier] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
   const [expandedSuggestionPieceId, setExpandedSuggestionPieceId] = useState<string | null>(null);
   const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyCode);
