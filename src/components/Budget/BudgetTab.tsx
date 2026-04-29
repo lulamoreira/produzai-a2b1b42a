@@ -669,6 +669,38 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           Convidado em {format(new Date(sup.invited_at), "dd/MM/yyyy")}
                         </p>
                       )}
+                      {sup.access_token && (
+                        <div className="flex items-center gap-1 pt-1">
+                          <Link2 className="w-3 h-3 shrink-0 text-muted-foreground" />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = `${window.location.origin}/orcamento/${sup.access_token}`;
+                              window.open(
+                                url,
+                                "_blank",
+                                "noopener,noreferrer,popup=yes,width=1200,height=800"
+                              );
+                            }}
+                            className="truncate text-[11px] text-primary hover:underline text-left flex-1 min-w-0"
+                            title={`${window.location.origin}/orcamento/${sup.access_token}`}
+                          >
+                            {`${window.location.origin}/orcamento/${sup.access_token}`}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = `${window.location.origin}/orcamento/${sup.access_token}`;
+                              navigator.clipboard.writeText(url);
+                              toast.success("Link copiado!");
+                            }}
+                            className="text-muted-foreground hover:text-foreground shrink-0"
+                            title="Copiar link"
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                     {/* Resumo de preenchimento (visível mesmo em andamento) */}
                     {partial && partial.totalPiecesNeeded > 0 && (
