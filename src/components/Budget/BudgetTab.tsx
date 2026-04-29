@@ -441,6 +441,11 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
   // ─── Download a single supplier's filled spreadsheet ─────
   const handleDownloadSupplierSheet = async (sup: typeof suppliers[0]) => {
+    if (downloadingSupplierId) return;
+    setDownloadingSupplierId(sup.id);
+    const toastId = toast.loading(`Gerando planilha de ${sup.company_name}...`, {
+      description: "Baixando imagens e montando o arquivo. Isso pode levar alguns segundos.",
+    });
     try {
       // Build display rows matching SupplierPortal layout
       type Merged =
@@ -517,6 +522,22 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       const itemsTotal = rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
       const grandTotal = itemsTotal + (installation || 0) + (freight || 0);
 
+      // Fetch full store data (city/state/store_code) for the Rateio sheet
+      const storeIds = stores.map((s) => s.id);
+      let fullStores: any[] = [];
+      if (storeIds.length > 0) {
+        const { data: storeRows } = await supabase
+          .from("client_stores")
+          .select("id, name, city, state, store_code")
+          .in("id", storeIds);
+        fullStores = storeRows ?? [];
+      }
+      // Preserve the order of the stores prop
+      const storeMap = new Map(fullStores.map((s) => [s.id, s]));
+      const orderedStores = stores
+        .map((s) => storeMap.get(s.id) ?? { id: s.id, name: s.name, city: null, state: null, store_code: null })
+        .filter(Boolean);
+
       await exportSupplierBudget({
         campaignName,
         agencyName,
@@ -527,11 +548,22 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         installation,
         freight,
         grandTotal,
+        rateio: {
+          pieces,
+          kits,
+          kitPieces: kitPieces as any,
+          stores: orderedStores as any,
+          qtyMap,
+        },
       });
+      toast.dismiss(toastId);
       toast.success("Planilha do fornecedor gerada.");
     } catch (e) {
       console.error("Supplier sheet export error:", e);
+      toast.dismiss(toastId);
       toast.error("Erro ao gerar planilha do fornecedor.");
+    } finally {
+      setDownloadingSupplierId(null);
     }
   };
   const detailSup = detailSupplier ? suppliers.find((s) => s.id === detailSupplier) : null;
