@@ -15,6 +15,7 @@ import {
 import { useClientStores } from "@/hooks/useMultiClientData";
 import { useTableSort } from "@/hooks/useTableSort";
 import SortableHeader from "./SortableHeader";
+import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 
 interface Props {
   campaignId: string;
