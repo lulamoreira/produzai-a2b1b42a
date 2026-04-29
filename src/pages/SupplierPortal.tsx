@@ -175,38 +175,77 @@ const SupplierPortal = () => {
     if (!token) { setError("Link inválido."); setLoading(false); return; }
 
     (async () => {
+      // Helper: tenta uma operação não-crítica e apenas loga se falhar (não derruba o portal)
+      const trySoft = async <T,>(label: string, fn: () => Promise<T>, fallback: T): Promise<T> => {
+        try {
+          return await fn();
+        } catch (e) {
+          console.warn(`[SupplierPortal] Falha não-crítica em "${label}":`, e);
+          return fallback;
+        }
+      };
+
       try {
-        // 1) Find supplier by token
+        // 1) Find supplier by token (CRÍTICO)
         const { data: sup, error: supErr } = await supabase
           .from("budget_suppliers")
           .select("*")
           .eq("access_token", token)
           .maybeSingle();
 
-        if (supErr) throw supErr;
+        if (supErr) {
+          console.error("[SupplierPortal] Erro ao buscar fornecedor:", supErr);
+          setError("Não foi possível validar o link. Verifique sua conexão e tente novamente.");
+          setLoading(false);
+          return;
+        }
         if (!sup) { setError("Link inválido ou expirado."); setLoading(false); return; }
 
-        // 2) Budget settings
-        const { data: settings } = await supabase
-          .from("budget_settings")
-          .select("deadline, currency_code")
-          .eq("campaign_id", sup.campaign_id)
-          .maybeSingle();
+        // 2) Budget settings (não-crítico)
+        const settings = await trySoft(
+          "budget_settings",
+          async () => {
+            const { data, error: err } = await supabase
+              .from("budget_settings")
+              .select("deadline, currency_code")
+              .eq("campaign_id", sup.campaign_id)
+              .maybeSingle();
+            if (err) throw err;
+            return data;
+          },
+          null as { deadline: string | null; currency_code?: string } | null
+        );
 
         const dl = settings?.deadline ?? null;
         setDeadline(dl);
         setCurrencyCode((settings as { currency_code?: string } | null | undefined)?.currency_code || "BRL");
 
-        // 2b) Timeline entries
-        const { data: timeline } = await supabase
-          .from("budget_timeline_entries")
-          .select("id, entry_date, description")
-          .eq("campaign_id", sup.campaign_id)
-          .order("display_order", { ascending: true });
+        // 2b) Timeline entries (não-crítico)
+        const timeline = await trySoft(
+          "budget_timeline_entries",
+          async () => {
+            const { data, error: err } = await supabase
+              .from("budget_timeline_entries")
+              .select("id, entry_date, description")
+              .eq("campaign_id", sup.campaign_id)
+              .order("display_order", { ascending: true });
+            if (err) throw err;
+            return data;
+          },
+          [] as { id: string; entry_date: string; description: string }[] | null
+        );
         setTimelineEntries(timeline ?? []);
 
-        // 2c) Materiais de apoio compartilhados com o fornecedor (via RPC segura por token)
-        const { data: materialsData } = await supabase.rpc("get_supplier_support_materials" as never, { p_token: token } as never);
+        // 2c) Materiais de apoio (não-crítico — RPC pode falhar sem bloquear o portal)
+        const materialsData = await trySoft(
+          "get_supplier_support_materials",
+          async () => {
+            const { data, error: err } = await supabase.rpc("get_supplier_support_materials" as never, { p_token: token } as never);
+            if (err) throw err;
+            return data;
+          },
+          [] as any[] | null
+        );
         setSupportMaterials((materialsData as any[] | null) ?? []);
 
         if (dl && new Date(dl) < new Date() && sup.status !== "enviado") {
@@ -375,8 +414,9 @@ const SupplierPortal = () => {
 
         if (sup.locked) setSubmitted(true);
       } catch (e: unknown) {
-        console.error(e);
-        setError("Erro ao carregar dados.");
+        console.error("[SupplierPortal] Erro crítico ao carregar:", e);
+        const msg = e instanceof Error ? e.message : String(e);
+        setError(`Não foi possível carregar o orçamento. ${msg ? `Detalhe: ${msg}. ` : ""}Recarregue a página ou tente novamente mais tarde.`);
       } finally {
         setLoading(false);
       }
@@ -690,9 +730,12 @@ const SupplierPortal = () => {
             <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
           <h1 className="text-xl font-bold text-foreground mb-2">{error || "Link inválido ou expirado"}</h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-muted-foreground text-sm mb-4">
             Caso acredite ser um erro, entre em contato com a agência responsável.
           </p>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Tentar novamente
+          </Button>
         </div>
       </div>
     );
