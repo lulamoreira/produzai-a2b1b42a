@@ -888,6 +888,11 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                             Editar dados
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleDownloadSupplierSheet(sup)}>
+                            <Download className="w-3.5 h-3.5 mr-2" />
+                            Baixar planilha preenchida
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={() => setDeleteId(sup.id)}
