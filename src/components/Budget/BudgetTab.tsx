@@ -5,11 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, MoreVertical, Pencil, Loader2,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2,
 } from "lucide-react";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
