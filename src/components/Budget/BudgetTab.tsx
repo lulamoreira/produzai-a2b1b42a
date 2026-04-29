@@ -870,42 +870,40 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setDetailSupplier(sup.id)} title="Ver detalhes">
                         <Eye className="w-3.5 h-3.5" />
                       </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 ml-auto" title="Mais ações">
-                            <MoreVertical className="w-3.5 h-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditSupplierDraft({
-                                company_name: sup.company_name ?? "",
-                                contact_name: sup.contact_name ?? "",
-                                phone: sup.phone ?? "",
-                                email: sup.email ?? "",
-                              });
-                              setEditSupplierId(sup.id);
-                            }}
-                          >
-                            <Pencil className="w-3.5 h-3.5 mr-2" />
-                            Editar dados
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleDownloadSupplierSheet(sup)}>
-                            <Download className="w-3.5 h-3.5 mr-2" />
-                            Baixar planilha preenchida
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => setDeleteId(sup.id)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5 mr-2" />
-                            Excluir fornecedor
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button
+                        size="sm" variant="ghost" className="h-7 w-7 p-0"
+                        title="Editar dados"
+                        onClick={() => {
+                          setEditSupplierDraft({
+                            company_name: sup.company_name ?? "",
+                            contact_name: sup.contact_name ?? "",
+                            phone: sup.phone ?? "",
+                            email: sup.email ?? "",
+                          });
+                          setEditSupplierId(sup.id);
+                        }}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="sm" variant="ghost" className="h-7 w-7 p-0"
+                        title="Baixar planilha preenchida"
+                        disabled={downloadingSupplierId === sup.id}
+                        onClick={() => handleDownloadSupplierSheet(sup)}
+                      >
+                        {downloadingSupplierId === sup.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Download className="w-3.5 h-3.5" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm" variant="ghost" className="h-7 w-7 p-0 ml-auto text-destructive hover:text-destructive"
+                        title="Excluir fornecedor"
+                        onClick={() => setDeleteId(sup.id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
