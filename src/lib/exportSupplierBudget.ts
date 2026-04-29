@@ -43,13 +43,15 @@ type Params = {
   installation: number | null;
   freight: number | null;
   grandTotal: number;
-  /** Optional: include a second tab with per-store rateio (same layout as the Rateio module). */
+  /** Optional: include the full Rateio module export (Matriz Lojas x Peças + Kit tabs) as additional sheets. */
   rateio?: {
     pieces: CampaignPiece[];
     kits: CampaignKit[];
     kitPieces: CampaignKitPiece[];
     stores: ClientStore[];
     qtyMap: Record<string, number>;
+    locations?: CampaignPieceLocation[];
+    subLocations?: CampaignPieceSubLocation[];
   };
 };
 
