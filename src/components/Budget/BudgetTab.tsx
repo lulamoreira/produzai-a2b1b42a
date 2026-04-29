@@ -45,6 +45,7 @@ import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppl
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
+import { exportSupplierBudget, type SupplierExportRow } from "@/lib/exportSupplierBudget";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -433,7 +434,101 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     }
   };
 
-  // ─── Detail supplier data ──────────────────────────────
+  // ─── Download a single supplier's filled spreadsheet ─────
+  const handleDownloadSupplierSheet = async (sup: typeof suppliers[0]) => {
+    try {
+      // Build display rows matching SupplierPortal layout
+      type Merged =
+        | { type: "piece"; data: typeof pieces[number] }
+        | { type: "kit"; data: typeof kits[number] };
+      const merged: Merged[] = [
+        ...pieces.filter((p) => !p.kit_only).map((p) => ({ type: "piece" as const, data: p })),
+        ...kits.map((k) => ({ type: "kit" as const, data: k })),
+      ];
+      merged.sort((a, b) => (a.data.display_order ?? 0) - (b.data.display_order ?? 0));
+
+      const supPrices = prices.filter((p) => p.supplier_id === sup.id);
+      const priceFor = (pieceId: string): number | null => {
+        const pr = supPrices.find((x) => x.piece_id === pieceId);
+        return pr && pr.unit_price != null ? Number(pr.unit_price) : null;
+      };
+
+      const rows: SupplierExportRow[] = [];
+      merged.forEach((item) => {
+        if (item.type === "kit") {
+          const kit = item.data;
+          const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
+          if (kpList.length === 0) return;
+          const kitTotalQty = Math.min(
+            ...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1)))
+          );
+          rows.push({
+            type: "kit_header",
+            name: kit.name,
+            code: kit.code,
+            totalQty: kitTotalQty,
+            unitPrice: null,
+            lineTotal: 0,
+            image_url: kit.image_url ?? null,
+          });
+          kpList.forEach((kp) => {
+            const piece = pieces.find((p) => p.id === kp.piece_id);
+            if (!piece) return;
+            const qty = kitTotalQty * kp.quantity;
+            const up = priceFor(kp.piece_id);
+            rows.push({
+              type: "kit_piece",
+              name: piece.name,
+              code: piece.code,
+              specification: (piece as any).specification ?? "",
+              size: (piece as any).size ?? "",
+              totalQty: qty,
+              unitPrice: up,
+              lineTotal: up != null ? up * qty : 0,
+              image_url: piece.image_url ?? null,
+            });
+          });
+        } else {
+          const p = item.data;
+          const qty = pieceTotals[p.id] || 0;
+          const up = priceFor(p.id);
+          rows.push({
+            type: "standalone_piece",
+            name: p.name,
+            code: p.code,
+            specification: (p as any).specification ?? "",
+            size: (p as any).size ?? "",
+            totalQty: qty,
+            unitPrice: up,
+            lineTotal: up != null ? up * qty : 0,
+            image_url: p.image_url ?? null,
+          });
+        }
+      });
+
+      const ec = extraCosts.find((e) => e.supplier_id === sup.id);
+      const installation = ec?.installation_value != null ? Number(ec.installation_value) : null;
+      const freight = ec?.freight_value != null ? Number(ec.freight_value) : null;
+      const itemsTotal = rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
+      const grandTotal = itemsTotal + (installation || 0) + (freight || 0);
+
+      await exportSupplierBudget({
+        campaignName,
+        agencyName,
+        clientName: "",
+        supplierName: sup.company_name,
+        currencyCode,
+        rows,
+        installation,
+        freight,
+        grandTotal,
+      });
+      toast.success("Planilha do fornecedor gerada.");
+    } catch (e) {
+      console.error("Supplier sheet export error:", e);
+      toast.error("Erro ao gerar planilha do fornecedor.");
+    }
+  };
   const detailSup = detailSupplier ? suppliers.find((s) => s.id === detailSupplier) : null;
   const detailPrices = detailSupplier ? prices.filter((p) => p.supplier_id === detailSupplier) : [];
   const detailCosts = detailSupplier ? extraCosts.find((e) => e.supplier_id === detailSupplier) : null;
@@ -791,6 +886,11 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           >
                             <Pencil className="w-3.5 h-3.5 mr-2" />
                             Editar dados
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleDownloadSupplierSheet(sup)}>
+                            <Download className="w-3.5 h-3.5 mr-2" />
+                            Baixar planilha preenchida
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem

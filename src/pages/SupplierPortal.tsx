@@ -662,10 +662,17 @@ const SupplierPortal = () => {
     if (!supplier) return;
     setSubmitting(true);
     try {
-      await supabase
+      const { data: updated, error: updErr } = await supabase
         .from("budget_suppliers")
         .update({ status: "enviado", locked: true, submitted_at: new Date().toISOString() })
-        .eq("id", supplier.id);
+        .eq("id", supplier.id)
+        .select("id")
+        .maybeSingle();
+      if (updErr) throw updErr;
+      if (!updated) {
+        // RLS bloqueou o update — não devemos exibir tela de sucesso falsa
+        throw new Error("Não foi possível registrar o envio. Atualize a página e tente novamente.");
+      }
 
       const { data: campaign } = await supabase
         .from("campaigns")
@@ -703,6 +710,8 @@ const SupplierPortal = () => {
       setTimeout(() => setShowConfetti(false), 4000);
     } catch (e) {
       console.error(e);
+      const msg = e instanceof Error ? e.message : "Erro ao enviar orçamento.";
+      toast.error(msg);
     } finally {
       setSubmitting(false);
       setShowConfirm2(false);
@@ -795,9 +804,23 @@ const SupplierPortal = () => {
                 </div>
               </CardContent>
             </Card>
-            <div className="mt-6 flex items-center gap-2 justify-center text-sm text-muted-foreground">
-              <Lock className="w-4 h-4" />
-              <span>Os valores estão bloqueados e não podem ser alterados.</span>
+            <div className="mt-6 flex flex-col items-center gap-3">
+              <Button
+                onClick={handleDownloadExcel}
+                disabled={downloadingExcel}
+                variant="outline"
+                className="gap-2"
+              >
+                <Download className="w-4 h-4" />
+                {downloadingExcel ? "Gerando planilha..." : "Baixar cópia da planilha"}
+              </Button>
+              <p className="text-xs text-muted-foreground max-w-sm">
+                A planilha enviada está bloqueada. Guarde esta cópia para seus registros — os valores não poderão ser alterados.
+              </p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
+                <Lock className="w-4 h-4" />
+                <span>Os valores estão bloqueados e não podem ser alterados.</span>
+              </div>
             </div>
           </div>
         </div>
