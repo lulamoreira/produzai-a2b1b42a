@@ -25,6 +25,7 @@ import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
 import { useTableSort } from "@/hooks/useTableSort";
 import SortableHeader from "./SortableHeader";
 import { useStorePortalConfig } from "@/hooks/useStorePortalConfig";
+import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 
 interface CollapsibleCardProps {
   title: string;
