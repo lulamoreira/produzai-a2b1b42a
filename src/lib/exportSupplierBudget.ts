@@ -1,6 +1,13 @@
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildExportFileName } from "@/lib/exportFileName";
-import { fetchImageBytes } from "@/lib/rateioGridShared";
+import {
+  fetchImageBytes,
+  buildRateioGridBuckets,
+  renderStoreRateioSheet,
+  sanitizeSheetName,
+  type RateioImageCache,
+} from "@/lib/rateioGridShared";
+import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -34,6 +41,14 @@ type Params = {
   installation: number | null;
   freight: number | null;
   grandTotal: number;
+  /** Optional: include a second tab with per-store rateio (same layout as the Rateio module). */
+  rateio?: {
+    pieces: CampaignPiece[];
+    kits: CampaignKit[];
+    kitPieces: CampaignKitPiece[];
+    stores: ClientStore[];
+    qtyMap: Record<string, number>;
+  };
 };
 
 function moneyFormat(currencyCode: string) {
