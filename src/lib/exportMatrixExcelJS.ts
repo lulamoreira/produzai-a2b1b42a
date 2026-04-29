@@ -431,9 +431,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
   // Build kit sheet names map first.
   // Excel forbids \ / ? * [ ] : in sheet names and limits length to 31 chars.
   // Also deduplicate names (truncation can collide, e.g. "Kit 111 - KIT Revestimento Cubo" / "Kit 114 - ...").
-  const usedSheetNames = new Set<string>();
-  usedSheetNames.add("matriz lojas x peças");
-  usedSheetNames.add("dashboard");
+  const usedSheetNames = new Set<string>(reservedSheetNames ? Array.from(reservedSheetNames) : []);
   const safeSheetName = (raw: string): string => {
     let base = raw.replace(/[\\/?*\[\]:]/g, "-").replace(/\s+/g, " ").slice(0, 31).trim();
     if (!base) base = "Sheet";
@@ -446,6 +444,8 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
     usedSheetNames.add(name.toLowerCase());
     return name;
   };
+  const mainSheetName = safeSheetName("Matriz Lojas x Peças");
+  const dashboardSheetName = skipDashboard ? null : safeSheetName("Dashboard");
   const kitSheetNames = new Map<string, string>();
   for (const kit of kits) {
     const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
