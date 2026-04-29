@@ -5,11 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, MoreVertical, Pencil,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2,
 } from "lucide-react";
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -133,6 +130,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyCode);
   const [showLockConfirm, setShowLockConfirm] = useState(false);
   const [exportingBudget, setExportingBudget] = useState(false);
+  const [downloadingSupplierId, setDownloadingSupplierId] = useState<string | null>(null);
 
   // Client suppliers picker
   const { data: clientSuppliers = [] } = useClientSuppliers(clientId);
@@ -440,6 +438,11 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
   // ─── Download a single supplier's filled spreadsheet ─────
   const handleDownloadSupplierSheet = async (sup: typeof suppliers[0]) => {
+    if (downloadingSupplierId) return;
+    setDownloadingSupplierId(sup.id);
+    const toastId = toast.loading(`Gerando planilha de ${sup.company_name}...`, {
+      description: "Baixando imagens e montando o arquivo. Isso pode levar alguns segundos.",
+    });
     try {
       // Build display rows matching SupplierPortal layout
       type Merged =
@@ -516,6 +519,22 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       const itemsTotal = rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
       const grandTotal = itemsTotal + (installation || 0) + (freight || 0);
 
+      // Fetch full store data (city/state/store_code) for the Rateio sheet
+      const storeIds = stores.map((s) => s.id);
+      let fullStores: any[] = [];
+      if (storeIds.length > 0) {
+        const { data: storeRows } = await supabase
+          .from("client_stores")
+          .select("id, name, city, state, store_code")
+          .in("id", storeIds);
+        fullStores = storeRows ?? [];
+      }
+      // Preserve the order of the stores prop
+      const storeMap = new Map(fullStores.map((s) => [s.id, s]));
+      const orderedStores = stores
+        .map((s) => storeMap.get(s.id) ?? { id: s.id, name: s.name, city: null, state: null, store_code: null })
+        .filter(Boolean);
+
       await exportSupplierBudget({
         campaignName,
         agencyName,
@@ -526,11 +545,22 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         installation,
         freight,
         grandTotal,
+        rateio: {
+          pieces,
+          kits,
+          kitPieces: kitPieces as any,
+          stores: orderedStores as any,
+          qtyMap,
+        },
       });
+      toast.dismiss(toastId);
       toast.success("Planilha do fornecedor gerada.");
     } catch (e) {
       console.error("Supplier sheet export error:", e);
+      toast.dismiss(toastId);
       toast.error("Erro ao gerar planilha do fornecedor.");
+    } finally {
+      setDownloadingSupplierId(null);
     }
   };
   const detailSup = detailSupplier ? suppliers.find((s) => s.id === detailSupplier) : null;
@@ -870,42 +900,40 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setDetailSupplier(sup.id)} title="Ver detalhes">
                         <Eye className="w-3.5 h-3.5" />
                       </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 ml-auto" title="Mais ações">
-                            <MoreVertical className="w-3.5 h-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setEditSupplierDraft({
-                                company_name: sup.company_name ?? "",
-                                contact_name: sup.contact_name ?? "",
-                                phone: sup.phone ?? "",
-                                email: sup.email ?? "",
-                              });
-                              setEditSupplierId(sup.id);
-                            }}
-                          >
-                            <Pencil className="w-3.5 h-3.5 mr-2" />
-                            Editar dados
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleDownloadSupplierSheet(sup)}>
-                            <Download className="w-3.5 h-3.5 mr-2" />
-                            Baixar planilha preenchida
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => setDeleteId(sup.id)}
-                          >
-                            <Trash2 className="w-3.5 h-3.5 mr-2" />
-                            Excluir fornecedor
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button
+                        size="sm" variant="ghost" className="h-7 w-7 p-0"
+                        title="Editar dados"
+                        onClick={() => {
+                          setEditSupplierDraft({
+                            company_name: sup.company_name ?? "",
+                            contact_name: sup.contact_name ?? "",
+                            phone: sup.phone ?? "",
+                            email: sup.email ?? "",
+                          });
+                          setEditSupplierId(sup.id);
+                        }}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="sm" variant="ghost" className="h-7 w-7 p-0"
+                        title="Baixar planilha preenchida"
+                        disabled={downloadingSupplierId === sup.id}
+                        onClick={() => handleDownloadSupplierSheet(sup)}
+                      >
+                        {downloadingSupplierId === sup.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Download className="w-3.5 h-3.5" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm" variant="ghost" className="h-7 w-7 p-0 ml-auto text-destructive hover:text-destructive"
+                        title="Excluir fornecedor"
+                        onClick={() => setDeleteId(sup.id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>

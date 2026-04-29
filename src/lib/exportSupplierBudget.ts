@@ -1,6 +1,13 @@
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildExportFileName } from "@/lib/exportFileName";
-import { fetchImageBytes } from "@/lib/rateioGridShared";
+import {
+  fetchImageBytes,
+  buildRateioGridBuckets,
+  renderStoreRateioSheet,
+  sanitizeSheetName,
+  type RateioImageCache,
+} from "@/lib/rateioGridShared";
+import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -34,6 +41,14 @@ type Params = {
   installation: number | null;
   freight: number | null;
   grandTotal: number;
+  /** Optional: include a second tab with per-store rateio (same layout as the Rateio module). */
+  rateio?: {
+    pieces: CampaignPiece[];
+    kits: CampaignKit[];
+    kitPieces: CampaignKitPiece[];
+    stores: ClientStore[];
+    qtyMap: Record<string, number>;
+  };
 };
 
 function moneyFormat(currencyCode: string) {
@@ -107,8 +122,8 @@ export async function exportSupplierBudget(params: Params) {
     };
   });
 
-  // Cache image fetches across rows (same image_url reused in kits)
-  const imageCache = new Map<string, { buffer: ArrayBuffer; ext: "png" | "jpeg" | "gif" } | null>();
+  // Cache image fetches across rows AND across the optional Rateio sheet.
+  const imageCache: RateioImageCache = new Map();
 
   // Body rows — sequential because we await image fetches
   let bodyEvenIdx = 0;
@@ -211,6 +226,36 @@ export async function exportSupplierBudget(params: Params) {
     { width: 18 }, // Total
   ];
   ws.views = [{ state: "frozen", ySplit: headerRowIdx }];
+
+  // ─── Optional second tab: Rateio por Loja ───
+  if (params.rateio) {
+    const buckets = buildRateioGridBuckets(
+      params.rateio.pieces,
+      params.rateio.kits,
+      params.rateio.kitPieces,
+      params.rateio.stores,
+      params.rateio.qtyMap,
+      "pieces_and_kits",
+    );
+    if (buckets.length > 0) {
+      const usedNames = new Set<string>(["Orçamento".toLowerCase()]);
+      for (const bucket of buckets) {
+        const sheetName = sanitizeSheetName(bucket.store.name || "Loja", usedNames);
+        const rws = wb.addWorksheet(sheetName, { views: [{ showGridLines: false }] });
+        await renderStoreRateioSheet(
+          wb,
+          rws,
+          bucket,
+          {
+            campaignName: params.campaignName,
+            clientName: params.clientName || "",
+            agencyName: params.agencyName || "",
+          },
+          imageCache,
+        );
+      }
+    }
+  }
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: XLSX_MIME });
