@@ -710,6 +710,8 @@ const SupplierPortal = () => {
       setTimeout(() => setShowConfetti(false), 4000);
     } catch (e) {
       console.error(e);
+      const msg = e instanceof Error ? e.message : "Erro ao enviar orçamento.";
+      toast.error(msg);
     } finally {
       setSubmitting(false);
       setShowConfirm2(false);
