@@ -470,7 +470,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
   }
 
   // ABA 1 – Main matrix
-  const ws = wb.addWorksheet("Matriz Lojas x Peças");
+  const ws = wb.addWorksheet(mainSheetName);
   await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames, effectiveStoreFields);
 
   // Kit tabs
@@ -506,6 +506,8 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
     await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`, colors, locData, undefined, effectiveStoreFields);
   }
 
+  if (skipDashboard || !dashboardSheetName) return;
+
   // Dashboard tab
   const { PRIMARY, SECONDARY, LIGHT, BORDER } = colors;
   const whiteFont: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: true };
@@ -515,7 +517,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
   const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
   const allWhiteBorders = { top: whiteBorder, bottom: whiteBorder, left: whiteBorder, right: whiteBorder };
 
-  const dash = wb.addWorksheet("Dashboard");
+  const dash = wb.addWorksheet(dashboardSheetName);
   let currentRow = 1;
 
   function addSectionTitle(title: string, cols: number) {
@@ -593,8 +595,46 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
   dash.getColumn(1).width = 12;
   dash.getColumn(2).width = 40;
   dash.getColumn(3).width = 20;
+}
 
-  // Generate and download (com diálogo "Salvar como" quando suportado)
+// ─── Thin wrapper: standalone Rateio export (creates workbook + saves) ───
+
+export async function exportMatrixExcelJS(
+  stores: ClientStore[],
+  pieces: CampaignPiece[],
+  qtyMap: Record<string, number>,
+  campaignName: string,
+  kits: CampaignKit[] = [],
+  kitPieces: CampaignKitPiece[] = [],
+  palette?: ColorPalette,
+  locations: CampaignPieceLocation[] = [],
+  subLocations: CampaignPieceSubLocation[] = [],
+  allPieces?: CampaignPiece[],
+  agencyName?: string,
+  clientName?: string,
+  storeFields?: StoreFieldDef[],
+) {
+  const ExcelJSModule = await import("exceljs");
+  const ExcelJSRuntime = ExcelJSModule.default;
+  const wb = new ExcelJSRuntime.Workbook();
+  wb.creator = "ProduzAI";
+
+  await appendMatrixSheets(wb, {
+    stores,
+    pieces,
+    qtyMap,
+    campaignName,
+    kits,
+    kitPieces,
+    palette,
+    locations,
+    subLocations,
+    allPieces,
+    agencyName,
+    clientName,
+    storeFields,
+  });
+
   const buffer = await wb.xlsx.writeBuffer();
   const fileName = `Rateio_${campaignName.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
   await saveXlsxAs(buffer as ArrayBuffer, fileName);
