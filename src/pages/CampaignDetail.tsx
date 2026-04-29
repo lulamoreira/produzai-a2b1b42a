@@ -425,8 +425,9 @@ const CampaignDetail = () => {
     const urlSection = params.get("section");
     if (urlSection && urlSection !== activeSection) {
       setActiveSectionState(urlSection);
-    } else if (!urlSection && activeSection && !locationState?.initialSection) {
-      // Only clear if navigated without section param and no initial section
+    } else if (!urlSection && activeSection) {
+      // URL não tem section → voltar para o hub inicial da campanha
+      setActiveSectionState(null);
     }
   }, [location.search]);
 
