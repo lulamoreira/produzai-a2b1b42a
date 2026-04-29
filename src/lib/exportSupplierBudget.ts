@@ -1,13 +1,15 @@
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildExportFileName } from "@/lib/exportFileName";
-import {
-  fetchImageBytes,
-  buildRateioGridBuckets,
-  renderStoreRateioSheet,
-  sanitizeSheetName,
-  type RateioImageCache,
-} from "@/lib/rateioGridShared";
-import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
+import { fetchImageBytes, type RateioImageCache } from "@/lib/rateioGridShared";
+import { appendMatrixSheets } from "@/lib/exportMatrixExcelJS";
+import type {
+  CampaignPiece,
+  CampaignKit,
+  CampaignKitPiece,
+  ClientStore,
+  CampaignPieceLocation,
+  CampaignPieceSubLocation,
+} from "@/hooks/useMultiClientData";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
