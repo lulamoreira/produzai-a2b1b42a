@@ -349,26 +349,51 @@ async function buildTransposedSheet(
 
 // ─── Main export ─────────────────────────────────────────
 
-export async function exportMatrixExcelJS(
-  stores: ClientStore[],
-  pieces: CampaignPiece[],
-  qtyMap: Record<string, number>,
-  campaignName: string,
-  kits: CampaignKit[] = [],
-  kitPieces: CampaignKitPiece[] = [],
-  palette?: ColorPalette,
-  locations: CampaignPieceLocation[] = [],
-  subLocations: CampaignPieceSubLocation[] = [],
-  allPieces?: CampaignPiece[],
-  agencyName?: string,
-  clientName?: string,
-  storeFields?: StoreFieldDef[],
-) {
+export type AppendMatrixParams = {
+  stores: ClientStore[];
+  pieces: CampaignPiece[];
+  qtyMap: Record<string, number>;
+  campaignName: string;
+  kits?: CampaignKit[];
+  kitPieces?: CampaignKitPiece[];
+  palette?: ColorPalette;
+  locations?: CampaignPieceLocation[];
+  subLocations?: CampaignPieceSubLocation[];
+  allPieces?: CampaignPiece[];
+  agencyName?: string;
+  clientName?: string;
+  storeFields?: StoreFieldDef[];
+  /** When provided, sheet names already used in the workbook (lowercased) — to avoid collisions. */
+  reservedSheetNames?: Set<string>;
+  /** When true, skip the Dashboard tab. Useful when appending to another workbook. */
+  skipDashboard?: boolean;
+};
+
+/**
+ * Appends the Rateio matrix sheets (Matriz Lojas x Peças, kit tabs, optional Dashboard)
+ * to an EXISTING workbook. Used by both the standalone Rateio export and the
+ * Supplier Budget export (which appends these sheets after its own "Orçamento" tab).
+ */
+export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMatrixParams) {
+  const {
+    stores,
+    pieces,
+    qtyMap,
+    campaignName,
+    kits = [],
+    kitPieces = [],
+    palette,
+    locations = [],
+    subLocations = [],
+    allPieces,
+    agencyName,
+    clientName,
+    storeFields,
+    reservedSheetNames,
+    skipDashboard,
+  } = params;
+
   const effectiveStoreFields = storeFields && storeFields.length > 0 ? storeFields : DEFAULT_STORE_FIELDS;
-  const ExcelJSModule = await import("exceljs");
-  const ExcelJSRuntime = ExcelJSModule.default;
-  const wb = new ExcelJSRuntime.Workbook();
-  wb.creator = "ProduzAI";
   const colors = makeColors(palette);
   const locData: LocationData = { locations, subLocations };
 
