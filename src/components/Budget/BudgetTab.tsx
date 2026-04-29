@@ -5,8 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, MoreVertical, Pencil,
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -118,6 +121,8 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [addOpen, setAddOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detailSupplier, setDetailSupplier] = useState<string | null>(null);
+  const [editSupplierId, setEditSupplierId] = useState<string | null>(null);
+  const [editSupplierDraft, setEditSupplierDraft] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
   const [newSupplier, setNewSupplier] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
   const [expandedSuggestionPieceId, setExpandedSuggestionPieceId] = useState<string | null>(null);
   const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyCode);
@@ -766,12 +771,37 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setDetailSupplier(sup.id)} title="Ver detalhes">
                         <Eye className="w-3.5 h-3.5" />
                       </Button>
-                      <Button
-                        size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive ml-auto"
-                        onClick={() => setDeleteId(sup.id)}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 ml-auto" title="Mais ações">
+                            <MoreVertical className="w-3.5 h-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditSupplierDraft({
+                                company_name: sup.company_name ?? "",
+                                contact_name: sup.contact_name ?? "",
+                                phone: sup.phone ?? "",
+                                email: sup.email ?? "",
+                              });
+                              setEditSupplierId(sup.id);
+                            }}
+                          >
+                            <Pencil className="w-3.5 h-3.5 mr-2" />
+                            Editar dados
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setDeleteId(sup.id)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 mr-2" />
+                            Excluir fornecedor
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardContent>
                 </Card>
@@ -1033,6 +1063,82 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             <Button variant="outline" onClick={() => setAddOpen(false)}>Cancelar</Button>
             <Button onClick={handleAddSupplier} disabled={addSupplier.isPending}>
               {addSupplier.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ═══ EDIT SUPPLIER DIALOG ═══ */}
+      <Dialog open={!!editSupplierId} onOpenChange={(o) => !o && setEditSupplierId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar fornecedor</DialogTitle>
+            <DialogDescription>Atualize os dados de contato do fornecedor.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">Empresa</Label>
+              <Input
+                value={editSupplierDraft.company_name}
+                onChange={(e) => setEditSupplierDraft((d) => ({ ...d, company_name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Contato</Label>
+              <Input
+                value={editSupplierDraft.contact_name}
+                onChange={(e) => setEditSupplierDraft((d) => ({ ...d, contact_name: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Telefone</Label>
+                <Input
+                  value={editSupplierDraft.phone}
+                  onChange={(e) => setEditSupplierDraft((d) => ({ ...d, phone: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">E-mail</Label>
+                <Input
+                  type="email"
+                  value={editSupplierDraft.email}
+                  onChange={(e) => setEditSupplierDraft((d) => ({ ...d, email: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditSupplierId(null)}>Cancelar</Button>
+            <Button
+              onClick={() => {
+                if (!editSupplierId) return;
+                if (!editSupplierDraft.company_name.trim() || !editSupplierDraft.email.trim()) {
+                  toast.error("Empresa e e-mail são obrigatórios.");
+                  return;
+                }
+                updateSupplier.mutate(
+                  {
+                    id: editSupplierId,
+                    campaign_id: campaignId,
+                    updates: {
+                      company_name: editSupplierDraft.company_name.trim(),
+                      contact_name: editSupplierDraft.contact_name.trim(),
+                      phone: editSupplierDraft.phone.trim(),
+                      email: editSupplierDraft.email.trim(),
+                    },
+                  },
+                  {
+                    onSuccess: () => {
+                      toast.success("Fornecedor atualizado.");
+                      setEditSupplierId(null);
+                    },
+                    onError: (e: any) => toast.error("Erro: " + (e?.message || "")),
+                  }
+                );
+              }}
+            >
+              Salvar
             </Button>
           </DialogFooter>
         </DialogContent>
