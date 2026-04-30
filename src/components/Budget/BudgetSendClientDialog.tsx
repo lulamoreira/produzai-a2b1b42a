@@ -440,7 +440,19 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     fileName: string,
     supplierIdOrTag: string,
   ): Promise<{ name: string; url: string }> => {
-    const path = `${campaignId}/${supplierIdOrTag}/${Date.now()}_${fileName}`;
+    // Supabase Storage rejects keys with accents, spaces, or non-ASCII chars.
+    // Sanitize the storage path while keeping the original fileName for the
+    // signed URL's download attribute (so the user still sees a friendly name).
+    const sanitize = (s: string) =>
+      s
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // strip diacritics
+        .replace(/[^\w.\-]+/g, "_")       // replace anything not [A-Za-z0-9_.-]
+        .replace(/_+/g, "_")
+        .replace(/^_+|_+$/g, "");
+    const safeFileName = sanitize(fileName) || `file_${Date.now()}.xlsx`;
+    const safeTag = sanitize(supplierIdOrTag) || "tag";
+    const path = `${campaignId}/${safeTag}/${Date.now()}_${safeFileName}`;
     const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, blob, {
       contentType: XLSX_MIME,
       upsert: false,
@@ -448,7 +460,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     if (upErr) throw new Error(`Falha no upload de ${fileName}: ${upErr.message}`);
     const { data: signed, error: signErr } = await supabase.storage
       .from(BUCKET)
-      .createSignedUrl(path, 60 * 60 * 24 * 30);
+      .createSignedUrl(path, 60 * 60 * 24 * 30, { download: fileName });
     if (signErr || !signed) throw new Error(`Falha ao gerar link de ${fileName}`);
     return { name: fileName, url: signed.signedUrl };
   };
