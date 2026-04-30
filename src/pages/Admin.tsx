@@ -82,6 +82,11 @@ const Admin = () => {
               <Bell className="w-4 h-4" /> Notificações
             </TabsTrigger>
             {isAdmin && (
+              <TabsTrigger value="images" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                <ImageIcon className="w-4 h-4" /> Imagens
+              </TabsTrigger>
+            )}
+            {isAdmin && (
               <TabsTrigger value="backup" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
                 <Database className="w-4 h-4" /> {t("common.backup")}
               </TabsTrigger>
