@@ -398,7 +398,9 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
   const titleParts = [agencyName, clientName, campaignName].filter(Boolean);
   const fullTitle = titleParts.join(" / ");
 
-  // Build unified column list
+  // Build unified column list — same ordering rules used in the Rateio module
+  // (display_order, then piece-before-kit on ties, then id) so that the
+  // "Matriz Lojas x Peças" tab produced here matches the standalone Rateio export.
   type ColItem = MatrixItem & { _type: "piece" | "kit"; display_order: number };
   const allColumns: ColItem[] = [
     ...pieces.map((p) => ({
@@ -423,7 +425,12 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
       _type: "kit" as const,
       display_order: k.display_order,
     })),
-  ].sort((a, b) => a.display_order - b.display_order);
+  ].sort(
+    (a, b) =>
+      (a.display_order ?? 0) - (b.display_order ?? 0)
+      || (a._type === b._type ? 0 : a._type === "piece" ? -1 : 1)
+      || (a.id < b.id ? -1 : 1),
+  );
 
   // Build kit sheet names map first.
   // Excel forbids \ / ? * [ ] : in sheet names and limits length to 31 chars.
