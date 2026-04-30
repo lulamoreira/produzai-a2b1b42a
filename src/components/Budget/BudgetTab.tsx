@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -50,6 +50,7 @@ import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
 import { exportSupplierBudget, type SupplierExportRow } from "@/lib/exportSupplierBudget";
 import BudgetSendClientDialog from "@/components/Budget/BudgetSendClientDialog";
+import BudgetWinnerDialog from "@/components/Budget/BudgetWinnerDialog";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -146,6 +147,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [clientSendDialogOpen, setClientSendDialogOpen] = useState(false);
   const [historySupplierId, setHistorySupplierId] = useState<string | null>(null);
   const [reopeningSupplierId, setReopeningSupplierId] = useState<string | null>(null);
+  const [winnerSupplierId, setWinnerSupplierId] = useState<string | null>(null);
 
   const { isAdminOrMaster } = useUserRole();
   const { user } = useAuth();
@@ -1017,6 +1019,15 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           onClick={() => setHistorySupplierId(sup.id)}
                         >
                           <History className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                      {isAdminOrMaster && sup.submitted_at && (
+                        <Button
+                          size="sm" variant="ghost" className="h-7 w-7 p-0"
+                          title="Declarar vencedor do certame"
+                          onClick={() => setWinnerSupplierId(sup.id)}
+                        >
+                          <Trophy className="w-3.5 h-3.5 text-amber-500" />
                         </Button>
                       )}
                       <Button
