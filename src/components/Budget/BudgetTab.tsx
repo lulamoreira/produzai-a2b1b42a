@@ -1001,6 +1001,15 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           <Download className="w-3.5 h-3.5" />
                         )}
                       </Button>
+                      {isAdminOrMaster && sup.submitted_at && (
+                        <Button
+                          size="sm" variant="ghost" className="h-7 w-7 p-0"
+                          title="Histórico de valores"
+                          onClick={() => setHistorySupplierId(sup.id)}
+                        >
+                          <History className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                       <Button
                         size="sm" variant="ghost" className="h-7 w-7 p-0 ml-auto text-destructive hover:text-destructive"
                         title="Excluir fornecedor"
@@ -1009,6 +1018,32 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
+
+                    {/* Lock toggle: visible only to admin/master once supplier has submitted at least once */}
+                    {isAdminOrMaster && sup.submitted_at && (
+                      <div className="flex items-center justify-between gap-2 pt-2 mt-1 border-t border-border/60">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {sup.locked ? (
+                            <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          ) : (
+                            <Unlock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          )}
+                          <span className="text-[11px] text-muted-foreground truncate">
+                            {sup.locked ? "Travado para edição" : "Liberado para revisão"}
+                          </span>
+                        </div>
+                        <Switch
+                          checked={!sup.locked}
+                          disabled={reopeningSupplierId === sup.id || !sup.locked}
+                          onCheckedChange={(checked) => {
+                            if (checked && sup.locked) {
+                              handleToggleSupplierLock(sup);
+                            }
+                          }}
+                          aria-label="Liberar planilha para revisão"
+                        />
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
