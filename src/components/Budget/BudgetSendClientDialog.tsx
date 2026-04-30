@@ -277,7 +277,6 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         submittedSuppliers.forEach(() => headerVals.push(null));
         headerVals.push(null);
         const hRow = ws.addRow(headerVals);
-        hRow.height = 22;
         hRow.eachCell({ includeEmpty: true }, (cell, col) => {
           cell.font = { bold: true };
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEDE3D4" } };
