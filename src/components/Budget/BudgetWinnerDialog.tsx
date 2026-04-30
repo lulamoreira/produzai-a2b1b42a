@@ -37,6 +37,7 @@ export default function BudgetWinnerDialog({
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const [mockupUrl, setMockupUrl] = useState("");
+  const [bookUrl, setBookUrl] = useState("");
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function BudgetWinnerDialog({
       setEmail(supplier.email || "");
       setCc("");
       setMockupUrl("");
+      setBookUrl("");
     }
   }, [open, supplier]);
 
