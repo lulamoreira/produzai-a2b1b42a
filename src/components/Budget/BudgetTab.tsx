@@ -1041,13 +1041,9 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                         </div>
                         <Switch
                           checked={!sup.locked}
-                          disabled={reopeningSupplierId === sup.id || !sup.locked}
-                          onCheckedChange={(checked) => {
-                            if (checked && sup.locked) {
-                              handleToggleSupplierLock(sup);
-                            }
-                          }}
-                          aria-label="Liberar planilha para revisão"
+                          disabled={reopeningSupplierId === sup.id}
+                          onCheckedChange={() => handleToggleSupplierLock(sup)}
+                          aria-label={sup.locked ? "Liberar planilha para revisão" : "Travar planilha novamente"}
                         />
                       </div>
                     )}
