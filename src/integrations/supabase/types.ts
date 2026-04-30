@@ -251,6 +251,54 @@ export type Database = {
           },
         ]
       }
+      budget_price_history: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          reason: string | null
+          snapshot: Json
+          supplier_id: string
+          version: number
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          snapshot: Json
+          supplier_id: string
+          version: number
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          reason?: string | null
+          snapshot?: Json
+          supplier_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_price_history_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_price_history_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "budget_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_prices: {
         Row: {
           campaign_id: string
