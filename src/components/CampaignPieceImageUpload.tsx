@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useUpdateCampaignPieceImage } from "@/hooks/useMultiClientData";
-import { compressImage } from "@/lib/compressImage";
+import { uploadPieceImageVariants } from "@/lib/uploadPieceImage";
 import { Image, Upload, Link, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,22 +22,23 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Reset the input so the same file can be re-selected
     e.target.value = "";
 
     setUploading(true);
     try {
-      const compressed = await compressImage(file, 800, 0.6);
-      const path = `campaign-piece-${piece.id}-${Date.now()}.jpg`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("piece-images")
-        .upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
-      await updateImage.mutateAsync({ pieceId: piece.id, imageUrl: urlData.publicUrl });
+      // Generates 3 optimized 1:1 variants (thumb/report/full) and uploads
+      // them under a hash-based path so identical images dedupe automatically.
+      const uploaded = await uploadPieceImageVariants(file);
+      await updateImage.mutateAsync({
+        pieceId: piece.id,
+        imageUrl: uploaded.image_url,
+        variants: {
+          image_thumb_url: uploaded.image_thumb_url,
+          image_report_url: uploaded.image_report_url,
+          image_full_url: uploaded.image_full_url,
+          image_hash: uploaded.image_hash,
+        },
+      });
       setOpen(false);
     } catch (err: any) {
       toast.error("Erro ao enviar imagem: " + err.message);
@@ -46,6 +46,7 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
       setUploading(false);
     }
   };
+
 
   const handleUrlSubmit = async () => {
     if (!urlInput.trim()) return;
