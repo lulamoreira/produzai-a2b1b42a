@@ -77,6 +77,11 @@ export default function BudgetWinnerDialog({
       toast.error("Informe um link válido (começando com http:// ou https://).");
       return;
     }
+    const book = bookUrl.trim();
+    if (book && !URL_REGEX.test(book)) {
+      toast.error("Link do book de mockup inválido (deve começar com http:// ou https://).");
+      return;
+    }
 
     setSending(true);
     const toastId = toast.loading("Enviando comunicado ao fornecedor vencedor...");
