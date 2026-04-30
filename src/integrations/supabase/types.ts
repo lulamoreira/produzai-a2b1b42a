@@ -825,6 +825,10 @@ export type Database = {
           created_at: string
           display_order: number
           id: string
+          image_full_url: string | null
+          image_hash: string | null
+          image_report_url: string | null
+          image_thumb_url: string | null
           image_url: string | null
           installation_instructions: string
           is_mockup: boolean
@@ -843,6 +847,10 @@ export type Database = {
           created_at?: string
           display_order?: number
           id?: string
+          image_full_url?: string | null
+          image_hash?: string | null
+          image_report_url?: string | null
+          image_thumb_url?: string | null
           image_url?: string | null
           installation_instructions?: string
           is_mockup?: boolean
@@ -861,6 +869,10 @@ export type Database = {
           created_at?: string
           display_order?: number
           id?: string
+          image_full_url?: string | null
+          image_hash?: string | null
+          image_report_url?: string | null
+          image_thumb_url?: string | null
           image_url?: string | null
           installation_instructions?: string
           is_mockup?: boolean
@@ -2748,6 +2760,10 @@ export type Database = {
           code: number
           created_at: string
           id: number
+          image_full_url: string | null
+          image_hash: string | null
+          image_report_url: string | null
+          image_thumb_url: string | null
           image_url: string | null
           installation_instructions: string
           name: string
@@ -2759,6 +2775,10 @@ export type Database = {
           code: number
           created_at?: string
           id?: number
+          image_full_url?: string | null
+          image_hash?: string | null
+          image_report_url?: string | null
+          image_thumb_url?: string | null
           image_url?: string | null
           installation_instructions?: string
           name: string
@@ -2770,6 +2790,10 @@ export type Database = {
           code?: number
           created_at?: string
           id?: number
+          image_full_url?: string | null
+          image_hash?: string | null
+          image_report_url?: string | null
+          image_thumb_url?: string | null
           image_url?: string | null
           installation_instructions?: string
           name?: string

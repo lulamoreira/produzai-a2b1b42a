@@ -51,7 +51,9 @@ export function buildRateioGridBuckets(
           quantity: qty,
           is_new: (p as any).is_new === true,
           is_mockup: (p as any).is_mockup === true,
-          image_url: p.image_url || null,
+          // Prefer the optimized 'report' variant (600px square JPEG, ~80KB).
+          // Falls back to legacy image_url for pieces that haven't been re-processed yet.
+          image_url: (p as any).image_report_url || p.image_url || null,
         });
       }
     }
@@ -74,7 +76,7 @@ export function buildRateioGridBuckets(
             quantity: kitQty,
             is_new: (k as any).is_new === true,
             is_mockup: (k as any).is_mockup === true,
-            image_url: k.image_url || null,
+            image_url: (k as any).image_report_url || k.image_url || null,
           });
         }
       }

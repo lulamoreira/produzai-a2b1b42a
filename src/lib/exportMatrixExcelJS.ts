@@ -420,7 +420,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
       sub_location: k.sub_location,
       specification: "",
       installation_instructions: "",
-      image_url: k.image_url,
+      image_url: (k as any).image_report_url || k.image_url,
       is_new: (k as any).is_new || false,
       _type: "kit" as const,
       display_order: k.display_order,
@@ -496,7 +496,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
         sub_location: piece?.sub_location,
         specification: piece?.specification || "",
         installation_instructions: piece?.installation_instructions || "",
-        image_url: piece?.image_url,
+        image_url: (piece as any)?.image_report_url || piece?.image_url,
         is_new: (piece as any)?.is_new || false,
       };
     });

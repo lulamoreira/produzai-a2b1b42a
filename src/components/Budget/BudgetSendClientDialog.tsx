@@ -120,7 +120,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
           totalQty: kitTotalQty,
           unitPrice: null,
           lineTotal: 0,
-          image_url: kit.image_url ?? null,
+          image_url: (kit as any).image_report_url ?? kit.image_url ?? null,
         });
         kpList.forEach((kp) => {
           const piece = pieces.find((p) => p.id === kp.piece_id);
@@ -136,7 +136,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
             totalQty: qty,
             unitPrice: up,
             lineTotal: up != null ? up * qty : 0,
-            image_url: piece.image_url ?? null,
+            image_url: (piece as any).image_report_url ?? piece.image_url ?? null,
           });
         });
       } else {
@@ -152,7 +152,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
           totalQty: qty,
           unitPrice: up,
           lineTotal: up != null ? up * qty : 0,
-          image_url: p.image_url ?? null,
+          image_url: (p as any).image_report_url ?? p.image_url ?? null,
         });
       }
     });

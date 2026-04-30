@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { getThumbnailUrl } from "@/lib/imageUrl";
-import { supabase } from "@/integrations/supabase/client";
 import { useUpdatePieceImage, type Piece } from "@/hooks/useStoreData";
-import { compressImage } from "@/lib/compressImage";
+import { uploadPieceImageVariants } from "@/lib/uploadPieceImage";
+import { pickPieceImageUrl } from "@/lib/pieceImageVariants";
 import { Image, Upload, Link, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,22 +21,23 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Reset the input so the same file can be re-selected
     e.target.value = "";
 
     setUploading(true);
     try {
-      const compressed = await compressImage(file, 800, 0.6);
-      const path = `piece-${piece.id}-${Date.now()}.jpg`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("piece-images")
-        .upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
-      await updateImage.mutateAsync({ pieceId: piece.id, imageUrl: urlData.publicUrl });
+      // Generates 3 optimized 1:1 variants and uploads them under a hash-based
+      // path (auto-dedupes identical images across pieces / campaigns).
+      const uploaded = await uploadPieceImageVariants(file);
+      await updateImage.mutateAsync({
+        pieceId: piece.id,
+        imageUrl: uploaded.image_url,
+        variants: {
+          image_thumb_url: uploaded.image_thumb_url,
+          image_report_url: uploaded.image_report_url,
+          image_full_url: uploaded.image_full_url,
+          image_hash: uploaded.image_hash,
+        },
+      });
       setOpen(false);
     } catch (err: any) {
       console.error("Upload error:", err);
@@ -61,11 +62,13 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button className="relative group w-10 h-10 rounded-lg border border-border bg-muted/50 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors shrink-0">
-          {piece.image_url ? (
-            <img src={getThumbnailUrl(piece.image_url, 80)} alt={piece.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
-          ) : (
-            <Image className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          )}
+          {(() => {
+            const thumb = pickPieceImageUrl(piece, "thumb");
+            if (thumb) {
+              return <img src={thumb} alt={piece.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />;
+            }
+            return <Image className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />;
+          })()}
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">

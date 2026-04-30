@@ -91,6 +91,10 @@ export type CampaignPiece = {
   store_category: string | null;
   sub_location: string | null;
   image_url: string | null;
+  image_thumb_url?: string | null;
+  image_report_url?: string | null;
+  image_full_url?: string | null;
+  image_hash?: string | null;
   specification: string;
   installation_instructions: string;
   kit_only: boolean;
@@ -599,8 +603,34 @@ export function useUpdateCampaignPiece() {
 export function useUpdateCampaignPieceImage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ pieceId, imageUrl }: { pieceId: string; imageUrl: string | null }) => {
-      const { error } = await supabase.from("campaign_pieces").update({ image_url: imageUrl }).eq("id", pieceId);
+    mutationFn: async ({
+      pieceId,
+      imageUrl,
+      variants,
+    }: {
+      pieceId: string;
+      imageUrl: string | null;
+      variants?: {
+        image_thumb_url: string | null;
+        image_report_url: string | null;
+        image_full_url: string | null;
+        image_hash: string | null;
+      };
+    }) => {
+      const payload: Record<string, string | null> = { image_url: imageUrl };
+      if (variants) {
+        payload.image_thumb_url = variants.image_thumb_url;
+        payload.image_report_url = variants.image_report_url;
+        payload.image_full_url = variants.image_full_url;
+        payload.image_hash = variants.image_hash;
+      } else if (imageUrl === null) {
+        // Removing the image — clear all variant fields too
+        payload.image_thumb_url = null;
+        payload.image_report_url = null;
+        payload.image_full_url = null;
+        payload.image_hash = null;
+      }
+      const { error } = await supabase.from("campaign_pieces").update(payload).eq("id", pieceId);
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_pieces"] }); toast.success("Imagem atualizada!"); },
