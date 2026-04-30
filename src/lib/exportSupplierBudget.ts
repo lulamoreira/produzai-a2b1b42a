@@ -268,15 +268,14 @@ export async function buildSupplierBudgetWorkbook(
     (s || "").trim().replace(/[^a-zA-Z0-9À-ÿ\s_-]/g, "").replace(/\s+/g, "_").slice(0, 40);
   const today = new Date()
     .toLocaleDateString("pt-BR", { year: "numeric", month: "2-digit", day: "2-digit" })
-    .split("/")
-    .reverse()
-    .join("-");
+    .replace(/\//g, "-");
 
   const nameParts = [
+    "Orcamento",
+    sanitizeCamp(params.campaignName),
+    firstName(params.clientName),
     firstName(params.supplierName),
     firstName(params.agencyName),
-    firstName(params.clientName),
-    sanitizeCamp(params.campaignName),
     today,
   ].filter(Boolean);
 
