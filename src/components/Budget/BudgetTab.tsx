@@ -1715,6 +1715,19 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         pieces={pieces}
         kits={kits}
       />
+
+      {/* Declarar vencedor (Admin/Master) */}
+      <BudgetWinnerDialog
+        open={!!winnerSupplierId}
+        onOpenChange={(o) => !o && setWinnerSupplierId(null)}
+        campaignId={campaignId}
+        campaignName={campaignName}
+        agencyName={agencyName}
+        supplier={(() => {
+          const s = suppliers.find((x) => x.id === winnerSupplierId);
+          return s ? { id: s.id, company_name: s.company_name, contact_name: s.contact_name, email: s.email } : null;
+        })()}
+      />
     </div>
   );
 }
