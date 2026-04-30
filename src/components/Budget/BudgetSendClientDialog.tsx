@@ -358,13 +358,13 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     });
 
     // Column widths
-    const cols: Partial<ExcelJS.Column>[] = [
+    const cols: any[] = [
       { width: 12 },
       { width: 50 },
     ];
     submittedSuppliers.forEach(() => cols.push({ width: 18 }));
     cols.push({ width: 18 });
-    ws.columns = cols as any;
+    ws.columns = cols;
     ws.views = [{ state: "frozen", ySplit: headerRowIdx, xSplit: 2 }];
 
     const buffer = await wb.xlsx.writeBuffer();
