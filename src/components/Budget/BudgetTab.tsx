@@ -149,6 +149,48 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [reopeningSupplierId, setReopeningSupplierId] = useState<string | null>(null);
   const [winnerSupplierId, setWinnerSupplierId] = useState<string | null>(null);
 
+  // ── Editor de "Links do Vencedor" (configuração padrão usada no e-mail de vencedor) ──
+  const settingsAny = settings as any;
+  const [winnerLinksOpen, setWinnerLinksOpen] = useState(false);
+  const [winnerMockupUrlDraft, setWinnerMockupUrlDraft] = useState("");
+  const [winnerBookUrlDraft, setWinnerBookUrlDraft] = useState("");
+  const [winnerCcEmailDraft, setWinnerCcEmailDraft] = useState("");
+  const [savingWinnerLinks, setSavingWinnerLinks] = useState(false);
+
+  React.useEffect(() => {
+    setWinnerMockupUrlDraft(settingsAny?.winner_mockup_url ?? "");
+    setWinnerBookUrlDraft(settingsAny?.winner_book_url ?? "");
+    setWinnerCcEmailDraft(settingsAny?.winner_cc_email ?? "");
+  }, [settingsAny?.winner_mockup_url, settingsAny?.winner_book_url, settingsAny?.winner_cc_email]);
+
+  const handleSaveWinnerLinks = async () => {
+    const mockup = winnerMockupUrlDraft.trim();
+    const book = winnerBookUrlDraft.trim();
+    const cc = winnerCcEmailDraft.trim();
+    const URL_RE = /^https?:\/\/.+/i;
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (mockup && !URL_RE.test(mockup)) { toast.error("Link de mockup inválido (use http:// ou https://)."); return; }
+    if (book && !URL_RE.test(book)) { toast.error("Link do book inválido (use http:// ou https://)."); return; }
+    if (cc && !EMAIL_RE.test(cc)) { toast.error("E-mail de CC inválido."); return; }
+    setSavingWinnerLinks(true);
+    try {
+      await saveSettings.mutateAsync({
+        campaign_id: campaignId,
+        budget_amount: settings?.budget_amount ?? null,
+        deadline: settings?.deadline ?? null,
+        winner_mockup_url: mockup || null,
+        winner_book_url: book || null,
+        winner_cc_email: cc || null,
+      });
+      toast.success("Links do vencedor salvos.");
+      setWinnerLinksOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao salvar links.");
+    } finally {
+      setSavingWinnerLinks(false);
+    }
+  };
+
   const { isAdminOrMaster } = useUserRole();
   const { user } = useAuth();
 
@@ -805,6 +847,48 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           </CardContent>
         </Card>
       </div>
+
+      {/* ═══ LINKS DO VENCEDOR (Admin/Master) ═══ */}
+      {isAdminOrMaster && (
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-start gap-2 min-w-0">
+                <Trophy className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold leading-tight">Links do Vencedor</p>
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    Pré-preenchem o e-mail enviado ao fornecedor vencedor (mockup, book e CC).
+                  </p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-[11px]">
+                    <span className="text-muted-foreground">
+                      Mockup:{" "}
+                      <span className={settingsAny?.winner_mockup_url ? "text-foreground font-medium" : "italic"}>
+                        {settingsAny?.winner_mockup_url ? "configurado" : "não configurado"}
+                      </span>
+                    </span>
+                    <span className="text-muted-foreground">
+                      Book:{" "}
+                      <span className={settingsAny?.winner_book_url ? "text-foreground font-medium" : "italic"}>
+                        {settingsAny?.winner_book_url ? "configurado" : "opcional"}
+                      </span>
+                    </span>
+                    <span className="text-muted-foreground">
+                      CC:{" "}
+                      <span className={settingsAny?.winner_cc_email ? "text-foreground font-medium" : "italic"}>
+                        {settingsAny?.winner_cc_email || "não definido"}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setWinnerLinksOpen(true)}>
+                <Pencil className="w-3 h-3" /> Editar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ═══ ENVIAR CERTAME (logo abaixo dos KPIs) ═══ */}
       {suppliers.some((s) => s.status === "enviado") && (
@@ -1727,7 +1811,70 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           const s = suppliers.find((x) => x.id === winnerSupplierId);
           return s ? { id: s.id, company_name: s.company_name, contact_name: s.contact_name, email: s.email } : null;
         })()}
+        defaultMockupUrl={settingsAny?.winner_mockup_url ?? ""}
+        defaultBookUrl={settingsAny?.winner_book_url ?? ""}
+        defaultCcEmail={settingsAny?.winner_cc_email ?? ""}
       />
+
+      {/* Editor de Links do Vencedor */}
+      <Dialog open={winnerLinksOpen} onOpenChange={(o) => !savingWinnerLinks && setWinnerLinksOpen(o)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-amber-500" />
+              Links do Vencedor
+            </DialogTitle>
+            <DialogDescription>
+              Estes valores serão pré-preenchidos no e-mail enviado ao fornecedor vencedor. Você ainda poderá ajustá-los no momento do envio.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="cfg-mockup">Link das peças fechadas do mockup</Label>
+              <Input
+                id="cfg-mockup"
+                type="url"
+                placeholder="https://drive.google.com/..."
+                value={winnerMockupUrlDraft}
+                onChange={(e) => setWinnerMockupUrlDraft(e.target.value)}
+                disabled={savingWinnerLinks}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cfg-book">Link do book de mockup (opcional)</Label>
+              <Input
+                id="cfg-book"
+                type="url"
+                placeholder="https://drive.google.com/..."
+                value={winnerBookUrlDraft}
+                onChange={(e) => setWinnerBookUrlDraft(e.target.value)}
+                disabled={savingWinnerLinks}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cfg-cc">E-mail de cópia (CC) padrão (opcional)</Label>
+              <Input
+                id="cfg-cc"
+                type="email"
+                placeholder="copia@empresa.com"
+                value={winnerCcEmailDraft}
+                onChange={(e) => setWinnerCcEmailDraft(e.target.value)}
+                disabled={savingWinnerLinks}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setWinnerLinksOpen(false)} disabled={savingWinnerLinks}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveWinnerLinks} disabled={savingWinnerLinks}>
+              {savingWinnerLinks ? (<><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Salvando...</>) : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

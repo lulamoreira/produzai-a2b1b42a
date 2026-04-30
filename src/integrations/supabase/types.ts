@@ -368,6 +368,9 @@ export type Database = {
           deadline: string | null
           id: string
           notify_user_ids: string[] | null
+          winner_book_url: string | null
+          winner_cc_email: string | null
+          winner_mockup_url: string | null
         }
         Insert: {
           budget_amount?: number | null
@@ -378,6 +381,9 @@ export type Database = {
           deadline?: string | null
           id?: string
           notify_user_ids?: string[] | null
+          winner_book_url?: string | null
+          winner_cc_email?: string | null
+          winner_mockup_url?: string | null
         }
         Update: {
           budget_amount?: number | null
@@ -388,6 +394,9 @@ export type Database = {
           deadline?: string | null
           id?: string
           notify_user_ids?: string[] | null
+          winner_book_url?: string | null
+          winner_cc_email?: string | null
+          winner_mockup_url?: string | null
         }
         Relationships: [
           {
