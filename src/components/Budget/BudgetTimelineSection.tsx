@@ -38,6 +38,8 @@ import {
 
 interface BudgetTimelineSectionProps {
   campaignId: string;
+  hideHeader?: boolean;
+  bare?: boolean;
 }
 
 // ─── Sortable row ────────────────────────────────────────
