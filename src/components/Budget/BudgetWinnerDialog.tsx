@@ -176,6 +176,21 @@ export default function BudgetWinnerDialog({
             </p>
           </div>
 
+          <div className="space-y-1.5">
+            <Label htmlFor="winner-book">Link do book de mockup (opcional)</Label>
+            <Input
+              id="winner-book"
+              type="url"
+              placeholder="https://drive.google.com/..."
+              value={bookUrl}
+              onChange={(e) => setBookUrl(e.target.value)}
+              disabled={sending}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Link externo do book de mockup (apresentação visual das peças).
+            </p>
+          </div>
+
           <div className="rounded-md border border-border/60 bg-muted/40 p-3">
             <p className="text-xs font-medium text-foreground mb-1">
               Cronograma incluído no e-mail ({timelineEntries.length} {timelineEntries.length === 1 ? "etapa" : "etapas"})
