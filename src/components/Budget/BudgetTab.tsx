@@ -830,6 +830,17 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             ) : (
               <p className="text-lg text-muted-foreground">Sem propostas</p>
             )}
+            {suppliers.some((s) => s.status === "enviado") && (
+              <div className="pt-2">
+                <Button
+                  size="sm"
+                  className="w-full gap-1 h-8 text-xs"
+                  onClick={() => setClientSendDialogOpen(true)}
+                >
+                  <Send className="w-3.5 h-3.5" /> Enviar o Certame para o Cliente
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -912,19 +923,6 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             </CollapsibleContent>
           </Collapsible>
         </Card>
-      )}
-
-      {/* ═══ ENVIAR CERTAME (logo abaixo dos KPIs) ═══ */}
-      {suppliers.some((s) => s.status === "enviado") && (
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            className="gap-1"
-            onClick={() => setClientSendDialogOpen(true)}
-          >
-            <Send className="w-3.5 h-3.5" /> Enviar o Certame para o Cliente
-          </Button>
-        </div>
       )}
 
       {/* Exchange rate info row (shown only when currency is not BRL) */}
