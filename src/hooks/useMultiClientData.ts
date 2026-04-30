@@ -91,7 +91,10 @@ export type CampaignPiece = {
   store_category: string | null;
   sub_location: string | null;
   image_url: string | null;
-  specification: string;
+  image_thumb_url?: string | null;
+  image_report_url?: string | null;
+  image_full_url?: string | null;
+  image_hash?: string | null;
   installation_instructions: string;
   kit_only: boolean;
   is_mockup: boolean;
