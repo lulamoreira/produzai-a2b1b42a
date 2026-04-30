@@ -76,7 +76,7 @@ export function buildRateioGridBuckets(
             quantity: kitQty,
             is_new: (k as any).is_new === true,
             is_mockup: (k as any).is_mockup === true,
-            image_url: k.image_url || null,
+            image_url: (k as any).image_report_url || k.image_url || null,
           });
         }
       }
