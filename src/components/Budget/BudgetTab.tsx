@@ -753,7 +753,27 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     <div className="space-y-6">
 
       {/* ═══ KPI CARDS ═══ */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className={cn("grid grid-cols-1 gap-4", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
+        {/* Empresa Vencedora (só aparece quando há vencedor declarado) */}
+        {winnerSupplier && (
+          <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20">
+            <CardContent className="pt-4 pb-4 space-y-1">
+              <div className="flex items-center gap-1.5">
+                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Empresa Vencedora</p>
+              </div>
+              <p className="text-lg font-bold text-amber-700 dark:text-amber-400 leading-tight truncate" title={(winnerSupplier as any).company_name}>
+                {(winnerSupplier as any).company_name}
+              </p>
+              {(winnerSupplier as any).winner_declared_at && (
+                <p className="text-xs text-muted-foreground">
+                  Declarada em {format(new Date((winnerSupplier as any).winner_declared_at), "dd/MM/yyyy", { locale: ptBR })}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Budget da Campanha */}
         <Card>
           <CardContent className="pt-4 pb-4 space-y-3">
