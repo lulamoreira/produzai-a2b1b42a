@@ -333,7 +333,6 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       rowVals.push(diff);
       const row = ws.addRow(rowVals);
       const bg = idx % 2 === 0 ? WHITE : BEIGE;
-      row.height = 22;
       row.eachCell({ includeEmpty: true }, (cell, col) => {
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
         cell.alignment = {
