@@ -9,6 +9,10 @@ export type Piece = {
   name: string;
   size: string;
   image_url: string | null;
+  image_thumb_url?: string | null;
+  image_report_url?: string | null;
+  image_full_url?: string | null;
+  image_hash?: string | null;
   specification: string;
   installation_instructions: string;
 };
