@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { getThumbnailUrl } from "@/lib/imageUrl";
-import { supabase } from "@/integrations/supabase/client";
 import { useUpdatePieceImage, type Piece } from "@/hooks/useStoreData";
-import { compressImage } from "@/lib/compressImage";
+import { uploadPieceImageVariants } from "@/lib/uploadPieceImage";
+import { pickPieceImageUrl } from "@/lib/pieceImageVariants";
 import { Image, Upload, Link, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,22 +21,23 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Reset the input so the same file can be re-selected
     e.target.value = "";
 
     setUploading(true);
     try {
-      const compressed = await compressImage(file, 800, 0.6);
-      const path = `piece-${piece.id}-${Date.now()}.jpg`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("piece-images")
-        .upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
-      await updateImage.mutateAsync({ pieceId: piece.id, imageUrl: urlData.publicUrl });
+      // Generates 3 optimized 1:1 variants and uploads them under a hash-based
+      // path (auto-dedupes identical images across pieces / campaigns).
+      const uploaded = await uploadPieceImageVariants(file);
+      await updateImage.mutateAsync({
+        pieceId: piece.id,
+        imageUrl: uploaded.image_url,
+        variants: {
+          image_thumb_url: uploaded.image_thumb_url,
+          image_report_url: uploaded.image_report_url,
+          image_full_url: uploaded.image_full_url,
+          image_hash: uploaded.image_hash,
+        },
+      });
       setOpen(false);
     } catch (err: any) {
       console.error("Upload error:", err);
