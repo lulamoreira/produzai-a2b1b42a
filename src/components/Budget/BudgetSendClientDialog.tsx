@@ -563,6 +563,32 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     }
   };
 
+  const handleDownloadTest = async () => {
+    if (submittedSuppliers.length === 0) {
+      toast.error("Nenhum fornecedor enviou o orçamento ainda.");
+      return;
+    }
+    setSending(true);
+    const toastId = toast.loading("Gerando planilha de teste...");
+    try {
+      const sup = submittedSuppliers[0];
+      const { blob, fileName } = await buildOneSupplier(sup);
+      await saveBlobAs(blob, fileName, {
+        mimeType: XLSX_MIME,
+        description: "Planilha Excel (.xlsx)",
+        extension: ".xlsx",
+      });
+      toast.dismiss(toastId);
+      toast.success(`Planilha de "${sup.company_name}" baixada para conferência.`);
+    } catch (e: any) {
+      console.error("Test download error:", e);
+      toast.dismiss(toastId);
+      toast.error(e?.message || "Erro ao gerar planilha de teste.");
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(o) => !sending && onOpenChange(o)}>
       <DialogContent className="max-w-lg">
