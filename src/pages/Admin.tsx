@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserPermissionCard from "@/components/admin/UserPermissionCard";
 import CategoryManager from "@/components/admin/CategoryManager";
 import SystemMessagesManager from "@/components/admin/SystemMessagesManager";
+import RegeneratePieceImagesPanel from "@/components/admin/RegeneratePieceImagesPanel";
 
 const Admin = () => {
   const { t } = useTranslation();
