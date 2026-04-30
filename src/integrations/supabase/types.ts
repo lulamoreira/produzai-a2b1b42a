@@ -1623,6 +1623,7 @@ export type Database = {
           custom_field_8_label: string | null
           custom_field_9_label: string | null
           display_order: number | null
+          email: string | null
           id: string
           language: string | null
           name: string
@@ -1649,6 +1650,7 @@ export type Database = {
           custom_field_8_label?: string | null
           custom_field_9_label?: string | null
           display_order?: number | null
+          email?: string | null
           id?: string
           language?: string | null
           name: string
@@ -1675,6 +1677,7 @@ export type Database = {
           custom_field_8_label?: string | null
           custom_field_9_label?: string | null
           display_order?: number | null
+          email?: string | null
           id?: string
           language?: string | null
           name?: string
