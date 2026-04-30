@@ -856,42 +856,61 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       {/* ═══ LINKS DO VENCEDOR (Admin/Master) ═══ */}
       {isAdminOrMaster && (
         <Card>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-start gap-2 min-w-0">
-                <Trophy className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                <div className="min-w-0">
+          <Collapsible open={winnerLinksExpanded} onOpenChange={setWinnerLinksExpanded}>
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors rounded-t-lg"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Trophy className="w-4 h-4 text-amber-500 shrink-0" />
                   <p className="text-sm font-semibold leading-tight">Links do Vencedor</p>
-                  <p className="text-[11px] text-muted-foreground leading-snug">
-                    Pré-preenchem o e-mail enviado ao fornecedor vencedor (mockup, book e CC).
-                  </p>
-                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-[11px]">
-                    <span className="text-muted-foreground">
-                      Mockup:{" "}
-                      <span className={settingsAny?.winner_mockup_url ? "text-foreground font-medium" : "italic"}>
-                        {settingsAny?.winner_mockup_url ? "configurado" : "não configurado"}
-                      </span>
+                  {!winnerLinksExpanded && (
+                    <span className="text-[11px] text-muted-foreground italic ml-2 truncate hidden sm:inline">
+                      Mockup: {settingsAny?.winner_mockup_url ? "configurado" : "não configurado"}
                     </span>
-                    <span className="text-muted-foreground">
-                      Book:{" "}
-                      <span className={settingsAny?.winner_book_url ? "text-foreground font-medium" : "italic"}>
-                        {settingsAny?.winner_book_url ? "configurado" : "opcional"}
-                      </span>
-                    </span>
-                    <span className="text-muted-foreground">
-                      CC:{" "}
-                      <span className={settingsAny?.winner_cc_email ? "text-foreground font-medium" : "italic"}>
-                        {settingsAny?.winner_cc_email || "não definido"}
-                      </span>
-                    </span>
-                  </div>
+                  )}
                 </div>
-              </div>
-              <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setWinnerLinksOpen(true)}>
-                <Pencil className="w-3 h-3" /> Editar
-              </Button>
-            </div>
-          </CardContent>
+                <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform shrink-0", winnerLinksExpanded && "rotate-180")} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0 pb-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div className="flex items-start gap-2 min-w-0">
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-muted-foreground leading-snug">
+                        Pré-preenchem o e-mail enviado ao fornecedor vencedor (mockup, book e CC).
+                      </p>
+                      <div className="flex flex-wrap gap-x-4 gap-y-0.5 mt-1.5 text-[11px]">
+                        <span className="text-muted-foreground">
+                          Mockup:{" "}
+                          <span className={settingsAny?.winner_mockup_url ? "text-foreground font-medium" : "italic"}>
+                            {settingsAny?.winner_mockup_url ? "configurado" : "não configurado"}
+                          </span>
+                        </span>
+                        <span className="text-muted-foreground">
+                          Book:{" "}
+                          <span className={settingsAny?.winner_book_url ? "text-foreground font-medium" : "italic"}>
+                            {settingsAny?.winner_book_url ? "configurado" : "opcional"}
+                          </span>
+                        </span>
+                        <span className="text-muted-foreground">
+                          CC:{" "}
+                          <span className={settingsAny?.winner_cc_email ? "text-foreground font-medium" : "italic"}>
+                            {settingsAny?.winner_cc_email || "não definido"}
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setWinnerLinksOpen(true)}>
+                    <Pencil className="w-3 h-3" /> Editar
+                  </Button>
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Collapsible>
         </Card>
       )}
 
