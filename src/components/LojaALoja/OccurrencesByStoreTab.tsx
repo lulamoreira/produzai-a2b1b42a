@@ -262,7 +262,16 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
       {/* Filters */}
       <Card>
         <CardContent className="pt-4 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Peça</label>
+              <PieceMultiSelectFilter
+                occurrences={occList}
+                value={filterPieceIds}
+                onChange={setFilterPieceIds}
+                triggerClassName="h-10 text-sm"
+              />
+            </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Loja</label>
               <Select value={filterStore} onValueChange={setFilterStore}>
