@@ -168,12 +168,9 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
         });
         toast.success(`Planilha liberada para ${sup.company_name} revisar.`);
       } else {
-        // ─── RE-LOCK: always restore to "enviado". Preserve previous submitted_at if it exists,
-        // otherwise stamp now() so the card shows a coherent "Enviado em ..." label.
+        // ─── RE-LOCK: restore to "enviado" without changing submitted_at.
+        // If the supplier did not submit again, the original submission date must be preserved.
         const updates: Record<string, unknown> = { locked: true, status: "enviado" };
-        if (!sup.submitted_at) {
-          updates.submitted_at = new Date().toISOString();
-        }
         await updateSupplier.mutateAsync({
           id: sup.id,
           campaign_id: sup.campaign_id,
