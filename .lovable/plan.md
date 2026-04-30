@@ -1,62 +1,34 @@
-## Adicionar etapa de preview do e-mail antes do envio
+## Filtro multi-peça no módulo de Ocorrências (Loja a Loja)
 
-Hoje, ao clicar em "Enviar comunicado" no `BudgetWinnerDialog`, o e-mail é disparado direto. Vamos inserir uma etapa de **preview visual + confirmação** antes do envio efetivo.
+Adicionar um novo filtro "Peça" nas duas telas de ocorrências da Loja a Loja, listando apenas peças que aparecem em ocorrências, exibindo o local da peça e permitindo seleção múltipla.
 
-### Fluxo desejado
+### Comportamento
 
-1. Usuário preenche destinatário, CC, links e clica em **"Visualizar e enviar"** no Dialog atual.
-2. Validações atuais rodam (e-mails e URLs).
-3. Sistema renderiza o HTML real do template `supplier-winner-notification` com os dados preenchidos e abre um **novo Dialog de Preview** mostrando:
-   - Cabeçalho: **Para**, **CC** (ou "Nenhum"), **Assunto**
-   - Corpo: o e-mail renderizado dentro de um `<iframe sandbox>` (isola CSS) com altura ~500px e scroll.
-   - Rodapé com **3 botões**:
-     - **Cancelar** — fecha tudo, não envia.
-     - **Modificar destinatários** — fecha o preview e volta ao Dialog de edição com os valores preservados; foco no campo de e-mail.
-     - **Confirmar e enviar** — dispara o envio (lógica atual de `sendOnce` para destinatário e CC).
+- **Campo**: novo filtro "Peça" na barra de filtros, ao lado dos filtros já existentes (Loja, Motivo, Status, Período).
+- **Opções listadas**: derivadas dinamicamente das próprias ocorrências carregadas — só aparecem peças (`loja_a_loja_pecas`) realmente citadas. Peças sem ocorrência não entram.
+- **Local exibido**: para cada peça mostra `Tipo (letra) › Subdivisão` (ex.: `A › Vitrine`), conforme já vem no join `loja_a_loja_tipos` / `loja_a_loja_subdivisoes`. Se faltar tipo ou subdivisão, mostra só o que existir.
+- **Seleção múltipla**: checkbox por linha, busca por texto, opções "Selecionar todas" e "Limpar". Trigger mostra "Todas as peças", "Peça X" ou "N peças selecionadas".
+- **Aplicação**: filtra a lista exibida (e os agrupamentos/contagens já existentes — pendentes, em andamento, resolvidas) sem alterar a query do Supabase.
+- **Reset**: incluído no botão "Limpar filtros" e contabilizado em `hasActiveFilters`.
+- **Exportação Excel**: passa a respeitar a seleção, já que opera sobre `filtered`.
 
-### Implementação técnica
+### Onde aplicar
 
-**1. Novo Edge Function `render-transactional-email`** (`supabase/functions/render-transactional-email/index.ts`)
+1. `src/components/LojaALoja/OccurrencesByStoreTab.tsx` — tela principal "Ocorrências por loja".
+2. `src/components/LojaALoja/PortalDashboard.tsx` — dashboard do portal (mesmos dados, mesma UX).
 
-- Aceita JWT padrão (não precisa de `LOVABLE_API_KEY` — é chamado pelo usuário autenticado).
-- Body: `{ templateName: string, templateData: Record<string, any> }`.
-- Importa `TEMPLATES` de `_shared/transactional-email-templates/registry.ts`.
-- Valida `templateName` existe na registry; renderiza com `renderAsync` do `@react-email/components`.
-- Retorna `{ subject, html }`.
-- CORS habilitado, validação de input com Zod.
-- Adicionar entrada no `supabase/config.toml` se necessário (provavelmente padrão `verify_jwt = true` ou default).
+Ambas já fazem o join necessário com `loja_a_loja_pecas(nome, loja_a_loja_tipos(letra, nome), loja_a_loja_subdivisoes(nome))`, então não precisa mudar query.
 
-**2. Novo componente `BudgetWinnerPreviewDialog.tsx`** (`src/components/Budget/`)
+### Detalhes técnicos
 
-- Props: `open`, `onOpenChange`, `to`, `cc`, `subject`, `html`, `loading`, `onConfirm`, `onEditRecipients`.
-- Usa `<Dialog>` com `max-w-3xl` e `max-h-[90vh]`.
-- Header mostra **Para**, **CC**, **Assunto**.
-- Body: `<iframe srcDoc={html} sandbox="" className="w-full h-[500px] border rounded">`.
-- Footer com 3 botões: Cancelar / Modificar destinatários / Confirmar e enviar.
-- Estado de loading/sending desabilita botões e bloqueia fechamento.
+- Novo componente reutilizável `src/components/LojaALoja/PieceMultiSelectFilter.tsx` baseado em `Popover` + `Command` + `Checkbox` do shadcn (não há `MultiSelect` no projeto). Props: `occurrences`, `value: string[]`, `onChange`.
+- Lista de opções construída via `useMemo` percorrendo `occList`, deduplicando por `loja_a_loja_peca_id` e ordenando por nome. Ignora ocorrências sem `loja_a_loja_peca_id`.
+- Estado `filterPieceIds: string[]` em cada tela; filtro: `filterPieceIds.length === 0 || filterPieceIds.includes(o.loja_a_loja_peca_id)`.
+- Inclui `filterPieceIds` nas dependências dos `useMemo` de filtro/agrupamento existentes.
+- Atualiza `clearFilters` e `hasActiveFilters` para considerar o novo filtro.
 
-**3. Atualizar `BudgetWinnerDialog.tsx`**
+### Fora do escopo
 
-- Renomear botão "Enviar comunicado" para **"Visualizar e enviar"** (ícone `Eye`).
-- State novo: `previewOpen`, `previewLoading`, `previewHtml`, `previewSubject`.
-- Renomear `handleSend` atual para `executeSend` (loop de envio inalterado).
-- Novo `handleOpenPreview`:
-  - Roda validações atuais.
-  - Monta `templateData` (mesma lógica atual com timeline).
-  - `setPreviewLoading(true)`; chama `supabase.functions.invoke('render-transactional-email', { body: { templateName: 'supplier-winner-notification', templateData } })`.
-  - Em sucesso: salva `html`/`subject` no state, abre `previewOpen=true`.
-  - Em erro: toast e mantém o dialog atual aberto.
-- Renderiza `<BudgetWinnerPreviewDialog>` ao lado do Dialog principal:
-  - `onConfirm` → chama `executeSend(templateData)` (refatorar para receber `templateData` já montado, evita reconstruir).
-  - `onEditRecipients` → fecha preview, mantém Dialog principal aberto, foca no input de e-mail (via `useRef`).
-  - `onOpenChange(false)` (cancelar/X) → fecha preview e Dialog principal sem enviar.
-
-### Observações
-
-- Nenhuma mudança no template `supplier-winner-notification.tsx` nem no `send-transactional-email`.
-- O HTML mostrado no preview é exatamente o mesmo que será enviado (mesmo render path, `renderAsync`).
-- O footer de unsubscribe é adicionado pelo sistema apenas no envio real — não aparece no preview, o que é o comportamento padrão e aceitável (mensagem informativa pequena pode ser adicionada se desejado).
-
-### Permissões
-
-- Admin/Master apenas (já é a regra do botão "Declarar vencedor", mantém-se).
+- Não toca no módulo de Orçamentos.
+- Não toca na tabela legada `occurrences` (módulo desativado).
+- Sem mudanças de schema, RLS ou edge functions.

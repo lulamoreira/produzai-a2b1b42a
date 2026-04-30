@@ -17,6 +17,7 @@ import { ptBR } from "date-fns/locale";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
+import PieceMultiSelectFilter from "./PieceMultiSelectFilter";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 
 interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
@@ -74,6 +75,7 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
   const [filterStore, setFilterStore] = useState<string>("__all__");
   const [filterMotive, setFilterMotive] = useState<string>("__all__");
   const [filterStatus, setFilterStatus] = useState<string>("__all__");
+  const [filterPieceIds, setFilterPieceIds] = useState<string[]>([]);
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [search, setSearch] = useState("");
@@ -104,6 +106,7 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
       if (filterMotive !== "__all__" && o.motive_id !== filterMotive) return false;
       const st = o.tratativa_status ?? "aberta";
       if (filterStatus !== "__all__" && st !== filterStatus) return false;
+      if (filterPieceIds.length > 0 && !filterPieceIds.includes(o.loja_a_loja_peca_id)) return false;
       if (dateFrom && new Date(o.created_at) < dateFrom) return false;
       if (dateTo) {
         const end = new Date(dateTo);
@@ -127,7 +130,7 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
       return sortOrder === "desc" ? tb - ta : ta - tb;
     });
     return result;
-  }, [occList, filterStore, filterMotive, filterStatus, dateFrom, dateTo, search, sortOrder]);
+  }, [occList, filterStore, filterMotive, filterStatus, filterPieceIds, dateFrom, dateTo, search, sortOrder]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { storeId: string; storeName: string; city: string; state: string; items: any[] }>();
@@ -157,6 +160,7 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
     setFilterStore("__all__");
     setFilterMotive("__all__");
     setFilterStatus("__all__");
+    setFilterPieceIds([]);
     setDateFrom(undefined);
     setDateTo(undefined);
     setSearch("");
@@ -166,6 +170,7 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
     filterStore !== "__all__" ||
     filterMotive !== "__all__" ||
     filterStatus !== "__all__" ||
+    filterPieceIds.length > 0 ||
     dateFrom ||
     dateTo ||
     search.trim() !== "";
@@ -257,7 +262,16 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
       {/* Filters */}
       <Card>
         <CardContent className="pt-4 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Peça</label>
+              <PieceMultiSelectFilter
+                occurrences={occList}
+                value={filterPieceIds}
+                onChange={setFilterPieceIds}
+                triggerClassName="h-10 text-sm"
+              />
+            </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Loja</label>
               <Select value={filterStore} onValueChange={setFilterStore}>
