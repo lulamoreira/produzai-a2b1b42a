@@ -1026,8 +1026,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                       </Button>
                     </div>
 
-                    {/* Lock toggle: visible only to admin/master once supplier has submitted at least once */}
-                    {isAdminOrMaster && sup.submitted_at && (
+                    {/* Lock toggle: visible to admin/master always */}
+                    {isAdminOrMaster && (
                       <div className="flex items-center justify-between gap-2 pt-2 mt-1 border-t border-border/60">
                         <div className="flex items-center gap-1.5 min-w-0">
                           {sup.locked ? (
