@@ -947,8 +947,33 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         </div>
       )}
 
-      {/* ═══ TIMELINE SECTION ═══ */}
-      <BudgetTimelineSection campaignId={campaignId} />
+      {/* ═══ TIMELINE SECTION (collapsible, starts collapsed) ═══ */}
+      <Card>
+        <Collapsible open={timelineExpanded} onOpenChange={setTimelineExpanded}>
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors rounded-t-lg"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                <p className="text-sm font-semibold leading-tight">Cronograma da Campanha</p>
+                {!timelineExpanded && (
+                  <span className="text-[11px] text-muted-foreground italic ml-2 hidden sm:inline">
+                    Datas e entregas acordadas com o fornecedor
+                  </span>
+                )}
+              </div>
+              <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform shrink-0", timelineExpanded && "rotate-180")} />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="px-0 pb-0 -mt-2">
+              <BudgetTimelineSection campaignId={campaignId} />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
 
       {/* ═══ SUPPLIERS SECTION ═══ */}
       <div className="space-y-3">
