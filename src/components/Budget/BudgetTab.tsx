@@ -752,6 +752,19 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         </Card>
       </div>
 
+      {/* ═══ ENVIAR CERTAME (logo abaixo dos KPIs) ═══ */}
+      {suppliers.some((s) => s.status === "enviado") && (
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            className="gap-1"
+            onClick={() => setClientSendDialogOpen(true)}
+          >
+            <Send className="w-3.5 h-3.5" /> Enviar o Certame para o Cliente
+          </Button>
+        </div>
+      )}
+
       {/* Exchange rate info row (shown only when currency is not BRL) */}
       {currencyCode !== "BRL" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground -mt-2">
@@ -780,15 +793,6 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Fornecedores</h3>
           <div className="flex items-center gap-2">
-            {suppliers.some((s) => s.status === "enviado") && (
-              <Button
-                size="sm"
-                className="gap-1"
-                onClick={() => setClientSendDialogOpen(true)}
-              >
-                <Send className="w-3.5 h-3.5" /> Enviar ao Cliente
-              </Button>
-            )}
             <Button size="sm" variant="outline" className="gap-1" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
               <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
             </Button>
