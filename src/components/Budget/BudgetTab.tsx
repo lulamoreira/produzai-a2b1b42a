@@ -925,19 +925,6 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         </Card>
       )}
 
-      {/* ═══ ENVIAR CERTAME (logo abaixo dos KPIs) ═══ */}
-      {suppliers.some((s) => s.status === "enviado") && (
-        <div className="flex justify-end">
-          <Button
-            size="sm"
-            className="gap-1"
-            onClick={() => setClientSendDialogOpen(true)}
-          >
-            <Send className="w-3.5 h-3.5" /> Enviar o Certame para o Cliente
-          </Button>
-        </div>
-      )}
-
       {/* Exchange rate info row (shown only when currency is not BRL) */}
       {currencyCode !== "BRL" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground -mt-2">
