@@ -21,6 +21,7 @@ interface SupplierWinnerProps {
   agencyName?: string
   campaignName?: string
   mockupUrl?: string
+  bookUrl?: string
   timeline?: TimelineEntry[]
 }
 
