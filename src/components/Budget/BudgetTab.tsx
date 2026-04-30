@@ -1243,6 +1243,23 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                         />
                       </div>
                     )}
+
+                    {/* Winner toggle: admin/master, visible only after submission */}
+                    {isAdminOrMaster && sup.submitted_at && (
+                      <div className="flex items-center justify-between gap-2 pt-2 mt-1 border-t border-border/60">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Trophy className={cn("w-3.5 h-3.5 shrink-0", (sup as any).is_winner ? "text-amber-500" : "text-muted-foreground")} />
+                          <span className="text-[11px] text-muted-foreground truncate">
+                            {(sup as any).is_winner ? "Empresa vencedora" : "Declarar vencedora"}
+                          </span>
+                        </div>
+                        <Switch
+                          checked={!!(sup as any).is_winner}
+                          onCheckedChange={(checked) => handleToggleWinner(sup, checked)}
+                          aria-label={(sup as any).is_winner ? "Desmarcar vencedora" : "Declarar vencedora do certame"}
+                        />
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
