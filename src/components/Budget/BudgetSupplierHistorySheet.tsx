@@ -25,7 +25,7 @@ interface Props {
   supplierId: string | null;
   supplierName?: string;
   currencyCode?: string;
-  pieces: { id: string; code?: string | null; name?: string | null }[];
+  pieces: { id: string; code?: string | number | null; name?: string | null }[];
   kits: { id: string; name?: string | null }[];
 }
 
