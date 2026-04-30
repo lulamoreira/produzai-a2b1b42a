@@ -100,6 +100,7 @@ export default function BudgetWinnerDialog({
         agencyName,
         campaignName,
         mockupUrl: mockup,
+        bookUrl: book || undefined,
         timeline,
       };
 
