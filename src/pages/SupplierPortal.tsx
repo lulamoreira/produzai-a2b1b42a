@@ -674,6 +674,18 @@ const SupplierPortal = () => {
         throw new Error("Não foi possível registrar o envio. Atualize a página e tente novamente.");
       }
 
+      // Save snapshot of submitted prices for admin history
+      try {
+        const { snapshotSupplierBudget } = await import("@/lib/budgetPriceSnapshot");
+        await snapshotSupplierBudget({
+          supplierId: supplier.id,
+          campaignId: supplier.campaign_id,
+          reason: "submitted",
+        });
+      } catch (snapErr) {
+        console.warn("Snapshot history failed (non-blocking):", snapErr);
+      }
+
       const { data: campaign } = await supabase
         .from("campaigns")
         .select("client_id")
