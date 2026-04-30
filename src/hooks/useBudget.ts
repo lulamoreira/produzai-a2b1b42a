@@ -21,7 +21,7 @@ export function useBudgetSettings(campaignId: string | undefined) {
 export function useSaveBudgetSettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { campaign_id: string; budget_amount?: number | null; deadline?: string | null; currency_code?: string; currency_locked?: boolean }) => {
+    mutationFn: async (params: { campaign_id: string; budget_amount?: number | null; deadline?: string | null; currency_code?: string; currency_locked?: boolean; winner_mockup_url?: string | null; winner_book_url?: string | null; winner_cc_email?: string | null }) => {
       const payload: Record<string, unknown> = {
         campaign_id: params.campaign_id,
         budget_amount: params.budget_amount ?? null,
@@ -29,6 +29,9 @@ export function useSaveBudgetSettings() {
       };
       if (params.currency_code !== undefined) payload.currency_code = params.currency_code;
       if (params.currency_locked !== undefined) payload.currency_locked = params.currency_locked;
+      if (params.winner_mockup_url !== undefined) payload.winner_mockup_url = params.winner_mockup_url;
+      if (params.winner_book_url !== undefined) payload.winner_book_url = params.winner_book_url;
+      if (params.winner_cc_email !== undefined) payload.winner_cc_email = params.winner_cc_email;
       const { data, error } = await supabase
         .from("budget_settings")
         .upsert(payload as never, { onConflict: "campaign_id" })
