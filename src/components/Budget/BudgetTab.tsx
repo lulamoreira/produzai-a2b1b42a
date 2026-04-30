@@ -1811,7 +1811,70 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           const s = suppliers.find((x) => x.id === winnerSupplierId);
           return s ? { id: s.id, company_name: s.company_name, contact_name: s.contact_name, email: s.email } : null;
         })()}
+        defaultMockupUrl={settingsAny?.winner_mockup_url ?? ""}
+        defaultBookUrl={settingsAny?.winner_book_url ?? ""}
+        defaultCcEmail={settingsAny?.winner_cc_email ?? ""}
       />
+
+      {/* Editor de Links do Vencedor */}
+      <Dialog open={winnerLinksOpen} onOpenChange={(o) => !savingWinnerLinks && setWinnerLinksOpen(o)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-amber-500" />
+              Links do Vencedor
+            </DialogTitle>
+            <DialogDescription>
+              Estes valores serão pré-preenchidos no e-mail enviado ao fornecedor vencedor. Você ainda poderá ajustá-los no momento do envio.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="cfg-mockup">Link das peças fechadas do mockup</Label>
+              <Input
+                id="cfg-mockup"
+                type="url"
+                placeholder="https://drive.google.com/..."
+                value={winnerMockupUrlDraft}
+                onChange={(e) => setWinnerMockupUrlDraft(e.target.value)}
+                disabled={savingWinnerLinks}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cfg-book">Link do book de mockup (opcional)</Label>
+              <Input
+                id="cfg-book"
+                type="url"
+                placeholder="https://drive.google.com/..."
+                value={winnerBookUrlDraft}
+                onChange={(e) => setWinnerBookUrlDraft(e.target.value)}
+                disabled={savingWinnerLinks}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cfg-cc">E-mail de cópia (CC) padrão (opcional)</Label>
+              <Input
+                id="cfg-cc"
+                type="email"
+                placeholder="copia@empresa.com"
+                value={winnerCcEmailDraft}
+                onChange={(e) => setWinnerCcEmailDraft(e.target.value)}
+                disabled={savingWinnerLinks}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setWinnerLinksOpen(false)} disabled={savingWinnerLinks}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveWinnerLinks} disabled={savingWinnerLinks}>
+              {savingWinnerLinks ? (<><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Salvando...</>) : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
