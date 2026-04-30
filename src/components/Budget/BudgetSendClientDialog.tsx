@@ -236,7 +236,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     submittedSuppliers.forEach((s) => headerVals.push(s.company_name));
     headerVals.push("Diferença (max-min)");
     headerRow.values = headerVals;
-    headerRow.height = 28;
+    headerRow.height = 32;
     headerRow.eachCell({ includeEmpty: true }, (cell) => {
       cell.font = { bold: true, color: { argb: WHITE } };
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
