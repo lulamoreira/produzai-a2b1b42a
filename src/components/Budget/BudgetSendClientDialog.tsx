@@ -435,12 +435,12 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       (s || "").trim().replace(/[^a-zA-Z0-9À-ÿ\s_-]/g, "").replace(/\s+/g, "_").slice(0, 40);
     const today = new Date()
       .toLocaleDateString("pt-BR", { year: "numeric", month: "2-digit", day: "2-digit" })
-      .split("/").reverse().join("-");
+      .replace(/\//g, "-");
     const nameParts = [
       "Comparativo",
-      firstName(agencyName),
-      firstName(clientName),
       sanitizeCamp(campaignName),
+      firstName(clientName),
+      firstName(agencyName),
       today,
     ].filter(Boolean);
     const fileName = `${nameParts.join("_")}.xlsx`;
