@@ -179,7 +179,7 @@ function TimelineRow({ entry, campaignId, onDelete }: RowProps) {
 }
 
 // ─── Section ─────────────────────────────────────────────
-export default function BudgetTimelineSection({ campaignId }: BudgetTimelineSectionProps) {
+export default function BudgetTimelineSection({ campaignId, hideHeader = false, bare = false }: BudgetTimelineSectionProps) {
   const { data: entries = [] } = useBudgetTimeline(campaignId);
   const addEntry = useAddTimelineEntry();
   const deleteEntry = useDeleteTimelineEntry();
