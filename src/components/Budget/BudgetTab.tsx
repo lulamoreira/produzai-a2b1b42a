@@ -510,7 +510,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               totalQty: qty,
               unitPrice: up,
               lineTotal: up != null ? up * qty : 0,
-              image_url: piece.image_url ?? null,
+              image_url: (piece as any).image_report_url ?? piece.image_url ?? null,
             });
           });
         } else {
