@@ -248,13 +248,74 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       };
     });
 
-    // Data rows: pieces (non-kit-only) with positive total qty
-    const targetPieces = pieces.filter((p) => !p.kit_only && (pieceTotals[p.id] || 0) > 0);
-    const supplierTotals: number[] = submittedSuppliers.map(() => 0);
+    // Build merged list (pieces + kits) — same logic as the Orçamento tab,
+    // so the comparative shows ALL pieces and kits from the campaign.
+    type Merged =
+      | { type: "piece"; data: typeof pieces[number] }
+      | { type: "kit"; data: typeof kits[number] };
+    const merged: Merged[] = [
+      ...pieces.filter((p) => !p.kit_only).map((p) => ({ type: "piece" as const, data: p })),
+      ...kits.map((k) => ({ type: "kit" as const, data: k })),
+    ];
+    merged.sort((a, b) => (a.data.display_order ?? 0) - (b.data.display_order ?? 0));
 
+    const supplierTotals: number[] = submittedSuppliers.map(() => 0);
     let evenIdx = 0;
-    targetPieces.forEach((piece) => {
-      const qty = pieceTotals[piece.id] || 0;
+
+    merged.forEach((item) => {
+      if (item.type === "kit") {
+        const kit = item.data;
+        const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
+        if (kpList.length === 0) return;
+        const kitTotalQty = Math.min(
+          ...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1))),
+        );
+
+        // Kit header row (no prices on header itself)
+        const headerVals: any[] = [kit.code, `Kit: ${kit.name}`];
+        submittedSuppliers.forEach(() => headerVals.push(null));
+        headerVals.push(null);
+        const hRow = ws.addRow(headerVals);
+        hRow.height = 22;
+        hRow.eachCell({ includeEmpty: true }, (cell, col) => {
+          cell.font = { bold: true };
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEDE3D4" } };
+          cell.alignment = {
+            vertical: "middle",
+            horizontal: col >= 3 ? "right" : col === 1 ? "center" : "left",
+            wrapText: true,
+          };
+          cell.border = {
+            top: { style: "thin", color: { argb: BORDER } },
+            bottom: { style: "thin", color: { argb: BORDER } },
+            left: { style: "thin", color: { argb: BORDER } },
+            right: { style: "thin", color: { argb: BORDER } },
+          };
+        });
+
+        // Kit pieces
+        kpList.forEach((kp) => {
+          const piece = pieces.find((p) => p.id === kp.piece_id);
+          if (!piece) return;
+          const qty = kitTotalQty * kp.quantity;
+          renderRow(piece, qty, supplierTotals, evenIdx, true);
+          evenIdx++;
+        });
+      } else {
+        const piece = item.data;
+        const qty = pieceTotals[piece.id] || 0;
+        renderRow(piece, qty, supplierTotals, evenIdx, false);
+        evenIdx++;
+      }
+    });
+
+    function renderRow(
+      piece: typeof pieces[number],
+      qty: number,
+      totalsAcc: number[],
+      idx: number,
+      isKitChild: boolean,
+    ) {
       const supPrices = submittedSuppliers.map((s) => {
         const pr = prices.find((x) => x.supplier_id === s.id && x.piece_id === piece.id);
         return pr && pr.unit_price != null ? Number(pr.unit_price) : null;
@@ -264,12 +325,14 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       const maxP = numericPrices.length ? Math.max(...numericPrices) : null;
       const diff = minP != null && maxP != null ? maxP - minP : null;
 
-      const rowVals: any[] = [piece.code, [piece.name, (piece as any).specification, (piece as any).size].filter(Boolean).join(" — ")];
+      const itemLabel = [piece.name, (piece as any).specification, (piece as any).size]
+        .filter(Boolean)
+        .join(" — ");
+      const rowVals: any[] = [piece.code, isKitChild ? `   ↳ ${itemLabel}` : itemLabel];
       supPrices.forEach((p) => rowVals.push(p));
       rowVals.push(diff);
       const row = ws.addRow(rowVals);
-      const bg = evenIdx % 2 === 0 ? WHITE : BEIGE;
-      evenIdx++;
+      const bg = idx % 2 === 0 ? WHITE : BEIGE;
       row.height = 22;
       row.eachCell({ includeEmpty: true }, (cell, col) => {
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
@@ -287,7 +350,6 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         if (col >= 3) cell.numFmt = moneyFormatStr;
       });
 
-      // Highlight min/max within supplier columns (cols 3..3+supCount-1)
       if (minP != null && maxP != null && minP !== maxP) {
         supPrices.forEach((p, i) => {
           if (p == null) return;
@@ -297,11 +359,10 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         });
       }
 
-      // Accumulate supplier totals
       supPrices.forEach((p, i) => {
-        if (p != null) supplierTotals[i] += p * qty;
+        if (p != null) totalsAcc[i] += p * qty;
       });
-    });
+    }
 
     // Totals row (items)
     ws.addRow([]);
