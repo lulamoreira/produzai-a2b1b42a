@@ -152,6 +152,12 @@ const Admin = () => {
           </TabsContent>
 
           {isAdmin && (
+            <TabsContent value="images">
+              <RegeneratePieceImagesPanel />
+            </TabsContent>
+          )}
+
+          {isAdmin && (
             <TabsContent value="backup">
               <BackupRestorePanel />
             </TabsContent>
