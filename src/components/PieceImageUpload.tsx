@@ -62,13 +62,13 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button className="relative group w-10 h-10 rounded-lg border border-border bg-muted/50 flex items-center justify-center overflow-hidden hover:border-primary/50 transition-colors shrink-0">
-          {pickPieceImageUrl(piece, "thumb") ? (
-            <img src={pickPieceImageUrl(piece, "thumb") || getThumbnailUrl(piece.image_url || "", 80)} alt={piece.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
-          ) : piece.image_url ? (
-            <img src={getThumbnailUrl(piece.image_url, 80)} alt={piece.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />
-          ) : (
-            <Image className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          )}
+          {(() => {
+            const thumb = pickPieceImageUrl(piece, "thumb");
+            if (thumb) {
+              return <img src={thumb} alt={piece.name} loading="lazy" decoding="async" className="w-full h-full object-cover" />;
+            }
+            return <Image className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />;
+          })()}
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
