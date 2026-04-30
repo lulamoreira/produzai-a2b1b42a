@@ -144,6 +144,7 @@ export const template = {
     agencyName: 'Studio Design',
     campaignName: 'Campanha Verão 2026',
     mockupUrl: 'https://example.com/mockup.zip',
+    bookUrl: 'https://example.com/book-mockup.pdf',
     timeline: [
       { date: '15/05/2026', description: 'Início da produção' },
       { date: '30/05/2026', description: 'Envio para os pontos de venda' },
