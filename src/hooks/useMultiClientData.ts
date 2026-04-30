@@ -95,6 +95,7 @@ export type CampaignPiece = {
   image_report_url?: string | null;
   image_full_url?: string | null;
   image_hash?: string | null;
+  specification: string;
   installation_instructions: string;
   kit_only: boolean;
   is_mockup: boolean;
