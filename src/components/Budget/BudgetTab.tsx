@@ -1688,6 +1688,17 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         currencyCode={currencyCode}
         deadline={settings?.deadline ?? null}
       />
+
+      {/* Histórico de valores do fornecedor (Admin/Master) */}
+      <BudgetSupplierHistorySheet
+        open={!!historySupplierId}
+        onOpenChange={(o) => !o && setHistorySupplierId(null)}
+        supplierId={historySupplierId}
+        supplierName={suppliers.find((s) => s.id === historySupplierId)?.company_name}
+        currencyCode={currencyCode}
+        pieces={pieces}
+        kits={kits}
+      />
     </div>
   );
 }
