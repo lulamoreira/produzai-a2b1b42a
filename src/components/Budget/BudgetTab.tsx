@@ -138,6 +138,38 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [exportingBudget, setExportingBudget] = useState(false);
   const [downloadingSupplierId, setDownloadingSupplierId] = useState<string | null>(null);
   const [clientSendDialogOpen, setClientSendDialogOpen] = useState(false);
+  const [historySupplierId, setHistorySupplierId] = useState<string | null>(null);
+  const [reopeningSupplierId, setReopeningSupplierId] = useState<string | null>(null);
+
+  const { isAdminOrMaster } = useUserRole();
+  const { user } = useAuth();
+
+  const handleToggleSupplierLock = async (sup: { id: string; campaign_id: string; locked: boolean | null; status: string; company_name: string }) => {
+    // Only allow REOPEN action via toggle (lock auto when supplier submits)
+    if (!sup.locked) return; // already open - nothing to do here
+    setReopeningSupplierId(sup.id);
+    try {
+      // 1. Snapshot current prices before reopening
+      await snapshotSupplierBudget({
+        supplierId: sup.id,
+        campaignId: sup.campaign_id,
+        reason: "reopened",
+        createdBy: user?.id ?? null,
+      });
+      // 2. Unlock + status back to "preenchendo" (em revisão)
+      await updateSupplier.mutateAsync({
+        id: sup.id,
+        campaign_id: sup.campaign_id,
+        updates: { locked: false, status: "preenchendo", submitted_at: null } as never,
+      });
+      toast.success(`Planilha liberada para ${sup.company_name} revisar.`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao liberar planilha. Tente novamente.");
+    } finally {
+      setReopeningSupplierId(null);
+    }
+  };
 
   // ─── Fetch client name + email (for "Send results" feature) ─────
   const { data: clientData } = useQuery({
