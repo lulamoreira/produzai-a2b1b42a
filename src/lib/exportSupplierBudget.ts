@@ -72,7 +72,11 @@ async function fetchImageBuffer(
   return { buffer: fetched.buffer, ext };
 }
 
-export async function exportSupplierBudget(params: Params) {
+export type ExportSupplierBudgetParams = Params;
+
+export async function buildSupplierBudgetWorkbook(
+  params: Params,
+): Promise<{ blob: Blob; fileName: string }> {
   const ExcelJSModule = await import("exceljs");
   const ExcelJSRuntime = ExcelJSModule.default;
   const wb = new ExcelJSRuntime.Workbook();
@@ -256,6 +260,11 @@ export async function exportSupplierBudget(params: Params) {
     agencyName: params.agencyName,
     clientName: params.clientName,
   });
+  return { blob, fileName };
+}
+
+export async function exportSupplierBudget(params: Params) {
+  const { blob, fileName } = await buildSupplierBudgetWorkbook(params);
   await saveBlobAs(blob, fileName, {
     mimeType: XLSX_MIME,
     description: "Planilha Excel (.xlsx)",
