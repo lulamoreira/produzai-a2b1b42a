@@ -13,10 +13,12 @@ import { template as occurrenceNotification } from './occurrence-notification.ts
 import { template as occurrenceTracking } from './occurrence-tracking.tsx'
 import { template as supplierInvite } from './supplier-invite.tsx'
 import { template as budgetResultsToClient } from './budget-results-to-client.tsx'
+import { template as supplierWinnerNotification } from './supplier-winner-notification.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'occurrence-notification': occurrenceNotification,
   'occurrence-tracking': occurrenceTracking,
   'supplier-invite': supplierInvite,
   'budget-results-to-client': budgetResultsToClient,
+  'supplier-winner-notification': supplierWinnerNotification,
 }
