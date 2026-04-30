@@ -236,7 +236,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     submittedSuppliers.forEach((s) => headerVals.push(s.company_name));
     headerVals.push("Diferença (max-min)");
     headerRow.values = headerVals;
-    headerRow.height = 28;
+    headerRow.height = 32;
     headerRow.eachCell({ includeEmpty: true }, (cell) => {
       cell.font = { bold: true, color: { argb: WHITE } };
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
@@ -277,7 +277,6 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         submittedSuppliers.forEach(() => headerVals.push(null));
         headerVals.push(null);
         const hRow = ws.addRow(headerVals);
-        hRow.height = 22;
         hRow.eachCell({ includeEmpty: true }, (cell, col) => {
           cell.font = { bold: true };
           cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEDE3D4" } };
@@ -334,7 +333,6 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       rowVals.push(diff);
       const row = ws.addRow(rowVals);
       const bg = idx % 2 === 0 ? WHITE : BEIGE;
-      row.height = 22;
       row.eachCell({ includeEmpty: true }, (cell, col) => {
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
         cell.alignment = {
