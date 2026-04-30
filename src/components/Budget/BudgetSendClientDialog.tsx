@@ -429,8 +429,21 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
 
     const buffer = await wb.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: XLSX_MIME });
-    const safe = (s: string) => s.replace(/[^\w\-]+/g, "_");
-    const fileName = `Comparativo_${safe(campaignName)}.xlsx`;
+    const firstName = (s?: string) =>
+      (s || "").trim().split(/\s+/)[0]?.replace(/[^a-zA-Z0-9À-ÿ_-]/g, "") || "";
+    const sanitizeCamp = (s?: string) =>
+      (s || "").trim().replace(/[^a-zA-Z0-9À-ÿ\s_-]/g, "").replace(/\s+/g, "_").slice(0, 40);
+    const today = new Date()
+      .toLocaleDateString("pt-BR", { year: "numeric", month: "2-digit", day: "2-digit" })
+      .split("/").reverse().join("-");
+    const nameParts = [
+      "Comparativo",
+      firstName(agencyName),
+      firstName(clientName),
+      sanitizeCamp(campaignName),
+      today,
+    ].filter(Boolean);
+    const fileName = `${nameParts.join("_")}.xlsx`;
     return { blob, fileName };
   };
 

@@ -261,10 +261,26 @@ export async function buildSupplierBudgetWorkbook(
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: XLSX_MIME });
-  const fileName = buildExportFileName(`Orcamento_${params.supplierName}_${params.campaignName}`, {
-    agencyName: params.agencyName,
-    clientName: params.clientName,
-  });
+
+  const firstName = (s?: string) =>
+    (s || "").trim().split(/\s+/)[0]?.replace(/[^a-zA-Z0-9À-ÿ_-]/g, "") || "";
+  const sanitizeCamp = (s?: string) =>
+    (s || "").trim().replace(/[^a-zA-Z0-9À-ÿ\s_-]/g, "").replace(/\s+/g, "_").slice(0, 40);
+  const today = new Date()
+    .toLocaleDateString("pt-BR", { year: "numeric", month: "2-digit", day: "2-digit" })
+    .split("/")
+    .reverse()
+    .join("-");
+
+  const nameParts = [
+    firstName(params.supplierName),
+    firstName(params.agencyName),
+    firstName(params.clientName),
+    sanitizeCamp(params.campaignName),
+    today,
+  ].filter(Boolean);
+
+  const fileName = `${nameParts.join("_")}.xlsx`;
   return { blob, fileName };
 }
 
