@@ -55,10 +55,13 @@ const BudgetResultsEmail = ({
 }: BudgetResultsProps) => {
   const submitted = suppliers.filter((s) => s.status === 'enviado')
   const deadlineDate = deadline ? new Date(deadline) : null
+  // Force São Paulo timezone — Deno runs in UTC, so without an explicit
+  // timeZone the formatted string would shift the deadline by 3h.
   const deadlineStr = deadlineDate
-    ? deadlineDate.toLocaleDateString('pt-BR', {
+    ? deadlineDate.toLocaleString('pt-BR', {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit',
+        timeZone: 'America/Sao_Paulo',
       })
     : null
   const diffColor = difference != null && difference > 0 ? RED : GREEN
@@ -255,7 +258,7 @@ const td = { fontSize: '13px', color: '#333333', padding: '8px', border: '1px so
 const tdRight = { ...td, textAlign: 'right' as const }
 const rowEven = { backgroundColor: '#ffffff' }
 const rowOdd = { backgroundColor: BEIGE }
-const rowWinner = { backgroundColor: BRAND }
+const rowWinner = { backgroundColor: '#3F2E1E' } // dark espresso — distinct from BRAND header
 
 const deadlineBox = { backgroundColor: '#fef9f0', border: '1px solid #f0e0c8', borderRadius: '6px', padding: '12px 16px', margin: '0 0 16px', textAlign: 'center' as const }
 const deadlineText = { fontSize: '13px', color: '#6b5937', margin: '0' }
