@@ -1580,6 +1580,32 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Send budget results to client */}
+      <BudgetSendClientDialog
+        open={clientSendDialogOpen}
+        onOpenChange={setClientSendDialogOpen}
+        campaignId={campaignId}
+        campaignName={campaignName}
+        agencyName={agencyName}
+        clientId={clientId}
+        clientName={clientName}
+        clientEmail={clientEmail}
+        suppliers={suppliers}
+        supplierPartialTotals={supplierPartialTotals}
+        bestSupplier={bestSupplier}
+        budgetAmount={budgetAmount}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        qtyMap={qtyMap}
+        stores={stores}
+        pieceTotals={pieceTotals}
+        prices={prices}
+        extraCosts={extraCosts}
+        currencyCode={currencyCode}
+        deadline={settings?.deadline ?? null}
+      />
     </div>
   );
 }
