@@ -420,7 +420,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
       sub_location: k.sub_location,
       specification: "",
       installation_instructions: "",
-      image_url: k.image_url,
+      image_url: (k as any).image_report_url || k.image_url,
       is_new: (k as any).is_new || false,
       _type: "kit" as const,
       display_order: k.display_order,
