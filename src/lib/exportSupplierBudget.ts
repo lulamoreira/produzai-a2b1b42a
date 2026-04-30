@@ -251,6 +251,7 @@ export async function buildSupplierBudgetWorkbook(
       clientName: params.clientName,
       reservedSheetNames: new Set(["orçamento"]),
       skipDashboard: true,
+      skipKitTabs: true,
     });
   }
 

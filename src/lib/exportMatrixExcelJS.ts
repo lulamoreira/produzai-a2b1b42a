@@ -361,6 +361,8 @@ export type AppendMatrixParams = {
   reservedSheetNames?: Set<string>;
   /** When true, skip the Dashboard tab. Useful when appending to another workbook. */
   skipDashboard?: boolean;
+  /** When true, skip generating individual tabs for each kit (kits still appear as columns in main matrix). */
+  skipKitTabs?: boolean;
 };
 
 /**
@@ -385,6 +387,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
     storeFields,
     reservedSheetNames,
     skipDashboard,
+    skipKitTabs,
   } = params;
 
   const effectiveStoreFields = storeFields && storeFields.length > 0 ? storeFields : DEFAULT_STORE_FIELDS;
@@ -468,7 +471,10 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
   await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames, effectiveStoreFields);
 
   // Kit tabs
-  for (const kit of kits) {
+  if (skipKitTabs) {
+    if (skipDashboard || !dashboardSheetName) return;
+  }
+  for (const kit of skipKitTabs ? [] : kits) {
     const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
     if (kpList.length === 0) continue;
 
