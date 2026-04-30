@@ -37,6 +37,7 @@ export default function BudgetWinnerDialog({
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const [mockupUrl, setMockupUrl] = useState("");
+  const [bookUrl, setBookUrl] = useState("");
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function BudgetWinnerDialog({
       setEmail(supplier.email || "");
       setCc("");
       setMockupUrl("");
+      setBookUrl("");
     }
   }, [open, supplier]);
 
@@ -75,6 +77,11 @@ export default function BudgetWinnerDialog({
       toast.error("Informe um link válido (começando com http:// ou https://).");
       return;
     }
+    const book = bookUrl.trim();
+    if (book && !URL_REGEX.test(book)) {
+      toast.error("Link do book de mockup inválido (deve começar com http:// ou https://).");
+      return;
+    }
 
     setSending(true);
     const toastId = toast.loading("Enviando comunicado ao fornecedor vencedor...");
@@ -93,6 +100,7 @@ export default function BudgetWinnerDialog({
         agencyName,
         campaignName,
         mockupUrl: mockup,
+        bookUrl: book || undefined,
         timeline,
       };
 
@@ -165,6 +173,21 @@ export default function BudgetWinnerDialog({
             />
             <p className="text-[11px] text-muted-foreground">
               Cole aqui o link externo (Google Drive, WeTransfer, Dropbox, etc.) para o fornecedor baixar as peças.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="winner-book">Link do book de mockup (opcional)</Label>
+            <Input
+              id="winner-book"
+              type="url"
+              placeholder="https://drive.google.com/..."
+              value={bookUrl}
+              onChange={(e) => setBookUrl(e.target.value)}
+              disabled={sending}
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Link externo do book de mockup (apresentação visual das peças).
             </p>
           </div>
 

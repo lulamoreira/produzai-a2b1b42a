@@ -21,6 +21,7 @@ interface SupplierWinnerProps {
   agencyName?: string
   campaignName?: string
   mockupUrl?: string
+  bookUrl?: string
   timeline?: TimelineEntry[]
 }
 
@@ -30,6 +31,7 @@ const SupplierWinnerEmail = ({
   agencyName = '',
   campaignName = 'Campanha',
   mockupUrl,
+  bookUrl,
   timeline = [],
 }: SupplierWinnerProps) => {
   const greeting = contactName || supplierName
@@ -97,6 +99,20 @@ const SupplierWinnerEmail = ({
             </>
           )}
 
+          {bookUrl && (
+            <>
+              <Heading as="h2" style={h2}>📘 Book de Mockup</Heading>
+              <Text style={text}>
+                Acesse abaixo o book de mockup com a apresentação visual completa das peças:
+              </Text>
+              <Section style={ctaSection}>
+                <Button style={ctaButton} href={bookUrl}>
+                  📖 Baixar book de mockup
+                </Button>
+              </Section>
+            </>
+          )}
+
           <Section style={infoBox}>
             <Text style={infoText}>
               ✅ Solicitamos que confirme o recebimento deste e-mail e dê início à
@@ -128,6 +144,7 @@ export const template = {
     agencyName: 'Studio Design',
     campaignName: 'Campanha Verão 2026',
     mockupUrl: 'https://example.com/mockup.zip',
+    bookUrl: 'https://example.com/book-mockup.pdf',
     timeline: [
       { date: '15/05/2026', description: 'Início da produção' },
       { date: '30/05/2026', description: 'Envio para os pontos de venda' },
