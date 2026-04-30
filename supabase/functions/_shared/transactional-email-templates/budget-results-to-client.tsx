@@ -55,10 +55,13 @@ const BudgetResultsEmail = ({
 }: BudgetResultsProps) => {
   const submitted = suppliers.filter((s) => s.status === 'enviado')
   const deadlineDate = deadline ? new Date(deadline) : null
+  // Force São Paulo timezone — Deno runs in UTC, so without an explicit
+  // timeZone the formatted string would shift the deadline by 3h.
   const deadlineStr = deadlineDate
-    ? deadlineDate.toLocaleDateString('pt-BR', {
+    ? deadlineDate.toLocaleString('pt-BR', {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit',
+        timeZone: 'America/Sao_Paulo',
       })
     : null
   const diffColor = difference != null && difference > 0 ? RED : GREEN
