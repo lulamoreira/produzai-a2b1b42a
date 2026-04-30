@@ -454,8 +454,9 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         differenceFormatted: difference != null ? fmt(difference) : null,
         suppliers: submittedSuppliers.map((s) => {
           const partial = supplierPartialTotals[s.id] || { total: 0, installation: 0, freight: 0 };
-          const submittedAt = s.updated_at
-            ? format(new Date(s.updated_at), "dd/MM/yyyy HH:mm", { locale: ptBR })
+          const submittedAtRaw = s.submitted_at ?? s.updated_at ?? s.created_at ?? null;
+          const submittedAt = submittedAtRaw
+            ? format(new Date(submittedAtRaw), "dd/MM/yyyy HH:mm", { locale: ptBR })
             : null;
           return {
             name: s.company_name,
