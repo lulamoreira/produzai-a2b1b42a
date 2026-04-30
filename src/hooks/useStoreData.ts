@@ -260,10 +260,35 @@ export function useRemovePieceFromStore() {
 export function useUpdatePieceImage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ pieceId, imageUrl }: { pieceId: number; imageUrl: string | null }) => {
+    mutationFn: async ({
+      pieceId,
+      imageUrl,
+      variants,
+    }: {
+      pieceId: number;
+      imageUrl: string | null;
+      variants?: {
+        image_thumb_url: string | null;
+        image_report_url: string | null;
+        image_full_url: string | null;
+        image_hash: string | null;
+      };
+    }) => {
+      const payload: Record<string, string | null> = { image_url: imageUrl };
+      if (variants) {
+        payload.image_thumb_url = variants.image_thumb_url;
+        payload.image_report_url = variants.image_report_url;
+        payload.image_full_url = variants.image_full_url;
+        payload.image_hash = variants.image_hash;
+      } else if (imageUrl === null) {
+        payload.image_thumb_url = null;
+        payload.image_report_url = null;
+        payload.image_full_url = null;
+        payload.image_hash = null;
+      }
       const { error } = await supabase
         .from("pieces")
-        .update({ image_url: imageUrl })
+        .update(payload)
         .eq("id", pieceId);
       if (error) throw error;
     },
