@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -44,6 +44,7 @@ import { useRealtimeBudget } from "@/hooks/useRealtimeBudget";
 import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
 import { exportSupplierBudget, type SupplierExportRow } from "@/lib/exportSupplierBudget";
+import BudgetSendClientDialog from "@/components/Budget/BudgetSendClientDialog";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -131,6 +132,23 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [showLockConfirm, setShowLockConfirm] = useState(false);
   const [exportingBudget, setExportingBudget] = useState(false);
   const [downloadingSupplierId, setDownloadingSupplierId] = useState<string | null>(null);
+  const [clientSendDialogOpen, setClientSendDialogOpen] = useState(false);
+
+  // ─── Fetch client name + email (for "Send results" feature) ─────
+  const { data: clientData } = useQuery({
+    queryKey: ["client-name-email", clientId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("clients")
+        .select("name, email")
+        .eq("id", clientId)
+        .maybeSingle();
+      return data as { name: string | null; email: string | null } | null;
+    },
+    enabled: !!clientId,
+  });
+  const clientName = clientData?.name || "";
+  const clientEmail = (clientData as any)?.email || "";
 
   // Client suppliers picker
   const { data: clientSuppliers = [] } = useClientSuppliers(clientId);
