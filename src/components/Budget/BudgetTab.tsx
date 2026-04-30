@@ -360,6 +360,40 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     return best;
   }, [supplierTotals, suppliers]);
 
+  // Vencedor declarado (apenas 1 por campanha, garantido por índice único)
+  const winnerSupplier = useMemo(() => {
+    return (suppliers as any[]).find((s) => s.is_winner === true) || null;
+  }, [suppliers]);
+
+  const handleToggleWinner = async (sup: { id: string; campaign_id: string; company_name: string }, makeWinner: boolean) => {
+    try {
+      if (makeWinner) {
+        // Desmarcar qualquer outro vencedor da campanha primeiro
+        const others = (suppliers as any[]).filter((s) => s.is_winner === true && s.id !== sup.id);
+        for (const o of others) {
+          await supabase.from("budget_suppliers")
+            .update({ is_winner: false, winner_declared_at: null } as never)
+            .eq("id", o.id);
+        }
+        const { error } = await supabase.from("budget_suppliers")
+          .update({ is_winner: true, winner_declared_at: new Date().toISOString() } as never)
+          .eq("id", sup.id);
+        if (error) throw error;
+        toast.success(`${sup.company_name} declarada vencedora.`);
+      } else {
+        const { error } = await supabase.from("budget_suppliers")
+          .update({ is_winner: false, winner_declared_at: null } as never)
+          .eq("id", sup.id);
+        if (error) throw error;
+        toast.success("Vencedor desmarcado.");
+      }
+      queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] });
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Erro ao atualizar vencedor.");
+    }
+  };
+
   const budgetAmount = settings?.budget_amount != null ? Number(settings.budget_amount) : null;
   const difference = bestSupplier && budgetAmount != null ? bestSupplier.total - budgetAmount : null;
 
@@ -719,7 +753,27 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     <div className="space-y-6">
 
       {/* ═══ KPI CARDS ═══ */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className={cn("grid grid-cols-1 gap-4", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
+        {/* Empresa Vencedora (só aparece quando há vencedor declarado) */}
+        {winnerSupplier && (
+          <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20">
+            <CardContent className="pt-4 pb-4 space-y-1">
+              <div className="flex items-center gap-1.5">
+                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Empresa Vencedora</p>
+              </div>
+              <p className="text-lg font-bold text-amber-700 dark:text-amber-400 leading-tight truncate" title={(winnerSupplier as any).company_name}>
+                {(winnerSupplier as any).company_name}
+              </p>
+              {(winnerSupplier as any).winner_declared_at && (
+                <p className="text-xs text-muted-foreground">
+                  Declarada em {format(new Date((winnerSupplier as any).winner_declared_at), "dd/MM/yyyy", { locale: ptBR })}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Budget da Campanha */}
         <Card>
           <CardContent className="pt-4 pb-4 space-y-3">
@@ -1186,6 +1240,23 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           disabled={reopeningSupplierId === sup.id}
                           onCheckedChange={() => handleToggleSupplierLock(sup)}
                           aria-label={sup.locked ? "Liberar planilha para revisão" : "Travar planilha novamente"}
+                        />
+                      </div>
+                    )}
+
+                    {/* Winner toggle: admin/master, visible only after submission */}
+                    {isAdminOrMaster && sup.submitted_at && (
+                      <div className="flex items-center justify-between gap-2 pt-2 mt-1 border-t border-border/60">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Trophy className={cn("w-3.5 h-3.5 shrink-0", (sup as any).is_winner ? "text-amber-500" : "text-muted-foreground")} />
+                          <span className="text-[11px] text-muted-foreground truncate">
+                            {(sup as any).is_winner ? "Empresa vencedora" : "Declarar vencedora"}
+                          </span>
+                        </div>
+                        <Switch
+                          checked={!!(sup as any).is_winner}
+                          onCheckedChange={(checked) => handleToggleWinner(sup, checked)}
+                          aria-label={(sup as any).is_winner ? "Desmarcar vencedora" : "Declarar vencedora do certame"}
                         />
                       </div>
                     )}

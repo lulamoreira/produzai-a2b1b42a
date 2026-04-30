@@ -418,10 +418,12 @@ export type Database = {
           email: string
           id: string
           invited_at: string | null
+          is_winner: boolean
           locked: boolean | null
           phone: string
           status: string
           submitted_at: string | null
+          winner_declared_at: string | null
         }
         Insert: {
           access_token?: string
@@ -432,10 +434,12 @@ export type Database = {
           email: string
           id?: string
           invited_at?: string | null
+          is_winner?: boolean
           locked?: boolean | null
           phone: string
           status?: string
           submitted_at?: string | null
+          winner_declared_at?: string | null
         }
         Update: {
           access_token?: string
@@ -446,10 +450,12 @@ export type Database = {
           email?: string
           id?: string
           invited_at?: string | null
+          is_winner?: boolean
           locked?: boolean | null
           phone?: string
           status?: string
           submitted_at?: string | null
+          winner_declared_at?: string | null
         }
         Relationships: [
           {
