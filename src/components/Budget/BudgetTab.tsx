@@ -968,9 +968,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             </button>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="px-0 pb-0 -mt-2">
-              <BudgetTimelineSection campaignId={campaignId} />
-            </div>
+            <BudgetTimelineSection campaignId={campaignId} hideHeader bare />
           </CollapsibleContent>
         </Collapsible>
       </Card>
