@@ -38,6 +38,8 @@ import {
 
 interface BudgetTimelineSectionProps {
   campaignId: string;
+  hideHeader?: boolean;
+  bare?: boolean;
 }
 
 // ─── Sortable row ────────────────────────────────────────
@@ -177,7 +179,7 @@ function TimelineRow({ entry, campaignId, onDelete }: RowProps) {
 }
 
 // ─── Section ─────────────────────────────────────────────
-export default function BudgetTimelineSection({ campaignId }: BudgetTimelineSectionProps) {
+export default function BudgetTimelineSection({ campaignId, hideHeader = false, bare = false }: BudgetTimelineSectionProps) {
   const { data: entries = [] } = useBudgetTimeline(campaignId);
   const addEntry = useAddTimelineEntry();
   const deleteEntry = useDeleteTimelineEntry();
@@ -216,9 +218,9 @@ export default function BudgetTimelineSection({ campaignId }: BudgetTimelineSect
     });
   };
 
-  return (
-    <Card>
-      <CardContent className="pt-5 pb-5 space-y-4">
+  const inner = (
+    <div className="space-y-4">
+      {!hideHeader && (
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-sm font-semibold text-foreground">Cronograma da Campanha</h3>
@@ -227,44 +229,54 @@ export default function BudgetTimelineSection({ campaignId }: BudgetTimelineSect
             </p>
           </div>
         </div>
+      )}
 
-        {entries.length === 0 ? (
-          <div className="rounded-md border border-dashed border-border py-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              Nenhuma entrega cadastrada. Adicione as datas e descrições do cronograma.
-            </p>
-          </div>
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={entries.map((e) => e.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-2">
-                {entries.map((entry) => (
-                  <TimelineRow
-                    key={entry.id}
-                    entry={entry}
-                    campaignId={campaignId}
-                    onDelete={handleDelete}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-        )}
-
-        <div>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleAdd}>
-            <Plus className="w-3.5 h-3.5" />
-            Adicionar entrega
-          </Button>
+      {entries.length === 0 ? (
+        <div className="rounded-md border border-dashed border-border py-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            Nenhuma entrega cadastrada. Adicione as datas e descrições do cronograma.
+          </p>
         </div>
-      </CardContent>
+      ) : (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={entries.map((e) => e.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-2">
+              {entries.map((entry) => (
+                <TimelineRow
+                  key={entry.id}
+                  entry={entry}
+                  campaignId={campaignId}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
+
+      <div>
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={handleAdd}>
+          <Plus className="w-3.5 h-3.5" />
+          Adicionar entrega
+        </Button>
+      </div>
+    </div>
+  );
+
+  if (bare) {
+    return <div className="px-4 pb-4">{inner}</div>;
+  }
+
+  return (
+    <Card>
+      <CardContent className="pt-5 pb-5">{inner}</CardContent>
     </Card>
   );
 }
