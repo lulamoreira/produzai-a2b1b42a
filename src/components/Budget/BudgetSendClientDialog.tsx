@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Send, Loader2, X, Download } from "lucide-react";
+import { Send, Loader2, X } from "lucide-react";
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -561,32 +561,6 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     }
   };
 
-  const handleDownloadTest = async () => {
-    if (submittedSuppliers.length === 0) {
-      toast.error("Nenhum fornecedor enviou o orçamento ainda.");
-      return;
-    }
-    setSending(true);
-    const toastId = toast.loading("Gerando planilha de teste...");
-    try {
-      const sup = submittedSuppliers[0];
-      const { blob, fileName } = await buildOneSupplier(sup);
-      await saveBlobAs(blob, fileName, {
-        mimeType: XLSX_MIME,
-        description: "Planilha Excel (.xlsx)",
-        extension: ".xlsx",
-      });
-      toast.dismiss(toastId);
-      toast.success(`Planilha de "${sup.company_name}" baixada para conferência.`);
-    } catch (e: any) {
-      console.error("Test download error:", e);
-      toast.dismiss(toastId);
-      toast.error(e?.message || "Erro ao gerar planilha de teste.");
-    } finally {
-      setSending(false);
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={(o) => !sending && onOpenChange(o)}>
       <DialogContent className="max-w-lg">
@@ -660,15 +634,6 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button
-            variant="secondary"
-            onClick={handleDownloadTest}
-            disabled={sending || submittedSuppliers.length === 0}
-            className="sm:mr-auto"
-            title="Baixa a planilha do primeiro fornecedor enviado, sem disparar email — útil para conferir layout/abas."
-          >
-            <Download className="w-4 h-4 mr-1" /> Baixar planilha de teste
-          </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
             <X className="w-4 h-4 mr-1" /> Cancelar
           </Button>
