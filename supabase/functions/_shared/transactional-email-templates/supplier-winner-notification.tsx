@@ -31,6 +31,7 @@ const SupplierWinnerEmail = ({
   agencyName = '',
   campaignName = 'Campanha',
   mockupUrl,
+  bookUrl,
   timeline = [],
 }: SupplierWinnerProps) => {
   const greeting = contactName || supplierName
