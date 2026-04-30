@@ -237,9 +237,13 @@ export async function buildSupplierBudgetWorkbook(
 
   // ─── Optional: append the full Rateio module export (Matriz Lojas x Peças + Kit tabs) ───
   if (params.rateio) {
+    // Mirror the Rateio module: only standalone pieces (kit_only=false) become
+    // columns in the "Matriz Lojas x Peças" tab. The full piece pool is still
+    // passed via `allPieces` so kit components can be resolved.
+    const visiblePieces = params.rateio.pieces.filter((p: any) => p.kit_only !== true);
     await appendMatrixSheets(wb, {
       stores: params.rateio.stores,
-      pieces: params.rateio.pieces,
+      pieces: visiblePieces,
       qtyMap: params.rateio.qtyMap,
       campaignName: params.campaignName,
       kits: params.rateio.kits,
