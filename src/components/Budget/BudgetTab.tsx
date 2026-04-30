@@ -780,6 +780,15 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-foreground">Fornecedores</h3>
           <div className="flex items-center gap-2">
+            {suppliers.some((s) => s.status === "enviado") && (
+              <Button
+                size="sm"
+                className="gap-1"
+                onClick={() => setClientSendDialogOpen(true)}
+              >
+                <Send className="w-3.5 h-3.5" /> Enviar ao Cliente
+              </Button>
+            )}
             <Button size="sm" variant="outline" className="gap-1" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
               <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
             </Button>
