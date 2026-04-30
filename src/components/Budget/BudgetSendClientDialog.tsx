@@ -661,7 +661,16 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <Button
+            variant="secondary"
+            onClick={handleDownloadTest}
+            disabled={sending || submittedSuppliers.length === 0}
+            className="sm:mr-auto"
+            title="Baixa a planilha do primeiro fornecedor enviado, sem disparar email — útil para conferir layout/abas."
+          >
+            <Download className="w-4 h-4 mr-1" /> Baixar planilha de teste
+          </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
             <X className="w-4 h-4 mr-1" /> Cancelar
           </Button>
