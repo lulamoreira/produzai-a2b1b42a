@@ -850,7 +850,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {suppliers.map((sup) => {
-              const st = STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
+              const st = getDisplayStatus(sup);
               const partial = supplierPartialTotals[sup.id];
               const inProgress = partial && partial.pricedPieces > 0 && sup.status !== "enviado";
               return (
@@ -1048,7 +1048,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   </TableHeader>
                   <TableBody>
                     {suppliers.map((sup) => {
-                      const st = STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
+                      const st = getDisplayStatus(sup);
                       const p = supplierPartialTotals[sup.id];
                       if (!p) return null;
                       const piecesTotal = p.total - p.installation - p.freight;
