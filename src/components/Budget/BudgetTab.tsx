@@ -360,6 +360,40 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     return best;
   }, [supplierTotals, suppliers]);
 
+  // Vencedor declarado (apenas 1 por campanha, garantido por índice único)
+  const winnerSupplier = useMemo(() => {
+    return (suppliers as any[]).find((s) => s.is_winner === true) || null;
+  }, [suppliers]);
+
+  const handleToggleWinner = async (sup: { id: string; campaign_id: string; company_name: string }, makeWinner: boolean) => {
+    try {
+      if (makeWinner) {
+        // Desmarcar qualquer outro vencedor da campanha primeiro
+        const others = (suppliers as any[]).filter((s) => s.is_winner === true && s.id !== sup.id);
+        for (const o of others) {
+          await supabase.from("budget_suppliers")
+            .update({ is_winner: false, winner_declared_at: null } as never)
+            .eq("id", o.id);
+        }
+        const { error } = await supabase.from("budget_suppliers")
+          .update({ is_winner: true, winner_declared_at: new Date().toISOString() } as never)
+          .eq("id", sup.id);
+        if (error) throw error;
+        toast.success(`${sup.company_name} declarada vencedora.`);
+      } else {
+        const { error } = await supabase.from("budget_suppliers")
+          .update({ is_winner: false, winner_declared_at: null } as never)
+          .eq("id", sup.id);
+        if (error) throw error;
+        toast.success("Vencedor desmarcado.");
+      }
+      queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] });
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Erro ao atualizar vencedor.");
+    }
+  };
+
   const budgetAmount = settings?.budget_amount != null ? Number(settings.budget_amount) : null;
   const difference = bestSupplier && budgetAmount != null ? bestSupplier.total - budgetAmount : null;
 
