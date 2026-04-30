@@ -149,6 +149,48 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [reopeningSupplierId, setReopeningSupplierId] = useState<string | null>(null);
   const [winnerSupplierId, setWinnerSupplierId] = useState<string | null>(null);
 
+  // ── Editor de "Links do Vencedor" (configuração padrão usada no e-mail de vencedor) ──
+  const settingsAny = settings as any;
+  const [winnerLinksOpen, setWinnerLinksOpen] = useState(false);
+  const [winnerMockupUrlDraft, setWinnerMockupUrlDraft] = useState("");
+  const [winnerBookUrlDraft, setWinnerBookUrlDraft] = useState("");
+  const [winnerCcEmailDraft, setWinnerCcEmailDraft] = useState("");
+  const [savingWinnerLinks, setSavingWinnerLinks] = useState(false);
+
+  React.useEffect(() => {
+    setWinnerMockupUrlDraft(settingsAny?.winner_mockup_url ?? "");
+    setWinnerBookUrlDraft(settingsAny?.winner_book_url ?? "");
+    setWinnerCcEmailDraft(settingsAny?.winner_cc_email ?? "");
+  }, [settingsAny?.winner_mockup_url, settingsAny?.winner_book_url, settingsAny?.winner_cc_email]);
+
+  const handleSaveWinnerLinks = async () => {
+    const mockup = winnerMockupUrlDraft.trim();
+    const book = winnerBookUrlDraft.trim();
+    const cc = winnerCcEmailDraft.trim();
+    const URL_RE = /^https?:\/\/.+/i;
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (mockup && !URL_RE.test(mockup)) { toast.error("Link de mockup inválido (use http:// ou https://)."); return; }
+    if (book && !URL_RE.test(book)) { toast.error("Link do book inválido (use http:// ou https://)."); return; }
+    if (cc && !EMAIL_RE.test(cc)) { toast.error("E-mail de CC inválido."); return; }
+    setSavingWinnerLinks(true);
+    try {
+      await saveSettings.mutateAsync({
+        campaign_id: campaignId,
+        budget_amount: settings?.budget_amount ?? null,
+        deadline: settings?.deadline ?? null,
+        winner_mockup_url: mockup || null,
+        winner_book_url: book || null,
+        winner_cc_email: cc || null,
+      });
+      toast.success("Links do vencedor salvos.");
+      setWinnerLinksOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao salvar links.");
+    } finally {
+      setSavingWinnerLinks(false);
+    }
+  };
+
   const { isAdminOrMaster } = useUserRole();
   const { user } = useAuth();
 
