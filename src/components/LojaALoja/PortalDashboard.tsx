@@ -22,6 +22,7 @@ import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clo
 import { toast } from "sonner";
 import { criarNotificacao } from "@/lib/criarNotificacao";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
+import PieceMultiSelectFilter from "./PieceMultiSelectFilter";
 import { useTableSort } from "@/hooks/useTableSort";
 import SortableHeader from "./SortableHeader";
 import { useStorePortalConfig } from "@/hooks/useStorePortalConfig";
@@ -206,6 +207,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterStore, setFilterStore] = useState<string>("all");
+  const [filterPieceIds, setFilterPieceIds] = useState<string[]>([]);
   const [occViewMode, setOccViewMode] = useState<"list" | "cards">("list");
   const [selectedOccurrence, setSelectedOccurrence] = useState<any | null>(null);
 
@@ -238,9 +240,10 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       if (filterStatus !== "all" && (o.tratativa_status ?? "aberta") !== filterStatus) return false;
       if (filterPriority !== "all" && o.priority !== filterPriority) return false;
       if (filterStore !== "all" && o.store_id !== filterStore) return false;
+      if (filterPieceIds.length > 0 && !filterPieceIds.includes(o.loja_a_loja_peca_id)) return false;
       return true;
     });
-  }, [occList, filterStatus, filterPriority, filterStore]);
+  }, [occList, filterStatus, filterPriority, filterStore, filterPieceIds]);
 
   /* Other KPIs */
   const openMaintenance = useMemo(() => (maintenance ?? []).filter((m: any) => ["aberto", "em_andamento"].includes(m.status)).length, [maintenance]);
@@ -486,6 +489,13 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
                 ))}
               </SelectContent>
             </Select>
+            <PieceMultiSelectFilter
+              occurrences={occList}
+              value={filterPieceIds}
+              onChange={setFilterPieceIds}
+              className="w-[240px]"
+              triggerClassName="h-8 text-xs"
+            />
           </div>
 
           {/* Occurrences — Lista ou Cards */}
