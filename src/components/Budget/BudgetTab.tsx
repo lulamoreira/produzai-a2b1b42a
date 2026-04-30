@@ -150,28 +150,35 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const { isAdminOrMaster } = useUserRole();
   const { user } = useAuth();
 
-  const handleToggleSupplierLock = async (sup: { id: string; campaign_id: string; locked: boolean | null; status: string; company_name: string }) => {
-    // Only allow REOPEN action via toggle (lock auto when supplier submits)
-    if (!sup.locked) return; // already open - nothing to do here
+  const handleToggleSupplierLock = async (sup: { id: string; campaign_id: string; locked: boolean | null; status: string; company_name: string; submitted_at: string | null }) => {
     setReopeningSupplierId(sup.id);
     try {
-      // 1. Snapshot current prices before reopening
-      await snapshotSupplierBudget({
-        supplierId: sup.id,
-        campaignId: sup.campaign_id,
-        reason: "reopened",
-        createdBy: user?.id ?? null,
-      });
-      // 2. Unlock + status back to "preenchendo" (em revisão)
-      await updateSupplier.mutateAsync({
-        id: sup.id,
-        campaign_id: sup.campaign_id,
-        updates: { locked: false, status: "preenchendo", submitted_at: null } as never,
-      });
-      toast.success(`Planilha liberada para ${sup.company_name} revisar.`);
+      if (sup.locked) {
+        // ─── REOPEN: snapshot then unlock, preserving submitted_at so we can restore "Enviado" later
+        await snapshotSupplierBudget({
+          supplierId: sup.id,
+          campaignId: sup.campaign_id,
+          reason: "reopened",
+          createdBy: user?.id ?? null,
+        });
+        await updateSupplier.mutateAsync({
+          id: sup.id,
+          campaign_id: sup.campaign_id,
+          updates: { locked: false, status: "preenchendo" } as never,
+        });
+        toast.success(`Planilha liberada para ${sup.company_name} revisar.`);
+      } else {
+        // ─── RE-LOCK without supplier resubmitting: restore "Enviado" with previous submitted_at
+        await updateSupplier.mutateAsync({
+          id: sup.id,
+          campaign_id: sup.campaign_id,
+          updates: { locked: true, status: sup.submitted_at ? "enviado" : sup.status } as never,
+        });
+        toast.success(`Planilha de ${sup.company_name} travada novamente.`);
+      }
     } catch (e) {
       console.error(e);
-      toast.error("Erro ao liberar planilha. Tente novamente.");
+      toast.error("Erro ao alterar trava da planilha. Tente novamente.");
     } finally {
       setReopeningSupplierId(null);
     }
