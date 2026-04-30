@@ -8,7 +8,7 @@ import { useUserClientAccess } from "@/hooks/useMultiClientData";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { Users, Tags, Database, UserCheck, Search, MessageSquareText, Bell } from "lucide-react";
+import { Users, Tags, Database, UserCheck, Search, MessageSquareText, Bell, Image as ImageIcon } from "lucide-react";
 import { CreateUserDialog } from "@/components/CreateUserDialog";
 import AppLayout from "@/components/AppLayout";
 import NotificationSettingsManager from "@/components/admin/NotificationSettingsManager";
