@@ -158,6 +158,10 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [winnerCcEmailDraft, setWinnerCcEmailDraft] = useState("");
   const [savingWinnerLinks, setSavingWinnerLinks] = useState(false);
 
+  // Collapsible sections (start collapsed)
+  const [winnerLinksExpanded, setWinnerLinksExpanded] = useState(false);
+  const [timelineExpanded, setTimelineExpanded] = useState(false);
+
   React.useEffect(() => {
     setWinnerMockupUrlDraft(settingsAny?.winner_mockup_url ?? "");
     setWinnerBookUrlDraft(settingsAny?.winner_book_url ?? "");
