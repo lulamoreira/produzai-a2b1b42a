@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Send, Loader2, X } from "lucide-react";
+import { Send, Loader2, X, Download } from "lucide-react";
+import { saveBlobAs } from "@/lib/saveBlobAs";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
