@@ -28,10 +28,14 @@ interface BudgetWinnerDialogProps {
     contact_name: string | null;
     email: string;
   } | null;
+  defaultMockupUrl?: string;
+  defaultBookUrl?: string;
+  defaultCcEmail?: string;
 }
 
 export default function BudgetWinnerDialog({
   open, onOpenChange, campaignId, campaignName, agencyName, supplier,
+  defaultMockupUrl = "", defaultBookUrl = "", defaultCcEmail = "",
 }: BudgetWinnerDialogProps) {
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
   const [email, setEmail] = useState("");
@@ -43,11 +47,11 @@ export default function BudgetWinnerDialog({
   useEffect(() => {
     if (open && supplier) {
       setEmail(supplier.email || "");
-      setCc("");
-      setMockupUrl("");
-      setBookUrl("");
+      setCc(defaultCcEmail || "");
+      setMockupUrl(defaultMockupUrl || "");
+      setBookUrl(defaultBookUrl || "");
     }
-  }, [open, supplier]);
+  }, [open, supplier, defaultMockupUrl, defaultBookUrl, defaultCcEmail]);
 
   const sendOnce = async (recipient: string, templateData: any) => {
     const { error } = await supabase.functions.invoke("send-transactional-email", {
