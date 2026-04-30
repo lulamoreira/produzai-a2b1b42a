@@ -5,9 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useAuth } from "@/hooks/useAuth";
+import { snapshotSupplierBudget } from "@/lib/budgetPriceSnapshot";
+import BudgetSupplierHistorySheet from "@/components/Budget/BudgetSupplierHistorySheet";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,7 +73,13 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   prazo_encerrado: { label: "Prazo encerrado", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 };
 
-// Note: fmtCurrency is defined inside the component to access settings.currency_code
+// Returns visual status considering revision state (sup unlocked but had submitted before)
+function getDisplayStatus(sup: { status: string; locked: boolean | null; submitted_at: string | null }) {
+  if (sup.status !== "enviado" && sup.submitted_at && !sup.locked) {
+    return { label: "Em revisão", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" };
+  }
+  return STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
+}
 
 // ─── Main Component ──────────────────────────────────────
 export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores }: BudgetTabProps) {
@@ -133,6 +144,38 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [exportingBudget, setExportingBudget] = useState(false);
   const [downloadingSupplierId, setDownloadingSupplierId] = useState<string | null>(null);
   const [clientSendDialogOpen, setClientSendDialogOpen] = useState(false);
+  const [historySupplierId, setHistorySupplierId] = useState<string | null>(null);
+  const [reopeningSupplierId, setReopeningSupplierId] = useState<string | null>(null);
+
+  const { isAdminOrMaster } = useUserRole();
+  const { user } = useAuth();
+
+  const handleToggleSupplierLock = async (sup: { id: string; campaign_id: string; locked: boolean | null; status: string; company_name: string }) => {
+    // Only allow REOPEN action via toggle (lock auto when supplier submits)
+    if (!sup.locked) return; // already open - nothing to do here
+    setReopeningSupplierId(sup.id);
+    try {
+      // 1. Snapshot current prices before reopening
+      await snapshotSupplierBudget({
+        supplierId: sup.id,
+        campaignId: sup.campaign_id,
+        reason: "reopened",
+        createdBy: user?.id ?? null,
+      });
+      // 2. Unlock + status back to "preenchendo" (em revisão)
+      await updateSupplier.mutateAsync({
+        id: sup.id,
+        campaign_id: sup.campaign_id,
+        updates: { locked: false, status: "preenchendo", submitted_at: null } as never,
+      });
+      toast.success(`Planilha liberada para ${sup.company_name} revisar.`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Erro ao liberar planilha. Tente novamente.");
+    } finally {
+      setReopeningSupplierId(null);
+    }
+  };
 
   // ─── Fetch client name + email (for "Send results" feature) ─────
   const { data: clientData } = useQuery({
@@ -807,7 +850,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {suppliers.map((sup) => {
-              const st = STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
+              const st = getDisplayStatus(sup);
               const partial = supplierPartialTotals[sup.id];
               const inProgress = partial && partial.pricedPieces > 0 && sup.status !== "enviado";
               return (
@@ -958,6 +1001,15 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           <Download className="w-3.5 h-3.5" />
                         )}
                       </Button>
+                      {isAdminOrMaster && sup.submitted_at && (
+                        <Button
+                          size="sm" variant="ghost" className="h-7 w-7 p-0"
+                          title="Histórico de valores"
+                          onClick={() => setHistorySupplierId(sup.id)}
+                        >
+                          <History className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                       <Button
                         size="sm" variant="ghost" className="h-7 w-7 p-0 ml-auto text-destructive hover:text-destructive"
                         title="Excluir fornecedor"
@@ -966,6 +1018,32 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
+
+                    {/* Lock toggle: visible only to admin/master once supplier has submitted at least once */}
+                    {isAdminOrMaster && sup.submitted_at && (
+                      <div className="flex items-center justify-between gap-2 pt-2 mt-1 border-t border-border/60">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          {sup.locked ? (
+                            <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          ) : (
+                            <Unlock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          )}
+                          <span className="text-[11px] text-muted-foreground truncate">
+                            {sup.locked ? "Travado para edição" : "Liberado para revisão"}
+                          </span>
+                        </div>
+                        <Switch
+                          checked={!sup.locked}
+                          disabled={reopeningSupplierId === sup.id || !sup.locked}
+                          onCheckedChange={(checked) => {
+                            if (checked && sup.locked) {
+                              handleToggleSupplierLock(sup);
+                            }
+                          }}
+                          aria-label="Liberar planilha para revisão"
+                        />
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
@@ -1005,7 +1083,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   </TableHeader>
                   <TableBody>
                     {suppliers.map((sup) => {
-                      const st = STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
+                      const st = getDisplayStatus(sup);
                       const p = supplierPartialTotals[sup.id];
                       if (!p) return null;
                       const piecesTotal = p.total - p.installation - p.freight;
@@ -1609,6 +1687,17 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         extraCosts={extraCosts}
         currencyCode={currencyCode}
         deadline={settings?.deadline ?? null}
+      />
+
+      {/* Histórico de valores do fornecedor (Admin/Master) */}
+      <BudgetSupplierHistorySheet
+        open={!!historySupplierId}
+        onOpenChange={(o) => !o && setHistorySupplierId(null)}
+        supplierId={historySupplierId}
+        supplierName={suppliers.find((s) => s.id === historySupplierId)?.company_name}
+        currencyCode={currencyCode}
+        pieces={pieces}
+        kits={kits}
       />
     </div>
   );
