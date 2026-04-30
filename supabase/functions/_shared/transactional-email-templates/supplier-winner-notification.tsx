@@ -99,6 +99,20 @@ const SupplierWinnerEmail = ({
             </>
           )}
 
+          {bookUrl && (
+            <>
+              <Heading as="h2" style={h2}>📘 Book de Mockup</Heading>
+              <Text style={text}>
+                Acesse abaixo o book de mockup com a apresentação visual completa das peças:
+              </Text>
+              <Section style={ctaSection}>
+                <Button style={ctaButton} href={bookUrl}>
+                  📖 Baixar book de mockup
+                </Button>
+              </Section>
+            </>
+          )}
+
           <Section style={infoBox}>
             <Text style={infoText}>
               ✅ Solicitamos que confirme o recebimento deste e-mail e dê início à
