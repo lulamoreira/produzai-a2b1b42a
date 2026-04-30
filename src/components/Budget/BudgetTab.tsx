@@ -73,7 +73,13 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   prazo_encerrado: { label: "Prazo encerrado", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 };
 
-// Note: fmtCurrency is defined inside the component to access settings.currency_code
+// Returns visual status considering revision state (sup unlocked but had submitted before)
+function getDisplayStatus(sup: { status: string; locked: boolean | null; submitted_at: string | null }) {
+  if (sup.status !== "enviado" && sup.submitted_at && !sup.locked) {
+    return { label: "Em revisão", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" };
+  }
+  return STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
+}
 
 // ─── Main Component ──────────────────────────────────────
 export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores }: BudgetTabProps) {
