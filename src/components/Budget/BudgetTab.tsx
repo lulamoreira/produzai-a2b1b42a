@@ -494,7 +494,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             totalQty: kitTotalQty,
             unitPrice: null,
             lineTotal: 0,
-            image_url: kit.image_url ?? null,
+            image_url: (kit as any).image_report_url ?? kit.image_url ?? null,
           });
           kpList.forEach((kp) => {
             const piece = pieces.find((p) => p.id === kp.piece_id);
