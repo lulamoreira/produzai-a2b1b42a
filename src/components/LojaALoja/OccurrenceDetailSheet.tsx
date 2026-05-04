@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,8 +98,19 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       setReinstallationDate(toLocalInput(occurrence.reinstallation_scheduled_at));
       setReinstallationOs(occurrence.reinstallation_os ?? "");
       setInitialized(occurrence.id);
+      // Reset transient UI so leftover lightbox/check-in from a previous occurrence don't reappear
+      setLightboxUrl(null);
+      setCheckinOpen(false);
     }
   }, [occurrence, initialized]);
+
+  // Reset transient UI when the sheet closes
+  useEffect(() => {
+    if (!open) {
+      setLightboxUrl(null);
+      setCheckinOpen(false);
+    }
+  }, [open]);
 
   if (!occurrence) return null;
 
