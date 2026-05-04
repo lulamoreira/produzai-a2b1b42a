@@ -1,0 +1,1 @@
+ALTER TABLE public.budget_suppliers ADD COLUMN IF NOT EXISTS winner_locked_total numeric;
