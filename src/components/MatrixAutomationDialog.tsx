@@ -256,6 +256,11 @@ export default function MatrixAutomationDialog({
       setKind("fixed");
       setBaseField("");
       setOperation("multiply");
+      setReplacementPieceId("");
+      setReplacementSourceQtys([]);
+      setReplacementTargetQty(1);
+      setReplaceAnyNonZero(false);
+      setReplacementPieceSearch("");
       setEditingId(null);
     }
   }, [open]);
