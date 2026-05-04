@@ -104,6 +104,11 @@ export default function BudgetNegotiationDialog({
   const effectivePieceTotals = negotiationPieces.length > 0 ? negPieceTotals : pieceTotals;
 
   const currentTotal = useMemo(() => {
+    // If a frozen winner total exists and there's no isolated negotiation rateio,
+    // honor the frozen value (matches what's displayed everywhere else in BudgetTab).
+    if (frozenTotal != null && frozenTotal > 0 && negotiationPieces.length === 0) {
+      return frozenTotal;
+    }
     let total = toNum(supplierEC?.installation_value) + toNum(supplierEC?.freight_value);
     for (const piece of pieces) {
       const qty = effectivePieceTotals[piece.id] || 0;
@@ -112,7 +117,7 @@ export default function BudgetNegotiationDialog({
       total += toNum(pr?.unit_price) * qty;
     }
     return total;
-  }, [pieces, effectivePieceTotals, supplierPrices, supplierEC]);
+  }, [pieces, effectivePieceTotals, supplierPrices, supplierEC, frozenTotal, negotiationPieces.length]);
 
   useEffect(() => {
     if (open) {
