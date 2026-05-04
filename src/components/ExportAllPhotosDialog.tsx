@@ -275,7 +275,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
       toast.error("Selecione ao menos um tipo de foto");
       return;
     }
-    if (deleteAfter) {
+    if (deleteAfter || deleteOnly) {
       setConfirmOpen(true);
     } else {
       void run();
@@ -292,10 +292,12 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
         setBusy(false);
         return;
       }
-      await buildAndDownloadZip(photos);
-      toast.success(`${photos.length} arquivo(s) compactados em ZIP`);
+      if (!deleteOnly) {
+        await buildAndDownloadZip(photos);
+        toast.success(`${photos.length} arquivo(s) compactados em ZIP`);
+      }
 
-      if (deleteAfter) {
+      if (deleteAfter || deleteOnly) {
         await deletePhotos(photos);
         toast.success(`${photos.length} foto(s) excluídas do sistema`);
       }
