@@ -73,6 +73,8 @@ interface Props {
   qtyMap: Record<string, number>;
   customFieldLabels: CustomFieldDef[];
   onComplete: () => void | Promise<void>;
+  isNegotiationView?: boolean;
+  negotiationSupplierId?: string | null;
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
