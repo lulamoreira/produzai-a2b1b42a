@@ -384,11 +384,20 @@ const SupplierPortal = () => {
           .select("*")
           .eq("supplier_id", sup.id);
 
+        // In negotiation mode (status='pending'), the editable price is adjusted_unit_price
+        // (falling back to unit_price for the first edit). Original is shown as reference.
+        const inNegotiation = sup.negotiation_status === "pending";
         const priceMap: Record<string, number | null> = {};
+        const origMap: Record<string, number | null> = {};
         (pricesData ?? []).forEach((p: any) => {
-          if (p.piece_id) priceMap[p.piece_id] = p.unit_price;
+          if (!p.piece_id) return;
+          origMap[p.piece_id] = p.unit_price;
+          priceMap[p.piece_id] = inNegotiation
+            ? (p.adjusted_unit_price ?? p.unit_price)
+            : p.unit_price;
         });
         setPrices(priceMap);
+        setOriginalPrices(origMap);
         setPriceInputs(Object.fromEntries(Object.entries(priceMap).map(([pieceId, value]) => [pieceId, priceToInput(value)])));
 
         // 9) Extra costs
@@ -401,8 +410,14 @@ const SupplierPortal = () => {
         setExtraCosts({
           id: ecData?.id,
           supplier_id: sup.id,
-          installation_value: ecData?.installation_value ?? null,
-          freight_value: ecData?.freight_value ?? null,
+          installation_value: inNegotiation
+            ? ((ecData as any)?.adjusted_installation_value ?? ecData?.installation_value ?? null)
+            : (ecData?.installation_value ?? null),
+          freight_value: inNegotiation
+            ? ((ecData as any)?.adjusted_freight_value ?? ecData?.freight_value ?? null)
+            : (ecData?.freight_value ?? null),
+          adjusted_installation_value: (ecData as any)?.adjusted_installation_value ?? null,
+          adjusted_freight_value: (ecData as any)?.adjusted_freight_value ?? null,
         });
 
 
