@@ -1236,7 +1236,7 @@ export default function MatrixAutomationDialog({
               {/* ── Tipo de automação ── */}
               <div>
                 <Label className="text-sm font-semibold mb-2 block">Tipo de automação</Label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setKind("fixed")}
@@ -1267,8 +1267,143 @@ export default function MatrixAutomationDialog({
                       Quantidade calculada a partir de um campo numérico da loja
                     </p>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setKind("replacement")}
+                    className={`text-left p-3 rounded-lg border transition-all ${
+                      kind === "replacement"
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border bg-background hover:border-primary/40"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">Substituição</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Substituir valores existentes
+                    </p>
+                  </button>
                 </div>
               </div>
+
+              {/* ── Substituição UI (apenas no modo replacement) ── */}
+              {kind === "replacement" && (
+                <div className="space-y-3 p-3 border rounded-lg bg-muted/20">
+                  <div>
+                    <Label className="text-sm font-semibold mb-1 block">Peça</Label>
+                    <Input
+                      placeholder="Buscar por código ou nome..."
+                      value={replacementPieceSearch}
+                      onChange={e => setReplacementPieceSearch(e.target.value)}
+                      className="mb-1 h-8 text-xs"
+                    />
+                    <div className="border rounded-md max-h-40 overflow-y-auto bg-background">
+                      {(() => {
+                        const q = replacementPieceSearch.toLowerCase().trim();
+                        const filtered = pieces.filter(p => {
+                          if (!q) return true;
+                          return String(p.code).includes(q) || p.name.toLowerCase().includes(q);
+                        });
+                        if (filtered.length === 0) {
+                          return <p className="text-xs text-muted-foreground p-2">Nenhuma peça encontrada</p>;
+                        }
+                        return filtered.map(p => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-accent flex items-center gap-2 border-b last:border-b-0 ${
+                              p.id === replacementPieceId ? "bg-primary/10 font-semibold" : ""
+                            }`}
+                            onClick={() => {
+                              setReplacementPieceId(p.id);
+                              setReplacementSourceQtys([]);
+                            }}
+                          >
+                            <span className="font-mono">{p.code}</span>
+                            <span className="truncate">{p.name}</span>
+                          </button>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+
+                  {replacementPieceId && (
+                    <>
+                      <div>
+                        <Label className="text-sm font-semibold mb-1 block">Quantidades existentes nas lojas</Label>
+                        {replacementQtyDistribution.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Nenhuma loja tem essa peça preenchida.</p>
+                        ) : (
+                          <div className="space-y-1">
+                            {replacementQtyDistribution.map(({ qty, count }) => {
+                              const checked = replacementSourceQtys.includes(qty);
+                              return (
+                                <label
+                                  key={qty}
+                                  className={`flex items-center gap-2 px-2 py-1 rounded border cursor-pointer text-xs ${
+                                    replaceAnyNonZero ? "opacity-50 cursor-not-allowed" : "hover:bg-accent"
+                                  } ${checked && !replaceAnyNonZero ? "border-primary bg-primary/5" : "border-border"}`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    disabled={replaceAnyNonZero}
+                                    checked={checked}
+                                    onChange={() => {
+                                      setReplacementSourceQtys(prev =>
+                                        prev.includes(qty) ? prev.filter(q => q !== qty) : [...prev, qty]
+                                      );
+                                    }}
+                                  />
+                                  <span className="font-mono font-semibold">qty={qty}</span>
+                                  <span className="text-muted-foreground">— {count} loja(s)</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 my-1">
+                        <div className="flex-1 h-px bg-border" />
+                        <span className="text-[10px] text-muted-foreground tracking-wider">OU</span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+
+                      <label className="flex items-start gap-2 px-2 py-1.5 rounded border border-border hover:bg-accent cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={replaceAnyNonZero}
+                          onChange={e => setReplaceAnyNonZero(e.target.checked)}
+                          className="mt-0.5"
+                        />
+                        <div>
+                          <p className="text-xs font-medium">Qualquer valor diferente de 0</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            Substitui independente da quantidade atual
+                          </p>
+                        </div>
+                      </label>
+
+                      <div>
+                        <Label className="text-sm font-semibold mb-1 block">Substituir por</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={replacementTargetQty}
+                          onChange={e => setReplacementTargetQty(parseInt(e.target.value) || 0)}
+                          className="h-9 text-sm w-32"
+                        />
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Use 0 para apagar (remover a peça da loja).
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg">
+                        <span className="text-lg font-bold text-primary">{replacementAffectedStores.length}</span>
+                        <span className="text-xs text-muted-foreground">loja(s) serão atualizadas</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* ── Campo base (apenas no modo by_field) ── */}
               {kind === "by_field" && (
