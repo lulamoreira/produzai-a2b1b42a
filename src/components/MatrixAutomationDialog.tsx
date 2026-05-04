@@ -1352,8 +1352,8 @@ export default function MatrixAutomationDialog({
                                       );
                                     }}
                                   />
-                                  <span className="font-mono font-semibold">qty={qty}</span>
-                                  <span className="text-muted-foreground">— {count} loja(s)</span>
+                                  <span className="font-semibold">Quantidade de itens: {qty}</span>
+                                  <span className="text-muted-foreground">— em {count} loja(s)</span>
                                 </label>
                               );
                             })}
