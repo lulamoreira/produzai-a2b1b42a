@@ -564,6 +564,19 @@ export default function BudgetNegotiationDialog({
         </Tabs>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
+          {onNavigateToRateio && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                onOpenChange(false);
+                onNavigateToRateio();
+              }}
+              className="gap-1.5"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              Editar Rateio da Negociação
+            </Button>
+          )}
           {hasAdjusted && (
             <Button variant="outline" onClick={handleRevert} disabled={busy} className="gap-1">
               <RotateCcw className="w-4 h-4" />
