@@ -237,6 +237,20 @@ export default function BudgetNegotiationDialog({
     );
   };
 
+  // ─── Action: navigate to negotiation rateio (snapshot first) ───
+  const handleNavigateToRateio = async () => {
+    const TOAST_ID = "neg-rateio-snapshot";
+    toast.loading("Preparando rateio de negociação...", { id: TOAST_ID });
+    try {
+      await snapshotNegotiationRateio(supplier.id, campaignId);
+      toast.dismiss(TOAST_ID);
+      onOpenChange(false);
+      onNavigateToRateio?.();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao preparar rateio.", { id: TOAST_ID });
+    }
+  };
+
   // ─── Action: open negotiation (manual mode) ───
   const handleOpenManual = async () => {
     if (targetNum <= 0) { toast.error("Defina um teto máximo válido."); return; }
