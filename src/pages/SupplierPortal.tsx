@@ -34,6 +34,7 @@ interface Supplier {
   locked: boolean | null;
   submitted_at: string | null;
   access_token: string;
+  negotiation_status?: string | null;
 }
 
 interface PieceData {
@@ -73,6 +74,8 @@ interface ExtraCosts {
   supplier_id: string;
   installation_value: number | null;
   freight_value: number | null;
+  adjusted_installation_value?: number | null;
+  adjusted_freight_value?: number | null;
 }
 
 // A display row in the matrix
@@ -151,9 +154,11 @@ const SupplierPortal = () => {
   const [kitPiecesData, setKitPiecesData] = useState<KitPieceData[]>([]);
   const [storePieceQtyMap, setStorePieceQtyMap] = useState<Record<string, number>>({});
 
-  const [prices, setPrices] = useState<Record<string, number | null>>({}); // keyed by piece_id
+  const [prices, setPrices] = useState<Record<string, number | null>>({}); // keyed by piece_id — current editable price (adjusted in negotiation, otherwise unit_price)
+  const [originalPrices, setOriginalPrices] = useState<Record<string, number | null>>({}); // shown as reference in negotiation mode
   const [priceInputs, setPriceInputs] = useState<Record<string, string>>({});
-  const [extraCosts, setExtraCosts] = useState<ExtraCosts>({ supplier_id: "", installation_value: null, freight_value: null });
+  const [extraCosts, setExtraCosts] = useState<ExtraCosts>({ supplier_id: "", installation_value: null, freight_value: null, adjusted_installation_value: null, adjusted_freight_value: null });
+  const [negotiationTarget, setNegotiationTarget] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [showConfirm1, setShowConfirm1] = useState(false);
   const [showConfirm2, setShowConfirm2] = useState(false);
@@ -207,18 +212,19 @@ const SupplierPortal = () => {
           async () => {
             const { data, error: err } = await supabase
               .from("budget_settings")
-              .select("deadline, currency_code")
+              .select("deadline, currency_code, negotiation_target")
               .eq("campaign_id", sup.campaign_id)
               .maybeSingle();
             if (err) throw err;
             return data;
           },
-          null as { deadline: string | null; currency_code?: string } | null
+          null as { deadline: string | null; currency_code?: string; negotiation_target?: number | null } | null
         );
 
         const dl = settings?.deadline ?? null;
         setDeadline(dl);
         setCurrencyCode((settings as { currency_code?: string } | null | undefined)?.currency_code || "BRL");
+        setNegotiationTarget((settings as any)?.negotiation_target ?? null);
 
         // 2b) Timeline entries (não-crítico)
         const timeline = await trySoft(
@@ -378,11 +384,20 @@ const SupplierPortal = () => {
           .select("*")
           .eq("supplier_id", sup.id);
 
+        // In negotiation mode (status='pending'), the editable price is adjusted_unit_price
+        // (falling back to unit_price for the first edit). Original is shown as reference.
+        const inNegotiation = sup.negotiation_status === "pending";
         const priceMap: Record<string, number | null> = {};
+        const origMap: Record<string, number | null> = {};
         (pricesData ?? []).forEach((p: any) => {
-          if (p.piece_id) priceMap[p.piece_id] = p.unit_price;
+          if (!p.piece_id) return;
+          origMap[p.piece_id] = p.unit_price;
+          priceMap[p.piece_id] = inNegotiation
+            ? (p.adjusted_unit_price ?? p.unit_price)
+            : p.unit_price;
         });
         setPrices(priceMap);
+        setOriginalPrices(origMap);
         setPriceInputs(Object.fromEntries(Object.entries(priceMap).map(([pieceId, value]) => [pieceId, priceToInput(value)])));
 
         // 9) Extra costs
@@ -395,8 +410,14 @@ const SupplierPortal = () => {
         setExtraCosts({
           id: ecData?.id,
           supplier_id: sup.id,
-          installation_value: ecData?.installation_value ?? null,
-          freight_value: ecData?.freight_value ?? null,
+          installation_value: inNegotiation
+            ? ((ecData as any)?.adjusted_installation_value ?? ecData?.installation_value ?? null)
+            : (ecData?.installation_value ?? null),
+          freight_value: inNegotiation
+            ? ((ecData as any)?.adjusted_freight_value ?? ecData?.freight_value ?? null)
+            : (ecData?.freight_value ?? null),
+          adjusted_installation_value: (ecData as any)?.adjusted_installation_value ?? null,
+          adjusted_freight_value: (ecData as any)?.adjusted_freight_value ?? null,
         });
 
 
@@ -412,7 +433,7 @@ const SupplierPortal = () => {
         });
         setSuggestions(sugMap);
 
-        if (sup.locked) setSubmitted(true);
+        if (sup.locked && sup.negotiation_status !== "pending") setSubmitted(true);
       } catch (e: unknown) {
         console.error("[SupplierPortal] Erro crítico ao carregar:", e);
         const msg = e instanceof Error ? e.message : String(e);
@@ -510,36 +531,48 @@ const SupplierPortal = () => {
   }, [supplier]);
 
   // ─── Save price on blur (always piece_id) ──────────────
+  // In negotiation mode, writes to adjusted_unit_price (preserves original unit_price).
   const savePrice = useCallback(
     async (pieceId: string, value: number | null) => {
       if (!supplier) return;
-      await supabase.from("budget_prices").upsert(
-        {
-          supplier_id: supplier.id,
-          campaign_id: supplier.campaign_id,
-          piece_id: pieceId,
-          unit_price: value,
-        } as never,
-        { onConflict: "supplier_id,piece_id" }
-      );
+      const isNeg = supplier.negotiation_status === "pending";
+      const payload: any = {
+        supplier_id: supplier.id,
+        campaign_id: supplier.campaign_id,
+        piece_id: pieceId,
+      };
+      if (isNeg) {
+        payload.adjusted_unit_price = value;
+        // preserve original unit_price by including it from cache
+        const original = originalPrices[pieceId];
+        if (original != null) payload.unit_price = original;
+      } else {
+        payload.unit_price = value;
+      }
+      await supabase.from("budget_prices").upsert(payload as never, { onConflict: "supplier_id,piece_id" });
     },
-    [supplier]
+    [supplier, originalPrices]
   );
 
   // ─── Save extra costs on blur ──────────────────────────
   const saveExtraCosts = useCallback(
     async (field: "installation_value" | "freight_value", value: number | null) => {
       if (!supplier) return;
-      const payload = {
-        supplier_id: supplier.id,
-        installation_value: field === "installation_value" ? value : extraCosts.installation_value,
-        freight_value: field === "freight_value" ? value : extraCosts.freight_value,
-      };
+      const isNeg = supplier.negotiation_status === "pending";
+      const dbField = isNeg
+        ? (field === "installation_value" ? "adjusted_installation_value" : "adjusted_freight_value")
+        : field;
 
       if (extraCosts.id) {
-        await supabase.from("budget_extra_costs").update({ [field]: value }).eq("id", extraCosts.id);
+        await supabase.from("budget_extra_costs").update({ [dbField]: value } as never).eq("id", extraCosts.id);
       } else {
-        const { data } = await supabase.from("budget_extra_costs").insert(payload).select().single();
+        const insertPayload: any = {
+          supplier_id: supplier.id,
+          installation_value: !isNeg && field === "installation_value" ? value : extraCosts.installation_value,
+          freight_value: !isNeg && field === "freight_value" ? value : extraCosts.freight_value,
+        };
+        if (isNeg) insertPayload[dbField] = value;
+        const { data } = await supabase.from("budget_extra_costs").insert(insertPayload).select().single();
         if (data) setExtraCosts((ec) => ({ ...ec, id: data.id }));
       }
     },
@@ -660,27 +693,31 @@ const SupplierPortal = () => {
   // ─── Submit ────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!supplier) return;
+    const isNeg = supplier.negotiation_status === "pending";
     setSubmitting(true);
     try {
+      const updates: any = isNeg
+        ? { negotiation_status: "submitted", negotiation_submitted_at: new Date().toISOString(), locked: true }
+        : { status: "enviado", locked: true, submitted_at: new Date().toISOString() };
+
       const { data: updated, error: updErr } = await supabase
         .from("budget_suppliers")
-        .update({ status: "enviado", locked: true, submitted_at: new Date().toISOString() })
+        .update(updates)
         .eq("id", supplier.id)
         .select("id")
         .maybeSingle();
       if (updErr) throw updErr;
       if (!updated) {
-        // RLS bloqueou o update — não devemos exibir tela de sucesso falsa
         throw new Error("Não foi possível registrar o envio. Atualize a página e tente novamente.");
       }
 
-      // Save snapshot of submitted prices for admin history
+      // Save snapshot
       try {
         const { snapshotSupplierBudget } = await import("@/lib/budgetPriceSnapshot");
         await snapshotSupplierBudget({
           supplierId: supplier.id,
           campaignId: supplier.campaign_id,
-          reason: "submitted",
+          reason: (isNeg ? "negotiation_submitted" : "submitted") as any,
         });
       } catch (snapErr) {
         console.warn("Snapshot history failed (non-blocking):", snapErr);
@@ -710,16 +747,24 @@ const SupplierPortal = () => {
           _campaign_id: supplier.campaign_id,
           _client_id: clientId,
           _type: "orcamento_enviado",
-          _title: "Orçamento recebido",
-          _body: `${supplier.company_name} enviou o orçamento para a campanha ${campaignName}.`,
+          _title: isNeg ? "Proposta ajustada recebida" : "Orçamento recebido",
+          _body: isNeg
+            ? `${supplier.company_name} enviou a proposta ajustada para a campanha ${campaignName}.`
+            : `${supplier.company_name} enviou o orçamento para a campanha ${campaignName}.`,
           _action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${supplier.campaign_id}?section=budgets`,
         });
       }
 
-      setSupplier((s) => s ? { ...s, status: "enviado", locked: true, submitted_at: new Date().toISOString() } : s);
+      setSupplier((s) => s ? {
+        ...s,
+        ...(isNeg
+          ? { negotiation_status: "submitted", locked: true }
+          : { status: "enviado", locked: true, submitted_at: new Date().toISOString() }),
+      } : s);
       setSubmitted(true);
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000);
+      if (isNeg) toast.success("Proposta ajustada enviada com sucesso!");
     } catch (e) {
       console.error(e);
       const msg = e instanceof Error ? e.message : "Erro ao enviar orçamento.";
@@ -730,7 +775,8 @@ const SupplierPortal = () => {
     }
   };
 
-  const isLocked = supplier?.locked === true;
+  const inNegotiation = supplier?.negotiation_status === "pending";
+  const isLocked = supplier?.locked === true && !inNegotiation;
   const daysLeft = daysUntil(deadline);
 
   // ─── Loading ───────────────────────────────────────────
@@ -1325,19 +1371,48 @@ const SupplierPortal = () => {
         </Card>
 
         {/* Submit button */}
-        {!isLocked && (
-          <div className="flex justify-center pb-8">
-            <Button
-              size="lg"
-              className="bg-[#8C6F4E] hover:bg-[#7A5F3E] text-white px-10 py-6 text-lg font-semibold"
-              onClick={() => setShowConfirm1(true)}
-              disabled={submitting}
-            >
-              <Send className="w-5 h-5 mr-2" />
-              ENVIAR ORÇAMENTO
-            </Button>
-          </div>
-        )}
+        {!isLocked && (() => {
+          const overTarget = inNegotiation && negotiationTarget != null && grandTotal > negotiationTarget;
+          const pct = inNegotiation && negotiationTarget && negotiationTarget > 0
+            ? Math.round((grandTotal / negotiationTarget) * 100) : 0;
+          return (
+            <div className="space-y-3 pb-8">
+              {inNegotiation && negotiationTarget != null && (
+                <Card className={overTarget ? "border-red-300 bg-red-50 dark:bg-red-900/10" : "border-emerald-300 bg-emerald-50 dark:bg-emerald-900/10"}>
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center gap-2 font-semibold text-sm">🤝 NEGOCIAÇÃO EM ANDAMENTO</div>
+                    <p className="text-xs text-muted-foreground">A agência solicitou ajuste de proposta.</p>
+                    <div className="flex justify-between text-sm"><span>Teto máximo:</span><span className="font-bold">{fmt(negotiationTarget)}</span></div>
+                    <div className="flex justify-between text-sm">
+                      <span>Seu total atual:</span>
+                      <span className={`font-bold ${overTarget ? "text-red-700 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"}`}>
+                        {fmt(grandTotal)} ({overTarget ? "acima do teto" : "dentro do teto"})
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div className={`h-full transition-all ${overTarget ? "bg-red-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                    </div>
+                    <div className="text-[11px] text-muted-foreground text-right">{pct}% do teto</div>
+                  </CardContent>
+                </Card>
+              )}
+              <div className="flex justify-center">
+                <Button
+                  size="lg"
+                  className={inNegotiation && !overTarget
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-6 text-lg font-semibold"
+                    : "bg-[#8C6F4E] hover:bg-[#7A5F3E] text-white px-10 py-6 text-lg font-semibold"}
+                  onClick={() => setShowConfirm1(true)}
+                  disabled={submitting || overTarget}
+                  title={overTarget ? "Total acima do teto máximo" : undefined}
+                >
+                  <Send className="w-5 h-5 mr-2" />
+                  {inNegotiation ? "ENVIAR PROPOSTA AJUSTADA" : "ENVIAR ORÇAMENTO"}
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Confirmation 1 */}

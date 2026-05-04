@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -52,6 +52,7 @@ import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
 import { exportSupplierBudget, type SupplierExportRow } from "@/lib/exportSupplierBudget";
 import BudgetSendClientDialog from "@/components/Budget/BudgetSendClientDialog";
 import BudgetWinnerDialog from "@/components/Budget/BudgetWinnerDialog";
+import BudgetNegotiationDialog from "@/components/Budget/BudgetNegotiationDialog";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -149,6 +150,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [historySupplierId, setHistorySupplierId] = useState<string | null>(null);
   const [reopeningSupplierId, setReopeningSupplierId] = useState<string | null>(null);
   const [winnerSupplierId, setWinnerSupplierId] = useState<string | null>(null);
+  const [negotiationSupplierId, setNegotiationSupplierId] = useState<string | null>(null);
 
   // ── Editor de "Links do Vencedor" (configuração padrão usada no e-mail de vencedor) ──
   const settingsAny = settings as any;
@@ -339,6 +341,25 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     });
     return result;
   }, [suppliers, prices, extraCosts, pieceTotals, kitPieceTotals, pieces]);
+
+  // ─── Negotiation totals — uses adjusted prices when present ───
+  const supplierNegotiationTotals = useMemo(() => {
+    const result: Record<string, number> = {};
+    for (const sup of suppliers as any[]) {
+      if (!sup.negotiation_status) continue;
+      const ec = extraCosts.find((e) => e.supplier_id === sup.id) as any;
+      let total = Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0)
+                + Number(ec?.adjusted_freight_value ?? ec?.freight_value ?? 0);
+      for (const piece of pieces) {
+        const qty = pieceTotals[piece.id] || 0;
+        if (qty === 0) continue;
+        const price = prices.find((p) => p.supplier_id === sup.id && p.piece_id === piece.id) as any;
+        total += Number(price?.adjusted_unit_price ?? price?.unit_price ?? 0) * qty;
+      }
+      result[sup.id] = total;
+    }
+    return result;
+  }, [suppliers, extraCosts, pieces, prices, pieceTotals]);
 
   const supplierTotals = useMemo(() => {
     const result: Record<string, number> = {};
@@ -1260,6 +1281,35 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                         />
                       </div>
                     )}
+
+                    {/* Negotiation: only for declared winner */}
+                    {isAdminOrMaster && (sup as any).is_winner && (
+                      <div className="flex items-center justify-between gap-2 pt-2 mt-1 border-t border-border/60">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <TrendingDown className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <span className="text-[11px] text-muted-foreground truncate">
+                            {(() => {
+                              const ns = (sup as any).negotiation_status;
+                              if (!ns) return "Negociação";
+                              if (ns === "pending") return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">Negociação Pendente</Badge>;
+                              if (ns === "submitted") return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-[10px]">Proposta Enviada</Badge>;
+                              if (ns === "approved") return <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 text-[10px]">Negociação Aprovada</Badge>;
+                              return ns;
+                            })()}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={(sup as any).negotiation_status ? "outline" : "default"}
+                          className="h-7 gap-1 text-[11px]"
+                          onClick={() => setNegotiationSupplierId(sup.id)}
+                        >
+                          <TrendingDown className="w-3 h-3" />
+                          {(sup as any).negotiation_status === "submitted" ? "Ver proposta" :
+                           (sup as any).negotiation_status ? "Gerenciar" : "Iniciar Negociação"}
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               );
@@ -1932,7 +1982,30 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         defaultCcEmail={settingsAny?.winner_cc_email ?? ""}
       />
 
-      {/* Editor de Links do Vencedor */}
+      {/* Negociação pós-orçamento (Admin/Master) */}
+      {negotiationSupplierId && (() => {
+        const sup = suppliers.find((x) => x.id === negotiationSupplierId) as any;
+        if (!sup) return null;
+        const portalBase = typeof window !== "undefined" ? window.location.origin : "";
+        return (
+          <BudgetNegotiationDialog
+            open
+            onOpenChange={(o) => !o && setNegotiationSupplierId(null)}
+            supplier={sup}
+            campaignId={campaignId}
+            campaignName={campaignName}
+            pieces={pieces.filter((p) => !p.kit_only)}
+            prices={prices as any}
+            extraCosts={extraCosts as any}
+            pieceTotals={pieceTotals}
+            settings={settings}
+            currencyCode={currencyCode}
+            fmtCurrency={fmtCurrency}
+            publicPortalUrl={`${portalBase}/supplier/${sup.access_token}`}
+          />
+        );
+      })()}
+
       <Dialog open={winnerLinksOpen} onOpenChange={(o) => !savingWinnerLinks && setWinnerLinksOpen(o)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>

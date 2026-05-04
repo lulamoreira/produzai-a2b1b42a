@@ -17,12 +17,15 @@ type BudgetPrice = {
   supplier_id: string;
   piece_id: string | null;
   unit_price: number | string | null;
+  adjusted_unit_price?: number | string | null;
 };
 
 type BudgetExtraCost = {
   supplier_id: string;
   installation_value: number | string | null;
   freight_value: number | string | null;
+  adjusted_installation_value?: number | string | null;
+  adjusted_freight_value?: number | string | null;
 };
 
 type BudgetKitPiece = {
@@ -99,6 +102,11 @@ function getKitComponentTotals(
   }, {});
 }
 
+function effectiveUnit(price: BudgetPrice | undefined): number {
+  if (!price) return 0;
+  return toNumber(price.adjusted_unit_price ?? price.unit_price);
+}
+
 function getSupplierItemTotal(
   supplierId: string,
   prices: BudgetPrice[],
@@ -110,13 +118,13 @@ function getSupplierItemTotal(
     .filter((piece) => !piece.kit_only)
     .reduce((sum, piece) => {
       const price = prices.find((pr) => pr.supplier_id === supplierId && pr.piece_id === piece.id);
-      return sum + toNumber(price?.unit_price) * (pieceTotals[piece.id] || 0);
+      return sum + effectiveUnit(price) * (pieceTotals[piece.id] || 0);
     }, 0);
 
   const kitTotal = Object.values(kitComponentTotals).reduce((sum, kit) => {
     return sum + Object.entries(kit.components).reduce((componentSum, [pieceId, qty]) => {
       const price = prices.find((pr) => pr.supplier_id === supplierId && pr.piece_id === pieceId);
-      return componentSum + toNumber(price?.unit_price) * qty;
+      return componentSum + effectiveUnit(price) * qty;
     }, 0);
   }, 0);
 
@@ -164,10 +172,10 @@ export async function exportBudgetComparison(params: ExportBudgetComparisonParam
   const supplierTotals = new Map<string, { items: number; installation: number; freight: number; grand: number }>();
 
   params.suppliers.forEach((supplier) => {
-    const extra = extraBySupplier.get(supplier.id);
+    const extra = extraBySupplier.get(supplier.id) as any;
     const items = getSupplierItemTotal(supplier.id, params.prices, params.pieces, pieceTotals, kitComponentTotals);
-    const installation = toNumber(extra?.installation_value);
-    const freight = toNumber(extra?.freight_value);
+    const installation = toNumber(extra?.adjusted_installation_value ?? extra?.installation_value);
+    const freight = toNumber(extra?.adjusted_freight_value ?? extra?.freight_value);
     supplierTotals.set(supplier.id, { items, installation, freight, grand: items + installation + freight });
   });
 
