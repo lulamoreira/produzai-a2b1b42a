@@ -44,7 +44,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle, Database } from "lucide-react";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -82,6 +82,7 @@ import { ResetMatrixDialog } from "@/components/Matrix/ResetMatrixDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import ExportAllPhotosDialog from "@/components/ExportAllPhotosDialog";
+import CampaignBackupDialog from "@/components/CampaignBackupDialog";
 import RateioExportColorDialog, { type ColorPalette } from "@/components/RateioExportColorDialog";
 import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 // Lazy: defers recharts (~80KB) until the user opens the pending dashboard
@@ -252,6 +253,8 @@ const CampaignDetail = () => {
   const updatePiece = useUpdateCampaignPiece();
   const updateStorePiece = useUpdateCampaignStorePiece();
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
+
+  const [backupDialogOpen, setBackupDialogOpen] = useState(false);
 
   // ─── Negotiation rateio (isolated distribution for the winning supplier) ───
   const [rateioSource, setRateioSource] = useState<"original" | "negotiation">("original");
@@ -1567,6 +1570,16 @@ const CampaignDetail = () => {
                     campaignId={campaignId!}
                     campaignName={campaign?.name || ""}
                   />
+                )}
+                {isAdminOrMaster && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 h-8"
+                    onClick={() => setBackupDialogOpen(true)}
+                  >
+                    <Database className="w-3.5 h-3.5" /> Backup
+                  </Button>
                 )}
                 {(isAdmin || canEditCampaign) && (
                   <ExportReportDropdown
@@ -3502,6 +3515,13 @@ const CampaignDetail = () => {
         mode="pieces"
         existingItems={pieces.map(p => ({ name: p.name, id: p.id }))}
         onImport={handlePiecesImport}
+      />
+
+      <CampaignBackupDialog
+        open={backupDialogOpen}
+        onOpenChange={setBackupDialogOpen}
+        campaignId={campaignId!}
+        campaignName={campaign?.name || ""}
       />
     </AppLayout>
   );
