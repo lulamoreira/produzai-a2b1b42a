@@ -1667,7 +1667,9 @@ export default function MatrixAutomationDialog({
                   </div>
                 )}
               </div>
+              </>
               )}
+              {/* Action buttons */}
               <div className="flex gap-2">
                 <Button
                   className="flex-1"
