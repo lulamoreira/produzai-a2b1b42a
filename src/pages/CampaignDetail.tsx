@@ -822,7 +822,33 @@ const CampaignDetail = () => {
 
     if (typeof window !== "undefined" && (window as any).__rateioDebug) {
       // eslint-disable-next-line no-console
-      console.log("[CELL][SAVE]", { ...cell, rawValue, qty, isKit: cell.pieceId.startsWith("kit-") });
+      console.log("[CELL][SAVE]", { ...cell, rawValue, qty, isKit: cell.pieceId.startsWith("kit-"), source: isNegotiationView ? "negotiation" : "original" });
+    }
+
+    // ─── Negotiation rateio: write to isolated table for the winning supplier ───
+    if (isNegotiationView && winnerSupplierId) {
+      if (cell.pieceId.startsWith("kit-")) {
+        const kitId = cell.pieceId.replace("kit-", "");
+        const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
+        for (const kp of piecesInKit) {
+          updateNegotiationStorePiece.mutate({
+            supplier_id: winnerSupplierId,
+            campaign_id: campaignId,
+            store_id: cell.storeId,
+            piece_id: kp.piece_id,
+            quantity: qty * (kp.quantity || 1),
+          });
+        }
+        return;
+      }
+      updateNegotiationStorePiece.mutate({
+        supplier_id: winnerSupplierId,
+        campaign_id: campaignId,
+        store_id: cell.storeId,
+        piece_id: cell.pieceId,
+        quantity: qty,
+      });
+      return;
     }
 
     if (cell.pieceId.startsWith("kit-")) {
@@ -847,7 +873,7 @@ const CampaignDetail = () => {
       pieceId: cell.pieceId,
       quantity: qty,
     });
-  }, [campaignId, kitPieces, updateStorePiece, bulkUpdateStorePieces]);
+  }, [campaignId, kitPieces, updateStorePiece, bulkUpdateStorePieces, isNegotiationView, winnerSupplierId, updateNegotiationStorePiece]);
 
   // ─── Atomic transition: save current cell (if any) and open the new one ───
   // The save runs SYNCHRONOUSLY using editValueRef.current as the source of
