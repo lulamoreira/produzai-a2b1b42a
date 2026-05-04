@@ -92,6 +92,7 @@ import {
   useNegotiationStorePieces,
   useUpdateNegotiationStorePiece,
   cancelNegotiationRateio,
+  resetNegotiationRateioFromOriginal,
 } from "@/hooks/useNegotiationStorePieces";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
 import { Table2, BarChart3 as BarChart3Icon } from "lucide-react";
@@ -313,6 +314,23 @@ const CampaignDetail = () => {
       toast.success("Negociação cancelada. O rateio original congelado foi preservado.", { id: toastId });
     } catch (error: any) {
       toast.error(error?.message || "Erro ao cancelar negociação.", { id: toastId });
+    }
+  }, [campaignId, queryClient, winnerSupplierId]);
+
+  const handleResetNegotiationRateio = useCallback(async () => {
+    if (!campaignId || !winnerSupplierId) return;
+    const toastId = "reset-negotiation-rateio";
+    toast.loading("Restaurando rateio da negociação...", { id: toastId });
+    try {
+      await resetNegotiationRateioFromOriginal(winnerSupplierId, campaignId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces", winnerSupplierId] }),
+        queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] }),
+        queryClient.invalidateQueries({ queryKey: ["budget_negotiation_rateio_totals", campaignId] }),
+      ]);
+      toast.success("Rateio da negociação restaurado igual ao original congelado.", { id: toastId });
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao restaurar rateio da negociação.", { id: toastId });
     }
   }, [campaignId, queryClient, winnerSupplierId]);
 
