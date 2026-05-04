@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import type { ClientStore, CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
-import { useAutomationTemplates, type AutomationTemplateItem } from "@/hooks/useAutomationTemplates";
+import { useAutomationTemplates, type AutomationTemplateItem, type AutomationKind } from "@/hooks/useAutomationTemplates";
 import { GroupRunReviewDialog, buildValidations, type TemplateValidation } from "@/components/Matrix/GroupRunReviewDialog";
 import { GroupRunErrorDialog, type GroupRunResult } from "@/components/Matrix/GroupRunErrorDialog";
 
@@ -156,7 +156,7 @@ function parseCustomFieldLabel(raw: string): { name: string; type: "text" | "num
   };
 }
 
-type AutomationKind = "fixed" | "by_field";
+// AutomationKind imported from useAutomationTemplates
 
 /* ─── Component ──────────────────────────────────────────── */
 
@@ -185,9 +185,23 @@ export default function MatrixAutomationDialog({
   const [baseField, setBaseField] = useState<string>("");
   const [operation, setOperation] = useState<Operation>("multiply");
 
+  // Replacement mode state
+  const [replacementPieceId, setReplacementPieceId] = useState<string>("");
+  const [replacementSourceQtys, setReplacementSourceQtys] = useState<number[]>([]);
+  const [replacementTargetQty, setReplacementTargetQty] = useState<number>(1);
+  const [replaceAnyNonZero, setReplaceAnyNonZero] = useState<boolean>(false);
+  const [replacementPieceSearch, setReplacementPieceSearch] = useState<string>("");
+
   // Reset operation when leaving by_field mode
   useEffect(() => {
     if (kind !== "by_field") setOperation("multiply");
+    if (kind !== "replacement") {
+      setReplacementPieceId("");
+      setReplacementSourceQtys([]);
+      setReplacementTargetQty(1);
+      setReplaceAnyNonZero(false);
+      setReplacementPieceSearch("");
+    }
   }, [kind]);
 
   // Step 2 state
@@ -197,6 +211,9 @@ export default function MatrixAutomationDialog({
 
   // Overwrite dialog state
   const [overwriteDialog, setOverwriteDialog] = useState<{ open: boolean; count: number }>({ open: false, count: 0 });
+
+  // Replacement confirm dialog
+  const [replacementConfirm, setReplacementConfirm] = useState<{ open: boolean; count: number }>({ open: false, count: 0 });
 
   // Save template state
   const [saveName, setSaveName] = useState("");
@@ -242,6 +259,11 @@ export default function MatrixAutomationDialog({
       setKind("fixed");
       setBaseField("");
       setOperation("multiply");
+      setReplacementPieceId("");
+      setReplacementSourceQtys([]);
+      setReplacementTargetQty(1);
+      setReplaceAnyNonZero(false);
+      setReplacementPieceSearch("");
       setEditingId(null);
     }
   }, [open]);
@@ -287,6 +309,29 @@ export default function MatrixAutomationDialog({
 
   // Filtered stores (real-time count)
   const matchingStores = useMemo(() => filtrarLojas(stores, filterGroup), [stores, filterGroup]);
+
+  // Replacement: compute qty distribution for selected piece
+  const replacementQtyDistribution = useMemo(() => {
+    if (kind !== "replacement" || !replacementPieceId) return [] as { qty: number; count: number }[];
+    const countMap = new Map<number, number>();
+    for (const store of stores) {
+      const qty = qtyMap[`${store.id}-${replacementPieceId}`] || 0;
+      if (qty > 0) countMap.set(qty, (countMap.get(qty) || 0) + 1);
+    }
+    return Array.from(countMap.entries())
+      .map(([qty, count]) => ({ qty, count }))
+      .sort((a, b) => a.qty - b.qty);
+  }, [kind, replacementPieceId, stores, qtyMap]);
+
+  // Replacement: stores affected by current selection
+  const replacementAffectedStores = useMemo(() => {
+    if (kind !== "replacement" || !replacementPieceId) return [] as ClientStore[];
+    return stores.filter(store => {
+      const currentQty = qtyMap[`${store.id}-${replacementPieceId}`] || 0;
+      if (replaceAnyNonZero) return currentQty > 0;
+      return replacementSourceQtys.includes(currentQty);
+    });
+  }, [kind, replacementPieceId, stores, qtyMap, replaceAnyNonZero, replacementSourceQtys]);
 
   // Filter update helpers
   const updateFilter = (index: number, patch: Partial<AutomationFilter>) => {
@@ -430,6 +475,19 @@ export default function MatrixAutomationDialog({
 
   // Check for overwrite before preview
   const handlePreviewClick = async () => {
+    // Replacement mode short-circuit
+    if (kind === "replacement") {
+      if (!replacementPieceId) { toast.error("Selecione a peça."); return; }
+      if (!Number.isFinite(replacementTargetQty) || replacementTargetQty < 0) {
+        toast.error("Informe a quantidade de substituição (>= 0)."); return;
+      }
+      if (!replaceAnyNonZero && replacementSourceQtys.length === 0) {
+        toast.error("Selecione ao menos uma quantidade de origem ou marque \"qualquer valor diferente de 0\"."); return;
+      }
+      setReplacementConfirm({ open: true, count: replacementAffectedStores.length });
+      return;
+    }
+
     const validFilters = filterGroup.filtros.filter(f => f.campo && f.valor);
     if (selectedItems.length === 0) {
       toast.error(t("automation.fillAllFields"));
@@ -560,7 +618,54 @@ export default function MatrixAutomationDialog({
     setOutsideActions(updated);
   };
 
-  // Execute automation (reusable for single + group) — supports kind=fixed|by_field
+  // Execute replacement (reusable for single + group)
+  const executeReplacementMulti = async (
+    pieceId: string,
+    sourceQtys: number[],
+    targetQty: number,
+    anyNonZero: boolean,
+  ): Promise<{ updated: number }> => {
+    const affected = stores.filter(store => {
+      const currentQty = qtyMap[`${store.id}-${pieceId}`] || 0;
+      if (anyNonZero) return currentQty > 0;
+      return sourceQtys.includes(currentQty);
+    });
+    if (affected.length === 0) return { updated: 0 };
+
+    if (targetQty > 0) {
+      const upserts = affected.map(s => ({
+        campaign_id: campaignId, store_id: s.id, piece_id: pieceId, quantity: targetQty,
+      }));
+      const { error } = await supabase
+        .from("campaign_store_pieces")
+        .upsert(upserts, { onConflict: "campaign_id,store_id,piece_id" });
+      if (error) throw error;
+    } else {
+      // targetQty === 0 → delete rows
+      for (const s of affected) {
+        await supabase.from("campaign_store_pieces").delete()
+          .eq("campaign_id", campaignId).eq("store_id", s.id).eq("piece_id", pieceId);
+      }
+    }
+    return { updated: affected.length };
+  };
+
+  const handleConfirmReplacement = async () => {
+    setReplacementConfirm({ open: false, count: 0 });
+    setExecuting(true);
+    try {
+      const result = await executeReplacementMulti(
+        replacementPieceId, replacementSourceQtys, replacementTargetQty, replaceAnyNonZero,
+      );
+      toast.success(`${result.updated} loja(s) atualizada(s).`);
+      await onComplete();
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error("Erro ao executar substituição: " + (err?.message || ""));
+    } finally {
+      setExecuting(false);
+    }
+  };
   const executeAutomationMulti = async (
     fg: FilterGroup,
     items: SelectedItem[],
@@ -716,12 +821,28 @@ export default function MatrixAutomationDialog({
       toast.error("Selecione o campo base para o cálculo.");
       return;
     }
+    if (kind === "replacement") {
+      if (!replacementPieceId) { toast.error("Selecione a peça."); return; }
+      if (!replaceAnyNonZero && replacementSourceQtys.length === 0) {
+        toast.error("Selecione ao menos uma quantidade de origem."); return;
+      }
+    }
     try {
+      const filterValue = kind === "replacement"
+        ? JSON.stringify({
+            filtros: [], condicoes: [],
+            replacementPieceId,
+            replacementSourceQtys,
+            replacementTargetQty,
+            replaceAnyNonZero,
+          })
+        : JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes, operation });
+
       const payload = {
         name: saveName.trim(),
         filter_field: "__multi_v2__",
-        filter_value: JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes, operation }),
-        items: selectedItems,
+        filter_value: filterValue,
+        items: kind === "replacement" ? [] : selectedItems,
         outside_action: "keep",
         kind,
         base_field: kind === "by_field" ? baseField : null,
@@ -741,14 +862,40 @@ export default function MatrixAutomationDialog({
     }
   };
 
+  // Helper: parse replacement payload from template filter_value
+  const parseReplacementFromTpl = (tpl: typeof templates[0]) => {
+    try {
+      const parsed = JSON.parse(tpl.filter_value);
+      return {
+        replacementPieceId: parsed.replacementPieceId || "",
+        replacementSourceQtys: Array.isArray(parsed.replacementSourceQtys) ? parsed.replacementSourceQtys : [],
+        replacementTargetQty: Number(parsed.replacementTargetQty) || 0,
+        replaceAnyNonZero: !!parsed.replaceAnyNonZero,
+      };
+    } catch {
+      return { replacementPieceId: "", replacementSourceQtys: [], replacementTargetQty: 0, replaceAnyNonZero: false };
+    }
+  };
+
   // Load template into form (read-only "carregar" — não entra em modo edição)
   const loadTemplate = (tpl: typeof templates[0]) => {
-    const migrated = migrateTemplate(tpl);
-    setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
-    setSelectedItems(tpl.items);
-    setKind(tpl.kind ?? "fixed");
+    const tplKind = tpl.kind ?? "fixed";
+    if (tplKind === "replacement") {
+      const r = parseReplacementFromTpl(tpl);
+      setReplacementPieceId(r.replacementPieceId);
+      setReplacementSourceQtys(r.replacementSourceQtys);
+      setReplacementTargetQty(r.replacementTargetQty);
+      setReplaceAnyNonZero(r.replaceAnyNonZero);
+      setFilterGroup({ filtros: [createEmptyFilter()], condicoes: [] });
+      setSelectedItems([]);
+    } else {
+      const migrated = migrateTemplate(tpl);
+      setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
+      setSelectedItems(tpl.items);
+      setOperation(migrated.operation);
+    }
+    setKind(tplKind);
     setBaseField(tpl.base_field ?? "");
-    setOperation(migrated.operation);
     setEditingId(null);
     setMainTab("new");
     setStep(1);
@@ -756,12 +903,23 @@ export default function MatrixAutomationDialog({
 
   // Edit template: load into form AND mark as editing so save updates in place
   const editTemplate = (tpl: typeof templates[0]) => {
-    const migrated = migrateTemplate(tpl);
-    setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
-    setSelectedItems(tpl.items);
-    setKind(tpl.kind ?? "fixed");
+    const tplKind = tpl.kind ?? "fixed";
+    if (tplKind === "replacement") {
+      const r = parseReplacementFromTpl(tpl);
+      setReplacementPieceId(r.replacementPieceId);
+      setReplacementSourceQtys(r.replacementSourceQtys);
+      setReplacementTargetQty(r.replacementTargetQty);
+      setReplaceAnyNonZero(r.replaceAnyNonZero);
+      setFilterGroup({ filtros: [createEmptyFilter()], condicoes: [] });
+      setSelectedItems([]);
+    } else {
+      const migrated = migrateTemplate(tpl);
+      setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
+      setSelectedItems(tpl.items);
+      setOperation(migrated.operation);
+    }
+    setKind(tplKind);
     setBaseField(tpl.base_field ?? "");
-    setOperation(migrated.operation);
     setEditingId(tpl.id);
     setSaveName(tpl.name);
     setShowSaveInput(true);
@@ -835,14 +993,27 @@ export default function MatrixAutomationDialog({
         continue;
       }
       try {
-        const migrated = migrateTemplate(tpl);
-        const result = await executeAutomationMulti(
-          { filtros: migrated.filtros, condicoes: migrated.condicoes },
-          tpl.items,
-          tpl.kind ?? "fixed",
-          tpl.base_field ?? null,
-          migrated.operation,
-        );
+        const tplKind = tpl.kind ?? "fixed";
+        let result: { updated: number };
+        if (tplKind === "replacement") {
+          let parsed: any = {};
+          try { parsed = JSON.parse(tpl.filter_value); } catch {}
+          result = await executeReplacementMulti(
+            parsed.replacementPieceId || "",
+            Array.isArray(parsed.replacementSourceQtys) ? parsed.replacementSourceQtys : [],
+            Number(parsed.replacementTargetQty) || 0,
+            !!parsed.replaceAnyNonZero,
+          );
+        } else {
+          const migrated = migrateTemplate(tpl);
+          result = await executeAutomationMulti(
+            { filtros: migrated.filtros, condicoes: migrated.condicoes },
+            tpl.items,
+            tplKind,
+            tpl.base_field ?? null,
+            migrated.operation,
+          );
+        }
         results.push({
           templateId: tpl.id,
           templateName: tpl.name,
@@ -958,7 +1129,10 @@ export default function MatrixAutomationDialog({
 
   const hasValidFilters = filterGroup.filtros.some(f => f.campo && f.valor);
   // Filtros vazios aplicam a TODAS as lojas em ambos os modos (fixed e by_field).
-  const canProceed = selectedItems.length > 0 && (kind === "fixed" || !!baseField);
+  const canProceed =
+    kind === "replacement"
+      ? !!replacementPieceId && (replaceAnyNonZero || replacementSourceQtys.length > 0)
+      : selectedItems.length > 0 && (kind === "fixed" || !!baseField);
   const applyingToAll = !hasValidFilters;
 
   // Stores within filter that have a valid numeric value in baseField
@@ -972,6 +1146,15 @@ export default function MatrixAutomationDialog({
 
   // Template display helper
   const getTemplateFilterSummary = (tpl: typeof templates[0]): string => {
+    if ((tpl.kind ?? "fixed") === "replacement") {
+      const r = parseReplacementFromTpl(tpl);
+      const piece = pieces.find(p => p.id === r.replacementPieceId);
+      const pieceLabel = piece ? `Peça ${piece.code}` : "Peça ?";
+      const src = r.replaceAnyNonZero
+        ? "qualquer valor ≠ 0"
+        : `qty=${r.replacementSourceQtys.join(",")}`;
+      return `${pieceLabel}: ${src} → ${r.replacementTargetQty}`;
+    }
     let base: string;
     if (tpl.filter_field === "__multi_v2__") {
       try {
@@ -1053,7 +1236,7 @@ export default function MatrixAutomationDialog({
               {/* ── Tipo de automação ── */}
               <div>
                 <Label className="text-sm font-semibold mb-2 block">Tipo de automação</Label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setKind("fixed")}
@@ -1084,8 +1267,143 @@ export default function MatrixAutomationDialog({
                       Quantidade calculada a partir de um campo numérico da loja
                     </p>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setKind("replacement")}
+                    className={`text-left p-3 rounded-lg border transition-all ${
+                      kind === "replacement"
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border bg-background hover:border-primary/40"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">Substituição</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Substituir valores existentes
+                    </p>
+                  </button>
                 </div>
               </div>
+
+              {/* ── Substituição UI (apenas no modo replacement) ── */}
+              {kind === "replacement" && (
+                <div className="space-y-3 p-3 border rounded-lg bg-muted/20">
+                  <div>
+                    <Label className="text-sm font-semibold mb-1 block">Peça</Label>
+                    <Input
+                      placeholder="Buscar por código ou nome..."
+                      value={replacementPieceSearch}
+                      onChange={e => setReplacementPieceSearch(e.target.value)}
+                      className="mb-1 h-8 text-xs"
+                    />
+                    <div className="border rounded-md max-h-40 overflow-y-auto bg-background">
+                      {(() => {
+                        const q = replacementPieceSearch.toLowerCase().trim();
+                        const filtered = pieces.filter(p => {
+                          if (!q) return true;
+                          return String(p.code).includes(q) || p.name.toLowerCase().includes(q);
+                        });
+                        if (filtered.length === 0) {
+                          return <p className="text-xs text-muted-foreground p-2">Nenhuma peça encontrada</p>;
+                        }
+                        return filtered.map(p => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            className={`w-full text-left px-3 py-1.5 text-xs hover:bg-accent flex items-center gap-2 border-b last:border-b-0 ${
+                              p.id === replacementPieceId ? "bg-primary/10 font-semibold" : ""
+                            }`}
+                            onClick={() => {
+                              setReplacementPieceId(p.id);
+                              setReplacementSourceQtys([]);
+                            }}
+                          >
+                            <span className="font-mono">{p.code}</span>
+                            <span className="truncate">{p.name}</span>
+                          </button>
+                        ));
+                      })()}
+                    </div>
+                  </div>
+
+                  {replacementPieceId && (
+                    <>
+                      <div>
+                        <Label className="text-sm font-semibold mb-1 block">Quantidades existentes nas lojas</Label>
+                        {replacementQtyDistribution.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">Nenhuma loja tem essa peça preenchida.</p>
+                        ) : (
+                          <div className="space-y-1">
+                            {replacementQtyDistribution.map(({ qty, count }) => {
+                              const checked = replacementSourceQtys.includes(qty);
+                              return (
+                                <label
+                                  key={qty}
+                                  className={`flex items-center gap-2 px-2 py-1 rounded border cursor-pointer text-xs ${
+                                    replaceAnyNonZero ? "opacity-50 cursor-not-allowed" : "hover:bg-accent"
+                                  } ${checked && !replaceAnyNonZero ? "border-primary bg-primary/5" : "border-border"}`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    disabled={replaceAnyNonZero}
+                                    checked={checked}
+                                    onChange={() => {
+                                      setReplacementSourceQtys(prev =>
+                                        prev.includes(qty) ? prev.filter(q => q !== qty) : [...prev, qty]
+                                      );
+                                    }}
+                                  />
+                                  <span className="font-mono font-semibold">qty={qty}</span>
+                                  <span className="text-muted-foreground">— {count} loja(s)</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 my-1">
+                        <div className="flex-1 h-px bg-border" />
+                        <span className="text-[10px] text-muted-foreground tracking-wider">OU</span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+
+                      <label className="flex items-start gap-2 px-2 py-1.5 rounded border border-border hover:bg-accent cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={replaceAnyNonZero}
+                          onChange={e => setReplaceAnyNonZero(e.target.checked)}
+                          className="mt-0.5"
+                        />
+                        <div>
+                          <p className="text-xs font-medium">Qualquer valor diferente de 0</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            Substitui independente da quantidade atual
+                          </p>
+                        </div>
+                      </label>
+
+                      <div>
+                        <Label className="text-sm font-semibold mb-1 block">Substituir por</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={replacementTargetQty}
+                          onChange={e => setReplacementTargetQty(parseInt(e.target.value) || 0)}
+                          className="h-9 text-sm w-32"
+                        />
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Use 0 para apagar (remover a peça da loja).
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg">
+                        <span className="text-lg font-bold text-primary">{replacementAffectedStores.length}</span>
+                        <span className="text-xs text-muted-foreground">loja(s) serão atualizadas</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
 
               {/* ── Campo base (apenas no modo by_field) ── */}
               {kind === "by_field" && (
@@ -1140,7 +1458,9 @@ export default function MatrixAutomationDialog({
                 </div>
               )}
 
-              {/* Multi-filter section */}
+              {/* Multi-filter + Items selection (hidden in replacement mode) */}
+              {kind !== "replacement" && (
+              <>
               <div>
                 <Label className="text-sm font-semibold mb-1 block">Filtros de Lojas</Label>
                 <p className="text-[11px] text-muted-foreground mb-2">
@@ -1347,17 +1667,18 @@ export default function MatrixAutomationDialog({
                   </div>
                 )}
               </div>
-
+              </>
+              )}
               {/* Action buttons */}
               <div className="flex gap-2">
                 <Button
                   className="flex-1"
-                  disabled={!canProceed || selectedItems.length === 0}
+                  disabled={!canProceed || (kind !== "replacement" && selectedItems.length === 0)}
                   onClick={handlePreviewClick}
                 >
-                  <Eye className="w-4 h-4 mr-1" /> {t("automation.preview")}
+                  <Eye className="w-4 h-4 mr-1" /> {kind === "replacement" ? "Aplicar substituição" : t("automation.preview")}
                 </Button>
-                {canProceed && selectedItems.length > 0 && (
+                {canProceed && (kind === "replacement" || selectedItems.length > 0) && (
                   <>
                     {!showSaveInput ? (
                       <Button variant="outline" size="icon" onClick={() => setShowSaveInput(true)} title={editingId ? "Atualizar automação" : t("automation.saveTemplate")}>
@@ -1752,6 +2073,29 @@ export default function MatrixAutomationDialog({
           <DialogFooter>
             <Button variant="outline" onClick={() => setOverwriteDialog({ open: false, count: 0 })}>
               Cancelar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ──── Replacement confirmation dialog ──── */}
+      <Dialog open={replacementConfirm.open} onOpenChange={(o) => setReplacementConfirm({ ...replacementConfirm, open: o })}>
+        <DialogContent className="w-full max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Confirmar substituição</DialogTitle>
+            <DialogDescription>
+              {replacementConfirm.count} loja(s) terão a peça atualizada para a quantidade <strong>{replacementTargetQty}</strong>.
+              {replaceAnyNonZero
+                ? " (substituindo qualquer valor diferente de 0)"
+                : ` (substituindo qty=${replacementSourceQtys.join(", ")})`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReplacementConfirm({ open: false, count: 0 })}>
+              Cancelar
+            </Button>
+            <Button onClick={handleConfirmReplacement} disabled={executing || replacementConfirm.count === 0}>
+              {executing ? "Aplicando..." : "Confirmar"}
             </Button>
           </DialogFooter>
         </DialogContent>
