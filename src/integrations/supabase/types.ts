@@ -221,6 +221,8 @@ export type Database = {
       }
       budget_extra_costs: {
         Row: {
+          adjusted_freight_value: number | null
+          adjusted_installation_value: number | null
           created_at: string | null
           freight_value: number | null
           id: string
@@ -228,6 +230,8 @@ export type Database = {
           supplier_id: string
         }
         Insert: {
+          adjusted_freight_value?: number | null
+          adjusted_installation_value?: number | null
           created_at?: string | null
           freight_value?: number | null
           id?: string
@@ -235,6 +239,8 @@ export type Database = {
           supplier_id: string
         }
         Update: {
+          adjusted_freight_value?: number | null
+          adjusted_installation_value?: number | null
           created_at?: string | null
           freight_value?: number | null
           id?: string
@@ -301,6 +307,7 @@ export type Database = {
       }
       budget_prices: {
         Row: {
+          adjusted_unit_price: number | null
           campaign_id: string
           created_at: string | null
           id: string
@@ -310,6 +317,7 @@ export type Database = {
           unit_price: number | null
         }
         Insert: {
+          adjusted_unit_price?: number | null
           campaign_id: string
           created_at?: string | null
           id?: string
@@ -319,6 +327,7 @@ export type Database = {
           unit_price?: number | null
         }
         Update: {
+          adjusted_unit_price?: number | null
           campaign_id?: string
           created_at?: string | null
           id?: string
@@ -367,6 +376,8 @@ export type Database = {
           currency_locked: boolean
           deadline: string | null
           id: string
+          negotiation_mode: string | null
+          negotiation_target: number | null
           notify_user_ids: string[] | null
           winner_book_url: string | null
           winner_cc_email: string | null
@@ -380,6 +391,8 @@ export type Database = {
           currency_locked?: boolean
           deadline?: string | null
           id?: string
+          negotiation_mode?: string | null
+          negotiation_target?: number | null
           notify_user_ids?: string[] | null
           winner_book_url?: string | null
           winner_cc_email?: string | null
@@ -393,6 +406,8 @@ export type Database = {
           currency_locked?: boolean
           deadline?: string | null
           id?: string
+          negotiation_mode?: string | null
+          negotiation_target?: number | null
           notify_user_ids?: string[] | null
           winner_book_url?: string | null
           winner_cc_email?: string | null
@@ -420,6 +435,8 @@ export type Database = {
           invited_at: string | null
           is_winner: boolean
           locked: boolean | null
+          negotiation_status: string | null
+          negotiation_submitted_at: string | null
           phone: string
           status: string
           submitted_at: string | null
@@ -436,6 +453,8 @@ export type Database = {
           invited_at?: string | null
           is_winner?: boolean
           locked?: boolean | null
+          negotiation_status?: string | null
+          negotiation_submitted_at?: string | null
           phone: string
           status?: string
           submitted_at?: string | null
@@ -452,6 +471,8 @@ export type Database = {
           invited_at?: string | null
           is_winner?: boolean
           locked?: boolean | null
+          negotiation_status?: string | null
+          negotiation_submitted_at?: string | null
           phone?: string
           status?: string
           submitted_at?: string | null
