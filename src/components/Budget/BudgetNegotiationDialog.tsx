@@ -237,6 +237,20 @@ export default function BudgetNegotiationDialog({
     );
   };
 
+  // ─── Action: navigate to negotiation rateio (snapshot first) ───
+  const handleNavigateToRateio = async () => {
+    const TOAST_ID = "neg-rateio-snapshot";
+    toast.loading("Preparando rateio de negociação...", { id: TOAST_ID });
+    try {
+      await snapshotNegotiationRateio(supplier.id, campaignId);
+      toast.dismiss(TOAST_ID);
+      onOpenChange(false);
+      onNavigateToRateio?.();
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao preparar rateio.", { id: TOAST_ID });
+    }
+  };
+
   // ─── Action: open negotiation (manual mode) ───
   const handleOpenManual = async () => {
     if (targetNum <= 0) { toast.error("Defina um teto máximo válido."); return; }
@@ -246,7 +260,6 @@ export default function BudgetNegotiationDialog({
         supplierId: supplier.id, campaignId, reason: "negotiation_opened" as any,
       });
       await saveTarget();
-      await snapshotNegotiationRateio(supplier.id, campaignId);
       await supabase.from("budget_suppliers")
         .update({ negotiation_status: "pending" } as never)
         .eq("id", supplier.id);
@@ -282,7 +295,6 @@ export default function BudgetNegotiationDialog({
     setBusy(true);
     try {
       await saveTarget();
-      await snapshotNegotiationRateio(supplier.id, campaignId);
       // Update each price
       for (const row of autoPreview) {
         await supabase.from("budget_prices").upsert(
@@ -574,10 +586,7 @@ export default function BudgetNegotiationDialog({
           {onNavigateToRateio && (
             <Button
               variant="outline"
-              onClick={() => {
-                onOpenChange(false);
-                onNavigateToRateio();
-              }}
+              onClick={handleNavigateToRateio}
               className="gap-1.5"
             >
               <LayoutGrid className="w-4 h-4" />
