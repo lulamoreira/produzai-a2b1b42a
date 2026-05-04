@@ -816,6 +816,35 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   Declarada em {format(new Date((winnerSupplier as any).winner_declared_at), "dd/MM/yyyy", { locale: ptBR })}
                 </p>
               )}
+
+              {/* Valor (frozen / em negociação / negociado) */}
+              {(() => {
+                const isApproved = winnerNegotiationStatus === "approved";
+                const isInProgress = winnerNegotiationStatus === "pending" || winnerNegotiationStatus === "submitted";
+                const showValue = isApproved ? winnerNegotiatedTotal : (isInProgress ? winnerNegotiatedTotal : winnerOriginalTotal);
+                const label = isApproved ? "Valor negociado" : (isInProgress ? "Em negociação" : "Valor vencedor");
+                const labelClass = isInProgress
+                  ? "text-xs text-amber-700 dark:text-amber-400 uppercase tracking-wide"
+                  : "text-xs text-muted-foreground uppercase tracking-wide";
+                return (
+                  <div className="pt-1">
+                    <p className={labelClass}>{label}</p>
+                    <p className="text-lg font-bold text-amber-700 dark:text-amber-400 mt-1">
+                      {fmtCurrency(showValue)}
+                    </p>
+                    {currencyCode !== "BRL" && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {fmtBRL(showValue * exchangeRate)}
+                      </p>
+                    )}
+                    {(isApproved || isInProgress) && (
+                      <p className="text-xs text-muted-foreground line-through mt-0.5">
+                        Original: {fmtCurrency(winnerOriginalTotal)}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         )}
