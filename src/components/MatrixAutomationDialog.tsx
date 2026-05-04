@@ -307,6 +307,29 @@ export default function MatrixAutomationDialog({
   // Filtered stores (real-time count)
   const matchingStores = useMemo(() => filtrarLojas(stores, filterGroup), [stores, filterGroup]);
 
+  // Replacement: compute qty distribution for selected piece
+  const replacementQtyDistribution = useMemo(() => {
+    if (kind !== "replacement" || !replacementPieceId) return [] as { qty: number; count: number }[];
+    const countMap = new Map<number, number>();
+    for (const store of stores) {
+      const qty = qtyMap[`${store.id}-${replacementPieceId}`] || 0;
+      if (qty > 0) countMap.set(qty, (countMap.get(qty) || 0) + 1);
+    }
+    return Array.from(countMap.entries())
+      .map(([qty, count]) => ({ qty, count }))
+      .sort((a, b) => a.qty - b.qty);
+  }, [kind, replacementPieceId, stores, qtyMap]);
+
+  // Replacement: stores affected by current selection
+  const replacementAffectedStores = useMemo(() => {
+    if (kind !== "replacement" || !replacementPieceId) return [] as ClientStore[];
+    return stores.filter(store => {
+      const currentQty = qtyMap[`${store.id}-${replacementPieceId}`] || 0;
+      if (replaceAnyNonZero) return currentQty > 0;
+      return replacementSourceQtys.includes(currentQty);
+    });
+  }, [kind, replacementPieceId, stores, qtyMap, replaceAnyNonZero, replacementSourceQtys]);
+
   // Filter update helpers
   const updateFilter = (index: number, patch: Partial<AutomationFilter>) => {
     setFilterGroup(prev => ({
