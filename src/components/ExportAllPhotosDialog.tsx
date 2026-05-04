@@ -82,6 +82,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
     setProgress({ done: 0, total: 0, label: "" });
     setConfirmText("");
     setConfirmOpen(false);
+    setDeleteOnly(false);
   };
 
   const collectPhotos = async (): Promise<{ photos: CollectedPhoto[]; storeMap: Record<string, string> }> => {
