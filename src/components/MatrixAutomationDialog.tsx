@@ -1146,6 +1146,15 @@ export default function MatrixAutomationDialog({
 
   // Template display helper
   const getTemplateFilterSummary = (tpl: typeof templates[0]): string => {
+    if ((tpl.kind ?? "fixed") === "replacement") {
+      const r = parseReplacementFromTpl(tpl);
+      const piece = pieces.find(p => p.id === r.replacementPieceId);
+      const pieceLabel = piece ? `Peça ${piece.code}` : "Peça ?";
+      const src = r.replaceAnyNonZero
+        ? "qualquer valor ≠ 0"
+        : `qty=${r.replacementSourceQtys.join(",")}`;
+      return `${pieceLabel}: ${src} → ${r.replacementTargetQty}`;
+    }
     let base: string;
     if (tpl.filter_field === "__multi_v2__") {
       try {
