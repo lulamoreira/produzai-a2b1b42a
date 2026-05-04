@@ -300,7 +300,7 @@ const CampaignDetail = () => {
     const toastId = "cancel-negotiation-rateio";
     toast.loading("Cancelando negociação...", { id: toastId });
     try {
-      await cancelNegotiationRateio(winnerSupplierId);
+      await cancelNegotiationRateio(winnerSupplierId, campaignId);
       setRateioSource("original");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["winner_neg_supplier", campaignId] }),
