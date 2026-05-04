@@ -257,6 +257,54 @@ export type Database = {
           },
         ]
       }
+      budget_negotiation_store_pieces: {
+        Row: {
+          campaign_id: string
+          created_at: string | null
+          id: string
+          piece_id: string
+          quantity: number
+          store_id: string
+          supplier_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string | null
+          id?: string
+          piece_id: string
+          quantity?: number
+          store_id: string
+          supplier_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string | null
+          id?: string
+          piece_id?: string
+          quantity?: number
+          store_id?: string
+          supplier_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_negotiation_store_pieces_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_negotiation_store_pieces_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "budget_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_price_history: {
         Row: {
           campaign_id: string
