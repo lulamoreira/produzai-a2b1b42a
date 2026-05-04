@@ -18,6 +18,10 @@ import {
 } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { snapshotSupplierBudget } from "@/lib/budgetPriceSnapshot";
+import {
+  useNegotiationStorePieces,
+  snapshotNegotiationRateio,
+} from "@/hooks/useNegotiationStorePieces";
 
 type Supplier = {
   id: string;
