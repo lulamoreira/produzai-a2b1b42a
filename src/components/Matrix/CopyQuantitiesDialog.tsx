@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { applyRateioBulk } from "@/lib/applyRateioBulk";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
