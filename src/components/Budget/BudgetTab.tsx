@@ -1146,9 +1146,74 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                       </div>
                     </div>
                   </div>
-                  <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setWinnerLinksOpen(true)}>
-                    <Pencil className="w-3 h-3" /> Editar
-                  </Button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {winnerSupplier && (() => {
+                      const sup: any = winnerSupplier;
+                      const mockup = settingsAny?.winner_mockup_url || "";
+                      const book = settingsAny?.winner_book_url || "";
+                      const ccEmail = settingsAny?.winner_cc_email || "";
+                      const canShare = !!mockup;
+                      const greetingName = sup.contact_name || sup.company_name;
+                      const subject = `${campaignName} — Links de produção (peças aprovadas)`;
+                      const body =
+`Olá ${greetingName},
+
+Conforme alinhado, segue abaixo o material aprovado da campanha ${campaignName} para iniciarmos a produção:
+
+🎨 Peças fechadas (mockup):
+${mockup}
+${book ? `\n📘 Book de mockup:\n${book}\n` : ""}
+Qualquer dúvida sobre arquivos, formatos ou cronograma, estamos à disposição.
+
+Atenciosamente,
+${agencyName}`;
+                      const waMsg =
+`Olá ${greetingName}! Reenviando os links de produção da campanha *${campaignName}*:
+
+🎨 Peças fechadas (mockup):
+${mockup}${book ? `\n\n📘 Book de mockup:\n${book}` : ""}
+
+Qualquer dúvida, estamos à disposição.
+— ${agencyName}`;
+                      const mailtoHref = `mailto:${sup.email}${ccEmail ? `?cc=${encodeURIComponent(ccEmail)}&` : "?"}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                      const phone = (sup.phone || "").replace(/\D/g, "");
+                      const waHref = phone ? `https://wa.me/${phone}?text=${encodeURIComponent(waMsg)}` : "";
+                      return (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1"
+                            disabled={!canShare}
+                            title={canShare ? "Reenviar links por e-mail" : "Configure o link do mockup primeiro"}
+                            onClick={() => {
+                              if (!canShare) { toast.error("Configure o link do mockup antes de reenviar."); return; }
+                              window.open(mailtoHref, "_blank");
+                            }}
+                          >
+                            <Mail className="w-3 h-3" /> E-mail
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1"
+                            disabled={!canShare || !phone}
+                            title={!canShare ? "Configure o link do mockup primeiro" : (!phone ? "Vencedor sem telefone cadastrado" : "Reenviar links por WhatsApp")}
+                            onClick={() => {
+                              if (!canShare) { toast.error("Configure o link do mockup antes de reenviar."); return; }
+                              if (!phone) { toast.error("Vencedor sem telefone cadastrado."); return; }
+                              window.open(waHref, "_blank");
+                            }}
+                          >
+                            <MessageCircle className="w-3 h-3" /> WhatsApp
+                          </Button>
+                        </>
+                      );
+                    })()}
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setWinnerLinksOpen(true)}>
+                      <Pencil className="w-3 h-3" /> Editar
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </CollapsibleContent>
