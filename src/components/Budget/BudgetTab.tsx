@@ -428,7 +428,20 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   };
 
   const budgetAmount = settings?.budget_amount != null ? Number(settings.budget_amount) : null;
-  const difference = bestSupplier && budgetAmount != null ? bestSupplier.total - budgetAmount : null;
+
+  // ─── Winner KPI helpers ────────────────────────────────
+  const winnerNegotiationStatus: string | null = (winnerSupplier as any)?.negotiation_status ?? null;
+  const winnerInNegotiation = winnerNegotiationStatus === "pending" || winnerNegotiationStatus === "submitted" || winnerNegotiationStatus === "approved";
+  const winnerOriginalTotal = winnerSupplier ? (supplierPartialTotals[(winnerSupplier as any).id]?.total ?? 0) : 0;
+  const winnerNegotiatedTotal = winnerSupplier ? (supplierNegotiationTotals[(winnerSupplier as any).id] ?? winnerOriginalTotal) : 0;
+
+  const difference = (() => {
+    if (budgetAmount == null) return null;
+    if (winnerSupplier && winnerNegotiationStatus === "approved") {
+      return winnerNegotiatedTotal - budgetAmount;
+    }
+    return bestSupplier ? bestSupplier.total - budgetAmount : null;
+  })();
 
   // ─── Deadline state ────────────────────────────────────
   const deadlineDate = settings?.deadline ? new Date(settings.deadline) : undefined;
