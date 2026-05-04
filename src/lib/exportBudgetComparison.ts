@@ -241,7 +241,8 @@ export async function exportBudgetComparison(params: ExportBudgetComparisonParam
     if (!kitData) return;
     addItemRow(["Kit", kit.code, kit.name, "", kitData.kitQty, ...params.suppliers.flatMap((supplier) => {
       const kitTotal = Object.entries(kitData.components).reduce((sum, [pieceId, qty]) => {
-        const unitPrice = toNumber(params.prices.find((pr) => pr.supplier_id === supplier.id && pr.piece_id === pieceId)?.unit_price);
+        const priceRow = params.prices.find((pr) => pr.supplier_id === supplier.id && pr.piece_id === pieceId);
+        const unitPrice = effectiveUnit(priceRow);
         return sum + unitPrice * qty;
       }, 0);
       return ["", kitTotal];
