@@ -2258,6 +2258,27 @@ const CampaignDetail = () => {
                           ← Voltar à Negociação
                         </Button>
                       )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button type="button" size="sm" variant="outline" className="h-7 text-xs text-destructive hover:text-destructive">
+                            Cancelar negociação
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Cancelar negociação?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Isso remove o rateio e os ajustes da negociação. O rateio original congelado permanece preservado.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleCancelNegotiationRateio}>
+                              Confirmar cancelamento
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 )}
