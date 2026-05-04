@@ -212,6 +212,9 @@ export default function MatrixAutomationDialog({
   // Overwrite dialog state
   const [overwriteDialog, setOverwriteDialog] = useState<{ open: boolean; count: number }>({ open: false, count: 0 });
 
+  // Replacement confirm dialog
+  const [replacementConfirm, setReplacementConfirm] = useState<{ open: boolean; count: number }>({ open: false, count: 0 });
+
   // Save template state
   const [saveName, setSaveName] = useState("");
   const [showSaveInput, setShowSaveInput] = useState(false);
