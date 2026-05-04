@@ -102,6 +102,11 @@ function getKitComponentTotals(
   }, {});
 }
 
+function effectiveUnit(price: BudgetPrice | undefined): number {
+  if (!price) return 0;
+  return toNumber(price.adjusted_unit_price ?? price.unit_price);
+}
+
 function getSupplierItemTotal(
   supplierId: string,
   prices: BudgetPrice[],
@@ -113,13 +118,13 @@ function getSupplierItemTotal(
     .filter((piece) => !piece.kit_only)
     .reduce((sum, piece) => {
       const price = prices.find((pr) => pr.supplier_id === supplierId && pr.piece_id === piece.id);
-      return sum + toNumber(price?.unit_price) * (pieceTotals[piece.id] || 0);
+      return sum + effectiveUnit(price) * (pieceTotals[piece.id] || 0);
     }, 0);
 
   const kitTotal = Object.values(kitComponentTotals).reduce((sum, kit) => {
     return sum + Object.entries(kit.components).reduce((componentSum, [pieceId, qty]) => {
       const price = prices.find((pr) => pr.supplier_id === supplierId && pr.piece_id === pieceId);
-      return componentSum + toNumber(price?.unit_price) * qty;
+      return componentSum + effectiveUnit(price) * qty;
     }, 0);
   }, 0);
 
