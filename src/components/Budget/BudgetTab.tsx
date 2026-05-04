@@ -342,7 +342,33 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     return result;
   }, [suppliers, prices, extraCosts, pieceTotals, kitPieceTotals, pieces]);
 
-  // ─── Negotiation totals — uses adjusted prices when present ───
+  // ─── Negotiation rateio (per-supplier isolated quantities) ───
+  const negotiatingSupplierIds = useMemo(
+    () => (suppliers as any[]).filter((s) => s.negotiation_status).map((s) => s.id),
+    [suppliers]
+  );
+  const { data: negRateioRows = [] } = useQuery({
+    queryKey: ["budget_negotiation_rateio_totals", campaignId, negotiatingSupplierIds.join(",")],
+    enabled: negotiatingSupplierIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("budget_negotiation_store_pieces" as never)
+        .select("supplier_id, piece_id, quantity")
+        .in("supplier_id", negotiatingSupplierIds);
+      if (error) return [];
+      return (data as any[]) || [];
+    },
+  });
+  const negPieceTotalsBySupplier = useMemo(() => {
+    const out: Record<string, Record<string, number>> = {};
+    for (const r of negRateioRows as any[]) {
+      const m = (out[r.supplier_id] ||= {});
+      m[r.piece_id] = (m[r.piece_id] || 0) + Number(r.quantity || 0);
+    }
+    return out;
+  }, [negRateioRows]);
+
+  // ─── Negotiation totals — uses adjusted prices when present and negotiation rateio when available ───
   const supplierNegotiationTotals = useMemo(() => {
     const result: Record<string, number> = {};
     for (const sup of suppliers as any[]) {
@@ -350,8 +376,10 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
       const ec = extraCosts.find((e) => e.supplier_id === sup.id) as any;
       let total = Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0)
                 + Number(ec?.adjusted_freight_value ?? ec?.freight_value ?? 0);
+      const negTotals = negPieceTotalsBySupplier[sup.id];
+      const hasNeg = negTotals && Object.keys(negTotals).length > 0;
       for (const piece of pieces) {
-        const qty = pieceTotals[piece.id] || 0;
+        const qty = hasNeg ? (negTotals[piece.id] || 0) : (pieceTotals[piece.id] || 0);
         if (qty === 0) continue;
         const price = prices.find((p) => p.supplier_id === sup.id && p.piece_id === piece.id) as any;
         total += Number(price?.adjusted_unit_price ?? price?.unit_price ?? 0) * qty;
@@ -359,7 +387,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
       result[sup.id] = total;
     }
     return result;
-  }, [suppliers, extraCosts, pieces, prices, pieceTotals]);
+  }, [suppliers, extraCosts, pieces, prices, pieceTotals, negPieceTotalsBySupplier]);
 
   const supplierTotals = useMemo(() => {
     const result: Record<string, number> = {};

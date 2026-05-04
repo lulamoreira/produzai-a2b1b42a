@@ -87,6 +87,10 @@ import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 // Lazy: defers recharts (~80KB) until the user opens the pending dashboard
 const PendingOccurrencesDashboard = lazy(() => import("@/components/PendingOccurrencesDashboard"));
 import BudgetTab from "@/components/Budget/BudgetTab";
+import {
+  useNegotiationStorePieces,
+  useUpdateNegotiationStorePiece,
+} from "@/hooks/useNegotiationStorePieces";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
 import { Table2, BarChart3 as BarChart3Icon } from "lucide-react";
 import { useOccurrenceMotives, useOccurrenceStatuses } from "@/hooks/useOccurrences";
@@ -248,6 +252,52 @@ const CampaignDetail = () => {
   const updatePiece = useUpdateCampaignPiece();
   const updateStorePiece = useUpdateCampaignStorePiece();
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
+
+  // ─── Negotiation rateio (isolated distribution for the winning supplier) ───
+  const [rateioSource, setRateioSource] = useState<"original" | "negotiation">("original");
+  const { data: winnerNegSupplier } = useQuery({
+    queryKey: ["winner_neg_supplier", campaignId],
+    enabled: !!campaignId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("budget_suppliers")
+        .select("id, company_name, negotiation_status")
+        .eq("campaign_id", campaignId as string)
+        .eq("is_winner", true)
+        .not("negotiation_status", "is", null)
+        .in("negotiation_status", ["pending", "submitted", "approved"])
+        .limit(1)
+        .maybeSingle();
+      if (error) return null;
+      return data as { id: string; company_name: string; negotiation_status: string } | null;
+    },
+  });
+  const winnerSupplierId = winnerNegSupplier?.id ?? null;
+  const winnerSupplierName = winnerNegSupplier?.company_name ?? "";
+  const { data: negRateioExists } = useQuery({
+    queryKey: ["neg_rateio_exists", winnerSupplierId],
+    enabled: !!winnerSupplierId,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("budget_negotiation_store_pieces" as never)
+        .select("id", { count: "exact", head: true })
+        .eq("supplier_id", winnerSupplierId as string);
+      return (count ?? 0) > 0;
+    },
+  });
+  const hasNegotiationRateio = negRateioExists === true;
+  const isNegotiationView = rateioSource === "negotiation" && hasNegotiationRateio && !!winnerSupplierId;
+  // Reset to original if negotiation disappears
+  useEffect(() => {
+    if (rateioSource === "negotiation" && !hasNegotiationRateio) setRateioSource("original");
+  }, [rateioSource, hasNegotiationRateio]);
+
+  const { data: negotiationStorePieces = [] } = useNegotiationStorePieces(
+    winnerSupplierId,
+    campaignId,
+    isNegotiationView
+  );
+  const updateNegotiationStorePiece = useUpdateNegotiationStorePiece();
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
   const addPieceLocation = useAddCampaignPieceLocation();
@@ -517,9 +567,13 @@ const CampaignDetail = () => {
   // ─── Derived data ──────────────────────────────────────
   const qtyMap = useMemo(() => {
     const map: Record<string, number> = {};
-    storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
+    if (isNegotiationView) {
+      negotiationStorePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
+    } else {
+      storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
+    }
     return map;
-  }, [storePieces]);
+  }, [storePieces, negotiationStorePieces, isNegotiationView]);
 
   const totalPieces = useMemo(() => storePieces.reduce((s, sp) => s + sp.quantity, 0), [storePieces]);
 
@@ -768,7 +822,33 @@ const CampaignDetail = () => {
 
     if (typeof window !== "undefined" && (window as any).__rateioDebug) {
       // eslint-disable-next-line no-console
-      console.log("[CELL][SAVE]", { ...cell, rawValue, qty, isKit: cell.pieceId.startsWith("kit-") });
+      console.log("[CELL][SAVE]", { ...cell, rawValue, qty, isKit: cell.pieceId.startsWith("kit-"), source: isNegotiationView ? "negotiation" : "original" });
+    }
+
+    // ─── Negotiation rateio: write to isolated table for the winning supplier ───
+    if (isNegotiationView && winnerSupplierId) {
+      if (cell.pieceId.startsWith("kit-")) {
+        const kitId = cell.pieceId.replace("kit-", "");
+        const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
+        for (const kp of piecesInKit) {
+          updateNegotiationStorePiece.mutate({
+            supplier_id: winnerSupplierId,
+            campaign_id: campaignId,
+            store_id: cell.storeId,
+            piece_id: kp.piece_id,
+            quantity: qty * (kp.quantity || 1),
+          });
+        }
+        return;
+      }
+      updateNegotiationStorePiece.mutate({
+        supplier_id: winnerSupplierId,
+        campaign_id: campaignId,
+        store_id: cell.storeId,
+        piece_id: cell.pieceId,
+        quantity: qty,
+      });
+      return;
     }
 
     if (cell.pieceId.startsWith("kit-")) {
@@ -793,7 +873,7 @@ const CampaignDetail = () => {
       pieceId: cell.pieceId,
       quantity: qty,
     });
-  }, [campaignId, kitPieces, updateStorePiece, bulkUpdateStorePieces]);
+  }, [campaignId, kitPieces, updateStorePiece, bulkUpdateStorePieces, isNegotiationView, winnerSupplierId, updateNegotiationStorePiece]);
 
   // ─── Atomic transition: save current cell (if any) and open the new one ───
   // The save runs SYNCHRONOUSLY using editValueRef.current as the source of
@@ -2095,6 +2175,47 @@ const CampaignDetail = () => {
                     </TabsList>
                   </div>
                   <TabsContent value="planilha" className="flex-1 flex flex-col overflow-hidden mt-0 data-[state=inactive]:hidden">
+                {/* Negotiation rateio banner + source toggle */}
+                {hasNegotiationRateio && winnerSupplierId && (
+                  <div
+                    className={`border-b px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                      isNegotiationView
+                        ? "border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/10"
+                        : "border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10"
+                    }`}
+                  >
+                    <div className={`text-xs flex items-start gap-2 ${
+                      isNegotiationView ? "text-blue-900 dark:text-blue-200" : "text-amber-900 dark:text-amber-200"
+                    }`}>
+                      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                      <span>
+                        {isNegotiationView
+                          ? <>Editando <strong>rateio de negociação</strong> — <strong>{winnerSupplierName}</strong>. Alterações aqui não afetam o rateio original.</>
+                          : <>⚠️ Existe uma negociação ativa com <strong>{winnerSupplierName}</strong>. O rateio de negociação é independente do rateio original.</>}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={rateioSource === "original" ? "default" : "outline"}
+                        className="h-7 text-xs"
+                        onClick={() => setRateioSource("original")}
+                      >
+                        Rateio Original
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={rateioSource === "negotiation" ? "default" : "outline"}
+                        className="h-7 text-xs"
+                        onClick={() => setRateioSource("negotiation")}
+                      >
+                        Rateio da Negociação
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 {/* Toolbar */}
                 <div className="border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between px-3 py-1">

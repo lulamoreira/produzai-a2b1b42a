@@ -18,6 +18,10 @@ import {
 } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { snapshotSupplierBudget } from "@/lib/budgetPriceSnapshot";
+import {
+  useNegotiationStorePieces,
+  snapshotNegotiationRateio,
+} from "@/hooks/useNegotiationStorePieces";
 
 type Supplier = {
   id: string;
@@ -81,16 +85,32 @@ export default function BudgetNegotiationDialog({
     [extraCosts, supplier.id]
   );
 
+  // Negotiation rateio (isolated quantities for this supplier)
+  const { data: negotiationPieces = [] } = useNegotiationStorePieces(
+    supplier.id,
+    campaignId,
+    open
+  );
+  const negPieceTotals = useMemo<Record<string, number>>(() => {
+    if (!negotiationPieces.length) return {};
+    const map: Record<string, number> = {};
+    for (const row of negotiationPieces) {
+      map[row.piece_id] = (map[row.piece_id] || 0) + Number(row.quantity || 0);
+    }
+    return map;
+  }, [negotiationPieces]);
+  const effectivePieceTotals = negotiationPieces.length > 0 ? negPieceTotals : pieceTotals;
+
   const currentTotal = useMemo(() => {
     let total = toNum(supplierEC?.installation_value) + toNum(supplierEC?.freight_value);
     for (const piece of pieces) {
-      const qty = pieceTotals[piece.id] || 0;
+      const qty = effectivePieceTotals[piece.id] || 0;
       if (qty <= 0) continue;
       const pr = supplierPrices.find((p) => p.piece_id === piece.id);
       total += toNum(pr?.unit_price) * qty;
     }
     return total;
-  }, [pieces, pieceTotals, supplierPrices, supplierEC]);
+  }, [pieces, effectivePieceTotals, supplierPrices, supplierEC]);
 
   useEffect(() => {
     if (open) {
@@ -112,7 +132,7 @@ export default function BudgetNegotiationDialog({
   const autoPreview = useMemo(() => {
     if (mode !== "auto" || targetNum <= 0 || currentTotal <= 0) return [];
     return pieces
-      .filter((p) => (pieceTotals[p.id] || 0) > 0)
+      .filter((p) => (effectivePieceTotals[p.id] || 0) > 0)
       .map((piece) => {
         const pr = supplierPrices.find((p) => p.piece_id === piece.id);
         const original = toNum(pr?.unit_price);
@@ -126,7 +146,7 @@ export default function BudgetNegotiationDialog({
           diff: adjusted - original,
         };
       });
-  }, [mode, targetNum, currentTotal, pieces, pieceTotals, supplierPrices, ratio]);
+  }, [mode, targetNum, currentTotal, pieces, effectivePieceTotals, supplierPrices, ratio]);
 
   const adjustedInstallation = supplierEC?.installation_value != null
     ? Math.round(toNum(supplierEC.installation_value) * ratio * 100) / 100
@@ -139,10 +159,10 @@ export default function BudgetNegotiationDialog({
     if (mode !== "auto") return targetNum;
     let t = (adjustedInstallation || 0) + (adjustedFreight || 0);
     for (const row of autoPreview) {
-      t += row.adjusted * (pieceTotals[row.pieceId] || 0);
+      t += row.adjusted * (effectivePieceTotals[row.pieceId] || 0);
     }
     return t;
-  }, [mode, targetNum, autoPreview, adjustedInstallation, adjustedFreight, pieceTotals]);
+  }, [mode, targetNum, autoPreview, adjustedInstallation, adjustedFreight, effectivePieceTotals]);
 
   // History
   const { data: history = [] } = useQuery({
@@ -200,6 +220,7 @@ export default function BudgetNegotiationDialog({
         supplierId: supplier.id, campaignId, reason: "negotiation_opened" as any,
       });
       await saveTarget();
+      await snapshotNegotiationRateio(supplier.id, campaignId);
       await supabase.from("budget_suppliers")
         .update({ negotiation_status: "pending" } as never)
         .eq("id", supplier.id);
@@ -231,6 +252,7 @@ export default function BudgetNegotiationDialog({
     setBusy(true);
     try {
       await saveTarget();
+      await snapshotNegotiationRateio(supplier.id, campaignId);
       // Update each price
       for (const row of autoPreview) {
         await supabase.from("budget_prices").upsert(
