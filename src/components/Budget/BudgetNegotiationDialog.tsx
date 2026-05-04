@@ -401,6 +401,11 @@ export default function BudgetNegotiationDialog({
                   onChange={(e) => setTarget(e.target.value.replace(/[^0-9.,]/g, ""))}
                 />
               </div>
+              <div className="rounded-md border bg-muted/30 p-2 text-xs space-y-1">
+                <div className="flex justify-between"><span className="text-muted-foreground">Frete + Instalação:</span><span className="font-mono">{fmtCurrency(fixedCosts)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Total das peças:</span><span className="font-mono">{fmtCurrency(currentPiecesTotal)}</span></div>
+                <div className="flex justify-between font-semibold"><span>Total geral atual:</span><span className="font-mono">{fmtCurrency(currentTotal)}</span></div>
+              </div>
             </div>
 
             <div className="space-y-2">
