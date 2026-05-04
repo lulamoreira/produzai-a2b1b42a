@@ -940,14 +940,27 @@ export default function MatrixAutomationDialog({
         continue;
       }
       try {
-        const migrated = migrateTemplate(tpl);
-        const result = await executeAutomationMulti(
-          { filtros: migrated.filtros, condicoes: migrated.condicoes },
-          tpl.items,
-          tpl.kind ?? "fixed",
-          tpl.base_field ?? null,
-          migrated.operation,
-        );
+        const tplKind = tpl.kind ?? "fixed";
+        let result: { updated: number };
+        if (tplKind === "replacement") {
+          let parsed: any = {};
+          try { parsed = JSON.parse(tpl.filter_value); } catch {}
+          result = await executeReplacementMulti(
+            parsed.replacementPieceId || "",
+            Array.isArray(parsed.replacementSourceQtys) ? parsed.replacementSourceQtys : [],
+            Number(parsed.replacementTargetQty) || 0,
+            !!parsed.replaceAnyNonZero,
+          );
+        } else {
+          const migrated = migrateTemplate(tpl);
+          result = await executeAutomationMulti(
+            { filtros: migrated.filtros, condicoes: migrated.condicoes },
+            tpl.items,
+            tplKind,
+            tpl.base_field ?? null,
+            migrated.operation,
+          );
+        }
         results.push({
           templateId: tpl.id,
           templateName: tpl.name,
