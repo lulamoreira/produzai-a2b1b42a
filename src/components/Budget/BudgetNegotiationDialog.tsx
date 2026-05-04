@@ -243,6 +243,12 @@ export default function BudgetNegotiationDialog({
     toast.loading("Preparando rateio de negociação...", { id: TOAST_ID });
     try {
       await snapshotNegotiationRateio(supplier.id, campaignId);
+      if (!(supplier as any).negotiation_status) {
+        await supabase
+          .from("budget_suppliers")
+          .update({ negotiation_status: "pending" } as never)
+          .eq("id", supplier.id);
+      }
       toast.dismiss(TOAST_ID);
       onOpenChange(false);
       onNavigateToRateio?.();
