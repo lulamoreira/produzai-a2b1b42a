@@ -598,7 +598,7 @@ export default function BudgetNegotiationDialog({
               Editar Rateio da Negociação
             </Button>
           )}
-          {hasAdjusted && (
+          {hasAdjusted && !status && (
             <Button variant="outline" onClick={handleRevert} disabled={busy} className="gap-1">
               <RotateCcw className="w-4 h-4" />
               Reverter ajuste
