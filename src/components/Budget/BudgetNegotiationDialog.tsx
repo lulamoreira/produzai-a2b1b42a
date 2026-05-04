@@ -460,7 +460,7 @@ export default function BudgetNegotiationDialog({
                         {format(new Date(h.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
                       </span>
                     </div>
-                    <div className="mt-1 text-xs text-muted-foreground">{h.reason}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{reasonLabel(h.reason)}</div>
                   </div>
                 ))}
               </div>
