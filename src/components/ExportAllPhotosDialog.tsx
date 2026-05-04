@@ -390,11 +390,22 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {isAdmin && (
+              <Button
+                variant="destructive"
+                onClick={() => { setDeleteOnly(true); setDeleteAfter(false); handleStart(); }}
+                disabled={busy}
+                className="gap-1.5 sm:mr-auto"
+              >
+                <Trash2 className="w-4 h-4" />
+                Apagar todas (sem baixar)
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
               Cancelar
             </Button>
-            <Button onClick={handleStart} disabled={busy}>
+            <Button onClick={() => { setDeleteOnly(false); handleStart(); }} disabled={busy}>
               {busy ? "Processando..." : deleteAfter ? "Baixar e apagar" : "Baixar ZIP"}
             </Button>
           </DialogFooter>
