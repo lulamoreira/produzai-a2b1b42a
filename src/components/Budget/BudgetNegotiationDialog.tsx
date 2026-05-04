@@ -368,7 +368,7 @@ export default function BudgetNegotiationDialog({
   const handleRevert = async () => {
     setBusy(true);
     try {
-      await cancelNegotiationRateio(supplier.id);
+      await cancelNegotiationRateio(supplier.id, campaignId);
       refresh();
       toast.success("Negociação cancelada — rateio original preservado.");
       onOpenChange(false);
