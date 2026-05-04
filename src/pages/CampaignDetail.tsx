@@ -2495,6 +2495,11 @@ const CampaignDetail = () => {
                           <Download className="w-4 h-4 mr-2" />
                           {t("matrix.customExport")}
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setRateioBackupOpen(true)}>
+                          <Database className="w-4 h-4 mr-2" />
+                          Backup do Rateio
+                        </DropdownMenuItem>
 
 
                         {canEditCampaign && (
