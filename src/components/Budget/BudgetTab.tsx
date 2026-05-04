@@ -841,7 +841,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     <div className="space-y-6">
 
       {/* ═══ KPI CARDS ═══ */}
-      <div className={cn("grid grid-cols-1 gap-4", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
+      <div className={cn("grid grid-cols-1 gap-4 items-stretch [&>*]:h-full [&_[data-kpi-card]]:h-full [&_[data-kpi-card]]:flex [&_[data-kpi-card]]:flex-col [&_[data-kpi-card]]:justify-center", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
         {/* Empresa Vencedora (só aparece quando há vencedor declarado) */}
         {winnerSupplier && (
           <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20">
