@@ -62,6 +62,7 @@ function parseStoragePath(url: string): { bucket: string; path: string } | null 
 }
 
 export default function ExportAllPhotosDialog({ campaignId, campaignName, trigger }: Props) {
+  const { isAdmin } = useUserRole();
   const [open, setOpen] = useState(false);
   const [scope, setScope] = useState<Scope>({
     installations: true,
@@ -70,6 +71,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
     chat: true,
   });
   const [deleteAfter, setDeleteAfter] = useState(false);
+  const [deleteOnly, setDeleteOnly] = useState(false);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, label: "" });
 
