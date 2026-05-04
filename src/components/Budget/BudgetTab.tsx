@@ -841,11 +841,11 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     <div className="space-y-6">
 
       {/* ═══ KPI CARDS ═══ */}
-      <div className={cn("grid grid-cols-1 gap-4", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
+      <div className={cn("grid grid-cols-1 gap-4 items-stretch [&>*]:h-full [&_[data-kpi-card]]:h-full [&_[data-kpi-card]]:flex [&_[data-kpi-card]]:flex-col [&_[data-kpi-card]]:justify-center", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
         {/* Empresa Vencedora (só aparece quando há vencedor declarado) */}
         {winnerSupplier && (
           <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20">
-            <CardContent className="pt-4 pb-4 space-y-1">
+            <CardContent data-kpi-card className="pt-4 pb-4 space-y-1">
               <div className="flex items-center gap-1.5">
                 <Trophy className="w-3.5 h-3.5 text-amber-500" />
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Empresa Vencedora</p>
@@ -890,7 +890,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
         {/* Budget da Campanha */}
         <Card>
-          <CardContent className="pt-4 pb-4 space-y-3">
+          <CardContent data-kpi-card className="pt-4 pb-4 space-y-3">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Budget da Campanha</p>
             {editingBudget ? (
               <div className="flex items-center gap-2">
@@ -990,7 +990,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
         {/* Melhor Proposta / Vencedor em negociação */}
         <Card className={(winnerSupplier && winnerInNegotiation) || bestSupplier ? "border-emerald-200 dark:border-emerald-800" : ""}>
-          <CardContent className="pt-4 pb-4 space-y-1">
+          <CardContent data-kpi-card className="pt-4 pb-4 space-y-1">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {winnerSupplier && winnerInNegotiation
                 ? (winnerNegotiationStatus === "approved" ? "Proposta negociada" : "Em negociação")
@@ -1057,7 +1057,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           );
           return (
             <Card>
-              <CardContent className="pt-4 pb-4 space-y-2">
+              <CardContent data-kpi-card className="pt-4 pb-4 space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Diferença</p>
                 {renderDiff("vs. Proposta vencedora", winnerDiff)}
                 {renderDiff("vs. Melhor proposta", bestDiff)}
