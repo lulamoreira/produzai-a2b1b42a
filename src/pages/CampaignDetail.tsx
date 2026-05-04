@@ -254,6 +254,8 @@ const CampaignDetail = () => {
   const updateStorePiece = useUpdateCampaignStorePiece();
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
 
+  const [backupDialogOpen, setBackupDialogOpen] = useState(false);
+
   // ─── Negotiation rateio (isolated distribution for the winning supplier) ───
   const [rateioSource, setRateioSource] = useState<"original" | "negotiation">("original");
   const { data: winnerNegSupplier } = useQuery({
