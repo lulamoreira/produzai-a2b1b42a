@@ -3663,6 +3663,20 @@ const CampaignDetail = () => {
         campaignId={campaignId!}
         campaignName={campaign?.name || ""}
       />
+
+      <RateioBackupSheet
+        open={rateioBackupOpen}
+        onOpenChange={setRateioBackupOpen}
+        campaignId={campaignId!}
+        campaignName={campaign?.name || ""}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        stores={stores}
+        qtyMap={qtyMap}
+        isNegotiationView={isNegotiationView}
+        negotiationSupplierId={winnerSupplierId}
+      />
     </AppLayout>
   );
 };
