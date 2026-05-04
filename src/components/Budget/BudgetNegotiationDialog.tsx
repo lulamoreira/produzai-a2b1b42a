@@ -117,6 +117,7 @@ export default function BudgetNegotiationDialog({
     if (open) {
       setTarget(settings?.negotiation_target ? String(settings.negotiation_target) : "");
       setMode((settings?.negotiation_mode as "auto" | "manual") || "manual");
+      setAdjustScope("pieces_only");
     }
   }, [open, settings?.negotiation_target, settings?.negotiation_mode]);
 
