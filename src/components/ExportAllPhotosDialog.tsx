@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Camera, Download, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface Props {
   campaignId: string;
@@ -61,6 +62,7 @@ function parseStoragePath(url: string): { bucket: string; path: string } | null 
 }
 
 export default function ExportAllPhotosDialog({ campaignId, campaignName, trigger }: Props) {
+  const { isAdmin } = useUserRole();
   const [open, setOpen] = useState(false);
   const [scope, setScope] = useState<Scope>({
     installations: true,
@@ -69,6 +71,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
     chat: true,
   });
   const [deleteAfter, setDeleteAfter] = useState(false);
+  const [deleteOnly, setDeleteOnly] = useState(false);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, label: "" });
 
@@ -79,6 +82,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
     setProgress({ done: 0, total: 0, label: "" });
     setConfirmText("");
     setConfirmOpen(false);
+    setDeleteOnly(false);
   };
 
   const collectPhotos = async (): Promise<{ photos: CollectedPhoto[]; storeMap: Record<string, string> }> => {
@@ -272,7 +276,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
       toast.error("Selecione ao menos um tipo de foto");
       return;
     }
-    if (deleteAfter) {
+    if (deleteAfter || deleteOnly) {
       setConfirmOpen(true);
     } else {
       void run();
@@ -289,10 +293,12 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
         setBusy(false);
         return;
       }
-      await buildAndDownloadZip(photos);
-      toast.success(`${photos.length} arquivo(s) compactados em ZIP`);
+      if (!deleteOnly) {
+        await buildAndDownloadZip(photos);
+        toast.success(`${photos.length} arquivo(s) compactados em ZIP`);
+      }
 
-      if (deleteAfter) {
+      if (deleteAfter || deleteOnly) {
         await deletePhotos(photos);
         toast.success(`${photos.length} foto(s) excluídas do sistema`);
       }
@@ -385,11 +391,22 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {isAdmin && (
+              <Button
+                variant="destructive"
+                onClick={() => { setDeleteOnly(true); setDeleteAfter(false); handleStart(); }}
+                disabled={busy}
+                className="gap-1.5 sm:mr-auto"
+              >
+                <Trash2 className="w-4 h-4" />
+                Apagar todas (sem baixar)
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
               Cancelar
             </Button>
-            <Button onClick={handleStart} disabled={busy}>
+            <Button onClick={() => { setDeleteOnly(false); handleStart(); }} disabled={busy}>
               {busy ? "Processando..." : deleteAfter ? "Baixar e apagar" : "Baixar ZIP"}
             </Button>
           </DialogFooter>
