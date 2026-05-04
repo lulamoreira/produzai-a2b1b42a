@@ -866,7 +866,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
                   <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhuma reposição pendente</TableCell></TableRow>
                 )}
                 {replSort.sortedItems.map((r: any) => (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} data-card-id={r.id} className={highlightId === r.id ? "ring-2 ring-primary bg-primary/5 transition-all" : ""}>
                     <TableCell className="font-medium">{(r.client_stores as any)?.name ?? "—"}</TableCell>
                     <TableCell>{(r.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
                     <TableCell className="text-center">{r.quantity_requested}</TableCell>
@@ -921,7 +921,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
                  <TableRow><TableCell colSpan={(isAdmin ? 6 : 5) - (showPriority ? 0 : 1)} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
                )}
                {maintSort.sortedItems.slice(0, 10).map((m: any) => (
-                 <TableRow key={m.id}>
+                 <TableRow key={m.id} data-card-id={m.id} className={highlightId === m.id ? "ring-2 ring-primary bg-primary/5 transition-all" : ""}>
                    <TableCell className="font-medium">{(m.client_stores as any)?.name ?? "—"}</TableCell>
                    <TableCell><span className="line-clamp-1 max-w-[250px]">{m.description}</span></TableCell>
                    {showPriority && <TableCell><Badge className={priorityColor[m.priority] ?? "bg-muted"}>{m.priority}</Badge></TableCell>}
