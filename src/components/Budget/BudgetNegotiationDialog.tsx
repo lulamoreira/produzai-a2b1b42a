@@ -74,6 +74,7 @@ export default function BudgetNegotiationDialog({
   const qc = useQueryClient();
   const [target, setTarget] = useState<string>("");
   const [mode, setMode] = useState<"auto" | "manual">("manual");
+  const [adjustScope, setAdjustScope] = useState<"all" | "pieces_only">("pieces_only");
   const [busy, setBusy] = useState(false);
 
   const supplierPrices = useMemo(
@@ -116,6 +117,7 @@ export default function BudgetNegotiationDialog({
     if (open) {
       setTarget(settings?.negotiation_target ? String(settings.negotiation_target) : "");
       setMode((settings?.negotiation_mode as "auto" | "manual") || "manual");
+      setAdjustScope("pieces_only");
     }
   }, [open, settings?.negotiation_target, settings?.negotiation_mode]);
 
@@ -124,9 +126,22 @@ export default function BudgetNegotiationDialog({
     return Number.isFinite(n) && n > 0 ? n : 0;
   }, [target]);
 
-  const ratio = targetNum > 0 && currentTotal > 0 ? targetNum / currentTotal : 1;
+  const fixedCosts = toNum(supplierEC?.installation_value) + toNum(supplierEC?.freight_value);
+  const currentPiecesTotal = currentTotal - fixedCosts;
+  const piecesOnlyTarget = targetNum - fixedCosts;
+  const piecesOnlyInvalid = mode === "auto" && adjustScope === "pieces_only" && targetNum > 0 && piecesOnlyTarget <= 0;
+
+  const ratio = useMemo(() => {
+    if (targetNum <= 0) return 1;
+    if (adjustScope === "pieces_only") {
+      if (currentPiecesTotal <= 0 || piecesOnlyTarget <= 0) return 1;
+      return piecesOnlyTarget / currentPiecesTotal;
+    }
+    return currentTotal > 0 ? targetNum / currentTotal : 1;
+  }, [targetNum, adjustScope, currentPiecesTotal, piecesOnlyTarget, currentTotal]);
+
   const reductionPct = targetNum > 0 && currentTotal > 0
-    ? Math.round((1 - ratio) * 1000) / 10
+    ? Math.round((1 - targetNum / currentTotal) * 1000) / 10
     : 0;
 
   const autoPreview = useMemo(() => {
@@ -149,10 +164,14 @@ export default function BudgetNegotiationDialog({
   }, [mode, targetNum, currentTotal, pieces, effectivePieceTotals, supplierPrices, ratio]);
 
   const adjustedInstallation = supplierEC?.installation_value != null
-    ? Math.round(toNum(supplierEC.installation_value) * ratio * 100) / 100
+    ? (adjustScope === "pieces_only"
+        ? toNum(supplierEC.installation_value)
+        : Math.round(toNum(supplierEC.installation_value) * ratio * 100) / 100)
     : null;
   const adjustedFreight = supplierEC?.freight_value != null
-    ? Math.round(toNum(supplierEC.freight_value) * ratio * 100) / 100
+    ? (adjustScope === "pieces_only"
+        ? toNum(supplierEC.freight_value)
+        : Math.round(toNum(supplierEC.freight_value) * ratio * 100) / 100)
     : null;
 
   const newTotal = useMemo(() => {
@@ -249,6 +268,10 @@ export default function BudgetNegotiationDialog({
   // ─── Action: auto apply ───
   const handleAutoApply = async () => {
     if (targetNum <= 0) { toast.error("Defina um teto máximo válido."); return; }
+    if (piecesOnlyInvalid) {
+      toast.error("O teto é menor que frete + instalação somados.");
+      return;
+    }
     setBusy(true);
     try {
       await saveTarget();
@@ -266,8 +289,8 @@ export default function BudgetNegotiationDialog({
           { onConflict: "supplier_id,piece_id" }
         );
       }
-      // Update extras
-      if (supplierEC) {
+      // Update extras (only when adjusting all)
+      if (supplierEC && adjustScope === "all") {
         await supabase.from("budget_extra_costs")
           .update({
             adjusted_installation_value: adjustedInstallation,
@@ -378,6 +401,11 @@ export default function BudgetNegotiationDialog({
                   onChange={(e) => setTarget(e.target.value.replace(/[^0-9.,]/g, ""))}
                 />
               </div>
+              <div className="rounded-md border bg-muted/30 p-2 text-xs space-y-1">
+                <div className="flex justify-between"><span className="text-muted-foreground">Frete + Instalação:</span><span className="font-mono">{fmtCurrency(fixedCosts)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Total das peças:</span><span className="font-mono">{fmtCurrency(currentPiecesTotal)}</span></div>
+                <div className="flex justify-between font-semibold"><span>Total geral atual:</span><span className="font-mono">{fmtCurrency(currentTotal)}</span></div>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -401,6 +429,35 @@ export default function BudgetNegotiationDialog({
                 </button>
               </div>
             </div>
+
+            {mode === "auto" && (
+              <div className="space-y-2">
+                <Label>O que ajustar proporcionalmente?</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAdjustScope("pieces_only")}
+                    className={`rounded-md border p-3 text-left text-sm transition-colors ${adjustScope === "pieces_only" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
+                  >
+                    <div className="font-semibold">Somente peças</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Frete e instalação ficam fixos</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdjustScope("all")}
+                    className={`rounded-md border p-3 text-left text-sm transition-colors ${adjustScope === "all" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
+                  >
+                    <div className="font-semibold">Tudo</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Peças + frete + instalação</div>
+                  </button>
+                </div>
+                {piecesOnlyInvalid && (
+                  <div className="text-xs text-red-700 dark:text-red-400 font-medium">
+                    O teto é menor que frete + instalação somados ({fmtCurrency(fixedCosts)}).
+                  </div>
+                )}
+              </div>
+            )}
 
             {mode === "auto" && targetNum > 0 && currentTotal > 0 && (
               <div className="space-y-3">
@@ -444,19 +501,28 @@ export default function BudgetNegotiationDialog({
                             <TableCell>Instalação</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.installation_value))}</TableCell>
                             <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(adjustedInstallation || 0)}</TableCell>
-                            <TableCell className="text-right font-mono">—</TableCell>
+                            <TableCell className="text-right font-mono">
+                              {adjustScope === "pieces_only" ? <Badge variant="outline" className="text-[10px]">🔒 Fixo</Badge> : "—"}
+                            </TableCell>
                           </TableRow>
                           <TableRow>
                             <TableCell>Frete</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.freight_value))}</TableCell>
                             <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(adjustedFreight || 0)}</TableCell>
-                            <TableCell className="text-right font-mono">—</TableCell>
+                            <TableCell className="text-right font-mono">
+                              {adjustScope === "pieces_only" ? <Badge variant="outline" className="text-[10px]">🔒 Fixo</Badge> : "—"}
+                            </TableCell>
                           </TableRow>
                         </>
                       )}
                     </TableBody>
                   </Table>
                 </div>
+                {adjustScope === "pieces_only" && (
+                  <div className="text-xs text-muted-foreground italic">
+                    Frete + Instalação: {fmtCurrency(fixedCosts)} (fixo) — Ajuste aplicado apenas nas peças.
+                  </div>
+                )}
               </div>
             )}
 
@@ -510,7 +576,7 @@ export default function BudgetNegotiationDialog({
             </Button>
           )}
           {mode === "auto" && status !== "submitted" && (
-            <Button onClick={handleAutoApply} disabled={busy || targetNum <= 0} className="gap-1">
+            <Button onClick={handleAutoApply} disabled={busy || targetNum <= 0 || piecesOnlyInvalid} className="gap-1">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               Aplicar e fechar
             </Button>
