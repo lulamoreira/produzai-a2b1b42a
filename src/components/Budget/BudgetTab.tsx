@@ -66,6 +66,7 @@ interface BudgetTabProps {
   kitPieces: { id: string; kit_id: string; piece_id: string; quantity: number }[];
   qtyMap: Record<string, number>;
   stores: { id: string; name: string }[];
+  onNavigateToRateio?: () => void;
 }
 
 // ─── Status helpers ──────────────────────────────────────
