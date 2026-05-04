@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { applyRateioBulk } from "@/lib/applyRateioBulk";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -40,6 +41,8 @@ interface Props {
   kitPieces: { kit_id: string; piece_id: string; quantity: number }[];
   qtyMap: Record<string, number>;
   onComplete: () => void | Promise<void>;
+  isNegotiationView?: boolean;
+  negotiationSupplierId?: string | null;
 }
 
 /** Compute the available "kit count" for a given store, i.e. how many full kits fit. */
@@ -62,7 +65,9 @@ function kitQtyForStore(
 
 export default function CopyQuantitiesDialog({
   open, onOpenChange, campaignId, stores, pieces, kits, kitPieces, qtyMap, onComplete,
+  isNegotiationView = false, negotiationSupplierId = null,
 }: Props) {
+  const rateioOptions = { isNegotiationView, negotiationSupplierId };
   const [source, setSource] = useState<ItemRef | null>(null);
   const [dest, setDest] = useState<ItemRef | null>(null);
   const [multiplier, setMultiplier] = useState<number>(1);
@@ -180,49 +185,29 @@ export default function CopyQuantitiesDialog({
   const execute = async () => {
     setExecuting(true);
     try {
-      const upserts: { campaign_id: string; store_id: string; piece_id: string; quantity: number }[] = [];
-      const deletes: { storeId: string; pieceId: string }[] = [];
+      const upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[] = [];
+      const deletes: { campaignId: string; storeId: string; pieceId: string }[] = [];
 
       for (const row of preview) {
         for (const ch of row.destChanges) {
           if (!ch.willWrite) continue;
           if (ch.next > 0) {
-            upserts.push({ campaign_id: campaignId, store_id: row.storeId, piece_id: ch.pieceId, quantity: ch.next });
+            upserts.push({ campaignId, storeId: row.storeId, pieceId: ch.pieceId, quantity: ch.next });
           } else {
-            deletes.push({ storeId: row.storeId, pieceId: ch.pieceId });
+            deletes.push({ campaignId, storeId: row.storeId, pieceId: ch.pieceId });
           }
         }
       }
 
-      // Dedup (store, piece) – sum quantities (defensive; aggregation already happened per row)
-      if (upserts.length > 0) {
-        const map = new Map<string, typeof upserts[number]>();
-        for (const u of upserts) {
-          const key = `${u.store_id}-${u.piece_id}`;
-          const existing = map.get(key);
-          if (existing) existing.quantity = u.quantity; // last-wins per store/piece
-          else map.set(key, { ...u });
-        }
-        // Chunk to keep payload small
-        const arr = Array.from(map.values());
-        const CHUNK = 500;
-        for (let i = 0; i < arr.length; i += CHUNK) {
-          const slice = arr.slice(i, i + CHUNK);
-          const { error } = await supabase
-            .from("campaign_store_pieces")
-            .upsert(slice, { onConflict: "campaign_id,store_id,piece_id" });
-          if (error) throw error;
-        }
+      // Dedup (store, piece) – last-wins
+      const map = new Map<string, typeof upserts[number]>();
+      for (const u of upserts) {
+        const key = `${u.storeId}-${u.pieceId}`;
+        map.set(key, { ...u });
       }
+      const dedupedUpserts = Array.from(map.values());
 
-      for (const d of deletes) {
-        await supabase
-          .from("campaign_store_pieces")
-          .delete()
-          .eq("campaign_id", campaignId)
-          .eq("store_id", d.storeId)
-          .eq("piece_id", d.pieceId);
-      }
+      await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
 
       const totalStores = preview.length;
       toast.success(`Quantidades copiadas em ${totalStores} loja(s).`);

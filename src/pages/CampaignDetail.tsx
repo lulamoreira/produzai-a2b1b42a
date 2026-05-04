@@ -2554,10 +2554,22 @@ const CampaignDetail = () => {
                   currentKits={kits}
                   currentStores={activeFilteredStores}
                   onImport={async (changes) => {
-                    for (const c of changes) {
-                      await updateStorePiece.mutateAsync({
-                        campaignId: campaignId!, storeId: c.storeId, pieceId: c.pieceId, quantity: c.quantity,
-                      });
+                    if (isNegotiationView && winnerSupplierId) {
+                      for (const c of changes) {
+                        await updateNegotiationStorePiece.mutateAsync({
+                          supplier_id: winnerSupplierId,
+                          campaign_id: campaignId!,
+                          store_id: c.storeId,
+                          piece_id: c.pieceId,
+                          quantity: c.quantity,
+                        });
+                      }
+                    } else {
+                      for (const c of changes) {
+                        await updateStorePiece.mutateAsync({
+                          campaignId: campaignId!, storeId: c.storeId, pieceId: c.pieceId, quantity: c.quantity,
+                        });
+                      }
                     }
                   }}
                 />
@@ -2572,6 +2584,8 @@ const CampaignDetail = () => {
                   kits={kits}
                   kitPieces={kitPieces}
                   qtyMap={qtyMap}
+                  isNegotiationView={isNegotiationView}
+                  negotiationSupplierId={winnerSupplierId}
                   customFieldLabels={Array.from({ length: 15 }, (_, idx) => {
                     const i = idx + 1;
                     const label = (client as any)?.[`custom_field_${i}_label`];
@@ -2579,10 +2593,16 @@ const CampaignDetail = () => {
                   }).filter((x): x is { key: string; label: string; index: number } => x !== null)}
                   onComplete={async () => {
                     await queryClient.refetchQueries({
-                      queryKey: ["campaign_store_pieces", campaignId],
+                      queryKey: isNegotiationView
+                        ? ["negotiation_store_pieces", winnerSupplierId]
+                        : ["campaign_store_pieces", campaignId],
                       exact: true,
                       type: "active",
                     });
+                    if (isNegotiationView && winnerSupplierId) {
+                      queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] });
+                      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_rateio_totals", campaignId] });
+                    }
                   }}
                 />
 
@@ -2622,12 +2642,20 @@ const CampaignDetail = () => {
                   kits={kits}
                   kitPieces={kitPieces}
                   qtyMap={qtyMap}
+                  isNegotiationView={isNegotiationView}
+                  negotiationSupplierId={winnerSupplierId}
                   onComplete={async () => {
                     await queryClient.refetchQueries({
-                      queryKey: ["campaign_store_pieces", campaignId],
+                      queryKey: isNegotiationView
+                        ? ["negotiation_store_pieces", winnerSupplierId]
+                        : ["campaign_store_pieces", campaignId],
                       exact: true,
                       type: "active",
                     });
+                    if (isNegotiationView && winnerSupplierId) {
+                      queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] });
+                      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_rateio_totals", campaignId] });
+                    }
                   }}
                 />
 
@@ -2651,11 +2679,19 @@ const CampaignDetail = () => {
                     );
                     try {
                       if (isAll) {
-                        const { error } = await supabase
-                          .from("campaign_store_pieces")
-                          .delete()
-                          .eq("campaign_id", campaignId);
-                        if (error) throw error;
+                        if (isNegotiationView && winnerSupplierId) {
+                          const { error } = await supabase
+                            .from("budget_negotiation_store_pieces" as never)
+                            .delete()
+                            .eq("supplier_id", winnerSupplierId);
+                          if (error) throw error;
+                        } else {
+                          const { error } = await supabase
+                            .from("campaign_store_pieces")
+                            .delete()
+                            .eq("campaign_id", campaignId);
+                          if (error) throw error;
+                        }
                       } else {
                         // Expande kits → peças componentes e mescla com peças selecionadas
                         const pieceIdSet = new Set<string>(payload.pieceIds);
@@ -2669,14 +2705,28 @@ const CampaignDetail = () => {
                           toast.error("Nenhuma peça válida para zerar.", { id: toastId });
                           return;
                         }
-                        const { error } = await supabase
-                          .from("campaign_store_pieces")
-                          .delete()
-                          .eq("campaign_id", campaignId)
-                          .in("piece_id", finalPieceIds);
-                        if (error) throw error;
+                        if (isNegotiationView && winnerSupplierId) {
+                          const { error } = await supabase
+                            .from("budget_negotiation_store_pieces" as never)
+                            .delete()
+                            .eq("supplier_id", winnerSupplierId)
+                            .in("piece_id", finalPieceIds);
+                          if (error) throw error;
+                        } else {
+                          const { error } = await supabase
+                            .from("campaign_store_pieces")
+                            .delete()
+                            .eq("campaign_id", campaignId)
+                            .in("piece_id", finalPieceIds);
+                          if (error) throw error;
+                        }
                       }
-                      await queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
+                      if (isNegotiationView && winnerSupplierId) {
+                        await queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces", winnerSupplierId] });
+                        queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] });
+                      } else {
+                        await queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
+                      }
                       toast.success(
                         isAll
                           ? "Planilha do Rateio zerada com sucesso."

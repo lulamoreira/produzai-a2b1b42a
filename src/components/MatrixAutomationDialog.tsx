@@ -23,6 +23,7 @@ import type { ClientStore, CampaignPiece, CampaignKit } from "@/hooks/useMultiCl
 import { useAutomationTemplates, type AutomationTemplateItem, type AutomationKind } from "@/hooks/useAutomationTemplates";
 import { GroupRunReviewDialog, buildValidations, type TemplateValidation } from "@/components/Matrix/GroupRunReviewDialog";
 import { GroupRunErrorDialog, type GroupRunResult } from "@/components/Matrix/GroupRunErrorDialog";
+import { applyRateioBulk } from "@/lib/applyRateioBulk";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -72,6 +73,8 @@ interface Props {
   qtyMap: Record<string, number>;
   customFieldLabels: CustomFieldDef[];
   onComplete: () => void | Promise<void>;
+  isNegotiationView?: boolean;
+  negotiationSupplierId?: string | null;
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -164,8 +167,10 @@ export default function MatrixAutomationDialog({
   open, onOpenChange, campaignId, clientId,
   stores, pieces, kits, kitPieces, qtyMap,
   customFieldLabels, onComplete,
+  isNegotiationView = false, negotiationSupplierId = null,
 }: Props) {
   const { t } = useTranslation();
+  const rateioOptions = { isNegotiationView, negotiationSupplierId };
 
 
   const [mainTab, setMainTab] = useState<string>("new");
@@ -650,18 +655,13 @@ export default function MatrixAutomationDialog({
 
     if (targetQty > 0) {
       const upserts = affected.map(s => ({
-        campaign_id: campaignId, store_id: s.id, piece_id: pieceId, quantity: targetQty,
+        campaignId, storeId: s.id, pieceId, quantity: targetQty,
       }));
-      const { error } = await supabase
-        .from("campaign_store_pieces")
-        .upsert(upserts, { onConflict: "campaign_id,store_id,piece_id" });
-      if (error) throw error;
+      await applyRateioBulk(upserts, [], rateioOptions);
     } else {
       // targetQty === 0 → delete rows
-      for (const s of affected) {
-        await supabase.from("campaign_store_pieces").delete()
-          .eq("campaign_id", campaignId).eq("store_id", s.id).eq("piece_id", pieceId);
-      }
+      const dels = affected.map(s => ({ campaignId, storeId: s.id, pieceId }));
+      await applyRateioBulk([], dels, rateioOptions);
     }
     return { updated: affected.length };
   };
@@ -677,8 +677,8 @@ export default function MatrixAutomationDialog({
     const matchingIds = new Set(matching.map(s => s.id));
     const nonMatchingStores = stores.filter(s => !matchingIds.has(s.id));
 
-    const upserts: { campaign_id: string; store_id: string; piece_id: string; quantity: number }[] = [];
-    const deletes: { storeId: string; pieceId: string }[] = [];
+    const upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[] = [];
+    const deletes: { campaignId: string; storeId: string; pieceId: string }[] = [];
     let touchedStores = 0;
 
     for (const store of matching) {
@@ -689,9 +689,9 @@ export default function MatrixAutomationDialog({
       touchedStores++;
       for (const rp of resolvedPieces) {
         if (rp.quantity > 0) {
-          upserts.push({ campaign_id: campaignId, store_id: store.id, piece_id: rp.pieceId, quantity: rp.quantity });
+          upserts.push({ campaignId, storeId: store.id, pieceId: rp.pieceId, quantity: rp.quantity });
         } else {
-          deletes.push({ storeId: store.id, pieceId: rp.pieceId });
+          deletes.push({ campaignId, storeId: store.id, pieceId: rp.pieceId });
         }
       }
     }
@@ -705,31 +705,21 @@ export default function MatrixAutomationDialog({
       }
     }
 
-    if (upserts.length > 0) {
-      // Deduplicate: same (store_id, piece_id) cannot appear twice in a single upsert
-      // (Postgres throws "ON CONFLICT DO UPDATE command cannot affect row a second time").
-      // When a kit references the same piece more than once, sum the quantities.
-      const dedupMap = new Map<string, typeof upserts[number]>();
-      for (const u of upserts) {
-        const key = `${u.store_id}-${u.piece_id}`;
-        const existing = dedupMap.get(key);
-        if (existing) {
-          existing.quantity += u.quantity;
-        } else {
-          dedupMap.set(key, { ...u });
-        }
+    // Deduplicate: same (storeId, pieceId) cannot appear twice in a single upsert.
+    // When a kit references the same piece more than once, sum the quantities.
+    const dedupMap = new Map<string, typeof upserts[number]>();
+    for (const u of upserts) {
+      const key = `${u.storeId}-${u.pieceId}`;
+      const existing = dedupMap.get(key);
+      if (existing) {
+        existing.quantity += u.quantity;
+      } else {
+        dedupMap.set(key, { ...u });
       }
-      const dedupedUpserts = Array.from(dedupMap.values());
-      const { error } = await supabase
-        .from("campaign_store_pieces")
-        .upsert(dedupedUpserts, { onConflict: "campaign_id,store_id,piece_id" });
-      if (error) throw error;
     }
+    const dedupedUpserts = Array.from(dedupMap.values());
 
-    for (const del of deletes) {
-      await supabase.from("campaign_store_pieces").delete()
-        .eq("campaign_id", campaignId).eq("store_id", del.storeId).eq("piece_id", del.pieceId);
-    }
+    await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
 
     return { updated: touchedStores, kept: keepCount, zeroed: 0 };
   };
@@ -755,14 +745,14 @@ export default function MatrixAutomationDialog({
         }
       }
 
-      const upserts: { campaign_id: string; store_id: string; piece_id: string; quantity: number }[] = [];
-      const deletes: { storeId: string; pieceId: string }[] = [];
+      const upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[] = [];
+      const deletes: { campaignId: string; storeId: string; pieceId: string }[] = [];
 
       for (const row of updateRows) {
         if (row.newQty > 0) {
-          upserts.push({ campaign_id: campaignId, store_id: row.storeId, piece_id: row.pieceId, quantity: row.newQty });
+          upserts.push({ campaignId, storeId: row.storeId, pieceId: row.pieceId, quantity: row.newQty });
         } else {
-          deletes.push({ storeId: row.storeId, pieceId: row.pieceId });
+          deletes.push({ campaignId, storeId: row.storeId, pieceId: row.pieceId });
         }
       }
 
@@ -771,38 +761,27 @@ export default function MatrixAutomationDialog({
       for (const row of outsideRows) {
         const action = outsideActions[`${row.storeId}-${row.pieceId}`] || "keep";
         if (action === "zero") {
-          deletes.push({ storeId: row.storeId, pieceId: row.pieceId });
+          deletes.push({ campaignId, storeId: row.storeId, pieceId: row.pieceId });
           zeroCount++;
         } else {
           keepCount++;
         }
       }
 
-      if (upserts.length > 0) {
-        // Deduplicate same (store_id, piece_id) entries before upserting (sum quantities).
-        const dedupMap = new Map<string, typeof upserts[number]>();
-        for (const u of upserts) {
-          const key = `${u.store_id}-${u.piece_id}`;
-          const existing = dedupMap.get(key);
-          if (existing) {
-            existing.quantity += u.quantity;
-          } else {
-            dedupMap.set(key, { ...u });
-          }
+      // Deduplicate same (storeId, pieceId) entries before upserting (sum quantities).
+      const dedupMap = new Map<string, typeof upserts[number]>();
+      for (const u of upserts) {
+        const key = `${u.storeId}-${u.pieceId}`;
+        const existing = dedupMap.get(key);
+        if (existing) {
+          existing.quantity += u.quantity;
+        } else {
+          dedupMap.set(key, { ...u });
         }
-        const dedupedUpserts = Array.from(dedupMap.values());
-        const { error } = await supabase
-          .from("campaign_store_pieces")
-          .upsert(dedupedUpserts, { onConflict: "campaign_id,store_id,piece_id" })
-          .select();
-        if (error) throw error;
       }
+      const dedupedUpserts = Array.from(dedupMap.values());
 
-      for (const del of deletes) {
-        const { error: delError } = await supabase.from("campaign_store_pieces").delete()
-          .eq("campaign_id", campaignId).eq("store_id", del.storeId).eq("piece_id", del.pieceId);
-        if (delError) console.warn("Delete error", { del, delError });
-      }
+      await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
 
       toast.success(t("automation.successMessage", { updated: uniqueUpdateStores, kept: keepCount, zeroed: zeroCount }));
       await onComplete();
