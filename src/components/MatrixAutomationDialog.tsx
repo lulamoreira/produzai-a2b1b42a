@@ -821,12 +821,28 @@ export default function MatrixAutomationDialog({
       toast.error("Selecione o campo base para o cálculo.");
       return;
     }
+    if (kind === "replacement") {
+      if (!replacementPieceId) { toast.error("Selecione a peça."); return; }
+      if (!replaceAnyNonZero && replacementSourceQtys.length === 0) {
+        toast.error("Selecione ao menos uma quantidade de origem."); return;
+      }
+    }
     try {
+      const filterValue = kind === "replacement"
+        ? JSON.stringify({
+            filtros: [], condicoes: [],
+            replacementPieceId,
+            replacementSourceQtys,
+            replacementTargetQty,
+            replaceAnyNonZero,
+          })
+        : JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes, operation });
+
       const payload = {
         name: saveName.trim(),
         filter_field: "__multi_v2__",
-        filter_value: JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes, operation }),
-        items: selectedItems,
+        filter_value: filterValue,
+        items: kind === "replacement" ? [] : selectedItems,
         outside_action: "keep",
         kind,
         base_field: kind === "by_field" ? baseField : null,
@@ -846,14 +862,40 @@ export default function MatrixAutomationDialog({
     }
   };
 
+  // Helper: parse replacement payload from template filter_value
+  const parseReplacementFromTpl = (tpl: typeof templates[0]) => {
+    try {
+      const parsed = JSON.parse(tpl.filter_value);
+      return {
+        replacementPieceId: parsed.replacementPieceId || "",
+        replacementSourceQtys: Array.isArray(parsed.replacementSourceQtys) ? parsed.replacementSourceQtys : [],
+        replacementTargetQty: Number(parsed.replacementTargetQty) || 0,
+        replaceAnyNonZero: !!parsed.replaceAnyNonZero,
+      };
+    } catch {
+      return { replacementPieceId: "", replacementSourceQtys: [], replacementTargetQty: 0, replaceAnyNonZero: false };
+    }
+  };
+
   // Load template into form (read-only "carregar" — não entra em modo edição)
   const loadTemplate = (tpl: typeof templates[0]) => {
-    const migrated = migrateTemplate(tpl);
-    setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
-    setSelectedItems(tpl.items);
-    setKind(tpl.kind ?? "fixed");
+    const tplKind = tpl.kind ?? "fixed";
+    if (tplKind === "replacement") {
+      const r = parseReplacementFromTpl(tpl);
+      setReplacementPieceId(r.replacementPieceId);
+      setReplacementSourceQtys(r.replacementSourceQtys);
+      setReplacementTargetQty(r.replacementTargetQty);
+      setReplaceAnyNonZero(r.replaceAnyNonZero);
+      setFilterGroup({ filtros: [createEmptyFilter()], condicoes: [] });
+      setSelectedItems([]);
+    } else {
+      const migrated = migrateTemplate(tpl);
+      setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
+      setSelectedItems(tpl.items);
+      setOperation(migrated.operation);
+    }
+    setKind(tplKind);
     setBaseField(tpl.base_field ?? "");
-    setOperation(migrated.operation);
     setEditingId(null);
     setMainTab("new");
     setStep(1);
@@ -861,12 +903,23 @@ export default function MatrixAutomationDialog({
 
   // Edit template: load into form AND mark as editing so save updates in place
   const editTemplate = (tpl: typeof templates[0]) => {
-    const migrated = migrateTemplate(tpl);
-    setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
-    setSelectedItems(tpl.items);
-    setKind(tpl.kind ?? "fixed");
+    const tplKind = tpl.kind ?? "fixed";
+    if (tplKind === "replacement") {
+      const r = parseReplacementFromTpl(tpl);
+      setReplacementPieceId(r.replacementPieceId);
+      setReplacementSourceQtys(r.replacementSourceQtys);
+      setReplacementTargetQty(r.replacementTargetQty);
+      setReplaceAnyNonZero(r.replaceAnyNonZero);
+      setFilterGroup({ filtros: [createEmptyFilter()], condicoes: [] });
+      setSelectedItems([]);
+    } else {
+      const migrated = migrateTemplate(tpl);
+      setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
+      setSelectedItems(tpl.items);
+      setOperation(migrated.operation);
+    }
+    setKind(tplKind);
     setBaseField(tpl.base_field ?? "");
-    setOperation(migrated.operation);
     setEditingId(tpl.id);
     setSaveName(tpl.name);
     setShowSaveInput(true);
