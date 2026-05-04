@@ -273,7 +273,7 @@ export default function CampaignBackupDialog({ open, onOpenChange, campaignId, c
             </div>
           </div>
 
-          {(busy || stage === "done") && (
+          {busy && (
             <div className="space-y-2 mt-4">
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>{progressLabel}</span>
