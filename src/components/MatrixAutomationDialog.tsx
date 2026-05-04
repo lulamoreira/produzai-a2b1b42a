@@ -618,7 +618,54 @@ export default function MatrixAutomationDialog({
     setOutsideActions(updated);
   };
 
-  // Execute automation (reusable for single + group) — supports kind=fixed|by_field
+  // Execute replacement (reusable for single + group)
+  const executeReplacementMulti = async (
+    pieceId: string,
+    sourceQtys: number[],
+    targetQty: number,
+    anyNonZero: boolean,
+  ): Promise<{ updated: number }> => {
+    const affected = stores.filter(store => {
+      const currentQty = qtyMap[`${store.id}-${pieceId}`] || 0;
+      if (anyNonZero) return currentQty > 0;
+      return sourceQtys.includes(currentQty);
+    });
+    if (affected.length === 0) return { updated: 0 };
+
+    if (targetQty > 0) {
+      const upserts = affected.map(s => ({
+        campaign_id: campaignId, store_id: s.id, piece_id: pieceId, quantity: targetQty,
+      }));
+      const { error } = await supabase
+        .from("campaign_store_pieces")
+        .upsert(upserts, { onConflict: "campaign_id,store_id,piece_id" });
+      if (error) throw error;
+    } else {
+      // targetQty === 0 → delete rows
+      for (const s of affected) {
+        await supabase.from("campaign_store_pieces").delete()
+          .eq("campaign_id", campaignId).eq("store_id", s.id).eq("piece_id", pieceId);
+      }
+    }
+    return { updated: affected.length };
+  };
+
+  const handleConfirmReplacement = async () => {
+    setReplacementConfirm({ open: false, count: 0 });
+    setExecuting(true);
+    try {
+      const result = await executeReplacementMulti(
+        replacementPieceId, replacementSourceQtys, replacementTargetQty, replaceAnyNonZero,
+      );
+      toast.success(`${result.updated} loja(s) atualizada(s).`);
+      await onComplete();
+      onOpenChange(false);
+    } catch (err: any) {
+      toast.error("Erro ao executar substituição: " + (err?.message || ""));
+    } finally {
+      setExecuting(false);
+    }
+  };
   const executeAutomationMulti = async (
     fg: FilterGroup,
     items: SelectedItem[],
