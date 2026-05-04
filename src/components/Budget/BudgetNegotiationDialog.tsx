@@ -23,6 +23,7 @@ import {
   snapshotNegotiationRateio,
   cancelNegotiationRateio,
 } from "@/hooks/useNegotiationStorePieces";
+import { computeSupplierTotal, type KitComponentRow } from "@/lib/computeSupplierTotal";
 
 type Supplier = {
   id: string;
@@ -57,6 +58,7 @@ interface Props {
   prices: Price[];
   extraCosts: ExtraCost[];
   pieceTotals: Record<string, number>;
+  kitPieceTotals: Record<string, KitComponentRow[]>;
   settings: any;
   currencyCode: string;
   fmtCurrency: (v: number | null | undefined) => string;
@@ -72,7 +74,7 @@ function toNum(v: any): number {
 
 export default function BudgetNegotiationDialog({
   open, onOpenChange, supplier, campaignId, campaignName,
-  pieces, prices, extraCosts, pieceTotals, settings, currencyCode, fmtCurrency, publicPortalUrl, frozenTotal, onNavigateToRateio,
+  pieces, prices, extraCosts, pieceTotals, kitPieceTotals, settings, currencyCode, fmtCurrency, publicPortalUrl, frozenTotal, onNavigateToRateio,
 }: Props) {
   const qc = useQueryClient();
   const [target, setTarget] = useState<string>("");
@@ -105,21 +107,51 @@ export default function BudgetNegotiationDialog({
   }, [negotiationPieces]);
   const effectivePieceTotals = negotiationPieces.length > 0 ? negPieceTotals : pieceTotals;
 
+  const pricedQuantityRows = useMemo(() => {
+    const rows: { pieceId: string; qty: number }[] = [];
+    const counted = new Set<string>();
+
+    for (const piece of pieces) {
+      if (piece.kit_only) continue;
+      const qty = effectivePieceTotals[piece.id] || 0;
+      if (qty <= 0) continue;
+      rows.push({ pieceId: piece.id, qty });
+      counted.add(piece.id);
+    }
+
+    for (const kpItems of Object.values(kitPieceTotals)) {
+      for (const kpi of kpItems) {
+        if (counted.has(kpi.pieceId)) continue;
+        if (kpi.qty <= 0) continue;
+        rows.push({ pieceId: kpi.pieceId, qty: kpi.qty });
+        counted.add(kpi.pieceId);
+      }
+    }
+
+    return rows;
+  }, [pieces, effectivePieceTotals, kitPieceTotals]);
+
   const currentTotal = useMemo(() => {
     // If a frozen winner total exists and there's no isolated negotiation rateio,
     // honor the frozen value (matches what's displayed everywhere else in BudgetTab).
     if (frozenTotal != null && frozenTotal > 0 && negotiationPieces.length === 0) {
       return frozenTotal;
     }
-    let total = toNum(supplierEC?.installation_value) + toNum(supplierEC?.freight_value);
-    for (const piece of pieces) {
-      const qty = effectivePieceTotals[piece.id] || 0;
-      if (qty <= 0) continue;
-      const pr = supplierPrices.find((p) => p.piece_id === piece.id);
-      total += toNum(pr?.unit_price) * qty;
-    }
-    return total;
-  }, [pieces, effectivePieceTotals, supplierPrices, supplierEC, frozenTotal, negotiationPieces.length]);
+    return computeSupplierTotal({
+      supplierId: supplier.id,
+      pieces,
+      kitPieceTotals,
+      qtyResolver: (pieceId) => effectivePieceTotals[pieceId] || 0,
+      priceResolver: (_supplierId, pieceId) => {
+        const pr = supplierPrices.find((p) => p.piece_id === pieceId);
+        return toNum(pr?.unit_price);
+      },
+      extraCostResolver: () => ({
+        installation: toNum(supplierEC?.installation_value),
+        freight: toNum(supplierEC?.freight_value),
+      }),
+    });
+  }, [supplier.id, pieces, kitPieceTotals, effectivePieceTotals, supplierPrices, supplierEC, frozenTotal, negotiationPieces.length]);
 
   useEffect(() => {
     if (open) {
