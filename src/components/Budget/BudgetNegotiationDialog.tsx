@@ -61,6 +61,7 @@ interface Props {
   fmtCurrency: (v: number | null | undefined) => string;
   publicPortalUrl?: string;
   frozenTotal?: number | null;
+  onNavigateToRateio?: () => void;
 }
 
 function toNum(v: any): number {
