@@ -586,10 +586,7 @@ export default function BudgetNegotiationDialog({
           {onNavigateToRateio && (
             <Button
               variant="outline"
-              onClick={() => {
-                onOpenChange(false);
-                onNavigateToRateio();
-              }}
+              onClick={handleNavigateToRateio}
               className="gap-1.5"
             >
               <LayoutGrid className="w-4 h-4" />
