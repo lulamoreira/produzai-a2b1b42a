@@ -156,7 +156,7 @@ function parseCustomFieldLabel(raw: string): { name: string; type: "text" | "num
   };
 }
 
-type AutomationKind = "fixed" | "by_field";
+// AutomationKind imported from useAutomationTemplates
 
 /* ─── Component ──────────────────────────────────────────── */
 
