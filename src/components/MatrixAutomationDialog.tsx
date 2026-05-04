@@ -185,9 +185,23 @@ export default function MatrixAutomationDialog({
   const [baseField, setBaseField] = useState<string>("");
   const [operation, setOperation] = useState<Operation>("multiply");
 
+  // Replacement mode state
+  const [replacementPieceId, setReplacementPieceId] = useState<string>("");
+  const [replacementSourceQtys, setReplacementSourceQtys] = useState<number[]>([]);
+  const [replacementTargetQty, setReplacementTargetQty] = useState<number>(1);
+  const [replaceAnyNonZero, setReplaceAnyNonZero] = useState<boolean>(false);
+  const [replacementPieceSearch, setReplacementPieceSearch] = useState<string>("");
+
   // Reset operation when leaving by_field mode
   useEffect(() => {
     if (kind !== "by_field") setOperation("multiply");
+    if (kind !== "replacement") {
+      setReplacementPieceId("");
+      setReplacementSourceQtys([]);
+      setReplacementTargetQty(1);
+      setReplaceAnyNonZero(false);
+      setReplacementPieceSearch("");
+    }
   }, [kind]);
 
   // Step 2 state
