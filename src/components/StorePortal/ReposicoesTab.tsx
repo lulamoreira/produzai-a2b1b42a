@@ -52,7 +52,7 @@ export default function ReposicoesTab({ data, agencyId }: Props) {
     setSubmitting(true);
 
     const peca = selectedPeca;
-    const { error } = await supabase.from("store_replacement_requests").insert({
+    const { data: inserted, error } = await supabase.from("store_replacement_requests").insert({
       token_id: data.token_id,
       campaign_id: data.campaign.id,
       store_id: data.store.id,
@@ -63,7 +63,7 @@ export default function ReposicoesTab({ data, agencyId }: Props) {
       quantity_requested: quantity,
       photo_urls: photos.length > 0 ? photos : null,
       status: "pendente",
-    });
+    }).select("id").single();
 
     if (error) {
       toast.error("Erro ao solicitar reposição.");
@@ -71,13 +71,18 @@ export default function ReposicoesTab({ data, agencyId }: Props) {
     } else {
       toast.success("Solicitação de reposição enviada!");
       try {
+        const repId = (inserted as any)?.id;
         await criarNotificacao({
           agency_id: agencyId,
           campaign_id: data.campaign.id,
           store_id: data.store.id,
+          client_id: data.campaign.client_id,
           type: "store_replacement_request",
           title: "Nova solicitação de reposição",
           body: `${data.store.name} solicitou reposição de ${quantity}x "${peca.nome}".`,
+          action_url: repId
+            ? `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard&rep=${repId}`
+            : `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard`,
         });
       } catch {}
       setSelectedPeca(null);

@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -211,6 +212,46 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   const [occViewMode, setOccViewMode] = useState<"list" | "cards">("list");
   const [selectedOccurrence, setSelectedOccurrence] = useState<any | null>(null);
 
+  // ─── Deep-link: abrir card específico ao chegar via notificação ───
+  const [searchParams, setSearchParams] = useSearchParams();
+  const occParam = searchParams.get("occ");
+  const repParam = searchParams.get("rep");
+  const manParam = searchParams.get("man");
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+
+  // Abrir OccurrenceDetailSheet quando ?occ=<id>
+  useEffect(() => {
+    if (!occParam || !occurrences) return;
+    const found = (occurrences as any[]).find((x) => x.id === occParam);
+    if (found) {
+      setSelectedOccurrence(found);
+      const next = new URLSearchParams(searchParams);
+      next.delete("occ");
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [occParam, occurrences]);
+
+  // Destacar linha de reposição/manutenção quando ?rep=<id> ou ?man=<id>
+  useEffect(() => {
+    const id = repParam || manParam;
+    if (!id) return;
+    if (repParam && !replacements) return;
+    if (manParam && !maintenance) return;
+    setHighlightId(id);
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-card-id="${id}"]`) as HTMLElement | null;
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    const next = new URLSearchParams(searchParams);
+    if (repParam) next.delete("rep");
+    if (manParam) next.delete("man");
+    setSearchParams(next, { replace: true });
+    const t = setTimeout(() => setHighlightId(null), 3000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repParam, manParam, replacements, maintenance]);
+
   const isLoading = l1 || l2 || l3 || l4;
 
   /* Occurrence KPIs */
@@ -367,6 +408,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
             type: confirmAction.status === "aprovada" ? "store_replacement_approved" : "store_replacement_rejected",
             title: confirmAction.status === "aprovada" ? "Reposição aprovada" : "Reposição rejeitada",
             body: `Uma solicitação de reposição foi ${confirmAction.status === "aprovada" ? "aprovada" : "rejeitada"}.`,
+            action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}?section=occurrences&tab=portal-dashboard&rep=${confirmAction.id}`,
           });
         }
       } catch {}
@@ -824,7 +866,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
                   <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">Nenhuma reposição pendente</TableCell></TableRow>
                 )}
                 {replSort.sortedItems.map((r: any) => (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} data-card-id={r.id} className={highlightId === r.id ? "ring-2 ring-primary bg-primary/5 transition-all" : ""}>
                     <TableCell className="font-medium">{(r.client_stores as any)?.name ?? "—"}</TableCell>
                     <TableCell>{(r.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
                     <TableCell className="text-center">{r.quantity_requested}</TableCell>
@@ -879,7 +921,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
                  <TableRow><TableCell colSpan={(isAdmin ? 6 : 5) - (showPriority ? 0 : 1)} className="text-center text-muted-foreground">Nenhuma manutenção</TableCell></TableRow>
                )}
                {maintSort.sortedItems.slice(0, 10).map((m: any) => (
-                 <TableRow key={m.id}>
+                 <TableRow key={m.id} data-card-id={m.id} className={highlightId === m.id ? "ring-2 ring-primary bg-primary/5 transition-all" : ""}>
                    <TableCell className="font-medium">{(m.client_stores as any)?.name ?? "—"}</TableCell>
                    <TableCell><span className="line-clamp-1 max-w-[250px]">{m.description}</span></TableCell>
                    {showPriority && <TableCell><Badge className={priorityColor[m.priority] ?? "bg-muted"}>{m.priority}</Badge></TableCell>}
