@@ -212,8 +212,6 @@ export default function MatrixAutomationDialog({
   // Overwrite dialog state
   const [overwriteDialog, setOverwriteDialog] = useState<{ open: boolean; count: number }>({ open: false, count: 0 });
 
-  // Replacement confirm dialog
-  const [replacementConfirm, setReplacementConfirm] = useState<{ open: boolean; count: number }>({ open: false, count: 0 });
 
   // Save template state
   const [saveName, setSaveName] = useState("");
@@ -475,7 +473,7 @@ export default function MatrixAutomationDialog({
 
   // Check for overwrite before preview
   const handlePreviewClick = async () => {
-    // Replacement mode short-circuit
+    // Replacement mode → build preview rows and go to step 2
     if (kind === "replacement") {
       if (!replacementPieceId) { toast.error("Selecione a peça."); return; }
       if (!Number.isFinite(replacementTargetQty) || replacementTargetQty < 0) {
@@ -484,7 +482,25 @@ export default function MatrixAutomationDialog({
       if (!replaceAnyNonZero && replacementSourceQtys.length === 0) {
         toast.error("Selecione ao menos uma quantidade de origem ou marque \"qualquer valor diferente de 0\"."); return;
       }
-      setReplacementConfirm({ open: true, count: replacementAffectedStores.length });
+      const piece = pieces.find(p => p.id === replacementPieceId);
+      const pieceName = piece ? `${piece.code} — ${piece.name}` : "Peça";
+      const rows: PreviewRow[] = replacementAffectedStores.map(store => ({
+        storeId: store.id,
+        storeName: store.name,
+        group: "update" as const,
+        pieceId: replacementPieceId,
+        pieceName,
+        currentQty: qtyMap[`${store.id}-${replacementPieceId}`] || 0,
+        newQty: replacementTargetQty,
+        action: "keep" as const,
+      }));
+      if (rows.length === 0) {
+        toast.error("Nenhuma loja corresponde aos critérios.");
+        return;
+      }
+      setPreview(rows);
+      setOutsideActions({});
+      setStep(2);
       return;
     }
 
@@ -650,22 +666,6 @@ export default function MatrixAutomationDialog({
     return { updated: affected.length };
   };
 
-  const handleConfirmReplacement = async () => {
-    setReplacementConfirm({ open: false, count: 0 });
-    setExecuting(true);
-    try {
-      const result = await executeReplacementMulti(
-        replacementPieceId, replacementSourceQtys, replacementTargetQty, replaceAnyNonZero,
-      );
-      toast.success(`${result.updated} loja(s) atualizada(s).`);
-      await onComplete();
-      onOpenChange(false);
-    } catch (err: any) {
-      toast.error("Erro ao executar substituição: " + (err?.message || ""));
-    } finally {
-      setExecuting(false);
-    }
-  };
   const executeAutomationMulti = async (
     fg: FilterGroup,
     items: SelectedItem[],
@@ -2073,29 +2073,6 @@ export default function MatrixAutomationDialog({
           <DialogFooter>
             <Button variant="outline" onClick={() => setOverwriteDialog({ open: false, count: 0 })}>
               Cancelar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ──── Replacement confirmation dialog ──── */}
-      <Dialog open={replacementConfirm.open} onOpenChange={(o) => setReplacementConfirm({ ...replacementConfirm, open: o })}>
-        <DialogContent className="w-full max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Confirmar substituição</DialogTitle>
-            <DialogDescription>
-              {replacementConfirm.count} loja(s) terão a peça atualizada para a quantidade <strong>{replacementTargetQty}</strong>.
-              {replaceAnyNonZero
-                ? " (substituindo qualquer valor diferente de 0)"
-                : ` (substituindo qty=${replacementSourceQtys.join(", ")})`}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReplacementConfirm({ open: false, count: 0 })}>
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirmReplacement} disabled={executing || replacementConfirm.count === 0}>
-              {executing ? "Aplicando..." : "Confirmar"}
             </Button>
           </DialogFooter>
         </DialogContent>
