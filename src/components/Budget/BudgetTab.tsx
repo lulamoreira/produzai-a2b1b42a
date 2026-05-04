@@ -396,12 +396,24 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
             .update({ is_winner: false, winner_declared_at: null } as never)
             .eq("id", o.id);
         }
+        // Congelar preços via snapshot antes de declarar o vencedor
+        await snapshotSupplierBudget({
+          supplierId: sup.id,
+          campaignId,
+          reason: "winner_declared" as any,
+          createdBy: user?.id ?? null,
+        });
         const { error } = await supabase.from("budget_suppliers")
-          .update({ is_winner: true, winner_declared_at: new Date().toISOString() } as never)
+          .update({
+            is_winner: true,
+            winner_declared_at: new Date().toISOString(),
+            locked: true,
+          } as never)
           .eq("id", sup.id);
         if (error) throw error;
-        toast.success(`${sup.company_name} declarada vencedora.`);
+        toast.success(`${sup.company_name} declarada vencedora. Preços congelados.`);
       } else {
+        // Mantém snapshot e trava — admin destrava manualmente se necessário
         const { error } = await supabase.from("budget_suppliers")
           .update({ is_winner: false, winner_declared_at: null } as never)
           .eq("id", sup.id);
@@ -416,7 +428,20 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   };
 
   const budgetAmount = settings?.budget_amount != null ? Number(settings.budget_amount) : null;
-  const difference = bestSupplier && budgetAmount != null ? bestSupplier.total - budgetAmount : null;
+
+  // ─── Winner KPI helpers ────────────────────────────────
+  const winnerNegotiationStatus: string | null = (winnerSupplier as any)?.negotiation_status ?? null;
+  const winnerInNegotiation = winnerNegotiationStatus === "pending" || winnerNegotiationStatus === "submitted" || winnerNegotiationStatus === "approved";
+  const winnerOriginalTotal = winnerSupplier ? (supplierPartialTotals[(winnerSupplier as any).id]?.total ?? 0) : 0;
+  const winnerNegotiatedTotal = winnerSupplier ? (supplierNegotiationTotals[(winnerSupplier as any).id] ?? winnerOriginalTotal) : 0;
+
+  const difference = (() => {
+    if (budgetAmount == null) return null;
+    if (winnerSupplier && winnerNegotiationStatus === "approved") {
+      return winnerNegotiatedTotal - budgetAmount;
+    }
+    return bestSupplier ? bestSupplier.total - budgetAmount : null;
+  })();
 
   // ─── Deadline state ────────────────────────────────────
   const deadlineDate = settings?.deadline ? new Date(settings.deadline) : undefined;
@@ -890,11 +915,26 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           </CardContent>
         </Card>
 
-        {/* Melhor Proposta */}
-        <Card className={bestSupplier ? "border-emerald-200 dark:border-emerald-800" : ""}>
+        {/* Melhor Proposta / Vencedor em negociação */}
+        <Card className={(winnerSupplier && winnerInNegotiation) || bestSupplier ? "border-emerald-200 dark:border-emerald-800" : ""}>
           <CardContent className="pt-4 pb-4 space-y-1">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Melhor Proposta</p>
-            {bestSupplier ? (
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {winnerSupplier && winnerInNegotiation
+                ? (winnerNegotiationStatus === "approved" ? "Proposta negociada" : "Em negociação")
+                : "Melhor Proposta"}
+            </p>
+            {winnerSupplier && winnerInNegotiation ? (
+              <>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(winnerNegotiatedTotal)}</p>
+                {currencyCode !== "BRL" && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
+                )}
+                <p className="text-xs text-muted-foreground line-through">
+                  Original: {fmtCurrency(winnerOriginalTotal)}
+                </p>
+                <p className="text-xs text-muted-foreground">{(winnerSupplier as any).company_name}</p>
+              </>
+            ) : bestSupplier ? (
               <>
                 <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(bestSupplier.total)}</p>
                 {currencyCode !== "BRL" && (
