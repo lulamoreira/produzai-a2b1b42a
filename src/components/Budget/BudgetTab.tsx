@@ -2284,10 +2284,11 @@ Qualquer dúvida, estamos à disposição.
             supplier={sup}
             campaignId={campaignId}
             campaignName={campaignName}
-            pieces={pieces.filter((p) => !p.kit_only)}
+            pieces={pieces}
             prices={prices as any}
             extraCosts={extraCosts as any}
             pieceTotals={pieceTotals}
+            kitPieceTotals={kitPieceTotals}
             settings={settings}
             currencyCode={currencyCode}
             fmtCurrency={fmtCurrency}
