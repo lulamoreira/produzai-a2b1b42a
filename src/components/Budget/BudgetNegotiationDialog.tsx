@@ -186,22 +186,23 @@ export default function BudgetNegotiationDialog({
 
   const autoPreview = useMemo(() => {
     if (mode !== "auto" || targetNum <= 0 || currentTotal <= 0) return [];
-    return pieces
-      .filter((p) => (effectivePieceTotals[p.id] || 0) > 0)
-      .map((piece) => {
-        const pr = supplierPrices.find((p) => p.piece_id === piece.id);
+    return pricedQuantityRows
+      .map((row) => {
+        const piece = pieces.find((p) => p.id === row.pieceId);
+        const pr = supplierPrices.find((p) => p.piece_id === row.pieceId);
         const original = toNum(pr?.unit_price);
         const adjusted = Math.round(original * ratio * 100) / 100;
         return {
-          pieceId: piece.id,
-          name: piece.name,
-          code: piece.code,
+          pieceId: row.pieceId,
+          name: piece?.name || "Peça",
+          code: piece?.code ?? 0,
+          qty: row.qty,
           original,
           adjusted,
           diff: adjusted - original,
         };
       });
-  }, [mode, targetNum, currentTotal, pieces, effectivePieceTotals, supplierPrices, ratio]);
+  }, [mode, targetNum, currentTotal, pricedQuantityRows, pieces, supplierPrices, ratio]);
 
   const adjustedInstallation = supplierEC?.installation_value != null
     ? (adjustScope === "pieces_only"
@@ -218,10 +219,10 @@ export default function BudgetNegotiationDialog({
     if (mode !== "auto") return targetNum;
     let t = (adjustedInstallation || 0) + (adjustedFreight || 0);
     for (const row of autoPreview) {
-      t += row.adjusted * (effectivePieceTotals[row.pieceId] || 0);
+      t += row.adjusted * row.qty;
     }
     return t;
-  }, [mode, targetNum, autoPreview, adjustedInstallation, adjustedFreight, effectivePieceTotals]);
+  }, [mode, targetNum, autoPreview, adjustedInstallation, adjustedFreight]);
 
   // History
   const { data: history = [] } = useQuery({
