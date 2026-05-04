@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TrendingDown, Send, Check, RotateCcw, Loader2, History, LayoutGrid } from "lucide-react";
+import { TrendingDown, Send, Check, RotateCcw, Loader2, History, LayoutGrid, XCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -21,6 +21,7 @@ import { snapshotSupplierBudget } from "@/lib/budgetPriceSnapshot";
 import {
   useNegotiationStorePieces,
   snapshotNegotiationRateio,
+  cancelNegotiationRateio,
 } from "@/hooks/useNegotiationStorePieces";
 
 type Supplier = {
@@ -224,6 +225,9 @@ export default function BudgetNegotiationDialog({
     qc.invalidateQueries({ queryKey: ["budget_extra_costs", campaignId] });
     qc.invalidateQueries({ queryKey: ["budget_settings", campaignId] });
     qc.invalidateQueries({ queryKey: ["budget_price_history", supplier.id, "negotiation"] });
+    qc.invalidateQueries({ queryKey: ["negotiation_store_pieces", supplier.id] });
+    qc.invalidateQueries({ queryKey: ["neg_rateio_exists", supplier.id] });
+    qc.invalidateQueries({ queryKey: ["budget_negotiation_rateio_totals", campaignId] });
   };
 
   const saveTarget = async () => {
@@ -265,6 +269,7 @@ export default function BudgetNegotiationDialog({
       await snapshotSupplierBudget({
         supplierId: supplier.id, campaignId, reason: "negotiation_opened" as any,
       });
+      await snapshotNegotiationRateio(supplier.id, campaignId);
       await saveTarget();
       await supabase.from("budget_suppliers")
         .update({ negotiation_status: "pending" } as never)
@@ -300,6 +305,7 @@ export default function BudgetNegotiationDialog({
     }
     setBusy(true);
     try {
+      await snapshotNegotiationRateio(supplier.id, campaignId);
       await saveTarget();
       // Update each price
       for (const row of autoPreview) {
@@ -362,23 +368,12 @@ export default function BudgetNegotiationDialog({
   const handleRevert = async () => {
     setBusy(true);
     try {
-      await supabase.from("budget_prices")
-        .update({ adjusted_unit_price: null } as never)
-        .eq("supplier_id", supplier.id);
-      await supabase.from("budget_extra_costs")
-        .update({
-          adjusted_installation_value: null,
-          adjusted_freight_value: null,
-        } as never)
-        .eq("supplier_id", supplier.id);
-      await supabase.from("budget_suppliers")
-        .update({ negotiation_status: null, negotiation_submitted_at: null } as never)
-        .eq("id", supplier.id);
+      await cancelNegotiationRateio(supplier.id, campaignId);
       refresh();
-      toast.success("Ajuste revertido — preços originais restaurados.");
+      toast.success("Negociação cancelada — rateio original preservado.");
       onOpenChange(false);
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao reverter.");
+      toast.error(e?.message || "Erro ao cancelar negociação.");
     } finally { setBusy(false); }
   };
 
@@ -589,6 +584,12 @@ export default function BudgetNegotiationDialog({
         </Tabs>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
+          {status && (
+            <Button variant="outline" onClick={handleRevert} disabled={busy} className="gap-1.5 sm:mr-auto">
+              <XCircle className="w-4 h-4" />
+              Cancelar negociação
+            </Button>
+          )}
           {onNavigateToRateio && (
             <Button
               variant="outline"
@@ -599,7 +600,7 @@ export default function BudgetNegotiationDialog({
               Editar Rateio da Negociação
             </Button>
           )}
-          {hasAdjusted && (
+          {hasAdjusted && !status && (
             <Button variant="outline" onClick={handleRevert} disabled={busy} className="gap-1">
               <RotateCcw className="w-4 h-4" />
               Reverter ajuste

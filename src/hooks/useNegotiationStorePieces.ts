@@ -23,12 +23,20 @@ export function useNegotiationStorePieces(
     queryKey: ["negotiation_store_pieces", supplierId],
     enabled: !!supplierId && enabled,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("budget_negotiation_store_pieces" as never)
-        .select("id, supplier_id, campaign_id, store_id, piece_id, quantity")
-        .eq("supplier_id", supplierId as string);
-      if (error) throw error;
-      return (data as unknown as NegotiationStorePiece[]) || [];
+      const rows: NegotiationStorePiece[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from("budget_negotiation_store_pieces" as never)
+          .select("id, supplier_id, campaign_id, store_id, piece_id, quantity")
+          .eq("supplier_id", supplierId as string)
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const page = ((data as unknown as NegotiationStorePiece[]) || []);
+        rows.push(...page);
+        if (page.length < pageSize) break;
+      }
+      return rows;
     },
   });
 }
@@ -91,13 +99,22 @@ export async function snapshotNegotiationRateio(
   if (countErr) throw countErr;
   if ((count ?? 0) > 0) return 0;
 
-  // Fetch current campaign rateio
-  const { data: rows, error: fetchErr } = await supabase
-    .from("campaign_store_pieces")
-    .select("store_id, piece_id, quantity")
-    .eq("campaign_id", campaignId);
-  if (fetchErr) throw fetchErr;
-  if (!rows || rows.length === 0) return 0;
+  // Fetch current campaign rateio in pages. The API defaults to 1,000 rows;
+  // without pagination the negotiation copy can start incomplete.
+  const rows: Array<{ store_id: string; piece_id: string; quantity: number }> = [];
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error: fetchErr } = await supabase
+      .from("campaign_store_pieces")
+      .select("store_id, piece_id, quantity")
+      .eq("campaign_id", campaignId)
+      .range(from, from + pageSize - 1);
+    if (fetchErr) throw fetchErr;
+    const page = (data ?? []) as Array<{ store_id: string; piece_id: string; quantity: number }>;
+    rows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  if (rows.length === 0) return 0;
 
   const payload = rows
     .filter((r: any) => Number(r.quantity) > 0)
@@ -121,4 +138,50 @@ export async function snapshotNegotiationRateio(
     if (insErr) throw insErr;
   }
   return payload.length;
+}
+
+export async function resetNegotiationRateioFromOriginal(
+  supplierId: string,
+  campaignId: string
+): Promise<number> {
+  const { error } = await supabase
+    .from("budget_negotiation_store_pieces" as never)
+    .delete()
+    .eq("supplier_id", supplierId);
+  if (error) throw error;
+  return snapshotNegotiationRateio(supplierId, campaignId);
+}
+
+export async function cancelNegotiationRateio(supplierId: string, campaignId?: string): Promise<void> {
+  const { error: pricesErr } = await supabase
+    .from("budget_prices")
+    .update({ adjusted_unit_price: null } as never)
+    .eq("supplier_id", supplierId);
+  if (pricesErr) throw pricesErr;
+
+  const { error: extrasErr } = await supabase
+    .from("budget_extra_costs")
+    .update({ adjusted_installation_value: null, adjusted_freight_value: null } as never)
+    .eq("supplier_id", supplierId);
+  if (extrasErr) throw extrasErr;
+
+  const { error: rateioErr } = await supabase
+    .from("budget_negotiation_store_pieces" as never)
+    .delete()
+    .eq("supplier_id", supplierId);
+  if (rateioErr) throw rateioErr;
+
+  const { error: supplierErr } = await supabase
+    .from("budget_suppliers")
+    .update({ negotiation_status: null, negotiation_submitted_at: null } as never)
+    .eq("id", supplierId);
+  if (supplierErr) throw supplierErr;
+
+  if (campaignId) {
+    const { error: settingsErr } = await supabase
+      .from("budget_settings")
+      .update({ negotiation_target: null, negotiation_mode: "manual" } as never)
+      .eq("campaign_id", campaignId);
+    if (settingsErr) throw settingsErr;
+  }
 }

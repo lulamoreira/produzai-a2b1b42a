@@ -91,6 +91,8 @@ import BudgetTab from "@/components/Budget/BudgetTab";
 import {
   useNegotiationStorePieces,
   useUpdateNegotiationStorePiece,
+  cancelNegotiationRateio,
+  resetNegotiationRateioFromOriginal,
 } from "@/hooks/useNegotiationStorePieces";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
 import { Table2, BarChart3 as BarChart3Icon } from "lucide-react";
@@ -292,6 +294,45 @@ const CampaignDetail = () => {
   useEffect(() => {
     if (rateioSource === "negotiation" && !hasNegotiationRateio) setRateioSource("original");
   }, [rateioSource, hasNegotiationRateio]);
+
+  const handleCancelNegotiationRateio = useCallback(async () => {
+    if (!winnerSupplierId) return;
+    const toastId = "cancel-negotiation-rateio";
+    toast.loading("Cancelando negociação...", { id: toastId });
+    try {
+      await cancelNegotiationRateio(winnerSupplierId, campaignId);
+      setRateioSource("original");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["winner_neg_supplier", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] }),
+        queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces", winnerSupplierId] }),
+        queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["budget_prices", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["budget_extra_costs", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["budget_negotiation_rateio_totals", campaignId] }),
+      ]);
+      toast.success("Negociação cancelada. O rateio original congelado foi preservado.", { id: toastId });
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao cancelar negociação.", { id: toastId });
+    }
+  }, [campaignId, queryClient, winnerSupplierId]);
+
+  const handleResetNegotiationRateio = useCallback(async () => {
+    if (!campaignId || !winnerSupplierId) return;
+    const toastId = "reset-negotiation-rateio";
+    toast.loading("Restaurando rateio da negociação...", { id: toastId });
+    try {
+      await resetNegotiationRateioFromOriginal(winnerSupplierId, campaignId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces", winnerSupplierId] }),
+        queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] }),
+        queryClient.invalidateQueries({ queryKey: ["budget_negotiation_rateio_totals", campaignId] }),
+      ]);
+      toast.success("Rateio da negociação restaurado igual ao original congelado.", { id: toastId });
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao restaurar rateio da negociação.", { id: toastId });
+    }
+  }, [campaignId, queryClient, winnerSupplierId]);
 
   const { data: negotiationStorePieces = [] } = useNegotiationStorePieces(
     winnerSupplierId,
@@ -2235,6 +2276,50 @@ const CampaignDetail = () => {
                           ← Voltar à Negociação
                         </Button>
                       )}
+                      {isNegotiationView && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button type="button" size="sm" variant="outline" className="h-7 text-xs">
+                              Restaurar original
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Restaurar rateio da negociação?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Isso descarta as alterações feitas no rateio da negociação e copia novamente o rateio original congelado.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleResetNegotiationRateio}>
+                                Restaurar original
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button type="button" size="sm" variant="outline" className="h-7 text-xs text-destructive hover:text-destructive">
+                            Cancelar negociação
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Cancelar negociação?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Isso remove o rateio e os ajustes da negociação. O rateio original congelado permanece preservado.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleCancelNegotiationRateio}>
+                              Confirmar cancelamento
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 )}
