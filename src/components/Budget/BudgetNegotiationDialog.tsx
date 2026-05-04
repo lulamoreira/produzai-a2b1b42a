@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TrendingDown, Send, Check, RotateCcw, Loader2, History } from "lucide-react";
+import { TrendingDown, Send, Check, RotateCcw, Loader2, History, LayoutGrid } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
