@@ -49,13 +49,27 @@ export function useInstallationPhotos(campaignId: string | undefined) {
     queryKey: ["installation_photos", campaignId],
     queryFn: async () => {
       if (!campaignId) return [];
-      const { data, error } = await supabase
-        .from("installation_photos")
-        .select("*")
-        .eq("campaign_id", campaignId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as InstallationPhoto[];
+      const pageSize = 1000;
+      let from = 0;
+      const allPhotos: InstallationPhoto[] = [];
+
+      while (true) {
+        const { data, error } = await supabase
+          .from("installation_photos")
+          .select("*")
+          .eq("campaign_id", campaignId)
+          .order("created_at", { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+
+        const page = (data || []) as InstallationPhoto[];
+        allPhotos.push(...page);
+
+        if (page.length < pageSize) break;
+        from += pageSize;
+      }
+
+      return allPhotos;
     },
     enabled: !!campaignId,
   });
