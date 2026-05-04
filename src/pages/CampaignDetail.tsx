@@ -2630,12 +2630,20 @@ const CampaignDetail = () => {
                   kits={kits}
                   kitPieces={kitPieces}
                   qtyMap={qtyMap}
+                  isNegotiationView={isNegotiationView}
+                  negotiationSupplierId={winnerSupplierId}
                   onComplete={async () => {
                     await queryClient.refetchQueries({
-                      queryKey: ["campaign_store_pieces", campaignId],
+                      queryKey: isNegotiationView
+                        ? ["negotiation_store_pieces", winnerSupplierId]
+                        : ["campaign_store_pieces", campaignId],
                       exact: true,
                       type: "active",
                     });
+                    if (isNegotiationView && winnerSupplierId) {
+                      queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] });
+                      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_rateio_totals", campaignId] });
+                    }
                   }}
                 />
 
