@@ -745,14 +745,14 @@ export default function MatrixAutomationDialog({
         }
       }
 
-      const upserts: { campaign_id: string; store_id: string; piece_id: string; quantity: number }[] = [];
-      const deletes: { storeId: string; pieceId: string }[] = [];
+      const upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[] = [];
+      const deletes: { campaignId: string; storeId: string; pieceId: string }[] = [];
 
       for (const row of updateRows) {
         if (row.newQty > 0) {
-          upserts.push({ campaign_id: campaignId, store_id: row.storeId, piece_id: row.pieceId, quantity: row.newQty });
+          upserts.push({ campaignId, storeId: row.storeId, pieceId: row.pieceId, quantity: row.newQty });
         } else {
-          deletes.push({ storeId: row.storeId, pieceId: row.pieceId });
+          deletes.push({ campaignId, storeId: row.storeId, pieceId: row.pieceId });
         }
       }
 
@@ -761,38 +761,27 @@ export default function MatrixAutomationDialog({
       for (const row of outsideRows) {
         const action = outsideActions[`${row.storeId}-${row.pieceId}`] || "keep";
         if (action === "zero") {
-          deletes.push({ storeId: row.storeId, pieceId: row.pieceId });
+          deletes.push({ campaignId, storeId: row.storeId, pieceId: row.pieceId });
           zeroCount++;
         } else {
           keepCount++;
         }
       }
 
-      if (upserts.length > 0) {
-        // Deduplicate same (store_id, piece_id) entries before upserting (sum quantities).
-        const dedupMap = new Map<string, typeof upserts[number]>();
-        for (const u of upserts) {
-          const key = `${u.store_id}-${u.piece_id}`;
-          const existing = dedupMap.get(key);
-          if (existing) {
-            existing.quantity += u.quantity;
-          } else {
-            dedupMap.set(key, { ...u });
-          }
+      // Deduplicate same (storeId, pieceId) entries before upserting (sum quantities).
+      const dedupMap = new Map<string, typeof upserts[number]>();
+      for (const u of upserts) {
+        const key = `${u.storeId}-${u.pieceId}`;
+        const existing = dedupMap.get(key);
+        if (existing) {
+          existing.quantity += u.quantity;
+        } else {
+          dedupMap.set(key, { ...u });
         }
-        const dedupedUpserts = Array.from(dedupMap.values());
-        const { error } = await supabase
-          .from("campaign_store_pieces")
-          .upsert(dedupedUpserts, { onConflict: "campaign_id,store_id,piece_id" })
-          .select();
-        if (error) throw error;
       }
+      const dedupedUpserts = Array.from(dedupMap.values());
 
-      for (const del of deletes) {
-        const { error: delError } = await supabase.from("campaign_store_pieces").delete()
-          .eq("campaign_id", campaignId).eq("store_id", del.storeId).eq("piece_id", del.pieceId);
-        if (delError) console.warn("Delete error", { del, delError });
-      }
+      await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
 
       toast.success(t("automation.successMessage", { updated: uniqueUpdateStores, kept: keepCount, zeroed: zeroCount }));
       await onComplete();
