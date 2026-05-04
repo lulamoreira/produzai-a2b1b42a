@@ -240,13 +240,12 @@ export default function CampaignBackupDialog({ open, onOpenChange, campaignId, c
                 Exporta todos os dados da campanha + binários do storage em um arquivo ZIP.
               </p>
               <Button onClick={handleBackup} disabled={busy} className="w-full gap-2">
-                {stage === "fetching" || stage === "downloading" || stage === "zipping" ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4" />
-                )}
+                <Download className="w-4 h-4" />
                 Baixar
               </Button>
+              <p className="text-[11px] text-muted-foreground italic">
+                O backup roda em segundo plano — você pode continuar usando o sistema.
+              </p>
             </div>
 
             {/* RESTORE */}
