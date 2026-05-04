@@ -3267,6 +3267,11 @@ const CampaignDetail = () => {
               kitPieces={kitPieces}
               qtyMap={qtyMap}
               stores={stores}
+              onNavigateToRateio={() => {
+                setRateioSource("negotiation");
+                setRateioView("planilha");
+                setActiveSection("matrix");
+              }}
             />
           )}
 
