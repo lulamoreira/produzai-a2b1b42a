@@ -126,9 +126,22 @@ export default function BudgetNegotiationDialog({
     return Number.isFinite(n) && n > 0 ? n : 0;
   }, [target]);
 
-  const ratio = targetNum > 0 && currentTotal > 0 ? targetNum / currentTotal : 1;
+  const fixedCosts = toNum(supplierEC?.installation_value) + toNum(supplierEC?.freight_value);
+  const currentPiecesTotal = currentTotal - fixedCosts;
+  const piecesOnlyTarget = targetNum - fixedCosts;
+  const piecesOnlyInvalid = mode === "auto" && adjustScope === "pieces_only" && targetNum > 0 && piecesOnlyTarget <= 0;
+
+  const ratio = useMemo(() => {
+    if (targetNum <= 0) return 1;
+    if (adjustScope === "pieces_only") {
+      if (currentPiecesTotal <= 0 || piecesOnlyTarget <= 0) return 1;
+      return piecesOnlyTarget / currentPiecesTotal;
+    }
+    return currentTotal > 0 ? targetNum / currentTotal : 1;
+  }, [targetNum, adjustScope, currentPiecesTotal, piecesOnlyTarget, currentTotal]);
+
   const reductionPct = targetNum > 0 && currentTotal > 0
-    ? Math.round((1 - ratio) * 1000) / 10
+    ? Math.round((1 - targetNum / currentTotal) * 1000) / 10
     : 0;
 
   const autoPreview = useMemo(() => {
@@ -151,10 +164,14 @@ export default function BudgetNegotiationDialog({
   }, [mode, targetNum, currentTotal, pieces, effectivePieceTotals, supplierPrices, ratio]);
 
   const adjustedInstallation = supplierEC?.installation_value != null
-    ? Math.round(toNum(supplierEC.installation_value) * ratio * 100) / 100
+    ? (adjustScope === "pieces_only"
+        ? toNum(supplierEC.installation_value)
+        : Math.round(toNum(supplierEC.installation_value) * ratio * 100) / 100)
     : null;
   const adjustedFreight = supplierEC?.freight_value != null
-    ? Math.round(toNum(supplierEC.freight_value) * ratio * 100) / 100
+    ? (adjustScope === "pieces_only"
+        ? toNum(supplierEC.freight_value)
+        : Math.round(toNum(supplierEC.freight_value) * ratio * 100) / 100)
     : null;
 
   const newTotal = useMemo(() => {
