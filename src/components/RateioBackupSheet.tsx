@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -23,8 +23,9 @@ import {
 } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import {
-  Database, Loader2, Plus, Trash2, RotateCcw, ChevronDown, ChevronRight,
+  Database, Loader2, Plus, Trash2, RotateCcw, ChevronDown, ChevronRight, Download, Upload,
 } from "lucide-react";
+import { saveBlobAs } from "@/lib/saveBlobAs";
 import { toast } from "sonner";
 import { applyRateioBulk } from "@/lib/applyRateioBulk";
 import type { CampaignPiece, CampaignKit, ClientStore } from "@/hooks/useMultiClientData";
@@ -177,7 +178,80 @@ export default function RateioBackupSheet({
     }
   };
 
-  // -------- Restore --------
+  // -------- Download backup as JSON file --------
+  const slugify = (s: string) =>
+    s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "backup";
+
+  const handleDownload = async (b: BackupRow) => {
+    try {
+      const { data, error } = await supabase
+        .from("campaign_snapshots")
+        .select("name, description, created_at, snapshot_data")
+        .eq("id", b.id)
+        .single();
+      if (error) throw error;
+      const payload = {
+        format: "rateio_backup",
+        version: 1,
+        campaignName,
+        exportedAt: new Date().toISOString(),
+        backup: {
+          name: (data as any).name,
+          description: (data as any).description,
+          created_at: (data as any).created_at,
+          snapshot_data: (data as any).snapshot_data,
+        },
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const date = new Date(b.created_at).toISOString().slice(0, 10);
+      const fname = `rateio-backup-${slugify(campaignName)}-${slugify(b.name)}-${date}.json`;
+      await saveBlobAs(blob, fname, {
+        mimeType: "application/json",
+        description: "Backup do rateio (.json)",
+        extension: ".json",
+      });
+    } catch (e: any) {
+      toast.error("Erro ao baixar backup", { description: e?.message });
+    }
+  };
+
+  // -------- Import backup from JSON file --------
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (fileRef.current) fileRef.current.value = "";
+    if (!file) return;
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const backup = parsed?.backup;
+      const snap = backup?.snapshot_data;
+      if (!snap || !Array.isArray(snap.storePieces)) {
+        throw new Error("Arquivo inválido: snapshot_data.storePieces ausente");
+      }
+      const { data: userRes } = await supabase.auth.getUser();
+      const importedName = backup?.name ? `${backup.name} (importado)` : `Importado ${defaultName()}`;
+      const { error } = await supabase.from("campaign_snapshots").insert({
+        campaign_id: campaignId,
+        name: importedName,
+        description: backup?.description || `Importado de arquivo em ${new Date().toLocaleString("pt-BR")}`,
+        snapshot_data: snap,
+        created_by: userRes?.user?.id ?? null,
+        kind: "rateio_backup",
+      } as any);
+      if (error) throw error;
+      toast.success("Backup importado");
+      qc.invalidateQueries({ queryKey: ["rateio_backups", campaignId] });
+    } catch (err: any) {
+      toast.error("Erro ao importar", { description: err?.message });
+    } finally {
+      setIsImporting(false);
+    }
+  };
   const [restoreTarget, setRestoreTarget] = useState<BackupRow | null>(null);
   const [restoreMode, setRestoreMode] = useState<"full" | "diff_only">("full");
   const [isRestoring, setIsRestoring] = useState(false);
@@ -329,10 +403,28 @@ export default function RateioBackupSheet({
                 <span className="text-xs text-muted-foreground">
                   {currentSnapshot.storePieces.length} célula(s) com quantidade
                 </span>
-                <Button size="sm" onClick={handleSave} disabled={isSaving}>
-                  {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-                  Salvar backup
-                </Button>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="application/json,.json"
+                    className="hidden"
+                    onChange={handleImportFile}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => fileRef.current?.click()}
+                    disabled={isImporting || isSaving}
+                  >
+                    {isImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                    Importar arquivo
+                  </Button>
+                  <Button size="sm" onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+                    Salvar backup
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -357,6 +449,13 @@ export default function RateioBackupSheet({
                       <div className="text-xs text-muted-foreground mt-1 break-words">{b.description}</div>
                     )}
                   </div>
+                  <Button
+                    size="sm" variant="outline" className="h-7 gap-1"
+                    onClick={() => handleDownload(b)}
+                    title="Baixar arquivo .json"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Baixar
+                  </Button>
                   <Button
                     size="sm" variant="outline" className="h-7 gap-1"
                     onClick={() => { setRestoreMode("full"); setRestoreTarget(b); }}
