@@ -1496,7 +1496,19 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                             "text-right tabular-nums font-semibold",
                             isBest && "text-emerald-600 dark:text-emerald-400"
                           )}>
-                            {p.total > 0 ? fmtCurrency(p.total) : "—"}
+                            {(() => {
+                              const compTotal = (sup as any).winner_locked_total != null
+                                ? Number((sup as any).winner_locked_total)
+                                : p.total;
+                              return compTotal > 0 ? (
+                                <>
+                                  {fmtCurrency(compTotal)}
+                                  {(sup as any).winner_locked_total != null && (
+                                    <span className="text-xs text-muted-foreground ml-1" title="Valor congelado">🔒</span>
+                                  )}
+                                </>
+                              ) : "—";
+                            })()}
                           </TableCell>
                         </TableRow>
                       );
