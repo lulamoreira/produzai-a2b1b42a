@@ -1982,7 +1982,30 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         defaultCcEmail={settingsAny?.winner_cc_email ?? ""}
       />
 
-      {/* Editor de Links do Vencedor */}
+      {/* Negociação pós-orçamento (Admin/Master) */}
+      {negotiationSupplierId && (() => {
+        const sup = suppliers.find((x) => x.id === negotiationSupplierId) as any;
+        if (!sup) return null;
+        const portalBase = typeof window !== "undefined" ? window.location.origin : "";
+        return (
+          <BudgetNegotiationDialog
+            open
+            onOpenChange={(o) => !o && setNegotiationSupplierId(null)}
+            supplier={sup}
+            campaignId={campaignId}
+            campaignName={campaignName}
+            pieces={pieces.filter((p) => !p.kit_only)}
+            prices={prices as any}
+            extraCosts={extraCosts as any}
+            pieceTotals={pieceTotals}
+            settings={settings}
+            currencyCode={currencyCode}
+            fmtCurrency={fmtCurrency}
+            publicPortalUrl={`${portalBase}/supplier/${sup.access_token}`}
+          />
+        );
+      })()}
+
       <Dialog open={winnerLinksOpen} onOpenChange={(o) => !savingWinnerLinks && setWinnerLinksOpen(o)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
