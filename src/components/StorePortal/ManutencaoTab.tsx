@@ -51,7 +51,7 @@ export default function ManutencaoTab({ data, agencyId }: Props) {
     setSubmitting(true);
 
     const peca = selectedPeca;
-    const { error } = await supabase.from("store_maintenance_requests").insert({
+    const { data: inserted, error } = await supabase.from("store_maintenance_requests").insert({
       campaign_id: data.campaign.id,
       store_id: data.store.id,
       loja_a_loja_peca_id: peca.id,
@@ -61,7 +61,7 @@ export default function ManutencaoTab({ data, agencyId }: Props) {
       priority,
       photo_urls: photos.length > 0 ? photos : null,
       opened_by: "loja",
-    });
+    }).select("id").single();
 
     if (error) {
       toast.error("Erro ao solicitar manutenção.");
@@ -69,13 +69,18 @@ export default function ManutencaoTab({ data, agencyId }: Props) {
     } else {
       toast.success("Solicitação de manutenção enviada!");
       try {
+        const manId = (inserted as any)?.id;
         await criarNotificacao({
           agency_id: agencyId,
           campaign_id: data.campaign.id,
           store_id: data.store.id,
+          client_id: data.campaign.client_id,
           type: "store_maintenance_request",
           title: "Nova solicitação de manutenção",
           body: `${data.store.name} solicitou manutenção na peça "${peca.nome}".`,
+          action_url: manId
+            ? `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard&man=${manId}`
+            : `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard`,
         });
       } catch {}
       setSelectedPeca(null);
