@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -23,8 +23,9 @@ import {
 } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import {
-  Database, Loader2, Plus, Trash2, RotateCcw, ChevronDown, ChevronRight,
+  Database, Loader2, Plus, Trash2, RotateCcw, ChevronDown, ChevronRight, Download, Upload,
 } from "lucide-react";
+import { saveBlobAs } from "@/lib/saveBlobAs";
 import { toast } from "sonner";
 import { applyRateioBulk } from "@/lib/applyRateioBulk";
 import type { CampaignPiece, CampaignKit, ClientStore } from "@/hooks/useMultiClientData";
