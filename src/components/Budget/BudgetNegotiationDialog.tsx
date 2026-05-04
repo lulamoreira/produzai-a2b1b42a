@@ -23,6 +23,7 @@ import {
   snapshotNegotiationRateio,
   cancelNegotiationRateio,
 } from "@/hooks/useNegotiationStorePieces";
+import { computeSupplierTotal, type KitComponentRow } from "@/lib/computeSupplierTotal";
 
 type Supplier = {
   id: string;
@@ -57,6 +58,7 @@ interface Props {
   prices: Price[];
   extraCosts: ExtraCost[];
   pieceTotals: Record<string, number>;
+  kitPieceTotals: Record<string, KitComponentRow[]>;
   settings: any;
   currencyCode: string;
   fmtCurrency: (v: number | null | undefined) => string;
@@ -72,7 +74,7 @@ function toNum(v: any): number {
 
 export default function BudgetNegotiationDialog({
   open, onOpenChange, supplier, campaignId, campaignName,
-  pieces, prices, extraCosts, pieceTotals, settings, currencyCode, fmtCurrency, publicPortalUrl, frozenTotal, onNavigateToRateio,
+  pieces, prices, extraCosts, pieceTotals, kitPieceTotals, settings, currencyCode, fmtCurrency, publicPortalUrl, frozenTotal, onNavigateToRateio,
 }: Props) {
   const qc = useQueryClient();
   const [target, setTarget] = useState<string>("");
@@ -105,21 +107,51 @@ export default function BudgetNegotiationDialog({
   }, [negotiationPieces]);
   const effectivePieceTotals = negotiationPieces.length > 0 ? negPieceTotals : pieceTotals;
 
+  const pricedQuantityRows = useMemo(() => {
+    const rows: { pieceId: string; qty: number }[] = [];
+    const counted = new Set<string>();
+
+    for (const piece of pieces) {
+      if (piece.kit_only) continue;
+      const qty = effectivePieceTotals[piece.id] || 0;
+      if (qty <= 0) continue;
+      rows.push({ pieceId: piece.id, qty });
+      counted.add(piece.id);
+    }
+
+    for (const kpItems of Object.values(kitPieceTotals)) {
+      for (const kpi of kpItems) {
+        if (counted.has(kpi.pieceId)) continue;
+        if (kpi.qty <= 0) continue;
+        rows.push({ pieceId: kpi.pieceId, qty: kpi.qty });
+        counted.add(kpi.pieceId);
+      }
+    }
+
+    return rows;
+  }, [pieces, effectivePieceTotals, kitPieceTotals]);
+
   const currentTotal = useMemo(() => {
     // If a frozen winner total exists and there's no isolated negotiation rateio,
     // honor the frozen value (matches what's displayed everywhere else in BudgetTab).
     if (frozenTotal != null && frozenTotal > 0 && negotiationPieces.length === 0) {
       return frozenTotal;
     }
-    let total = toNum(supplierEC?.installation_value) + toNum(supplierEC?.freight_value);
-    for (const piece of pieces) {
-      const qty = effectivePieceTotals[piece.id] || 0;
-      if (qty <= 0) continue;
-      const pr = supplierPrices.find((p) => p.piece_id === piece.id);
-      total += toNum(pr?.unit_price) * qty;
-    }
-    return total;
-  }, [pieces, effectivePieceTotals, supplierPrices, supplierEC, frozenTotal, negotiationPieces.length]);
+    return computeSupplierTotal({
+      supplierId: supplier.id,
+      pieces,
+      kitPieceTotals,
+      qtyResolver: (pieceId) => effectivePieceTotals[pieceId] || 0,
+      priceResolver: (_supplierId, pieceId) => {
+        const pr = supplierPrices.find((p) => p.piece_id === pieceId);
+        return toNum(pr?.unit_price);
+      },
+      extraCostResolver: () => ({
+        installation: toNum(supplierEC?.installation_value),
+        freight: toNum(supplierEC?.freight_value),
+      }),
+    });
+  }, [supplier.id, pieces, kitPieceTotals, effectivePieceTotals, supplierPrices, supplierEC, frozenTotal, negotiationPieces.length]);
 
   useEffect(() => {
     if (open) {
@@ -154,22 +186,23 @@ export default function BudgetNegotiationDialog({
 
   const autoPreview = useMemo(() => {
     if (mode !== "auto" || targetNum <= 0 || currentTotal <= 0) return [];
-    return pieces
-      .filter((p) => (effectivePieceTotals[p.id] || 0) > 0)
-      .map((piece) => {
-        const pr = supplierPrices.find((p) => p.piece_id === piece.id);
+    return pricedQuantityRows
+      .map((row) => {
+        const piece = pieces.find((p) => p.id === row.pieceId);
+        const pr = supplierPrices.find((p) => p.piece_id === row.pieceId);
         const original = toNum(pr?.unit_price);
         const adjusted = Math.round(original * ratio * 100) / 100;
         return {
-          pieceId: piece.id,
-          name: piece.name,
-          code: piece.code,
+          pieceId: row.pieceId,
+          name: piece?.name || "Peça",
+          code: piece?.code ?? 0,
+          qty: row.qty,
           original,
           adjusted,
           diff: adjusted - original,
         };
       });
-  }, [mode, targetNum, currentTotal, pieces, effectivePieceTotals, supplierPrices, ratio]);
+  }, [mode, targetNum, currentTotal, pricedQuantityRows, pieces, supplierPrices, ratio]);
 
   const adjustedInstallation = supplierEC?.installation_value != null
     ? (adjustScope === "pieces_only"
@@ -186,10 +219,10 @@ export default function BudgetNegotiationDialog({
     if (mode !== "auto") return targetNum;
     let t = (adjustedInstallation || 0) + (adjustedFreight || 0);
     for (const row of autoPreview) {
-      t += row.adjusted * (effectivePieceTotals[row.pieceId] || 0);
+      t += row.adjusted * row.qty;
     }
     return t;
-  }, [mode, targetNum, autoPreview, adjustedInstallation, adjustedFreight, effectivePieceTotals]);
+  }, [mode, targetNum, autoPreview, adjustedInstallation, adjustedFreight]);
 
   // History
   const { data: history = [] } = useQuery({
@@ -507,11 +540,10 @@ export default function BudgetNegotiationDialog({
                     </TableHeader>
                     <TableBody>
                       {autoPreview.map((row) => {
-                        const qty = effectivePieceTotals[row.pieceId] || 0;
                         return (
                         <TableRow key={row.pieceId}>
                           <TableCell className="truncate max-w-[200px]" title={row.name}>{row.code} — {row.name}</TableCell>
-                          <TableCell className="text-right font-mono font-semibold">{qty}</TableCell>
+                          <TableCell className="text-right font-mono font-semibold">{row.qty}</TableCell>
                           <TableCell className="text-right font-mono">{fmtCurrency(row.original)}</TableCell>
                           <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(row.adjusted)}</TableCell>
                           <TableCell className={`text-right font-mono ${row.diff < 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
