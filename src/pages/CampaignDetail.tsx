@@ -91,6 +91,7 @@ import BudgetTab from "@/components/Budget/BudgetTab";
 import {
   useNegotiationStorePieces,
   useUpdateNegotiationStorePiece,
+  cancelNegotiationRateio,
 } from "@/hooks/useNegotiationStorePieces";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
 import { Table2, BarChart3 as BarChart3Icon } from "lucide-react";
@@ -292,6 +293,28 @@ const CampaignDetail = () => {
   useEffect(() => {
     if (rateioSource === "negotiation" && !hasNegotiationRateio) setRateioSource("original");
   }, [rateioSource, hasNegotiationRateio]);
+
+  const handleCancelNegotiationRateio = useCallback(async () => {
+    if (!winnerSupplierId) return;
+    const toastId = "cancel-negotiation-rateio";
+    toast.loading("Cancelando negociação...", { id: toastId });
+    try {
+      await cancelNegotiationRateio(winnerSupplierId);
+      setRateioSource("original");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["winner_neg_supplier", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] }),
+        queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces", winnerSupplierId] }),
+        queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["budget_prices", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["budget_extra_costs", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["budget_negotiation_rateio_totals", campaignId] }),
+      ]);
+      toast.success("Negociação cancelada. O rateio original congelado foi preservado.", { id: toastId });
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao cancelar negociação.", { id: toastId });
+    }
+  }, [campaignId, queryClient, winnerSupplierId]);
 
   const { data: negotiationStorePieces = [] } = useNegotiationStorePieces(
     winnerSupplierId,
