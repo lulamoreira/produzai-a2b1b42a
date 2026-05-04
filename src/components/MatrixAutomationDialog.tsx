@@ -475,6 +475,19 @@ export default function MatrixAutomationDialog({
 
   // Check for overwrite before preview
   const handlePreviewClick = async () => {
+    // Replacement mode short-circuit
+    if (kind === "replacement") {
+      if (!replacementPieceId) { toast.error("Selecione a peça."); return; }
+      if (!Number.isFinite(replacementTargetQty) || replacementTargetQty < 0) {
+        toast.error("Informe a quantidade de substituição (>= 0)."); return;
+      }
+      if (!replaceAnyNonZero && replacementSourceQtys.length === 0) {
+        toast.error("Selecione ao menos uma quantidade de origem ou marque \"qualquer valor diferente de 0\"."); return;
+      }
+      setReplacementConfirm({ open: true, count: replacementAffectedStores.length });
+      return;
+    }
+
     const validFilters = filterGroup.filtros.filter(f => f.campo && f.valor);
     if (selectedItems.length === 0) {
       toast.error(t("automation.fillAllFields"));
