@@ -87,6 +87,10 @@ import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 // Lazy: defers recharts (~80KB) until the user opens the pending dashboard
 const PendingOccurrencesDashboard = lazy(() => import("@/components/PendingOccurrencesDashboard"));
 import BudgetTab from "@/components/Budget/BudgetTab";
+import {
+  useNegotiationStorePieces,
+  useUpdateNegotiationStorePiece,
+} from "@/hooks/useNegotiationStorePieces";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
 import { Table2, BarChart3 as BarChart3Icon } from "lucide-react";
 import { useOccurrenceMotives, useOccurrenceStatuses } from "@/hooks/useOccurrences";
