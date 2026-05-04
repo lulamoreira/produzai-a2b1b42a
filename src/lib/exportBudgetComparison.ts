@@ -17,12 +17,15 @@ type BudgetPrice = {
   supplier_id: string;
   piece_id: string | null;
   unit_price: number | string | null;
+  adjusted_unit_price?: number | string | null;
 };
 
 type BudgetExtraCost = {
   supplier_id: string;
   installation_value: number | string | null;
   freight_value: number | string | null;
+  adjusted_installation_value?: number | string | null;
+  adjusted_freight_value?: number | string | null;
 };
 
 type BudgetKitPiece = {
