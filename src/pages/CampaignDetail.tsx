@@ -2554,10 +2554,22 @@ const CampaignDetail = () => {
                   currentKits={kits}
                   currentStores={activeFilteredStores}
                   onImport={async (changes) => {
-                    for (const c of changes) {
-                      await updateStorePiece.mutateAsync({
-                        campaignId: campaignId!, storeId: c.storeId, pieceId: c.pieceId, quantity: c.quantity,
-                      });
+                    if (isNegotiationView && winnerSupplierId) {
+                      for (const c of changes) {
+                        await updateNegotiationStorePiece.mutateAsync({
+                          supplier_id: winnerSupplierId,
+                          campaign_id: campaignId!,
+                          store_id: c.storeId,
+                          piece_id: c.pieceId,
+                          quantity: c.quantity,
+                        });
+                      }
+                    } else {
+                      for (const c of changes) {
+                        await updateStorePiece.mutateAsync({
+                          campaignId: campaignId!, storeId: c.storeId, pieceId: c.pieceId, quantity: c.quantity,
+                        });
+                      }
                     }
                   }}
                 />
