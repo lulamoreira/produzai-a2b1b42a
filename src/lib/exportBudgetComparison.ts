@@ -172,10 +172,10 @@ export async function exportBudgetComparison(params: ExportBudgetComparisonParam
   const supplierTotals = new Map<string, { items: number; installation: number; freight: number; grand: number }>();
 
   params.suppliers.forEach((supplier) => {
-    const extra = extraBySupplier.get(supplier.id);
+    const extra = extraBySupplier.get(supplier.id) as any;
     const items = getSupplierItemTotal(supplier.id, params.prices, params.pieces, pieceTotals, kitComponentTotals);
-    const installation = toNumber(extra?.installation_value);
-    const freight = toNumber(extra?.freight_value);
+    const installation = toNumber(extra?.adjusted_installation_value ?? extra?.installation_value);
+    const freight = toNumber(extra?.adjusted_freight_value ?? extra?.freight_value);
     supplierTotals.set(supplier.id, { items, installation, freight, grand: items + installation + freight });
   });
 
