@@ -2276,6 +2276,29 @@ const CampaignDetail = () => {
                           ← Voltar à Negociação
                         </Button>
                       )}
+                      {isNegotiationView && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button type="button" size="sm" variant="outline" className="h-7 text-xs">
+                              Restaurar original
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Restaurar rateio da negociação?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Isso descarta as alterações feitas no rateio da negociação e copia novamente o rateio original congelado.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleResetNegotiationRateio}>
+                                Restaurar original
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button type="button" size="sm" variant="outline" className="h-7 text-xs text-destructive hover:text-destructive">
