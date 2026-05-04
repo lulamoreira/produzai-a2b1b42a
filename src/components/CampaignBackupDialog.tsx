@@ -64,13 +64,13 @@ export default function CampaignBackupDialog({ open, onOpenChange, campaignId, c
   const [confirmText, setConfirmText] = useState("");
   const [results, setResults] = useState<Record<string, any> | null>(null);
 
-  const busy = stage !== "idle" && stage !== "done";
+  // Restore-only busy (backup runs in background via toasts)
+  const busy = stage === "extracting" || stage === "uploading" || stage === "restoring";
 
-  // ────────── BACKUP ──────────
-  const handleBackup = async () => {
-    setStage("fetching");
-    setProgress(5);
-    setProgressLabel("Coletando dados…");
+  // ────────── BACKUP (background) ──────────
+  const runBackupInBackground = async () => {
+    const TOAST_ID = "campaign-backup";
+    toast.loading("Preparando backup da campanha...", { id: TOAST_ID, duration: Infinity });
     try {
       const headers = await authHeaders();
       const res = await fetch(`${FN_URL}?campaign_id=${campaignId}`, { headers });
@@ -82,11 +82,9 @@ export default function CampaignBackupDialog({ open, onOpenChange, campaignId, c
       zip.file("manifest.json", JSON.stringify(manifest, null, 2));
       zip.file("data.json", JSON.stringify({ tables }, null, 2));
 
-      // Download photos in parallel
       const total = storage_files.length;
       let done = 0;
-      setStage("downloading");
-      setProgressLabel(`Baixando fotos (0/${total})…`);
+      toast.loading(`Baixando fotos (0/${total})...`, { id: TOAST_ID, duration: Infinity });
 
       await pMap(storage_files, async (f: any) => {
         if (!f.signed_url) return;
@@ -100,32 +98,37 @@ export default function CampaignBackupDialog({ open, onOpenChange, campaignId, c
           console.warn("download failed", f.path, e);
         }
         done++;
-        setProgress(10 + Math.round((done / Math.max(total, 1)) * 75));
-        setProgressLabel(`Baixando fotos (${done}/${total})…`);
+        toast.loading(`Baixando fotos (${done}/${total})...`, { id: TOAST_ID, duration: Infinity });
       }, 5);
 
-      setStage("zipping");
-      setProgress(90);
-      setProgressLabel("Compactando…");
+      toast.loading("Compactando backup...", { id: TOAST_ID, duration: Infinity });
       const blob = await zip.generateAsync({ type: "blob", compression: "DEFLATE", compressionOptions: { level: 6 } });
-
       const filename = `campaign-backup-${slugify(campaignName)}-${new Date().toISOString().slice(0, 10)}.zip`;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
 
-      setProgress(100);
-      setProgressLabel("Pronto!");
-      setStage("done");
-      toast.success("Backup baixado com sucesso");
+      toast.success("Backup pronto! Clique para salvar.", {
+        id: TOAST_ID,
+        duration: Infinity,
+        action: {
+          label: "💾 Salvar arquivo",
+          onClick: () => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            toast.dismiss(TOAST_ID);
+          },
+        },
+      });
     } catch (err: any) {
-      toast.error("Erro: " + (err.message || "desconhecido"));
-      setStage("idle");
-      setProgress(0);
+      toast.error("Erro no backup: " + (err.message || "desconhecido"), { id: TOAST_ID });
     }
+  };
+
+  const handleBackup = () => {
+    onOpenChange(false);
+    void runBackupInBackground();
   };
 
   // ────────── RESTORE ──────────
