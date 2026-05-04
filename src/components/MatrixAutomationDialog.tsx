@@ -655,18 +655,13 @@ export default function MatrixAutomationDialog({
 
     if (targetQty > 0) {
       const upserts = affected.map(s => ({
-        campaign_id: campaignId, store_id: s.id, piece_id: pieceId, quantity: targetQty,
+        campaignId, storeId: s.id, pieceId, quantity: targetQty,
       }));
-      const { error } = await supabase
-        .from("campaign_store_pieces")
-        .upsert(upserts, { onConflict: "campaign_id,store_id,piece_id" });
-      if (error) throw error;
+      await applyRateioBulk(upserts, [], rateioOptions);
     } else {
       // targetQty === 0 → delete rows
-      for (const s of affected) {
-        await supabase.from("campaign_store_pieces").delete()
-          .eq("campaign_id", campaignId).eq("store_id", s.id).eq("piece_id", pieceId);
-      }
+      const dels = affected.map(s => ({ campaignId, storeId: s.id, pieceId }));
+      await applyRateioBulk([], dels, rateioOptions);
     }
     return { updated: affected.length };
   };
