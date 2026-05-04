@@ -1028,23 +1028,39 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         </Card>
 
         {/* Diferença */}
-        <Card>
-          <CardContent className="pt-4 pb-4 space-y-1">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Diferença</p>
-            {difference != null ? (
-              <>
-                <p className={cn("text-2xl font-bold", difference <= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
-                  {difference <= 0 ? "" : "+"}{fmtCurrency(difference)}
-                </p>
-                {currencyCode !== "BRL" && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(difference * exchangeRate)}</p>
-                )}
-              </>
-            ) : (
-              <p className="text-lg text-muted-foreground">—</p>
-            )}
-          </CardContent>
-        </Card>
+        {(() => {
+          const winnerDiff = budgetAmount != null && winnerSupplier
+            ? (winnerNegotiationStatus === "approved" ? winnerNegotiatedTotal : winnerOriginalTotal) - budgetAmount
+            : null;
+          const bestDiff = budgetAmount != null && bestSupplier ? bestSupplier.total - budgetAmount : null;
+          const renderDiff = (label: string, val: number | null) => (
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{label}</p>
+              {val != null ? (
+                <>
+                  <p className={cn("text-lg font-bold", val <= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
+                    {val <= 0 ? "" : "+"}{fmtCurrency(val)}
+                  </p>
+                  {currencyCode !== "BRL" && (
+                    <p className="text-[10px] text-muted-foreground">{fmtBRL(val * exchangeRate)}</p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">—</p>
+              )}
+            </div>
+          );
+          return (
+            <Card>
+              <CardContent className="pt-4 pb-4 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Diferença</p>
+                {renderDiff("vs. Proposta vencedora", winnerDiff)}
+                {renderDiff("vs. Melhor proposta", bestDiff)}
+              </CardContent>
+            </Card>
+          );
+        })()}
+
       </div>
 
       {/* ═══ LINKS DO VENCEDOR (Admin/Master) ═══ */}
