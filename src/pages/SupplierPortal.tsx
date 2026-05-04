@@ -693,27 +693,31 @@ const SupplierPortal = () => {
   // ─── Submit ────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!supplier) return;
+    const isNeg = supplier.negotiation_status === "pending";
     setSubmitting(true);
     try {
+      const updates: any = isNeg
+        ? { negotiation_status: "submitted", negotiation_submitted_at: new Date().toISOString(), locked: true }
+        : { status: "enviado", locked: true, submitted_at: new Date().toISOString() };
+
       const { data: updated, error: updErr } = await supabase
         .from("budget_suppliers")
-        .update({ status: "enviado", locked: true, submitted_at: new Date().toISOString() })
+        .update(updates)
         .eq("id", supplier.id)
         .select("id")
         .maybeSingle();
       if (updErr) throw updErr;
       if (!updated) {
-        // RLS bloqueou o update — não devemos exibir tela de sucesso falsa
         throw new Error("Não foi possível registrar o envio. Atualize a página e tente novamente.");
       }
 
-      // Save snapshot of submitted prices for admin history
+      // Save snapshot
       try {
         const { snapshotSupplierBudget } = await import("@/lib/budgetPriceSnapshot");
         await snapshotSupplierBudget({
           supplierId: supplier.id,
           campaignId: supplier.campaign_id,
-          reason: "submitted",
+          reason: (isNeg ? "negotiation_submitted" : "submitted") as any,
         });
       } catch (snapErr) {
         console.warn("Snapshot history failed (non-blocking):", snapErr);
@@ -743,16 +747,24 @@ const SupplierPortal = () => {
           _campaign_id: supplier.campaign_id,
           _client_id: clientId,
           _type: "orcamento_enviado",
-          _title: "Orçamento recebido",
-          _body: `${supplier.company_name} enviou o orçamento para a campanha ${campaignName}.`,
+          _title: isNeg ? "Proposta ajustada recebida" : "Orçamento recebido",
+          _body: isNeg
+            ? `${supplier.company_name} enviou a proposta ajustada para a campanha ${campaignName}.`
+            : `${supplier.company_name} enviou o orçamento para a campanha ${campaignName}.`,
           _action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${supplier.campaign_id}?section=budgets`,
         });
       }
 
-      setSupplier((s) => s ? { ...s, status: "enviado", locked: true, submitted_at: new Date().toISOString() } : s);
+      setSupplier((s) => s ? {
+        ...s,
+        ...(isNeg
+          ? { negotiation_status: "submitted", locked: true }
+          : { status: "enviado", locked: true, submitted_at: new Date().toISOString() }),
+      } : s);
       setSubmitted(true);
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000);
+      if (isNeg) toast.success("Proposta ajustada enviada com sucesso!");
     } catch (e) {
       console.error(e);
       const msg = e instanceof Error ? e.message : "Erro ao enviar orçamento.";
