@@ -212,6 +212,46 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   const [occViewMode, setOccViewMode] = useState<"list" | "cards">("list");
   const [selectedOccurrence, setSelectedOccurrence] = useState<any | null>(null);
 
+  // ─── Deep-link: abrir card específico ao chegar via notificação ───
+  const [searchParams, setSearchParams] = useSearchParams();
+  const occParam = searchParams.get("occ");
+  const repParam = searchParams.get("rep");
+  const manParam = searchParams.get("man");
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+
+  // Abrir OccurrenceDetailSheet quando ?occ=<id>
+  useEffect(() => {
+    if (!occParam || !occurrences) return;
+    const found = (occurrences as any[]).find((x) => x.id === occParam);
+    if (found) {
+      setSelectedOccurrence(found);
+      const next = new URLSearchParams(searchParams);
+      next.delete("occ");
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [occParam, occurrences]);
+
+  // Destacar linha de reposição/manutenção quando ?rep=<id> ou ?man=<id>
+  useEffect(() => {
+    const id = repParam || manParam;
+    if (!id) return;
+    if (repParam && !replacements) return;
+    if (manParam && !maintenance) return;
+    setHighlightId(id);
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-card-id="${id}"]`) as HTMLElement | null;
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    const next = new URLSearchParams(searchParams);
+    if (repParam) next.delete("rep");
+    if (manParam) next.delete("man");
+    setSearchParams(next, { replace: true });
+    const t = setTimeout(() => setHighlightId(null), 3000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repParam, manParam, replacements, maintenance]);
+
   const isLoading = l1 || l2 || l3 || l4;
 
   /* Occurrence KPIs */
