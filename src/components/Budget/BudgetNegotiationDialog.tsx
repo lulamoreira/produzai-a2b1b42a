@@ -430,6 +430,35 @@ export default function BudgetNegotiationDialog({
               </div>
             </div>
 
+            {mode === "auto" && (
+              <div className="space-y-2">
+                <Label>O que ajustar proporcionalmente?</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAdjustScope("pieces_only")}
+                    className={`rounded-md border p-3 text-left text-sm transition-colors ${adjustScope === "pieces_only" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
+                  >
+                    <div className="font-semibold">Somente peças</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Frete e instalação ficam fixos</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdjustScope("all")}
+                    className={`rounded-md border p-3 text-left text-sm transition-colors ${adjustScope === "all" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
+                  >
+                    <div className="font-semibold">Tudo</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Peças + frete + instalação</div>
+                  </button>
+                </div>
+                {piecesOnlyInvalid && (
+                  <div className="text-xs text-red-700 dark:text-red-400 font-medium">
+                    O teto é menor que frete + instalação somados ({fmtCurrency(fixedCosts)}).
+                  </div>
+                )}
+              </div>
+            )}
+
             {mode === "auto" && targetNum > 0 && currentTotal > 0 && (
               <div className="space-y-3">
                 <div className="rounded-lg border bg-amber-50 dark:bg-amber-900/10 p-3 space-y-1">
