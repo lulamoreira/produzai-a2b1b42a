@@ -389,15 +389,26 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     return result;
   }, [suppliers, extraCosts, pieces, prices, pieceTotals, negPieceTotalsBySupplier]);
 
+  // Vencedor declarado (apenas 1 por campanha, garantido por índice único)
+  const winnerSupplier = useMemo(() => {
+    return (suppliers as any[]).find((s) => s.is_winner === true) || null;
+  }, [suppliers]);
+
+  // Totais por fornecedor:
+  // - Se houver vencedor declarado, usa o valor congelado (winner_locked_total) de cada um.
+  // - Caso contrário, usa o rateio atual (supplierPartialTotals) — refletindo edições recentes.
   const supplierTotals = useMemo(() => {
     const result: Record<string, number> = {};
+    const hasWinner = !!winnerSupplier;
     suppliers.forEach((sup) => {
       if (sup.status !== "enviado") return;
       const locked = (sup as any).winner_locked_total;
-      result[sup.id] = locked != null ? Number(locked) : (supplierPartialTotals[sup.id]?.total ?? 0);
+      result[sup.id] = hasWinner && locked != null
+        ? Number(locked)
+        : (supplierPartialTotals[sup.id]?.total ?? 0);
     });
     return result;
-  }, [suppliers, supplierPartialTotals]);
+  }, [suppliers, supplierPartialTotals, winnerSupplier]);
 
   const bestSupplier = useMemo(() => {
     let best: { id: string; total: number; name: string } | null = null;
@@ -410,10 +421,6 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     return best;
   }, [supplierTotals, suppliers]);
 
-  // Vencedor declarado (apenas 1 por campanha, garantido por índice único)
-  const winnerSupplier = useMemo(() => {
-    return (suppliers as any[]).find((s) => s.is_winner === true) || null;
-  }, [suppliers]);
 
   const handleToggleWinner = async (sup: { id: string; campaign_id: string; company_name: string }, makeWinner: boolean) => {
     try {
@@ -1215,10 +1222,10 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             {suppliers.map((sup) => {
               const st = getDisplayStatus(sup);
               const partial = supplierPartialTotals[sup.id];
-              const displayTotal = (sup as any).winner_locked_total != null
+              const isFrozen = !!winnerSupplier && (sup as any).winner_locked_total != null;
+              const displayTotal = isFrozen
                 ? Number((sup as any).winner_locked_total)
                 : partial?.total ?? 0;
-              const isFrozen = (sup as any).winner_locked_total != null;
               const inProgress = partial && partial.pricedPieces > 0 && sup.status !== "enviado";
               return (
                 <Card key={sup.id} className="relative">
@@ -1538,13 +1545,12 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                             isBest && "text-emerald-600 dark:text-emerald-400"
                           )}>
                             {(() => {
-                              const compTotal = (sup as any).winner_locked_total != null
-                                ? Number((sup as any).winner_locked_total)
-                                : p.total;
+                              const frozen = !!winnerSupplier && (sup as any).winner_locked_total != null;
+                              const compTotal = frozen ? Number((sup as any).winner_locked_total) : p.total;
                               return compTotal > 0 ? (
                                 <>
                                   {fmtCurrency(compTotal)}
-                                  {(sup as any).winner_locked_total != null && (
+                                  {frozen && (
                                     <span className="text-xs text-muted-foreground ml-1" title="Valor congelado">🔒</span>
                                   )}
                                 </>
