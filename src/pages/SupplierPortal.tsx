@@ -1371,19 +1371,48 @@ const SupplierPortal = () => {
         </Card>
 
         {/* Submit button */}
-        {!isLocked && (
-          <div className="flex justify-center pb-8">
-            <Button
-              size="lg"
-              className="bg-[#8C6F4E] hover:bg-[#7A5F3E] text-white px-10 py-6 text-lg font-semibold"
-              onClick={() => setShowConfirm1(true)}
-              disabled={submitting}
-            >
-              <Send className="w-5 h-5 mr-2" />
-              ENVIAR ORÇAMENTO
-            </Button>
-          </div>
-        )}
+        {!isLocked && (() => {
+          const overTarget = inNegotiation && negotiationTarget != null && grandTotal > negotiationTarget;
+          const pct = inNegotiation && negotiationTarget && negotiationTarget > 0
+            ? Math.round((grandTotal / negotiationTarget) * 100) : 0;
+          return (
+            <div className="space-y-3 pb-8">
+              {inNegotiation && negotiationTarget != null && (
+                <Card className={overTarget ? "border-red-300 bg-red-50 dark:bg-red-900/10" : "border-emerald-300 bg-emerald-50 dark:bg-emerald-900/10"}>
+                  <CardContent className="p-4 space-y-2">
+                    <div className="flex items-center gap-2 font-semibold text-sm">🤝 NEGOCIAÇÃO EM ANDAMENTO</div>
+                    <p className="text-xs text-muted-foreground">A agência solicitou ajuste de proposta.</p>
+                    <div className="flex justify-between text-sm"><span>Teto máximo:</span><span className="font-bold">{fmt(negotiationTarget)}</span></div>
+                    <div className="flex justify-between text-sm">
+                      <span>Seu total atual:</span>
+                      <span className={`font-bold ${overTarget ? "text-red-700 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"}`}>
+                        {fmt(grandTotal)} ({overTarget ? "acima do teto" : "dentro do teto"})
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div className={`h-full transition-all ${overTarget ? "bg-red-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+                    </div>
+                    <div className="text-[11px] text-muted-foreground text-right">{pct}% do teto</div>
+                  </CardContent>
+                </Card>
+              )}
+              <div className="flex justify-center">
+                <Button
+                  size="lg"
+                  className={inNegotiation && !overTarget
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-6 text-lg font-semibold"
+                    : "bg-[#8C6F4E] hover:bg-[#7A5F3E] text-white px-10 py-6 text-lg font-semibold"}
+                  onClick={() => setShowConfirm1(true)}
+                  disabled={submitting || overTarget}
+                  title={overTarget ? "Total acima do teto máximo" : undefined}
+                >
+                  <Send className="w-5 h-5 mr-2" />
+                  {inNegotiation ? "ENVIAR PROPOSTA AJUSTADA" : "ENVIAR ORÇAMENTO"}
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Confirmation 1 */}
