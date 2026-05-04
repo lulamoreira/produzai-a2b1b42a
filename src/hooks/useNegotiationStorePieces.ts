@@ -152,7 +152,7 @@ export async function resetNegotiationRateioFromOriginal(
   return snapshotNegotiationRateio(supplierId, campaignId);
 }
 
-export async function cancelNegotiationRateio(supplierId: string): Promise<void> {
+export async function cancelNegotiationRateio(supplierId: string, campaignId?: string): Promise<void> {
   const { error: pricesErr } = await supabase
     .from("budget_prices")
     .update({ adjusted_unit_price: null } as never)
@@ -176,4 +176,12 @@ export async function cancelNegotiationRateio(supplierId: string): Promise<void>
     .update({ negotiation_status: null, negotiation_submitted_at: null } as never)
     .eq("id", supplierId);
   if (supplierErr) throw supplierErr;
+
+  if (campaignId) {
+    const { error: settingsErr } = await supabase
+      .from("budget_settings")
+      .update({ negotiation_target: null, negotiation_mode: "manual" } as never)
+      .eq("campaign_id", campaignId);
+    if (settingsErr) throw settingsErr;
+  }
 }
