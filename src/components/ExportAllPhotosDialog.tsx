@@ -424,7 +424,9 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p>
-                  Após o download, todas as fotos selecionadas serão <strong>excluídas permanentemente</strong> do sistema. Esta ação não pode ser desfeita.
+                  {deleteOnly
+                    ? <>Todas as fotos selecionadas serão <strong>excluídas permanentemente</strong> do sistema, <strong>sem download prévio</strong>. Esta ação não pode ser desfeita.</>
+                    : <>Após o download, todas as fotos selecionadas serão <strong>excluídas permanentemente</strong> do sistema. Esta ação não pode ser desfeita.</>}
                 </p>
                 <p>
                   Para confirmar, digite o nome da campanha: <strong>{expectedConfirm}</strong>
