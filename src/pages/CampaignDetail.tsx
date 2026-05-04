@@ -3516,6 +3516,13 @@ const CampaignDetail = () => {
         existingItems={pieces.map(p => ({ name: p.name, id: p.id }))}
         onImport={handlePiecesImport}
       />
+
+      <CampaignBackupDialog
+        open={backupDialogOpen}
+        onOpenChange={setBackupDialogOpen}
+        campaignId={campaignId!}
+        campaignName={campaign?.name || ""}
+      />
     </AppLayout>
   );
 };
