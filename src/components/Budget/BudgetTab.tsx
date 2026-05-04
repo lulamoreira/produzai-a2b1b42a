@@ -842,45 +842,48 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
       {/* ═══ KPI CARDS ═══ */}
       <div className={cn("grid grid-cols-1 gap-4 items-stretch", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
+        {/* Reusable header with fixed height for visual alignment across all KPI cards */}
         {/* Empresa Vencedora (só aparece quando há vencedor declarado) */}
         {winnerSupplier && (
           <Card className="border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/20 h-full flex flex-col">
-            <CardContent data-kpi-card className="pt-4 pb-4 space-y-1 flex-1 flex flex-col justify-center">
-              <div className="flex items-center gap-1.5">
-                <Trophy className="w-3.5 h-3.5 text-amber-500" />
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Empresa Vencedora</p>
-              </div>
-              <p className="text-lg font-bold text-amber-700 dark:text-amber-400 leading-tight truncate" title={(winnerSupplier as any).company_name}>
-                {(winnerSupplier as any).company_name}
-              </p>
-              {(winnerSupplier as any).winner_declared_at && (
-                <p className="text-xs text-muted-foreground">
-                  Declarada em {format(new Date((winnerSupplier as any).winner_declared_at), "dd/MM/yyyy", { locale: ptBR })}
+            <div className="px-6 h-12 flex items-center gap-1.5 border-b border-amber-200/60 dark:border-amber-800/60">
+              <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Empresa Vencedora</p>
+            </div>
+            <CardContent className="px-6 py-4 flex-1 flex flex-col gap-3">
+              <div>
+                <p className="text-lg font-bold text-amber-700 dark:text-amber-400 leading-tight truncate" title={(winnerSupplier as any).company_name}>
+                  {(winnerSupplier as any).company_name}
                 </p>
-              )}
+                {(winnerSupplier as any).winner_declared_at && (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Declarada em {format(new Date((winnerSupplier as any).winner_declared_at), "dd/MM/yyyy", { locale: ptBR })}
+                  </p>
+                )}
+              </div>
 
               {/* Valor vencedor — sempre fixo (frozen no momento da declaração) */}
-              <div className="pt-1">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide">Valor vencedor</p>
-                <p className="text-lg font-bold text-amber-700 dark:text-amber-400 mt-1">
+              <div className="mt-auto">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Valor vencedor</p>
+                <p className="text-xl font-bold text-amber-700 dark:text-amber-400 mt-0.5">
                   {fmtCurrency(winnerOriginalTotal)}
                 </p>
                 {currencyCode !== "BRL" && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(winnerOriginalTotal * exchangeRate)}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{fmtBRL(winnerOriginalTotal * exchangeRate)}</p>
                 )}
               </div>
 
               {/* Valor negociado — aparece quando há negociação */}
               {winnerInNegotiation && (
-                <div className="mt-2 pt-2 border-t border-border">
-                  <p className={`text-xs uppercase tracking-wide ${winnerNegotiationStatus === "approved" ? "text-emerald-600" : "text-amber-600"}`}>
+                <div className="pt-3 border-t border-border">
+                  <p className={`text-[10px] uppercase tracking-wide ${winnerNegotiationStatus === "approved" ? "text-emerald-600" : "text-amber-600"}`}>
                     {winnerNegotiationStatus === "approved" ? "✅ Valor negociado (vale)" : "🤝 Em negociação"}
                   </p>
-                  <p className={`text-lg font-bold mt-1 ${winnerNegotiationStatus === "approved" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
+                  <p className={`text-xl font-bold mt-0.5 ${winnerNegotiationStatus === "approved" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
                     {fmtCurrency(winnerNegotiatedTotal)}
                   </p>
                   {currencyCode !== "BRL" && (
-                    <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
                   )}
                 </div>
               )}
@@ -890,136 +893,148 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
         {/* Budget da Campanha */}
         <Card className="h-full flex flex-col">
-          <CardContent data-kpi-card className="pt-4 pb-4 space-y-3 flex-1 flex flex-col justify-center">
+          <div className="px-6 h-12 flex items-center border-b border-border/60">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Budget da Campanha</p>
-            {editingBudget ? (
-              <div className="flex items-center gap-2">
-                <Input
-                  autoFocus
-                  value={budgetDraft}
-                  onChange={(e) => setBudgetDraft(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSaveBudget()}
-                  placeholder="0,00"
-                  className="h-8 text-sm"
-                />
-                <Button size="sm" variant="ghost" onClick={handleSaveBudget}><Check className="w-4 h-4" /></Button>
-              </div>
-            ) : (
-              <button
-                onClick={() => { setBudgetDraft(budgetAmount?.toString() ?? ""); setEditingBudget(true); }}
-                className="text-2xl font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2"
-              >
-                {budgetAmount != null ? fmtCurrency(budgetAmount) : "Definir"}
-                <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
-              </button>
-            )}
-            {budgetAmount != null && currencyCode !== "BRL" && (
-              <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(budgetAmount * exchangeRate)}</p>
-            )}
-            {/* Deadline */}
-            <div className="space-y-1 pt-1">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Prazo p/ envio dos orçamentos</p>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className={cn("h-7 text-xs gap-1", !deadlineDate && "text-muted-foreground")}>
-                    <CalendarIcon className="w-3 h-3" />
-                    {deadlineDate ? format(deadlineDate, "dd/MM/yyyy 'às' HH:mm") : "Definir prazo"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={deadlineDate}
-                    onSelect={(d) => handleSaveDeadline(d)}
-                    locale={ptBR}
-                    className="p-3 pointer-events-auto"
+          </div>
+          <CardContent className="px-6 py-4 flex-1 flex flex-col gap-4">
+            <div>
+              {editingBudget ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    autoFocus
+                    value={budgetDraft}
+                    onChange={(e) => setBudgetDraft(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveBudget()}
+                    placeholder="0,00"
+                    className="h-8 text-sm"
                   />
-                  {deadlineDate && (
-                    <div className="border-t border-border p-3 flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Horário:</span>
-                      <Input
-                        type="time"
-                        value={format(deadlineDate, "HH:mm")}
-                        onChange={(e) => handleSaveDeadlineTime(e.target.value)}
-                        className="h-7 text-xs w-28"
-                      />
-                    </div>
-                  )}
-                </PopoverContent>
-              </Popover>
-            </div>
-            {/* Currency */}
-            <div className="space-y-1 pt-1">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Moeda</p>
-              {currencyLocked ? (
-                <div className="flex items-center gap-1.5 h-7 text-xs text-foreground">
-                  <Lock className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="font-medium">
-                    {currencyCode === "USD"
-                      ? "Dólar Americano"
-                      : currencyCode === "CLP"
-                        ? "Peso Chileno"
-                        : "Real Brasileiro"}
-                  </span>
+                  <Button size="sm" variant="ghost" onClick={handleSaveBudget}><Check className="w-4 h-4" /></Button>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
-                    <SelectTrigger className="h-7 w-auto text-xs gap-1 px-2">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BRL" className="text-xs">🇧🇷 Real Brasileiro (BRL)</SelectItem>
-                      <SelectItem value="USD" className="text-xs">🇺🇸 Dólar Americano (USD)</SelectItem>
-                      <SelectItem value="CLP" className="text-xs">🇨🇱 Peso Chileno (CLP)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
-                    onClick={() => setShowLockConfirm(true)}
-                  >
-                    Confirmar moeda
-                  </Button>
-                </div>
+                <button
+                  onClick={() => { setBudgetDraft(budgetAmount?.toString() ?? ""); setEditingBudget(true); }}
+                  className="text-2xl font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2"
+                >
+                  {budgetAmount != null ? fmtCurrency(budgetAmount) : "Definir"}
+                  <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
+                </button>
               )}
+              {budgetAmount != null && currencyCode !== "BRL" && (
+                <p className="text-[11px] text-muted-foreground mt-1">{fmtBRL(budgetAmount * exchangeRate)}</p>
+              )}
+            </div>
+
+            <div className="mt-auto space-y-3">
+              {/* Deadline */}
+              <div className="space-y-1">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Prazo p/ envio dos orçamentos</p>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("h-7 text-xs gap-1", !deadlineDate && "text-muted-foreground")}>
+                      <CalendarIcon className="w-3 h-3" />
+                      {deadlineDate ? format(deadlineDate, "dd/MM/yyyy 'às' HH:mm") : "Definir prazo"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={deadlineDate}
+                      onSelect={(d) => handleSaveDeadline(d)}
+                      locale={ptBR}
+                      className="p-3 pointer-events-auto"
+                    />
+                    {deadlineDate && (
+                      <div className="border-t border-border p-3 flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">Horário:</span>
+                        <Input
+                          type="time"
+                          value={format(deadlineDate, "HH:mm")}
+                          onChange={(e) => handleSaveDeadlineTime(e.target.value)}
+                          className="h-7 text-xs w-28"
+                        />
+                      </div>
+                    )}
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* Currency */}
+              <div className="space-y-1">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Moeda</p>
+                {currencyLocked ? (
+                  <div className="flex items-center gap-1.5 h-7 text-xs text-foreground">
+                    <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="font-medium">
+                      {currencyCode === "USD"
+                        ? "Dólar Americano"
+                        : currencyCode === "CLP"
+                          ? "Peso Chileno"
+                          : "Real Brasileiro"}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                      <SelectTrigger className="h-7 w-auto text-xs gap-1 px-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BRL" className="text-xs">🇧🇷 Real Brasileiro (BRL)</SelectItem>
+                        <SelectItem value="USD" className="text-xs">🇺🇸 Dólar Americano (USD)</SelectItem>
+                        <SelectItem value="CLP" className="text-xs">🇨🇱 Peso Chileno (CLP)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs"
+                      onClick={() => setShowLockConfirm(true)}
+                    >
+                      Confirmar moeda
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Melhor Proposta / Vencedor em negociação */}
         <Card className={cn("h-full flex flex-col", (winnerSupplier && winnerInNegotiation) || bestSupplier ? "border-emerald-200 dark:border-emerald-800" : "")}>
-          <CardContent data-kpi-card className="pt-4 pb-4 space-y-1 flex-1 flex flex-col justify-center">
+          <div className="px-6 h-12 flex items-center border-b border-border/60">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
               {winnerSupplier && winnerInNegotiation
                 ? (winnerNegotiationStatus === "approved" ? "Proposta negociada" : "Em negociação")
                 : "Melhor Proposta"}
             </p>
-            {winnerSupplier && winnerInNegotiation ? (
-              <>
-                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(winnerNegotiatedTotal)}</p>
-                {currencyCode !== "BRL" && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
-                )}
-                <p className="text-xs text-muted-foreground line-through">
-                  Original: {fmtCurrency(winnerOriginalTotal)}
-                </p>
-                <p className="text-xs text-muted-foreground">{(winnerSupplier as any).company_name}</p>
-              </>
-            ) : bestSupplier ? (
-              <>
-                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(bestSupplier.total)}</p>
-                {currencyCode !== "BRL" && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(bestSupplier.total * exchangeRate)}</p>
-                )}
-                <p className="text-xs text-muted-foreground">{bestSupplier.name}</p>
-              </>
-            ) : (
-              <p className="text-lg text-muted-foreground">Sem propostas</p>
-            )}
+          </div>
+          <CardContent className="px-6 py-4 flex-1 flex flex-col gap-3">
+            <div>
+              {winnerSupplier && winnerInNegotiation ? (
+                <>
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(winnerNegotiatedTotal)}</p>
+                  {currencyCode !== "BRL" && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
+                  )}
+                  <p className="text-[11px] text-muted-foreground line-through mt-1">
+                    Original: {fmtCurrency(winnerOriginalTotal)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">{(winnerSupplier as any).company_name}</p>
+                </>
+              ) : bestSupplier ? (
+                <>
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(bestSupplier.total)}</p>
+                  {currencyCode !== "BRL" && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{fmtBRL(bestSupplier.total * exchangeRate)}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">{bestSupplier.name}</p>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">Sem propostas</p>
+              )}
+            </div>
             {suppliers.some((s) => s.status === "enviado") && (
-              <div className="pt-2">
+              <div className="mt-auto">
                 <Button
                   size="sm"
                   variant="outline"
@@ -1059,8 +1074,10 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           );
           return (
             <Card className="h-full flex flex-col">
-              <CardContent data-kpi-card className="pt-4 pb-4 space-y-3 flex-1 flex flex-col justify-center">
+              <div className="px-6 h-12 flex items-center border-b border-border/60">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Diferença</p>
+              </div>
+              <CardContent className="px-6 py-4 flex-1 flex flex-col justify-around gap-3">
                 {renderDiff("vs. Proposta vencedora", winnerDiff)}
                 {renderDiff("vs. Melhor proposta", bestDiff)}
               </CardContent>
