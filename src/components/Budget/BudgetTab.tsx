@@ -396,12 +396,24 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
             .update({ is_winner: false, winner_declared_at: null } as never)
             .eq("id", o.id);
         }
+        // Congelar preços via snapshot antes de declarar o vencedor
+        await snapshotSupplierBudget({
+          supplierId: sup.id,
+          campaignId,
+          reason: "winner_declared" as any,
+          createdBy: user?.id ?? null,
+        });
         const { error } = await supabase.from("budget_suppliers")
-          .update({ is_winner: true, winner_declared_at: new Date().toISOString() } as never)
+          .update({
+            is_winner: true,
+            winner_declared_at: new Date().toISOString(),
+            locked: true,
+          } as never)
           .eq("id", sup.id);
         if (error) throw error;
-        toast.success(`${sup.company_name} declarada vencedora.`);
+        toast.success(`${sup.company_name} declarada vencedora. Preços congelados.`);
       } else {
+        // Mantém snapshot e trava — admin destrava manualmente se necessário
         const { error } = await supabase.from("budget_suppliers")
           .update({ is_winner: false, winner_declared_at: null } as never)
           .eq("id", sup.id);
