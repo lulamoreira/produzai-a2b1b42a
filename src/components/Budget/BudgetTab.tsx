@@ -66,6 +66,7 @@ interface BudgetTabProps {
   kitPieces: { id: string; kit_id: string; piece_id: string; quantity: number }[];
   qtyMap: Record<string, number>;
   stores: { id: string; name: string }[];
+  onNavigateToRateio?: () => void;
 }
 
 // ─── Status helpers ──────────────────────────────────────
@@ -85,7 +86,7 @@ function getDisplayStatus(sup: { status: string; locked: boolean | null; submitt
 }
 
 // ─── Main Component ──────────────────────────────────────
-export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores }: BudgetTabProps) {
+export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio }: BudgetTabProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -2176,6 +2177,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             fmtCurrency={fmtCurrency}
             publicPortalUrl={`${portalBase}/supplier/${sup.access_token}`}
             frozenTotal={sup?.winner_locked_total != null ? Number(sup.winner_locked_total) : null}
+            onNavigateToRateio={onNavigateToRateio}
           />
         );
       })()}

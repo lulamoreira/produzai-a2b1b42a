@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { TrendingDown, Send, Check, RotateCcw, Loader2, History } from "lucide-react";
+import { TrendingDown, Send, Check, RotateCcw, Loader2, History, LayoutGrid } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -61,6 +61,7 @@ interface Props {
   fmtCurrency: (v: number | null | undefined) => string;
   publicPortalUrl?: string;
   frozenTotal?: number | null;
+  onNavigateToRateio?: () => void;
 }
 
 function toNum(v: any): number {
@@ -70,7 +71,7 @@ function toNum(v: any): number {
 
 export default function BudgetNegotiationDialog({
   open, onOpenChange, supplier, campaignId, campaignName,
-  pieces, prices, extraCosts, pieceTotals, settings, currencyCode, fmtCurrency, publicPortalUrl, frozenTotal,
+  pieces, prices, extraCosts, pieceTotals, settings, currencyCode, fmtCurrency, publicPortalUrl, frozenTotal, onNavigateToRateio,
 }: Props) {
   const qc = useQueryClient();
   const [target, setTarget] = useState<string>("");
@@ -563,6 +564,19 @@ export default function BudgetNegotiationDialog({
         </Tabs>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
+          {onNavigateToRateio && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                onOpenChange(false);
+                onNavigateToRateio();
+              }}
+              className="gap-1.5"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              Editar Rateio da Negociação
+            </Button>
+          )}
           {hasAdjusted && (
             <Button variant="outline" onClick={handleRevert} disabled={busy} className="gap-1">
               <RotateCcw className="w-4 h-4" />

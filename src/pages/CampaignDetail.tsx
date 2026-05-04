@@ -2213,6 +2213,17 @@ const CampaignDetail = () => {
                       >
                         Rateio da Negociação
                       </Button>
+                      {isNegotiationView && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs ml-1"
+                          onClick={() => setActiveSection("budgets")}
+                        >
+                          ← Voltar à Negociação
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -3267,6 +3278,11 @@ const CampaignDetail = () => {
               kitPieces={kitPieces}
               qtyMap={qtyMap}
               stores={stores}
+              onNavigateToRateio={() => {
+                setRateioSource("negotiation");
+                setRateioView("planilha");
+                setActiveSection("matrix");
+              }}
             />
           )}
 
