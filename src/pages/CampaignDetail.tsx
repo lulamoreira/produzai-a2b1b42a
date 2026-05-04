@@ -82,6 +82,7 @@ import { ResetMatrixDialog } from "@/components/Matrix/ResetMatrixDialog";
 import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import ExportAllPhotosDialog from "@/components/ExportAllPhotosDialog";
+import CampaignBackupDialog from "@/components/CampaignBackupDialog";
 import RateioExportColorDialog, { type ColorPalette } from "@/components/RateioExportColorDialog";
 import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 // Lazy: defers recharts (~80KB) until the user opens the pending dashboard
@@ -1567,6 +1568,16 @@ const CampaignDetail = () => {
                     campaignId={campaignId!}
                     campaignName={campaign?.name || ""}
                   />
+                )}
+                {isAdminOrMaster && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 h-8"
+                    onClick={() => setBackupDialogOpen(true)}
+                  >
+                    <Database className="w-3.5 h-3.5" /> Backup
+                  </Button>
                 )}
                 {(isAdmin || canEditCampaign) && (
                   <ExportReportDropdown
