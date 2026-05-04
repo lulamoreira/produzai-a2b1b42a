@@ -1673,12 +1673,12 @@ export default function MatrixAutomationDialog({
               <div className="flex gap-2">
                 <Button
                   className="flex-1"
-                  disabled={!canProceed || selectedItems.length === 0}
+                  disabled={!canProceed || (kind !== "replacement" && selectedItems.length === 0)}
                   onClick={handlePreviewClick}
                 >
-                  <Eye className="w-4 h-4 mr-1" /> {t("automation.preview")}
+                  <Eye className="w-4 h-4 mr-1" /> {kind === "replacement" ? "Aplicar substituição" : t("automation.preview")}
                 </Button>
-                {canProceed && selectedItems.length > 0 && (
+                {canProceed && (kind === "replacement" || selectedItems.length > 0) && (
                   <>
                     {!showSaveInput ? (
                       <Button variant="outline" size="icon" onClick={() => setShowSaveInput(true)} title={editingId ? "Atualizar automação" : t("automation.saveTemplate")}>
