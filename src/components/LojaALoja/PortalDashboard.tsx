@@ -368,6 +368,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
             type: confirmAction.status === "aprovada" ? "store_replacement_approved" : "store_replacement_rejected",
             title: confirmAction.status === "aprovada" ? "Reposição aprovada" : "Reposição rejeitada",
             body: `Uma solicitação de reposição foi ${confirmAction.status === "aprovada" ? "aprovada" : "rejeitada"}.`,
+            action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}?section=occurrences&tab=portal-dashboard&rep=${confirmAction.id}`,
           });
         }
       } catch {}
