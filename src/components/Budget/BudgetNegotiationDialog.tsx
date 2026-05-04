@@ -486,22 +486,27 @@ export default function BudgetNegotiationDialog({
                     <TableHeader>
                       <TableRow>
                         <TableHead>Peça</TableHead>
+                        <TableHead className="text-right">Qtd</TableHead>
                         <TableHead className="text-right">Original</TableHead>
                         <TableHead className="text-right">Ajustado</TableHead>
                         <TableHead className="text-right">Δ</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {autoPreview.map((row) => (
+                      {autoPreview.map((row) => {
+                        const qty = effectivePieceTotals[row.pieceId] || 0;
+                        return (
                         <TableRow key={row.pieceId}>
                           <TableCell className="truncate max-w-[200px]" title={row.name}>{row.code} — {row.name}</TableCell>
+                          <TableCell className="text-right font-mono font-semibold">{qty}</TableCell>
                           <TableCell className="text-right font-mono">{fmtCurrency(row.original)}</TableCell>
                           <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(row.adjusted)}</TableCell>
                           <TableCell className={`text-right font-mono ${row.diff < 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
                             {fmtCurrency(row.diff)}
                           </TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
                       {supplierEC && (
                         <>
                           <TableRow>
