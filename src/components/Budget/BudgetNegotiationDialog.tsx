@@ -269,6 +269,7 @@ export default function BudgetNegotiationDialog({
       await snapshotSupplierBudget({
         supplierId: supplier.id, campaignId, reason: "negotiation_opened" as any,
       });
+      await snapshotNegotiationRateio(supplier.id, campaignId);
       await saveTarget();
       await supabase.from("budget_suppliers")
         .update({ negotiation_status: "pending" } as never)
@@ -304,6 +305,7 @@ export default function BudgetNegotiationDialog({
     }
     setBusy(true);
     try {
+      await snapshotNegotiationRateio(supplier.id, campaignId);
       await saveTarget();
       // Update each price
       for (const row of autoPreview) {
