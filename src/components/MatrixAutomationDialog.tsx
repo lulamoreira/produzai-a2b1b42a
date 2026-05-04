@@ -2080,29 +2080,6 @@ export default function MatrixAutomationDialog({
         </DialogContent>
       </Dialog>
 
-      {/* ──── Replacement confirmation dialog ──── */}
-      <Dialog open={replacementConfirm.open} onOpenChange={(o) => setReplacementConfirm({ ...replacementConfirm, open: o })}>
-        <DialogContent className="w-full max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Confirmar substituição</DialogTitle>
-            <DialogDescription>
-              {replacementConfirm.count} loja(s) terão a peça atualizada para a quantidade <strong>{replacementTargetQty}</strong>.
-              {replaceAnyNonZero
-                ? " (substituindo qualquer valor diferente de 0)"
-                : ` (substituindo qty=${replacementSourceQtys.join(", ")})`}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReplacementConfirm({ open: false, count: 0 })}>
-              Cancelar
-            </Button>
-            <Button onClick={handleConfirmReplacement} disabled={executing || replacementConfirm.count === 0}>
-              {executing ? "Aplicando..." : "Confirmar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <GroupRunReviewDialog
         open={reviewDialog.open}
         onOpenChange={(o) => setReviewDialog(prev => ({ ...prev, open: o }))}
