@@ -1,24 +1,47 @@
 ## Problema
 
-Ao clicar em uma loja/linha na Gestão de Ocorrências, em vez de abrir o card da ocorrência clicada, reaparece a última foto visualizada.
+No diálogo de **Negociação** (Pigma), os valores exibidos não batem com a realidade congelada:
 
-## Causa
+- Mostra: **Total atual R$ 244.459,09** (Frete+Inst 195.477,00 + Peças 48.982,09)
+- Real (congelado quando Pigma foi declarada vencedora): **R$ 454.978,90**
 
-O componente `OccurrenceDetailSheet` mantém estados transitórios de UI (`lightboxUrl` e `checkinOpen`) que não são resetados quando:
+### Causa
 
-1. O sheet é fechado (clique fora, ESC ou X).
-2. Uma nova ocorrência é selecionada (o componente é reutilizado, não desmontado).
+`BudgetNegotiationDialog.tsx` calcula `currentTotal` (linhas 105–114) **sempre a partir do rateio atual** (`pieceTotals` ou `negPieceTotals`) × `unit_price`. Como o rateio da campanha foi alterado depois que o vencedor foi declarado, o cálculo "ao vivo" diverge do valor que de fato foi congelado e que o BudgetTab usa em todos os outros lugares (`winner_locked_total`).
 
-Quando o usuário fecha o sheet sem antes fechar a foto ampliada, `lightboxUrl` permanece preenchido. Ao abrir outra ocorrência, o overlay da foto antiga reaparece por cima do conteúdo do novo card.
+Verificações feitas:
+- `budget_suppliers.winner_locked_total` para Pigma = `454978.90` ✅
+- `budget_extra_costs` Pigma: instalação 129.990 + frete 65.487 = 195.477 ✅ (parte fixa correta)
+- `budget_negotiation_store_pieces` para essa campanha está **vazio**, então o diálogo cai no `pieceTotals` da campanha (já alterado).
 
 ## Correção (1 arquivo)
 
-`src/components/LojaALoja/OccurrenceDetailSheet.tsx`:
+`src/components/Budget/BudgetNegotiationDialog.tsx`
 
-1. No bloco de init (`useMemo` em torno da linha 90), quando detecta troca de `occurrence.id`, também limpar:
-   - `setLightboxUrl(null)`
-   - `setCheckinOpen(false)`
+1. Aceitar uma nova prop opcional `frozenTotal?: number | null` (vinda de `winner_locked_total` quando o fornecedor é o vencedor declarado **ou** está com `locked = true`).
 
-2. Adicionar um `useEffect` que, quando `open` vira `false`, limpa esses dois estados, garantindo estado higiênico na próxima abertura.
+2. Em `currentTotal` (linhas 105–114):
+   - Se `frozenTotal` existir e for > 0 e **não houver** rateio de negociação isolado (`negotiationPieces.length === 0`), usar `frozenTotal` como `currentTotal`.
+   - Caso contrário, manter o cálculo atual (rateio de negociação ou rateio vivo).
 
-Nenhuma outra alteração de lógica de negócios. O clique na linha (`setSelectedOccurrence(o)` em `PortalDashboard.tsx`) já está correto.
+3. Derivar `currentPiecesTotal` (linha 130) de forma consistente:
+   - `currentPiecesTotal = currentTotal - fixedCosts` (já é assim — basta garantir que `currentTotal` venha do passo 2).
+
+4. Em `BudgetTab.tsx`, na renderização do `<BudgetNegotiationDialog ...>` (~linha 2164), passar:
+   ```tsx
+   frozenTotal={
+     (negotiatingSupplier as any)?.winner_locked_total ?? null
+   }
+   ```
+   (usar o supplier que está em negociação; o campo já existe no objeto retornado por `useBudgetSuppliers`.)
+
+### Observações
+
+- Nenhuma alteração no fluxo de salvar/aplicar negociação. Apenas a **exibição** do "Total atual" e "Total das peças" passa a refletir o valor congelado real quando aplicável.
+- Quando o admin abrir uma negociação isolada (snapshot do rateio em `budget_negotiation_store_pieces`), continuamos usando esse rateio isolado — comportamento já existente.
+- `Frete + Instalação` continua vindo de `budget_extra_costs` (não foi alterado).
+
+## Fora de escopo
+
+- Não mexer em `handleToggleWinner` (lógica de congelamento já discutida em respostas anteriores).
+- Não recalcular `winner_locked_total`; o valor já está correto no banco.
