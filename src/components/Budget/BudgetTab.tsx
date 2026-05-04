@@ -342,6 +342,25 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     return result;
   }, [suppliers, prices, extraCosts, pieceTotals, kitPieceTotals, pieces]);
 
+  // ─── Negotiation totals — uses adjusted prices when present ───
+  const supplierNegotiationTotals = useMemo(() => {
+    const result: Record<string, number> = {};
+    for (const sup of suppliers as any[]) {
+      if (!sup.negotiation_status) continue;
+      const ec = extraCosts.find((e) => e.supplier_id === sup.id) as any;
+      let total = Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0)
+                + Number(ec?.adjusted_freight_value ?? ec?.freight_value ?? 0);
+      for (const piece of pieces) {
+        const qty = pieceTotals[piece.id] || 0;
+        if (qty === 0) continue;
+        const price = prices.find((p) => p.supplier_id === sup.id && p.piece_id === piece.id) as any;
+        total += Number(price?.adjusted_unit_price ?? price?.unit_price ?? 0) * qty;
+      }
+      result[sup.id] = total;
+    }
+    return result;
+  }, [suppliers, extraCosts, pieces, prices, pieceTotals]);
+
   const supplierTotals = useMemo(() => {
     const result: Record<string, number> = {};
     suppliers.forEach((sup) => {
