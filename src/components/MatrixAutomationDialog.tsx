@@ -23,6 +23,7 @@ import type { ClientStore, CampaignPiece, CampaignKit } from "@/hooks/useMultiCl
 import { useAutomationTemplates, type AutomationTemplateItem, type AutomationKind } from "@/hooks/useAutomationTemplates";
 import { GroupRunReviewDialog, buildValidations, type TemplateValidation } from "@/components/Matrix/GroupRunReviewDialog";
 import { GroupRunErrorDialog, type GroupRunResult } from "@/components/Matrix/GroupRunErrorDialog";
+import { applyRateioBulk } from "@/lib/applyRateioBulk";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
