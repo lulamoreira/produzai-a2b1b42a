@@ -159,10 +159,10 @@ export default function BudgetNegotiationDialog({
     if (mode !== "auto") return targetNum;
     let t = (adjustedInstallation || 0) + (adjustedFreight || 0);
     for (const row of autoPreview) {
-      t += row.adjusted * (pieceTotals[row.pieceId] || 0);
+      t += row.adjusted * (effectivePieceTotals[row.pieceId] || 0);
     }
     return t;
-  }, [mode, targetNum, autoPreview, adjustedInstallation, adjustedFreight, pieceTotals]);
+  }, [mode, targetNum, autoPreview, adjustedInstallation, adjustedFreight, effectivePieceTotals]);
 
   // History
   const { data: history = [] } = useQuery({
