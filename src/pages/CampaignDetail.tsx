@@ -104,7 +104,6 @@ const hasStoreDetailValue = (value: unknown) => value !== null && value !== unde
 
 function StoreDetailsPopover({ store, customFieldLabels }: { store: ClientStore; customFieldLabels: StoreDetailCustomField[] }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const closeDetailsTimer = useRef<number | null>(null);
   const storeAny = store as any;
   const locationParts = [store.city, store.state].filter(Boolean).join(" / ");
