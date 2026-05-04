@@ -916,13 +916,14 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             {budgetAmount != null && currencyCode !== "BRL" && (
               <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(budgetAmount * exchangeRate)}</p>
             )}
-            {/* Deadline + Currency */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Deadline */}
+            <div className="space-y-1 pt-1">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Prazo p/ envio dos orçamentos</p>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className={cn("h-7 text-xs gap-1", !deadlineDate && "text-muted-foreground")}>
                     <CalendarIcon className="w-3 h-3" />
-                    {deadlineDate ? format(deadlineDate, "dd/MM/yyyy 'às' HH:mm") : "Prazo"}
+                    {deadlineDate ? format(deadlineDate, "dd/MM/yyyy 'às' HH:mm") : "Definir prazo"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -946,8 +947,12 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   )}
                 </PopoverContent>
               </Popover>
+            </div>
+            {/* Currency */}
+            <div className="space-y-1 pt-1">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Moeda</p>
               {currencyLocked ? (
-                <div className="flex items-center gap-1.5 h-7 text-xs px-2 text-foreground">
+                <div className="flex items-center gap-1.5 h-7 text-xs text-foreground">
                   <Lock className="w-3.5 h-3.5 text-muted-foreground" />
                   <span className="font-medium">
                     {currencyCode === "USD"
@@ -958,7 +963,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   </span>
                 </div>
               ) : (
-                <>
+                <div className="flex items-center gap-2 flex-wrap">
                   <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
                     <SelectTrigger className="h-7 w-auto text-xs gap-1 px-2">
                       <SelectValue />
@@ -977,7 +982,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   >
                     Confirmar moeda
                   </Button>
-                </>
+                </div>
               )}
             </div>
           </CardContent>
