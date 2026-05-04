@@ -2175,6 +2175,47 @@ const CampaignDetail = () => {
                     </TabsList>
                   </div>
                   <TabsContent value="planilha" className="flex-1 flex flex-col overflow-hidden mt-0 data-[state=inactive]:hidden">
+                {/* Negotiation rateio banner + source toggle */}
+                {hasNegotiationRateio && winnerSupplierId && (
+                  <div
+                    className={`border-b px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                      isNegotiationView
+                        ? "border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/10"
+                        : "border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10"
+                    }`}
+                  >
+                    <div className={`text-xs flex items-start gap-2 ${
+                      isNegotiationView ? "text-blue-900 dark:text-blue-200" : "text-amber-900 dark:text-amber-200"
+                    }`}>
+                      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                      <span>
+                        {isNegotiationView
+                          ? <>Editando <strong>rateio de negociação</strong> — <strong>{winnerSupplierName}</strong>. Alterações aqui não afetam o rateio original.</>
+                          : <>⚠️ Existe uma negociação ativa com <strong>{winnerSupplierName}</strong>. O rateio de negociação é independente do rateio original.</>}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={rateioSource === "original" ? "default" : "outline"}
+                        className="h-7 text-xs"
+                        onClick={() => setRateioSource("original")}
+                      >
+                        Rateio Original
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={rateioSource === "negotiation" ? "default" : "outline"}
+                        className="h-7 text-xs"
+                        onClick={() => setRateioSource("negotiation")}
+                      >
+                        Rateio da Negociação
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 {/* Toolbar */}
                 <div className="border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between px-3 py-1">
