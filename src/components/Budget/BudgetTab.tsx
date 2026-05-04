@@ -1222,10 +1222,10 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             {suppliers.map((sup) => {
               const st = getDisplayStatus(sup);
               const partial = supplierPartialTotals[sup.id];
-              const displayTotal = (sup as any).winner_locked_total != null
+              const isFrozen = !!winnerSupplier && (sup as any).winner_locked_total != null;
+              const displayTotal = isFrozen
                 ? Number((sup as any).winner_locked_total)
                 : partial?.total ?? 0;
-              const isFrozen = (sup as any).winner_locked_total != null;
               const inProgress = partial && partial.pricedPieces > 0 && sup.status !== "enviado";
               return (
                 <Card key={sup.id} className="relative">
