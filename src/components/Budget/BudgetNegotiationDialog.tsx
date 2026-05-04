@@ -74,6 +74,7 @@ export default function BudgetNegotiationDialog({
   const qc = useQueryClient();
   const [target, setTarget] = useState<string>("");
   const [mode, setMode] = useState<"auto" | "manual">("manual");
+  const [adjustScope, setAdjustScope] = useState<"all" | "pieces_only">("pieces_only");
   const [busy, setBusy] = useState(false);
 
   const supplierPrices = useMemo(
