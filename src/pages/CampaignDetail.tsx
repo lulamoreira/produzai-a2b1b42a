@@ -83,6 +83,7 @@ import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import ExportAllPhotosDialog from "@/components/ExportAllPhotosDialog";
 import CampaignBackupDialog from "@/components/CampaignBackupDialog";
+import RateioBackupSheet from "@/components/RateioBackupSheet";
 import RateioExportColorDialog, { type ColorPalette } from "@/components/RateioExportColorDialog";
 import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 // Lazy: defers recharts (~80KB) until the user opens the pending dashboard
@@ -257,6 +258,7 @@ const CampaignDetail = () => {
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
 
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
+  const [rateioBackupOpen, setRateioBackupOpen] = useState(false);
 
   // ─── Negotiation rateio (isolated distribution for the winning supplier) ───
   const [rateioSource, setRateioSource] = useState<"original" | "negotiation">("original");
