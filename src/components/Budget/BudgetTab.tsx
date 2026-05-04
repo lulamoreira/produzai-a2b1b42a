@@ -52,6 +52,7 @@ import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
 import { exportSupplierBudget, type SupplierExportRow } from "@/lib/exportSupplierBudget";
 import BudgetSendClientDialog from "@/components/Budget/BudgetSendClientDialog";
 import BudgetWinnerDialog from "@/components/Budget/BudgetWinnerDialog";
+import BudgetNegotiationDialog from "@/components/Budget/BudgetNegotiationDialog";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
