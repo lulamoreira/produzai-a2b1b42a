@@ -751,7 +751,8 @@ const SupplierPortal = () => {
     }
   };
 
-  const isLocked = supplier?.locked === true;
+  const inNegotiation = supplier?.negotiation_status === "pending";
+  const isLocked = supplier?.locked === true && !inNegotiation;
   const daysLeft = daysUntil(deadline);
 
   // ─── Loading ───────────────────────────────────────────
