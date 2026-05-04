@@ -2177,6 +2177,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             fmtCurrency={fmtCurrency}
             publicPortalUrl={`${portalBase}/supplier/${sup.access_token}`}
             frozenTotal={sup?.winner_locked_total != null ? Number(sup.winner_locked_total) : null}
+            onNavigateToRateio={onNavigateToRateio}
           />
         );
       })()}
