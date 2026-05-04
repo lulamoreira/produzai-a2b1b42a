@@ -60,6 +60,7 @@ interface Props {
   currencyCode: string;
   fmtCurrency: (v: number | null | undefined) => string;
   publicPortalUrl?: string;
+  frozenTotal?: number | null;
 }
 
 function toNum(v: any): number {
@@ -69,7 +70,7 @@ function toNum(v: any): number {
 
 export default function BudgetNegotiationDialog({
   open, onOpenChange, supplier, campaignId, campaignName,
-  pieces, prices, extraCosts, pieceTotals, settings, currencyCode, fmtCurrency, publicPortalUrl,
+  pieces, prices, extraCosts, pieceTotals, settings, currencyCode, fmtCurrency, publicPortalUrl, frozenTotal,
 }: Props) {
   const qc = useQueryClient();
   const [target, setTarget] = useState<string>("");
@@ -103,6 +104,11 @@ export default function BudgetNegotiationDialog({
   const effectivePieceTotals = negotiationPieces.length > 0 ? negPieceTotals : pieceTotals;
 
   const currentTotal = useMemo(() => {
+    // If a frozen winner total exists and there's no isolated negotiation rateio,
+    // honor the frozen value (matches what's displayed everywhere else in BudgetTab).
+    if (frozenTotal != null && frozenTotal > 0 && negotiationPieces.length === 0) {
+      return frozenTotal;
+    }
     let total = toNum(supplierEC?.installation_value) + toNum(supplierEC?.freight_value);
     for (const piece of pieces) {
       const qty = effectivePieceTotals[piece.id] || 0;
@@ -111,7 +117,7 @@ export default function BudgetNegotiationDialog({
       total += toNum(pr?.unit_price) * qty;
     }
     return total;
-  }, [pieces, effectivePieceTotals, supplierPrices, supplierEC]);
+  }, [pieces, effectivePieceTotals, supplierPrices, supplierEC, frozenTotal, negotiationPieces.length]);
 
   useEffect(() => {
     if (open) {
