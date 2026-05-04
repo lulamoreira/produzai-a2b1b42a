@@ -268,6 +268,10 @@ export default function BudgetNegotiationDialog({
   // ─── Action: auto apply ───
   const handleAutoApply = async () => {
     if (targetNum <= 0) { toast.error("Defina um teto máximo válido."); return; }
+    if (piecesOnlyInvalid) {
+      toast.error("O teto é menor que frete + instalação somados.");
+      return;
+    }
     setBusy(true);
     try {
       await saveTarget();
@@ -285,8 +289,8 @@ export default function BudgetNegotiationDialog({
           { onConflict: "supplier_id,piece_id" }
         );
       }
-      // Update extras
-      if (supplierEC) {
+      // Update extras (only when adjusting all)
+      if (supplierEC && adjustScope === "all") {
         await supabase.from("budget_extra_costs")
           .update({
             adjusted_installation_value: adjustedInstallation,
