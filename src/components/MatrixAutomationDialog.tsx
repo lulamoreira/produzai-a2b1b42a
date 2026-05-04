@@ -677,8 +677,8 @@ export default function MatrixAutomationDialog({
     const matchingIds = new Set(matching.map(s => s.id));
     const nonMatchingStores = stores.filter(s => !matchingIds.has(s.id));
 
-    const upserts: { campaign_id: string; store_id: string; piece_id: string; quantity: number }[] = [];
-    const deletes: { storeId: string; pieceId: string }[] = [];
+    const upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[] = [];
+    const deletes: { campaignId: string; storeId: string; pieceId: string }[] = [];
     let touchedStores = 0;
 
     for (const store of matching) {
@@ -689,9 +689,9 @@ export default function MatrixAutomationDialog({
       touchedStores++;
       for (const rp of resolvedPieces) {
         if (rp.quantity > 0) {
-          upserts.push({ campaign_id: campaignId, store_id: store.id, piece_id: rp.pieceId, quantity: rp.quantity });
+          upserts.push({ campaignId, storeId: store.id, pieceId: rp.pieceId, quantity: rp.quantity });
         } else {
-          deletes.push({ storeId: store.id, pieceId: rp.pieceId });
+          deletes.push({ campaignId, storeId: store.id, pieceId: rp.pieceId });
         }
       }
     }
@@ -705,31 +705,21 @@ export default function MatrixAutomationDialog({
       }
     }
 
-    if (upserts.length > 0) {
-      // Deduplicate: same (store_id, piece_id) cannot appear twice in a single upsert
-      // (Postgres throws "ON CONFLICT DO UPDATE command cannot affect row a second time").
-      // When a kit references the same piece more than once, sum the quantities.
-      const dedupMap = new Map<string, typeof upserts[number]>();
-      for (const u of upserts) {
-        const key = `${u.store_id}-${u.piece_id}`;
-        const existing = dedupMap.get(key);
-        if (existing) {
-          existing.quantity += u.quantity;
-        } else {
-          dedupMap.set(key, { ...u });
-        }
+    // Deduplicate: same (storeId, pieceId) cannot appear twice in a single upsert.
+    // When a kit references the same piece more than once, sum the quantities.
+    const dedupMap = new Map<string, typeof upserts[number]>();
+    for (const u of upserts) {
+      const key = `${u.storeId}-${u.pieceId}`;
+      const existing = dedupMap.get(key);
+      if (existing) {
+        existing.quantity += u.quantity;
+      } else {
+        dedupMap.set(key, { ...u });
       }
-      const dedupedUpserts = Array.from(dedupMap.values());
-      const { error } = await supabase
-        .from("campaign_store_pieces")
-        .upsert(dedupedUpserts, { onConflict: "campaign_id,store_id,piece_id" });
-      if (error) throw error;
     }
+    const dedupedUpserts = Array.from(dedupMap.values());
 
-    for (const del of deletes) {
-      await supabase.from("campaign_store_pieces").delete()
-        .eq("campaign_id", campaignId).eq("store_id", del.storeId).eq("piece_id", del.pieceId);
-    }
+    await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
 
     return { updated: touchedStores, kept: keepCount, zeroed: 0 };
   };
