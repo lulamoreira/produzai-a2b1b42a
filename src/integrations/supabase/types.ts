@@ -441,6 +441,7 @@ export type Database = {
           status: string
           submitted_at: string | null
           winner_declared_at: string | null
+          winner_locked_total: number | null
         }
         Insert: {
           access_token?: string
@@ -459,6 +460,7 @@ export type Database = {
           status?: string
           submitted_at?: string | null
           winner_declared_at?: string | null
+          winner_locked_total?: number | null
         }
         Update: {
           access_token?: string
@@ -477,6 +479,7 @@ export type Database = {
           status?: string
           submitted_at?: string | null
           winner_declared_at?: string | null
+          winner_locked_total?: number | null
         }
         Relationships: [
           {

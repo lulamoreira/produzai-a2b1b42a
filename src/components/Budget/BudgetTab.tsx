@@ -396,6 +396,14 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
             .update({ is_winner: false, winner_declared_at: null } as never)
             .eq("id", o.id);
         }
+        // Congelar total de TODOS os fornecedores no momento da declaração
+        for (const s of suppliers as any[]) {
+          const total = supplierPartialTotals[s.id]?.total ?? 0;
+          await supabase
+            .from("budget_suppliers")
+            .update({ winner_locked_total: total } as never)
+            .eq("id", s.id);
+        }
         // Congelar preços via snapshot antes de declarar o vencedor
         await snapshotSupplierBudget({
           supplierId: sup.id,
@@ -432,13 +440,18 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   // ─── Winner KPI helpers ────────────────────────────────
   const winnerNegotiationStatus: string | null = (winnerSupplier as any)?.negotiation_status ?? null;
   const winnerInNegotiation = winnerNegotiationStatus === "pending" || winnerNegotiationStatus === "submitted" || winnerNegotiationStatus === "approved";
-  const winnerOriginalTotal = winnerSupplier ? (supplierPartialTotals[(winnerSupplier as any).id]?.total ?? 0) : 0;
+  const winnerOriginalTotal = winnerSupplier
+    ? ((winnerSupplier as any).winner_locked_total ?? supplierPartialTotals[(winnerSupplier as any).id]?.total ?? 0)
+    : 0;
   const winnerNegotiatedTotal = winnerSupplier ? (supplierNegotiationTotals[(winnerSupplier as any).id] ?? winnerOriginalTotal) : 0;
 
   const difference = (() => {
     if (budgetAmount == null) return null;
     if (winnerSupplier && winnerNegotiationStatus === "approved") {
       return winnerNegotiatedTotal - budgetAmount;
+    }
+    if (winnerSupplier) {
+      return winnerOriginalTotal - budgetAmount;
     }
     return bestSupplier ? bestSupplier.total - budgetAmount : null;
   })();
@@ -817,34 +830,31 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                 </p>
               )}
 
-              {/* Valor (frozen / em negociação / negociado) */}
-              {(() => {
-                const isApproved = winnerNegotiationStatus === "approved";
-                const isInProgress = winnerNegotiationStatus === "pending" || winnerNegotiationStatus === "submitted";
-                const showValue = isApproved ? winnerNegotiatedTotal : (isInProgress ? winnerNegotiatedTotal : winnerOriginalTotal);
-                const label = isApproved ? "Valor negociado" : (isInProgress ? "Em negociação" : "Valor vencedor");
-                const labelClass = isInProgress
-                  ? "text-xs text-amber-700 dark:text-amber-400 uppercase tracking-wide"
-                  : "text-xs text-muted-foreground uppercase tracking-wide";
-                return (
-                  <div className="pt-1">
-                    <p className={labelClass}>{label}</p>
-                    <p className="text-lg font-bold text-amber-700 dark:text-amber-400 mt-1">
-                      {fmtCurrency(showValue)}
-                    </p>
-                    {currencyCode !== "BRL" && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {fmtBRL(showValue * exchangeRate)}
-                      </p>
-                    )}
-                    {(isApproved || isInProgress) && (
-                      <p className="text-xs text-muted-foreground line-through mt-0.5">
-                        Original: {fmtCurrency(winnerOriginalTotal)}
-                      </p>
-                    )}
-                  </div>
-                );
-              })()}
+              {/* Valor vencedor — sempre fixo (frozen no momento da declaração) */}
+              <div className="pt-1">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Valor vencedor</p>
+                <p className="text-lg font-bold text-amber-700 dark:text-amber-400 mt-1">
+                  {fmtCurrency(winnerOriginalTotal)}
+                </p>
+                {currencyCode !== "BRL" && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(winnerOriginalTotal * exchangeRate)}</p>
+                )}
+              </div>
+
+              {/* Valor negociado — aparece quando há negociação */}
+              {winnerInNegotiation && (
+                <div className="mt-2 pt-2 border-t border-border">
+                  <p className={`text-xs uppercase tracking-wide ${winnerNegotiationStatus === "approved" ? "text-emerald-600" : "text-amber-600"}`}>
+                    {winnerNegotiationStatus === "approved" ? "✅ Valor negociado (vale)" : "🤝 Em negociação"}
+                  </p>
+                  <p className={`text-lg font-bold mt-1 ${winnerNegotiationStatus === "approved" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
+                    {fmtCurrency(winnerNegotiatedTotal)}
+                  </p>
+                  {currencyCode !== "BRL" && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
