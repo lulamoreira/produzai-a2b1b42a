@@ -83,6 +83,7 @@ import CampaignActivityHistory from "@/components/CampaignActivityHistory";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import ExportAllPhotosDialog from "@/components/ExportAllPhotosDialog";
 import CampaignBackupDialog from "@/components/CampaignBackupDialog";
+import RateioBackupSheet from "@/components/RateioBackupSheet";
 import RateioExportColorDialog, { type ColorPalette } from "@/components/RateioExportColorDialog";
 import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 // Lazy: defers recharts (~80KB) until the user opens the pending dashboard
@@ -257,6 +258,7 @@ const CampaignDetail = () => {
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
 
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
+  const [rateioBackupOpen, setRateioBackupOpen] = useState(false);
 
   // ─── Negotiation rateio (isolated distribution for the winning supplier) ───
   const [rateioSource, setRateioSource] = useState<"original" | "negotiation">("original");
@@ -2493,6 +2495,11 @@ const CampaignDetail = () => {
                           <Download className="w-4 h-4 mr-2" />
                           {t("matrix.customExport")}
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setRateioBackupOpen(true)}>
+                          <Database className="w-4 h-4 mr-2" />
+                          Backup do Rateio
+                        </DropdownMenuItem>
 
 
                         {canEditCampaign && (
@@ -3655,6 +3662,20 @@ const CampaignDetail = () => {
         onOpenChange={setBackupDialogOpen}
         campaignId={campaignId!}
         campaignName={campaign?.name || ""}
+      />
+
+      <RateioBackupSheet
+        open={rateioBackupOpen}
+        onOpenChange={setRateioBackupOpen}
+        campaignId={campaignId!}
+        campaignName={campaign?.name || ""}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        stores={stores}
+        qtyMap={qtyMap}
+        isNegotiationView={isNegotiationView}
+        negotiationSupplierId={winnerSupplierId}
       />
     </AppLayout>
   );

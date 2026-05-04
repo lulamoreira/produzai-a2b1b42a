@@ -1267,6 +1267,7 @@ export type Database = {
           created_by: string | null
           description: string | null
           id: string
+          kind: string | null
           name: string
           snapshot_data: Json
         }
@@ -1276,6 +1277,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          kind?: string | null
           name: string
           snapshot_data: Json
         }
@@ -1285,6 +1287,7 @@ export type Database = {
           created_by?: string | null
           description?: string | null
           id?: string
+          kind?: string | null
           name?: string
           snapshot_data?: Json
         }
