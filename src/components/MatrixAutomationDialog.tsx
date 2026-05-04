@@ -1129,7 +1129,10 @@ export default function MatrixAutomationDialog({
 
   const hasValidFilters = filterGroup.filtros.some(f => f.campo && f.valor);
   // Filtros vazios aplicam a TODAS as lojas em ambos os modos (fixed e by_field).
-  const canProceed = selectedItems.length > 0 && (kind === "fixed" || !!baseField);
+  const canProceed =
+    kind === "replacement"
+      ? !!replacementPieceId && (replaceAnyNonZero || replacementSourceQtys.length > 0)
+      : selectedItems.length > 0 && (kind === "fixed" || !!baseField);
   const applyingToAll = !hasValidFilters;
 
   // Stores within filter that have a valid numeric value in baseField
