@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -445,47 +445,6 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const winnerSupplier = useMemo(() => {
     return (suppliers as any[]).find((s) => s.is_winner === true) || null;
   }, [suppliers]);
-
-  // ─── Auto-resync do winner_locked_total (política híbrida) ───
-  // Enquanto a negociação ainda NÃO começou de fato (status null ou "pending")
-  // e o fornecedor não tem ajustes nem rateio de negociação divergente,
-  // mantemos o snapshot do vencedor sincronizado com o cálculo ao vivo.
-  // Quando negotiation_status passa a "submitted" ou "approved", o snapshot
-  // congela e qualquer drift posterior aparece como diferença real no KPI.
-  const lastSyncedWinnerTotalRef = useRef<Record<string, number>>({});
-  useEffect(() => {
-    if (!winnerSupplier) return;
-    const w: any = winnerSupplier;
-    const ns: string | null = w.negotiation_status ?? null;
-    if (ns !== null && ns !== "pending") return; // congelado após submitted/approved
-
-    const livePartial = supplierPartialTotals[w.id]?.total;
-    const liveNeg = supplierNegotiationTotals[w.id];
-    if (livePartial == null) return;
-
-    // Se houver qualquer divergência entre original e negociação (ajustes de
-    // preço/custo extra ou rateio de negociação editado), NÃO mexemos no snapshot.
-    if (liveNeg != null && Math.abs(liveNeg - livePartial) > 0.01) return;
-
-    const locked = w.winner_locked_total != null ? Number(w.winner_locked_total) : null;
-    if (locked != null && Math.abs(locked - livePartial) < 0.01) return;
-
-    // Evita gravar a mesma sincronização em loop entre invalidations.
-    const lastSynced = lastSyncedWinnerTotalRef.current[w.id];
-    if (lastSynced != null && Math.abs(lastSynced - livePartial) < 0.01) return;
-    lastSyncedWinnerTotalRef.current[w.id] = livePartial;
-
-    (async () => {
-      const { error } = await supabase
-        .from("budget_suppliers")
-        .update({ winner_locked_total: livePartial } as never)
-        .eq("id", w.id);
-      if (!error) {
-        queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] });
-      }
-    })();
-  }, [winnerSupplier, supplierPartialTotals, supplierNegotiationTotals, campaignId, queryClient]);
-
 
   // Totais por fornecedor:
   // - Se houver vencedor declarado, usa o valor congelado (winner_locked_total) de cada um.
