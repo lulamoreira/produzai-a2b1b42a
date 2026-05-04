@@ -60,6 +60,7 @@ interface Props {
   currencyCode: string;
   fmtCurrency: (v: number | null | undefined) => string;
   publicPortalUrl?: string;
+  frozenTotal?: number | null;
 }
 
 function toNum(v: any): number {
