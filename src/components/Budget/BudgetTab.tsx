@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/hooks/useAuth";
 import { snapshotSupplierBudget } from "@/lib/budgetPriceSnapshot";
+import { computeSupplierTotal } from "@/lib/computeSupplierTotal";
 import BudgetSupplierHistorySheet from "@/components/Budget/BudgetSupplierHistorySheet";
 
 import { Card, CardContent } from "@/components/ui/card";
