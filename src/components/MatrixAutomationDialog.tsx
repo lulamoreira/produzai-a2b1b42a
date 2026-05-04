@@ -475,7 +475,7 @@ export default function MatrixAutomationDialog({
 
   // Check for overwrite before preview
   const handlePreviewClick = async () => {
-    // Replacement mode short-circuit
+    // Replacement mode → build preview rows and go to step 2
     if (kind === "replacement") {
       if (!replacementPieceId) { toast.error("Selecione a peça."); return; }
       if (!Number.isFinite(replacementTargetQty) || replacementTargetQty < 0) {
@@ -484,7 +484,25 @@ export default function MatrixAutomationDialog({
       if (!replaceAnyNonZero && replacementSourceQtys.length === 0) {
         toast.error("Selecione ao menos uma quantidade de origem ou marque \"qualquer valor diferente de 0\"."); return;
       }
-      setReplacementConfirm({ open: true, count: replacementAffectedStores.length });
+      const piece = pieces.find(p => p.id === replacementPieceId);
+      const pieceName = piece ? `${piece.code} — ${piece.name}` : "Peça";
+      const rows: PreviewRow[] = replacementAffectedStores.map(store => ({
+        storeId: store.id,
+        storeName: store.name,
+        group: "update" as const,
+        pieceId: replacementPieceId,
+        pieceName,
+        currentQty: qtyMap[`${store.id}-${replacementPieceId}`] || 0,
+        newQty: replacementTargetQty,
+        action: "keep" as const,
+      }));
+      if (rows.length === 0) {
+        toast.error("Nenhuma loja corresponde aos critérios.");
+        return;
+      }
+      setPreview(rows);
+      setOutsideActions({});
+      setStep(2);
       return;
     }
 
