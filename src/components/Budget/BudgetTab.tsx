@@ -915,11 +915,26 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           </CardContent>
         </Card>
 
-        {/* Melhor Proposta */}
-        <Card className={bestSupplier ? "border-emerald-200 dark:border-emerald-800" : ""}>
+        {/* Melhor Proposta / Vencedor em negociação */}
+        <Card className={(winnerSupplier && winnerInNegotiation) || bestSupplier ? "border-emerald-200 dark:border-emerald-800" : ""}>
           <CardContent className="pt-4 pb-4 space-y-1">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Melhor Proposta</p>
-            {bestSupplier ? (
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {winnerSupplier && winnerInNegotiation
+                ? (winnerNegotiationStatus === "approved" ? "Proposta negociada" : "Em negociação")
+                : "Melhor Proposta"}
+            </p>
+            {winnerSupplier && winnerInNegotiation ? (
+              <>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(winnerNegotiatedTotal)}</p>
+                {currencyCode !== "BRL" && (
+                  <p className="text-xs text-muted-foreground mt-0.5">{fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
+                )}
+                <p className="text-xs text-muted-foreground line-through">
+                  Original: {fmtCurrency(winnerOriginalTotal)}
+                </p>
+                <p className="text-xs text-muted-foreground">{(winnerSupplier as any).company_name}</p>
+              </>
+            ) : bestSupplier ? (
               <>
                 <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(bestSupplier.total)}</p>
                 {currencyCode !== "BRL" && (
