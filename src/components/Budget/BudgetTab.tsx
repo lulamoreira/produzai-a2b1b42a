@@ -1022,10 +1022,12 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               <div className="pt-2">
                 <Button
                   size="sm"
-                  className="w-full gap-1 h-8 text-xs"
+                  variant="outline"
+                  className="w-full gap-1.5 h-8 text-xs whitespace-normal leading-tight border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
                   onClick={() => setClientSendDialogOpen(true)}
                 >
-                  <Send className="w-3.5 h-3.5" /> Enviar o Certame para o Cliente
+                  <Send className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">Enviar ao cliente</span>
                 </Button>
               </div>
             )}
