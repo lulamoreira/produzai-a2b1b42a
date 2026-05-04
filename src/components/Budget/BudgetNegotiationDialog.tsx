@@ -576,7 +576,7 @@ export default function BudgetNegotiationDialog({
             </Button>
           )}
           {mode === "auto" && status !== "submitted" && (
-            <Button onClick={handleAutoApply} disabled={busy || targetNum <= 0} className="gap-1">
+            <Button onClick={handleAutoApply} disabled={busy || targetNum <= 0 || piecesOnlyInvalid} className="gap-1">
               {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               Aplicar e fechar
             </Button>
