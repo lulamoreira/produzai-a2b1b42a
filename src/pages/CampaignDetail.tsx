@@ -567,9 +567,13 @@ const CampaignDetail = () => {
   // ─── Derived data ──────────────────────────────────────
   const qtyMap = useMemo(() => {
     const map: Record<string, number> = {};
-    storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
+    if (isNegotiationView) {
+      negotiationStorePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
+    } else {
+      storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
+    }
     return map;
-  }, [storePieces]);
+  }, [storePieces, negotiationStorePieces, isNegotiationView]);
 
   const totalPieces = useMemo(() => storePieces.reduce((s, sp) => s + sp.quantity, 0), [storePieces]);
 
