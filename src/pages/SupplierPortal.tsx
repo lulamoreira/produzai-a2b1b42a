@@ -531,36 +531,48 @@ const SupplierPortal = () => {
   }, [supplier]);
 
   // ─── Save price on blur (always piece_id) ──────────────
+  // In negotiation mode, writes to adjusted_unit_price (preserves original unit_price).
   const savePrice = useCallback(
     async (pieceId: string, value: number | null) => {
       if (!supplier) return;
-      await supabase.from("budget_prices").upsert(
-        {
-          supplier_id: supplier.id,
-          campaign_id: supplier.campaign_id,
-          piece_id: pieceId,
-          unit_price: value,
-        } as never,
-        { onConflict: "supplier_id,piece_id" }
-      );
+      const isNeg = supplier.negotiation_status === "pending";
+      const payload: any = {
+        supplier_id: supplier.id,
+        campaign_id: supplier.campaign_id,
+        piece_id: pieceId,
+      };
+      if (isNeg) {
+        payload.adjusted_unit_price = value;
+        // preserve original unit_price by including it from cache
+        const original = originalPrices[pieceId];
+        if (original != null) payload.unit_price = original;
+      } else {
+        payload.unit_price = value;
+      }
+      await supabase.from("budget_prices").upsert(payload as never, { onConflict: "supplier_id,piece_id" });
     },
-    [supplier]
+    [supplier, originalPrices]
   );
 
   // ─── Save extra costs on blur ──────────────────────────
   const saveExtraCosts = useCallback(
     async (field: "installation_value" | "freight_value", value: number | null) => {
       if (!supplier) return;
-      const payload = {
-        supplier_id: supplier.id,
-        installation_value: field === "installation_value" ? value : extraCosts.installation_value,
-        freight_value: field === "freight_value" ? value : extraCosts.freight_value,
-      };
+      const isNeg = supplier.negotiation_status === "pending";
+      const dbField = isNeg
+        ? (field === "installation_value" ? "adjusted_installation_value" : "adjusted_freight_value")
+        : field;
 
       if (extraCosts.id) {
-        await supabase.from("budget_extra_costs").update({ [field]: value }).eq("id", extraCosts.id);
+        await supabase.from("budget_extra_costs").update({ [dbField]: value } as never).eq("id", extraCosts.id);
       } else {
-        const { data } = await supabase.from("budget_extra_costs").insert(payload).select().single();
+        const insertPayload: any = {
+          supplier_id: supplier.id,
+          installation_value: !isNeg && field === "installation_value" ? value : extraCosts.installation_value,
+          freight_value: !isNeg && field === "freight_value" ? value : extraCosts.freight_value,
+        };
+        if (isNeg) insertPayload[dbField] = value;
+        const { data } = await supabase.from("budget_extra_costs").insert(insertPayload).select().single();
         if (data) setExtraCosts((ec) => ({ ...ec, id: data.id }));
       }
     },
