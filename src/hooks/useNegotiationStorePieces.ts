@@ -23,12 +23,20 @@ export function useNegotiationStorePieces(
     queryKey: ["negotiation_store_pieces", supplierId],
     enabled: !!supplierId && enabled,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("budget_negotiation_store_pieces" as never)
-        .select("id, supplier_id, campaign_id, store_id, piece_id, quantity")
-        .eq("supplier_id", supplierId as string);
-      if (error) throw error;
-      return (data as unknown as NegotiationStorePiece[]) || [];
+      const rows: NegotiationStorePiece[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from("budget_negotiation_store_pieces" as never)
+          .select("id, supplier_id, campaign_id, store_id, piece_id, quantity")
+          .eq("supplier_id", supplierId as string)
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const page = ((data as unknown as NegotiationStorePiece[]) || []);
+        rows.push(...page);
+        if (page.length < pageSize) break;
+      }
+      return rows;
     },
   });
 }
