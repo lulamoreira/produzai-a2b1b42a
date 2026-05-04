@@ -212,18 +212,19 @@ const SupplierPortal = () => {
           async () => {
             const { data, error: err } = await supabase
               .from("budget_settings")
-              .select("deadline, currency_code")
+              .select("deadline, currency_code, negotiation_target")
               .eq("campaign_id", sup.campaign_id)
               .maybeSingle();
             if (err) throw err;
             return data;
           },
-          null as { deadline: string | null; currency_code?: string } | null
+          null as { deadline: string | null; currency_code?: string; negotiation_target?: number | null } | null
         );
 
         const dl = settings?.deadline ?? null;
         setDeadline(dl);
         setCurrencyCode((settings as { currency_code?: string } | null | undefined)?.currency_code || "BRL");
+        setNegotiationTarget((settings as any)?.negotiation_target ?? null);
 
         // 2b) Timeline entries (não-crítico)
         const timeline = await trySoft(
