@@ -85,16 +85,32 @@ export default function BudgetNegotiationDialog({
     [extraCosts, supplier.id]
   );
 
+  // Negotiation rateio (isolated quantities for this supplier)
+  const { data: negotiationPieces = [] } = useNegotiationStorePieces(
+    supplier.id,
+    campaignId,
+    open
+  );
+  const negPieceTotals = useMemo<Record<string, number>>(() => {
+    if (!negotiationPieces.length) return {};
+    const map: Record<string, number> = {};
+    for (const row of negotiationPieces) {
+      map[row.piece_id] = (map[row.piece_id] || 0) + Number(row.quantity || 0);
+    }
+    return map;
+  }, [negotiationPieces]);
+  const effectivePieceTotals = negotiationPieces.length > 0 ? negPieceTotals : pieceTotals;
+
   const currentTotal = useMemo(() => {
     let total = toNum(supplierEC?.installation_value) + toNum(supplierEC?.freight_value);
     for (const piece of pieces) {
-      const qty = pieceTotals[piece.id] || 0;
+      const qty = effectivePieceTotals[piece.id] || 0;
       if (qty <= 0) continue;
       const pr = supplierPrices.find((p) => p.piece_id === piece.id);
       total += toNum(pr?.unit_price) * qty;
     }
     return total;
-  }, [pieces, pieceTotals, supplierPrices, supplierEC]);
+  }, [pieces, effectivePieceTotals, supplierPrices, supplierEC]);
 
   useEffect(() => {
     if (open) {
