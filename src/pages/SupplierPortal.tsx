@@ -433,7 +433,7 @@ const SupplierPortal = () => {
         });
         setSuggestions(sugMap);
 
-        if (sup.locked) setSubmitted(true);
+        if (sup.locked && sup.negotiation_status !== "pending") setSubmitted(true);
       } catch (e: unknown) {
         console.error("[SupplierPortal] Erro crítico ao carregar:", e);
         const msg = e instanceof Error ? e.message : String(e);
