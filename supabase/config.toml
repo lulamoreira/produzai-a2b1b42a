@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.backup-restore]
 verify_jwt = false
 
+[functions.campaign-backup]
+verify_jwt = false
+
 [functions.cep-lookup]
 verify_jwt = false
 
