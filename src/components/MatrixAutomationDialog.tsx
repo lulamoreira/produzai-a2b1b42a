@@ -1458,7 +1458,8 @@ export default function MatrixAutomationDialog({
                 </div>
               )}
 
-              {/* Multi-filter section */}
+              {/* Multi-filter section (hidden in replacement mode) */}
+              {kind !== "replacement" && (
               <div>
                 <Label className="text-sm font-semibold mb-1 block">Filtros de Lojas</Label>
                 <p className="text-[11px] text-muted-foreground mb-2">
