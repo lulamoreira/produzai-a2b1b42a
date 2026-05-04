@@ -246,7 +246,6 @@ export default function BudgetNegotiationDialog({
         supplierId: supplier.id, campaignId, reason: "negotiation_opened" as any,
       });
       await saveTarget();
-      await snapshotNegotiationRateio(supplier.id, campaignId);
       await supabase.from("budget_suppliers")
         .update({ negotiation_status: "pending" } as never)
         .eq("id", supplier.id);
