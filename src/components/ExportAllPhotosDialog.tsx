@@ -271,12 +271,14 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
     setProgress({ done: photos.length, total: photos.length, label: "Concluído" });
   };
 
-  const handleStart = () => {
+  const handleStart = (mode: "download" | "downloadDelete" | "deleteOnly" = "download") => {
     if (!Object.values(scope).some(Boolean)) {
       toast.error("Selecione ao menos um tipo de foto");
       return;
     }
-    if (deleteAfter || deleteOnly) {
+    setDeleteOnly(mode === "deleteOnly");
+    setDeleteAfter(mode === "downloadDelete");
+    if (mode === "deleteOnly" || mode === "downloadDelete") {
       setConfirmOpen(true);
     } else {
       void run();
@@ -395,7 +397,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
             {isAdmin && (
               <Button
                 variant="destructive"
-                onClick={() => { setDeleteOnly(true); setDeleteAfter(false); handleStart(); }}
+                onClick={() => handleStart("deleteOnly")}
                 disabled={busy}
                 className="gap-1.5 sm:mr-auto"
               >
@@ -406,7 +408,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
             <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
               Cancelar
             </Button>
-            <Button onClick={() => { setDeleteOnly(false); handleStart(); }} disabled={busy}>
+            <Button onClick={() => handleStart(deleteAfter ? "downloadDelete" : "download")} disabled={busy}>
               {busy ? "Processando..." : deleteAfter ? "Baixar e apagar" : "Baixar ZIP"}
             </Button>
           </DialogFooter>
@@ -422,7 +424,9 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p>
-                  Após o download, todas as fotos selecionadas serão <strong>excluídas permanentemente</strong> do sistema. Esta ação não pode ser desfeita.
+                  {deleteOnly
+                    ? <>Todas as fotos selecionadas serão <strong>excluídas permanentemente</strong> do sistema, <strong>sem download prévio</strong>. Esta ação não pode ser desfeita.</>
+                    : <>Após o download, todas as fotos selecionadas serão <strong>excluídas permanentemente</strong> do sistema. Esta ação não pode ser desfeita.</>}
                 </p>
                 <p>
                   Para confirmar, digite o nome da campanha: <strong>{expectedConfirm}</strong>
@@ -447,7 +451,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Baixar e apagar
+              {deleteOnly ? "Apagar permanentemente" : "Baixar e apagar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
