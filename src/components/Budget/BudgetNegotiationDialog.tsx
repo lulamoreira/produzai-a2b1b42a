@@ -155,9 +155,22 @@ export default function BudgetNegotiationDialog({
         .eq("supplier_id", supplier.id)
         .order("version", { ascending: false });
       if (error) throw error;
-      return ((data as any[]) || []).filter((h) => (h.reason || "").startsWith("negotiation"));
+      return ((data as any[]) || []).filter(
+        (h) => (h.reason || "").startsWith("negotiation") || h.reason === "winner_declared"
+      );
     },
   });
+
+  const reasonLabel = (reason: string | null | undefined) => {
+    switch (reason) {
+      case "winner_declared": return "🏆 Preços congelados (vencedor declarado)";
+      case "negotiation_opened": return "🤝 Negociação aberta";
+      case "negotiation_auto_applied": return "⚙️ Ajuste automático aplicado";
+      case "negotiation_submitted": return "📩 Proposta ajustada enviada";
+      case "negotiation_approved": return "✅ Negociação aprovada";
+      default: return reason || "—";
+    }
+  };
 
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] });
