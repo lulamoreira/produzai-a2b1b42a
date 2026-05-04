@@ -451,9 +451,22 @@ export default function RateioBackupSheet({
                   </div>
                   <Button
                     size="sm" variant="outline" className="h-7 gap-1"
+                    onClick={() => handleDownload(b)}
+                    title="Baixar arquivo .json"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Baixar
+                  </Button>
+                  <Button
+                    size="sm" variant="outline" className="h-7 gap-1"
                     onClick={() => { setRestoreMode("full"); setRestoreTarget(b); }}
                   >
                     <RotateCcw className="w-3.5 h-3.5" /> Restaurar
+                  </Button>
+                  <Button
+                    size="icon" variant="ghost" className="h-7 w-7"
+                    onClick={() => setDeleteTarget(b)}
+                  >
+                    <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
                   <Button
                     size="icon" variant="ghost" className="h-7 w-7"
