@@ -115,7 +115,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
     setSubmitting(true);
 
     const peca = selectedPeca;
-    const { error } = await supabase.from("store_occurrence_reports").insert({
+    const { data: inserted, error } = await supabase.from("store_occurrence_reports").insert({
       token_id: data.token_id,
       campaign_id: data.campaign.id,
       store_id: data.store.id,
@@ -127,7 +127,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
       photo_urls: photos.length > 0 ? photos : null,
       reporter_type: reporterType,
       motive_id: motiveId,
-    } as any);
+    } as any).select("id").single();
 
     if (error) {
       toast.error("Erro ao salvar ocorrência.");
@@ -135,6 +135,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
     } else {
       toast.success("Ocorrência registrada com sucesso!");
       try {
+        const occId = (inserted as any)?.id;
         await criarNotificacao({
           agency_id: agencyId,
           campaign_id: data.campaign.id,
@@ -143,6 +144,9 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
           type: "store_occurrence_report",
           title: "Nova ocorrência da loja",
           body: `${data.store.name} reportou uma ocorrência na peça "${peca.nome}".`,
+          action_url: occId
+            ? `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard&occ=${occId}`
+            : `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard`,
         });
       } catch {}
       resetForm();
