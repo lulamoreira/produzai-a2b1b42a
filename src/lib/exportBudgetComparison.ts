@@ -230,7 +230,8 @@ export async function exportBudgetComparison(params: ExportBudgetComparisonParam
       piece.specification || "",
       qty,
       ...params.suppliers.flatMap((supplier) => {
-        const unitPrice = toNumber(params.prices.find((pr) => pr.supplier_id === supplier.id && pr.piece_id === piece.id)?.unit_price);
+        const priceRow = params.prices.find((pr) => pr.supplier_id === supplier.id && pr.piece_id === piece.id);
+        const unitPrice = effectiveUnit(priceRow);
         return [unitPrice, unitPrice * qty];
       }),
     ], rowIndex++);
