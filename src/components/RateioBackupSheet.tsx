@@ -468,12 +468,6 @@ export default function RateioBackupSheet({
                   >
                     <Trash2 className="w-4 h-4 text-destructive" />
                   </Button>
-                  <Button
-                    size="icon" variant="ghost" className="h-7 w-7"
-                    onClick={() => setDeleteTarget(b)}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
                 </div>
               ))
             )}
