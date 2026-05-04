@@ -302,10 +302,35 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   // ─── Compute supplier totals (per-piece pricing) ──────
   // Partial: para TODOS os fornecedores, mesmo em preenchimento.
   // Final (supplierTotals): apenas status "enviado".
+  // O total monetário usa o helper compartilhado computeSupplierTotal,
+  // garantindo paridade EXATA com supplierNegotiationTotals (mesma
+  // lógica de kit_only + expansão de kits + dedup).
   const supplierPartialTotals = useMemo(() => {
     const result: Record<string, { total: number; installation: number; freight: number; pricedPieces: number; totalPiecesNeeded: number; pct: number }> = {};
+    const qtyResolver = (pieceId: string) => pieceTotals[pieceId] || 0;
     suppliers.forEach((sup) => {
-      let total = 0;
+      const priceResolver = (_sid: string, pid: string) => {
+        const pr = prices.find((x) => x.supplier_id === sup.id && x.piece_id === pid);
+        return Number(pr?.unit_price ?? 0);
+      };
+      const extraCostResolver = () => {
+        const ec = extraCosts.find((e) => e.supplier_id === sup.id);
+        return {
+          installation: Number(ec?.installation_value) || 0,
+          freight: Number(ec?.freight_value) || 0,
+        };
+      };
+      const total = computeSupplierTotal({
+        supplierId: sup.id,
+        pieces,
+        kitPieceTotals,
+        qtyResolver,
+        priceResolver,
+        extraCostResolver,
+      });
+
+      // Counters (pricedPieces / totalPiecesNeeded / pct) — preservados
+      // exatamente como antes, pois alimentam barras de progresso da UI.
       let pricedPieces = 0;
       let totalPiecesNeeded = 0;
       const counted = new Set<string>();
@@ -315,7 +340,6 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
         totalPiecesNeeded += 1;
         const pr = prices.find((x) => x.supplier_id === sup.id && x.piece_id === piece.id);
         if (pr && Number(pr.unit_price) > 0) {
-          total += Number(pr.unit_price) * qty;
           pricedPieces += 1;
           counted.add(piece.id);
         }
@@ -327,7 +351,6 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
           totalPiecesNeeded += 1;
           const pr = prices.find((x) => x.supplier_id === sup.id && x.piece_id === kpi.pieceId);
           if (pr && Number(pr.unit_price) > 0) {
-            total += Number(pr.unit_price) * kpi.qty;
             pricedPieces += 1;
             counted.add(kpi.pieceId);
           }
@@ -336,7 +359,6 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
       const ec = extraCosts.find((e) => e.supplier_id === sup.id);
       const installation = Number(ec?.installation_value) || 0;
       const freight = Number(ec?.freight_value) || 0;
-      total += installation + freight;
       const pct = totalPiecesNeeded > 0 ? Math.round((pricedPieces / totalPiecesNeeded) * 100) : 0;
       result[sup.id] = { total, installation, freight, pricedPieces, totalPiecesNeeded, pct };
     });
