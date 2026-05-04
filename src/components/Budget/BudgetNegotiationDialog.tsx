@@ -132,7 +132,7 @@ export default function BudgetNegotiationDialog({
   const autoPreview = useMemo(() => {
     if (mode !== "auto" || targetNum <= 0 || currentTotal <= 0) return [];
     return pieces
-      .filter((p) => (pieceTotals[p.id] || 0) > 0)
+      .filter((p) => (effectivePieceTotals[p.id] || 0) > 0)
       .map((piece) => {
         const pr = supplierPrices.find((p) => p.piece_id === piece.id);
         const original = toNum(pr?.unit_price);
@@ -146,7 +146,7 @@ export default function BudgetNegotiationDialog({
           diff: adjusted - original,
         };
       });
-  }, [mode, targetNum, currentTotal, pieces, pieceTotals, supplierPrices, ratio]);
+  }, [mode, targetNum, currentTotal, pieces, effectivePieceTotals, supplierPrices, ratio]);
 
   const adjustedInstallation = supplierEC?.installation_value != null
     ? Math.round(toNum(supplierEC.installation_value) * ratio * 100) / 100
