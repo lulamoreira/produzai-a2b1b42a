@@ -252,6 +252,52 @@ const CampaignDetail = () => {
   const updatePiece = useUpdateCampaignPiece();
   const updateStorePiece = useUpdateCampaignStorePiece();
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
+
+  // ─── Negotiation rateio (isolated distribution for the winning supplier) ───
+  const [rateioSource, setRateioSource] = useState<"original" | "negotiation">("original");
+  const { data: winnerNegSupplier } = useQuery({
+    queryKey: ["winner_neg_supplier", campaignId],
+    enabled: !!campaignId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("budget_suppliers")
+        .select("id, company_name, negotiation_status")
+        .eq("campaign_id", campaignId as string)
+        .eq("is_winner", true)
+        .not("negotiation_status", "is", null)
+        .in("negotiation_status", ["pending", "submitted", "approved"])
+        .limit(1)
+        .maybeSingle();
+      if (error) return null;
+      return data as { id: string; company_name: string; negotiation_status: string } | null;
+    },
+  });
+  const winnerSupplierId = winnerNegSupplier?.id ?? null;
+  const winnerSupplierName = winnerNegSupplier?.company_name ?? "";
+  const { data: negRateioExists } = useQuery({
+    queryKey: ["neg_rateio_exists", winnerSupplierId],
+    enabled: !!winnerSupplierId,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("budget_negotiation_store_pieces" as never)
+        .select("id", { count: "exact", head: true })
+        .eq("supplier_id", winnerSupplierId as string);
+      return (count ?? 0) > 0;
+    },
+  });
+  const hasNegotiationRateio = negRateioExists === true;
+  const isNegotiationView = rateioSource === "negotiation" && hasNegotiationRateio && !!winnerSupplierId;
+  // Reset to original if negotiation disappears
+  useEffect(() => {
+    if (rateioSource === "negotiation" && !hasNegotiationRateio) setRateioSource("original");
+  }, [rateioSource, hasNegotiationRateio]);
+
+  const { data: negotiationStorePieces = [] } = useNegotiationStorePieces(
+    winnerSupplierId,
+    campaignId,
+    isNegotiationView
+  );
+  const updateNegotiationStorePiece = useUpdateNegotiationStorePiece();
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
   const addPieceLocation = useAddCampaignPieceLocation();
