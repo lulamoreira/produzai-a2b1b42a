@@ -41,6 +41,8 @@ interface Props {
   kitPieces: { kit_id: string; piece_id: string; quantity: number }[];
   qtyMap: Record<string, number>;
   onComplete: () => void | Promise<void>;
+  isNegotiationView?: boolean;
+  negotiationSupplierId?: string | null;
 }
 
 /** Compute the available "kit count" for a given store, i.e. how many full kits fit. */
