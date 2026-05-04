@@ -393,7 +393,8 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     const result: Record<string, number> = {};
     suppliers.forEach((sup) => {
       if (sup.status !== "enviado") return;
-      result[sup.id] = supplierPartialTotals[sup.id]?.total ?? 0;
+      const locked = (sup as any).winner_locked_total;
+      result[sup.id] = locked != null ? Number(locked) : (supplierPartialTotals[sup.id]?.total ?? 0);
     });
     return result;
   }, [suppliers, supplierPartialTotals]);
