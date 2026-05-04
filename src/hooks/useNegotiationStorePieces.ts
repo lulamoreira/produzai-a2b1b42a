@@ -140,6 +140,18 @@ export async function snapshotNegotiationRateio(
   return payload.length;
 }
 
+export async function resetNegotiationRateioFromOriginal(
+  supplierId: string,
+  campaignId: string
+): Promise<number> {
+  const { error } = await supabase
+    .from("budget_negotiation_store_pieces" as never)
+    .delete()
+    .eq("supplier_id", supplierId);
+  if (error) throw error;
+  return snapshotNegotiationRateio(supplierId, campaignId);
+}
+
 export async function cancelNegotiationRateio(supplierId: string): Promise<void> {
   const { error: pricesErr } = await supabase
     .from("budget_prices")
