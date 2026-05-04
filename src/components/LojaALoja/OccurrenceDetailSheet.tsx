@@ -381,12 +381,24 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
 
       {/* Lightbox */}
       {lightboxUrl && (
-        <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4" onClick={() => setLightboxUrl(null)}>
+        <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4" onClick={() => setLightboxUrl(null)}>
           <img src={lightboxUrl} alt="" loading="lazy" decoding="async" className="max-w-full max-h-full object-contain" />
-          <button onClick={() => setLightboxUrl(null)} className="absolute top-4 right-4 text-white p-2 hover:bg-white/10 rounded-full">
-            <X className="w-6 h-6" />
+          <button
+            type="button"
+            aria-label="Fechar"
+            onClick={(e) => { e.stopPropagation(); setLightboxUrl(null); }}
+            className="absolute top-4 right-4 z-[210] h-11 w-11 rounded-full bg-white text-black shadow-lg ring-2 ring-white/80 hover:bg-white/90 hover:scale-105 transition flex items-center justify-center"
+          >
+            <X className="w-6 h-6" strokeWidth={2.5} />
           </button>
-          <a href={lightboxUrl} target="_blank" rel="noreferrer" className="absolute top-4 right-16 text-white p-2 hover:bg-white/10 rounded-full" onClick={(e) => e.stopPropagation()}>
+          <a
+            href={lightboxUrl}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Abrir em nova aba"
+            className="absolute top-4 right-20 z-[210] h-11 w-11 rounded-full bg-white/15 text-white backdrop-blur hover:bg-white/25 transition flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             <ExternalLink className="w-5 h-5" />
           </a>
         </div>
