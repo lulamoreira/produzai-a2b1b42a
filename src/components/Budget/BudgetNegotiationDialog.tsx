@@ -511,6 +511,7 @@ export default function BudgetNegotiationDialog({
                         <>
                           <TableRow>
                             <TableCell>Instalação</TableCell>
+                            <TableCell className="text-right text-muted-foreground">—</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.installation_value))}</TableCell>
                             <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(adjustedInstallation || 0)}</TableCell>
                             <TableCell className="text-right font-mono">
@@ -519,6 +520,7 @@ export default function BudgetNegotiationDialog({
                           </TableRow>
                           <TableRow>
                             <TableCell>Frete</TableCell>
+                            <TableCell className="text-right text-muted-foreground">—</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.freight_value))}</TableCell>
                             <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(adjustedFreight || 0)}</TableCell>
                             <TableCell className="text-right font-mono">
