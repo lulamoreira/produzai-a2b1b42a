@@ -451,7 +451,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Baixar e apagar
+              {deleteOnly ? "Apagar permanentemente" : "Baixar e apagar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
