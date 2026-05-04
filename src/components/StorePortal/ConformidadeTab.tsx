@@ -136,9 +136,11 @@ export default function ConformidadeTab({ data, agencyId }: Props) {
         agency_id: agencyId,
         campaign_id: data.campaign.id,
         store_id: data.store.id,
+        client_id: data.campaign.client_id,
         type: "store_compliance_check",
         title: "Checklist de conformidade finalizado",
         body: `${data.store.name}: ${overallStatus === "conforme" ? "Tudo conforme ✓" : `${naoOkCount} peça(s) não conforme(s)`}.`,
+        action_url: `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard`,
       });
     } catch {}
 
