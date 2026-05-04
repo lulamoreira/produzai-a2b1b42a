@@ -397,7 +397,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
             {isAdmin && (
               <Button
                 variant="destructive"
-                onClick={() => { setDeleteOnly(true); setDeleteAfter(false); handleStart(); }}
+                onClick={() => handleStart("deleteOnly")}
                 disabled={busy}
                 className="gap-1.5 sm:mr-auto"
               >
@@ -408,7 +408,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
             <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
               Cancelar
             </Button>
-            <Button onClick={() => { setDeleteOnly(false); handleStart(); }} disabled={busy}>
+            <Button onClick={() => handleStart(deleteAfter ? "downloadDelete" : "download")} disabled={busy}>
               {busy ? "Processando..." : deleteAfter ? "Baixar e apagar" : "Baixar ZIP"}
             </Button>
           </DialogFooter>
