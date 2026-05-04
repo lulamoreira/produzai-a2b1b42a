@@ -1,47 +1,71 @@
-## Problema
+## Root cause confirmed: NOT a bug in `computeSupplierTotal`
 
-No diálogo de **Negociação** (Pigma), os valores exibidos não batem com a realidade congelada:
+The helper, the kit expansion, the dedup, and the rateio fetch are all correct. The R$ 939,04 difference comes from comparing a **frozen snapshot** against a **live recomputation**.
 
-- Mostra: **Total atual R$ 244.459,09** (Frete+Inst 195.477,00 + Peças 48.982,09)
-- Real (congelado quando Pigma foi declarada vencedora): **R$ 454.978,90**
+### Evidence
 
-### Causa
+**Manual SQL recomputation (matches current negotiation KPI exactly):**
+- standalone pieces value: `R$ 48.982,09`
+- kit-expanded components value: `R$ 209.580,77`
+- extras (installation + freight): `R$ 195.477,00`
+- **total: R$ 454.039,86** ✓ identical to `supplierNegotiationTotals[Pigma]`
 
-`BudgetNegotiationDialog.tsx` calcula `currentTotal` (linhas 105–114) **sempre a partir do rateio atual** (`pieceTotals` ou `negPieceTotals`) × `unit_price`. Como o rateio da campanha foi alterado depois que o vencedor foi declarado, o cálculo "ao vivo" diverge do valor que de fato foi congelado e que o BudgetTab usa em todos os outros lugares (`winner_locked_total`).
+**Database state for Pigma (`23d453e5…`):**
+- `is_winner = true`
+- `negotiation_status = 'pending'`
+- `winner_locked_total = 454978.8999…` ← stored snapshot from when the winner was declared
+- `budget_negotiation_store_pieces` total qty = `6641` = identical to `campaign_store_pieces` total qty
+- No `adjusted_unit_price` and no `adjusted_*` extra costs for this supplier
 
-Verificações feitas:
-- `budget_suppliers.winner_locked_total` para Pigma = `454978.90` ✅
-- `budget_extra_costs` Pigma: instalação 129.990 + frete 65.487 = 195.477 ✅ (parte fixa correta)
-- `budget_negotiation_store_pieces` para essa campanha está **vazio**, então o diálogo cai no `pieceTotals` da campanha (já alterado).
+### What the two KPIs are actually showing
 
-## Correção (1 arquivo)
+In `BudgetTab.tsx`:
 
-`src/components/Budget/BudgetNegotiationDialog.tsx`
+```ts
+// line 531-532
+winnerOriginalTotal = winnerSupplier.winner_locked_total          // R$ 454.978,90 (frozen)
+                   ?? supplierPartialTotals[id].total
 
-1. Aceitar uma nova prop opcional `frozenTotal?: number | null` (vinda de `winner_locked_total` quando o fornecedor é o vencedor declarado **ou** está com `locked = true`).
+// line 534
+winnerNegotiatedTotal = supplierNegotiationTotals[id]             // R$ 454.039,86 (live)
+                     ?? winnerOriginalTotal
+```
 
-2. Em `currentTotal` (linhas 105–114):
-   - Se `frozenTotal` existir e for > 0 e **não houver** rateio de negociação isolado (`negotiationPieces.length === 0`), usar `frozenTotal` como `currentTotal`.
-   - Caso contrário, manter o cálculo atual (rateio de negociação ou rateio vivo).
+So:
+- **"Valor vencedor" (R$ 454.978,90)** = `winner_locked_total`, written into `budget_suppliers` at the instant the supplier was declared winner. It is never recomputed.
+- **"Em negociação" (R$ 454.039,86)** = recomputed every render from current `pieces`, `kits`, `kit_pieces`, `prices`, `extra_costs`, `campaign_store_pieces`, and `budget_negotiation_store_pieces`.
 
-3. Derivar `currentPiecesTotal` (linha 130) de forma consistente:
-   - `currentPiecesTotal = currentTotal - fixedCosts` (já é assim — basta garantir que `currentTotal` venha do passo 2).
+### Where the R$ 939,04 came from
 
-4. Em `BudgetTab.tsx`, na renderização do `<BudgetNegotiationDialog ...>` (~linha 2164), passar:
-   ```tsx
-   frozenTotal={
-     (negotiatingSupplier as any)?.winner_locked_total ?? null
-   }
-   ```
-   (usar o supplier que está em negociação; o campo já existe no objeto retornado por `useBudgetSuppliers`.)
+Something changed between "declare winner" and now. With identical rateios and no adjusted prices, the only inputs that can shift the live total are:
+- a `unit_price` edit on a Pigma piece,
+- a kit composition / `kit_pieces.quantity` edit (changes kit expansion),
+- adding/removing a piece in a kit,
+- an `installation_value` / `freight_value` edit,
+- a piece flipped to/from `kit_only`,
+- a `campaign_store_pieces` quantity edit done **after** the winner snapshot.
 
-### Observações
+Any of those would silently desync `winner_locked_total` from the live recompute, even though the negotiation rateio is byte-identical to the original.
 
-- Nenhuma alteração no fluxo de salvar/aplicar negociação. Apenas a **exibição** do "Total atual" e "Total das peças" passa a refletir o valor congelado real quando aplicável.
-- Quando o admin abrir uma negociação isolada (snapshot do rateio em `budget_negotiation_store_pieces`), continuamos usando esse rateio isolado — comportamento já existente.
-- `Frete + Instalação` continua vindo de `budget_extra_costs` (não foi alterado).
+### Recommended fix (to discuss before implementing)
 
-## Fora de escopo
+Pick one of these — they are mutually exclusive product decisions:
 
-- Não mexer em `handleToggleWinner` (lógica de congelamento já discutida em respostas anteriores).
-- Não recalcular `winner_locked_total`; o valor já está correto no banco.
+1. **Treat the snapshot as the source of truth (current behavior).**
+   The R$ 939 delta is real and means "the campaign drifted after locking the winner". Add a small visual hint next to "Valor vencedor" explaining it is a frozen snapshot, and optionally an admin action to "Re-snapshot winner_locked_total" so the user can resync intentionally.
+
+2. **Always recompute both sides live.**
+   Replace `winnerOriginalTotal = winner_locked_total ?? …` with `supplierPartialTotals[id].total`. Both KPIs become live; they will match exactly when the negotiation rateio + adjusted prices match the original. Trade-off: any campaign edit retroactively changes the historical "Valor vencedor".
+
+3. **Hybrid: keep the snapshot, but auto-refresh it when no negotiation has started.**
+   When `negotiation_status` is null/`pending` and no `adjusted_*` exist and no `budget_negotiation_store_pieces` divergence exists, write `winner_locked_total = supplierPartialTotals[id].total` on save of any input that affects the total. Freeze only after negotiation moves to `submitted`/`approved`.
+
+### What I will not change
+
+- `src/lib/computeSupplierTotal.ts` — verified correct.
+- `kitPieceTotals` memo — shape `Record<kitId, Array<{kitId,pieceId,qty}>>` matches what the helper iterates (`Object.values → for each row → row.pieceId/row.qty`).
+- `supplierNegotiationTotals` memo — verified to call the helper with identical `pieces` + `kitPieceTotals` as `supplierPartialTotals`, only the qty/price/extras resolvers differ.
+
+### Decision needed
+
+Which of options **1 / 2 / 3** above do you want? (Or a different policy.) Once you choose, I will implement it in default mode.
