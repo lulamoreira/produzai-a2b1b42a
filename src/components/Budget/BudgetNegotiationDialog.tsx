@@ -281,7 +281,6 @@ export default function BudgetNegotiationDialog({
     setBusy(true);
     try {
       await saveTarget();
-      await snapshotNegotiationRateio(supplier.id, campaignId);
       // Update each price
       for (const row of autoPreview) {
         await supabase.from("budget_prices").upsert(
