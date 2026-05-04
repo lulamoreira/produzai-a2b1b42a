@@ -34,6 +34,7 @@ interface Supplier {
   locked: boolean | null;
   submitted_at: string | null;
   access_token: string;
+  negotiation_status?: string | null;
 }
 
 interface PieceData {
