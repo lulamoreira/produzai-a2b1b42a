@@ -1174,6 +1174,10 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             {suppliers.map((sup) => {
               const st = getDisplayStatus(sup);
               const partial = supplierPartialTotals[sup.id];
+              const displayTotal = (sup as any).winner_locked_total != null
+                ? Number((sup as any).winner_locked_total)
+                : partial?.total ?? 0;
+              const isFrozen = (sup as any).winner_locked_total != null;
               const inProgress = partial && partial.pricedPieces > 0 && sup.status !== "enviado";
               return (
                 <Card key={sup.id} className="relative">
@@ -1255,7 +1259,10 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                             "font-bold",
                             sup.status === "enviado" ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
                           )}>
-                            {fmtCurrency(partial.total)}
+                            {fmtCurrency(displayTotal)}
+                            {isFrozen && (
+                              <span className="text-xs text-muted-foreground ml-1" title="Valor congelado no momento da declaração do vencedor">🔒</span>
+                            )}
                           </span>
                         </div>
                         {(partial.installation > 0 || partial.freight > 0) && (
@@ -1489,7 +1496,19 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                             "text-right tabular-nums font-semibold",
                             isBest && "text-emerald-600 dark:text-emerald-400"
                           )}>
-                            {p.total > 0 ? fmtCurrency(p.total) : "—"}
+                            {(() => {
+                              const compTotal = (sup as any).winner_locked_total != null
+                                ? Number((sup as any).winner_locked_total)
+                                : p.total;
+                              return compTotal > 0 ? (
+                                <>
+                                  {fmtCurrency(compTotal)}
+                                  {(sup as any).winner_locked_total != null && (
+                                    <span className="text-xs text-muted-foreground ml-1" title="Valor congelado">🔒</span>
+                                  )}
+                                </>
+                              ) : "—";
+                            })()}
                           </TableCell>
                         </TableRow>
                       );
