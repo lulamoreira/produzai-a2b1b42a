@@ -267,12 +267,10 @@ const CampaignDetail = () => {
         .select("id, company_name, negotiation_status")
         .eq("campaign_id", campaignId as string)
         .eq("is_winner", true)
-        .not("negotiation_status", "is", null)
-        .in("negotiation_status", ["pending", "submitted", "approved"])
         .limit(1)
         .maybeSingle();
       if (error) return null;
-      return data as { id: string; company_name: string; negotiation_status: string } | null;
+      return data as { id: string; company_name: string; negotiation_status: string | null } | null;
     },
   });
   const winnerSupplierId = winnerNegSupplier?.id ?? null;
