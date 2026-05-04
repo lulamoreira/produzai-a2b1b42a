@@ -197,7 +197,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const lightbox = lightboxUrl && typeof document !== "undefined"
     ? createPortal(
       <div
-        className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+        className="fixed inset-0 z-[9999] flex pointer-events-auto items-center justify-center p-4"
         style={{ background: "hsl(var(--foreground) / 0.92)" }}
         onClick={() => setLightboxUrl(null)}
       >
@@ -213,14 +213,14 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
           type="button"
           aria-label="Fechar foto"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); setLightboxUrl(null); }}
-          className="absolute top-4 right-4 z-[10000] h-12 w-12 rounded-full bg-background text-foreground shadow-lg ring-2 ring-background/80 hover:scale-105 transition flex items-center justify-center"
+          className="absolute top-4 right-4 z-[10000] h-12 w-12 rounded-full bg-background text-foreground shadow-lg ring-2 ring-background/80 hover:scale-105 transition flex pointer-events-auto items-center justify-center"
         >
           <X className="w-6 h-6" strokeWidth={2.5} />
         </button>
         <button
           type="button"
           aria-label="Abrir foto em nova aba"
-          className="absolute top-4 right-20 z-[10000] h-12 w-12 rounded-full bg-background/20 text-background backdrop-blur hover:bg-background/30 transition flex items-center justify-center"
+          className="absolute top-4 right-20 z-[10000] h-12 w-12 rounded-full bg-background/20 text-background backdrop-blur hover:bg-background/30 transition flex pointer-events-auto items-center justify-center"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
