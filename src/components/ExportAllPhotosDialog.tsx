@@ -271,12 +271,14 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
     setProgress({ done: photos.length, total: photos.length, label: "Concluído" });
   };
 
-  const handleStart = () => {
+  const handleStart = (mode: "download" | "downloadDelete" | "deleteOnly" = "download") => {
     if (!Object.values(scope).some(Boolean)) {
       toast.error("Selecione ao menos um tipo de foto");
       return;
     }
-    if (deleteAfter || deleteOnly) {
+    setDeleteOnly(mode === "deleteOnly");
+    setDeleteAfter(mode === "downloadDelete");
+    if (mode === "deleteOnly" || mode === "downloadDelete") {
       setConfirmOpen(true);
     } else {
       void run();
