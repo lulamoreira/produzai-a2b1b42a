@@ -668,22 +668,6 @@ export default function MatrixAutomationDialog({
     return { updated: affected.length };
   };
 
-  const handleConfirmReplacement = async () => {
-    setReplacementConfirm({ open: false, count: 0 });
-    setExecuting(true);
-    try {
-      const result = await executeReplacementMulti(
-        replacementPieceId, replacementSourceQtys, replacementTargetQty, replaceAnyNonZero,
-      );
-      toast.success(`${result.updated} loja(s) atualizada(s).`);
-      await onComplete();
-      onOpenChange(false);
-    } catch (err: any) {
-      toast.error("Erro ao executar substituição: " + (err?.message || ""));
-    } finally {
-      setExecuting(false);
-    }
-  };
   const executeAutomationMulti = async (
     fg: FilterGroup,
     items: SelectedItem[],
