@@ -71,7 +71,7 @@ function toNum(v: any): number {
 
 export default function BudgetNegotiationDialog({
   open, onOpenChange, supplier, campaignId, campaignName,
-  pieces, prices, extraCosts, pieceTotals, settings, currencyCode, fmtCurrency, publicPortalUrl, frozenTotal,
+  pieces, prices, extraCosts, pieceTotals, settings, currencyCode, fmtCurrency, publicPortalUrl, frozenTotal, onNavigateToRateio,
 }: Props) {
   const qc = useQueryClient();
   const [target, setTarget] = useState<string>("");
