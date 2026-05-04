@@ -150,6 +150,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [historySupplierId, setHistorySupplierId] = useState<string | null>(null);
   const [reopeningSupplierId, setReopeningSupplierId] = useState<string | null>(null);
   const [winnerSupplierId, setWinnerSupplierId] = useState<string | null>(null);
+  const [negotiationSupplierId, setNegotiationSupplierId] = useState<string | null>(null);
 
   // ── Editor de "Links do Vencedor" (configuração padrão usada no e-mail de vencedor) ──
   const settingsAny = settings as any;
