@@ -11,7 +11,7 @@ export type AutomationTemplateItem = {
   quantity: number;
 };
 
-export type AutomationKind = "fixed" | "by_field";
+export type AutomationKind = "fixed" | "by_field" | "replacement";
 
 export type AutomationTemplate = {
   id: string;
