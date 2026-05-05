@@ -267,44 +267,56 @@ export default function RateioBackupSheet({
         .single();
       if (error) throw error;
       const snap = ((data as any)?.snapshot_data || {}) as RateioSnapshotData;
-      const snapMap = new Map<string, number>();
+      // Map keyed by `${store_id}|${piece_id}` — UUIDs contain "-", so we MUST
+      // use a separator that never appears inside a UUID.
+      const snapMap = new Map<string, { storeId: string; pieceId: string; qty: number }>();
       for (const sp of snap.storePieces || []) {
-        snapMap.set(`${sp.store_id}-${sp.piece_id}`, sp.quantity || 0);
+        if (!sp?.store_id || !sp?.piece_id) continue;
+        snapMap.set(`${sp.store_id}|${sp.piece_id}`, {
+          storeId: sp.store_id,
+          pieceId: sp.piece_id,
+          qty: Number(sp.quantity) || 0,
+        });
+      }
+
+      // Build a parallel map of the current state keyed the same way, by
+      // re-deriving (storeId, pieceId) from the existing qtyMap whose keys
+      // are `${storeId}-${pieceId}` — but instead of splitting on "-" (which
+      // breaks UUIDs), we reconstruct via the known `stores` and `pieces`.
+      const currentMap = new Map<string, { storeId: string; pieceId: string; qty: number }>();
+      for (const store of stores) {
+        for (const p of pieces) {
+          const qty = qtyMap[`${store.id}-${p.id}`] || 0;
+          if (qty > 0) {
+            currentMap.set(`${store.id}|${p.id}`, { storeId: store.id, pieceId: p.id, qty });
+          }
+        }
       }
 
       const upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[] = [];
       const deletes: { campaignId: string; storeId: string; pieceId: string }[] = [];
 
       if (restoreMode === "full") {
-        // Apply snapshot quantities; delete cells present in current but not in snapshot.
-        const currentKeys = new Set(Object.keys(qtyMap).filter((k) => (qtyMap[k] || 0) > 0));
-        for (const [key, qty] of snapMap) {
-          const [storeId, pieceId] = key.split("-");
+        for (const { storeId, pieceId, qty } of snapMap.values()) {
           upserts.push({ campaignId, storeId, pieceId, quantity: qty });
         }
-        for (const key of currentKeys) {
+        for (const [key, { storeId, pieceId }] of currentMap) {
           if (!snapMap.has(key)) {
-            const [storeId, pieceId] = key.split("-");
             deletes.push({ campaignId, storeId, pieceId });
           }
         }
       } else {
         // diff_only: only touch cells where snapshot differs from current.
-        const seen = new Set<string>();
-        for (const [key, qty] of snapMap) {
-          seen.add(key);
-          const cur = qtyMap[key] || 0;
+        for (const [key, { storeId, pieceId, qty }] of snapMap) {
+          const cur = currentMap.get(key)?.qty || 0;
           if (cur !== qty) {
-            const [storeId, pieceId] = key.split("-");
             upserts.push({ campaignId, storeId, pieceId, quantity: qty });
           }
         }
-        // Cells present now but absent in snapshot → delete.
-        for (const key of Object.keys(qtyMap)) {
-          if (seen.has(key)) continue;
-          if ((qtyMap[key] || 0) === 0) continue;
-          const [storeId, pieceId] = key.split("-");
-          deletes.push({ campaignId, storeId, pieceId });
+        for (const [key, { storeId, pieceId }] of currentMap) {
+          if (!snapMap.has(key)) {
+            deletes.push({ campaignId, storeId, pieceId });
+          }
         }
       }
 
