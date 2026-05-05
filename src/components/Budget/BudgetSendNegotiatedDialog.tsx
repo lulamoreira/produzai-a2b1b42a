@@ -17,7 +17,8 @@ import {
   computeNegotiatedTotals,
   type NegotiatedProposalParams,
 } from "@/lib/buildNegotiatedProposalWorkbook";
-import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
+import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
+import { useCampaignPieceLocations, useCampaignPieceSubLocations } from "@/hooks/useMultiClientData";
 import { validateNegotiationRateio, type RateioValidationResult } from "@/lib/validateNegotiationRateio";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
@@ -63,6 +64,9 @@ export default function BudgetSendNegotiatedDialog({
   const [extraCosts, setExtraCosts] = useState<NegotiatedProposalParams["extraCosts"] | null>(null);
   const [originalSp, setOriginalSp] = useState<NegotiatedProposalParams["originalStorePieces"]>([]);
   const [negotiationSp, setNegotiationSp] = useState<NegotiatedProposalParams["negotiationStorePieces"]>([]);
+
+  const { data: locations = [] } = useCampaignPieceLocations(campaignId);
+  const { data: subLocations = [] } = useCampaignPieceSubLocations(campaignId);
 
   const fmt = (v: number) => formatCurrencyByCode(v, currencyCode);
 
@@ -195,6 +199,8 @@ export default function BudgetSendNegotiatedDialog({
       agencyName,
       clientName,
       currencyCode,
+      locations: locations as CampaignPieceLocation[],
+      subLocations: subLocations as CampaignPieceSubLocation[],
     });
     const link = await uploadAndSign(blob, fileName, `negociacao_${supplier.id}`, campaignId);
     return { link, fileName, totals: t };
