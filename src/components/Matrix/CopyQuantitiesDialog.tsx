@@ -43,6 +43,8 @@ interface Props {
   onComplete: () => void | Promise<void>;
   isNegotiationView?: boolean;
   negotiationSupplierId?: string | null;
+  isAdjustmentView?: boolean;
+  adjustmentId?: string | null;
 }
 
 /** Compute the available "kit count" for a given store, i.e. how many full kits fit. */
@@ -66,8 +68,9 @@ function kitQtyForStore(
 export default function CopyQuantitiesDialog({
   open, onOpenChange, campaignId, stores, pieces, kits, kitPieces, qtyMap, onComplete,
   isNegotiationView = false, negotiationSupplierId = null,
+  isAdjustmentView = false, adjustmentId = null,
 }: Props) {
-  const rateioOptions = { isNegotiationView, negotiationSupplierId };
+  const rateioOptions = { isNegotiationView, negotiationSupplierId, isAdjustmentView, adjustmentId };
   const [source, setSource] = useState<ItemRef | null>(null);
   const [dest, setDest] = useState<ItemRef | null>(null);
   const [multiplier, setMultiplier] = useState<number>(1);

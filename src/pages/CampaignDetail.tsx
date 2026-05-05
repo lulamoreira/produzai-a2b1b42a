@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle, Database, Layers } from "lucide-react";
 import AdjustmentsTab from "@/components/AdjustmentsTab";
-import { useActiveAdjustment } from "@/hooks/useAdjustments";
+import { useActiveAdjustment, useAdjustmentStorePieces, useUpdateAdjustmentStorePiece } from "@/hooks/useAdjustments";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -264,7 +264,7 @@ const CampaignDetail = () => {
   const [rateioBackupOpen, setRateioBackupOpen] = useState(false);
 
   // ─── Negotiation rateio (isolated distribution for the winning supplier) ───
-  const [rateioSource, setRateioSource] = useState<"original" | "negotiation">("original");
+  const [rateioSource, setRateioSource] = useState<"original" | "negotiation" | "adjustment">("original");
   const { data: winnerNegSupplier } = useQuery({
     queryKey: ["winner_neg_supplier", campaignId],
     enabled: !!campaignId,
@@ -295,13 +295,18 @@ const CampaignDetail = () => {
   });
   const hasNegotiationRateio = negRateioExists === true;
   const isNegotiationView = rateioSource === "negotiation" && hasNegotiationRateio && !!winnerSupplierId;
+  const isAdjustmentView = rateioSource === "adjustment" && !!activeAdjustment;
+  const activeAdjustmentId = activeAdjustment?.id ?? null;
   // Only revert to original once the existence query has settled, to avoid
   // racing the snapshot insert triggered by "Editar Rateio da Negociação".
   useEffect(() => {
     if (rateioSource === "negotiation" && !hasNegotiationRateio && !negRateioFetching) {
       setRateioSource("original");
     }
-  }, [rateioSource, hasNegotiationRateio, negRateioFetching]);
+    if (rateioSource === "adjustment" && !activeAdjustment) {
+      setRateioSource("original");
+    }
+  }, [rateioSource, hasNegotiationRateio, negRateioFetching, activeAdjustment]);
 
   const handleCancelNegotiationRateio = useCallback(async () => {
     if (!winnerSupplierId) return;
@@ -348,6 +353,10 @@ const CampaignDetail = () => {
     isNegotiationView
   );
   const updateNegotiationStorePiece = useUpdateNegotiationStorePiece();
+  const { data: adjustmentStorePieces = [] } = useAdjustmentStorePieces(
+    isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
+  );
+  const updateAdjustmentStorePiece = useUpdateAdjustmentStorePiece();
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
   const addPieceLocation = useAddCampaignPieceLocation();
@@ -619,11 +628,13 @@ const CampaignDetail = () => {
     const map: Record<string, number> = {};
     if (isNegotiationView) {
       negotiationStorePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
+    } else if (isAdjustmentView) {
+      (adjustmentStorePieces as any[]).forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
     } else {
       storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
     }
     return map;
-  }, [storePieces, negotiationStorePieces, isNegotiationView]);
+  }, [storePieces, negotiationStorePieces, adjustmentStorePieces, isNegotiationView, isAdjustmentView]);
 
   const totalPieces = useMemo(() => storePieces.reduce((s, sp) => s + sp.quantity, 0), [storePieces]);
 
@@ -875,6 +886,30 @@ const CampaignDetail = () => {
       console.log("[CELL][SAVE]", { ...cell, rawValue, qty, isKit: cell.pieceId.startsWith("kit-"), source: isNegotiationView ? "negotiation" : "original" });
     }
 
+    // ─── Adjustment rateio: write to campaign_adjustment_store_pieces ───
+    if (isAdjustmentView && activeAdjustmentId) {
+      if (cell.pieceId.startsWith("kit-")) {
+        const kitId = cell.pieceId.replace("kit-", "");
+        const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
+        for (const kp of piecesInKit) {
+          updateAdjustmentStorePiece.mutate({
+            adjustmentId: activeAdjustmentId,
+            storeId: cell.storeId,
+            pieceId: kp.piece_id,
+            quantity: qty * (kp.quantity || 1),
+          });
+        }
+        return;
+      }
+      updateAdjustmentStorePiece.mutate({
+        adjustmentId: activeAdjustmentId,
+        storeId: cell.storeId,
+        pieceId: cell.pieceId,
+        quantity: qty,
+      });
+      return;
+    }
+
     // ─── Negotiation rateio: write to isolated table for the winning supplier ───
     if (isNegotiationView && winnerSupplierId) {
       if (cell.pieceId.startsWith("kit-")) {
@@ -923,7 +958,7 @@ const CampaignDetail = () => {
       pieceId: cell.pieceId,
       quantity: qty,
     });
-  }, [campaignId, kitPieces, updateStorePiece, bulkUpdateStorePieces, isNegotiationView, winnerSupplierId, updateNegotiationStorePiece]);
+  }, [campaignId, kitPieces, updateStorePiece, bulkUpdateStorePieces, isNegotiationView, winnerSupplierId, updateNegotiationStorePiece, isAdjustmentView, activeAdjustmentId, updateAdjustmentStorePiece]);
 
   // ─── Atomic transition: save current cell (if any) and open the new one ───
   // The save runs SYNCHRONOUSLY using editValueRef.current as the source of
@@ -2332,6 +2367,58 @@ const CampaignDetail = () => {
                     </div>
                   </div>
                 )}
+                {/* Adjustment rateio banner + source toggle */}
+                {activeAdjustment && (
+                  <div
+                    className={`border-b px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                      isAdjustmentView
+                        ? "border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-900/10"
+                        : "border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10"
+                    }`}
+                  >
+                    <div className={`text-xs flex items-start gap-2 ${
+                      isAdjustmentView ? "text-emerald-900 dark:text-emerald-200" : "text-amber-900 dark:text-amber-200"
+                    }`}>
+                      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                      <span>
+                        {isAdjustmentView
+                          ? <>Editando rateio do ajuste <strong>{activeAdjustment.name}</strong>. Alterações aqui não afetam o rateio original.</>
+                          : <>📐 Existe um ajuste ativo: <strong>{activeAdjustment.name}</strong>. O rateio do ajuste pode ser diferente do original.</>}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={rateioSource === "original" ? "default" : "outline"}
+                        className="h-7 text-xs"
+                        onClick={() => setRateioSource("original")}
+                      >
+                        Rateio Original
+                      </Button>
+                      {hasNegotiationRateio && winnerSupplierId && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={rateioSource === "negotiation" ? "default" : "outline"}
+                          className="h-7 text-xs"
+                          onClick={() => setRateioSource("negotiation")}
+                        >
+                          Rateio da Negociação
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={rateioSource === "adjustment" ? "default" : "outline"}
+                        className="h-7 text-xs"
+                        onClick={() => setRateioSource("adjustment")}
+                      >
+                        Rateio do Ajuste
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 {/* Toolbar */}
                 <div className="border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between px-3 py-1">
@@ -2600,22 +2687,22 @@ const CampaignDetail = () => {
                   qtyMap={qtyMap}
                   isNegotiationView={isNegotiationView}
                   negotiationSupplierId={winnerSupplierId}
+                  isAdjustmentView={isAdjustmentView}
+                  adjustmentId={activeAdjustmentId}
                   customFieldLabels={Array.from({ length: 15 }, (_, idx) => {
                     const i = idx + 1;
                     const label = (client as any)?.[`custom_field_${i}_label`];
                     return label ? { key: `custom_field_${i}`, label, index: i } : null;
                   }).filter((x): x is { key: string; label: string; index: number } => x !== null)}
                   onComplete={async () => {
-                    await queryClient.refetchQueries({
-                      queryKey: isNegotiationView
-                        ? ["negotiation_store_pieces", winnerSupplierId]
-                        : ["campaign_store_pieces", campaignId],
-                      exact: true,
-                      type: "active",
-                    });
-                    if (isNegotiationView && winnerSupplierId) {
+                    if (isAdjustmentView && activeAdjustmentId) {
+                      await queryClient.refetchQueries({ queryKey: ["adjustment_store_pieces", activeAdjustmentId], exact: true, type: "active" });
+                    } else if (isNegotiationView && winnerSupplierId) {
+                      await queryClient.refetchQueries({ queryKey: ["negotiation_store_pieces", winnerSupplierId], exact: true, type: "active" });
                       queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] });
                       queryClient.invalidateQueries({ queryKey: ["budget_negotiation_rateio_totals", campaignId] });
+                    } else {
+                      await queryClient.refetchQueries({ queryKey: ["campaign_store_pieces", campaignId], exact: true, type: "active" });
                     }
                   }}
                 />
@@ -2658,17 +2745,17 @@ const CampaignDetail = () => {
                   qtyMap={qtyMap}
                   isNegotiationView={isNegotiationView}
                   negotiationSupplierId={winnerSupplierId}
+                  isAdjustmentView={isAdjustmentView}
+                  adjustmentId={activeAdjustmentId}
                   onComplete={async () => {
-                    await queryClient.refetchQueries({
-                      queryKey: isNegotiationView
-                        ? ["negotiation_store_pieces", winnerSupplierId]
-                        : ["campaign_store_pieces", campaignId],
-                      exact: true,
-                      type: "active",
-                    });
-                    if (isNegotiationView && winnerSupplierId) {
+                    if (isAdjustmentView && activeAdjustmentId) {
+                      await queryClient.refetchQueries({ queryKey: ["adjustment_store_pieces", activeAdjustmentId], exact: true, type: "active" });
+                    } else if (isNegotiationView && winnerSupplierId) {
+                      await queryClient.refetchQueries({ queryKey: ["negotiation_store_pieces", winnerSupplierId], exact: true, type: "active" });
                       queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] });
                       queryClient.invalidateQueries({ queryKey: ["budget_negotiation_rateio_totals", campaignId] });
+                    } else {
+                      await queryClient.refetchQueries({ queryKey: ["campaign_store_pieces", campaignId], exact: true, type: "active" });
                     }
                   }}
                 />
@@ -2693,7 +2780,13 @@ const CampaignDetail = () => {
                     );
                     try {
                       if (isAll) {
-                        if (isNegotiationView && winnerSupplierId) {
+                        if (isAdjustmentView && activeAdjustmentId) {
+                          const { error } = await supabase
+                            .from("campaign_adjustment_store_pieces" as never)
+                            .delete()
+                            .eq("adjustment_id", activeAdjustmentId);
+                          if (error) throw error;
+                        } else if (isNegotiationView && winnerSupplierId) {
                           const { error } = await supabase
                             .from("budget_negotiation_store_pieces" as never)
                             .delete()
@@ -2719,7 +2812,14 @@ const CampaignDetail = () => {
                           toast.error("Nenhuma peça válida para zerar.", { id: toastId });
                           return;
                         }
-                        if (isNegotiationView && winnerSupplierId) {
+                        if (isAdjustmentView && activeAdjustmentId) {
+                          const { error } = await supabase
+                            .from("campaign_adjustment_store_pieces" as never)
+                            .delete()
+                            .eq("adjustment_id", activeAdjustmentId)
+                            .in("piece_id", finalPieceIds);
+                          if (error) throw error;
+                        } else if (isNegotiationView && winnerSupplierId) {
                           const { error } = await supabase
                             .from("budget_negotiation_store_pieces" as never)
                             .delete()
@@ -2735,7 +2835,9 @@ const CampaignDetail = () => {
                           if (error) throw error;
                         }
                       }
-                      if (isNegotiationView && winnerSupplierId) {
+                      if (isAdjustmentView && activeAdjustmentId) {
+                        await queryClient.invalidateQueries({ queryKey: ["adjustment_store_pieces", activeAdjustmentId] });
+                      } else if (isNegotiationView && winnerSupplierId) {
                         await queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces", winnerSupplierId] });
                         queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] });
                       } else {
@@ -3709,6 +3811,8 @@ const CampaignDetail = () => {
         qtyMap={qtyMap}
         isNegotiationView={isNegotiationView}
         negotiationSupplierId={winnerSupplierId}
+        isAdjustmentView={isAdjustmentView}
+        adjustmentId={activeAdjustmentId}
       />
     </AppLayout>
   );
