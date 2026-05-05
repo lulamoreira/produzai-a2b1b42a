@@ -159,8 +159,28 @@ export default function BudgetSendNegotiatedDialog({
     });
   }, [extraCosts, prices, originalSp, negotiationSp, pieces, kits, kitPieces, stores, supplier, campaignName, agencyName, clientName, currencyCode]);
 
+  const validation: RateioValidationResult | null = useMemo(() => {
+    if (loading || !extraCosts) return null;
+    return validateNegotiationRateio(originalSp, negotiationSp, stores);
+  }, [loading, extraCosts, originalSp, negotiationSp, stores]);
+
   const buildAndUpload = async () => {
     if (!extraCosts) throw new Error("Custos não carregados.");
+    const v = validateNegotiationRateio(originalSp, negotiationSp, stores);
+    if (!v.valid) {
+      const issues: string[] = [];
+      if (v.negotiationRows === 0) {
+        issues.push('O rateio de negociação está vazio. Abra a negociação e clique em "Editar Rateio da Negociação" antes de gerar a planilha.');
+      } else {
+        if (v.missingStores.length > 0) {
+          issues.push(`${v.missingStores.length} lojas ausentes no rateio de negociação: ${v.missingStores.slice(0, 5).join(', ')}${v.missingStores.length > 5 ? '...' : ''}`);
+        }
+        if (v.originalPieces !== v.negotiationPieces) {
+          issues.push(`Peças divergentes: original tem ${v.originalPieces}, negociação tem ${v.negotiationPieces}.`);
+        }
+      }
+      throw new Error('Rateio de negociação incompleto:\n' + issues.join('\n'));
+    }
     const { blob, fileName, totals: t } = await buildNegotiatedProposalWorkbook({
       supplier,
       pieces,
