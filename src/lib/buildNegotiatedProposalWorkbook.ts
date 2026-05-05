@@ -272,6 +272,19 @@ export async function buildNegotiatedProposalWorkbook(
       };
       if (col === 5 || col === 6) cell.numFmt = money;
     });
+    // Destaque máximo na Qtd Negociada quando houver diferença de peças
+    if (qtyChanged) {
+      const isPositive = qNeg > qOrig;
+      const qtyCell = row.getCell(4);
+      qtyCell.font = { color: { argb: WHITE }, bold: true, size: 14 };
+      qtyCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: isPositive ? "FF22C55E" : "FFDC2626" },
+      };
+      qtyCell.alignment = { vertical: "middle", horizontal: "center" };
+      row.height = Math.max(row.height || 0, 28);
+    }
   }
 
   // Totals
