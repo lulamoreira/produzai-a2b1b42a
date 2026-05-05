@@ -93,8 +93,18 @@ export function useCampaignSnapshotContext(campaignId?: string, enabled = true) 
       if (piecesRes.error) throw piecesRes.error;
       const kitsRes = await sb.from("campaign_kits").select("*").eq("campaign_id", campaignId!);
       if (kitsRes.error) throw kitsRes.error;
-      const storePiecesRes = await sb.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!);
-      if (storePiecesRes.error) throw storePiecesRes.error;
+      const storePiecesAll: any[] = [];
+      {
+        const pageSize = 5000;
+        for (let from = 0; ; from += pageSize) {
+          const { data, error } = await sb.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!).range(from, from + pageSize - 1);
+          if (error) throw error;
+          const page = (data ?? []) as any[];
+          storePiecesAll.push(...page);
+          if (page.length < pageSize) break;
+        }
+      }
+      const storePiecesRes = { data: storePiecesAll, error: null as any };
 
       const storeIds = [
         ...new Set(((storePiecesRes.data || []) as any[]).map((sp: any) => sp.store_id).filter(Boolean)),
@@ -138,11 +148,22 @@ export function useCreateSnapshot() {
     mutationFn: async (input: { campaign_id: string; name: string; description?: string }) => {
       const { campaign_id, name, description } = input;
 
-      const [piecesRes, kitsRes, storePiecesRes] = await Promise.all([
+      const [piecesRes, kitsRes] = await Promise.all([
         supabase.from("campaign_pieces").select("*").eq("campaign_id", campaign_id),
         supabase.from("campaign_kits").select("*").eq("campaign_id", campaign_id),
-        supabase.from("campaign_store_pieces").select("*").eq("campaign_id", campaign_id),
       ]);
+      const storePiecesAll: any[] = [];
+      {
+        const pageSize = 5000;
+        for (let from = 0; ; from += pageSize) {
+          const { data, error } = await supabase.from("campaign_store_pieces").select("*").eq("campaign_id", campaign_id).range(from, from + pageSize - 1);
+          if (error) throw error;
+          const page = (data ?? []) as any[];
+          storePiecesAll.push(...page);
+          if (page.length < pageSize) break;
+        }
+      }
+      const storePiecesRes = { data: storePiecesAll, error: null as any };
       if (piecesRes.error) throw piecesRes.error;
       if (kitsRes.error) throw kitsRes.error;
       if (storePiecesRes.error) throw storePiecesRes.error;
