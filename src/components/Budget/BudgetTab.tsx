@@ -378,7 +378,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     enabled: negotiatingSupplierIds.length > 0,
     queryFn: async () => {
       const rows: any[] = [];
-      const pageSize = 1000;
+      const pageSize = 5000;
       for (let from = 0; ; from += pageSize) {
         const { data, error } = await supabase
           .from("budget_negotiation_store_pieces" as never)

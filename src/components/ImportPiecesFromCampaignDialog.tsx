@@ -149,13 +149,21 @@ const ImportPiecesFromCampaignDialog = ({
   const { data: remoteStoreQuantities = [] } = useQuery({
     queryKey: ["campaign_store_pieces_for_import", selectedCampaignId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaign_store_pieces")
-        .select("piece_id, store_id, quantity")
-        .eq("campaign_id", selectedCampaignId)
-        .gt("quantity", 0);
-      if (error) throw error;
-      return data as { piece_id: string; store_id: string; quantity: number }[];
+      const rows: { piece_id: string; store_id: string; quantity: number }[] = [];
+      const pageSize = 5000;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from("campaign_store_pieces")
+          .select("piece_id, store_id, quantity")
+          .eq("campaign_id", selectedCampaignId)
+          .gt("quantity", 0)
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const page = (data ?? []) as { piece_id: string; store_id: string; quantity: number }[];
+        rows.push(...page);
+        if (page.length < pageSize) break;
+      }
+      return rows;
     },
     enabled: !!selectedCampaignId && importQuantities,
   });
