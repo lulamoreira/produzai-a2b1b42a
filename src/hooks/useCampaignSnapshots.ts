@@ -145,17 +145,9 @@ export function useCreateSnapshot() {
         supabase.from("campaign_pieces").select("*").eq("campaign_id", campaign_id),
         supabase.from("campaign_kits").select("*").eq("campaign_id", campaign_id),
       ]);
-      const storePiecesAll: any[] = [];
-      {
-        const pageSize = 5000;
-        for (let from = 0; ; from += pageSize) {
-          const { data, error } = await supabase.from("campaign_store_pieces").select("*").eq("campaign_id", campaign_id).range(from, from + pageSize - 1);
-          if (error) throw error;
-          const page = (data ?? []) as any[];
-          storePiecesAll.push(...page);
-          if (page.length < pageSize) break;
-        }
-      }
+      const storePiecesAll = await supabasePaginate<any>((from, to) =>
+        supabase.from("campaign_store_pieces").select("*").eq("campaign_id", campaign_id).range(from, to) as any
+      );
       const storePiecesRes = { data: storePiecesAll, error: null as any };
       if (piecesRes.error) throw piecesRes.error;
       if (kitsRes.error) throw kitsRes.error;
