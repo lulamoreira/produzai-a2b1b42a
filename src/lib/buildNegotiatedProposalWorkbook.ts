@@ -6,6 +6,12 @@ import type {
 } from "@/hooks/useMultiClientData";
 import { computeSupplierTotal } from "@/lib/computeSupplierTotal";
 import { validateNegotiationRateio } from "@/lib/validateNegotiationRateio";
+import {
+  buildRateioGridBuckets,
+  renderStoreRateioSheet,
+  sanitizeSheetName,
+  type RateioImageCache,
+} from "@/lib/rateioGridShared";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -299,58 +305,46 @@ export async function buildNegotiatedProposalWorkbook(
   ws1.views = [{ state: "frozen", ySplit: 5 }];
 
   // ─────────────────────────────────────────────────────────
-  // SHEET 2: Rateio por Loja (negotiation quantities)
+  // SHEETS: Rateio por Loja (one sheet per store, identical
+  // visual format to the standalone Rateio export, but using
+  // the negotiated quantities).
   // ─────────────────────────────────────────────────────────
-  const ws2 = wb.addWorksheet("Rateio por Loja");
   const negQtyMap: Record<string, number> = {};
   params.negotiationStorePieces.forEach((sp) => {
     negQtyMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity || 0);
   });
-  const visiblePieces = params.pieces;
 
-  const header2: any[] = ["Loja", "Apelido", "Cidade", "Estado"];
-  visiblePieces.forEach((p) => {
-    header2.push(`${p.code} - ${p.name}${(p as any).is_mockup ? " (MOCKUP)" : ""}`);
-  });
-  const maxPieceCode = visiblePieces.length > 0 ? Math.max(...visiblePieces.map((p) => p.code)) : 0;
-  params.kits.forEach((kit, idx) => {
-    header2.push(`${maxPieceCode + idx + 1} - ${kit.name}`);
-  });
-  header2.push("Total");
-  const h2 = ws2.addRow(header2);
-  h2.eachCell((cell) => {
-    cell.font = { bold: true, color: { argb: WHITE } };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
-    cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-  });
-  h2.height = 28;
+  const buckets = buildRateioGridBuckets(
+    params.pieces,
+    params.kits,
+    params.kitPieces,
+    params.stores,
+    negQtyMap,
+    "pieces_and_kits",
+  );
 
-  params.stores.forEach((store) => {
-    const r: any[] = [store.name, store.nickname || "", store.city || "", store.state || ""];
-    let total = 0;
-    visiblePieces.forEach((p) => {
-      const q = negQtyMap[`${store.id}-${p.id}`] || 0;
-      r.push(q);
-      total += q;
-    });
-    params.kits.forEach((kit) => {
-      const kpForKit = params.kitPieces.filter((kp) => kp.kit_id === kit.id);
-      const kitQty =
-        kpForKit.length > 0
-          ? Math.min(
-              ...kpForKit.map((kp) => {
-                const sq = negQtyMap[`${store.id}-${kp.piece_id}`] || 0;
-                return Math.floor(sq / (kp.quantity || 1));
-              }),
-            )
-          : 0;
-      r.push(kitQty);
-    });
-    r.push(total);
-    ws2.addRow(r);
-  });
-  ws2.columns = header2.map((_, i) => ({ width: i === 0 ? 28 : 14 }));
-  ws2.views = [{ state: "frozen", xSplit: 1, ySplit: 1 }];
+  const usedSheetNames = new Set<string>();
+  usedSheetNames.add("orçamento negociado");
+  usedSheetNames.add("comparativo");
+  const imageCache: RateioImageCache = new Map();
+
+  for (const bucket of buckets) {
+    const ws = wb.addWorksheet(
+      sanitizeSheetName(bucket.store.name || "Loja", usedSheetNames),
+      { views: [{ showGridLines: false }] },
+    );
+    await renderStoreRateioSheet(
+      wb,
+      ws,
+      bucket,
+      {
+        campaignName: params.campaignName,
+        clientName: params.clientName,
+        agencyName: params.agencyName,
+      },
+      imageCache,
+    );
+  }
 
   // ─────────────────────────────────────────────────────────
   // SHEET 3: Comparativo
