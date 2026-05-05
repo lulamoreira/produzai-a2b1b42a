@@ -2736,6 +2736,7 @@ const CampaignDetail = () => {
                         queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] });
                       } else {
                         await queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
+                        await queryClient.refetchQueries({ queryKey: ["campaign_store_pieces", campaignId], exact: true });
                       }
                       toast.success(
                         isAll
