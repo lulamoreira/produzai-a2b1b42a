@@ -170,9 +170,10 @@ export default function MatrixAutomationDialog({
   stores, pieces, kits, kitPieces, qtyMap,
   customFieldLabels, onComplete,
   isNegotiationView = false, negotiationSupplierId = null,
+  isAdjustmentView = false, adjustmentId = null,
 }: Props) {
   const { t } = useTranslation();
-  const rateioOptions = { isNegotiationView, negotiationSupplierId };
+  const rateioOptions = { isNegotiationView, negotiationSupplierId, isAdjustmentView, adjustmentId };
 
 
   const [mainTab, setMainTab] = useState<string>("new");
