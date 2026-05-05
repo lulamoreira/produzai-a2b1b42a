@@ -296,6 +296,21 @@ export async function buildNegotiatedProposalWorkbook(
   addTotal1("Frete / Despacho", totals.freightNegotiated);
   addTotal1("TOTAL GERAL NEGOCIADO", totals.totalNegotiated, true);
 
+  const freightDelta = totals.freightNegotiated - totals.freightOriginal;
+  const isRoundingResidual = Math.abs(freightDelta) > 0 && Math.abs(freightDelta) < 1.0;
+
+  if (isRoundingResidual) {
+    const noteRow = ws1.addRow([
+      "* Ajuste de arredondamento aplicado ao frete para atingir o teto negociado exato.",
+    ]);
+    ws1.mergeCells(`A${noteRow.number}:F${noteRow.number}`);
+    const nc = noteRow.getCell(1);
+    nc.font = { italic: true, color: { argb: AMBER_FONT }, size: 10 };
+    nc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: AMBER_BG } };
+    nc.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+    noteRow.height = 22;
+  }
+
   ws1.columns = [
     { width: 10 },
     { width: 50 },
