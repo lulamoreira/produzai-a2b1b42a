@@ -46,7 +46,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle, Database, Layers } from "lucide-react";
 import AdjustmentsTab from "@/components/AdjustmentsTab";
-import { useActiveAdjustment } from "@/hooks/useAdjustments";
+import { useActiveAdjustment, useAdjustmentStorePieces, useUpdateAdjustmentStorePiece } from "@/hooks/useAdjustments";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 
 import PieceThumbnail from "@/components/PieceThumbnail";
