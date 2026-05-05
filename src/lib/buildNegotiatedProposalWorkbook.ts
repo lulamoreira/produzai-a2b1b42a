@@ -44,10 +44,6 @@ export type NegotiatedProposalParams = {
   agencyName: string;
   clientName: string;
   currencyCode: string;
-  /** Override autoritativo do total ORIGINAL (já inclui frete + instalação + kits). */
-  originalTotalOverride?: number | null;
-  /** Override autoritativo do total NEGOCIADO (já inclui frete + instalação + kits). */
-  negotiatedTotalOverride?: number | null;
 };
 
 export type NegotiatedProposalTotals = {
