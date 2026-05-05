@@ -264,7 +264,7 @@ const CampaignDetail = () => {
   const [rateioBackupOpen, setRateioBackupOpen] = useState(false);
 
   // ─── Negotiation rateio (isolated distribution for the winning supplier) ───
-  const [rateioSource, setRateioSource] = useState<"original" | "negotiation">("original");
+  const [rateioSource, setRateioSource] = useState<"original" | "negotiation" | "adjustment">("original");
   const { data: winnerNegSupplier } = useQuery({
     queryKey: ["winner_neg_supplier", campaignId],
     enabled: !!campaignId,
