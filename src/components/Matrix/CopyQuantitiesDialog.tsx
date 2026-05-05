@@ -43,6 +43,8 @@ interface Props {
   onComplete: () => void | Promise<void>;
   isNegotiationView?: boolean;
   negotiationSupplierId?: string | null;
+  isAdjustmentView?: boolean;
+  adjustmentId?: string | null;
 }
 
 /** Compute the available "kit count" for a given store, i.e. how many full kits fit. */
