@@ -261,7 +261,7 @@ export async function buildNegotiatedProposalWorkbook(
   params.negotiationStorePieces.forEach((sp) => {
     negQtyMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity || 0);
   });
-  const visiblePieces = params.pieces.filter((p: any) => p.kit_only !== true);
+  const visiblePieces = params.pieces;
 
   const header2: any[] = ["Loja", "Apelido", "Cidade", "Estado"];
   visiblePieces.forEach((p) => {
