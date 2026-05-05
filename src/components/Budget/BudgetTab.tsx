@@ -948,9 +948,22 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   )}
                 </div>
               )}
+
+              {(winnerSupplier as any).negotiation_status && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5 mt-2"
+                  onClick={() => setSendNegotiatedOpen(true)}
+                >
+                  <Send className="w-4 h-4" />
+                  Enviar Proposta Negociada
+                </Button>
+              )}
             </CardContent>
           </Card>
         )}
+
 
         {/* Budget da Campanha */}
         <Card className="h-full flex flex-col">
@@ -1263,17 +1276,6 @@ Qualquer dúvida, estamos à disposição.
                         </>
                       );
                     })()}
-                    {winnerSupplier && (winnerSupplier as any).negotiation_status && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => setSendNegotiatedOpen(true)}
-                        title="Gerar planilha negociada (3 abas) e enviar ao fornecedor"
-                      >
-                        <Send className="w-3 h-3" /> Enviar Proposta Negociada
-                      </Button>
-                    )}
                     <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setWinnerLinksOpen(true)}>
                       <Pencil className="w-3 h-3" /> Editar
                     </Button>
