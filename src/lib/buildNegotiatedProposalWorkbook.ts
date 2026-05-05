@@ -5,6 +5,7 @@ import type {
   ClientStore,
 } from "@/hooks/useMultiClientData";
 import { computeSupplierTotal } from "@/lib/computeSupplierTotal";
+import { validateNegotiationRateio } from "@/lib/validateNegotiationRateio";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
