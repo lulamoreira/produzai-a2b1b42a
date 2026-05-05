@@ -628,11 +628,13 @@ const CampaignDetail = () => {
     const map: Record<string, number> = {};
     if (isNegotiationView) {
       negotiationStorePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
+    } else if (isAdjustmentView) {
+      (adjustmentStorePieces as any[]).forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
     } else {
       storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
     }
     return map;
-  }, [storePieces, negotiationStorePieces, isNegotiationView]);
+  }, [storePieces, negotiationStorePieces, adjustmentStorePieces, isNegotiationView, isAdjustmentView]);
 
   const totalPieces = useMemo(() => storePieces.reduce((s, sp) => s + sp.quantity, 0), [storePieces]);
 
