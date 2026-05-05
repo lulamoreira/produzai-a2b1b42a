@@ -253,6 +253,7 @@ const CampaignDetail = () => {
   const { data: clientStoreModels = [] } = useClientStoreModels(clientId);
   const { data: pieces = [], isLoading: loadingPieces } = useCampaignPieces(campaignId);
   const { data: storePieces = [] } = useCampaignStorePieces(campaignId);
+  const { data: activeAdjustment } = useActiveAdjustment(campaignId);
   const addPiece = useAddCampaignPiece();
   const deletePiece = useDeleteCampaignPiece();
   const updatePiece = useUpdateCampaignPiece();
