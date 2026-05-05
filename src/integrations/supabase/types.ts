@@ -613,6 +613,312 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_adjustment_budget_request: {
+        Row: {
+          adjusted_extras_jsonb: Json | null
+          adjusted_prices_jsonb: Json | null
+          adjustment_id: string
+          created_at: string | null
+          id: string
+          notes: string | null
+          request_sent_at: string | null
+          response_received_at: string | null
+          status: string
+          supplier_id: string
+        }
+        Insert: {
+          adjusted_extras_jsonb?: Json | null
+          adjusted_prices_jsonb?: Json | null
+          adjustment_id: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          request_sent_at?: string | null
+          response_received_at?: string | null
+          status?: string
+          supplier_id: string
+        }
+        Update: {
+          adjusted_extras_jsonb?: Json | null
+          adjusted_prices_jsonb?: Json | null
+          adjustment_id?: string
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          request_sent_at?: string | null
+          response_received_at?: string | null
+          status?: string
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_adjustment_budget_request_adjustment_id_fkey"
+            columns: ["adjustment_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_adjustments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_adjustment_budget_request_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "budget_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_adjustment_kit_pieces: {
+        Row: {
+          adjustment_id: string
+          created_at: string | null
+          id: string
+          kit_id: string
+          piece_id: string
+          quantity: number
+        }
+        Insert: {
+          adjustment_id: string
+          created_at?: string | null
+          id?: string
+          kit_id: string
+          piece_id: string
+          quantity?: number
+        }
+        Update: {
+          adjustment_id?: string
+          created_at?: string | null
+          id?: string
+          kit_id?: string
+          piece_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_adjustment_kit_pieces_adjustment_id_fkey"
+            columns: ["adjustment_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_adjustments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_adjustment_kit_pieces_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_adjustment_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_adjustment_kit_pieces_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_adjustment_pieces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_adjustment_kits: {
+        Row: {
+          adjustment_id: string
+          change_type: string
+          created_at: string | null
+          id: string
+          is_deleted: boolean | null
+          name: string
+          source_kit_id: string | null
+        }
+        Insert: {
+          adjustment_id: string
+          change_type?: string
+          created_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          name: string
+          source_kit_id?: string | null
+        }
+        Update: {
+          adjustment_id?: string
+          change_type?: string
+          created_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          name?: string
+          source_kit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_adjustment_kits_adjustment_id_fkey"
+            columns: ["adjustment_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_adjustments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_adjustment_kits_source_kit_id_fkey"
+            columns: ["source_kit_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_kits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_adjustment_pieces: {
+        Row: {
+          adjustment_id: string
+          category: string | null
+          change_type: string
+          code: number
+          created_at: string | null
+          id: string
+          is_deleted: boolean | null
+          is_new: boolean | null
+          kit_only: boolean | null
+          name: string
+          original_snapshot: Json | null
+          size: string | null
+          source_piece_id: string | null
+          specification: string | null
+          sub_location: string | null
+        }
+        Insert: {
+          adjustment_id: string
+          category?: string | null
+          change_type?: string
+          code: number
+          created_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          is_new?: boolean | null
+          kit_only?: boolean | null
+          name: string
+          original_snapshot?: Json | null
+          size?: string | null
+          source_piece_id?: string | null
+          specification?: string | null
+          sub_location?: string | null
+        }
+        Update: {
+          adjustment_id?: string
+          category?: string | null
+          change_type?: string
+          code?: number
+          created_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          is_new?: boolean | null
+          kit_only?: boolean | null
+          name?: string
+          original_snapshot?: Json | null
+          size?: string | null
+          source_piece_id?: string | null
+          specification?: string | null
+          sub_location?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_adjustment_pieces_adjustment_id_fkey"
+            columns: ["adjustment_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_adjustments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_adjustment_pieces_source_piece_id_fkey"
+            columns: ["source_piece_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_pieces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_adjustment_store_pieces: {
+        Row: {
+          adjustment_id: string
+          created_at: string | null
+          id: string
+          piece_id: string
+          quantity: number
+          store_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          adjustment_id: string
+          created_at?: string | null
+          id?: string
+          piece_id: string
+          quantity?: number
+          store_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          adjustment_id?: string
+          created_at?: string | null
+          id?: string
+          piece_id?: string
+          quantity?: number
+          store_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_adjustment_store_pieces_adjustment_id_fkey"
+            columns: ["adjustment_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_adjustments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_adjustment_store_pieces_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_adjustment_pieces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_adjustments: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          campaign_id: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          name: string
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          campaign_id: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          status?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          campaign_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_adjustments_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_budget_items: {
         Row: {
           budget_id: string
