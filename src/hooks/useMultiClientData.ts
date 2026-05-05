@@ -664,6 +664,8 @@ export function useDeleteCampaignPiece() {
 export function useCampaignStorePieces(campaignId: string | undefined) {
   return useQuery({
     queryKey: ["campaign_store_pieces", campaignId],
+    staleTime: 0,
+    gcTime: 0,
     queryFn: async () => {
       if (!campaignId) return [];
       const pageSize = 5000;
@@ -681,6 +683,7 @@ export function useCampaignStorePieces(campaignId: string | undefined) {
 
         const page = (data ?? []) as CampaignStorePiece[];
         rows.push(...page);
+        console.log(`[useCampaignStorePieces] page ${from / pageSize + 1}: ${page.length} rows fetched, total so far: ${rows.length}`);
 
         if (page.length < pageSize) break;
       }
