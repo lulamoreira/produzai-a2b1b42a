@@ -665,31 +665,16 @@ export function useDeleteCampaignPiece() {
 export function useCampaignStorePieces(campaignId: string | undefined) {
   return useQuery({
     queryKey: ["campaign_store_pieces", campaignId],
-    staleTime: 0,
-    gcTime: 0,
     queryFn: async () => {
-      if (!campaignId) return [];
-      const pageSize = 1000; // PostgREST server-side max-rows cap
-      const rows: CampaignStorePiece[] = [];
-
-      for (let from = 0; ; from += pageSize) {
-        const { data, error } = await supabase
+      if (!campaignId) return [] as CampaignStorePiece[];
+      return supabasePaginate<CampaignStorePiece>((from, to) =>
+        supabase
           .from("campaign_store_pieces")
           .select("*")
           .eq("campaign_id", campaignId)
           .order("id", { ascending: true })
-          .range(from, from + pageSize - 1);
-
-        if (error) throw error;
-
-        const page = (data ?? []) as CampaignStorePiece[];
-        rows.push(...page);
-        console.log(`[useCampaignStorePieces] page ${from / pageSize + 1}: ${page.length} rows fetched, total so far: ${rows.length}`);
-
-        if (page.length < pageSize) break;
-      }
-
-      return rows;
+          .range(from, to) as any
+      );
     },
     enabled: !!campaignId,
   });
