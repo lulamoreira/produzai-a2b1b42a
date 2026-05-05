@@ -353,6 +353,10 @@ const CampaignDetail = () => {
     isNegotiationView
   );
   const updateNegotiationStorePiece = useUpdateNegotiationStorePiece();
+  const { data: adjustmentStorePieces = [] } = useAdjustmentStorePieces(
+    isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
+  );
+  const updateAdjustmentStorePiece = useUpdateAdjustmentStorePiece();
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
   const addPieceLocation = useAddCampaignPieceLocation();
