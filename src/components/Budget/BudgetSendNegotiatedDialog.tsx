@@ -34,6 +34,8 @@ interface Props {
   kitPieces: CampaignKitPiece[];
   stores: ClientStore[];
   defaultCcEmail?: string | null;
+  originalTotalOverride?: number | null;
+  negotiatedTotalOverride?: number | null;
 }
 
 export default function BudgetSendNegotiatedDialog({
@@ -50,6 +52,8 @@ export default function BudgetSendNegotiatedDialog({
   kitPieces,
   stores,
   defaultCcEmail,
+  originalTotalOverride,
+  negotiatedTotalOverride,
 }: Props) {
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
@@ -133,8 +137,10 @@ export default function BudgetSendNegotiatedDialog({
       agencyName,
       clientName,
       currencyCode,
+      originalTotalOverride,
+      negotiatedTotalOverride,
     });
-  }, [extraCosts, prices, originalSp, negotiationSp, pieces, kits, kitPieces, stores, supplier, campaignName, agencyName, clientName, currencyCode]);
+  }, [extraCosts, prices, originalSp, negotiationSp, pieces, kits, kitPieces, stores, supplier, campaignName, agencyName, clientName, currencyCode, originalTotalOverride, negotiatedTotalOverride]);
 
   const buildAndUpload = async () => {
     if (!extraCosts) throw new Error("Custos não carregados.");
@@ -152,6 +158,8 @@ export default function BudgetSendNegotiatedDialog({
       agencyName,
       clientName,
       currencyCode,
+      originalTotalOverride,
+      negotiatedTotalOverride,
     });
     const link = await uploadAndSign(blob, fileName, `negociacao_${supplier.id}`, campaignId);
     return { link, fileName, totals: t };

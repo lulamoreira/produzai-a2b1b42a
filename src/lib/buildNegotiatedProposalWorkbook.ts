@@ -43,6 +43,10 @@ export type NegotiatedProposalParams = {
   agencyName: string;
   clientName: string;
   currencyCode: string;
+  /** Override autoritativo do total ORIGINAL (já inclui frete + instalação + kits). */
+  originalTotalOverride?: number | null;
+  /** Override autoritativo do total NEGOCIADO (já inclui frete + instalação + kits). */
+  negotiatedTotalOverride?: number | null;
 };
 
 export type NegotiatedProposalTotals = {
@@ -87,8 +91,19 @@ export function computeNegotiatedTotals(
   const freightNegotiated = Number(
     params.extraCosts.adjusted_freight_value ?? params.extraCosts.freight_value ?? 0,
   );
-  const totalOriginal = itemsOriginal + installationOriginal + freightOriginal;
-  const totalNegotiated = itemsNegotiated + installationNegotiated + freightNegotiated;
+  // Quando temos override autoritativo (vindo do BudgetTab que aplica
+  // expansão de kits + dedup), usamos ele como total geral, e derivamos
+  // itens = total - frete - instalação para manter coerência.
+  const hasOrigOverride = params.originalTotalOverride != null && Number.isFinite(Number(params.originalTotalOverride));
+  const hasNegOverride = params.negotiatedTotalOverride != null && Number.isFinite(Number(params.negotiatedTotalOverride));
+  const totalOriginal = hasOrigOverride
+    ? Number(params.originalTotalOverride)
+    : itemsOriginal + installationOriginal + freightOriginal;
+  const totalNegotiated = hasNegOverride
+    ? Number(params.negotiatedTotalOverride)
+    : itemsNegotiated + installationNegotiated + freightNegotiated;
+  if (hasOrigOverride) itemsOriginal = totalOriginal - installationOriginal - freightOriginal;
+  if (hasNegOverride) itemsNegotiated = totalNegotiated - installationNegotiated - freightNegotiated;
   return {
     itemsOriginal,
     itemsNegotiated,
@@ -407,11 +422,33 @@ export async function buildNegotiatedProposalWorkbook(
     if (dTotal !== 0) r.getCell(10).font = { color: { argb: dTotal > 0 ? RED_FONT : GREEN_FONT }, bold: true };
   }
 
-  const totRow = ws3.addRow(["TOTAL GERAL", "", "", "", "", "", "", totH, totI, totJ]);
-  totRow.height = 24;
+  const totRow = ws3.addRow(["SUBTOTAL ITENS (sem frete/instalação)", "", "", "", "", "", "", totH, totI, totJ]);
+  totRow.height = 22;
   totRow.eachCell({ includeEmpty: true }, (cell, col) => {
     cell.font = { bold: true };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: GOLD } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+    cell.alignment = { vertical: "middle", horizontal: col === 1 ? "left" : "right" };
+    if ([8, 9, 10].includes(col)) cell.numFmt = money;
+  });
+
+  const addExtra = (label: string, o: number, n: number) => {
+    const d = n - o;
+    const r = ws3.addRow([label, "", "", "", "", "", "", o, n, d]);
+    r.height = 20;
+    r.eachCell({ includeEmpty: true }, (cell, col) => {
+      cell.font = { bold: col === 1 };
+      cell.alignment = { vertical: "middle", horizontal: col === 1 ? "left" : "right" };
+      if ([8, 9, 10].includes(col)) cell.numFmt = money;
+    });
+  };
+  addExtra("Instalação", totals.installationOriginal, totals.installationNegotiated);
+  addExtra("Frete / Despacho", totals.freightOriginal, totals.freightNegotiated);
+
+  const grand = ws3.addRow(["TOTAL GERAL", "", "", "", "", "", "", totals.totalOriginal, totals.totalNegotiated, totals.totalNegotiated - totals.totalOriginal]);
+  grand.height = 26;
+  grand.eachCell({ includeEmpty: true }, (cell, col) => {
+    cell.font = { bold: true, color: { argb: WHITE } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
     cell.alignment = { vertical: "middle", horizontal: col === 1 ? "left" : "right" };
     if ([8, 9, 10].includes(col)) cell.numFmt = money;
   });
