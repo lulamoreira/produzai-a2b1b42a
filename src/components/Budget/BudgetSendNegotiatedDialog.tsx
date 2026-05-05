@@ -18,6 +18,8 @@ import {
   type NegotiatedProposalParams,
 } from "@/lib/buildNegotiatedProposalWorkbook";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
+import { validateNegotiationRateio, type RateioValidationResult } from "@/lib/validateNegotiationRateio";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -157,8 +159,28 @@ export default function BudgetSendNegotiatedDialog({
     });
   }, [extraCosts, prices, originalSp, negotiationSp, pieces, kits, kitPieces, stores, supplier, campaignName, agencyName, clientName, currencyCode]);
 
+  const validation: RateioValidationResult | null = useMemo(() => {
+    if (loading || !extraCosts) return null;
+    return validateNegotiationRateio(originalSp, negotiationSp, stores);
+  }, [loading, extraCosts, originalSp, negotiationSp, stores]);
+
   const buildAndUpload = async () => {
     if (!extraCosts) throw new Error("Custos não carregados.");
+    const v = validateNegotiationRateio(originalSp, negotiationSp, stores);
+    if (!v.valid) {
+      const issues: string[] = [];
+      if (v.negotiationRows === 0) {
+        issues.push('O rateio de negociação está vazio. Abra a negociação e clique em "Editar Rateio da Negociação" antes de gerar a planilha.');
+      } else {
+        if (v.missingStores.length > 0) {
+          issues.push(`${v.missingStores.length} lojas ausentes no rateio de negociação: ${v.missingStores.slice(0, 5).join(', ')}${v.missingStores.length > 5 ? '...' : ''}`);
+        }
+        if (v.originalPieces !== v.negotiationPieces) {
+          issues.push(`Peças divergentes: original tem ${v.originalPieces}, negociação tem ${v.negotiationPieces}.`);
+        }
+      }
+      throw new Error('Rateio de negociação incompleto:\n' + issues.join('\n'));
+    }
     const { blob, fileName, totals: t } = await buildNegotiatedProposalWorkbook({
       supplier,
       pieces,
@@ -273,6 +295,38 @@ export default function BudgetSendNegotiatedDialog({
                 </div>
               )}
 
+              {validation && (
+                validation.valid ? (
+                  <div className="rounded-md border border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20 p-2.5 text-xs text-emerald-800 dark:text-emerald-300 flex items-start gap-2">
+                    <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>
+                      Rateio de negociação válido — {validation.negotiationRows} linhas, {validation.negotiationStores} lojas, {validation.totalQtyNegotiation} unidades
+                    </span>
+                  </div>
+                ) : (
+                  <div className="rounded-md border border-red-300 bg-red-50 dark:bg-red-950/20 p-2.5 text-xs text-red-800 dark:text-red-300 flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <div className="space-y-1">
+                      <div className="font-medium">Rateio de negociação incompleto</div>
+                      {validation.negotiationRows === 0 ? (
+                        <div>O rateio de negociação está vazio. Abra a negociação e clique em "Editar Rateio da Negociação" antes de gerar a planilha.</div>
+                      ) : (
+                        <ul className="list-disc list-inside space-y-0.5">
+                          {validation.missingStores.length > 0 && (
+                            <li>
+                              {validation.missingStores.length} lojas ausentes: {validation.missingStores.slice(0, 5).join(', ')}{validation.missingStores.length > 5 ? '...' : ''}
+                            </li>
+                          )}
+                          {validation.originalPieces !== validation.negotiationPieces && (
+                            <li>Peças divergentes: original {validation.originalPieces}, negociação {validation.negotiationPieces}.</li>
+                          )}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                )
+              )}
+
               <div className="space-y-1.5">
                 <Label htmlFor="neg-email">E-mail do destinatário</Label>
                 <Input id="neg-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={sending} />
@@ -292,12 +346,12 @@ export default function BudgetSendNegotiatedDialog({
           <Button
             variant="outline"
             onClick={handleSendWhatsApp}
-            disabled={sending || loading || !supplier.phone}
+            disabled={sending || loading || !supplier.phone || (validation ? !validation.valid : false)}
             title={!supplier.phone ? "Fornecedor sem telefone" : "Gerar planilha e abrir WhatsApp"}
           >
             <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
           </Button>
-          <Button onClick={handleSendEmail} disabled={sending || loading}>
+          <Button onClick={handleSendEmail} disabled={sending || loading || (validation ? !validation.valid : false)}>
             {sending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Mail className="w-4 h-4 mr-1" />}
             Enviar por E-mail
           </Button>

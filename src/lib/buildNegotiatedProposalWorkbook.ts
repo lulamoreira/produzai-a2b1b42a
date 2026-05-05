@@ -5,6 +5,7 @@ import type {
   ClientStore,
 } from "@/hooks/useMultiClientData";
 import { computeSupplierTotal } from "@/lib/computeSupplierTotal";
+import { validateNegotiationRateio } from "@/lib/validateNegotiationRateio";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -150,6 +151,20 @@ export function computeNegotiatedTotals(
 export async function buildNegotiatedProposalWorkbook(
   params: NegotiatedProposalParams,
 ): Promise<{ blob: Blob; fileName: string; totals: NegotiatedProposalTotals }> {
+  const validation = validateNegotiationRateio(
+    params.originalStorePieces,
+    params.negotiationStorePieces,
+    params.stores,
+  );
+  if (!validation.valid) {
+    throw new Error(
+      `Rateio de negociação inválido: ` +
+      `${validation.negotiationRows} linhas (esperado ~${validation.originalRows}), ` +
+      `${validation.negotiationStores} lojas (esperado ${validation.originalStores}). ` +
+      `Lojas faltando: ${validation.missingStores.slice(0, 3).join(', ')}`
+    );
+  }
+
   const ExcelJSModule = await import("exceljs");
   const ExcelJSRuntime = ExcelJSModule.default;
   const wb = new ExcelJSRuntime.Workbook();
