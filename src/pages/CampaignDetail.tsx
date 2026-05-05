@@ -958,7 +958,7 @@ const CampaignDetail = () => {
       pieceId: cell.pieceId,
       quantity: qty,
     });
-  }, [campaignId, kitPieces, updateStorePiece, bulkUpdateStorePieces, isNegotiationView, winnerSupplierId, updateNegotiationStorePiece]);
+  }, [campaignId, kitPieces, updateStorePiece, bulkUpdateStorePieces, isNegotiationView, winnerSupplierId, updateNegotiationStorePiece, isAdjustmentView, activeAdjustmentId, updateAdjustmentStorePiece]);
 
   // ─── Atomic transition: save current cell (if any) and open the new one ───
   // The save runs SYNCHRONOUSLY using editValueRef.current as the source of
