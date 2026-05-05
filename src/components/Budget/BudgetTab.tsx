@@ -949,9 +949,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
               {(winnerSupplier as any).negotiation_status && (
                 <Button
-                  variant="outline"
                   size="sm"
-                  className="w-full gap-1.5 mt-2"
+                  className="w-full gap-2 mt-2 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white border-0 shadow-md hover:shadow-lg transition-all font-semibold"
                   onClick={() => setSendNegotiatedOpen(true)}
                 >
                   <Send className="w-4 h-4" />
