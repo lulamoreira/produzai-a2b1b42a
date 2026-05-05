@@ -2367,6 +2367,58 @@ const CampaignDetail = () => {
                     </div>
                   </div>
                 )}
+                {/* Adjustment rateio banner + source toggle */}
+                {activeAdjustment && (
+                  <div
+                    className={`border-b px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                      isAdjustmentView
+                        ? "border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-900/10"
+                        : "border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10"
+                    }`}
+                  >
+                    <div className={`text-xs flex items-start gap-2 ${
+                      isAdjustmentView ? "text-emerald-900 dark:text-emerald-200" : "text-amber-900 dark:text-amber-200"
+                    }`}>
+                      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                      <span>
+                        {isAdjustmentView
+                          ? <>Editando rateio do ajuste <strong>{activeAdjustment.name}</strong>. Alterações aqui não afetam o rateio original.</>
+                          : <>📐 Existe um ajuste ativo: <strong>{activeAdjustment.name}</strong>. O rateio do ajuste pode ser diferente do original.</>}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={rateioSource === "original" ? "default" : "outline"}
+                        className="h-7 text-xs"
+                        onClick={() => setRateioSource("original")}
+                      >
+                        Rateio Original
+                      </Button>
+                      {hasNegotiationRateio && winnerSupplierId && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={rateioSource === "negotiation" ? "default" : "outline"}
+                          className="h-7 text-xs"
+                          onClick={() => setRateioSource("negotiation")}
+                        >
+                          Rateio da Negociação
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={rateioSource === "adjustment" ? "default" : "outline"}
+                        className="h-7 text-xs"
+                        onClick={() => setRateioSource("adjustment")}
+                      >
+                        Rateio do Ajuste
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 {/* Toolbar */}
                 <div className="border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between px-3 py-1">
