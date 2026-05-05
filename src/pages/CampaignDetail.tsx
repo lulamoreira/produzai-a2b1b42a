@@ -3811,6 +3811,8 @@ const CampaignDetail = () => {
         qtyMap={qtyMap}
         isNegotiationView={isNegotiationView}
         negotiationSupplierId={winnerSupplierId}
+        isAdjustmentView={isAdjustmentView}
+        adjustmentId={activeAdjustmentId}
       />
     </AppLayout>
   );
