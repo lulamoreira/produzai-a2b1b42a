@@ -255,7 +255,7 @@ export async function buildNegotiatedProposalWorkbook(
     ]);
     const bg = evenIdx % 2 === 0 ? WHITE : BEIGE;
     evenIdx++;
-    row.height = 22;
+    // Auto row height — let Excel size based on wrapped content
     row.eachCell({ includeEmpty: true }, (cell, col) => {
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
       cell.alignment = {
@@ -443,7 +443,7 @@ export async function buildNegotiatedProposalWorkbook(
       tNeg,
       dTotal,
     ]);
-    r.height = 20;
+    r.height = dQty !== 0 ? 28 : 20;
     r.eachCell({ includeEmpty: true }, (cell, col) => {
       cell.alignment = { vertical: "middle", horizontal: col === 1 ? "left" : "right", wrapText: col === 1 };
       cell.border = {
@@ -460,7 +460,18 @@ export async function buildNegotiatedProposalWorkbook(
     // Color-coded fonts
     if (dPrice !== 0) r.getCell(3).font = { color: { argb: RED_FONT }, bold: true };
     if (dPrice !== 0) r.getCell(4).font = { color: { argb: RED_FONT }, bold: true };
-    if (dQty !== 0) r.getCell(7).font = { color: { argb: dQty > 0 ? GREEN_FONT : RED_FONT }, bold: true };
+    // Diferença de peças (Δ Qtd) — destaque máximo: fundo verde, texto branco, fonte grande
+    if (dQty !== 0) {
+      const qtyCell = r.getCell(7);
+      const isPositive = dQty > 0;
+      qtyCell.font = { color: { argb: WHITE }, bold: true, size: 14 };
+      qtyCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: isPositive ? "FF22C55E" : "FFDC2626" },
+      };
+      qtyCell.alignment = { vertical: "middle", horizontal: "center" };
+    }
     if (dTotal < 0) r.getCell(9).font = { color: { argb: RED_FONT }, bold: true };
     if (dTotal !== 0) r.getCell(10).font = { color: { argb: dTotal > 0 ? RED_FONT : GREEN_FONT }, bold: true };
   }
