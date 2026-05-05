@@ -17,7 +17,8 @@ import {
   computeNegotiatedTotals,
   type NegotiatedProposalParams,
 } from "@/lib/buildNegotiatedProposalWorkbook";
-import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
+import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
+import { useCampaignPieceLocations, useCampaignPieceSubLocations } from "@/hooks/useMultiClientData";
 import { validateNegotiationRateio, type RateioValidationResult } from "@/lib/validateNegotiationRateio";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
