@@ -16,6 +16,8 @@ export interface RateioDelete {
 export interface RateioBulkOptions {
   isNegotiationView: boolean;
   negotiationSupplierId?: string | null;
+  isAdjustmentView?: boolean;
+  adjustmentId?: string | null;
 }
 
 export async function applyRateioBulk(
@@ -23,8 +25,34 @@ export async function applyRateioBulk(
   deletes: RateioDelete[],
   options: RateioBulkOptions
 ): Promise<void> {
-  const { isNegotiationView, negotiationSupplierId } = options;
-  if (isNegotiationView && negotiationSupplierId) {
+  const { isNegotiationView, negotiationSupplierId, isAdjustmentView, adjustmentId } = options;
+  if (isAdjustmentView && adjustmentId) {
+    if (upserts.length > 0) {
+      const payload = upserts.map(u => ({
+        adjustment_id: adjustmentId,
+        store_id: u.storeId,
+        piece_id: u.pieceId,
+        quantity: u.quantity,
+      }));
+      for (let i = 0; i < payload.length; i += 500) {
+        const { error } = await supabase
+          .from('campaign_adjustment_store_pieces' as never)
+          .upsert(payload.slice(i, i + 500) as never, { onConflict: 'adjustment_id,store_id,piece_id' });
+        if (error) throw error;
+      }
+    }
+    if (deletes.length > 0) {
+      for (const d of deletes) {
+        const { error } = await supabase
+          .from('campaign_adjustment_store_pieces' as never)
+          .delete()
+          .eq('adjustment_id', adjustmentId)
+          .eq('store_id', d.storeId)
+          .eq('piece_id', d.pieceId);
+        if (error) throw error;
+      }
+    }
+  } else if (isNegotiationView && negotiationSupplierId) {
     if (upserts.length > 0) {
       const payload = upserts.map(u => ({
         supplier_id: negotiationSupplierId,
