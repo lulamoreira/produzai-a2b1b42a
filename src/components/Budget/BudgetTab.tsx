@@ -948,9 +948,6 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   )}
                 </div>
               )}
-            </CardContent>
-          </Card>
-              )}
 
               {(winnerSupplier as any).negotiation_status && (
                 <Button
@@ -963,6 +960,10 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   Enviar Proposta Negociada
                 </Button>
               )}
+            </CardContent>
+          </Card>
+        )}
+
 
         {/* Budget da Campanha */}
         <Card className="h-full flex flex-col">
