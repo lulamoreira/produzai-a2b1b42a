@@ -184,36 +184,70 @@ export default function BudgetNegotiationDialog({
     ? Math.round((1 - targetNum / currentTotal) * 1000) / 10
     : 0;
 
-  const autoPreview = useMemo(() => {
-    if (mode !== "auto" || targetNum <= 0 || currentTotal <= 0) return [];
-    return pricedQuantityRows
-      .map((row) => {
-        const piece = pieces.find((p) => p.id === row.pieceId);
-        const pr = supplierPrices.find((p) => p.piece_id === row.pieceId);
-        const original = toNum(pr?.unit_price);
-        const adjusted = Math.round(original * ratio * 100) / 100;
-        return {
-          pieceId: row.pieceId,
-          name: piece?.name || "Peça",
-          code: piece?.code ?? 0,
-          qty: row.qty,
-          original,
-          adjusted,
-          diff: adjusted - original,
-        };
-      });
-  }, [mode, targetNum, currentTotal, pricedQuantityRows, pieces, supplierPrices, ratio]);
-
   const adjustedInstallation = supplierEC?.installation_value != null
     ? (adjustScope === "pieces_only"
         ? toNum(supplierEC.installation_value)
-        : Math.round(toNum(supplierEC.installation_value) * ratio * 100) / 100)
+        : Math.floor(toNum(supplierEC.installation_value) * ratio * 100) / 100)
     : null;
   const adjustedFreight = supplierEC?.freight_value != null
     ? (adjustScope === "pieces_only"
         ? toNum(supplierEC.freight_value)
-        : Math.round(toNum(supplierEC.freight_value) * ratio * 100) / 100)
+        : Math.floor(toNum(supplierEC.freight_value) * ratio * 100) / 100)
     : null;
+
+  const autoPreview = useMemo(() => {
+    if (mode !== "auto" || targetNum <= 0 || currentTotal <= 0) return [];
+    // Step 1: floor each adjusted unit price (never exceeds target)
+    const rows = pricedQuantityRows.map((row) => {
+      const piece = pieces.find((p) => p.id === row.pieceId);
+      const pr = supplierPrices.find((p) => p.piece_id === row.pieceId);
+      const original = toNum(pr?.unit_price);
+      const adjusted = Math.floor(original * ratio * 100) / 100;
+      return {
+        pieceId: row.pieceId,
+        name: piece?.name || "Peça",
+        code: piece?.code ?? 0,
+        qty: row.qty,
+        original,
+        adjusted,
+        diff: adjusted - original,
+      };
+    });
+
+    // Step 2: redistribute leftover cents to get as close to the cap as possible
+    // without ever exceeding it. Add 1 cent at a time, prioritizing rows with
+    // the largest qty (max impact) to converge fast.
+    const fixed = (adjustedInstallation || 0) + (adjustedFreight || 0);
+    const piecesCap = adjustScope === "pieces_only" ? piecesOnlyTarget : (targetNum - fixed);
+    if (piecesCap > 0) {
+      let piecesSum = rows.reduce((s, r) => s + r.adjusted * r.qty, 0);
+      // Round to cents to avoid float drift
+      const capCents = Math.floor(piecesCap * 100);
+      let sumCents = Math.round(piecesSum * 100);
+      // Sort by qty desc — adding 1 cent here moves the total fastest
+      const order = rows
+        .map((_, i) => i)
+        .filter((i) => rows[i].qty > 0 && rows[i].adjusted > 0)
+        .sort((a, b) => rows[b].qty - rows[a].qty);
+      let guard = 0;
+      while (sumCents < capCents && guard < 100000) {
+        let progressed = false;
+        for (const i of order) {
+          const qtyCents = rows[i].qty; // qty is integer, 1 cent * qty
+          if (sumCents + qtyCents > capCents) continue;
+          rows[i].adjusted = Math.round((rows[i].adjusted + 0.01) * 100) / 100;
+          rows[i].diff = Math.round((rows[i].adjusted - rows[i].original) * 100) / 100;
+          sumCents += qtyCents;
+          progressed = true;
+          if (sumCents >= capCents) break;
+        }
+        if (!progressed) break;
+        guard++;
+      }
+    }
+
+    return rows;
+  }, [mode, targetNum, currentTotal, pricedQuantityRows, pieces, supplierPrices, ratio, adjustedInstallation, adjustedFreight, adjustScope, piecesOnlyTarget]);
 
   const newTotal = useMemo(() => {
     if (mode !== "auto") return targetNum;
