@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 
 export type NegotiationStorePiece = {
   id: string;
@@ -23,20 +24,13 @@ export function useNegotiationStorePieces(
     queryKey: ["negotiation_store_pieces", supplierId],
     enabled: !!supplierId && enabled,
     queryFn: async () => {
-      const rows: NegotiationStorePiece[] = [];
-      const pageSize = 5000;
-      for (let from = 0; ; from += pageSize) {
-        const { data, error } = await supabase
+      return supabasePaginate<NegotiationStorePiece>((from, to) =>
+        supabase
           .from("budget_negotiation_store_pieces" as never)
           .select("id, supplier_id, campaign_id, store_id, piece_id, quantity")
           .eq("supplier_id", supplierId as string)
-          .range(from, from + pageSize - 1);
-        if (error) throw error;
-        const page = ((data as unknown as NegotiationStorePiece[]) || []);
-        rows.push(...page);
-        if (page.length < pageSize) break;
-      }
-      return rows;
+          .range(from, to) as any
+      );
     },
   });
 }
@@ -99,21 +93,15 @@ export async function snapshotNegotiationRateio(
   if (countErr) throw countErr;
   if ((count ?? 0) > 0) return 0;
 
-  // Fetch current campaign rateio in pages. The API defaults to 1,000 rows;
-  // without pagination the negotiation copy can start incomplete.
-  const rows: Array<{ store_id: string; piece_id: string; quantity: number }> = [];
-  const pageSize = 5000;
-  for (let from = 0; ; from += pageSize) {
-    const { data, error: fetchErr } = await supabase
-      .from("campaign_store_pieces")
-      .select("store_id, piece_id, quantity")
-      .eq("campaign_id", campaignId)
-      .range(from, from + pageSize - 1);
-    if (fetchErr) throw fetchErr;
-    const page = (data ?? []) as Array<{ store_id: string; piece_id: string; quantity: number }>;
-    rows.push(...page);
-    if (page.length < pageSize) break;
-  }
+  // Fetch current campaign rateio in pages.
+  const rows = await supabasePaginate<{ store_id: string; piece_id: string; quantity: number }>(
+    (from, to) =>
+      supabase
+        .from("campaign_store_pieces")
+        .select("store_id, piece_id, quantity")
+        .eq("campaign_id", campaignId)
+        .range(from, to) as any
+  );
   if (rows.length === 0) return 0;
 
   const payload = rows

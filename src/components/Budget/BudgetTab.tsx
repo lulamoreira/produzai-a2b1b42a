@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -377,20 +378,17 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     queryKey: ["budget_negotiation_rateio_totals", campaignId, negotiatingSupplierIds.join(",")],
     enabled: negotiatingSupplierIds.length > 0,
     queryFn: async () => {
-      const rows: any[] = [];
-      const pageSize = 5000;
-      for (let from = 0; ; from += pageSize) {
-        const { data, error } = await supabase
-          .from("budget_negotiation_store_pieces" as never)
-          .select("supplier_id, piece_id, quantity")
-          .in("supplier_id", negotiatingSupplierIds)
-          .range(from, from + pageSize - 1);
-        if (error) return [];
-        const page = (data as any[]) || [];
-        rows.push(...page);
-        if (page.length < pageSize) break;
+      try {
+        return await supabasePaginate<any>((from, to) =>
+          supabase
+            .from("budget_negotiation_store_pieces" as never)
+            .select("supplier_id, piece_id, quantity")
+            .in("supplier_id", negotiatingSupplierIds)
+            .range(from, to) as any
+        );
+      } catch {
+        return [];
       }
-      return rows;
     },
   });
   const negPieceTotalsBySupplier = useMemo(() => {

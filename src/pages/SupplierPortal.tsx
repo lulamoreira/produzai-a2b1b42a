@@ -3,6 +3,7 @@ import { getThumbnailUrl } from "@/lib/imageUrl";
 import { toast } from "sonner";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import { Package, Lock, Clock, CheckCircle2, AlertTriangle, Send, ImageIcon, Download, Edit2, Save, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -333,24 +334,14 @@ const SupplierPortal = () => {
 
         // 7) Store pieces for qty totals + store data for Excel
         // ⚠️ Paginação obrigatória: Supabase limita a 1000 linhas por query.
-        // Em campanhas grandes (muitas lojas × peças) isso corta os dados
-        // e o total fica errado / só aparecem as primeiras lojas.
-        const PAGE_SIZE = 5000;
-        let from = 0;
-        const allStorePieces: { piece_id: string; quantity: number; store_id: string }[] = [];
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          const { data: page, error: pageErr } = await supabase
-            .from("campaign_store_pieces")
-            .select("piece_id, quantity, store_id")
-            .eq("campaign_id", sup.campaign_id)
-            .range(from, from + PAGE_SIZE - 1);
-          if (pageErr) throw pageErr;
-          const rows = (page ?? []) as { piece_id: string; quantity: number; store_id: string }[];
-          allStorePieces.push(...rows);
-          if (rows.length < PAGE_SIZE) break;
-          from += PAGE_SIZE;
-        }
+        const allStorePieces = await supabasePaginate<{ piece_id: string; quantity: number; store_id: string }>(
+          (from, to) =>
+            supabase
+              .from("campaign_store_pieces")
+              .select("piece_id, quantity, store_id")
+              .eq("campaign_id", sup.campaign_id)
+              .range(from, to) as any
+        );
 
         const spQtyMap: Record<string, number> = {};
         const fullQMap: Record<string, number> = {};
@@ -363,12 +354,13 @@ const SupplierPortal = () => {
         setStorePieceQtyMap(spQtyMap);
         setFullQtyMap(fullQMap);
 
-        // Fetch store details for Excel — também paginado para >1000 lojas
+        // Fetch store details for Excel — também chunked para >1000 lojas
         if (storeIds.size > 0) {
           const ids = Array.from(storeIds);
           const allStores: any[] = [];
-          for (let i = 0; i < ids.length; i += PAGE_SIZE) {
-            const chunk = ids.slice(i, i + PAGE_SIZE);
+          const CHUNK = 1000;
+          for (let i = 0; i < ids.length; i += CHUNK) {
+            const chunk = ids.slice(i, i + CHUNK);
             const { data: storesRaw } = await supabase
               .from("client_stores")
               .select("id, name, city, state, showcase_count")

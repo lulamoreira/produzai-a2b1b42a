@@ -3,6 +3,7 @@ import { Send, Loader2, MessageCircle, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,36 +82,32 @@ export default function BudgetSendNegotiatedDialog({
             .eq("supplier_id", supplier.id)
             .maybeSingle(),
           (async () => {
-            const rows: any[] = [];
-            const pageSize = 5000;
-            for (let from = 0; ; from += pageSize) {
-              const { data, error } = await supabase
-                .from("campaign_store_pieces" as any)
-                .select("store_id, piece_id, quantity")
-                .eq("campaign_id", campaignId)
-                .range(from, from + pageSize - 1);
-              if (error) return { data: null, error } as any;
-              const page = (data as any[]) || [];
-              rows.push(...page);
-              if (page.length < pageSize) break;
+            try {
+              const rows = await supabasePaginate<any>((from, to) =>
+                supabase
+                  .from("campaign_store_pieces" as any)
+                  .select("store_id, piece_id, quantity")
+                  .eq("campaign_id", campaignId)
+                  .range(from, to) as any
+              );
+              return { data: rows, error: null } as any;
+            } catch (error) {
+              return { data: null, error } as any;
             }
-            return { data: rows, error: null } as any;
           })(),
           (async () => {
-            const rows: any[] = [];
-            const pageSize = 5000;
-            for (let from = 0; ; from += pageSize) {
-              const { data, error } = await supabase
-                .from("budget_negotiation_store_pieces" as any)
-                .select("store_id, piece_id, quantity")
-                .eq("supplier_id", supplier.id)
-                .range(from, from + pageSize - 1);
-              if (error) return { data: null, error } as any;
-              const page = (data as any[]) || [];
-              rows.push(...page);
-              if (page.length < pageSize) break;
+            try {
+              const rows = await supabasePaginate<any>((from, to) =>
+                supabase
+                  .from("budget_negotiation_store_pieces" as any)
+                  .select("store_id, piece_id, quantity")
+                  .eq("supplier_id", supplier.id)
+                  .range(from, to) as any
+              );
+              return { data: rows, error: null } as any;
+            } catch (error) {
+              return { data: null, error } as any;
             }
-            return { data: rows, error: null } as any;
           })(),
         ]);
         if (pricesRes.error) throw pricesRes.error;

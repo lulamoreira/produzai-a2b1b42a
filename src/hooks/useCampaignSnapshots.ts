@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 
 export interface SnapshotListItem {
   id: string;
@@ -93,17 +94,9 @@ export function useCampaignSnapshotContext(campaignId?: string, enabled = true) 
       if (piecesRes.error) throw piecesRes.error;
       const kitsRes = await sb.from("campaign_kits").select("*").eq("campaign_id", campaignId!);
       if (kitsRes.error) throw kitsRes.error;
-      const storePiecesAll: any[] = [];
-      {
-        const pageSize = 5000;
-        for (let from = 0; ; from += pageSize) {
-          const { data, error } = await sb.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!).range(from, from + pageSize - 1);
-          if (error) throw error;
-          const page = (data ?? []) as any[];
-          storePiecesAll.push(...page);
-          if (page.length < pageSize) break;
-        }
-      }
+      const storePiecesAll = await supabasePaginate<any>((from, to) =>
+        sb.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!).range(from, to)
+      );
       const storePiecesRes = { data: storePiecesAll, error: null as any };
 
       const storeIds = [
@@ -152,17 +145,9 @@ export function useCreateSnapshot() {
         supabase.from("campaign_pieces").select("*").eq("campaign_id", campaign_id),
         supabase.from("campaign_kits").select("*").eq("campaign_id", campaign_id),
       ]);
-      const storePiecesAll: any[] = [];
-      {
-        const pageSize = 5000;
-        for (let from = 0; ; from += pageSize) {
-          const { data, error } = await supabase.from("campaign_store_pieces").select("*").eq("campaign_id", campaign_id).range(from, from + pageSize - 1);
-          if (error) throw error;
-          const page = (data ?? []) as any[];
-          storePiecesAll.push(...page);
-          if (page.length < pageSize) break;
-        }
-      }
+      const storePiecesAll = await supabasePaginate<any>((from, to) =>
+        supabase.from("campaign_store_pieces").select("*").eq("campaign_id", campaign_id).range(from, to) as any
+      );
       const storePiecesRes = { data: storePiecesAll, error: null as any };
       if (piecesRes.error) throw piecesRes.error;
       if (kitsRes.error) throw kitsRes.error;
