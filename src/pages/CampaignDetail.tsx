@@ -295,13 +295,18 @@ const CampaignDetail = () => {
   });
   const hasNegotiationRateio = negRateioExists === true;
   const isNegotiationView = rateioSource === "negotiation" && hasNegotiationRateio && !!winnerSupplierId;
+  const isAdjustmentView = rateioSource === "adjustment" && !!activeAdjustment;
+  const activeAdjustmentId = activeAdjustment?.id ?? null;
   // Only revert to original once the existence query has settled, to avoid
   // racing the snapshot insert triggered by "Editar Rateio da Negociação".
   useEffect(() => {
     if (rateioSource === "negotiation" && !hasNegotiationRateio && !negRateioFetching) {
       setRateioSource("original");
     }
-  }, [rateioSource, hasNegotiationRateio, negRateioFetching]);
+    if (rateioSource === "adjustment" && !activeAdjustment) {
+      setRateioSource("original");
+    }
+  }, [rateioSource, hasNegotiationRateio, negRateioFetching, activeAdjustment]);
 
   const handleCancelNegotiationRateio = useCallback(async () => {
     if (!winnerSupplierId) return;
