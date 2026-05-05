@@ -668,7 +668,7 @@ export function useCampaignStorePieces(campaignId: string | undefined) {
     gcTime: 0,
     queryFn: async () => {
       if (!campaignId) return [];
-      const pageSize = 5000;
+      const pageSize = 1000; // PostgREST server-side max-rows cap
       const rows: CampaignStorePiece[] = [];
 
       for (let from = 0; ; from += pageSize) {
