@@ -2687,22 +2687,22 @@ const CampaignDetail = () => {
                   qtyMap={qtyMap}
                   isNegotiationView={isNegotiationView}
                   negotiationSupplierId={winnerSupplierId}
+                  isAdjustmentView={isAdjustmentView}
+                  adjustmentId={activeAdjustmentId}
                   customFieldLabels={Array.from({ length: 15 }, (_, idx) => {
                     const i = idx + 1;
                     const label = (client as any)?.[`custom_field_${i}_label`];
                     return label ? { key: `custom_field_${i}`, label, index: i } : null;
                   }).filter((x): x is { key: string; label: string; index: number } => x !== null)}
                   onComplete={async () => {
-                    await queryClient.refetchQueries({
-                      queryKey: isNegotiationView
-                        ? ["negotiation_store_pieces", winnerSupplierId]
-                        : ["campaign_store_pieces", campaignId],
-                      exact: true,
-                      type: "active",
-                    });
-                    if (isNegotiationView && winnerSupplierId) {
+                    if (isAdjustmentView && activeAdjustmentId) {
+                      await queryClient.refetchQueries({ queryKey: ["adjustment_store_pieces", activeAdjustmentId], exact: true, type: "active" });
+                    } else if (isNegotiationView && winnerSupplierId) {
+                      await queryClient.refetchQueries({ queryKey: ["negotiation_store_pieces", winnerSupplierId], exact: true, type: "active" });
                       queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] });
                       queryClient.invalidateQueries({ queryKey: ["budget_negotiation_rateio_totals", campaignId] });
+                    } else {
+                      await queryClient.refetchQueries({ queryKey: ["campaign_store_pieces", campaignId], exact: true, type: "active" });
                     }
                   }}
                 />
