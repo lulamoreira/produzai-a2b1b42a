@@ -294,7 +294,7 @@ export default function BudgetSendNegotiatedDialog({
         `• ✅ Valor negociado: *${fmt(t.totalNegotiated)}*\n` +
         `• ${diffLine.replace(/^[^\s]+\s/, (m) => m)}\n\n` +
         `📎 *Planilha completa da proposta:*\n` +
-        `${link.url}\n\n` +
+        `${shortUrl}\n\n` +
         `📄 Arquivo: ${link.name}\n\n` +
         `Por favor, confirme o recebimento e nos avise em caso de qualquer dúvida. 🙌\n` +
         `Agradecemos pela parceria! 🚀\n\n` +
