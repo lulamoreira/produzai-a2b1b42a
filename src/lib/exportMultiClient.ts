@@ -188,21 +188,22 @@ export function parsePiecesImport(file: File): Promise<Array<{ code: number; cat
 
 // ─── Matrix (Store x Pieces + Kits) ─────────────────────
 
-export async function exportMatrix(
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+export async function buildMatrixWorkbook(
   stores: ClientStore[],
   pieces: CampaignPiece[],
-  storePieces: CampaignStorePiece[],
+  storePieces: { store_id: string; piece_id: string; quantity: number }[],
   campaignName: string,
   kits: CampaignKit[] = [],
   kitPieces: CampaignKitPiece[] = [],
   allPieces: CampaignPiece[] = [],
   agencyName?: string,
   clientName?: string,
-) {
+): Promise<{ blob: Blob; fileName: string }> {
   const qtyMap: Record<string, number> = {};
   storePieces.forEach((sp) => { qtyMap[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
 
-  // Build piece map from ALL pieces (including kit_only) for kit sheet lookups
   const pieceMap = new Map((allPieces.length > 0 ? allPieces : pieces).map(p => [p.id, p]));
   const usedSheetNames = new Set(["matriz"]);
   const safeSheetName = (raw: string) => {
@@ -232,7 +233,6 @@ export async function exportMatrix(
       total += qty;
     });
 
-    // Kit columns with sequential codes after pieces
     const maxPieceCode = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;
     kits.forEach((kit, idx) => {
       const kitSeqCode = maxPieceCode + idx + 1;
@@ -254,7 +254,6 @@ export async function exportMatrix(
   const ws = XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb, ws, "Matriz");
 
-  // Individual kit sheets
   const maxPieceCodeForSheets = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;
   kits.forEach((kit, idx) => {
     const kitSeqCode = maxPieceCodeForSheets + idx + 1;
@@ -278,6 +277,33 @@ export async function exportMatrix(
 
   const fileName = buildExportFileName(`Matriz_${campaignName}`, { agencyName, clientName });
   const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+  const blob = new Blob([buffer], { type: XLSX_MIME });
+  return { blob, fileName };
+}
+
+export async function exportMatrix(
+  stores: ClientStore[],
+  pieces: CampaignPiece[],
+  storePieces: CampaignStorePiece[],
+  campaignName: string,
+  kits: CampaignKit[] = [],
+  kitPieces: CampaignKitPiece[] = [],
+  allPieces: CampaignPiece[] = [],
+  agencyName?: string,
+  clientName?: string,
+) {
+  const { blob, fileName } = await buildMatrixWorkbook(
+    stores,
+    pieces,
+    storePieces.map((sp) => ({ store_id: sp.store_id, piece_id: sp.piece_id, quantity: sp.quantity })),
+    campaignName,
+    kits,
+    kitPieces,
+    allPieces,
+    agencyName,
+    clientName,
+  );
+  const buffer = await blob.arrayBuffer();
   await saveXlsxAs(buffer, fileName);
 }
 

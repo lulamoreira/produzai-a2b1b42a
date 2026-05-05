@@ -52,6 +52,7 @@ import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
 import { exportSupplierBudget, type SupplierExportRow } from "@/lib/exportSupplierBudget";
 import BudgetSendClientDialog from "@/components/Budget/BudgetSendClientDialog";
+import BudgetSendNegotiatedDialog from "@/components/Budget/BudgetSendNegotiatedDialog";
 import BudgetWinnerDialog from "@/components/Budget/BudgetWinnerDialog";
 import BudgetNegotiationDialog from "@/components/Budget/BudgetNegotiationDialog";
 
@@ -153,6 +154,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [reopeningSupplierId, setReopeningSupplierId] = useState<string | null>(null);
   const [winnerSupplierId, setWinnerSupplierId] = useState<string | null>(null);
   const [negotiationSupplierId, setNegotiationSupplierId] = useState<string | null>(null);
+  const [sendNegotiatedOpen, setSendNegotiatedOpen] = useState(false);
 
   // ── Editor de "Links do Vencedor" (configuração padrão usada no e-mail de vencedor) ──
   const settingsAny = settings as any;
@@ -1261,6 +1263,17 @@ Qualquer dúvida, estamos à disposição.
                         </>
                       );
                     })()}
+                    {winnerSupplier && (winnerSupplier as any).negotiation_status && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => setSendNegotiatedOpen(true)}
+                        title="Gerar planilha negociada (3 abas) e enviar ao fornecedor"
+                      >
+                        <Send className="w-3 h-3" /> Enviar Proposta Negociada
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setWinnerLinksOpen(true)}>
                       <Pencil className="w-3 h-3" /> Editar
                     </Button>
@@ -2357,6 +2370,30 @@ Qualquer dúvida, estamos à disposição.
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {winnerSupplier && (
+        <BudgetSendNegotiatedDialog
+          open={sendNegotiatedOpen}
+          onOpenChange={setSendNegotiatedOpen}
+          campaignId={campaignId}
+          campaignName={campaignName}
+          agencyName={agencyName}
+          clientName={(clientName as any) || ""}
+          currencyCode={currencyCode}
+          supplier={{
+            id: (winnerSupplier as any).id,
+            company_name: (winnerSupplier as any).company_name,
+            contact_name: (winnerSupplier as any).contact_name,
+            email: (winnerSupplier as any).email ?? null,
+            phone: (winnerSupplier as any).phone ?? null,
+          }}
+          pieces={pieces}
+          kits={kits}
+          kitPieces={kitPieces as any}
+          stores={stores as any}
+          defaultCcEmail={settingsAny?.winner_cc_email ?? null}
+        />
+      )}
     </div>
   );
 }
