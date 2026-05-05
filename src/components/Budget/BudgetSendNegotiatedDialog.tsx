@@ -219,6 +219,8 @@ export default function BudgetSendNegotiatedDialog({
     const tId = toast.loading("Gerando planilha e enviando...");
     try {
       const { link, totals: t } = await buildAndUpload();
+      const diff = t.totalNegotiated - t.totalOriginal;
+      const diffDirection: "up" | "down" | "none" = diff > 0 ? "up" : diff < 0 ? "down" : "none";
       const { error } = await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "negotiation-proposal-to-supplier",
@@ -228,10 +230,12 @@ export default function BudgetSendNegotiatedDialog({
             supplierName: supplier.company_name,
             contactName: supplier.contact_name,
             agencyName,
+            clientName,
             campaignName,
             totalOriginalFormatted: fmt(t.totalOriginal),
             totalNegotiatedFormatted: fmt(t.totalNegotiated),
-            savingsFormatted: fmt(t.savings),
+            differenceFormatted: fmt(Math.abs(diff)),
+            differenceDirection: diffDirection,
             downloadUrls: [link],
           },
         },
@@ -256,11 +260,32 @@ export default function BudgetSendNegotiatedDialog({
     const tId = toast.loading("Gerando planilha...");
     try {
       const { link, totals: t } = await buildAndUpload();
+      const diff = t.totalNegotiated - t.totalOriginal;
+      const diffLine =
+        diff > 0
+          ? `📈 Diferença (para maior): *+${fmt(diff)}*`
+          : diff < 0
+          ? `📉 Diferença (para menor): *-${fmt(Math.abs(diff))}*`
+          : `➖ Sem diferença em relação ao valor original.`;
+
+      const greeting = supplier.contact_name || supplier.company_name;
       const waText =
-        `Prezado(a) ${supplier.contact_name || supplier.company_name}, segue a proposta negociada para a campanha *${campaignName}*:\n\n` +
-        `📊 ${link.name}\n${link.url}\n\n` +
-        `Valor negociado: ${fmt(t.totalNegotiated)}\n` +
-        `Economia: ${fmt(t.savings)}`;
+        `🤝 *Proposta Negociada* 🤝\n\n` +
+        `Olá, *${greeting}*! 👋\n\n` +
+        `Segue a proposta negociada referente à:\n` +
+        `🏢 Cliente: *${clientName}*\n` +
+        `📣 Campanha: *${campaignName}*\n` +
+        `🏛 Agência: ${agencyName}\n\n` +
+        `💰 *Resumo financeiro*\n` +
+        `• Valor original: ${fmt(t.totalOriginal)}\n` +
+        `• ✅ Valor negociado: *${fmt(t.totalNegotiated)}*\n` +
+        `• ${diffLine.replace(/^[^\s]+\s/, (m) => m)}\n\n` +
+        `📎 *Planilha completa da proposta:*\n` +
+        `${link.url}\n\n` +
+        `📄 Arquivo: ${link.name}\n\n` +
+        `Por favor, confirme o recebimento e nos avise em caso de qualquer dúvida. 🙌\n` +
+        `Agradecemos pela parceria! 🚀\n\n` +
+        `— Equipe ${agencyName}`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waText)}`, "_blank");
       toast.success("Mensagem pronta no WhatsApp.", { id: tId });
       onOpenChange(false);
