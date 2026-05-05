@@ -260,6 +260,19 @@ export default function BudgetSendNegotiatedDialog({
     const tId = toast.loading("Gerando planilha...");
     try {
       const { link, totals: t } = await buildAndUpload();
+      // Encurta a URL via TinyURL (fallback para URL original em caso de falha)
+      let shortUrl = link.url;
+      try {
+        const resp = await fetch(
+          `https://tinyurl.com/api-create.php?url=${encodeURIComponent(link.url)}`
+        );
+        if (resp.ok) {
+          const txt = (await resp.text()).trim();
+          if (/^https?:\/\//i.test(txt)) shortUrl = txt;
+        }
+      } catch {
+        /* mantém URL original */
+      }
       const diff = t.totalNegotiated - t.totalOriginal;
       const diffLine =
         diff > 0
@@ -281,7 +294,7 @@ export default function BudgetSendNegotiatedDialog({
         `• ✅ Valor negociado: *${fmt(t.totalNegotiated)}*\n` +
         `• ${diffLine.replace(/^[^\s]+\s/, (m) => m)}\n\n` +
         `📎 *Planilha completa da proposta:*\n` +
-        `${link.url}\n\n` +
+        `${shortUrl}\n\n` +
         `📄 Arquivo: ${link.name}\n\n` +
         `Por favor, confirme o recebimento e nos avise em caso de qualquer dúvida. 🙌\n` +
         `Agradecemos pela parceria! 🚀\n\n` +
