@@ -19,6 +19,7 @@ import {
   buildSupplierBudgetWorkbook,
   type SupplierExportRow,
 } from "@/lib/exportSupplierBudget";
+import { uploadAndSign as sharedUploadAndSign } from "@/lib/budgetEmailUpload";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
