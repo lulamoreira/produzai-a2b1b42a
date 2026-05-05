@@ -75,6 +75,8 @@ interface Props {
   onComplete: () => void | Promise<void>;
   isNegotiationView?: boolean;
   negotiationSupplierId?: string | null;
+  isAdjustmentView?: boolean;
+  adjustmentId?: string | null;
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
