@@ -16,10 +16,12 @@ interface NegotiationProposalProps {
   supplierName?: string
   contactName?: string
   agencyName?: string
+  clientName?: string
   campaignName?: string
   totalOriginalFormatted?: string
   totalNegotiatedFormatted?: string
-  savingsFormatted?: string
+  differenceFormatted?: string
+  differenceDirection?: 'up' | 'down' | 'none'
   downloadUrls?: DownloadLink[]
 }
 
@@ -27,17 +29,29 @@ const NegotiationProposalEmail = ({
   supplierName = 'Fornecedor',
   contactName,
   agencyName = '',
+  clientName = '',
   campaignName = 'Campanha',
   totalOriginalFormatted = '',
   totalNegotiatedFormatted = '',
-  savingsFormatted = '',
+  differenceFormatted = '',
+  differenceDirection = 'none',
   downloadUrls = [],
 }: NegotiationProposalProps) => {
   const greeting = contactName || supplierName
+  const diffLabel =
+    differenceDirection === 'up'
+      ? 'Diferença (para maior)'
+      : differenceDirection === 'down'
+      ? 'Diferença (para menor)'
+      : 'Diferença'
+  const diffColor =
+    differenceDirection === 'up' ? '#2F855A' : differenceDirection === 'down' ? '#C53030' : '#555555'
+  const diffPrefix =
+    differenceDirection === 'up' ? '+' : differenceDirection === 'down' ? '-' : ''
   return (
     <Html lang="pt-BR" dir="ltr">
       <Head />
-      <Preview>Proposta negociada — {campaignName}</Preview>
+      <Preview>Proposta negociada — {clientName ? `${clientName} · ` : ''}{campaignName}</Preview>
       <Body style={main}>
         <Section style={headerDark}>
           <Text style={headerDarkText}>{agencyName || SITE_NAME}</Text>
@@ -50,6 +64,13 @@ const NegotiationProposalEmail = ({
           <Heading style={h1}>📑 Proposta Negociada</Heading>
 
           <Text style={text}>Prezado(a) <strong>{greeting}</strong>,</Text>
+
+          {clientName && (
+            <Section style={clientBox}>
+              <Text style={clientLabel}>Cliente</Text>
+              <Text style={clientName_}>{clientName}</Text>
+            </Section>
+          )}
 
           <Text style={text}>
             Conforme nossa negociação para a campanha <strong>{campaignName}</strong>,
@@ -68,9 +89,9 @@ const NegotiationProposalEmail = ({
                   Valor Negociado: <strong>{totalNegotiatedFormatted}</strong>
                 </Text>
               )}
-              {savingsFormatted && (
-                <Text style={savingsLine}>
-                  💰 Economia: <strong>{savingsFormatted}</strong>
+              {differenceFormatted && differenceDirection !== 'none' && (
+                <Text style={{ ...savingsLine, color: diffColor }}>
+                  {diffLabel}: <strong>{diffPrefix}{differenceFormatted}</strong>
                 </Text>
               )}
             </Section>
