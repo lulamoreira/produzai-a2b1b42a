@@ -256,7 +256,28 @@ export default function BudgetNegotiationDialog({
       t += row.adjusted * row.qty;
     }
     return t;
-  }, [mode, targetNum, autoPreview, adjustedInstallation, adjustedFreight]);
+  }, [mode, autoPreview, adjustedInstallation, adjustedFreight, mode, targetNum]);
+
+  // Rounding residual: when adjusting pieces only, flooring unit prices may
+  // leave a tiny gap below the cap. Push it onto freight so the total hits
+  // the target exactly.
+  const actualPiecesTotal = autoPreview.reduce(
+    (sum, row) => sum + row.adjusted * (effectivePieceTotals[row.pieceId] || 0),
+    0,
+  );
+  const actualTotal =
+    actualPiecesTotal +
+    toNum(supplierEC?.installation_value) +
+    toNum(supplierEC?.freight_value);
+  const residual = targetNum - actualTotal;
+  const applyResidualToFreight =
+    adjustScope === "pieces_only" &&
+    Math.abs(residual) > 0 &&
+    Math.abs(residual) <= 0.10;
+  const adjustedFreightFinal = applyResidualToFreight
+    ? toNum(supplierEC?.freight_value) + residual
+    : adjustedFreight;
+  const adjustedInstallationFinal = adjustedInstallation;
 
   // History
   const { data: history = [] } = useQuery({
