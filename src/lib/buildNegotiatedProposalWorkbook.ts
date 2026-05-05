@@ -3,15 +3,12 @@ import type {
   CampaignKit,
   CampaignKitPiece,
   ClientStore,
+  CampaignPieceLocation,
+  CampaignPieceSubLocation,
 } from "@/hooks/useMultiClientData";
 import { computeSupplierTotal } from "@/lib/computeSupplierTotal";
 import { validateNegotiationRateio } from "@/lib/validateNegotiationRateio";
-import {
-  buildRateioGridBuckets,
-  renderStoreRateioSheet,
-  sanitizeSheetName,
-  type RateioImageCache,
-} from "@/lib/rateioGridShared";
+import { appendMatrixSheets } from "@/lib/exportMatrixExcelJS";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
