@@ -326,12 +326,17 @@ export default function RateioBackupSheet({
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView,
         negotiationSupplierId: negotiationSupplierId || null,
+        isAdjustmentView,
+        adjustmentId: adjustmentId || null,
       });
 
       toast.success(`Rateio restaurado (${upserts.length} atualizações, ${deletes.length} remoções)`);
       qc.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
       if (negotiationSupplierId) {
         qc.invalidateQueries({ queryKey: ["negotiation_store_pieces", negotiationSupplierId] });
+      }
+      if (adjustmentId) {
+        qc.invalidateQueries({ queryKey: ["adjustment_store_pieces", adjustmentId] });
       }
       setRestoreTarget(null);
     } catch (e: any) {
