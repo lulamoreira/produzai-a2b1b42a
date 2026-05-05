@@ -2780,7 +2780,13 @@ const CampaignDetail = () => {
                     );
                     try {
                       if (isAll) {
-                        if (isNegotiationView && winnerSupplierId) {
+                        if (isAdjustmentView && activeAdjustmentId) {
+                          const { error } = await supabase
+                            .from("campaign_adjustment_store_pieces" as never)
+                            .delete()
+                            .eq("adjustment_id", activeAdjustmentId);
+                          if (error) throw error;
+                        } else if (isNegotiationView && winnerSupplierId) {
                           const { error } = await supabase
                             .from("budget_negotiation_store_pieces" as never)
                             .delete()
@@ -2806,7 +2812,14 @@ const CampaignDetail = () => {
                           toast.error("Nenhuma peça válida para zerar.", { id: toastId });
                           return;
                         }
-                        if (isNegotiationView && winnerSupplierId) {
+                        if (isAdjustmentView && activeAdjustmentId) {
+                          const { error } = await supabase
+                            .from("campaign_adjustment_store_pieces" as never)
+                            .delete()
+                            .eq("adjustment_id", activeAdjustmentId)
+                            .in("piece_id", finalPieceIds);
+                          if (error) throw error;
+                        } else if (isNegotiationView && winnerSupplierId) {
                           const { error } = await supabase
                             .from("budget_negotiation_store_pieces" as never)
                             .delete()
@@ -2822,7 +2835,9 @@ const CampaignDetail = () => {
                           if (error) throw error;
                         }
                       }
-                      if (isNegotiationView && winnerSupplierId) {
+                      if (isAdjustmentView && activeAdjustmentId) {
+                        await queryClient.invalidateQueries({ queryKey: ["adjustment_store_pieces", activeAdjustmentId] });
+                      } else if (isNegotiationView && winnerSupplierId) {
                         await queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces", winnerSupplierId] });
                         queryClient.invalidateQueries({ queryKey: ["neg_rateio_exists", winnerSupplierId] });
                       } else {
