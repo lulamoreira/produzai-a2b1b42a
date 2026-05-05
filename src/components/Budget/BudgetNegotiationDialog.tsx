@@ -641,9 +641,15 @@ export default function BudgetNegotiationDialog({
                             <TableCell>Frete</TableCell>
                             <TableCell className="text-right text-muted-foreground">—</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.freight_value))}</TableCell>
-                            <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(adjustedFreight || 0)}</TableCell>
+                            <TableCell className={`text-right font-mono font-semibold ${applyResidualToFreight ? "text-amber-700" : "text-primary"}`}>
+                              {fmtCurrency((applyResidualToFreight ? adjustedFreightFinal : adjustedFreight) || 0)}
+                            </TableCell>
                             <TableCell className="text-right font-mono">
-                              {adjustScope === "pieces_only" ? <Badge variant="outline" className="text-[10px]">🔒 Fixo</Badge> : "—"}
+                              {applyResidualToFreight ? (
+                                <Badge variant="outline" className="border-amber-400 text-amber-700 text-[10px]">Ajuste de arredondamento</Badge>
+                              ) : adjustScope === "pieces_only" ? (
+                                <Badge variant="outline" className="text-[10px]">🔒 Fixo</Badge>
+                              ) : "—"}
                             </TableCell>
                           </TableRow>
                         </>
@@ -654,6 +660,11 @@ export default function BudgetNegotiationDialog({
                 {adjustScope === "pieces_only" && (
                   <div className="text-xs text-muted-foreground italic">
                     Frete + Instalação: {fmtCurrency(fixedCosts)} (fixo) — Ajuste aplicado apenas nas peças.
+                  </div>
+                )}
+                {applyResidualToFreight && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-800 p-2 text-xs">
+                    ⚠️ Diferença de arredondamento de {fmtCurrency(residual)} adicionada ao frete para atingir o teto exato.
                   </div>
                 )}
               </div>
