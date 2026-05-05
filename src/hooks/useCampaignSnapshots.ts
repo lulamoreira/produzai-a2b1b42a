@@ -94,17 +94,9 @@ export function useCampaignSnapshotContext(campaignId?: string, enabled = true) 
       if (piecesRes.error) throw piecesRes.error;
       const kitsRes = await sb.from("campaign_kits").select("*").eq("campaign_id", campaignId!);
       if (kitsRes.error) throw kitsRes.error;
-      const storePiecesAll: any[] = [];
-      {
-        const pageSize = 5000;
-        for (let from = 0; ; from += pageSize) {
-          const { data, error } = await sb.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!).range(from, from + pageSize - 1);
-          if (error) throw error;
-          const page = (data ?? []) as any[];
-          storePiecesAll.push(...page);
-          if (page.length < pageSize) break;
-        }
-      }
+      const storePiecesAll = await supabasePaginate<any>((from, to) =>
+        sb.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!).range(from, to)
+      );
       const storePiecesRes = { data: storePiecesAll, error: null as any };
 
       const storeIds = [
