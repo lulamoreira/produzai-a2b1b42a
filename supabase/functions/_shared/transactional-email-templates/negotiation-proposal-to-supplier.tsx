@@ -126,16 +126,18 @@ const NegotiationProposalEmail = ({
 export const template = {
   component: NegotiationProposalEmail,
   subject: (data: Record<string, any>) =>
-    `📑 ${data.campaignName || 'Campanha'} — Proposta Negociada`,
+    `📑 ${data.clientName ? `${data.clientName} · ` : ''}${data.campaignName || 'Campanha'} — Proposta Negociada`,
   displayName: 'Proposta negociada ao fornecedor',
   previewData: {
     supplierName: 'Gráfica Express',
     contactName: 'João Silva',
     agencyName: 'Studio Design',
+    clientName: 'Cliente Exemplo',
     campaignName: 'Campanha Verão 2026',
     totalOriginalFormatted: 'R$ 480.000,00',
     totalNegotiatedFormatted: 'R$ 449.500,00',
-    savingsFormatted: 'R$ 30.500,00',
+    differenceFormatted: 'R$ 30.500,00',
+    differenceDirection: 'down',
     downloadUrls: [{ name: 'Proposta_Negociada.xlsx', url: 'https://example.com/file.xlsx' }],
   },
 } satisfies TemplateEntry
