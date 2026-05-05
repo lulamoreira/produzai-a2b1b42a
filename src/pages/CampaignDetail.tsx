@@ -279,7 +279,7 @@ const CampaignDetail = () => {
   });
   const winnerSupplierId = winnerNegSupplier?.id ?? null;
   const winnerSupplierName = winnerNegSupplier?.company_name ?? "";
-  const { data: negRateioExists } = useQuery({
+  const { data: negRateioExists, isFetching: negRateioFetching } = useQuery({
     queryKey: ["neg_rateio_exists", winnerSupplierId],
     enabled: !!winnerSupplierId,
     queryFn: async () => {
@@ -292,10 +292,13 @@ const CampaignDetail = () => {
   });
   const hasNegotiationRateio = negRateioExists === true;
   const isNegotiationView = rateioSource === "negotiation" && hasNegotiationRateio && !!winnerSupplierId;
-  // Reset to original if negotiation disappears
+  // Only revert to original once the existence query has settled, to avoid
+  // racing the snapshot insert triggered by "Editar Rateio da Negociação".
   useEffect(() => {
-    if (rateioSource === "negotiation" && !hasNegotiationRateio) setRateioSource("original");
-  }, [rateioSource, hasNegotiationRateio]);
+    if (rateioSource === "negotiation" && !hasNegotiationRateio && !negRateioFetching) {
+      setRateioSource("original");
+    }
+  }, [rateioSource, hasNegotiationRateio, negRateioFetching]);
 
   const handleCancelNegotiationRateio = useCallback(async () => {
     if (!winnerSupplierId) return;

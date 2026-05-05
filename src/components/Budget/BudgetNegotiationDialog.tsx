@@ -286,8 +286,19 @@ export default function BudgetNegotiationDialog({
           .update({ negotiation_status: "pending" } as never)
           .eq("id", supplier.id);
       }
+      // Invalidate dependent queries and wait for the existence query to refetch
+      // so hasNegotiationRateio flips to true before the consumer's useEffect runs.
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["neg_rateio_exists", supplier.id] }),
+        qc.invalidateQueries({ queryKey: ["winner_neg_supplier", campaignId] }),
+        qc.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] }),
+        qc.invalidateQueries({ queryKey: ["negotiation_store_pieces", supplier.id] }),
+      ]);
+      await qc.refetchQueries({ queryKey: ["neg_rateio_exists", supplier.id], exact: true });
       toast.dismiss(TOAST_ID);
       onOpenChange(false);
+      // Small delay to ensure React state propagates before navigation
+      await new Promise((resolve) => setTimeout(resolve, 150));
       onNavigateToRateio?.();
     } catch (e: any) {
       toast.error(e?.message || "Erro ao preparar rateio.", { id: TOAST_ID });
