@@ -69,6 +69,35 @@ export function useUpdateNegotiationStorePiece() {
       if (error) throw error;
       return null;
     },
+    onMutate: async (vars) => {
+      const key = ["negotiation_store_pieces", vars.supplier_id];
+      await qc.cancelQueries({ queryKey: key });
+      const previous = qc.getQueryData<NegotiationStorePiece[]>(key);
+      qc.setQueryData<NegotiationStorePiece[]>(key, (old) => {
+        if (!old) return old;
+        const filtered = old.filter(
+          (r) => !(r.store_id === vars.store_id && r.piece_id === vars.piece_id)
+        );
+        if (vars.quantity > 0) {
+          filtered.push({
+            id: `optimistic-${vars.store_id}-${vars.piece_id}`,
+            supplier_id: vars.supplier_id,
+            campaign_id: vars.campaign_id,
+            store_id: vars.store_id,
+            piece_id: vars.piece_id,
+            quantity: vars.quantity,
+          });
+        }
+        return filtered;
+      });
+      return { previous };
+    },
+    onError: (error: any, vars, context: any) => {
+      if (context?.previous) {
+        qc.setQueryData(["negotiation_store_pieces", vars.supplier_id], context.previous);
+      }
+      toast.error("Erro ao salvar: " + (error?.message || "Tente novamente"));
+    },
     onSettled: (_data, _err, vars) => {
       qc.invalidateQueries({ queryKey: ["negotiation_store_pieces", vars?.supplier_id] });
       if (vars?.supplier_id) {
