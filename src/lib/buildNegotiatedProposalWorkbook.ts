@@ -24,6 +24,8 @@ const RED_BG = "FFFFF0F0";
 const GOLD = "FFC5A55A";
 const RED_FONT = "FFC53030";
 const GREEN_FONT = "FF2F855A";
+const AMBER_BG = "FFFFF3CD";
+const AMBER_FONT = "FF8A6D00";
 
 function moneyFormat(currencyCode: string) {
   if (currencyCode === "USD") return '"US$" #,##0.00;[Red]-"US$" #,##0.00;-';
@@ -294,6 +296,21 @@ export async function buildNegotiatedProposalWorkbook(
   addTotal1("Frete / Despacho", totals.freightNegotiated);
   addTotal1("TOTAL GERAL NEGOCIADO", totals.totalNegotiated, true);
 
+  const freightDelta = totals.freightNegotiated - totals.freightOriginal;
+  const isRoundingResidual = Math.abs(freightDelta) > 0 && Math.abs(freightDelta) < 1.0;
+
+  if (isRoundingResidual) {
+    const noteRow = ws1.addRow([
+      "* Ajuste de arredondamento aplicado ao frete para atingir o teto negociado exato.",
+    ]);
+    ws1.mergeCells(`A${noteRow.number}:F${noteRow.number}`);
+    const nc = noteRow.getCell(1);
+    nc.font = { italic: true, color: { argb: AMBER_FONT }, size: 10 };
+    nc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: AMBER_BG } };
+    nc.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+    noteRow.height = 22;
+  }
+
   ws1.columns = [
     { width: 10 },
     { width: 50 },
@@ -470,7 +487,7 @@ export async function buildNegotiatedProposalWorkbook(
     if ([8, 9, 10].includes(col)) cell.numFmt = money;
   });
 
-  const addExtra = (label: string, o: number, n: number) => {
+  const addExtra = (label: string, o: number, n: number, amberDelta = false) => {
     const d = n - o;
     const r = ws3.addRow([label, "", "", "", "", "", "", o, n, d]);
     r.height = 20;
@@ -479,9 +496,14 @@ export async function buildNegotiatedProposalWorkbook(
       cell.alignment = { vertical: "middle", horizontal: col === 1 ? "left" : "right" };
       if ([8, 9, 10].includes(col)) cell.numFmt = money;
     });
+    if (amberDelta) {
+      const dCell = r.getCell(10);
+      dCell.font = { bold: true, color: { argb: AMBER_FONT } };
+      dCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: AMBER_BG } };
+    }
   };
   addExtra("Instalação", totals.installationOriginal, totals.installationNegotiated);
-  addExtra("Frete / Despacho", totals.freightOriginal, totals.freightNegotiated);
+  addExtra("Frete / Despacho", totals.freightOriginal, totals.freightNegotiated, isRoundingResidual);
 
   const grand = ws3.addRow(["TOTAL GERAL", "", "", "", "", "", "", totals.totalOriginal, totals.totalNegotiated, totals.totalNegotiated - totals.totalOriginal]);
   grand.height = 26;
@@ -491,6 +513,18 @@ export async function buildNegotiatedProposalWorkbook(
     cell.alignment = { vertical: "middle", horizontal: col === 1 ? "left" : "right" };
     if ([8, 9, 10].includes(col)) cell.numFmt = money;
   });
+
+  if (isRoundingResidual) {
+    const noteRow = ws3.addRow([
+      "* Ajuste de arredondamento aplicado ao frete para atingir o teto negociado exato.",
+    ]);
+    ws3.mergeCells(`A${noteRow.number}:J${noteRow.number}`);
+    const nc = noteRow.getCell(1);
+    nc.font = { italic: true, color: { argb: AMBER_FONT }, size: 10 };
+    nc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: AMBER_BG } };
+    nc.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+    noteRow.height = 22;
+  }
 
   ws3.columns = [
     { width: 38 },

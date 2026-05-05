@@ -256,7 +256,28 @@ export default function BudgetNegotiationDialog({
       t += row.adjusted * row.qty;
     }
     return t;
-  }, [mode, targetNum, autoPreview, adjustedInstallation, adjustedFreight]);
+  }, [mode, autoPreview, adjustedInstallation, adjustedFreight, targetNum]);
+
+  // Rounding residual: when adjusting pieces only, flooring unit prices may
+  // leave a tiny gap below the cap. Push it onto freight so the total hits
+  // the target exactly.
+  const actualPiecesTotal = autoPreview.reduce(
+    (sum, row) => sum + row.adjusted * (effectivePieceTotals[row.pieceId] || 0),
+    0,
+  );
+  const actualTotal =
+    actualPiecesTotal +
+    toNum(supplierEC?.installation_value) +
+    toNum(supplierEC?.freight_value);
+  const residual = targetNum - actualTotal;
+  const applyResidualToFreight =
+    adjustScope === "pieces_only" &&
+    Math.abs(residual) > 0 &&
+    Math.abs(residual) <= 0.10;
+  const adjustedFreightFinal = applyResidualToFreight
+    ? toNum(supplierEC?.freight_value) + residual
+    : adjustedFreight;
+  const adjustedInstallationFinal = adjustedInstallation;
 
   // History
   const { data: history = [] } = useQuery({
@@ -398,12 +419,20 @@ export default function BudgetNegotiationDialog({
           { onConflict: "supplier_id,piece_id" }
         );
       }
-      // Update extras (only when adjusting all)
+      // Update extras: when adjusting all, scale both. When pieces_only with a
+      // small rounding residual, push it onto freight so the total hits the cap.
       if (supplierEC && adjustScope === "all") {
         await supabase.from("budget_extra_costs")
           .update({
             adjusted_installation_value: adjustedInstallation,
             adjusted_freight_value: adjustedFreight,
+          } as never)
+          .eq("supplier_id", supplier.id);
+      } else if (supplierEC && adjustScope === "pieces_only" && applyResidualToFreight) {
+        await supabase.from("budget_extra_costs")
+          .update({
+            adjusted_installation_value: toNum(supplierEC.installation_value),
+            adjusted_freight_value: adjustedFreightFinal,
           } as never)
           .eq("supplier_id", supplier.id);
       }
@@ -612,9 +641,15 @@ export default function BudgetNegotiationDialog({
                             <TableCell>Frete</TableCell>
                             <TableCell className="text-right text-muted-foreground">—</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.freight_value))}</TableCell>
-                            <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(adjustedFreight || 0)}</TableCell>
+                            <TableCell className={`text-right font-mono font-semibold ${applyResidualToFreight ? "text-amber-700" : "text-primary"}`}>
+                              {fmtCurrency((applyResidualToFreight ? adjustedFreightFinal : adjustedFreight) || 0)}
+                            </TableCell>
                             <TableCell className="text-right font-mono">
-                              {adjustScope === "pieces_only" ? <Badge variant="outline" className="text-[10px]">🔒 Fixo</Badge> : "—"}
+                              {applyResidualToFreight ? (
+                                <Badge variant="outline" className="border-amber-400 text-amber-700 text-[10px]">Ajuste de arredondamento</Badge>
+                              ) : adjustScope === "pieces_only" ? (
+                                <Badge variant="outline" className="text-[10px]">🔒 Fixo</Badge>
+                              ) : "—"}
                             </TableCell>
                           </TableRow>
                         </>
@@ -625,6 +660,11 @@ export default function BudgetNegotiationDialog({
                 {adjustScope === "pieces_only" && (
                   <div className="text-xs text-muted-foreground italic">
                     Frete + Instalação: {fmtCurrency(fixedCosts)} (fixo) — Ajuste aplicado apenas nas peças.
+                  </div>
+                )}
+                {applyResidualToFreight && (
+                  <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-800 p-2 text-xs">
+                    ⚠️ Diferença de arredondamento de {fmtCurrency(residual)} adicionada ao frete para atingir o teto exato.
                   </div>
                 )}
               </div>
