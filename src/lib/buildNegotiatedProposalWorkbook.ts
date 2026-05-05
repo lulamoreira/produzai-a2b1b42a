@@ -50,6 +50,8 @@ export type NegotiatedProposalParams = {
   agencyName: string;
   clientName: string;
   currencyCode: string;
+  locations?: CampaignPieceLocation[];
+  subLocations?: CampaignPieceSubLocation[];
 };
 
 export type NegotiatedProposalTotals = {
