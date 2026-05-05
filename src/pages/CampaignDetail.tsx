@@ -44,7 +44,9 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle, Database } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle, Database, Layers } from "lucide-react";
+import AdjustmentsTab from "@/components/AdjustmentsTab";
+import { useActiveAdjustment } from "@/hooks/useAdjustments";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -251,6 +253,7 @@ const CampaignDetail = () => {
   const { data: clientStoreModels = [] } = useClientStoreModels(clientId);
   const { data: pieces = [], isLoading: loadingPieces } = useCampaignPieces(campaignId);
   const { data: storePieces = [] } = useCampaignStorePieces(campaignId);
+  const { data: activeAdjustment } = useActiveAdjustment(campaignId);
   const addPiece = useAddCampaignPiece();
   const deletePiece = useDeleteCampaignPiece();
   const updatePiece = useUpdateCampaignPiece();
@@ -1663,6 +1666,7 @@ const CampaignDetail = () => {
                 { key: "stores", label: t("modules.stores"), icon: Store, visible: canViewStores || canViewCampaignStores, color: "#6B4F2E" },
                 { key: "occurrences", label: t("modules.occurrences"), icon: AlertTriangle, visible: lalPerms.ocorrencias.canView, color: "#7A3B2E" },
                 { key: "budgets", label: t("modules.budgets"), icon: DollarSign, visible: isAdmin, color: "#4A5568" },
+                { key: "adjustments", label: "Ajustes", icon: Layers, visible: isAdminOrMaster, color: "#6E5A7A" },
                 { key: "pieces", label: t("modules.pieces"), icon: LayoutList, visible: canViewPieces, color: "#A07850" },
                 { key: "matrix", label: t("modules.matrix"), icon: Grid3X3, visible: canViewCampaignStores, color: "#8C6F4E" },
               ]}
@@ -3425,23 +3429,48 @@ const CampaignDetail = () => {
 
           {/* ─── SECTION: ORÇAMENTOS ─── */}
           {activeSection === "budgets" && (
-            <BudgetTab
-              campaignId={campaignId!}
-              clientId={clientId!}
+            <>
+              {activeAdjustment && (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 flex items-start gap-2 mb-3">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                  <p className="text-xs text-amber-900 dark:text-amber-200">
+                    <strong>Atenção:</strong> Existe um ajuste de mockup ativo (<strong>{activeAdjustment.name}</strong>) para esta campanha.
+                    O orçamento vigente pode ser diferente do original.
+                  </p>
+                </div>
+              )}
+              <BudgetTab
+                campaignId={campaignId!}
+                clientId={clientId!}
+                campaignName={campaign?.name || ""}
+                agencyName={agency?.name || ""}
+                pieces={pieces}
+                kits={kits}
+                kitPieces={kitPieces}
+                qtyMap={qtyMap}
+                stores={stores}
+                onNavigateToRateio={() => {
+                  setRateioSource("negotiation");
+                  setRateioView("planilha");
+                  setActiveSection("matrix");
+                }}
+              />
+            </>
+          )}
+
+          {/* ─── SECTION: AJUSTES DE MOCKUP ─── */}
+          {activeSection === "adjustments" && isAdminOrMaster && campaignId && (
+            <AdjustmentsTab
+              campaignId={campaignId}
               campaignName={campaign?.name || ""}
-              agencyName={agency?.name || ""}
               pieces={pieces}
               kits={kits}
               kitPieces={kitPieces}
-              qtyMap={qtyMap}
+              storePieces={storePieces}
               stores={stores}
-              onNavigateToRateio={() => {
-                setRateioSource("negotiation");
-                setRateioView("planilha");
-                setActiveSection("matrix");
-              }}
             />
           )}
+
 
 
           {/* ─── SECTION: HISTORY ─── */}
