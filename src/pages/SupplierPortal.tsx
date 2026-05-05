@@ -335,7 +335,7 @@ const SupplierPortal = () => {
         // ⚠️ Paginação obrigatória: Supabase limita a 1000 linhas por query.
         // Em campanhas grandes (muitas lojas × peças) isso corta os dados
         // e o total fica errado / só aparecem as primeiras lojas.
-        const PAGE_SIZE = 1000;
+        const PAGE_SIZE = 5000;
         let from = 0;
         const allStorePieces: { piece_id: string; quantity: number; store_id: string }[] = [];
         // eslint-disable-next-line no-constant-condition

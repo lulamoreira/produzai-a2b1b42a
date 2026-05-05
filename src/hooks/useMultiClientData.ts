@@ -666,7 +666,7 @@ export function useCampaignStorePieces(campaignId: string | undefined) {
     queryKey: ["campaign_store_pieces", campaignId],
     queryFn: async () => {
       if (!campaignId) return [];
-      const pageSize = 1000;
+      const pageSize = 5000;
       const rows: CampaignStorePiece[] = [];
 
       for (let from = 0; ; from += pageSize) {

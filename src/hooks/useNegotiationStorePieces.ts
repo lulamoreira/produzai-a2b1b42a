@@ -24,7 +24,7 @@ export function useNegotiationStorePieces(
     enabled: !!supplierId && enabled,
     queryFn: async () => {
       const rows: NegotiationStorePiece[] = [];
-      const pageSize = 1000;
+      const pageSize = 5000;
       for (let from = 0; ; from += pageSize) {
         const { data, error } = await supabase
           .from("budget_negotiation_store_pieces" as never)
@@ -102,7 +102,7 @@ export async function snapshotNegotiationRateio(
   // Fetch current campaign rateio in pages. The API defaults to 1,000 rows;
   // without pagination the negotiation copy can start incomplete.
   const rows: Array<{ store_id: string; piece_id: string; quantity: number }> = [];
-  const pageSize = 1000;
+  const pageSize = 5000;
   for (let from = 0; ; from += pageSize) {
     const { data, error: fetchErr } = await supabase
       .from("campaign_store_pieces")
