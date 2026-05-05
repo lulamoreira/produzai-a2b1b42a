@@ -24,6 +24,8 @@ const RED_BG = "FFFFF0F0";
 const GOLD = "FFC5A55A";
 const RED_FONT = "FFC53030";
 const GREEN_FONT = "FF2F855A";
+const AMBER_BG = "FFFFF3CD";
+const AMBER_FONT = "FF8A6D00";
 
 function moneyFormat(currencyCode: string) {
   if (currencyCode === "USD") return '"US$" #,##0.00;[Red]-"US$" #,##0.00;-';
