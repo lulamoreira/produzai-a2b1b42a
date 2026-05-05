@@ -65,6 +65,9 @@ export default function BudgetSendNegotiatedDialog({
   const [originalSp, setOriginalSp] = useState<NegotiatedProposalParams["originalStorePieces"]>([]);
   const [negotiationSp, setNegotiationSp] = useState<NegotiatedProposalParams["negotiationStorePieces"]>([]);
 
+  const { data: locations = [] } = useCampaignPieceLocations(campaignId);
+  const { data: subLocations = [] } = useCampaignPieceSubLocations(campaignId);
+
   const fmt = (v: number) => formatCurrencyByCode(v, currencyCode);
 
   useEffect(() => {
