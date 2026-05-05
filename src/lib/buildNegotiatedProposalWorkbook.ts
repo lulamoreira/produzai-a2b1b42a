@@ -423,10 +423,32 @@ export async function buildNegotiatedProposalWorkbook(
   }
 
   const totRow = ws3.addRow(["SUBTOTAL ITENS (sem frete/instalação)", "", "", "", "", "", "", totH, totI, totJ]);
-  totRow.height = 24;
+  totRow.height = 22;
   totRow.eachCell({ includeEmpty: true }, (cell, col) => {
     cell.font = { bold: true };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: GOLD } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+    cell.alignment = { vertical: "middle", horizontal: col === 1 ? "left" : "right" };
+    if ([8, 9, 10].includes(col)) cell.numFmt = money;
+  });
+
+  const addExtra = (label: string, o: number, n: number) => {
+    const d = n - o;
+    const r = ws3.addRow([label, "", "", "", "", "", "", o, n, d]);
+    r.height = 20;
+    r.eachCell({ includeEmpty: true }, (cell, col) => {
+      cell.font = { bold: col === 1 };
+      cell.alignment = { vertical: "middle", horizontal: col === 1 ? "left" : "right" };
+      if ([8, 9, 10].includes(col)) cell.numFmt = money;
+    });
+  };
+  addExtra("Instalação", totals.installationOriginal, totals.installationNegotiated);
+  addExtra("Frete / Despacho", totals.freightOriginal, totals.freightNegotiated);
+
+  const grand = ws3.addRow(["TOTAL GERAL", "", "", "", "", "", "", totals.totalOriginal, totals.totalNegotiated, totals.totalNegotiated - totals.totalOriginal]);
+  grand.height = 26;
+  grand.eachCell({ includeEmpty: true }, (cell, col) => {
+    cell.font = { bold: true, color: { argb: WHITE } };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
     cell.alignment = { vertical: "middle", horizontal: col === 1 ? "left" : "right" };
     if ([8, 9, 10].includes(col)) cell.numFmt = money;
   });
