@@ -86,6 +86,7 @@ export default function RateioBackupSheet({
   open, onOpenChange, campaignId, campaignName,
   pieces, kits, kitPieces, stores, qtyMap,
   isNegotiationView, negotiationSupplierId,
+  isAdjustmentView = false, adjustmentId = null,
 }: Props) {
   const qc = useQueryClient();
 
