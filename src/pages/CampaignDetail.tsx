@@ -886,6 +886,30 @@ const CampaignDetail = () => {
       console.log("[CELL][SAVE]", { ...cell, rawValue, qty, isKit: cell.pieceId.startsWith("kit-"), source: isNegotiationView ? "negotiation" : "original" });
     }
 
+    // ─── Adjustment rateio: write to campaign_adjustment_store_pieces ───
+    if (isAdjustmentView && activeAdjustmentId) {
+      if (cell.pieceId.startsWith("kit-")) {
+        const kitId = cell.pieceId.replace("kit-", "");
+        const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
+        for (const kp of piecesInKit) {
+          updateAdjustmentStorePiece.mutate({
+            adjustmentId: activeAdjustmentId,
+            storeId: cell.storeId,
+            pieceId: kp.piece_id,
+            quantity: qty * (kp.quantity || 1),
+          });
+        }
+        return;
+      }
+      updateAdjustmentStorePiece.mutate({
+        adjustmentId: activeAdjustmentId,
+        storeId: cell.storeId,
+        pieceId: cell.pieceId,
+        quantity: qty,
+      });
+      return;
+    }
+
     // ─── Negotiation rateio: write to isolated table for the winning supplier ───
     if (isNegotiationView && winnerSupplierId) {
       if (cell.pieceId.startsWith("kit-")) {
