@@ -950,7 +950,19 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               )}
             </CardContent>
           </Card>
-        )}
+              )}
+
+              {(winnerSupplier as any).negotiation_status && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5 mt-2"
+                  onClick={() => setSendNegotiatedOpen(true)}
+                >
+                  <Send className="w-4 h-4" />
+                  Enviar Proposta Negociada
+                </Button>
+              )}
 
         {/* Budget da Campanha */}
         <Card className="h-full flex flex-col">
