@@ -16,10 +16,12 @@ interface NegotiationProposalProps {
   supplierName?: string
   contactName?: string
   agencyName?: string
+  clientName?: string
   campaignName?: string
   totalOriginalFormatted?: string
   totalNegotiatedFormatted?: string
-  savingsFormatted?: string
+  differenceFormatted?: string
+  differenceDirection?: 'up' | 'down' | 'none'
   downloadUrls?: DownloadLink[]
 }
 
@@ -27,17 +29,29 @@ const NegotiationProposalEmail = ({
   supplierName = 'Fornecedor',
   contactName,
   agencyName = '',
+  clientName = '',
   campaignName = 'Campanha',
   totalOriginalFormatted = '',
   totalNegotiatedFormatted = '',
-  savingsFormatted = '',
+  differenceFormatted = '',
+  differenceDirection = 'none',
   downloadUrls = [],
 }: NegotiationProposalProps) => {
   const greeting = contactName || supplierName
+  const diffLabel =
+    differenceDirection === 'up'
+      ? 'Diferença (para maior)'
+      : differenceDirection === 'down'
+      ? 'Diferença (para menor)'
+      : 'Diferença'
+  const diffColor =
+    differenceDirection === 'up' ? '#2F855A' : differenceDirection === 'down' ? '#C53030' : '#555555'
+  const diffPrefix =
+    differenceDirection === 'up' ? '+' : differenceDirection === 'down' ? '-' : ''
   return (
     <Html lang="pt-BR" dir="ltr">
       <Head />
-      <Preview>Proposta negociada — {campaignName}</Preview>
+      <Preview>Proposta negociada — {clientName ? `${clientName} · ` : ''}{campaignName}</Preview>
       <Body style={main}>
         <Section style={headerDark}>
           <Text style={headerDarkText}>{agencyName || SITE_NAME}</Text>
@@ -50,6 +64,13 @@ const NegotiationProposalEmail = ({
           <Heading style={h1}>📑 Proposta Negociada</Heading>
 
           <Text style={text}>Prezado(a) <strong>{greeting}</strong>,</Text>
+
+          {clientName && (
+            <Section style={clientBox}>
+              <Text style={clientLabel}>Cliente</Text>
+              <Text style={clientName_}>{clientName}</Text>
+            </Section>
+          )}
 
           <Text style={text}>
             Conforme nossa negociação para a campanha <strong>{campaignName}</strong>,
@@ -68,9 +89,9 @@ const NegotiationProposalEmail = ({
                   Valor Negociado: <strong>{totalNegotiatedFormatted}</strong>
                 </Text>
               )}
-              {savingsFormatted && (
-                <Text style={savingsLine}>
-                  💰 Economia: <strong>{savingsFormatted}</strong>
+              {differenceFormatted && differenceDirection !== 'none' && (
+                <Text style={{ ...savingsLine, color: diffColor }}>
+                  {diffLabel}: <strong>{diffPrefix}{differenceFormatted}</strong>
                 </Text>
               )}
             </Section>
@@ -105,16 +126,18 @@ const NegotiationProposalEmail = ({
 export const template = {
   component: NegotiationProposalEmail,
   subject: (data: Record<string, any>) =>
-    `📑 ${data.campaignName || 'Campanha'} — Proposta Negociada`,
+    `📑 ${data.clientName ? `${data.clientName} · ` : ''}${data.campaignName || 'Campanha'} — Proposta Negociada`,
   displayName: 'Proposta negociada ao fornecedor',
   previewData: {
     supplierName: 'Gráfica Express',
     contactName: 'João Silva',
     agencyName: 'Studio Design',
+    clientName: 'Cliente Exemplo',
     campaignName: 'Campanha Verão 2026',
     totalOriginalFormatted: 'R$ 480.000,00',
     totalNegotiatedFormatted: 'R$ 449.500,00',
-    savingsFormatted: 'R$ 30.500,00',
+    differenceFormatted: 'R$ 30.500,00',
+    differenceDirection: 'down',
     downloadUrls: [{ name: 'Proposta_Negociada.xlsx', url: 'https://example.com/file.xlsx' }],
   },
 } satisfies TemplateEntry
@@ -128,6 +151,9 @@ const container = { padding: '28px 24px 20px' }
 const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#1a1a1a', margin: '0 0 20px' }
 const h2 = { fontSize: '16px', fontWeight: 'bold' as const, color: '#1a1a1a', margin: '24px 0 12px' }
 const text = { fontSize: '14px', color: '#333333', lineHeight: '1.6', margin: '0 0 16px' }
+const clientBox = { backgroundColor: '#fffdf7', border: `2px solid ${BRAND}`, borderRadius: '6px', padding: '12px 18px', margin: '0 0 18px' }
+const clientLabel = { fontSize: '11px', color: '#888888', margin: '0 0 4px', letterSpacing: '1px', textTransform: 'uppercase' as const, fontWeight: 'bold' as const }
+const clientName_ = { fontSize: '20px', color: DARK, margin: '0', fontWeight: 'bold' as const, lineHeight: '1.2' }
 const summaryBox = { border: `2px solid ${GOLD}`, borderRadius: '6px', padding: '14px 18px', margin: '8px 0 20px', backgroundColor: '#fffdf7' }
 const summaryLine = { fontSize: '14px', color: '#333333', margin: '0 0 6px', lineHeight: '1.5' }
 const savingsLine = { fontSize: '15px', color: '#2F855A', margin: '8px 0 0', lineHeight: '1.5', fontWeight: 'bold' as const }
