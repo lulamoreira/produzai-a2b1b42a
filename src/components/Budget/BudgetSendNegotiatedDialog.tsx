@@ -34,6 +34,8 @@ interface Props {
   kitPieces: CampaignKitPiece[];
   stores: ClientStore[];
   defaultCcEmail?: string | null;
+  originalTotalOverride?: number | null;
+  negotiatedTotalOverride?: number | null;
 }
 
 export default function BudgetSendNegotiatedDialog({
