@@ -2394,6 +2394,8 @@ Qualquer dúvida, estamos à disposição.
           kitPieces={kitPieces as any}
           stores={stores as any}
           defaultCcEmail={settingsAny?.winner_cc_email ?? null}
+          originalTotalOverride={winnerOriginalTotal}
+          negotiatedTotalOverride={winnerNegotiatedTotal}
         />
       )}
     </div>
