@@ -330,9 +330,13 @@ export async function buildNegotiatedProposalWorkbook(
     negQtyMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity || 0);
   });
 
+  // Exclude pieces that are components of any kit — show only standalone pieces + kits
+  const kitComponentIds = new Set(params.kitPieces.map((kp) => kp.piece_id));
+  const standalonePieces = params.pieces.filter((p) => !kitComponentIds.has(p.id));
+
   await appendMatrixSheets(wb, {
     stores: params.stores,
-    pieces: params.pieces,
+    pieces: standalonePieces,
     qtyMap: negQtyMap,
     campaignName: params.campaignName,
     kits: params.kits,
