@@ -3429,23 +3429,48 @@ const CampaignDetail = () => {
 
           {/* ─── SECTION: ORÇAMENTOS ─── */}
           {activeSection === "budgets" && (
-            <BudgetTab
-              campaignId={campaignId!}
-              clientId={clientId!}
+            <>
+              {activeAdjustment && (
+                <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 flex items-start gap-2 mb-3">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                  <p className="text-xs text-amber-900 dark:text-amber-200">
+                    <strong>Atenção:</strong> Existe um ajuste de mockup ativo (<strong>{activeAdjustment.name}</strong>) para esta campanha.
+                    O orçamento vigente pode ser diferente do original.
+                  </p>
+                </div>
+              )}
+              <BudgetTab
+                campaignId={campaignId!}
+                clientId={clientId!}
+                campaignName={campaign?.name || ""}
+                agencyName={agency?.name || ""}
+                pieces={pieces}
+                kits={kits}
+                kitPieces={kitPieces}
+                qtyMap={qtyMap}
+                stores={stores}
+                onNavigateToRateio={() => {
+                  setRateioSource("negotiation");
+                  setRateioView("planilha");
+                  setActiveSection("matrix");
+                }}
+              />
+            </>
+          )}
+
+          {/* ─── SECTION: AJUSTES DE MOCKUP ─── */}
+          {activeSection === "adjustments" && isAdminOrMaster && campaignId && (
+            <AdjustmentsTab
+              campaignId={campaignId}
               campaignName={campaign?.name || ""}
-              agencyName={agency?.name || ""}
               pieces={pieces}
               kits={kits}
               kitPieces={kitPieces}
-              qtyMap={qtyMap}
+              storePieces={storePieces}
               stores={stores}
-              onNavigateToRateio={() => {
-                setRateioSource("negotiation");
-                setRateioView("planilha");
-                setActiveSection("matrix");
-              }}
             />
           )}
+
 
 
           {/* ─── SECTION: HISTORY ─── */}
