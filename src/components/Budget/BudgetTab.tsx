@@ -950,10 +950,10 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               {(winnerSupplier as any).negotiation_status && (
                 <Button
                   size="sm"
-                  className="w-full gap-2 mt-2 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white border-0 shadow-md hover:shadow-lg transition-all font-semibold"
+                  className="w-full gap-1.5 mt-2 px-2 text-[11px] font-semibold whitespace-nowrap bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white border-0 shadow-md hover:shadow-lg transition-all"
                   onClick={() => setSendNegotiatedOpen(true)}
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3.5 h-3.5 shrink-0" />
                   Enviar Proposta Negociada
                 </Button>
               )}
