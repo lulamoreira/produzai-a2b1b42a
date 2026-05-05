@@ -112,20 +112,14 @@ const ImportMatrixFromCampaignDialog = ({
   const { data: remoteStorePieces = [] } = useQuery({
     queryKey: ["import-matrix-store-pieces", selectedCampaignId],
     queryFn: async () => {
-      const rows: { store_id: string; piece_id: string; quantity: number }[] = [];
-      const pageSize = 5000;
-      for (let from = 0; ; from += pageSize) {
-        const { data, error } = await supabase
-          .from("campaign_store_pieces")
-          .select("store_id, piece_id, quantity")
-          .eq("campaign_id", selectedCampaignId)
-          .range(from, from + pageSize - 1);
-        if (error) throw error;
-        const page = (data ?? []) as { store_id: string; piece_id: string; quantity: number }[];
-        rows.push(...page);
-        if (page.length < pageSize) break;
-      }
-      return rows;
+      return supabasePaginate<{ store_id: string; piece_id: string; quantity: number }>(
+        (from, to) =>
+          supabase
+            .from("campaign_store_pieces")
+            .select("store_id, piece_id, quantity")
+            .eq("campaign_id", selectedCampaignId)
+            .range(from, to) as any
+      );
     },
     enabled: !!selectedCampaignId,
   });
