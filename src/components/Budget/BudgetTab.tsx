@@ -2370,6 +2370,30 @@ Qualquer dúvida, estamos à disposição.
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {winnerSupplier && (
+        <BudgetSendNegotiatedDialog
+          open={sendNegotiatedOpen}
+          onOpenChange={setSendNegotiatedOpen}
+          campaignId={campaignId}
+          campaignName={campaignName}
+          agencyName={agencyName}
+          clientName={(clientName as any) || ""}
+          currencyCode={currencyCode}
+          supplier={{
+            id: (winnerSupplier as any).id,
+            company_name: (winnerSupplier as any).company_name,
+            contact_name: (winnerSupplier as any).contact_name,
+            email: (winnerSupplier as any).email ?? null,
+            phone: (winnerSupplier as any).phone ?? null,
+          }}
+          pieces={pieces}
+          kits={kits}
+          kitPieces={kitPieces as any}
+          stores={stores as any}
+          defaultCcEmail={settingsAny?.winner_cc_email ?? null}
+        />
+      )}
     </div>
   );
 }
