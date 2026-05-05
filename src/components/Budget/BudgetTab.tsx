@@ -1276,17 +1276,6 @@ Qualquer dúvida, estamos à disposição.
                         </>
                       );
                     })()}
-                    {winnerSupplier && (winnerSupplier as any).negotiation_status && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => setSendNegotiatedOpen(true)}
-                        title="Gerar planilha negociada (3 abas) e enviar ao fornecedor"
-                      >
-                        <Send className="w-3 h-3" /> Enviar Proposta Negociada
-                      </Button>
-                    )}
                     <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setWinnerLinksOpen(true)}>
                       <Pencil className="w-3 h-3" /> Editar
                     </Button>
