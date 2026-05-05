@@ -44,6 +44,8 @@ interface Props {
   qtyMap: Record<string, number>; // `${storeId}-${pieceId}` → qty
   isNegotiationView: boolean;
   negotiationSupplierId?: string | null;
+  isAdjustmentView?: boolean;
+  adjustmentId?: string | null;
 }
 
 interface BackupRow {
