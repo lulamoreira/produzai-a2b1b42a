@@ -18,6 +18,8 @@ import {
   type NegotiatedProposalParams,
 } from "@/lib/buildNegotiatedProposalWorkbook";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore } from "@/hooks/useMultiClientData";
+import { validateNegotiationRateio, type RateioValidationResult } from "@/lib/validateNegotiationRateio";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
