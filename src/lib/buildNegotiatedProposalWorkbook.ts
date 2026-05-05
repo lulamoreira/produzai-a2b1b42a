@@ -4,6 +4,7 @@ import type {
   CampaignKitPiece,
   ClientStore,
 } from "@/hooks/useMultiClientData";
+import { computeSupplierTotal } from "@/lib/computeSupplierTotal";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -43,10 +44,6 @@ export type NegotiatedProposalParams = {
   agencyName: string;
   clientName: string;
   currencyCode: string;
-  /** Override autoritativo do total ORIGINAL (já inclui frete + instalação + kits). */
-  originalTotalOverride?: number | null;
-  /** Override autoritativo do total NEGOCIADO (já inclui frete + instalação + kits). */
-  negotiatedTotalOverride?: number | null;
 };
 
 export type NegotiatedProposalTotals = {
@@ -71,18 +68,36 @@ function sumQty(
 export function computeNegotiatedTotals(
   params: NegotiatedProposalParams,
 ): NegotiatedProposalTotals {
-  const priceMap = new Map(params.prices.map((p) => [p.piece_id, p]));
-  let itemsOriginal = 0;
-  let itemsNegotiated = 0;
-  for (const piece of params.pieces) {
-    const pr = priceMap.get(piece.id);
-    if (!pr) continue;
-    const qOrig = sumQty(params.originalStorePieces, piece.id);
-    const qNeg = sumQty(params.negotiationStorePieces, piece.id);
-    itemsOriginal += Number(pr.unit_price || 0) * qOrig;
-    const adj = pr.adjusted_unit_price ?? pr.unit_price;
-    itemsNegotiated += Number(adj || 0) * qNeg;
+  // Aggregate per-piece quantities across all stores
+  const negQtyMap: Record<string, number> = {};
+  for (const sp of params.negotiationStorePieces) {
+    negQtyMap[sp.piece_id] = (negQtyMap[sp.piece_id] || 0) + Number(sp.quantity || 0);
   }
+  const origQtyMap: Record<string, number> = {};
+  for (const sp of params.originalStorePieces) {
+    origQtyMap[sp.piece_id] = (origQtyMap[sp.piece_id] || 0) + Number(sp.quantity || 0);
+  }
+
+  // Build kitPieceTotals — same shape as BudgetTab's memo — for each qty source.
+  const buildKitPieceTotals = (qtyMap: Record<string, number>) => {
+    const out: Record<string, Array<{ kitId: string; pieceId: string; qty: number }>> = {};
+    for (const kit of params.kits) {
+      const components = params.kitPieces.filter((kp) => kp.kit_id === kit.id);
+      if (components.length === 0) continue;
+      const kitQty = Math.min(
+        ...components.map((kp) => Math.floor((qtyMap[kp.piece_id] || 0) / (kp.quantity || 1))),
+      );
+      out[kit.id] = components.map((kp) => ({
+        kitId: kit.id,
+        pieceId: kp.piece_id,
+        qty: kitQty * (kp.quantity || 1),
+      }));
+    }
+    return out;
+  };
+  const kitPieceTotalsOrig = buildKitPieceTotals(origQtyMap);
+  const kitPieceTotalsNeg = buildKitPieceTotals(negQtyMap);
+
   const installationOriginal = Number(params.extraCosts.installation_value || 0);
   const installationNegotiated = Number(
     params.extraCosts.adjusted_installation_value ?? params.extraCosts.installation_value ?? 0,
@@ -91,19 +106,34 @@ export function computeNegotiatedTotals(
   const freightNegotiated = Number(
     params.extraCosts.adjusted_freight_value ?? params.extraCosts.freight_value ?? 0,
   );
-  // Quando temos override autoritativo (vindo do BudgetTab que aplica
-  // expansão de kits + dedup), usamos ele como total geral, e derivamos
-  // itens = total - frete - instalação para manter coerência.
-  const hasOrigOverride = params.originalTotalOverride != null && Number.isFinite(Number(params.originalTotalOverride));
-  const hasNegOverride = params.negotiatedTotalOverride != null && Number.isFinite(Number(params.negotiatedTotalOverride));
-  const totalOriginal = hasOrigOverride
-    ? Number(params.originalTotalOverride)
-    : itemsOriginal + installationOriginal + freightOriginal;
-  const totalNegotiated = hasNegOverride
-    ? Number(params.negotiatedTotalOverride)
-    : itemsNegotiated + installationNegotiated + freightNegotiated;
-  if (hasOrigOverride) itemsOriginal = totalOriginal - installationOriginal - freightOriginal;
-  if (hasNegOverride) itemsNegotiated = totalNegotiated - installationNegotiated - freightNegotiated;
+
+  const totalOriginal = computeSupplierTotal({
+    supplierId: params.supplier.id,
+    pieces: params.pieces,
+    kitPieceTotals: kitPieceTotalsOrig,
+    qtyResolver: (pieceId) => origQtyMap[pieceId] || 0,
+    priceResolver: (_sid, pieceId) => {
+      const pr = params.prices.find((p) => p.piece_id === pieceId);
+      return Number(pr?.unit_price ?? 0);
+    },
+    extraCostResolver: () => ({ installation: installationOriginal, freight: freightOriginal }),
+  });
+
+  const totalNegotiated = computeSupplierTotal({
+    supplierId: params.supplier.id,
+    pieces: params.pieces,
+    kitPieceTotals: kitPieceTotalsNeg,
+    qtyResolver: (pieceId) => negQtyMap[pieceId] || 0,
+    priceResolver: (_sid, pieceId) => {
+      const pr = params.prices.find((p) => p.piece_id === pieceId);
+      return Number(pr?.adjusted_unit_price ?? pr?.unit_price ?? 0);
+    },
+    extraCostResolver: () => ({ installation: installationNegotiated, freight: freightNegotiated }),
+  });
+
+  const itemsOriginal = totalOriginal - installationOriginal - freightOriginal;
+  const itemsNegotiated = totalNegotiated - installationNegotiated - freightNegotiated;
+
   return {
     itemsOriginal,
     itemsNegotiated,
