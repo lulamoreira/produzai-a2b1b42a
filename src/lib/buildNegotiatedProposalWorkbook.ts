@@ -423,6 +423,25 @@ export async function buildNegotiatedProposalWorkbook(
     c.border = { top: { style: "thin", color: { argb: BORDER } }, bottom: { style: "thin", color: { argb: BORDER } }, left: { style: "thin", color: { argb: BORDER } }, right: { style: "thin", color: { argb: BORDER } } };
   });
 
+  // Legenda da coluna "Δ Qtd"
+  const legendRow = ws3.addRow(["Legenda Δ Qtd:", "", "+ Verde = quantidade aumentada (para maior)", "", "", "", "− Vermelho = quantidade reduzida (para menor)"]);
+  ws3.mergeCells(`A${legendRow.number}:B${legendRow.number}`);
+  ws3.mergeCells(`C${legendRow.number}:F${legendRow.number}`);
+  ws3.mergeCells(`G${legendRow.number}:J${legendRow.number}`);
+  legendRow.height = 22;
+  const lc1 = legendRow.getCell(1);
+  lc1.font = { bold: true, color: { argb: DARK } };
+  lc1.alignment = { vertical: "middle", horizontal: "left" };
+  lc1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+  const lc2 = legendRow.getCell(3);
+  lc2.font = { bold: true, color: { argb: WHITE } };
+  lc2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF22C55E" } };
+  lc2.alignment = { vertical: "middle", horizontal: "center" };
+  const lc3 = legendRow.getCell(7);
+  lc3.font = { bold: true, color: { argb: WHITE } };
+  lc3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDC2626" } };
+  lc3.alignment = { vertical: "middle", horizontal: "center" };
+
   let totH = 0;
   let totI = 0;
   let totJ = 0;
