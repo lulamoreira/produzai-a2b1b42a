@@ -52,6 +52,7 @@ import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
 import { exportSupplierBudget, type SupplierExportRow } from "@/lib/exportSupplierBudget";
 import BudgetSendClientDialog from "@/components/Budget/BudgetSendClientDialog";
+import BudgetSendNegotiatedDialog from "@/components/Budget/BudgetSendNegotiatedDialog";
 import BudgetWinnerDialog from "@/components/Budget/BudgetWinnerDialog";
 import BudgetNegotiationDialog from "@/components/Budget/BudgetNegotiationDialog";
 
