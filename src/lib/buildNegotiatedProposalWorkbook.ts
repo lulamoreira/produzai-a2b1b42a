@@ -422,7 +422,7 @@ export async function buildNegotiatedProposalWorkbook(
     if (dTotal !== 0) r.getCell(10).font = { color: { argb: dTotal > 0 ? RED_FONT : GREEN_FONT }, bold: true };
   }
 
-  const totRow = ws3.addRow(["TOTAL GERAL", "", "", "", "", "", "", totH, totI, totJ]);
+  const totRow = ws3.addRow(["SUBTOTAL ITENS (sem frete/instalação)", "", "", "", "", "", "", totH, totI, totJ]);
   totRow.height = 24;
   totRow.eachCell({ includeEmpty: true }, (cell, col) => {
     cell.font = { bold: true };
