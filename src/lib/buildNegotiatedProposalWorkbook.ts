@@ -321,46 +321,30 @@ export async function buildNegotiatedProposalWorkbook(
   ws1.views = [{ state: "frozen", ySplit: 5 }];
 
   // ─────────────────────────────────────────────────────────
-  // SHEETS: Rateio por Loja (one sheet per store, identical
-  // visual format to the standalone Rateio export, but using
-  // the negotiated quantities).
+  // SHEET 2: Rateio (Matriz Lojas x Peças) — same visual layout as
+  // the standalone "Exportar Rateio" export, but using the
+  // negotiated quantities.
   // ─────────────────────────────────────────────────────────
   const negQtyMap: Record<string, number> = {};
   params.negotiationStorePieces.forEach((sp) => {
     negQtyMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity || 0);
   });
 
-  const buckets = buildRateioGridBuckets(
-    params.pieces,
-    params.kits,
-    params.kitPieces,
-    params.stores,
-    negQtyMap,
-    "pieces_and_kits",
-  );
-
-  const usedSheetNames = new Set<string>();
-  usedSheetNames.add("orçamento negociado");
-  usedSheetNames.add("comparativo");
-  const imageCache: RateioImageCache = new Map();
-
-  for (const bucket of buckets) {
-    const ws = wb.addWorksheet(
-      sanitizeSheetName(bucket.store.name || "Loja", usedSheetNames),
-      { views: [{ showGridLines: false }] },
-    );
-    await renderStoreRateioSheet(
-      wb,
-      ws,
-      bucket,
-      {
-        campaignName: params.campaignName,
-        clientName: params.clientName,
-        agencyName: params.agencyName,
-      },
-      imageCache,
-    );
-  }
+  await appendMatrixSheets(wb, {
+    stores: params.stores,
+    pieces: params.pieces,
+    qtyMap: negQtyMap,
+    campaignName: params.campaignName,
+    kits: params.kits,
+    kitPieces: params.kitPieces,
+    locations: params.locations || [],
+    subLocations: params.subLocations || [],
+    agencyName: params.agencyName,
+    clientName: params.clientName,
+    reservedSheetNames: new Set(["orçamento negociado", "comparativo"]),
+    skipDashboard: true,
+    skipKitTabs: true,
+  });
 
   // ─────────────────────────────────────────────────────────
   // SHEET 3: Comparativo
