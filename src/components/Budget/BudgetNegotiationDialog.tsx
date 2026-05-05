@@ -419,12 +419,20 @@ export default function BudgetNegotiationDialog({
           { onConflict: "supplier_id,piece_id" }
         );
       }
-      // Update extras (only when adjusting all)
+      // Update extras: when adjusting all, scale both. When pieces_only with a
+      // small rounding residual, push it onto freight so the total hits the cap.
       if (supplierEC && adjustScope === "all") {
         await supabase.from("budget_extra_costs")
           .update({
             adjusted_installation_value: adjustedInstallation,
             adjusted_freight_value: adjustedFreight,
+          } as never)
+          .eq("supplier_id", supplier.id);
+      } else if (supplierEC && adjustScope === "pieces_only" && applyResidualToFreight) {
+        await supabase.from("budget_extra_costs")
+          .update({
+            adjusted_installation_value: toNum(supplierEC.installation_value),
+            adjusted_freight_value: adjustedFreightFinal,
           } as never)
           .eq("supplier_id", supplier.id);
       }
