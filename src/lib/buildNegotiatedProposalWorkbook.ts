@@ -255,7 +255,7 @@ export async function buildNegotiatedProposalWorkbook(
     ]);
     const bg = evenIdx % 2 === 0 ? WHITE : BEIGE;
     evenIdx++;
-    row.height = 22;
+    // Auto row height — let Excel size based on wrapped content
     row.eachCell({ includeEmpty: true }, (cell, col) => {
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
       cell.alignment = {
