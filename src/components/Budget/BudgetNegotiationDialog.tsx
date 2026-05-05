@@ -256,7 +256,7 @@ export default function BudgetNegotiationDialog({
       t += row.adjusted * row.qty;
     }
     return t;
-  }, [mode, autoPreview, adjustedInstallation, adjustedFreight, mode, targetNum]);
+  }, [mode, autoPreview, adjustedInstallation, adjustedFreight, targetNum]);
 
   // Rounding residual: when adjusting pieces only, flooring unit prices may
   // leave a tiny gap below the cap. Push it onto freight so the total hits
