@@ -407,6 +407,8 @@ export default function AppSidebar() {
                             {CAMPAIGN_MODULE_KEYS.filter(mod => {
                               if (mod.key === "budgets") return false;
                               if (mod.key === "history") return false;
+                              if ((mod as any).adminOnly && !isAdminOrMaster) return false;
+                              if (mod.key === "adjustments") return isAdminOrMaster;
                               return camp.modules.includes(mod.key);
                             }).map((mod) => {
                               const modActive = isCampaignModuleActive(camp.campaignId, mod.key);
