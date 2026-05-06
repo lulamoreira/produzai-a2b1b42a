@@ -1076,8 +1076,8 @@ const ClientDetail = () => {
                     <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setStoreImportOpen(true)}>
                       <Upload className="w-3 h-3" /> Importar
                     </Button>
-                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleReviewStoreCodes}>
-                      <Sparkles className="w-3 h-3" /> Códigos
+                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleReviewStoreCodes} disabled={generatingCodes}>
+                      <Sparkles className={`w-3 h-3 ${generatingCodes ? "animate-pulse" : ""}`} /> {generatingCodes ? "..." : "Códigos"}
                     </Button>
                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleEnrichStores} disabled={enriching}>
                        <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "..." : "Enriquecer"}
