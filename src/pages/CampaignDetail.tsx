@@ -3297,6 +3297,59 @@ const CampaignDetail = () => {
                       <Copy className="w-4 h-4 mr-2" /> {t("pieces.fromCampaign")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={async () => {
+                      const targets = pieces.filter(p => !p.is_mockup);
+                      const targetKits = kits.filter(k => !k.is_mockup);
+                      const total = targets.length + targetKits.length;
+                      if (total === 0) { toast.info("Todas as peças e kits já estão como mockup"); return; }
+                      const toastId = "mark-all-mockup";
+                      toast.loading(`Marcando ${total} item(ns) como mockup...`, { id: toastId });
+                      try {
+                        let done = 0;
+                        for (const p of targets) {
+                          await updatePiece.mutateAsync({ id: p.id, is_mockup: true });
+                          done++;
+                          toast.loading(`Marcando ${done}/${total} como mockup...`, { id: toastId });
+                        }
+                        for (const k of targetKits) {
+                          await updateKit.mutateAsync({ id: k.id, is_mockup: true });
+                          done++;
+                          toast.loading(`Marcando ${done}/${total} como mockup...`, { id: toastId });
+                        }
+                        toast.success(`${total} item(ns) marcados como mockup`, { id: toastId });
+                      } catch (e: any) {
+                        toast.error(`Erro ao marcar como mockup: ${e?.message || e}`, { id: toastId });
+                      }
+                    }}>
+                      <Palette className="w-4 h-4 mr-2 text-amber-600" /> Marcar tudo como mockup
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={async () => {
+                      const targets = pieces.filter(p => p.is_mockup);
+                      const targetKits = kits.filter(k => k.is_mockup);
+                      const total = targets.length + targetKits.length;
+                      if (total === 0) { toast.info("Nenhuma peça ou kit está marcado como mockup"); return; }
+                      const toastId = "unmark-all-mockup";
+                      toast.loading(`Removendo mockup de ${total} item(ns)...`, { id: toastId });
+                      try {
+                        let done = 0;
+                        for (const p of targets) {
+                          await updatePiece.mutateAsync({ id: p.id, is_mockup: false });
+                          done++;
+                          toast.loading(`Removendo mockup ${done}/${total}...`, { id: toastId });
+                        }
+                        for (const k of targetKits) {
+                          await updateKit.mutateAsync({ id: k.id, is_mockup: false });
+                          done++;
+                          toast.loading(`Removendo mockup ${done}/${total}...`, { id: toastId });
+                        }
+                        toast.success(`Mockup removido de ${total} item(ns)`, { id: toastId });
+                      } catch (e: any) {
+                        toast.error(`Erro ao remover mockup: ${e?.message || e}`, { id: toastId });
+                      }
+                    }}>
+                      <Palette className="w-4 h-4 mr-2" /> Remover mockup de todos
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setBulkDeleteOpen(true)} className="text-destructive focus:text-destructive">
                       <Trash2 className="w-4 h-4 mr-2" /> {t("pieces.bulkDelete")}
                     </DropdownMenuItem>
