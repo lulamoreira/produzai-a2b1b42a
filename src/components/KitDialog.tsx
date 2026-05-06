@@ -113,9 +113,9 @@ function KitImageSection({
         <div className="flex gap-2">
           <div className="relative flex-1">
             <input type="file" accept="image/*" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={uploading} />
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20 text-xs text-muted-foreground">
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed transition-colors text-xs text-muted-foreground ${dragActive ? "border-primary bg-primary/10" : "border-border hover:border-primary/50 bg-muted/20"}`}>
               <Upload className="w-3.5 h-3.5" />
-              {uploading ? "Enviando..." : "Foto do kit"}
+              {uploading ? "Enviando..." : dragActive ? "Solte a imagem aqui" : "Foto do kit (clique ou arraste)"}
             </div>
           </div>
           {!showUrlInput ? (
