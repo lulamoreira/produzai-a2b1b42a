@@ -23,7 +23,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil, Layers } from "lucide-react";
 import { useClientSuppliers, useAddClientSupplier, useUpdateClientSupplier, useDeleteClientSupplier, type ClientSupplier } from "@/hooks/useClientSuppliers";
 import { Textarea } from "@/components/ui/textarea";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks/useCampaignFavorites";
@@ -154,6 +154,27 @@ const CAMPAIGN_COLORS = [
   "#1e3a5f", "#334155", "#475569", "#78716c",
 ];
 
+function CampaignActiveAdjustmentBadge({ campaignId }: { campaignId: string }) {
+  const { data: hasActiveAdj } = useQuery({
+    queryKey: ['has_active_adj', campaignId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('campaign_adjustments')
+        .select('id', { count: 'exact', head: true })
+        .eq('campaign_id', campaignId)
+        .eq('status', 'active');
+      return (count || 0) > 0;
+    },
+    staleTime: 60000,
+  });
+  if (!hasActiveAdj) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md border border-amber-400 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+      <Layers className="w-3 h-3" /> Ajuste ativo
+    </span>
+  );
+}
+
 function SortableCampaignCard({
   campaign, canDelete, canEdit, onNavigate, onDelete, onColorChange, isFavorited, onToggleFavorite, showFavorite,
 }: {
@@ -209,6 +230,7 @@ function SortableCampaignCard({
               {campaign.name}
             </h3>
             <span className="badge-base badge-success flex-shrink-0">● {t("clientDashboard.active") || "Ativa"}</span>
+            <CampaignActiveAdjustmentBadge campaignId={campaign.id} />
           </div>
           <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
             {t("clientDashboard.createdAt") || "Criada em"} {new Date(campaign.created_at).toLocaleDateString()}

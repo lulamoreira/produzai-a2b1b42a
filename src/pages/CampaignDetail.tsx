@@ -24,6 +24,7 @@ import { useClientPermission } from "@/hooks/useClientPermission";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useLojaALojaPermissions } from "@/hooks/useLojaALojaPermissions";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -1645,6 +1646,18 @@ const CampaignDetail = () => {
                   <span className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{visiblePieces.length + kits.length}</span>
                   <span className="text-[13px] group-hover:underline" style={{ color: "var(--text-muted)" }}>{t("pieces.registered")}</span>
                 </button>
+                {activeAdjustment && (
+                  <button
+                    onClick={() => setActiveSection("adjustments")}
+                    className="ml-2"
+                    title="Ver ajustes de mockup"
+                  >
+                    <Badge variant="outline" className="border-amber-400 text-amber-700 gap-1 cursor-pointer">
+                      <Layers className="w-3 h-3" />
+                      Ajuste ativo: {activeAdjustment.name}
+                    </Badge>
+                  </button>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {isAdminOrMaster && (
@@ -2271,6 +2284,18 @@ const CampaignDetail = () => {
                     </TabsList>
                   </div>
                   <TabsContent value="planilha" className="flex-1 flex flex-col overflow-hidden mt-0 data-[state=inactive]:hidden">
+                {/* Active adjustment hint */}
+                {activeAdjustment && rateioSource === "original" && (
+                  <div className="border-b border-amber-200 bg-amber-50 dark:bg-amber-900/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                    <Layers className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      Existe um ajuste ativo (<strong>{activeAdjustment.name}</strong>). O rateio original está sendo exibido.{" "}
+                      <button className="underline ml-1" onClick={() => setRateioSource("adjustment")}>
+                        Ver rateio do ajuste
+                      </button>
+                    </span>
+                  </div>
+                )}
                 {/* Negotiation rateio banner + source toggle */}
                 {hasNegotiationRateio && winnerSupplierId && (
                   <div
@@ -3551,6 +3576,7 @@ const CampaignDetail = () => {
                 kitPieces={kitPieces}
                 qtyMap={qtyMap}
                 stores={stores}
+                activeAdjustment={activeAdjustment ? { id: activeAdjustment.id, name: activeAdjustment.name } : null}
                 onNavigateToRateio={() => {
                   setRateioSource("negotiation");
                   setRateioView("planilha");

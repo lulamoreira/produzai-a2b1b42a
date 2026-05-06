@@ -3,7 +3,9 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send } from "lucide-react";
+import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput } from "lucide-react";
+import { formatCurrencyByCode } from "@/lib/countryConfig";
+import AdjustmentRegisterResponseDialog from "./AdjustmentRegisterResponseDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -71,16 +73,23 @@ export default function AdjustmentsTab({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('campaign_adjustment_budget_request' as any)
-        .select('adjustment_id, status, request_sent_at')
+        .select('adjustment_id, status, request_sent_at, response_received_at, adjusted_prices_jsonb')
         .in('adjustment_id', adjustments.map((a) => a.id));
       if (error) throw error;
-      return (data || []) as unknown as { adjustment_id: string; status: string; request_sent_at: string }[];
+      return (data || []) as unknown as {
+        adjustment_id: string;
+        status: string;
+        request_sent_at: string;
+        response_received_at: string | null;
+        adjusted_prices_jsonb: any;
+      }[];
     },
   });
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editingAdjustment, setEditingAdjustment] = useState<CampaignAdjustment | null>(null);
   const [requestDialogAdjustment, setRequestDialogAdjustment] = useState<CampaignAdjustment | null>(null);
+  const [registerResponseAdjustment, setRegisterResponseAdjustment] = useState<CampaignAdjustment | null>(null);
   const defaultName = useMemo(
     () => `Ajuste - ${format(new Date(), "dd/MM/yyyy")}`,
     [createOpen]
@@ -214,18 +223,38 @@ export default function AdjustmentsTab({
                   <p className="text-xs text-muted-foreground whitespace-pre-wrap">{a.notes}</p>
                 )}
                 {req && a.status === "active" && (
-                  <div className="mt-2">
+                  <div className="mt-2 space-y-2">
                     {req.status === "submitted" && (
-                      <Badge variant="outline" className="border-amber-400 text-amber-700">
-                        📤 Reorçamento solicitado em{" "}
-                        {format(new Date(req.request_sent_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      </Badge>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="border-amber-400 text-amber-700">
+                          📤 Reorçamento solicitado em{" "}
+                          {format(new Date(req.request_sent_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setRegisterResponseAdjustment(a)}
+                          className="h-7 text-xs gap-1.5 border-amber-400 text-amber-700 hover:bg-amber-50"
+                        >
+                          <FileInput className="w-3.5 h-3.5" /> Registrar Resposta
+                        </Button>
+                      </div>
                     )}
-                    {req.status === "approved" && (
-                      <Badge variant="outline" className="border-green-400 text-green-700">
-                        ✅ Reorçamento aprovado
-                      </Badge>
-                    )}
+                    {req.status === "approved" && (() => {
+                      const j = (req.adjusted_prices_jsonb || {}) as { prices?: { piece_id: string; new_price: number }[]; installation?: number; freight?: number };
+                      const items = (j.prices || []).length;
+                      return (
+                        <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm">
+                          <div className="font-medium text-green-800">✅ Reorçamento aprovado</div>
+                          <div className="text-green-700 text-xs mt-1">
+                            {items} item(ns) com novo preço · Instalação {formatCurrencyByCode(Number(j.installation || 0), currencyCode)} · Frete {formatCurrencyByCode(Number(j.freight || 0), currencyCode)}
+                            {req.response_received_at && (
+                              <> · Registrado em {format(new Date(req.response_received_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -369,6 +398,17 @@ export default function AdjustmentsTab({
           campaignName={campaignName}
           agencyName={agencyName}
           clientName={clientName}
+          currencyCode={currencyCode}
+        />
+      )}
+
+      {registerResponseAdjustment && (
+        <AdjustmentRegisterResponseDialog
+          open={!!registerResponseAdjustment}
+          onOpenChange={(v) => !v && setRegisterResponseAdjustment(null)}
+          adjustment={registerResponseAdjustment}
+          campaignId={campaignId}
+          campaignName={campaignName}
           currencyCode={currencyCode}
         />
       )}

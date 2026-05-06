@@ -6,7 +6,7 @@ import { supabasePaginate } from "@/lib/supabasePaginate";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -70,6 +70,7 @@ interface BudgetTabProps {
   qtyMap: Record<string, number>;
   stores: { id: string; name: string }[];
   onNavigateToRateio?: () => void;
+  activeAdjustment?: { id: string; name: string } | null;
 }
 
 // ─── Status helpers ──────────────────────────────────────
@@ -89,7 +90,7 @@ function getDisplayStatus(sup: { status: string; locked: boolean | null; submitt
 }
 
 // ─── Main Component ──────────────────────────────────────
-export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio }: BudgetTabProps) {
+export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, activeAdjustment }: BudgetTabProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -898,6 +899,12 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
   return (
     <div className="space-y-6">
+      {activeAdjustment && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800 flex items-center gap-1.5">
+          <Layers className="w-3 h-3" />
+          <span>Ajuste de mockup ativo: <strong>{activeAdjustment.name}</strong>. O orçamento vigente pode ser diferente do original.</span>
+        </div>
+      )}
 
       {/* ═══ KPI CARDS ═══ */}
       <div className={cn("grid grid-cols-1 gap-4 items-stretch", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
