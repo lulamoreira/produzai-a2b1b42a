@@ -899,6 +899,12 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
   return (
     <div className="space-y-6">
+      {activeAdjustment && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800 flex items-center gap-1.5">
+          <Layers className="w-3 h-3" />
+          <span>Ajuste de mockup ativo: <strong>{activeAdjustment.name}</strong>. O orçamento vigente pode ser diferente do original.</span>
+        </div>
+      )}
 
       {/* ═══ KPI CARDS ═══ */}
       <div className={cn("grid grid-cols-1 gap-4 items-stretch", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
