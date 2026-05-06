@@ -209,6 +209,7 @@ function SortableCampaignCard({
               {campaign.name}
             </h3>
             <span className="badge-base badge-success flex-shrink-0">● {t("clientDashboard.active") || "Ativa"}</span>
+            <CampaignActiveAdjustmentBadge campaignId={campaign.id} />
           </div>
           <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
             {t("clientDashboard.createdAt") || "Criada em"} {new Date(campaign.created_at).toLocaleDateString()}
