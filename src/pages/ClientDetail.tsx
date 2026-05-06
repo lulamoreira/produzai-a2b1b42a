@@ -677,6 +677,8 @@ const ClientDetail = () => {
     }
   };
 
+  const [storeImportOpen, setStoreImportOpen] = useState(false);
+
   const handleStoresImport = async (
     rows: Record<string, string>[],
     { updateExisting }: { updateExisting: boolean },
