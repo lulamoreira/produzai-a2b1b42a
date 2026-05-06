@@ -655,7 +655,27 @@ const ClientDetail = () => {
     }
   };
 
-  const [storeImportOpen, setStoreImportOpen] = useState(false);
+  const handleDeleteAllStores = async () => {
+    if (stores.length === 0) return;
+    setBulkDeleting(true);
+    setBulkDeleteProgress({ current: 0, total: stores.length });
+    let failed = 0;
+    for (let i = 0; i < stores.length; i++) {
+      try {
+        await deleteStore.mutateAsync(stores[i].id);
+      } catch {
+        failed++;
+      }
+      setBulkDeleteProgress({ current: i + 1, total: stores.length });
+    }
+    setBulkDeleting(false);
+    setDeleteAllStoresOpen(false);
+    if (failed === 0) {
+      toast.success(`${stores.length} loja(s) excluída(s) com sucesso.`);
+    } else {
+      toast.warning(`${stores.length - failed} excluída(s), ${failed} falharam.`);
+    }
+  };
 
   const handleStoresImport = async (
     rows: Record<string, string>[],
