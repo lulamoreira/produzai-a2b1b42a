@@ -401,6 +401,17 @@ export default function AdjustmentsTab({
           currencyCode={currencyCode}
         />
       )}
+
+      {registerResponseAdjustment && (
+        <AdjustmentRegisterResponseDialog
+          open={!!registerResponseAdjustment}
+          onOpenChange={(v) => !v && setRegisterResponseAdjustment(null)}
+          adjustment={registerResponseAdjustment}
+          campaignId={campaignId}
+          campaignName={campaignName}
+          currencyCode={currencyCode}
+        />
+      )}
     </div>
   );
 }
