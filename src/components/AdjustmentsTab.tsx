@@ -196,7 +196,7 @@ export default function AdjustmentsTab({
                       size="sm"
                       variant="outline"
                       className="h-7 text-xs gap-1"
-                      onClick={() => toast.info("Edição detalhada chega na próxima fase.")}
+                      onClick={() => setEditingAdjustment(a)}
                     >
                       <Eye className="w-3.5 h-3.5" /> Editar
                     </Button>
@@ -225,7 +225,7 @@ export default function AdjustmentsTab({
                       size="sm"
                       variant="outline"
                       className="h-7 text-xs gap-1"
-                      onClick={() => toast.info("Visualização detalhada chega na próxima fase.")}
+                      onClick={() => setEditingAdjustment(a)}
                     >
                       <Eye className="w-3.5 h-3.5" /> Ver detalhes
                     </Button>
@@ -245,7 +245,7 @@ export default function AdjustmentsTab({
                     size="sm"
                     variant="outline"
                     className="h-7 text-xs gap-1"
-                    onClick={() => toast.info("Visualização detalhada chega na próxima fase.")}
+                    onClick={() => setEditingAdjustment(a)}
                   >
                     <Eye className="w-3.5 h-3.5" /> Ver detalhes
                   </Button>
