@@ -223,18 +223,37 @@ export default function AdjustmentsTab({
                   <p className="text-xs text-muted-foreground whitespace-pre-wrap">{a.notes}</p>
                 )}
                 {req && a.status === "active" && (
-                  <div className="mt-2">
+                  <div className="mt-2 space-y-2">
                     {req.status === "submitted" && (
-                      <Badge variant="outline" className="border-amber-400 text-amber-700">
-                        📤 Reorçamento solicitado em{" "}
-                        {format(new Date(req.request_sent_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      </Badge>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="outline" className="border-amber-400 text-amber-700">
+                          📤 Reorçamento solicitado em{" "}
+                          {format(new Date(req.request_sent_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setRegisterResponseAdjustment(a)}
+                          className="h-7 text-xs gap-1.5 border-amber-400 text-amber-700 hover:bg-amber-50"
+                        >
+                          <FileInput className="w-3.5 h-3.5" /> Registrar Resposta
+                        </Button>
+                      </div>
                     )}
-                    {req.status === "approved" && (
-                      <Badge variant="outline" className="border-green-400 text-green-700">
-                        ✅ Reorçamento aprovado
-                      </Badge>
-                    )}
+                    {req.status === "approved" && (() => {
+                      const j = (req.adjusted_prices_jsonb || {}) as { prices?: { piece_id: string; new_price: number }[]; installation?: number; freight?: number };
+                      const newTotalRaw =
+                        (j.prices || []).reduce((s, p) => s + Number(p.new_price || 0), 0) +
+                        Number(j.installation || 0) + Number(j.freight || 0);
+                      return (
+                        <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm">
+                          <div className="font-medium text-green-800">✅ Reorçamento aprovado</div>
+                          <div className="text-green-700 text-xs mt-1">
+                            Novo total estimado (preços unitários + extras): {formatCurrencyByCode(newTotalRaw, currencyCode)}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
