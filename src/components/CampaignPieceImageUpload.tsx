@@ -17,17 +17,16 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
   const [open, setOpen] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const updateImage = useUpdateCampaignPieceImage();
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = "";
-
+  const uploadFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Arquivo inválido. Envie uma imagem.");
+      return;
+    }
     setUploading(true);
     try {
-      // Generates 3 optimized 1:1 variants (thumb/report/full) and uploads
-      // them under a hash-based path so identical images dedupe automatically.
       const uploaded = await uploadPieceImageVariants(file);
       await updateImage.mutateAsync({
         pieceId: piece.id,
@@ -45,6 +44,20 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    await uploadFile(file);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) await uploadFile(file);
   };
 
 
@@ -77,7 +90,12 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
         <DialogHeader>
           <DialogTitle className="font-display">Imagem - {piece.name}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div
+          className="space-y-4"
+          onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={handleDrop}
+        >
           {piece.image_url && (
             <div className="relative">
               <img
@@ -109,10 +127,10 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   disabled={uploading}
                 />
-                <div className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20">
+                <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed transition-colors ${dragActive ? "border-primary bg-primary/10" : "border-border hover:border-primary/50 bg-muted/20"}`}>
                   <Upload className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    {uploading ? "Comprimindo e enviando..." : "Clique ou arraste (será comprimida)"}
+                    {uploading ? "Comprimindo e enviando..." : dragActive ? "Solte a imagem aqui" : "Clique ou arraste (será comprimida)"}
                   </span>
                 </div>
               </div>

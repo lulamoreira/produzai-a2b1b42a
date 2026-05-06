@@ -40,10 +40,13 @@ function KitImageSection({
   const [uploading, setUploading] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const uploadFile = async (file: File) => {
+    if (!file || !file.type.startsWith("image/")) {
+      toast.error("Arquivo inválido. Envie uma imagem.");
+      return;
+    }
     setUploading(true);
     try {
       const compressed = await compressImage(file, 800, 0.6);
@@ -54,11 +57,26 @@ function KitImageSection({
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
       onImageUpdated(urlData.publicUrl);
+      toast.success("Imagem do kit atualizada!");
     } catch (err: any) {
       toast.error("Erro ao enviar imagem: " + err.message);
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await uploadFile(file);
+    e.target.value = "";
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    if (!canEdit) return;
+    const file = e.dataTransfer.files?.[0];
+    if (file) await uploadFile(file);
   };
 
   const handleUrlSubmit = () => {
@@ -69,23 +87,35 @@ function KitImageSection({
   };
 
   return (
-    <div className="space-y-2">
+    <div
+      className="space-y-2"
+      onDragOver={(e) => { if (canEdit) { e.preventDefault(); setDragActive(true); } }}
+      onDragLeave={() => setDragActive(false)}
+      onDrop={handleDrop}
+    >
       {imageUrl ? (
-        <div className="relative">
+        <div className={`relative rounded-lg ${dragActive ? "ring-2 ring-primary" : ""}`}>
           <img src={imageUrl} alt={kitName} loading="lazy" decoding="async" className="w-full h-32 object-contain rounded-lg border border-border bg-muted/30" />
           {canEdit && (
-            <Button size="sm" variant="destructive" className="absolute top-1 right-1 h-6 text-[10px] px-2" onClick={() => onImageUpdated(null)}>
-              <X className="w-3 h-3 mr-1" /> Remover
-            </Button>
+            <>
+              <label className="absolute inset-0 cursor-pointer rounded-lg flex items-center justify-center bg-black/0 hover:bg-black/40 transition-colors text-white text-xs opacity-0 hover:opacity-100">
+                <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" disabled={uploading} />
+                <span className="flex items-center gap-1"><Upload className="w-3.5 h-3.5" /> {uploading ? "Enviando..." : "Trocar (clique ou arraste)"}</span>
+              </label>
+              <Button size="sm" variant="destructive" className="absolute top-1 right-1 h-6 text-[10px] px-2" onClick={() => onImageUpdated(null)}>
+                <X className="w-3 h-3 mr-1" /> Remover
+              </Button>
+            </>
           )}
+          {dragActive && <div className="absolute inset-0 rounded-lg bg-primary/10 border-2 border-dashed border-primary pointer-events-none" />}
         </div>
       ) : canEdit ? (
         <div className="flex gap-2">
           <div className="relative flex-1">
             <input type="file" accept="image/*" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={uploading} />
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20 text-xs text-muted-foreground">
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed transition-colors text-xs text-muted-foreground ${dragActive ? "border-primary bg-primary/10" : "border-border hover:border-primary/50 bg-muted/20"}`}>
               <Upload className="w-3.5 h-3.5" />
-              {uploading ? "Enviando..." : "Foto do kit"}
+              {uploading ? "Enviando..." : dragActive ? "Solte a imagem aqui" : "Foto do kit (clique ou arraste)"}
             </div>
           </div>
           {!showUrlInput ? (
@@ -436,9 +466,11 @@ export function KitDetailDialog({
     toast.success("Peça atualizada!");
   };
 
-  const handlePieceImageUpload = async (pieceId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !onUpdatePiece) return;
+  const uploadPieceFile = async (pieceId: string, file: File) => {
+    if (!file || !file.type.startsWith("image/") || !onUpdatePiece) {
+      if (file && !file.type.startsWith("image/")) toast.error("Arquivo inválido. Envie uma imagem.");
+      return;
+    }
     try {
       const compressed = await compressImage(file, 800, 0.6);
       const path = `campaign-piece-${pieceId}-${Date.now()}.jpg`;
@@ -450,6 +482,18 @@ export function KitDetailDialog({
     } catch (err: any) {
       toast.error("Erro: " + err.message);
     }
+  };
+
+  const handlePieceImageUpload = async (pieceId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await uploadPieceFile(pieceId, file);
+    e.target.value = "";
+  };
+
+  const handlePieceImageDrop = async (pieceId: string, e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) await uploadPieceFile(pieceId, file);
   };
 
   const handleRemovePieceImage = async (pieceId: string) => {
@@ -726,7 +770,11 @@ export function KitDetailDialog({
                       <Input value={editForm.installation_instructions} onChange={(e) => setEditForm(f => ({ ...f, installation_instructions: e.target.value }))} className="h-7 text-xs" />
                     </div>
                     {/* Piece image in edit mode */}
-                    <div className="flex items-center gap-2">
+                    <div
+                      className="flex items-center gap-2"
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => handlePieceImageDrop(p.id, e)}
+                    >
                       {p.image_url && (
                         <div className="relative">
                           <img src={getThumbnailUrl(p.image_url, 150)} alt={p.name} loading="lazy" decoding="async" className="w-16 h-16 object-contain rounded border border-border" />
@@ -738,7 +786,7 @@ export function KitDetailDialog({
                       <div className="relative">
                         <input type="file" accept="image/*" onChange={(e) => handlePieceImageUpload(p.id, e)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                         <div className="flex items-center gap-1 px-2 py-1 rounded border border-dashed border-border text-[10px] text-muted-foreground hover:border-primary/50">
-                          <Image className="w-3 h-3" /> {p.image_url ? "Trocar" : "Foto"}
+                          <Image className="w-3 h-3" /> {p.image_url ? "Trocar (clique ou arraste)" : "Foto (clique ou arraste)"}
                         </div>
                       </div>
                     </div>

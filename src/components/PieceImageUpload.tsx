@@ -16,17 +16,13 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
   const [open, setOpen] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const updateImage = useUpdatePieceImage();
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = "";
-
+  const uploadFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
     setUploading(true);
     try {
-      // Generates 3 optimized 1:1 variants and uploads them under a hash-based
-      // path (auto-dedupes identical images across pieces / campaigns).
       const uploaded = await uploadPieceImageVariants(file);
       await updateImage.mutateAsync({
         pieceId: piece.id,
@@ -44,6 +40,20 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    await uploadFile(file);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) await uploadFile(file);
   };
 
   const handleUrlSubmit = async () => {
@@ -75,7 +85,12 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
         <DialogHeader>
           <DialogTitle className="font-display">Imagem - {piece.name}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div
+          className="space-y-4"
+          onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={handleDrop}
+        >
           {piece.image_url && (
             <div className="relative">
               <img
@@ -105,10 +120,10 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   disabled={uploading}
                 />
-                <div className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20">
+                <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed transition-colors ${dragActive ? "border-primary bg-primary/10" : "border-border hover:border-primary/50 bg-muted/20"}`}>
                   <Upload className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    {uploading ? "Enviando..." : "Clique ou arraste um arquivo"}
+                    {uploading ? "Enviando..." : dragActive ? "Solte a imagem aqui" : "Clique ou arraste um arquivo"}
                   </span>
                 </div>
               </div>
