@@ -188,7 +188,9 @@ export default function AdjustmentsTab({
         </div>
       ) : (
         <div className="space-y-2">
-          {adjustments.map((a) => (
+          {adjustments.map((a) => {
+            const req = budgetRequests.find((r) => r.adjustment_id === a.id);
+            return (
             <div
               key={a.id}
               className="rounded-lg border border-border bg-card p-3 flex items-start justify-between gap-3 flex-wrap"
@@ -210,6 +212,21 @@ export default function AdjustmentsTab({
                 </p>
                 {a.notes && (
                   <p className="text-xs text-muted-foreground whitespace-pre-wrap">{a.notes}</p>
+                )}
+                {req && a.status === "active" && (
+                  <div className="mt-2">
+                    {req.status === "submitted" && (
+                      <Badge variant="outline" className="border-amber-400 text-amber-700">
+                        📤 Reorçamento solicitado em{" "}
+                        {format(new Date(req.request_sent_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </Badge>
+                    )}
+                    {req.status === "approved" && (
+                      <Badge variant="outline" className="border-green-400 text-green-700">
+                        ✅ Reorçamento aprovado
+                      </Badge>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
@@ -254,6 +271,14 @@ export default function AdjustmentsTab({
                     </Button>
                     <Button
                       size="sm"
+                      variant="default"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => setRequestDialogAdjustment(a)}
+                    >
+                      <Send className="w-3.5 h-3.5" /> Solicitar Reorçamento
+                    </Button>
+                    <Button
+                      size="sm"
                       variant="outline"
                       className="h-7 text-xs gap-1"
                       onClick={() => handleSupersede(a)}
@@ -275,7 +300,8 @@ export default function AdjustmentsTab({
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
