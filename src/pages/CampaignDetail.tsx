@@ -3699,39 +3699,48 @@ const CampaignDetail = () => {
         onUpdateKitPiece={async (update) => { await updateKitPiece.mutateAsync(update); }}
         onReorderKitPieces={async (updates) => { await reorderKitPieces.mutateAsync(updates); }}
         onDuplicatePiece={async (piece) => {
+          const toastId = `dup-kpiece-${piece.id}`;
           const origOrder = piece.display_order;
           const maxCode = pieces.length > 0 ? Math.max(...pieces.map(p => p.code)) : 0;
-          // Shift all pieces and kits after the original down by 1
-          for (const p of pieces.filter(p => p.display_order > origOrder)) {
-            await supabase.from("campaign_pieces").update({ display_order: p.display_order + 1 }).eq("id", p.id);
-          }
-          for (const k of kits.filter(k => k.display_order > origOrder)) {
-            await supabase.from("campaign_kits").update({ display_order: k.display_order + 1 }).eq("id", k.id);
-          }
-          const newPiece = await addPiece.mutateAsync({
-            campaign_id: campaignId,
-            code: maxCode + 1,
-            category: piece.category,
-            name: `${piece.name} - Cópia`,
-            size: piece.size,
-            store_category: piece.store_category || undefined,
-            specification: piece.specification,
-            installation_instructions: piece.installation_instructions,
-            kit_only: piece.kit_only,
-            is_mockup: piece.is_mockup,
-            display_order: origOrder + 1,
-            image_url: piece.image_url || undefined,
-          });
-          // If the piece is in a kit, also add the duplicated piece to the same kit
-          if (viewKitDetail && newPiece) {
-            const kitPieceEntry = kitPieces.find(kp => kp.piece_id === piece.id && kp.kit_id === viewKitDetail.id);
-            if (kitPieceEntry) {
-              await addKitPiece.mutateAsync({ kit_id: viewKitDetail.id, piece_id: newPiece.id, quantity: kitPieceEntry.quantity });
+          const shiftPieces = pieces.filter(p => p.display_order > origOrder);
+          const shiftKits = kits.filter(k => k.display_order > origOrder);
+          try {
+            toast.loading(`Duplicando peça "${piece.name}"… reorganizando ${shiftPieces.length + shiftKits.length} item(s)`, { id: toastId });
+            for (const p of shiftPieces) {
+              await supabase.from("campaign_pieces").update({ display_order: p.display_order + 1 }).eq("id", p.id);
             }
+            for (const k of shiftKits) {
+              await supabase.from("campaign_kits").update({ display_order: k.display_order + 1 }).eq("id", k.id);
+            }
+            toast.loading(`Criando cópia da peça "${piece.name}"…`, { id: toastId });
+            const newPiece = await addPiece.mutateAsync({
+              campaign_id: campaignId,
+              code: maxCode + 1,
+              category: piece.category,
+              name: `${piece.name} - Cópia`,
+              size: piece.size,
+              store_category: piece.store_category || undefined,
+              specification: piece.specification,
+              installation_instructions: piece.installation_instructions,
+              kit_only: piece.kit_only,
+              is_mockup: piece.is_mockup,
+              display_order: origOrder + 1,
+              image_url: piece.image_url || undefined,
+            });
+            // If the piece is in a kit, also add the duplicated piece to the same kit
+            if (viewKitDetail && newPiece) {
+              const kitPieceEntry = kitPieces.find(kp => kp.piece_id === piece.id && kp.kit_id === viewKitDetail.id);
+              if (kitPieceEntry) {
+                toast.loading(`Vinculando cópia ao kit "${viewKitDetail.name}"…`, { id: toastId });
+                await addKitPiece.mutateAsync({ kit_id: viewKitDetail.id, piece_id: newPiece.id, quantity: kitPieceEntry.quantity });
+              }
+            }
+            queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+            queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
+            toast.success("Peça duplicada com sucesso!", { id: toastId });
+          } catch (e: any) {
+            toast.error(`Erro ao duplicar peça: ${e?.message || e}`, { id: toastId });
           }
-          queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
-          queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
-          toast.success("Peça duplicada com sucesso!");
         }}
       />
 
