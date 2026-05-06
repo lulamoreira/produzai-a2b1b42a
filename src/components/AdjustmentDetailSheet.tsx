@@ -63,7 +63,7 @@ export default function AdjustmentDetailSheet({
     enabled: open,
     queryFn: async () => {
       return supabasePaginate<any>((from, to) =>
-        supabase.from("store_pieces").select("piece_id, store_id, quantity").eq("campaign_id", campaignId).range(from, to) as any
+        (supabase.from("store_pieces") as any).select("piece_id, store_id, quantity").eq("campaign_id", campaignId).range(from, to)
       );
     },
   });
