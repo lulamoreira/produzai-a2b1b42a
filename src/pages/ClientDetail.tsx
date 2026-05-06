@@ -1111,6 +1111,16 @@ const ClientDetail = () => {
               </div>
             )}
 
+            {generatingCodes && (
+              <div className="mb-4 space-y-1">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Gerando códigos... ({codesProgress.current}/{codesProgress.total})</span>
+                  <span>{codesProgress.total > 0 ? Math.round((codesProgress.current / codesProgress.total) * 100) : 0}%</span>
+                </div>
+                <Progress value={codesProgress.total > 0 ? (codesProgress.current / codesProgress.total) * 100 : 0} className="h-2" />
+              </div>
+            )}
+
             {bulkDeleting && (
               <div className="mb-4 space-y-1">
                 <div className="flex items-center justify-between text-xs text-destructive">
