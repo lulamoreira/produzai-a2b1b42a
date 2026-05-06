@@ -2653,7 +2653,14 @@ const CampaignDetail = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-56">
                         {/* Export group */}
-                        <DropdownMenuItem onClick={() => { void exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name); }}>
+                        <DropdownMenuItem onClick={async () => {
+                          const toastId = "export-matrix";
+                          toast.loading("Gerando planilha do rateio...", { id: toastId });
+                          try {
+                            await exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name);
+                            toast.success("Planilha do rateio exportada!", { id: toastId });
+                          } catch (e: any) { toast.error(`Erro ao exportar: ${e?.message || e}`, { id: toastId }); }
+                        }}>
                           <Download className="w-4 h-4 mr-2" />
                           {t("common.export")} {t("modules.matrix")}
                         </DropdownMenuItem>
