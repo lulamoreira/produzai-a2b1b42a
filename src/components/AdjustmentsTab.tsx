@@ -300,6 +300,16 @@ export default function AdjustmentsTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {editingAdjustment && (
+        <AdjustmentDetailSheet
+          open={!!editingAdjustment}
+          onOpenChange={(v) => !v && setEditingAdjustment(null)}
+          adjustment={editingAdjustment}
+          campaignId={campaignId}
+          campaignName={campaignName}
+        />
+      )}
     </div>
   );
 }
