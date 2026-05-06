@@ -2284,6 +2284,18 @@ const CampaignDetail = () => {
                     </TabsList>
                   </div>
                   <TabsContent value="planilha" className="flex-1 flex flex-col overflow-hidden mt-0 data-[state=inactive]:hidden">
+                {/* Active adjustment hint */}
+                {activeAdjustment && rateioSource === "original" && (
+                  <div className="border-b border-amber-200 bg-amber-50 dark:bg-amber-900/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                    <Layers className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      Existe um ajuste ativo (<strong>{activeAdjustment.name}</strong>). O rateio original está sendo exibido.{" "}
+                      <button className="underline ml-1" onClick={() => setRateioSource("adjustment")}>
+                        Ver rateio do ajuste
+                      </button>
+                    </span>
+                  </div>
+                )}
                 {/* Negotiation rateio banner + source toggle */}
                 {hasNegotiationRateio && winnerSupplierId && (
                   <div
