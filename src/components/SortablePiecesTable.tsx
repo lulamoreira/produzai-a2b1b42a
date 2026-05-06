@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { GripVertical, Edit3, Trash2, CheckSquare, Package, Palette, Copy } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
+import PieceImageDropZone from "@/components/PieceImageDropZone";
 
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import type { CampaignPiece, ClientStore, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
