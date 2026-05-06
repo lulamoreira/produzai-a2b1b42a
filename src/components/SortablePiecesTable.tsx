@@ -365,7 +365,7 @@ export default function SortablePiecesTable({
               <TableHead className="w-[70px]">Cód.</TableHead>
               <TableHead className="hidden sm:table-cell">Localização</TableHead>
               <TableHead>Nome</TableHead>
-              <TableHead className="hidden md:table-cell">Medidas</TableHead>
+              <TableHead className="hidden md:table-cell w-[140px] min-w-[140px]">Medidas</TableHead>
               <TableHead className="hidden lg:table-cell">Modelo</TableHead>
               <TableHead className="hidden lg:table-cell">Especificação</TableHead>
               <TableHead className="hidden xl:table-cell">Instalação</TableHead>
