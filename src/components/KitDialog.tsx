@@ -400,6 +400,7 @@ export function KitDetailDialog({
   const [editingKitName, setEditingKitName] = useState(false);
   const [kitNameInput, setKitNameInput] = useState("");
   const [addPieceSearch, setAddPieceSearch] = useState("");
+  const [dragOverPieceId, setDragOverPieceId] = useState<string | null>(null);
   const [localImageUrl, setLocalImageUrl] = useState<string | null | undefined>(undefined);
   const [localKitName, setLocalKitName] = useState<string | undefined>(undefined);
   const [localCategory, setLocalCategory] = useState<string | null | undefined>(undefined);
