@@ -800,13 +800,22 @@ export function KitDetailDialog({
               }
 
               return (
-                <div key={kp.id} className={`flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 rounded-lg border ${idx % 2 === 0 ? 'bg-muted/20 border-border' : 'bg-primary/10 border-primary/20'}`}>
+                <div
+                  key={kp.id}
+                  className={`flex flex-col sm:flex-row sm:items-center gap-3 px-4 py-3 rounded-lg border transition-all ${dragOverPieceId === p.id ? 'border-primary border-dashed bg-primary/10 ring-2 ring-primary/30' : idx % 2 === 0 ? 'bg-muted/20 border-border' : 'bg-primary/10 border-primary/20'}`}
+                  onDragOver={canEdit && onUpdatePiece ? (e) => { e.preventDefault(); setDragOverPieceId(p.id); } : undefined}
+                  onDragLeave={canEdit && onUpdatePiece ? () => setDragOverPieceId(null) : undefined}
+                  onDrop={canEdit && onUpdatePiece ? async (e) => { setDragOverPieceId(null); await handlePieceImageDrop(p.id, e); } : undefined}
+                >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <PieceThumbnail imageUrl={p.image_url} name={p.name} size="lg" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-primary">#{p.code}</span>
                         <span className="font-medium text-sm break-words">{p.name}</span>
+                        {dragOverPieceId === p.id && (
+                          <span className="text-[10px] text-primary font-medium">Solte para {p.image_url ? 'substituir' : 'adicionar'} imagem</span>
+                        )}
                       </div>
                       <p className="text-[11px] text-muted-foreground">{p.category} · {p.size || "—"}</p>
                       <p className="text-[10px] text-muted-foreground break-words">{p.specification}</p>
