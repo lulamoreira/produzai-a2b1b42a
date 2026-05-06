@@ -178,7 +178,7 @@ function SortableRow({
       )}
       <TableCell>
         <div className="flex items-center gap-2">
-          <PieceThumbnail imageUrl={piece.image_url} name={piece.name} />
+          <PieceImageDropZone piece={piece} canEdit={canEditPieces} />
           <span className="font-bold text-primary">{piece.code}</span>
         </div>
       </TableCell>
