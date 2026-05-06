@@ -417,6 +417,9 @@ const ClientDetail = () => {
   const [editStoreForm, setEditStoreForm] = useState({ ...emptyStoreForm });
   const [editStoreId, setEditStoreId] = useState<string | null>(null);
   const [deleteStoreDialogOpen, setDeleteStoreDialogOpen] = useState(false);
+  const [deleteAllStoresOpen, setDeleteAllStoresOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkDeleteProgress, setBulkDeleteProgress] = useState({ current: 0, total: 0 });
   const { isAdminOrMaster } = useUserRole();
 
   // Custom field labels
