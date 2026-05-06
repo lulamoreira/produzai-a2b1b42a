@@ -466,9 +466,11 @@ export function KitDetailDialog({
     toast.success("Peça atualizada!");
   };
 
-  const handlePieceImageUpload = async (pieceId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !onUpdatePiece) return;
+  const uploadPieceFile = async (pieceId: string, file: File) => {
+    if (!file || !file.type.startsWith("image/") || !onUpdatePiece) {
+      if (file && !file.type.startsWith("image/")) toast.error("Arquivo inválido. Envie uma imagem.");
+      return;
+    }
     try {
       const compressed = await compressImage(file, 800, 0.6);
       const path = `campaign-piece-${pieceId}-${Date.now()}.jpg`;
@@ -480,6 +482,18 @@ export function KitDetailDialog({
     } catch (err: any) {
       toast.error("Erro: " + err.message);
     }
+  };
+
+  const handlePieceImageUpload = async (pieceId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await uploadPieceFile(pieceId, file);
+    e.target.value = "";
+  };
+
+  const handlePieceImageDrop = async (pieceId: string, e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) await uploadPieceFile(pieceId, file);
   };
 
   const handleRemovePieceImage = async (pieceId: string) => {
