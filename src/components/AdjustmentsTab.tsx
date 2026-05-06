@@ -1,7 +1,9 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -19,6 +21,7 @@ import {
   type AdjustmentStatus,
 } from "@/hooks/useAdjustments";
 import AdjustmentDetailSheet from "./AdjustmentDetailSheet";
+import AdjustmentBudgetRequestDialog from "./AdjustmentBudgetRequestDialog";
 
 interface AdjustmentsTabProps {
   campaignId: string;
@@ -28,6 +31,9 @@ interface AdjustmentsTabProps {
   kitPieces: any[];
   storePieces: any[];
   stores: any[];
+  agencyName: string;
+  clientName: string;
+  currencyCode: string;
 }
 
 function StatusBadge({ status }: { status: AdjustmentStatus }) {
