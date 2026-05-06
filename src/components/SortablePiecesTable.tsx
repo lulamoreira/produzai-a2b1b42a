@@ -190,7 +190,7 @@ function SortableRow({
           </span>
         </button>
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{piece.size || "—"}</TableCell>
+      <TableCell className="text-sm text-muted-foreground hidden md:table-cell w-[140px] min-w-[140px] whitespace-nowrap">{piece.size || "—"}</TableCell>
       <TableCell className="hidden lg:table-cell">
         {piece.store_category ? (
           <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{piece.store_category}</span>
