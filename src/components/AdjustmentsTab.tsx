@@ -73,10 +73,16 @@ export default function AdjustmentsTab({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('campaign_adjustment_budget_request' as any)
-        .select('adjustment_id, status, request_sent_at')
+        .select('adjustment_id, status, request_sent_at, response_received_at, adjusted_prices_jsonb')
         .in('adjustment_id', adjustments.map((a) => a.id));
       if (error) throw error;
-      return (data || []) as unknown as { adjustment_id: string; status: string; request_sent_at: string }[];
+      return (data || []) as unknown as {
+        adjustment_id: string;
+        status: string;
+        request_sent_at: string;
+        response_received_at: string | null;
+        adjusted_prices_jsonb: any;
+      }[];
     },
   });
 
