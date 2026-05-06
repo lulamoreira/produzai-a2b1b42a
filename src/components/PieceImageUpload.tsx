@@ -120,10 +120,10 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   disabled={uploading}
                 />
-                <div className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20">
+                <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed transition-colors ${dragActive ? "border-primary bg-primary/10" : "border-border hover:border-primary/50 bg-muted/20"}`}>
                   <Upload className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    {uploading ? "Enviando..." : "Clique ou arraste um arquivo"}
+                    {uploading ? "Enviando..." : dragActive ? "Solte a imagem aqui" : "Clique ou arraste um arquivo"}
                   </span>
                 </div>
               </div>
