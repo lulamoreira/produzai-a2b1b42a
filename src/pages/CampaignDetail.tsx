@@ -382,32 +382,41 @@ const CampaignDetail = () => {
     { updateExisting }: { updateExisting: boolean },
   ) => {
     if (!campaignId) return;
-    let added = 0, updated = 0;
-    for (const row of rows) {
-      const item = {
-        name: row.name ?? "",
-        code: parseInt(row.code ?? "0", 10) || 0,
-        category: row.category || "",
-        size: row.size || "",
-        specification: row.specification || "Vide Book/Manual",
-        store_category: row.store_category || null,
-        installation_instructions: row.installation_instructions || "Sem informações específicas",
-        sub_location: row.sub_location || null,
-        kit_only: ["true", "1", "sim", "yes"].includes(String(row.kit_only ?? "").toLowerCase()),
-      };
-      const existing = pieces.find(p => p.name.toLowerCase() === item.name.toLowerCase());
-      if (existing && updateExisting) {
-        await updatePiece.mutateAsync({ id: existing.id, ...item } as any);
-        updated++;
-      } else {
-        await addPiece.mutateAsync({ campaign_id: campaignId, ...item } as any);
-        added++;
+    const total = rows.length;
+    const toastId = "pieces-import";
+    toast.loading(`Importando ${total} peça(s)...`, { id: toastId });
+    let added = 0, updated = 0, processed = 0;
+    try {
+      for (const row of rows) {
+        const item = {
+          name: row.name ?? "",
+          code: parseInt(row.code ?? "0", 10) || 0,
+          category: row.category || "",
+          size: row.size || "",
+          specification: row.specification || "Vide Book/Manual",
+          store_category: row.store_category || null,
+          installation_instructions: row.installation_instructions || "Sem informações específicas",
+          sub_location: row.sub_location || null,
+          kit_only: ["true", "1", "sim", "yes"].includes(String(row.kit_only ?? "").toLowerCase()),
+        };
+        const existing = pieces.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+        if (existing && updateExisting) {
+          await updatePiece.mutateAsync({ id: existing.id, ...item } as any);
+          updated++;
+        } else {
+          await addPiece.mutateAsync({ campaign_id: campaignId, ...item } as any);
+          added++;
+        }
+        processed++;
+        toast.loading(`Importando ${processed}/${total} peça(s)...`, { id: toastId });
       }
+      const parts: string[] = [];
+      if (added > 0) parts.push(`${added} adicionada(s)`);
+      if (updated > 0) parts.push(`${updated} atualizada(s)`);
+      toast.success(parts.length > 0 ? parts.join(", ") + "!" : "Nenhuma alteração.", { id: toastId });
+    } catch (e: any) {
+      toast.error(`Erro ao importar: ${e?.message || e}`, { id: toastId });
     }
-    const parts: string[] = [];
-    if (added > 0) parts.push(`${added} adicionada(s)`);
-    if (updated > 0) parts.push(`${updated} atualizada(s)`);
-    if (parts.length > 0) toast.success(parts.join(", ") + "!");
   };
 
   // Fetch agency color for header gradient
@@ -824,16 +833,24 @@ const CampaignDetail = () => {
       toast.info("Todas as peças já possuem código.");
       return;
     }
+    const total = piecesWithoutCode.length;
+    const toastId = "review-piece-codes";
+    toast.loading(`Revisando códigos de ${total} peça(s)...`, { id: toastId });
     const usedNumbers = new Set<number>(pieces.filter((p) => p.code && p.code > 0).map((p) => p.code));
     let count = 0;
-    for (const piece of piecesWithoutCode) {
-      let seq = 1;
-      while (usedNumbers.has(seq)) seq++;
-      usedNumbers.add(seq);
-      await updatePiece.mutateAsync({ id: piece.id, code: seq });
-      count++;
+    try {
+      for (const piece of piecesWithoutCode) {
+        let seq = 1;
+        while (usedNumbers.has(seq)) seq++;
+        usedNumbers.add(seq);
+        await updatePiece.mutateAsync({ id: piece.id, code: seq });
+        count++;
+        toast.loading(`Revisando códigos ${count}/${total}...`, { id: toastId });
+      }
+      toast.success(`${count} peça(s) receberam código automaticamente.`, { id: toastId });
+    } catch (e: any) {
+      toast.error(`Erro ao revisar códigos: ${e?.message || e}`, { id: toastId });
     }
-    toast.success(`${count} peça(s) receberam código automaticamente.`);
   };
 
   const focusEditingCell = useCallback((cell: { storeId: string; pieceId: string } | null) => {
@@ -1137,61 +1154,78 @@ const CampaignDetail = () => {
       bucket.forEach((b) => finalSequence.push({ id: b.id, type: b.type }));
     });
 
+    const toastId = "order-by-location";
+    const totalOps = finalSequence.length + finalSequence.filter(i => i.type === "kit").reduce((acc, i) => acc + kitPieces.filter(kp => kp.kit_id === i.id).length, 0);
+    toast.loading(`Aplicando ordem a ${totalOps} item(ns)...`, { id: toastId });
+
     // Persist new display_order (1-indexed) to DB, only when changed
     let reorderCount = 0;
-    for (let i = 0; i < finalSequence.length; i++) {
-      const item = finalSequence[i];
-      const newOrder = i + 1;
-      if (item.type === "piece") {
-        const p = visiblePieces.find((x) => x.id === item.id);
-        if (p && p.display_order !== newOrder) {
-          await supabase.from("campaign_pieces").update({ display_order: newOrder }).eq("id", item.id);
-          reorderCount++;
+    let processed = 0;
+    try {
+      for (let i = 0; i < finalSequence.length; i++) {
+        const item = finalSequence[i];
+        const newOrder = i + 1;
+        if (item.type === "piece") {
+          const p = visiblePieces.find((x) => x.id === item.id);
+          if (p && p.display_order !== newOrder) {
+            await supabase.from("campaign_pieces").update({ display_order: newOrder }).eq("id", item.id);
+            reorderCount++;
+          }
+        } else {
+          const k = kits.find((x) => x.id === item.id);
+          if (k && k.display_order !== newOrder) {
+            await supabase.from("campaign_kits").update({ display_order: newOrder }).eq("id", item.id);
+            reorderCount++;
+          }
         }
-      } else {
-        const k = kits.find((x) => x.id === item.id);
-        if (k && k.display_order !== newOrder) {
-          await supabase.from("campaign_kits").update({ display_order: newOrder }).eq("id", item.id);
-          reorderCount++;
-        }
+        processed++;
+        toast.loading(`Reordenando ${processed}/${totalOps}...`, { id: toastId });
       }
-    }
 
-    // Recodificar sequencialmente (mesma lógica de handleRecodificar, mas usando a finalSequence em memória)
-    let code = 1;
-    let recodeCount = 0;
-    for (const item of finalSequence) {
-      if (item.type === "piece") {
-        const piece = visiblePieces.find((p) => p.id === item.id);
-        if (piece && piece.code !== code) {
-          await supabase.from("campaign_pieces").update({ code }).eq("id", item.id);
-          recodeCount++;
-        }
-        code++;
-      } else {
-        const kit = kits.find((k) => k.id === item.id);
-        if (kit && kit.code !== code) {
-          await supabase.from("campaign_kits").update({ code }).eq("id", item.id);
-          recodeCount++;
-        }
-        // Recodificar as peças do kit sequencialmente a partir do código do kit + 1
-        const kitPiecesForKit = kitPieces.filter((kp) => kp.kit_id === item.id);
-        let kitPieceCode = code + 1;
-        for (const kp of kitPiecesForKit) {
-          const piece = kitOnlyPieces.find((p) => p.id === kp.piece_id);
-          if (piece && piece.code !== kitPieceCode) {
-            await supabase.from("campaign_pieces").update({ code: kitPieceCode }).eq("id", kp.piece_id);
+      // Recodificar sequencialmente
+      let code = 1;
+      let recodeCount = 0;
+      processed = 0;
+      for (const item of finalSequence) {
+        if (item.type === "piece") {
+          const piece = visiblePieces.find((p) => p.id === item.id);
+          if (piece && piece.code !== code) {
+            await supabase.from("campaign_pieces").update({ code }).eq("id", item.id);
             recodeCount++;
           }
-          kitPieceCode++;
+          code++;
+          processed++;
+          toast.loading(`Recodificando ${processed}/${totalOps}...`, { id: toastId });
+        } else {
+          const kit = kits.find((k) => k.id === item.id);
+          if (kit && kit.code !== code) {
+            await supabase.from("campaign_kits").update({ code }).eq("id", item.id);
+            recodeCount++;
+          }
+          processed++;
+          toast.loading(`Recodificando ${processed}/${totalOps}...`, { id: toastId });
+          const kitPiecesForKit = kitPieces.filter((kp) => kp.kit_id === item.id);
+          let kitPieceCode = code + 1;
+          for (const kp of kitPiecesForKit) {
+            const piece = kitOnlyPieces.find((p) => p.id === kp.piece_id);
+            if (piece && piece.code !== kitPieceCode) {
+              await supabase.from("campaign_pieces").update({ code: kitPieceCode }).eq("id", kp.piece_id);
+              recodeCount++;
+            }
+            kitPieceCode++;
+            processed++;
+            toast.loading(`Recodificando ${processed}/${totalOps}...`, { id: toastId });
+          }
+          code = kitPieceCode;
         }
-        code = kitPieceCode;
       }
-    }
 
-    queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
-    queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
-    toast.success(`Ordem aplicada! ${reorderCount} item(ns) reordenado(s) e ${recodeCount} código(s) atualizado(s).`);
+      queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
+      toast.success(`Ordem aplicada! ${reorderCount} item(ns) reordenado(s) e ${recodeCount} código(s) atualizado(s).`, { id: toastId });
+    } catch (e: any) {
+      toast.error(`Erro ao aplicar ordem: ${e?.message || e}`, { id: toastId });
+    }
   }, [campaignId, locationItemsForOrdering, visiblePieces, kits, kitPieces, kitOnlyPieces, queryClient]);
 
   const handleRecodificar = async () => {
@@ -1200,44 +1234,57 @@ const CampaignDetail = () => {
       ...kits.map(k => ({ type: "kit" as const, id: k.id, display_order: k.display_order })),
     ].sort((a, b) => a.display_order - b.display_order);
 
+    const toastId = "recodificar";
+    const totalItems = allItems.length + kits.reduce((acc, k) => acc + kitPieces.filter(kp => kp.kit_id === k.id).length, 0);
+    toast.loading(`Recodificando ${totalItems} item(ns)...`, { id: toastId });
+
     let code = 1;
     let count = 0;
-    for (const item of allItems) {
-      if (item.type === "piece") {
-        const piece = visiblePieces.find(p => p.id === item.id);
-        if (piece && piece.code !== code) {
-          await supabase.from("campaign_pieces").update({ code }).eq("id", item.id);
-          count++;
-        }
-      } else {
-        const kit = kits.find(k => k.id === item.id);
-        if (kit && kit.code !== code) {
-          await supabase.from("campaign_kits").update({ code }).eq("id", item.id);
-          count++;
-        }
-        // Recodificar as peças do kit sequencialmente a partir do código do kit + 1
-        const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === item.id);
-        let kitPieceCode = code + 1;
-        for (const kp of kitPiecesForKit) {
-          const piece = kitOnlyPieces.find(p => p.id === kp.piece_id);
-          if (piece && piece.code !== kitPieceCode) {
-            await supabase.from("campaign_pieces").update({ code: kitPieceCode }).eq("id", kp.piece_id);
+    let processed = 0;
+    try {
+      for (const item of allItems) {
+        if (item.type === "piece") {
+          const piece = visiblePieces.find(p => p.id === item.id);
+          if (piece && piece.code !== code) {
+            await supabase.from("campaign_pieces").update({ code }).eq("id", item.id);
             count++;
           }
-          kitPieceCode++;
+          processed++;
+          toast.loading(`Recodificando ${processed}/${totalItems}...`, { id: toastId });
+        } else {
+          const kit = kits.find(k => k.id === item.id);
+          if (kit && kit.code !== code) {
+            await supabase.from("campaign_kits").update({ code }).eq("id", item.id);
+            count++;
+          }
+          processed++;
+          toast.loading(`Recodificando ${processed}/${totalItems}...`, { id: toastId });
+          const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === item.id);
+          let kitPieceCode = code + 1;
+          for (const kp of kitPiecesForKit) {
+            const piece = kitOnlyPieces.find(p => p.id === kp.piece_id);
+            if (piece && piece.code !== kitPieceCode) {
+              await supabase.from("campaign_pieces").update({ code: kitPieceCode }).eq("id", kp.piece_id);
+              count++;
+            }
+            kitPieceCode++;
+            processed++;
+            toast.loading(`Recodificando ${processed}/${totalItems}...`, { id: toastId });
+          }
+          code = kitPieceCode;
+          continue;
         }
-        // Avançar o código para depois das peças do kit
-        code = kitPieceCode;
-        continue;
+        code++;
       }
-      code++;
-    }
-    queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
-    queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
-    if (count > 0) {
-      toast.success(`${count} código(s) atualizado(s) sequencialmente!`);
-    } else {
-      toast.info("Os códigos já estão em ordem sequencial.");
+      queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
+      if (count > 0) {
+        toast.success(`${count} código(s) atualizado(s) sequencialmente!`, { id: toastId });
+      } else {
+        toast.info("Os códigos já estão em ordem sequencial.", { id: toastId });
+      }
+    } catch (e: any) {
+      toast.error(`Erro ao recodificar: ${e?.message || e}`, { id: toastId });
     }
   };
 
@@ -2606,7 +2653,14 @@ const CampaignDetail = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-56">
                         {/* Export group */}
-                        <DropdownMenuItem onClick={() => { void exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name); }}>
+                        <DropdownMenuItem onClick={async () => {
+                          const toastId = "export-matrix";
+                          toast.loading("Gerando planilha do rateio...", { id: toastId });
+                          try {
+                            await exportMatrix(activeFilteredStores, matrixPieces, storePieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name);
+                            toast.success("Planilha do rateio exportada!", { id: toastId });
+                          } catch (e: any) { toast.error(`Erro ao exportar: ${e?.message || e}`, { id: toastId }); }
+                        }}>
                           <Download className="w-4 h-4 mr-2" />
                           {t("common.export")} {t("modules.matrix")}
                         </DropdownMenuItem>
@@ -2655,14 +2709,23 @@ const CampaignDetail = () => {
                       <input id="matrix-import-input" type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file || !campaignId) return;
+                        const toastId = "matrix-import";
+                        toast.loading("Lendo planilha...", { id: toastId });
                         try {
                           const items = await parseMatrixImport(file, pieces, stores);
-                          if (items.length === 0) { toast.error(t("matrix.noDataFound")); return; }
+                          if (items.length === 0) { toast.error(t("matrix.noDataFound"), { id: toastId }); e.target.value = ""; return; }
+                          const total = items.length;
+                          let processed = 0;
+                          toast.loading(`Importando ${total} quantidade(s)...`, { id: toastId });
                           for (const item of items) {
                             await updateStorePiece.mutateAsync({ campaignId, storeId: item.storeId, pieceId: item.pieceId, quantity: item.quantity });
+                            processed++;
+                            if (processed % 10 === 0 || processed === total) {
+                              toast.loading(`Importando ${processed}/${total} quantidade(s)...`, { id: toastId });
+                            }
                           }
-                          toast.success(t("matrix.quantitiesImported", { count: items.length }));
-                        } catch { toast.error(t("matrix.errorImport")); }
+                          toast.success(t("matrix.quantitiesImported", { count: items.length }), { id: toastId });
+                        } catch { toast.error(t("matrix.errorImport"), { id: toastId }); }
                         e.target.value = "";
                       }} />
                     )}
@@ -3275,7 +3338,14 @@ const CampaignDetail = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
+                    <DropdownMenuItem onClick={async () => {
+                      const toastId = "export-pieces";
+                      toast.loading("Gerando planilha de peças...", { id: toastId });
+                      try {
+                        await exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name);
+                        toast.success("Planilha de peças exportada!", { id: toastId });
+                      } catch (e: any) { toast.error(`Erro ao exportar: ${e?.message || e}`, { id: toastId }); }
+                    }}>
                       <Download className="w-4 h-4 mr-2" /> {t("common.export")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setPieceImportOpen(true)}>
