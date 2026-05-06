@@ -3576,6 +3576,7 @@ const CampaignDetail = () => {
                 kitPieces={kitPieces}
                 qtyMap={qtyMap}
                 stores={stores}
+                activeAdjustment={activeAdjustment ? { id: activeAdjustment.id, name: activeAdjustment.name } : null}
                 onNavigateToRateio={() => {
                   setRateioSource("negotiation");
                   setRateioView("planilha");
