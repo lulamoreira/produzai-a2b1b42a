@@ -88,13 +88,7 @@ function SortableRow({
         )}
         <TableCell>
           <div className="flex items-center gap-2">
-            {kit.image_url ? (
-              <img src={getThumbnailUrl(kit.image_url, 80)} alt={kit.name} loading="lazy" decoding="async" className="w-8 h-8 rounded-lg object-cover border border-primary/20" />
-            ) : (
-              <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Package className="w-4 h-4 text-primary" />
-              </div>
-            )}
+            <KitImageDropZone kit={kit} canEdit={canEditPieces} />
             <span className="font-bold text-primary">{kit.code}</span>
           </div>
         </TableCell>
