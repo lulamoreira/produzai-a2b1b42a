@@ -1076,6 +1076,9 @@ const ClientDetail = () => {
                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleEnrichStores} disabled={enriching}>
                        <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "..." : "Enriquecer"}
                      </Button>
+                     <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setStoreModelDialogOpen(true)}>
+                       <Tag className="w-3 h-3" /> Modelos
+                     </Button>
                      {isAdminOrMaster && stores.length > 0 && (
                        <Button
                          size="sm"
