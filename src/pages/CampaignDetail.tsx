@@ -3338,7 +3338,14 @@ const CampaignDetail = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuItem onClick={() => exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name)}>
+                    <DropdownMenuItem onClick={async () => {
+                      const toastId = "export-pieces";
+                      toast.loading("Gerando planilha de peças...", { id: toastId });
+                      try {
+                        await exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name);
+                        toast.success("Planilha de peças exportada!", { id: toastId });
+                      } catch (e: any) { toast.error(`Erro ao exportar: ${e?.message || e}`, { id: toastId }); }
+                    }}>
                       <Download className="w-4 h-4 mr-2" /> {t("common.export")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setPieceImportOpen(true)}>
