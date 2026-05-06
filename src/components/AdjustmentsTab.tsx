@@ -359,6 +359,19 @@ export default function AdjustmentsTab({
           campaignName={campaignName}
         />
       )}
+
+      {requestDialogAdjustment && (
+        <AdjustmentBudgetRequestDialog
+          open={!!requestDialogAdjustment}
+          onOpenChange={(v) => !v && setRequestDialogAdjustment(null)}
+          adjustment={requestDialogAdjustment}
+          campaignId={campaignId}
+          campaignName={campaignName}
+          agencyName={agencyName}
+          clientName={clientName}
+          currencyCode={currencyCode}
+        />
+      )}
     </div>
   );
 }
