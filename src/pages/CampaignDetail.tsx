@@ -1208,44 +1208,57 @@ const CampaignDetail = () => {
       ...kits.map(k => ({ type: "kit" as const, id: k.id, display_order: k.display_order })),
     ].sort((a, b) => a.display_order - b.display_order);
 
+    const toastId = "recodificar";
+    const totalItems = allItems.length + kits.reduce((acc, k) => acc + kitPieces.filter(kp => kp.kit_id === k.id).length, 0);
+    toast.loading(`Recodificando ${totalItems} item(ns)...`, { id: toastId });
+
     let code = 1;
     let count = 0;
-    for (const item of allItems) {
-      if (item.type === "piece") {
-        const piece = visiblePieces.find(p => p.id === item.id);
-        if (piece && piece.code !== code) {
-          await supabase.from("campaign_pieces").update({ code }).eq("id", item.id);
-          count++;
-        }
-      } else {
-        const kit = kits.find(k => k.id === item.id);
-        if (kit && kit.code !== code) {
-          await supabase.from("campaign_kits").update({ code }).eq("id", item.id);
-          count++;
-        }
-        // Recodificar as peças do kit sequencialmente a partir do código do kit + 1
-        const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === item.id);
-        let kitPieceCode = code + 1;
-        for (const kp of kitPiecesForKit) {
-          const piece = kitOnlyPieces.find(p => p.id === kp.piece_id);
-          if (piece && piece.code !== kitPieceCode) {
-            await supabase.from("campaign_pieces").update({ code: kitPieceCode }).eq("id", kp.piece_id);
+    let processed = 0;
+    try {
+      for (const item of allItems) {
+        if (item.type === "piece") {
+          const piece = visiblePieces.find(p => p.id === item.id);
+          if (piece && piece.code !== code) {
+            await supabase.from("campaign_pieces").update({ code }).eq("id", item.id);
             count++;
           }
-          kitPieceCode++;
+          processed++;
+          toast.loading(`Recodificando ${processed}/${totalItems}...`, { id: toastId });
+        } else {
+          const kit = kits.find(k => k.id === item.id);
+          if (kit && kit.code !== code) {
+            await supabase.from("campaign_kits").update({ code }).eq("id", item.id);
+            count++;
+          }
+          processed++;
+          toast.loading(`Recodificando ${processed}/${totalItems}...`, { id: toastId });
+          const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === item.id);
+          let kitPieceCode = code + 1;
+          for (const kp of kitPiecesForKit) {
+            const piece = kitOnlyPieces.find(p => p.id === kp.piece_id);
+            if (piece && piece.code !== kitPieceCode) {
+              await supabase.from("campaign_pieces").update({ code: kitPieceCode }).eq("id", kp.piece_id);
+              count++;
+            }
+            kitPieceCode++;
+            processed++;
+            toast.loading(`Recodificando ${processed}/${totalItems}...`, { id: toastId });
+          }
+          code = kitPieceCode;
+          continue;
         }
-        // Avançar o código para depois das peças do kit
-        code = kitPieceCode;
-        continue;
+        code++;
       }
-      code++;
-    }
-    queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
-    queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
-    if (count > 0) {
-      toast.success(`${count} código(s) atualizado(s) sequencialmente!`);
-    } else {
-      toast.info("Os códigos já estão em ordem sequencial.");
+      queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["campaign_kits"] });
+      if (count > 0) {
+        toast.success(`${count} código(s) atualizado(s) sequencialmente!`, { id: toastId });
+      } else {
+        toast.info("Os códigos já estão em ordem sequencial.", { id: toastId });
+      }
+    } catch (e: any) {
+      toast.error(`Erro ao recodificar: ${e?.message || e}`, { id: toastId });
     }
   };
 
