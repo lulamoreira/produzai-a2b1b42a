@@ -16,17 +16,13 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
   const [open, setOpen] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const updateImage = useUpdatePieceImage();
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = "";
-
+  const uploadFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
     setUploading(true);
     try {
-      // Generates 3 optimized 1:1 variants and uploads them under a hash-based
-      // path (auto-dedupes identical images across pieces / campaigns).
       const uploaded = await uploadPieceImageVariants(file);
       await updateImage.mutateAsync({
         pieceId: piece.id,
@@ -44,6 +40,20 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    await uploadFile(file);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) await uploadFile(file);
   };
 
   const handleUrlSubmit = async () => {
