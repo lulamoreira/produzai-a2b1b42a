@@ -155,7 +155,8 @@
     "budgets": "Budgets",
     "chat": "Chat",
     "history": "History",
-    "loja_a_loja": "Store by Store"
+    "loja_a_loja": "Store by Store",
+    "adjustments": "Adjustments"
   },
   "dashboard": {
     "title": "Dashboard",
