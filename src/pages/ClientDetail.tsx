@@ -49,6 +49,7 @@ import { Switch } from "@/components/ui/switch";
 import ComboboxInput from "@/components/ComboboxInput";
 import { getStateColor } from "@/lib/stateColors";
 import DeleteStoreDialog from "@/components/DeleteStoreDialog";
+import DeleteAllStoresDialog from "@/components/DeleteAllStoresDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
@@ -416,6 +417,9 @@ const ClientDetail = () => {
   const [editStoreForm, setEditStoreForm] = useState({ ...emptyStoreForm });
   const [editStoreId, setEditStoreId] = useState<string | null>(null);
   const [deleteStoreDialogOpen, setDeleteStoreDialogOpen] = useState(false);
+  const [deleteAllStoresOpen, setDeleteAllStoresOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkDeleteProgress, setBulkDeleteProgress] = useState({ current: 0, total: 0 });
   const { isAdminOrMaster } = useUserRole();
 
   // Custom field labels
@@ -569,6 +573,9 @@ const ClientDetail = () => {
     setEditStoreId(null);
   };
 
+  const [generatingCodes, setGeneratingCodes] = useState(false);
+  const [codesProgress, setCodesProgress] = useState({ current: 0, total: 0 });
+
   const handleReviewStoreCodes = async () => {
     if (!client) return;
     const storesWithoutCode = stores.filter((s) => !s.store_code);
@@ -576,17 +583,20 @@ const ClientDetail = () => {
       toast.info("Todas as lojas já possuem código.");
       return;
     }
-    // Build a running list of all codes (existing + newly assigned)
+    setGeneratingCodes(true);
+    setCodesProgress({ current: 0, total: storesWithoutCode.length });
     const allStores = [...stores];
     let count = 0;
-    for (const store of storesWithoutCode) {
+    for (let i = 0; i < storesWithoutCode.length; i++) {
+      const store = storesWithoutCode[i];
       const code = generateStoreCode(client.name, store.country || "", allStores);
       await updateStore.mutateAsync({ id: store.id, store_code: code });
-      // Update allStores so next iteration sees this code
       const idx = allStores.findIndex((s) => s.id === store.id);
       if (idx >= 0) allStores[idx] = { ...allStores[idx], store_code: code };
       count++;
+      setCodesProgress({ current: i + 1, total: storesWithoutCode.length });
     }
+    setGeneratingCodes(false);
     toast.success(`${count} loja(s) receberam código automaticamente.`);
   };
 
@@ -648,6 +658,28 @@ const ClientDetail = () => {
       toast.success(`${updatedCount} loja(s) atualizada(s) com dados de CNPJ/CEP!`);
     } else {
       toast.info("Nenhuma loja precisou de atualização (dados já preenchidos ou não encontrados).");
+    }
+  };
+
+  const handleDeleteAllStores = async () => {
+    if (stores.length === 0) return;
+    setBulkDeleting(true);
+    setBulkDeleteProgress({ current: 0, total: stores.length });
+    let failed = 0;
+    for (let i = 0; i < stores.length; i++) {
+      try {
+        await deleteStore.mutateAsync(stores[i].id);
+      } catch {
+        failed++;
+      }
+      setBulkDeleteProgress({ current: i + 1, total: stores.length });
+    }
+    setBulkDeleting(false);
+    setDeleteAllStoresOpen(false);
+    if (failed === 0) {
+      toast.success(`${stores.length} loja(s) excluída(s) com sucesso.`);
+    } else {
+      toast.warning(`${stores.length - failed} excluída(s), ${failed} falharam.`);
     }
   };
 
@@ -1044,8 +1076,8 @@ const ClientDetail = () => {
                     <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setStoreImportOpen(true)}>
                       <Upload className="w-3 h-3" /> Importar
                     </Button>
-                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleReviewStoreCodes}>
-                      <Sparkles className="w-3 h-3" /> Códigos
+                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleReviewStoreCodes} disabled={generatingCodes}>
+                      <Sparkles className={`w-3 h-3 ${generatingCodes ? "animate-pulse" : ""}`} /> {generatingCodes ? "..." : "Códigos"}
                     </Button>
                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleEnrichStores} disabled={enriching}>
                        <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "..." : "Enriquecer"}
@@ -1053,6 +1085,17 @@ const ClientDetail = () => {
                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setStoreModelDialogOpen(true)}>
                        <Tag className="w-3 h-3" /> Modelos
                      </Button>
+                     {isAdminOrMaster && stores.length > 0 && (
+                       <Button
+                         size="sm"
+                         variant="destructive"
+                         className="text-xs h-7 gap-1"
+                         onClick={() => setDeleteAllStoresOpen(true)}
+                         disabled={bulkDeleting}
+                       >
+                         <Trash2 className="w-3 h-3" /> Apagar todas
+                       </Button>
+                     )}
                   </>
                 )}
               </div>
@@ -1067,6 +1110,37 @@ const ClientDetail = () => {
                 <Progress value={(enrichProgress.current / enrichProgress.total) * 100} className="h-2" />
               </div>
             )}
+
+            {generatingCodes && (
+              <div className="mb-4 space-y-1">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Gerando códigos... ({codesProgress.current}/{codesProgress.total})</span>
+                  <span>{codesProgress.total > 0 ? Math.round((codesProgress.current / codesProgress.total) * 100) : 0}%</span>
+                </div>
+                <Progress value={codesProgress.total > 0 ? (codesProgress.current / codesProgress.total) * 100 : 0} className="h-2" />
+              </div>
+            )}
+
+            {bulkDeleting && (
+              <div className="mb-4 space-y-1">
+                <div className="flex items-center justify-between text-xs text-destructive">
+                  <span>Excluindo lojas... ({bulkDeleteProgress.current}/{bulkDeleteProgress.total})</span>
+                  <span>{bulkDeleteProgress.total > 0 ? Math.round((bulkDeleteProgress.current / bulkDeleteProgress.total) * 100) : 0}%</span>
+                </div>
+                <Progress value={bulkDeleteProgress.total > 0 ? (bulkDeleteProgress.current / bulkDeleteProgress.total) * 100 : 0} className="h-2" />
+              </div>
+            )}
+
+            <DeleteAllStoresDialog
+              open={deleteAllStoresOpen}
+              onOpenChange={setDeleteAllStoresOpen}
+              clientName={client.name}
+              storeCount={stores.length}
+              isDeleting={bulkDeleting}
+              progress={bulkDeleteProgress}
+              onConfirm={handleDeleteAllStores}
+            />
+
 
             {canEditClients && (
               <div className="flex flex-wrap items-center gap-2 mb-4">
