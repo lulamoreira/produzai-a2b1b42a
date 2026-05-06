@@ -2702,14 +2702,23 @@ const CampaignDetail = () => {
                       <input id="matrix-import-input" type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file || !campaignId) return;
+                        const toastId = "matrix-import";
+                        toast.loading("Lendo planilha...", { id: toastId });
                         try {
                           const items = await parseMatrixImport(file, pieces, stores);
-                          if (items.length === 0) { toast.error(t("matrix.noDataFound")); return; }
+                          if (items.length === 0) { toast.error(t("matrix.noDataFound"), { id: toastId }); e.target.value = ""; return; }
+                          const total = items.length;
+                          let processed = 0;
+                          toast.loading(`Importando ${total} quantidade(s)...`, { id: toastId });
                           for (const item of items) {
                             await updateStorePiece.mutateAsync({ campaignId, storeId: item.storeId, pieceId: item.pieceId, quantity: item.quantity });
+                            processed++;
+                            if (processed % 10 === 0 || processed === total) {
+                              toast.loading(`Importando ${processed}/${total} quantidade(s)...`, { id: toastId });
+                            }
                           }
-                          toast.success(t("matrix.quantitiesImported", { count: items.length }));
-                        } catch { toast.error(t("matrix.errorImport")); }
+                          toast.success(t("matrix.quantitiesImported", { count: items.length }), { id: toastId });
+                        } catch { toast.error(t("matrix.errorImport"), { id: toastId }); }
                         e.target.value = "";
                       }} />
                     )}
