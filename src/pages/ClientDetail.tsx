@@ -154,6 +154,27 @@ const CAMPAIGN_COLORS = [
   "#1e3a5f", "#334155", "#475569", "#78716c",
 ];
 
+function CampaignActiveAdjustmentBadge({ campaignId }: { campaignId: string }) {
+  const { data: hasActiveAdj } = useQuery({
+    queryKey: ['has_active_adj', campaignId],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('campaign_adjustments')
+        .select('id', { count: 'exact', head: true })
+        .eq('campaign_id', campaignId)
+        .eq('status', 'active');
+      return (count || 0) > 0;
+    },
+    staleTime: 60000,
+  });
+  if (!hasActiveAdj) return null;
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md border border-amber-400 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+      <Layers className="w-3 h-3" /> Ajuste ativo
+    </span>
+  );
+}
+
 function SortableCampaignCard({
   campaign, canDelete, canEdit, onNavigate, onDelete, onColorChange, isFavorited, onToggleFavorite, showFavorite,
 }: {
