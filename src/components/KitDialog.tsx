@@ -770,7 +770,11 @@ export function KitDetailDialog({
                       <Input value={editForm.installation_instructions} onChange={(e) => setEditForm(f => ({ ...f, installation_instructions: e.target.value }))} className="h-7 text-xs" />
                     </div>
                     {/* Piece image in edit mode */}
-                    <div className="flex items-center gap-2">
+                    <div
+                      className="flex items-center gap-2"
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => handlePieceImageDrop(p.id, e)}
+                    >
                       {p.image_url && (
                         <div className="relative">
                           <img src={getThumbnailUrl(p.image_url, 150)} alt={p.name} loading="lazy" decoding="async" className="w-16 h-16 object-contain rounded border border-border" />
@@ -782,7 +786,7 @@ export function KitDetailDialog({
                       <div className="relative">
                         <input type="file" accept="image/*" onChange={(e) => handlePieceImageUpload(p.id, e)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                         <div className="flex items-center gap-1 px-2 py-1 rounded border border-dashed border-border text-[10px] text-muted-foreground hover:border-primary/50">
-                          <Image className="w-3 h-3" /> {p.image_url ? "Trocar" : "Foto"}
+                          <Image className="w-3 h-3" /> {p.image_url ? "Trocar (clique ou arraste)" : "Foto (clique ou arraste)"}
                         </div>
                       </div>
                     </div>
