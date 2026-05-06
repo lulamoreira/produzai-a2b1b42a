@@ -242,14 +242,15 @@ export default function AdjustmentsTab({
                     )}
                     {req.status === "approved" && (() => {
                       const j = (req.adjusted_prices_jsonb || {}) as { prices?: { piece_id: string; new_price: number }[]; installation?: number; freight?: number };
-                      const newTotalRaw =
-                        (j.prices || []).reduce((s, p) => s + Number(p.new_price || 0), 0) +
-                        Number(j.installation || 0) + Number(j.freight || 0);
+                      const items = (j.prices || []).length;
                       return (
                         <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm">
                           <div className="font-medium text-green-800">✅ Reorçamento aprovado</div>
                           <div className="text-green-700 text-xs mt-1">
-                            Novo total estimado (preços unitários + extras): {formatCurrencyByCode(newTotalRaw, currencyCode)}
+                            {items} item(ns) com novo preço · Instalação {formatCurrencyByCode(Number(j.installation || 0), currencyCode)} · Frete {formatCurrencyByCode(Number(j.freight || 0), currencyCode)}
+                            {req.response_received_at && (
+                              <> · Registrado em {format(new Date(req.response_received_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
+                            )}
                           </div>
                         </div>
                       );
