@@ -3570,6 +3570,9 @@ const CampaignDetail = () => {
               kitPieces={kitPieces}
               storePieces={storePieces}
               stores={stores}
+              agencyName={agency?.name || ""}
+              clientName={client?.name || ""}
+              currencyCode={(client as any)?.currency_code || "BRL"}
             />
           )}
 
