@@ -155,7 +155,8 @@
     "budgets": "Presupuestos",
     "chat": "Chat",
     "history": "Historial",
-    "loja_a_loja": "Tienda a Tienda"
+    "loja_a_loja": "Tienda a Tienda",
+    "adjustments": "Ajustes"
   },
   "dashboard": {
     "title": "Panel",
