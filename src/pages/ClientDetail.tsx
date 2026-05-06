@@ -1076,9 +1076,17 @@ const ClientDetail = () => {
                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleEnrichStores} disabled={enriching}>
                        <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "..." : "Enriquecer"}
                      </Button>
-                     <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setStoreModelDialogOpen(true)}>
-                       <Tag className="w-3 h-3" /> Modelos
-                     </Button>
+                     {isAdminOrMaster && stores.length > 0 && (
+                       <Button
+                         size="sm"
+                         variant="destructive"
+                         className="text-xs h-7 gap-1"
+                         onClick={() => setDeleteAllStoresOpen(true)}
+                         disabled={bulkDeleting}
+                       >
+                         <Trash2 className="w-3 h-3" /> Apagar todas
+                       </Button>
+                     )}
                   </>
                 )}
               </div>
@@ -1093,6 +1101,27 @@ const ClientDetail = () => {
                 <Progress value={(enrichProgress.current / enrichProgress.total) * 100} className="h-2" />
               </div>
             )}
+
+            {bulkDeleting && (
+              <div className="mb-4 space-y-1">
+                <div className="flex items-center justify-between text-xs text-destructive">
+                  <span>Excluindo lojas... ({bulkDeleteProgress.current}/{bulkDeleteProgress.total})</span>
+                  <span>{bulkDeleteProgress.total > 0 ? Math.round((bulkDeleteProgress.current / bulkDeleteProgress.total) * 100) : 0}%</span>
+                </div>
+                <Progress value={bulkDeleteProgress.total > 0 ? (bulkDeleteProgress.current / bulkDeleteProgress.total) * 100 : 0} className="h-2" />
+              </div>
+            )}
+
+            <DeleteAllStoresDialog
+              open={deleteAllStoresOpen}
+              onOpenChange={setDeleteAllStoresOpen}
+              clientName={client.name}
+              storeCount={stores.length}
+              isDeleting={bulkDeleting}
+              progress={bulkDeleteProgress}
+              onConfirm={handleDeleteAllStores}
+            />
+
 
             {canEditClients && (
               <div className="flex flex-wrap items-center gap-2 mb-4">
