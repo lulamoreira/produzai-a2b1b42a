@@ -55,6 +55,9 @@ export default function AdjustmentsTab({
   kits,
   kitPieces,
   storePieces,
+  agencyName,
+  clientName,
+  currencyCode,
 }: AdjustmentsTabProps) {
   const { data: adjustments = [], isLoading } = useCampaignAdjustments(campaignId);
   const { data: activeAdjustment } = useActiveAdjustment(campaignId);
@@ -62,8 +65,22 @@ export default function AdjustmentsTab({
   const statusMut = useUpdateAdjustmentStatus();
   const deleteMut = useDeleteAdjustment();
 
+  const { data: budgetRequests = [] } = useQuery({
+    queryKey: ['adjustment_budget_requests', campaignId],
+    enabled: !!campaignId && adjustments.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('campaign_adjustment_budget_request' as any)
+        .select('adjustment_id, status, request_sent_at')
+        .in('adjustment_id', adjustments.map((a) => a.id));
+      if (error) throw error;
+      return (data || []) as unknown as { adjustment_id: string; status: string; request_sent_at: string }[];
+    },
+  });
+
   const [createOpen, setCreateOpen] = useState(false);
   const [editingAdjustment, setEditingAdjustment] = useState<CampaignAdjustment | null>(null);
+  const [requestDialogAdjustment, setRequestDialogAdjustment] = useState<CampaignAdjustment | null>(null);
   const defaultName = useMemo(
     () => `Ajuste - ${format(new Date(), "dd/MM/yyyy")}`,
     [createOpen]
