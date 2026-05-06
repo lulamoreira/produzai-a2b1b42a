@@ -70,6 +70,7 @@ interface BudgetTabProps {
   qtyMap: Record<string, number>;
   stores: { id: string; name: string }[];
   onNavigateToRateio?: () => void;
+  activeAdjustment?: { id: string; name: string } | null;
 }
 
 // ─── Status helpers ──────────────────────────────────────
