@@ -40,10 +40,13 @@ function KitImageSection({
   const [uploading, setUploading] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const uploadFile = async (file: File) => {
+    if (!file || !file.type.startsWith("image/")) {
+      toast.error("Arquivo inválido. Envie uma imagem.");
+      return;
+    }
     setUploading(true);
     try {
       const compressed = await compressImage(file, 800, 0.6);
@@ -54,11 +57,26 @@ function KitImageSection({
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
       onImageUpdated(urlData.publicUrl);
+      toast.success("Imagem do kit atualizada!");
     } catch (err: any) {
       toast.error("Erro ao enviar imagem: " + err.message);
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) await uploadFile(file);
+    e.target.value = "";
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    if (!canEdit) return;
+    const file = e.dataTransfer.files?.[0];
+    if (file) await uploadFile(file);
   };
 
   const handleUrlSubmit = () => {
@@ -69,15 +87,27 @@ function KitImageSection({
   };
 
   return (
-    <div className="space-y-2">
+    <div
+      className="space-y-2"
+      onDragOver={(e) => { if (canEdit) { e.preventDefault(); setDragActive(true); } }}
+      onDragLeave={() => setDragActive(false)}
+      onDrop={handleDrop}
+    >
       {imageUrl ? (
-        <div className="relative">
+        <div className={`relative rounded-lg ${dragActive ? "ring-2 ring-primary" : ""}`}>
           <img src={imageUrl} alt={kitName} loading="lazy" decoding="async" className="w-full h-32 object-contain rounded-lg border border-border bg-muted/30" />
           {canEdit && (
-            <Button size="sm" variant="destructive" className="absolute top-1 right-1 h-6 text-[10px] px-2" onClick={() => onImageUpdated(null)}>
-              <X className="w-3 h-3 mr-1" /> Remover
-            </Button>
+            <>
+              <label className="absolute inset-0 cursor-pointer rounded-lg flex items-center justify-center bg-black/0 hover:bg-black/40 transition-colors text-white text-xs opacity-0 hover:opacity-100">
+                <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" disabled={uploading} />
+                <span className="flex items-center gap-1"><Upload className="w-3.5 h-3.5" /> {uploading ? "Enviando..." : "Trocar (clique ou arraste)"}</span>
+              </label>
+              <Button size="sm" variant="destructive" className="absolute top-1 right-1 h-6 text-[10px] px-2" onClick={() => onImageUpdated(null)}>
+                <X className="w-3 h-3 mr-1" /> Remover
+              </Button>
+            </>
           )}
+          {dragActive && <div className="absolute inset-0 rounded-lg bg-primary/10 border-2 border-dashed border-primary pointer-events-none" />}
         </div>
       ) : canEdit ? (
         <div className="flex gap-2">
