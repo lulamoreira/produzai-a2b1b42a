@@ -282,6 +282,119 @@ export function useUpdateAdjustmentPiece() {
   });
 }
 
+export function useAddAdjustmentPiece() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      adjustmentId: string;
+      code: number;
+      name: string;
+      specification?: string;
+      size?: string;
+      category?: string;
+      sub_location?: string;
+    }) => {
+      const { error } = await supabase
+        .from("campaign_adjustment_pieces")
+        .insert({
+          adjustment_id: params.adjustmentId,
+          source_piece_id: null,
+          code: params.code,
+          name: params.name,
+          specification: params.specification || null,
+          size: params.size || null,
+          category: params.category || null,
+          sub_location: params.sub_location || null,
+          is_new: true,
+          is_deleted: false,
+          kit_only: false,
+          change_type: "added",
+          original_snapshot: null,
+        } as any);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["adjustment_pieces", vars.adjustmentId] });
+      toast.success("Peça adicionada ao ajuste");
+    },
+    onError: (e: any) => toast.error(e?.message || "Erro ao adicionar peça"),
+  });
+}
+
+export function useRestoreAdjustmentPiece() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { pieceId: string; adjustmentId: string; originalSnapshot: any }) => {
+      const snap = params.originalSnapshot || {};
+      const { error } = await supabase
+        .from("campaign_adjustment_pieces")
+        .update({
+          name: snap.name,
+          specification: snap.specification || null,
+          size: snap.size || null,
+          category: snap.category || null,
+          sub_location: snap.sub_location || null,
+          is_deleted: false,
+          change_type: "unchanged",
+        } as any)
+        .eq("id", params.pieceId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["adjustment_pieces", vars.adjustmentId] });
+      toast.success("Peça restaurada ao valor original");
+    },
+    onError: (e: any) => toast.error(e?.message || "Erro ao restaurar peça"),
+  });
+}
+
+export function useUpdateAdjustmentKit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      kitId: string;
+      adjustmentId: string;
+      changes: Partial<{ name: string; is_deleted: boolean }>;
+    }) => {
+      const { error } = await supabase
+        .from("campaign_adjustment_kits")
+        .update({
+          ...params.changes,
+          change_type: params.changes.is_deleted ? "removed" : "modified",
+        } as any)
+        .eq("id", params.kitId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["adjustment_kits", vars.adjustmentId] });
+      toast.success("Kit atualizado");
+    },
+    onError: (e: any) => toast.error(e?.message || "Erro ao atualizar kit"),
+  });
+}
+
+export function useRestoreAdjustmentKit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { kitId: string; adjustmentId: string; originalName: string }) => {
+      const { error } = await supabase
+        .from("campaign_adjustment_kits")
+        .update({
+          name: params.originalName,
+          is_deleted: false,
+          change_type: "unchanged",
+        } as any)
+        .eq("id", params.kitId);
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["adjustment_kits", vars.adjustmentId] });
+      toast.success("Kit restaurado");
+    },
+    onError: (e: any) => toast.error(e?.message || "Erro ao restaurar kit"),
+  });
+}
+
 export function useUpdateAdjustmentStorePiece() {
   const qc = useQueryClient();
   return useMutation({

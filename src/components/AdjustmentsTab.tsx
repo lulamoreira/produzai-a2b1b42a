@@ -18,6 +18,7 @@ import {
   type CampaignAdjustment,
   type AdjustmentStatus,
 } from "@/hooks/useAdjustments";
+import AdjustmentDetailSheet from "./AdjustmentDetailSheet";
 
 interface AdjustmentsTabProps {
   campaignId: string;
@@ -56,6 +57,7 @@ export default function AdjustmentsTab({
   const deleteMut = useDeleteAdjustment();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingAdjustment, setEditingAdjustment] = useState<CampaignAdjustment | null>(null);
   const defaultName = useMemo(
     () => `Ajuste - ${format(new Date(), "dd/MM/yyyy")}`,
     [createOpen]
@@ -194,7 +196,7 @@ export default function AdjustmentsTab({
                       size="sm"
                       variant="outline"
                       className="h-7 text-xs gap-1"
-                      onClick={() => toast.info("Edição detalhada chega na próxima fase.")}
+                      onClick={() => setEditingAdjustment(a)}
                     >
                       <Eye className="w-3.5 h-3.5" /> Editar
                     </Button>
@@ -223,7 +225,7 @@ export default function AdjustmentsTab({
                       size="sm"
                       variant="outline"
                       className="h-7 text-xs gap-1"
-                      onClick={() => toast.info("Visualização detalhada chega na próxima fase.")}
+                      onClick={() => setEditingAdjustment(a)}
                     >
                       <Eye className="w-3.5 h-3.5" /> Ver detalhes
                     </Button>
@@ -243,7 +245,7 @@ export default function AdjustmentsTab({
                     size="sm"
                     variant="outline"
                     className="h-7 text-xs gap-1"
-                    onClick={() => toast.info("Visualização detalhada chega na próxima fase.")}
+                    onClick={() => setEditingAdjustment(a)}
                   >
                     <Eye className="w-3.5 h-3.5" /> Ver detalhes
                   </Button>
@@ -298,6 +300,16 @@ export default function AdjustmentsTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {editingAdjustment && (
+        <AdjustmentDetailSheet
+          open={!!editingAdjustment}
+          onOpenChange={(v) => !v && setEditingAdjustment(null)}
+          adjustment={editingAdjustment}
+          campaignId={campaignId}
+          campaignName={campaignName}
+        />
+      )}
     </div>
   );
 }
