@@ -1646,6 +1646,18 @@ const CampaignDetail = () => {
                   <span className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>{visiblePieces.length + kits.length}</span>
                   <span className="text-[13px] group-hover:underline" style={{ color: "var(--text-muted)" }}>{t("pieces.registered")}</span>
                 </button>
+                {activeAdjustment && (
+                  <button
+                    onClick={() => setActiveSection("adjustments")}
+                    className="ml-2"
+                    title="Ver ajustes de mockup"
+                  >
+                    <Badge variant="outline" className="border-amber-400 text-amber-700 gap-1 cursor-pointer">
+                      <Layers className="w-3 h-3" />
+                      Ajuste ativo: {activeAdjustment.name}
+                    </Badge>
+                  </button>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {isAdminOrMaster && (
