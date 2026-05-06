@@ -85,7 +85,12 @@ const PieceImageUpload = ({ piece }: PieceImageUploadProps) => {
         <DialogHeader>
           <DialogTitle className="font-display">Imagem - {piece.name}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
+        <div
+          className="space-y-4"
+          onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+          onDragLeave={() => setDragActive(false)}
+          onDrop={handleDrop}
+        >
           {piece.image_url && (
             <div className="relative">
               <img
