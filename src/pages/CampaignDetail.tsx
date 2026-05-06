@@ -824,16 +824,24 @@ const CampaignDetail = () => {
       toast.info("Todas as peças já possuem código.");
       return;
     }
+    const total = piecesWithoutCode.length;
+    const toastId = "review-piece-codes";
+    toast.loading(`Revisando códigos de ${total} peça(s)...`, { id: toastId });
     const usedNumbers = new Set<number>(pieces.filter((p) => p.code && p.code > 0).map((p) => p.code));
     let count = 0;
-    for (const piece of piecesWithoutCode) {
-      let seq = 1;
-      while (usedNumbers.has(seq)) seq++;
-      usedNumbers.add(seq);
-      await updatePiece.mutateAsync({ id: piece.id, code: seq });
-      count++;
+    try {
+      for (const piece of piecesWithoutCode) {
+        let seq = 1;
+        while (usedNumbers.has(seq)) seq++;
+        usedNumbers.add(seq);
+        await updatePiece.mutateAsync({ id: piece.id, code: seq });
+        count++;
+        toast.loading(`Revisando códigos ${count}/${total}...`, { id: toastId });
+      }
+      toast.success(`${count} peça(s) receberam código automaticamente.`, { id: toastId });
+    } catch (e: any) {
+      toast.error(`Erro ao revisar códigos: ${e?.message || e}`, { id: toastId });
     }
-    toast.success(`${count} peça(s) receberam código automaticamente.`);
   };
 
   const focusEditingCell = useCallback((cell: { storeId: string; pieceId: string } | null) => {
