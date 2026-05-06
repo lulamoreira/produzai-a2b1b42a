@@ -382,32 +382,41 @@ const CampaignDetail = () => {
     { updateExisting }: { updateExisting: boolean },
   ) => {
     if (!campaignId) return;
-    let added = 0, updated = 0;
-    for (const row of rows) {
-      const item = {
-        name: row.name ?? "",
-        code: parseInt(row.code ?? "0", 10) || 0,
-        category: row.category || "",
-        size: row.size || "",
-        specification: row.specification || "Vide Book/Manual",
-        store_category: row.store_category || null,
-        installation_instructions: row.installation_instructions || "Sem informações específicas",
-        sub_location: row.sub_location || null,
-        kit_only: ["true", "1", "sim", "yes"].includes(String(row.kit_only ?? "").toLowerCase()),
-      };
-      const existing = pieces.find(p => p.name.toLowerCase() === item.name.toLowerCase());
-      if (existing && updateExisting) {
-        await updatePiece.mutateAsync({ id: existing.id, ...item } as any);
-        updated++;
-      } else {
-        await addPiece.mutateAsync({ campaign_id: campaignId, ...item } as any);
-        added++;
+    const total = rows.length;
+    const toastId = "pieces-import";
+    toast.loading(`Importando ${total} peça(s)...`, { id: toastId });
+    let added = 0, updated = 0, processed = 0;
+    try {
+      for (const row of rows) {
+        const item = {
+          name: row.name ?? "",
+          code: parseInt(row.code ?? "0", 10) || 0,
+          category: row.category || "",
+          size: row.size || "",
+          specification: row.specification || "Vide Book/Manual",
+          store_category: row.store_category || null,
+          installation_instructions: row.installation_instructions || "Sem informações específicas",
+          sub_location: row.sub_location || null,
+          kit_only: ["true", "1", "sim", "yes"].includes(String(row.kit_only ?? "").toLowerCase()),
+        };
+        const existing = pieces.find(p => p.name.toLowerCase() === item.name.toLowerCase());
+        if (existing && updateExisting) {
+          await updatePiece.mutateAsync({ id: existing.id, ...item } as any);
+          updated++;
+        } else {
+          await addPiece.mutateAsync({ campaign_id: campaignId, ...item } as any);
+          added++;
+        }
+        processed++;
+        toast.loading(`Importando ${processed}/${total} peça(s)...`, { id: toastId });
       }
+      const parts: string[] = [];
+      if (added > 0) parts.push(`${added} adicionada(s)`);
+      if (updated > 0) parts.push(`${updated} atualizada(s)`);
+      toast.success(parts.length > 0 ? parts.join(", ") + "!" : "Nenhuma alteração.", { id: toastId });
+    } catch (e: any) {
+      toast.error(`Erro ao importar: ${e?.message || e}`, { id: toastId });
     }
-    const parts: string[] = [];
-    if (added > 0) parts.push(`${added} adicionada(s)`);
-    if (updated > 0) parts.push(`${updated} atualizada(s)`);
-    if (parts.length > 0) toast.success(parts.join(", ") + "!");
   };
 
   // Fetch agency color for header gradient
