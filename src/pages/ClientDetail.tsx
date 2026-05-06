@@ -573,6 +573,9 @@ const ClientDetail = () => {
     setEditStoreId(null);
   };
 
+  const [generatingCodes, setGeneratingCodes] = useState(false);
+  const [codesProgress, setCodesProgress] = useState({ current: 0, total: 0 });
+
   const handleReviewStoreCodes = async () => {
     if (!client) return;
     const storesWithoutCode = stores.filter((s) => !s.store_code);
@@ -580,17 +583,20 @@ const ClientDetail = () => {
       toast.info("Todas as lojas já possuem código.");
       return;
     }
-    // Build a running list of all codes (existing + newly assigned)
+    setGeneratingCodes(true);
+    setCodesProgress({ current: 0, total: storesWithoutCode.length });
     const allStores = [...stores];
     let count = 0;
-    for (const store of storesWithoutCode) {
+    for (let i = 0; i < storesWithoutCode.length; i++) {
+      const store = storesWithoutCode[i];
       const code = generateStoreCode(client.name, store.country || "", allStores);
       await updateStore.mutateAsync({ id: store.id, store_code: code });
-      // Update allStores so next iteration sees this code
       const idx = allStores.findIndex((s) => s.id === store.id);
       if (idx >= 0) allStores[idx] = { ...allStores[idx], store_code: code };
       count++;
+      setCodesProgress({ current: i + 1, total: storesWithoutCode.length });
     }
+    setGeneratingCodes(false);
     toast.success(`${count} loja(s) receberam código automaticamente.`);
   };
 
