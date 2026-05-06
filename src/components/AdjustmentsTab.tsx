@@ -57,6 +57,7 @@ export default function AdjustmentsTab({
   const deleteMut = useDeleteAdjustment();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingAdjustment, setEditingAdjustment] = useState<CampaignAdjustment | null>(null);
   const defaultName = useMemo(
     () => `Ajuste - ${format(new Date(), "dd/MM/yyyy")}`,
     [createOpen]
