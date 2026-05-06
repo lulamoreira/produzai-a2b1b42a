@@ -18,6 +18,7 @@ import {
   type CampaignAdjustment,
   type AdjustmentStatus,
 } from "@/hooks/useAdjustments";
+import AdjustmentDetailSheet from "./AdjustmentDetailSheet";
 
 interface AdjustmentsTabProps {
   campaignId: string;
