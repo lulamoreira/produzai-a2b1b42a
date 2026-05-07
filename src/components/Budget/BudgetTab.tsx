@@ -1006,34 +1006,23 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               {/* Deadline */}
               <div className="space-y-1">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Prazo p/ envio dos orçamentos</p>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn("h-7 text-xs gap-1", !deadlineDate && "text-muted-foreground")}>
-                      <CalendarIcon className="w-3 h-3" />
-                      {deadlineDate ? format(deadlineDate, "dd/MM/yyyy 'às' HH:mm") : "Definir prazo"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={deadlineDate}
-                      onSelect={(d) => handleSaveDeadline(d)}
-                      locale={ptBR}
-                      className="p-3 pointer-events-auto"
-                    />
-                    {deadlineDate && (
-                      <div className="border-t border-border p-3 flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Horário:</span>
-                        <Input
-                          type="time"
-                          value={format(deadlineDate, "HH:mm")}
-                          onChange={(e) => handleSaveDeadlineTime(e.target.value)}
-                          className="h-7 text-xs w-28"
-                        />
-                      </div>
-                    )}
-                  </PopoverContent>
-                </Popover>
+                <DateTimePicker
+                  value={settings?.deadline ?? null}
+                  onChange={(localIso) => {
+                    const finalIso = localIso ? new Date(localIso).toISOString() : null;
+                    saveSettings.mutate({
+                      campaign_id: campaignId,
+                      budget_amount: budgetAmount,
+                      deadline: finalIso,
+                    });
+                  }}
+                  placeholder="Definir prazo"
+                  buttonClassName="h-7 text-xs"
+                />
+                {/* Legacy handlers retained but unused after picker migration */}
+                {false && (
+                  <>{handleSaveDeadline}{handleSaveDeadlineTime}</>
+                )}
               </div>
 
               {/* Currency */}
