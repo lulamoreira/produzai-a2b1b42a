@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export const DEFAULT_CARD_ORDER = ["portal_ocorrencias", "globais", "por_loja", "motivos"] as const;
+export const DEFAULT_CARD_ORDER = ["portal_ocorrencias", "globais", "por_loja", "motivos", "tratativa_statuses"] as const;
 export const DEFAULT_COLLAPSED = ["por_loja"];
 
 export type CardKey = (typeof DEFAULT_CARD_ORDER)[number];

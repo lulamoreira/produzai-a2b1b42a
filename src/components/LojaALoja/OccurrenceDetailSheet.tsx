@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
 import { createPortal } from "react-dom";
+import { useEffectiveTratativaStatuses } from "@/hooks/useLalTratativaStatuses";
 
 interface Props {
   open: boolean;
@@ -34,6 +35,7 @@ const PRIORITY_LABELS: Record<string, string> = {
   baixa: "Baixa",
 };
 
+// Fallback labels (used when no custom statuses are configured)
 const TRATATIVA_LABELS: Record<string, string> = {
   aberta: "Aberta",
   em_andamento: "Em andamento",
@@ -65,6 +67,19 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [initialized, setInitialized] = useState<string | null>(null);
+
+  // Resolve clientId from the campaign so we can load custom statuses
+  const { data: campaignRow } = useQuery({
+    queryKey: ["campaign-client-id", campaignId],
+    enabled: !!campaignId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("campaigns").select("client_id").eq("id", campaignId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const clientId = campaignRow?.client_id as string | undefined;
+  const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
 
   // Photo check-in for this campaign + store (lazy: only when user opens the modal)
   const checkinQuery = useQuery({
@@ -169,7 +184,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
           resolution_photo_urls: resolutionPhotos,
           reinstallation_scheduled_at: needsReinst && reinstallationDate ? new Date(reinstallationDate).toISOString() : null,
           reinstallation_os: needsReinst && reinstallationOs.trim() ? reinstallationOs.trim() : null,
-          resolved_by_user_id: tratativaStatus === "resolvida" ? userId : null,
+          resolved_by_user_id: (tratativaStatuses.find((s) => s.value === tratativaStatus)?.is_resolved) ? userId : null,
         } as any)
         .eq("id", occurrence.id);
 
@@ -337,9 +352,19 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                 <Select value={tratativaStatus} onValueChange={setTratativaStatus} disabled={!isAdmin}>
                   <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(TRATATIVA_LABELS).map(([v, l]) => (
-                      <SelectItem key={v} value={v}>{l}</SelectItem>
+                    {tratativaStatuses.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        <span className="flex items-center gap-2">
+                          <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                          {s.label}
+                        </span>
+                      </SelectItem>
                     ))}
+                    {tratativaStatus && !tratativaStatuses.find((s) => s.value === tratativaStatus) && (
+                      <SelectItem value={tratativaStatus}>
+                        {TRATATIVA_LABELS[tratativaStatus] ?? tratativaStatus}
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>

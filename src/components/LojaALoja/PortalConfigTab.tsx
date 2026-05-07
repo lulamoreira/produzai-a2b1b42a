@@ -29,6 +29,7 @@ import { CheckCircle2, XCircle, Minus, Copy, ExternalLink, GripVertical, Chevron
 import { format } from "date-fns";
 import { toast } from "sonner";
 import MotivosManager from "./MotivosManager";
+import TratativaStatusManager from "./TratativaStatusManager";
 import { useTableSort } from "@/hooks/useTableSort";
 import SortableHeader from "./SortableHeader";
 import {
@@ -79,6 +80,7 @@ const CARD_TITLES: Record<string, string> = {
   globais: "Configurações Globais",
   por_loja: "Configurações por Loja",
   motivos: "Motivos de Ocorrência",
+  tratativa_statuses: "Status da Tratativa",
 };
 
 interface SortableCardProps {
@@ -562,6 +564,13 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
         return (
           <CardContent className="pt-6">
             <MotivosManager clientId={clientId} permissions={permissions} embedded />
+          </CardContent>
+        );
+
+      case "tratativa_statuses":
+        return (
+          <CardContent className="pt-6">
+            <TratativaStatusManager clientId={clientId} permissions={permissions} embedded />
           </CardContent>
         );
 
