@@ -123,10 +123,18 @@ export function DateTimePicker({
           <label className="text-xs text-muted-foreground">Hora</label>
           <Input
             type="time"
-            value={pending ? format(pending, "HH:mm") : ""}
+            value={timeStr}
             onChange={handleTimeChange}
             className="h-8 w-auto text-xs"
           />
+        </div>
+        <div className="p-3 border-t border-border flex items-center justify-end gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={handleCancel}>
+            Cancelar
+          </Button>
+          <Button type="button" size="sm" onClick={handleConfirm}>
+            Confirmar
+          </Button>
         </div>
       </PopoverContent>
     </Popover>
