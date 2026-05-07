@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
 import { createPortal } from "react-dom";
+import { useEffectiveTratativaStatuses } from "@/hooks/useLalTratativaStatuses";
 
 interface Props {
   open: boolean;
