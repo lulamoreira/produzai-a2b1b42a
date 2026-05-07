@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
@@ -548,36 +549,6 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   // ─── Deadline state ────────────────────────────────────
   const deadlineDate = settings?.deadline ? new Date(settings.deadline) : undefined;
 
-  const handleSaveDeadline = (date: Date | undefined) => {
-    let final: Date | null = null;
-    if (date) {
-      final = new Date(date);
-      // Preserva hora existente OU usa padrão 15:00
-      if (deadlineDate) {
-        final.setHours(deadlineDate.getHours(), deadlineDate.getMinutes(), 0, 0);
-      } else {
-        final.setHours(15, 0, 0, 0);
-      }
-    }
-    saveSettings.mutate({
-      campaign_id: campaignId,
-      budget_amount: budgetAmount,
-      deadline: final ? final.toISOString() : null,
-    });
-  };
-
-  const handleSaveDeadlineTime = (timeStr: string) => {
-    if (!deadlineDate || !timeStr) return;
-    const [hh, mm] = timeStr.split(":").map((n) => parseInt(n, 10));
-    if (isNaN(hh) || isNaN(mm)) return;
-    const final = new Date(deadlineDate);
-    final.setHours(hh, mm, 0, 0);
-    saveSettings.mutate({
-      campaign_id: campaignId,
-      budget_amount: budgetAmount,
-      deadline: final.toISOString(),
-    });
-  };
 
   const handleSaveBudget = () => {
     const val = parseFloat(budgetDraft.replace(/[^\d.,]/g, "").replace(",", "."));
@@ -1006,34 +977,19 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               {/* Deadline */}
               <div className="space-y-1">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Prazo p/ envio dos orçamentos</p>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn("h-7 text-xs gap-1", !deadlineDate && "text-muted-foreground")}>
-                      <CalendarIcon className="w-3 h-3" />
-                      {deadlineDate ? format(deadlineDate, "dd/MM/yyyy 'às' HH:mm") : "Definir prazo"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={deadlineDate}
-                      onSelect={(d) => handleSaveDeadline(d)}
-                      locale={ptBR}
-                      className="p-3 pointer-events-auto"
-                    />
-                    {deadlineDate && (
-                      <div className="border-t border-border p-3 flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">Horário:</span>
-                        <Input
-                          type="time"
-                          value={format(deadlineDate, "HH:mm")}
-                          onChange={(e) => handleSaveDeadlineTime(e.target.value)}
-                          className="h-7 text-xs w-28"
-                        />
-                      </div>
-                    )}
-                  </PopoverContent>
-                </Popover>
+                <DateTimePicker
+                  value={settings?.deadline ?? null}
+                  onChange={(localIso) => {
+                    const finalIso = localIso ? new Date(localIso).toISOString() : null;
+                    saveSettings.mutate({
+                      campaign_id: campaignId,
+                      budget_amount: budgetAmount,
+                      deadline: finalIso,
+                    });
+                  }}
+                  placeholder="Definir prazo"
+                  buttonClassName="h-7 text-xs"
+                />
               </div>
 
               {/* Currency */}

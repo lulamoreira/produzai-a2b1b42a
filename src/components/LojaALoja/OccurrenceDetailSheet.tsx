@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Camera, X, Loader2, ExternalLink, RotateCw, ImageIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
@@ -44,13 +45,7 @@ function formatDateTime(d: string | null | undefined) {
   return new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-function toLocalInput(iso: string | null | undefined): string {
-  if (!iso) return "";
-  const d = new Date(iso);
-  const off = d.getTimezoneOffset();
-  const local = new Date(d.getTime() - off * 60_000);
-  return local.toISOString().slice(0, 16);
-}
+// Note: legacy `toLocalInput` removed — DateTimePicker now handles parsing/formatting safely.
 
 export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, canEdit, canDelete, campaignId }: Props) {
   const isAdmin = canEdit; // legacy alias for input disabled states
@@ -92,11 +87,11 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
     if (occurrence && occurrence.id !== initialized) {
       setPriority(occurrence.priority ?? "media");
       setTratativaStatus(occurrence.tratativa_status ?? "aberta");
-      setExpectedDate(toLocalInput(occurrence.expected_resolution_date));
+      setExpectedDate(occurrence.expected_resolution_date ?? "");
       setNeedsReinst(!!occurrence.needs_reinstallation);
       setTratativaNotes(occurrence.tratativa_notes ?? "");
       setResolutionPhotos(Array.isArray(occurrence.resolution_photo_urls) ? occurrence.resolution_photo_urls : []);
-      setReinstallationDate(toLocalInput(occurrence.reinstallation_scheduled_at));
+      setReinstallationDate(occurrence.reinstallation_scheduled_at ?? "");
       setReinstallationOs(occurrence.reinstallation_os ?? "");
       setInitialized(occurrence.id);
       // Reset transient UI so leftover lightbox/check-in from a previous occurrence don't reappear
@@ -351,7 +346,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
 
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Previsão de resolução</label>
-                <Input type="datetime-local" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} disabled={!isAdmin} className="h-9" />
+                <DateTimePicker value={expectedDate} onChange={setExpectedDate} disabled={!isAdmin} buttonClassName="h-9" />
               </div>
 
               <div className="flex items-center gap-2">
@@ -365,12 +360,11 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                     <label className="text-xs font-medium text-foreground mb-1 block">
                       Data e horário da reinstalação
                     </label>
-                    <input
-                      type="datetime-local"
+                    <DateTimePicker
                       value={reinstallationDate}
-                      onChange={(e) => setReinstallationDate(e.target.value)}
+                      onChange={setReinstallationDate}
                       disabled={!isAdmin}
-                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      buttonClassName="h-9"
                     />
                   </div>
                   <div>

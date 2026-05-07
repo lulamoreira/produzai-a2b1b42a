@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { DatePicker } from "@/components/ui/date-picker";
 import { cn } from "@/lib/utils";
 
 import {
@@ -129,31 +130,17 @@ function TimelineRow({ entry, campaignId, onDelete }: RowProps) {
         <GripVertical className="w-4 h-4" />
       </button>
 
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className={cn(
-              "h-9 min-w-[140px] justify-start text-left font-normal gap-2",
-              !date && "text-muted-foreground",
-            )}
-          >
-            <CalendarIcon className="w-4 h-4" />
-            {date ? format(date, "dd/MM/yyyy") : "Data"}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={handleDateChange}
-            locale={ptBR}
-            initialFocus
-            className={cn("p-3 pointer-events-auto")}
-          />
-        </PopoverContent>
-      </Popover>
+      <div className="min-w-[160px]">
+        <DatePicker
+          value={entry.entry_date || ""}
+          onChange={(v) => {
+            setDate(v ? new Date(v + "T00:00:00") : undefined);
+            if (v && v !== entry.entry_date) persist({ entry_date: v });
+          }}
+          placeholder="Data"
+          buttonClassName="h-9"
+        />
+      </div>
 
       <Textarea
         value={description}
