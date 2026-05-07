@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
@@ -1019,10 +1020,6 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   placeholder="Definir prazo"
                   buttonClassName="h-7 text-xs"
                 />
-                {/* Legacy handlers retained but unused after picker migration */}
-                {false && (
-                  <>{handleSaveDeadline}{handleSaveDeadlineTime}</>
-                )}
               </div>
 
               {/* Currency */}
