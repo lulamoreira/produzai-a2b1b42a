@@ -2496,6 +2496,56 @@ export type Database = {
           },
         ]
       }
+      lal_tratativa_statuses: {
+        Row: {
+          ativo: boolean
+          client_id: string
+          color: string
+          created_at: string
+          display_order: number
+          id: string
+          is_default: boolean
+          is_resolved: boolean
+          label: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          ativo?: boolean
+          client_id: string
+          color?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_default?: boolean
+          is_resolved?: boolean
+          label: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          ativo?: boolean
+          client_id?: string
+          color?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_default?: boolean
+          is_resolved?: boolean
+          label?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lal_tratativa_statuses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loja_a_loja_lojas: {
         Row: {
           ativo: boolean | null
