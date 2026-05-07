@@ -91,7 +91,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       setNeedsReinst(!!occurrence.needs_reinstallation);
       setTratativaNotes(occurrence.tratativa_notes ?? "");
       setResolutionPhotos(Array.isArray(occurrence.resolution_photo_urls) ? occurrence.resolution_photo_urls : []);
-      setReinstallationDate(toLocalInput(occurrence.reinstallation_scheduled_at));
+      setReinstallationDate(occurrence.reinstallation_scheduled_at ?? "");
       setReinstallationOs(occurrence.reinstallation_os ?? "");
       setInitialized(occurrence.id);
       // Reset transient UI so leftover lightbox/check-in from a previous occurrence don't reappear
