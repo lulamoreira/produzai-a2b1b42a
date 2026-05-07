@@ -2027,8 +2027,8 @@ Qualquer dúvida, estamos à disposição.
 
           <div className="mt-6 space-y-4">
             {/* Pieces table */}
-            <div className="border rounded-md">
-              <Table className="table-fixed w-full">
+            <div className="border rounded-md overflow-x-auto">
+              <Table className="w-full min-w-[560px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-xs">Peça</TableHead>
