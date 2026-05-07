@@ -32,43 +32,62 @@ export function DateTimePicker({
 }: DateTimePickerProps) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState<Date | null>(parseLocalDate(value));
+  const [timeStr, setTimeStr] = useState<string>(
+    parseLocalDate(value) ? format(parseLocalDate(value)!, "HH:mm") : "",
+  );
 
   useEffect(() => {
-    setPending(parseLocalDate(value));
+    const parsed = parseLocalDate(value);
+    setPending(parsed);
+    setTimeStr(parsed ? format(parsed, "HH:mm") : "");
   }, [value]);
-
-  const commit = (date: Date) => {
-    setPending(date);
-    onChange(toLocalISOString(date));
-  };
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
     const next = new Date(date);
-    if (pending) {
-      next.setHours(pending.getHours(), pending.getMinutes(), 0, 0);
-    } else {
-      next.setHours(12, 0, 0, 0);
-    }
-    commit(next);
+    const [h, m] = (timeStr || "12:00").split(":").map(Number);
+    next.setHours(h || 0, m || 0, 0, 0);
+    setPending(next);
   };
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = e.target.value;
+    setTimeStr(time);
     if (!time) return;
     const [h, m] = time.split(":").map(Number);
     const base = pending ?? new Date();
     const next = new Date(base);
     next.setHours(h || 0, m || 0, 0, 0);
-    commit(next);
+    setPending(next);
+  };
+
+  const handleConfirm = () => {
+    if (!pending) {
+      setOpen(false);
+      return;
+    }
+    // Ensure latest typed time is applied (in case onChange didn't fire)
+    const [h, m] = (timeStr || format(pending, "HH:mm")).split(":").map(Number);
+    const final = new Date(pending);
+    final.setHours(h || 0, m || 0, 0, 0);
+    onChange(toLocalISOString(final));
+    setOpen(false);
+  };
+
+  const handleCancel = () => {
+    const parsed = parseLocalDate(value);
+    setPending(parsed);
+    setTimeStr(parsed ? format(parsed, "HH:mm") : "");
+    setOpen(false);
   };
 
   const handleOpenChange = (next: boolean) => {
-    setOpen(next);
-    if (!next && pending) {
-      const formatted = toLocalISOString(pending);
-      if (formatted !== value) onChange(formatted);
+    if (!next) {
+      // Closing via outside click — revert to original value, do NOT auto-save
+      handleCancel();
+      return;
     }
+    setOpen(next);
   };
 
   return (
@@ -104,10 +123,18 @@ export function DateTimePicker({
           <label className="text-xs text-muted-foreground">Hora</label>
           <Input
             type="time"
-            value={pending ? format(pending, "HH:mm") : ""}
+            value={timeStr}
             onChange={handleTimeChange}
             className="h-8 w-auto text-xs"
           />
+        </div>
+        <div className="p-3 border-t border-border flex items-center justify-end gap-2">
+          <Button type="button" variant="ghost" size="sm" onClick={handleCancel}>
+            Cancelar
+          </Button>
+          <Button type="button" size="sm" onClick={handleConfirm}>
+            Confirmar
+          </Button>
         </div>
       </PopoverContent>
     </Popover>
