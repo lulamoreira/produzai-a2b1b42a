@@ -346,7 +346,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
 
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Previsão de resolução</label>
-                <Input type="datetime-local" value={expectedDate} onChange={(e) => setExpectedDate(e.target.value)} disabled={!isAdmin} className="h-9" />
+                <DateTimePicker value={expectedDate} onChange={setExpectedDate} disabled={!isAdmin} buttonClassName="h-9" />
               </div>
 
               <div className="flex items-center gap-2">
@@ -360,12 +360,11 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                     <label className="text-xs font-medium text-foreground mb-1 block">
                       Data e horário da reinstalação
                     </label>
-                    <input
-                      type="datetime-local"
+                    <DateTimePicker
                       value={reinstallationDate}
-                      onChange={(e) => setReinstallationDate(e.target.value)}
+                      onChange={setReinstallationDate}
                       disabled={!isAdmin}
-                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                      buttonClassName="h-9"
                     />
                   </div>
                   <div>
