@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import DebouncedInput from "@/components/DebouncedInput";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -343,12 +344,12 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
                   {isOn && (
                     <div className="flex items-center gap-2 pl-4">
                       <Label className="text-xs text-muted-foreground whitespace-nowrap">Prazo:</Label>
-                      <Input
-                        type="datetime-local"
-                        className="h-8 text-xs w-auto"
-                        value={deadlineVal ? deadlineVal.slice(0, 16) : ""}
-                        onChange={(e) => handleDeadline(deadlineKey, e.target.value ? new Date(e.target.value).toISOString() : "")}
+                      <DateTimePicker
+                        value={deadlineVal || ""}
+                        onChange={(v) => handleDeadline(deadlineKey, v)}
                         disabled={!isAdmin}
+                        size="sm"
+                        buttonClassName="h-8 text-xs w-auto"
                       />
                     </div>
                   )}
