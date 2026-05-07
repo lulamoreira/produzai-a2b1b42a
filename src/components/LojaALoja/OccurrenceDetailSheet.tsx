@@ -68,6 +68,19 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [initialized, setInitialized] = useState<string | null>(null);
 
+  // Resolve clientId from the campaign so we can load custom statuses
+  const { data: campaignRow } = useQuery({
+    queryKey: ["campaign-client-id", campaignId],
+    enabled: !!campaignId,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("campaigns").select("client_id").eq("id", campaignId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const clientId = campaignRow?.client_id as string | undefined;
+  const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
+
   // Photo check-in for this campaign + store (lazy: only when user opens the modal)
   const checkinQuery = useQuery({
     queryKey: ["installation-photos-checkin", campaignId, occurrence?.store_id],
