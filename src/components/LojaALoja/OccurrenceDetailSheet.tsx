@@ -34,6 +34,7 @@ const PRIORITY_LABELS: Record<string, string> = {
   baixa: "Baixa",
 };
 
+// Fallback labels (used when no custom statuses are configured)
 const TRATATIVA_LABELS: Record<string, string> = {
   aberta: "Aberta",
   em_andamento: "Em andamento",
