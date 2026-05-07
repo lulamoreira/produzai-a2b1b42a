@@ -184,7 +184,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
           resolution_photo_urls: resolutionPhotos,
           reinstallation_scheduled_at: needsReinst && reinstallationDate ? new Date(reinstallationDate).toISOString() : null,
           reinstallation_os: needsReinst && reinstallationOs.trim() ? reinstallationOs.trim() : null,
-          resolved_by_user_id: tratativaStatus === "resolvida" ? userId : null,
+          resolved_by_user_id: (tratativaStatuses.find((s) => s.value === tratativaStatus)?.is_resolved) ? userId : null,
         } as any)
         .eq("id", occurrence.id);
 
@@ -352,9 +352,19 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                 <Select value={tratativaStatus} onValueChange={setTratativaStatus} disabled={!isAdmin}>
                   <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(TRATATIVA_LABELS).map(([v, l]) => (
-                      <SelectItem key={v} value={v}>{l}</SelectItem>
+                    {tratativaStatuses.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>
+                        <span className="flex items-center gap-2">
+                          <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                          {s.label}
+                        </span>
+                      </SelectItem>
                     ))}
+                    {tratativaStatus && !tratativaStatuses.find((s) => s.value === tratativaStatus) && (
+                      <SelectItem value={tratativaStatus}>
+                        {TRATATIVA_LABELS[tratativaStatus] ?? tratativaStatus}
+                      </SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
