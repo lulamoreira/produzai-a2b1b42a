@@ -36,10 +36,11 @@ export function formatLocalDateTime(date: Date | null | undefined): string {
 }
 
 /**
- * Build an ISO-like string preserving local wall-clock (no UTC drift on persist).
- * Returns "YYYY-MM-DDTHH:mm:ss" — no timezone suffix.
+ * Build an ISO string preserving local wall-clock with explicit timezone offset.
+ * Example: "2026-05-08T18:00:00-03:00".
+ * This ensures TIMESTAMPTZ columns round-trip without drift.
  */
 export function toLocalISOString(date: Date | null | undefined): string {
   if (!date) return "";
-  return format(date, "yyyy-MM-dd'T'HH:mm:ss");
+  return format(date, "yyyy-MM-dd'T'HH:mm:ssXXX");
 }
