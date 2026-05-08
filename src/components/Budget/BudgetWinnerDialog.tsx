@@ -52,7 +52,7 @@ export default function BudgetWinnerDialog({
   const [previewSubject, setPreviewSubject] = useState("");
   const [previewTemplateData, setPreviewTemplateData] = useState<any>(null);
 
-  const emailInputRef = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (open && supplier) {
