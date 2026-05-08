@@ -194,7 +194,14 @@ export function useUpdateMockup() {
       const previous = qc.getQueryData(key);
       qc.setQueryData(key, (old: CampaignMockup[] | undefined) => {
         if (!old) return old;
-        return old.map(m => m.id === vars.mockupId ? { ...m, ...vars.changes } as CampaignMockup : m);
+        const clearAlts = vars.changes.status && vars.changes.status !== 'changes_requested'
+          ? {
+              alt_name: null, alt_size: null, alt_specification: null, alt_installation: null,
+              alt_name_active: false, alt_size_active: false,
+              alt_specification_active: false, alt_installation_active: false,
+            }
+          : {};
+        return old.map(m => m.id === vars.mockupId ? { ...m, ...vars.changes, ...clearAlts } as CampaignMockup : m);
       });
       return { previous };
     },
