@@ -60,6 +60,7 @@ export default function BudgetSendNegotiatedDialog({
   const [cc, setCc] = useState("");
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
 
   const [prices, setPrices] = useState<NegotiatedProposalParams["prices"]>([]);
   const [extraCosts, setExtraCosts] = useState<NegotiatedProposalParams["extraCosts"] | null>(null);
