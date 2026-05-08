@@ -564,7 +564,7 @@ export default function MockupReviewSheet({
                   const v = e.target.value;
                   setDraft((d) => ({ ...d, observations: v }));
                   debounceSave("observations", activeMockup.id, { observations: v });
-                  if (v.trim() !== "" && activeMockup.status !== "changes_requested") {
+                  if (v.trim() !== "" && activeMockup.status === "pending") {
                     saveChanges(activeMockup.id, { status: "changes_requested" }, "status");
                   }
                 }}
