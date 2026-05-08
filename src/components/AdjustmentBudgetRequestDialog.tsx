@@ -154,6 +154,7 @@ export default function AdjustmentBudgetRequestDialog({
     if (!EMAIL_REGEX.test(email.trim())) { toast.error("E-mail inválido."); return; }
     if (cc.trim() && !EMAIL_REGEX.test(cc.trim())) { toast.error("CC inválido."); return; }
     setSending(true);
+    setUploadStatus(null);
     const tId = toast.loading("Gerando planilha e enviando...");
     try {
       const { link } = await buildAndUpload();
