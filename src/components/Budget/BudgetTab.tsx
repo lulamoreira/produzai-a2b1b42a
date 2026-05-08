@@ -2230,6 +2230,9 @@ Qualquer dúvida, estamos à disposição.
                               priceRow ? fmtCurrency(unitPrice) : "—"
                             )}
                           </TableCell>
+                          <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
+                        </TableRow>
+                        {sug && isSugExpanded && (
                           <TableRow className="bg-amber-50/80">
                             <TableCell colSpan={4} className="text-xs p-3">
                               <p className="text-amber-800 font-medium mb-1">Sugestão do fornecedor:</p>
