@@ -8,6 +8,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Schedule } from "@/types/schedule";
 import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
+import ReinstallCard from "@/components/ReinstallCard";
+import NewReinstallDialog from "@/components/NewReinstallDialog";
 import { useOccurrenceStatusSync } from "@/hooks/useOccurrenceStatusSync";
 import { buildAddress, buildContactsByStoreMap } from "@/lib/storeHelpers";
 import { type ClientStore } from "@/hooks/useMultiClientData";
