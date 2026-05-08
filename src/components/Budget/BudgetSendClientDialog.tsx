@@ -636,6 +636,15 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
               </div>
             )}
           </div>
+
+          {sending && (
+            <div className="space-y-2">
+              {stageMessage && (
+                <div className="text-xs text-muted-foreground">{stageMessage}</div>
+              )}
+              <UploadProgressPanel status={uploadStatus} />
+            </div>
+          )}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
