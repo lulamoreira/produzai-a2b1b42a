@@ -3745,6 +3745,17 @@ const CampaignDetail = () => {
             <CampaignActivityHistory campaignId={campaignId} />
           )}
 
+          {/* ─── SECTION: MOCKUP ─── */}
+          {activeSection === "mockup" && campaignId && (
+            <MockupTab
+              campaignId={campaignId}
+              campaignName={campaign?.name || ""}
+              pieces={pieces}
+              kits={kits}
+              kitPieces={kitPieces}
+            />
+          )}
+
           {/* ─── SECTION: LOJA A LOJA ─── */}
           {activeSection === "loja_a_loja" && campaignId && clientId && (
             <LojaALojaTab campaignId={campaignId} clientId={clientId} permissions={lalPerms} />
