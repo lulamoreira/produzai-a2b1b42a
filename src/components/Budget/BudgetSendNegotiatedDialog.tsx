@@ -78,6 +78,7 @@ export default function BudgetSendNegotiatedDialog({
     if (!open) return;
     setEmail(supplier.email || "");
     setCc(defaultCcEmail || "");
+    setSummaryItems([]);
     setLoading(true);
     (async () => {
       try {
