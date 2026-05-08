@@ -81,6 +81,7 @@ export default function MockupTab({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const piecesById = useMemo(() => {
     const m = new Map<string, any>();
