@@ -218,6 +218,7 @@ export default function BudgetSendNegotiatedDialog({
       return;
     }
     setSending(true);
+    setUploadStatus(null);
     const tId = toast.loading("Gerando planilha e enviando...");
     try {
       const { link, totals: t } = await buildAndUpload();
