@@ -22,6 +22,7 @@ export interface CampaignMockup {
   alt_specification_active: boolean;
   alt_installation_active: boolean;
   observations: string | null;
+  annotated_image_url: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
   created_at: string;
