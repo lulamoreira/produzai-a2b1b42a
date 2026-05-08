@@ -66,6 +66,7 @@ export default function AdjustmentBudgetRequestDialog({
 
   useEffect(() => {
     if (!open) return;
+    setSummaryItems([]);
     setLoading(true);
     (async () => {
       try {
