@@ -742,6 +742,25 @@ export default function MockupReviewSheet({
             />
           </div>
         )}
+
+        {annotationOpen && activeMockup && baseImageUrl && (
+          <MockupAnnotationEditor
+            open={annotationOpen}
+            onOpenChange={setAnnotationOpen}
+            imageUrl={baseImageUrl}
+            existingAnnotationUrl={activeMockup.annotated_image_url}
+            campaignId={campaignId}
+            mockupId={activeMockup.id}
+            onSave={async (url) => {
+              await update.mutateAsync({
+                mockupId: activeMockup.id,
+                campaignId,
+                changes: { annotated_image_url: url },
+              });
+              setShowAnnotated(true);
+            }}
+          />
+        )}
       </SheetContent>
     </Sheet>
   );
