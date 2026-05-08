@@ -21,8 +21,7 @@ import {
 import {
   useAdjustmentPieces, useAdjustmentKits, useAdjustmentKitPieces, useAdjustmentStorePieces,
 } from "@/hooks/useAdjustments";
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 
 interface Props {
   open: boolean;
