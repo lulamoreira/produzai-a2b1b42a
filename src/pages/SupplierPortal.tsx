@@ -1124,11 +1124,16 @@ const SupplierPortal = () => {
                                 </p>
                               </div>
                               <div className="ml-auto text-right">
-                                {row.totalQty > 0 && (
-                                  <div className="text-[11px] text-muted-foreground leading-tight">
-                                    Unit. por kit: <span className="font-medium text-foreground">{fmt((kitSectionTotals[row.kitId!] || 0) / row.totalQty)}</span>
-                                  </div>
-                                )}
+                                {(() => {
+                                  const unitSum = displayRows
+                                    .filter((r) => r.type === "kit_piece" && r.kitId === row.kitId)
+                                    .reduce((s, r) => s + (r.pieceId ? (prices[r.pieceId] ?? 0) : 0), 0);
+                                  return (
+                                    <div className="text-[11px] text-muted-foreground leading-tight">
+                                      Unit. por kit: <span className="font-medium text-foreground">{fmt(unitSum)}</span>
+                                    </div>
+                                  );
+                                })()}
                                 <span className="text-sm font-semibold text-primary">
                                   {fmt(kitSectionTotals[row.kitId!] || 0)}
                                 </span>
