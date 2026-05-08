@@ -3,15 +3,14 @@ import { computeKitRolledUpStatus, type CampaignMockup, type MockupStatus } from
 import { buildExportFileName } from "@/lib/exportFileName";
 
 const STATUS_LABEL: Record<MockupStatus, string> = {
-  pending: "Pendente",
-  approved: "Aprovada",
-  rejected: "Reprovada",
-  changes_requested: "Com alterações",
+  pending: "PENDENTE",
+  approved: "APROVADA",
+  rejected: "REPROVADA",
+  changes_requested: "COM ALTERAÇÕES",
 };
 
-// RGB colors
 const STATUS_RGB: Record<MockupStatus, [number, number, number]> = {
-  pending: [148, 163, 184],
+  pending: [120, 120, 120],
   approved: [22, 163, 74],
   rejected: [220, 38, 38],
   changes_requested: [217, 119, 6],
@@ -21,6 +20,11 @@ const DARK_BROWN: [number, number, number] = [74, 44, 42];
 const RED: [number, number, number] = [220, 38, 38];
 const TEXT: [number, number, number] = [30, 30, 30];
 const MUTED: [number, number, number] = [120, 120, 120];
+const LIGHT_BG: [number, number, number] = [245, 242, 237];
+const ALT_BG: [number, number, number] = [254, 235, 235];
+
+// Line height in mm for 9pt body
+const LINE_H = 4.2;
 
 async function loadImage(url: string | null | undefined): Promise<{ data: string; w: number; h: number } | null> {
   if (!url) return null;
@@ -92,6 +96,7 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 15;
+  const contentW = pageW - margin * 2;
 
   let pageIndex = 0;
 
@@ -101,37 +106,40 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
     doc.setFontSize(8);
     doc.setTextColor(...MUTED);
     const ctx = [agencyName, clientName, campaignName].filter(Boolean).join("  •  ");
-    doc.text(ctx, pageW / 2, 10, { align: "center" });
+    doc.text(ctx, pageW / 2, 9, { align: "center" });
 
-    // Title bar
+    // Title bar (dark brown)
     doc.setFillColor(...DARK_BROWN);
-    doc.rect(margin, 14, pageW - margin * 2, 12, "F");
+    doc.rect(margin, 13, contentW, 11, "F");
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    const t = doc.splitTextToSize(`MOCKUP — ${titleText}`, pageW - margin * 2 - 50)[0];
-    doc.text(t, margin + 4, 22);
+    doc.setFontSize(13);
+    const t = doc.splitTextToSize(`MOCKUP — ${titleText}`, contentW - 8)[0];
+    doc.text(t, margin + 4, 20.5);
 
-    // Status badge top right
+    // Big status bar right below title
     const [r, g, b] = STATUS_RGB[status];
     const label = STATUS_LABEL[status];
-    doc.setFontSize(9);
-    const labelW = doc.getTextWidth(label) + 6;
     doc.setFillColor(r, g, b);
-    doc.rect(pageW - margin - labelW - 1, 17, labelW, 7, "F");
+    doc.rect(margin, 24, contentW, 8, "F");
     doc.setTextColor(255, 255, 255);
-    doc.text(label, pageW - margin - labelW / 2 - 1, 22, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text(label, pageW / 2, 29.7, { align: "center" });
   };
 
   const drawFooter = (m: CampaignMockup) => {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...MUTED);
-    const reviewedTxt = `Revisado em: ${fmtDate(m.reviewed_at)}`;
-    doc.text(reviewedTxt, margin, pageH - 8);
+    doc.text(`Revisado em: ${fmtDate(m.reviewed_at)}`, margin, pageH - 8);
     doc.text(`Página ${pageIndex}`, pageW - margin, pageH - 8, { align: "right" });
   };
 
+  /**
+   * Draw a labeled field row with original (gray) and optional proposed alternative (red).
+   * Returns the new y after drawing.
+   */
   const drawField = (
     yStart: number,
     label: string,
@@ -139,36 +147,59 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
     altActive: boolean,
     altValue: string | null | undefined
   ): number => {
-    const colLabelW = 32;
-    const colValueX = margin + colLabelW + 4;
-    const valueW = pageW - margin - colValueX;
+    const labelH = 4.5;
+    const innerPad = 2.5;
 
+    // Label
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(...TEXT);
-    doc.text(label, margin, yStart + 4);
+    doc.text(label.toUpperCase(), margin, yStart + 3.5);
 
+    let y = yStart + labelH + 1.5;
+
+    // Original value box (light gray)
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    const origText = original ? String(original) : "—";
-    const origLines = doc.splitTextToSize(origText, valueW);
+    const origText = original ? String(original).trim() : "—";
+    const origLines = doc.splitTextToSize(origText, contentW - innerPad * 2) as string[];
+    const origH = origLines.length * LINE_H + innerPad * 2;
+    doc.setFillColor(...LIGHT_BG);
+    doc.rect(margin, y, contentW, origH, "F");
     doc.setTextColor(...TEXT);
-    doc.text(origLines, colValueX, yStart + 4);
-    let usedH = origLines.length * 4;
+    doc.text(origLines, margin + innerPad, y + innerPad + LINE_H - 1.2);
+    y += origH;
 
-    if (altActive && altValue) {
-      const altLines = doc.splitTextToSize(`→ ${altValue}`, valueW);
+    // Alt value box (red tint)
+    if (altActive && altValue && altValue.trim()) {
+      y += 1.5;
+      const altLines = doc.splitTextToSize(altValue.trim(), contentW - innerPad * 2 - 4) as string[];
+      const tagH = 5;
+      const altH = altLines.length * LINE_H + innerPad * 2 + tagH;
+
+      // Background
+      doc.setFillColor(...ALT_BG);
+      doc.rect(margin, y, contentW, altH, "F");
+      // Left red bar
+      doc.setFillColor(...RED);
+      doc.rect(margin, y, 1.6, altH, "F");
+
+      // Tag
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
       doc.setTextColor(...RED);
-      doc.text(altLines, colValueX, yStart + 4 + usedH + 1);
-      usedH += altLines.length * 4 + 1;
-      doc.setTextColor(...TEXT);
+      doc.text("ALTERAÇÃO PROPOSTA", margin + innerPad + 2, y + tagH);
+
+      // Alt text
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...RED);
+      doc.text(altLines, margin + innerPad + 2, y + tagH + LINE_H - 0.4);
+
+      y += altH;
     }
 
-    // Divider
-    doc.setDrawColor(230);
-    doc.line(margin, yStart + usedH + 3, pageW - margin, yStart + usedH + 3);
-
-    return yStart + usedH + 5;
+    return y + 3;
   };
 
   const renderPiecePage = async (m: CampaignMockup, titleOverride?: string) => {
@@ -181,58 +212,82 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
 
     drawHeader(titleName, m.status);
 
-    // Image
-    let y = 32;
+    let y = 38;
+
+    // Image (left/center, fixed height)
     const imgUrl = piece?.image_url || kit?.image_url || null;
     const img = await loadImage(imgUrl);
+    const imgBoxH = 55;
     if (img) {
-      const maxW = 80;
-      const maxH = 70;
+      const maxW = 70;
       const ratio = img.w / img.h;
       let w = maxW;
       let h = w / ratio;
-      if (h > maxH) {
-        h = maxH;
+      if (h > imgBoxH) {
+        h = imgBoxH;
         w = h * ratio;
       }
       const x = (pageW - w) / 2;
       try {
         doc.addImage(img.data, x, y, w, h);
       } catch {
-        // ignore image errors
+        // ignore
       }
-      y += maxH + 6;
     } else {
       doc.setDrawColor(220);
-      doc.rect(margin, y, pageW - margin * 2, 60);
+      doc.rect(margin + 30, y, contentW - 60, imgBoxH);
       doc.setFont("helvetica", "italic");
       doc.setFontSize(9);
       doc.setTextColor(...MUTED);
-      doc.text("Sem imagem", pageW / 2, y + 32, { align: "center" });
-      y += 66;
+      doc.text("Sem imagem", pageW / 2, y + imgBoxH / 2 + 1, { align: "center" });
     }
+    y += imgBoxH + 6;
+
+    // Helper: ensure space, otherwise add page (no header repeat — content continues)
+    const ensure = (needed: number) => {
+      if (y + needed > pageH - 15) {
+        doc.addPage();
+        pageIndex++;
+        // light context line
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(8);
+        doc.setTextColor(...MUTED);
+        doc.text(`(continuação) ${titleName}`, margin, 12);
+        y = 18;
+      }
+    };
 
     // Fields
     if (piece) {
-      y = drawField(y, "Nome", piece.name, !!m.alt_name_active, m.alt_name);
-      y = drawField(y, "Tamanho", piece.size, !!m.alt_size_active, m.alt_size);
-      y = drawField(y, "Especificação", piece.specification, !!m.alt_specification_active, m.alt_specification);
-      y = drawField(y, "Instalação", piece.installation_instructions, !!m.alt_installation_active, m.alt_installation);
+      const fields: [string, any, boolean, any][] = [
+        ["Nome", piece.name, !!m.alt_name_active, m.alt_name],
+        ["Tamanho", piece.size, !!m.alt_size_active, m.alt_size],
+        ["Especificação", piece.specification, !!m.alt_specification_active, m.alt_specification],
+        ["Instalação", piece.installation_instructions, !!m.alt_installation_active, m.alt_installation],
+      ];
+      for (const [label, orig, active, alt] of fields) {
+        // Rough estimate to decide page break
+        const estLines = doc.splitTextToSize(String(orig || "—"), contentW - 5).length;
+        const estAlt = active && alt ? doc.splitTextToSize(String(alt), contentW - 9).length + 2 : 0;
+        ensure(8 + estLines * LINE_H + estAlt * LINE_H);
+        y = drawField(y, label, orig, active, alt);
+      }
     }
 
-    // Observations box
-    const obsY = y + 2;
-    const obsH = Math.min(40, pageH - obsY - 14);
-    doc.setDrawColor(180);
-    doc.rect(margin, obsY, pageW - margin * 2, obsH);
+    // Observations
+    const obsText = (m.observations || "").trim();
+    const obsLines = obsText ? doc.splitTextToSize(obsText, contentW - 5) : ["—"];
+    ensure(10 + obsLines.length * LINE_H);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9);
     doc.setTextColor(...TEXT);
-    doc.text("Observações", margin + 2, obsY + 5);
+    doc.text("OBSERVAÇÕES", margin, y + 3.5);
+    y += 6;
+    doc.setFillColor(...LIGHT_BG);
+    const obsBoxH = obsLines.length * LINE_H + 5;
+    doc.rect(margin, y, contentW, obsBoxH, "F");
     doc.setFont("helvetica", "normal");
-    const obsText = m.observations || "—";
-    const obsLines = doc.splitTextToSize(obsText, pageW - margin * 2 - 4);
-    doc.text(obsLines.slice(0, Math.floor((obsH - 8) / 4)), margin + 2, obsY + 10);
+    doc.text(obsLines, margin + 2.5, y + LINE_H);
 
     drawFooter(m);
   };
@@ -247,34 +302,48 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
 
     drawHeader(`KIT — ${kit?.name || "—"}`, rolled);
 
-    let y = 34;
+    let y = 40;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(...TEXT);
     doc.text(`${components.length} componente(s)`, margin, y);
-    y += 6;
+    y += 7;
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
     components.forEach((c, i) => {
-      const cp = c.piece_id ? piecesById.get(c.piece_id) : null;
-      const status = STATUS_LABEL[c.status];
-      const line = `${i + 1}. ${cp?.name || "—"}   —   ${status}`;
-      doc.setTextColor(...TEXT);
-      const lines = doc.splitTextToSize(line, pageW - margin * 2);
-      doc.text(lines, margin, y);
-      y += lines.length * 4.5 + 1;
       if (y > pageH - 20) return;
+      const cp = c.piece_id ? piecesById.get(c.piece_id) : null;
+      const [r, g, b] = STATUS_RGB[c.status];
+
+      // Status pill
+      const label = STATUS_LABEL[c.status];
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      const pillW = doc.getTextWidth(label) + 4;
+      doc.setFillColor(r, g, b);
+      doc.rect(margin, y - 3.5, pillW, 5, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.text(label, margin + pillW / 2, y, { align: "center" });
+
+      // Name
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(...TEXT);
+      const name = `${i + 1}. ${cp?.name || "—"}`;
+      doc.text(name, margin + pillW + 3, y);
+      y += 7;
     });
 
     if (kitMockup.observations) {
       y += 4;
       doc.setFont("helvetica", "bold");
-      doc.text("Observações do kit:", margin, y);
+      doc.setFontSize(9);
+      doc.text("OBSERVAÇÕES DO KIT", margin, y);
       y += 5;
       doc.setFont("helvetica", "normal");
-      const obs = doc.splitTextToSize(kitMockup.observations, pageW - margin * 2);
-      doc.text(obs, margin, y);
+      const obs = doc.splitTextToSize(kitMockup.observations, contentW - 5) as string[];
+      doc.setFillColor(...LIGHT_BG);
+      doc.rect(margin, y, contentW, obs.length * LINE_H + 5, "F");
+      doc.text(obs, margin + 2.5, y + LINE_H);
     }
 
     drawFooter(kitMockup);
@@ -297,7 +366,6 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
     }
   }
 
-  // Empty fallback page
   if (pageIndex === 0) {
     pageIndex = 1;
     drawHeader("Nenhum mockup", "pending");
