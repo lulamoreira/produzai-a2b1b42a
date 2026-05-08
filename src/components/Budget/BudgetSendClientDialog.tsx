@@ -620,23 +620,24 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
 
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label htmlFor="recipient-email">E-mail do destinatário *</Label>
-            <Input
+            <Label htmlFor="recipient-email">E-mail(s) do destinatário *</Label>
+            <Textarea
               id="recipient-email"
-              type="email"
-              placeholder="cliente@empresa.com"
+              rows={2}
+              placeholder="cliente1@empresa.com, cliente2@empresa.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={sending}
             />
+            <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="cc-email">CC (opcional)</Label>
-            <Input
+            <Textarea
               id="cc-email"
-              type="email"
-              placeholder="copia@empresa.com"
+              rows={2}
+              placeholder="copia1@empresa.com, copia2@empresa.com"
               value={cc}
               onChange={(e) => setCc(e.target.value)}
               disabled={sending}
