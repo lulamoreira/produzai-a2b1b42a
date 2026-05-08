@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
-import { uploadAndSign } from "@/lib/budgetEmailUpload";
+import { uploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
+import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
 import {
   buildAdjustmentProposalWorkbook,
   summarizeAdjustmentChanges,
