@@ -30,16 +30,29 @@ import {
 import { toast } from "sonner";
 import EmptyState from "@/components/EmptyState";
 import MockupReviewSheet from "@/components/MockupReviewSheet";
+import { exportMockupPDF } from "@/lib/exportMockupPDF";
+import { exportMockupExcel } from "@/lib/exportMockupExcel";
+import { saveBlobAs } from "@/lib/saveBlobAs";
 
 interface Props {
   campaignId: string;
   campaignName: string;
+  agencyName?: string;
+  clientName?: string;
   pieces: any[];
   kits: any[];
   kitPieces: { kit_id: string; piece_id: string; quantity?: number }[];
 }
 
 type FilterKey = "all" | MockupStatus;
+
+const FILTER_LABEL: Record<FilterKey, string> = {
+  all: "Todas",
+  pending: "Pendentes",
+  approved: "Aprovadas",
+  changes_requested: "Alterações",
+  rejected: "Reprovadas",
+};
 
 const STATUS_BADGE: Record<MockupStatus, { icon: string; cls: string }> = {
   approved: { icon: "✅", cls: "bg-green-600 text-white border-transparent" },
@@ -51,6 +64,8 @@ const STATUS_BADGE: Record<MockupStatus, { icon: string; cls: string }> = {
 export default function MockupTab({
   campaignId,
   campaignName,
+  agencyName = "",
+  clientName = "",
   pieces,
   kits,
   kitPieces,
