@@ -539,6 +539,14 @@ export default function MockupTab({
                   </div>
                 )}
 
+                {annotated && (
+                  <div className={`absolute ${kit ? 'top-10' : 'top-2'} left-2`}>
+                    <Badge className="gap-1 text-[11px] bg-amber-500 text-white hover:bg-amber-500">
+                      <Pencil className="w-3 h-3" /> Imagem alterada
+                    </Badge>
+                  </div>
+                )}
+
                 {/* Name overlay */}
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3">
                   <div className="text-white text-sm font-medium line-clamp-2">
