@@ -420,12 +420,13 @@ export default function BudgetSendNegotiatedDialog({
               )}
 
               <div className="space-y-1.5">
-                <Label htmlFor="neg-email">E-mail do destinatário</Label>
-                <Input id="neg-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={sending} />
+                <Label htmlFor="neg-email">E-mail(s) do destinatário</Label>
+                <Textarea id="neg-email" rows={2} value={email} onChange={(e) => setEmail(e.target.value)} disabled={sending} placeholder="email1@empresa.com, email2@empresa.com" />
+                <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="neg-cc">CC (opcional)</Label>
-                <Input id="neg-cc" type="email" value={cc} onChange={(e) => setCc(e.target.value)} disabled={sending} placeholder="copia@empresa.com" />
+                <Textarea id="neg-cc" rows={2} value={cc} onChange={(e) => setCc(e.target.value)} disabled={sending} placeholder="copia1@empresa.com, copia2@empresa.com" />
               </div>
             </>
           )}
