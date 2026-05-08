@@ -467,18 +467,51 @@ export default function MockupReviewSheet({
               </div>
             )}
             {baseImageUrl && activeMockup && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="absolute bottom-2 right-2 gap-1.5 bg-background/90 z-10"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setAnnotationOpen(true);
-                }}
-              >
-                <Pencil className="w-4 h-4" />
-                {annotatedUrl ? "Editar anotação" : "Anotar imagem"}
-              </Button>
+              <div className="absolute bottom-2 right-2 z-10 flex gap-2">
+                {annotatedUrl && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 bg-background/90 text-destructive hover:text-destructive"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (!confirm("Remover a anotação e voltar para a imagem original?")) return;
+                      const m = activeMockup;
+                      const hasOtherChanges =
+                        !!m.alt_name_active ||
+                        !!m.alt_size_active ||
+                        !!m.alt_specification_active ||
+                        !!m.alt_installation_active ||
+                        !!(m.observations && m.observations.trim());
+                      const changes: any = { annotated_image_url: null };
+                      if (!hasOtherChanges && m.status === 'changes_requested') {
+                        changes.status = 'pending';
+                      }
+                      await update.mutateAsync({
+                        mockupId: m.id,
+                        campaignId,
+                        changes,
+                      });
+                      setShowAnnotated(false);
+                    }}
+                  >
+                    <X className="w-4 h-4" />
+                    Remover anotação
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 bg-background/90"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAnnotationOpen(true);
+                  }}
+                >
+                  <Pencil className="w-4 h-4" />
+                  {annotatedUrl ? "Editar anotação" : "Anotar imagem"}
+                </Button>
+              </div>
             )}
           </div>
 
