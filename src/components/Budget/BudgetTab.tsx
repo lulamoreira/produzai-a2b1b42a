@@ -2129,6 +2129,10 @@ Qualquer dúvida, estamos à disposição.
                       kitTotal += lineTotal;
                       return { kp, piece, priceRow, unitPrice, qty, lineTotal };
                     });
+                    const visibleRows = showOnlyMissing
+                      ? pieceRows.filter((r) => !r.priceRow || r.unitPrice <= 0)
+                      : pieceRows;
+                    if (showOnlyMissing && visibleRows.length === 0) return null;
                     return (
                       <React.Fragment key={kit.id}>
                         <TableRow className="bg-muted/40 border-t-2">
@@ -2137,7 +2141,7 @@ Qualquer dúvida, estamos à disposição.
                           </TableCell>
                           <TableCell className="text-xs text-right font-semibold">{fmtCurrency(kitTotal)}</TableCell>
                         </TableRow>
-                        {pieceRows.map(({ kp, piece, priceRow, unitPrice, qty, lineTotal }) => {
+                        {visibleRows.map(({ kp, piece, priceRow, unitPrice, qty, lineTotal }) => {
                           const sug = piece ? suggestionsMap[piece.id] : null;
                           const isSugExpanded = expandedSuggestionPieceId === kp.piece_id;
                           return (
