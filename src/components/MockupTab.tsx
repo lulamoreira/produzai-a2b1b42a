@@ -654,6 +654,17 @@ export default function MockupTab({
                 <XCircle className="w-4 h-4 text-red-600" /> ❌ Reprovadas
               </button>
             </div>
+            <label className="flex items-start gap-2 pt-3 cursor-pointer">
+              <Checkbox
+                checked={resetClearAnnotations}
+                onCheckedChange={(v) => setResetClearAnnotations(v === true)}
+                disabled={resetting}
+                className="mt-0.5"
+              />
+              <span className="text-sm">
+                Também remover imagens anotadas (voltar para as imagens originais)
+              </span>
+            </label>
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" disabled={resetting} onClick={() => { setResetOpen(false); setResetTarget(null); }}>
