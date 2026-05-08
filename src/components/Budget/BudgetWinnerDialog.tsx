@@ -211,7 +211,7 @@ export default function BudgetWinnerDialog({
               <Label htmlFor="winner-email">E-mail(s) do fornecedor *</Label>
               <Textarea
                 id="winner-email"
-                ref={emailInputRef as any}
+                ref={emailInputRef}
                 rows={2}
                 placeholder="fornecedor1@empresa.com, fornecedor2@empresa.com"
                 value={email}
