@@ -455,7 +455,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     blob: Blob,
     fileName: string,
     supplierIdOrTag: string,
-  ) => sharedUploadAndSign(blob, fileName, supplierIdOrTag, campaignId);
+  ) => sharedUploadAndSign(blob, fileName, supplierIdOrTag, campaignId, setUploadStatus);
 
   const sendOnce = async (recipient: string, templateData: any) => {
     const { error } = await supabase.functions.invoke("send-transactional-email", {
