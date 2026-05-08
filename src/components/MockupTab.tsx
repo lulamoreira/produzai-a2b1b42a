@@ -87,6 +87,10 @@ export default function MockupTab({
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetTarget, setResetTarget] = useState<MockupStatus | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const qc = useQueryClient();
 
   const piecesById = useMemo(() => {
     const m = new Map<string, any>();
