@@ -18,7 +18,9 @@ import {
   Loader2,
   ImageOff,
   Layers,
+  Pencil,
 } from "lucide-react";
+import MockupAnnotationEditor from "./MockupAnnotationEditor";
 import {
   useUpdateMockup,
   computeKitRolledUpStatus,
