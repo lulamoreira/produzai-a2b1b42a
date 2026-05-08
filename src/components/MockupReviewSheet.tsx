@@ -76,6 +76,8 @@ export default function MockupReviewSheet({
   const [savingField, setSavingField] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [annotationOpen, setAnnotationOpen] = useState(false);
+  const [showAnnotated, setShowAnnotated] = useState(true);
   const debounceRefs = useRef<Record<string, any>>({});
 
   const piecesById = useMemo(() => {
