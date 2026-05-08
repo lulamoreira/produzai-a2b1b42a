@@ -82,13 +82,36 @@ export default function MockupTab({
     [mockups]
   );
 
+  // Components grouped by parent kit mockup id
+  const componentsByParent = useMemo(() => {
+    const map = new Map<string, CampaignMockup[]>();
+    mockups.forEach((m) => {
+      if (m.parent_mockup_id) {
+        const arr = map.get(m.parent_mockup_id) || [];
+        arr.push(m);
+        map.set(m.parent_mockup_id, arr);
+      }
+    });
+    return map;
+  }, [mockups]);
+
+  // Effective status (rolled-up for kits)
+  const effectiveStatus = (m: CampaignMockup): MockupStatus => {
+    if (m.kit_id) {
+      const comps = componentsByParent.get(m.id) || [];
+      if (comps.length > 0) return computeKitRolledUpStatus(comps);
+    }
+    return m.status;
+  };
+
   const counts = useMemo(() => {
     const c = { approved: 0, rejected: 0, changes_requested: 0, pending: 0 };
     topLevel.forEach((m) => {
-      c[m.status as MockupStatus] += 1;
+      c[effectiveStatus(m)] += 1;
     });
     return c;
-  }, [topLevel]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topLevel, componentsByParent]);
 
   const reviewed = counts.approved + counts.rejected + counts.changes_requested;
   const total = topLevel.length;
@@ -96,8 +119,9 @@ export default function MockupTab({
 
   const filtered = useMemo(() => {
     if (filter === "all") return topLevel;
-    return topLevel.filter((m) => m.status === filter);
-  }, [topLevel, filter]);
+    return topLevel.filter((m) => effectiveStatus(m) === filter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topLevel, filter, componentsByParent]);
 
   // Pieces eligible to add: not in mockup, not kit_only, not deleted
   const availablePieces = useMemo(() => {
