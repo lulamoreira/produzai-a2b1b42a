@@ -2340,15 +2340,33 @@ Qualquer dúvida, estamos à disposição.
             {/* Extra costs */}
             <div className="grid grid-cols-2 gap-3">
               <Card>
-                <CardContent className="pt-3 pb-3">
+                <CardContent className="pt-3 pb-3 space-y-1">
                   <p className="text-xs text-muted-foreground">Instalação</p>
-                  <p className="text-sm font-semibold">{fmtCurrency(Number(detailCosts?.installation_value) || 0)}</p>
+                  {isAdminOrMaster ? (
+                    <AdminInlineNumberInput
+                      initial={detailCosts?.installation_value != null ? Number(detailCosts.installation_value) : null}
+                      onSave={(v) => upsertAdminExtra("installation_value", v)}
+                      ariaLabel="Valor de instalação"
+                      className="justify-start"
+                    />
+                  ) : (
+                    <p className="text-sm font-semibold">{fmtCurrency(Number(detailCosts?.installation_value) || 0)}</p>
+                  )}
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="pt-3 pb-3">
+                <CardContent className="pt-3 pb-3 space-y-1">
                   <p className="text-xs text-muted-foreground">Frete</p>
-                  <p className="text-sm font-semibold">{fmtCurrency(Number(detailCosts?.freight_value) || 0)}</p>
+                  {isAdminOrMaster ? (
+                    <AdminInlineNumberInput
+                      initial={detailCosts?.freight_value != null ? Number(detailCosts.freight_value) : null}
+                      onSave={(v) => upsertAdminExtra("freight_value", v)}
+                      ariaLabel="Valor de frete"
+                      className="justify-start"
+                    />
+                  ) : (
+                    <p className="text-sm font-semibold">{fmtCurrency(Number(detailCosts?.freight_value) || 0)}</p>
+                  )}
                 </CardContent>
               </Card>
             </div>
