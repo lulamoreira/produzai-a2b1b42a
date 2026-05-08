@@ -270,22 +270,26 @@ export default function MockupTab({
     const tId = toast.loading("Zerando mockup...");
     try {
       const { data: userData } = await supabase.auth.getUser();
+      const updatePayload: any = {
+        status: resetTarget,
+        alt_name: null,
+        alt_size: null,
+        alt_specification: null,
+        alt_installation: null,
+        alt_name_active: false,
+        alt_size_active: false,
+        alt_specification_active: false,
+        alt_installation_active: false,
+        observations: null,
+        reviewed_by: userData?.user?.id ?? null,
+        reviewed_at: new Date().toISOString(),
+      };
+      if (resetClearAnnotations) {
+        updatePayload.annotated_image_url = null;
+      }
       const { error } = await supabase
         .from("campaign_mockups")
-        .update({
-          status: resetTarget,
-          alt_name: null,
-          alt_size: null,
-          alt_specification: null,
-          alt_installation: null,
-          alt_name_active: false,
-          alt_size_active: false,
-          alt_specification_active: false,
-          alt_installation_active: false,
-          observations: null,
-          reviewed_by: userData?.user?.id ?? null,
-          reviewed_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq("campaign_id", campaignId);
       if (error) throw error;
       await qc.invalidateQueries({ queryKey: ["campaign_mockups", campaignId] });
