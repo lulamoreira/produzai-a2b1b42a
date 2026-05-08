@@ -48,7 +48,7 @@ import {
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { cn } from "@/lib/utils";
-import { EMAIL_REGEX, validateRecipients } from "@/lib/emailRecipients";
+import { validateRecipients } from "@/lib/emailRecipients";
 import { format } from "date-fns";
 
 import PhotoLightbox from "./PhotoLightbox";
