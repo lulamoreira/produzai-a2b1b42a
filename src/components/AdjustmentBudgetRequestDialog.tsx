@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { uploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
+import { SendSummaryPanel, type SendSummaryItem } from "@/components/Budget/SendSummaryPanel";
 import {
   buildAdjustmentProposalWorkbook,
   summarizeAdjustmentChanges,
