@@ -336,22 +336,73 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
     toast.success(t("occurrences.linkCopied"));
   };
 
-  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const MAX_EMAIL_LENGTH = 254;
+  const MAX_EMAILS = 5;
 
   const handleAddEmail = () => {
-    const trimmed = newEmail.trim();
-    if (!trimmed || !EMAIL_REGEX.test(trimmed)) {
-      toast.error(t("common.errorSaving"));
+    const { valid, invalid } = validateRecipients(newEmail);
+    if (valid.length === 0) {
+      toast.error("Nenhum e-mail válido informado.");
       return;
     }
-    if (trimmed.length > MAX_EMAIL_LENGTH) {
-      toast.error(t("common.errorSaving"));
+    if (invalid.length > 0) {
+      toast.error(`E-mails inválidos: ${invalid.join(", ")}`);
       return;
     }
-    addEmail.mutate({ campaignId, email: trimmed }, {
-      onSuccess: () => setNewEmail(""),
-      onError: (e) => toast.error(e.message),
+    const tooLong = valid.filter((e) => e.length > MAX_EMAIL_LENGTH);
+    if (tooLong.length > 0) {
+      toast.error(`E-mails muito longos: ${tooLong.join(", ")}`);
+      return;
+    }
+    const existing = new Set(emails.map((e) => e.email.toLowerCase()));
+    const fresh = valid.filter((e) => !existing.has(e));
+    if (fresh.length === 0) {
+      toast.error("Estes e-mails já estão cadastrados.");
+      return;
+    }
+    const remaining = MAX_EMAILS - emails.length;
+    if (remaining <= 0) {
+      toast.error(`Limite de ${MAX_EMAILS} e-mails atingido.`);
+      return;
+    }
+    const toAdd = fresh.slice(0, remaining);
+    const skipped = fresh.length - toAdd.length;
+
+    let pending = toAdd.length;
+    let added = 0;
+    const failures: string[] = [];
+    toAdd.forEach((email) => {
+      addEmail.mutate(
+        { campaignId, email },
+        {
+          onSuccess: () => {
+            added += 1;
+            pending -= 1;
+            if (pending === 0) {
+              setNewEmail("");
+              if (added > 0) {
+                toast.success(
+                  added === 1 ? "E-mail adicionado." : `${added} e-mails adicionados.`,
+                );
+              }
+              if (skipped > 0) {
+                toast.warning(`${skipped} e-mail(s) ignorado(s) — limite de ${MAX_EMAILS}.`);
+              }
+              if (failures.length > 0) {
+                toast.error(`Falha ao adicionar: ${failures.join(", ")}`);
+              }
+            }
+          },
+          onError: (e) => {
+            failures.push(email);
+            pending -= 1;
+            if (pending === 0) {
+              if (added > 0) setNewEmail("");
+              toast.error(`Falha ao adicionar ${email}: ${(e as Error).message}`);
+            }
+          },
+        },
+      );
     });
   };
 
