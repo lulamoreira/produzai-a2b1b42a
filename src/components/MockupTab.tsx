@@ -252,7 +252,7 @@ export default function MockupTab({
               variant="outline"
               size="sm"
               className="min-h-[44px] gap-1.5"
-              onClick={() => toast.info("Em breve")}
+              onClick={handleExportPDF}
             >
               <FileText className="w-4 h-4" /> PDF
             </Button>
@@ -260,7 +260,7 @@ export default function MockupTab({
               variant="outline"
               size="sm"
               className="min-h-[44px] gap-1.5"
-              onClick={() => toast.info("Em breve")}
+              onClick={handleExportExcel}
             >
               <FileSpreadsheet className="w-4 h-4" /> Excel
             </Button>
