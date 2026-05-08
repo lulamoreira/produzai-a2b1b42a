@@ -90,6 +90,91 @@ function getDisplayStatus(sup: { status: string; locked: boolean | null; submitt
   return STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
 }
 
+// ─── Admin inline number input (price/freight/installation) ──────
+function AdminInlineNumberInput({
+  initial,
+  onSave,
+  ariaLabel,
+  placeholder = "—",
+  className,
+}: {
+  initial: number | null;
+  onSave: (val: number | null) => Promise<void>;
+  ariaLabel: string;
+  placeholder?: string;
+  className?: string;
+}) {
+  const [val, setVal] = React.useState<string>(initial != null ? String(initial) : "");
+  const [saving, setSaving] = React.useState(false);
+  const [savedFlash, setSavedFlash] = React.useState(false);
+  const initialRef = React.useRef<number | null>(initial);
+  const focusedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (focusedRef.current) return;
+    if (initial !== initialRef.current) {
+      initialRef.current = initial;
+      setVal(initial != null ? String(initial) : "");
+    }
+  }, [initial]);
+
+  const commit = async () => {
+    focusedRef.current = false;
+    const trimmed = val.trim().replace(",", ".");
+    const num = trimmed === "" ? null : Number(trimmed);
+    const cur = initialRef.current;
+    if (num != null && (Number.isNaN(num) || num < 0)) {
+      setVal(cur != null ? String(cur) : "");
+      return;
+    }
+    if ((num ?? null) === (cur ?? null)) return;
+    setSaving(true);
+    try {
+      await onSave(num);
+      initialRef.current = num;
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 1500);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao salvar");
+      setVal(cur != null ? String(cur) : "");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={cn("inline-flex items-center gap-1 justify-end", className)}>
+      <Input
+        type="number"
+        inputMode="decimal"
+        step="0.01"
+        min="0"
+        value={val}
+        placeholder={placeholder}
+        aria-label={ariaLabel}
+        onFocus={() => { focusedRef.current = true; }}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+          if (e.key === "Escape") {
+            setVal(initialRef.current != null ? String(initialRef.current) : "");
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        className="h-7 w-24 text-xs text-right tabular-nums px-2"
+      />
+      {saving ? (
+        <Loader2 className="w-3 h-3 animate-spin text-muted-foreground shrink-0" />
+      ) : savedFlash ? (
+        <Check className="w-3 h-3 text-emerald-500 shrink-0" />
+      ) : (
+        <span className="w-3 h-3 shrink-0" />
+      )}
+    </div>
+  );
+}
+
 // ─── Main Component ──────────────────────────────────────
 export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, activeAdjustment }: BudgetTabProps) {
   const { t } = useTranslation();
@@ -868,6 +953,40 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     total += Number(detailCosts?.freight_value) || 0;
     return total;
   }, [detailSupplier, detailPrices, detailCosts, pieceTotals, kitPieceTotals, pieces]);
+
+  // ─── Admin manual edit (works even when supplier is locked) ───
+  const upsertAdminPrice = async (pieceId: string, value: number | null) => {
+    if (!detailSupplier) return;
+    if (value == null) {
+      const { error } = await supabase
+        .from("budget_prices")
+        .delete()
+        .eq("supplier_id", detailSupplier)
+        .eq("piece_id", pieceId);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from("budget_prices")
+        .upsert(
+          { supplier_id: detailSupplier, campaign_id: campaignId, piece_id: pieceId, unit_price: value } as never,
+          { onConflict: "supplier_id,piece_id" }
+        );
+      if (error) throw error;
+    }
+    await queryClient.invalidateQueries({ queryKey: ["budget_prices", campaignId] });
+  };
+
+  const upsertAdminExtra = async (field: "installation_value" | "freight_value", value: number | null) => {
+    if (!detailSupplier) return;
+    const { error } = await supabase
+      .from("budget_extra_costs")
+      .upsert(
+        { supplier_id: detailSupplier, [field]: value ?? 0 } as never,
+        { onConflict: "supplier_id" }
+      );
+    if (error) throw error;
+    await queryClient.invalidateQueries({ queryKey: ["budget_extra_costs", campaignId] });
+  };
 
   return (
     <div className="space-y-6">
@@ -1989,6 +2108,9 @@ Qualquer dúvida, estamos à disposição.
             <SheetTitle className="flex items-center gap-2">
               {detailSup?.company_name}
               {detailSup?.locked && <Lock className="w-4 h-4 text-muted-foreground" />}
+              {detailSup?.locked && isAdminOrMaster && (
+                <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px]">Edição administrativa</Badge>
+              )}
               {detailSup?.status === "enviado" && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px]">Enviado</Badge>}
             </SheetTitle>
             <SheetDescription>
@@ -2097,7 +2219,17 @@ Qualquer dúvida, estamos à disposição.
                             )}
                           </TableCell>
                           <TableCell className="text-xs text-right">{qty}</TableCell>
-                          <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(unitPrice) : "—"}</TableCell>
+                          <TableCell className="text-xs text-right">
+                            {isAdminOrMaster ? (
+                              <AdminInlineNumberInput
+                                initial={priceRow ? Number(priceRow.unit_price) : null}
+                                onSave={(v) => upsertAdminPrice(piece.id, v)}
+                                ariaLabel={`Preço unitário ${piece.code}`}
+                              />
+                            ) : (
+                              priceRow ? fmtCurrency(unitPrice) : "—"
+                            )}
+                          </TableCell>
                           <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
                         </TableRow>
                         {sug && isSugExpanded && (
@@ -2171,7 +2303,17 @@ Qualquer dúvida, estamos à disposição.
                                   )}
                                 </TableCell>
                                 <TableCell className="text-xs text-right">{qty}</TableCell>
-                                <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(unitPrice) : "—"}</TableCell>
+                                <TableCell className="text-xs text-right">
+                                  {isAdminOrMaster ? (
+                                    <AdminInlineNumberInput
+                                      initial={priceRow ? Number(priceRow.unit_price) : null}
+                                      onSave={(v) => upsertAdminPrice(kp.piece_id, v)}
+                                      ariaLabel={`Preço unitário ${piece?.code ?? kp.piece_id}`}
+                                    />
+                                  ) : (
+                                    priceRow ? fmtCurrency(unitPrice) : "—"
+                                  )}
+                                </TableCell>
                                 <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
                               </TableRow>
                               {sug && isSugExpanded && (
@@ -2198,15 +2340,33 @@ Qualquer dúvida, estamos à disposição.
             {/* Extra costs */}
             <div className="grid grid-cols-2 gap-3">
               <Card>
-                <CardContent className="pt-3 pb-3">
+                <CardContent className="pt-3 pb-3 space-y-1">
                   <p className="text-xs text-muted-foreground">Instalação</p>
-                  <p className="text-sm font-semibold">{fmtCurrency(Number(detailCosts?.installation_value) || 0)}</p>
+                  {isAdminOrMaster ? (
+                    <AdminInlineNumberInput
+                      initial={detailCosts?.installation_value != null ? Number(detailCosts.installation_value) : null}
+                      onSave={(v) => upsertAdminExtra("installation_value", v)}
+                      ariaLabel="Valor de instalação"
+                      className="justify-start"
+                    />
+                  ) : (
+                    <p className="text-sm font-semibold">{fmtCurrency(Number(detailCosts?.installation_value) || 0)}</p>
+                  )}
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="pt-3 pb-3">
+                <CardContent className="pt-3 pb-3 space-y-1">
                   <p className="text-xs text-muted-foreground">Frete</p>
-                  <p className="text-sm font-semibold">{fmtCurrency(Number(detailCosts?.freight_value) || 0)}</p>
+                  {isAdminOrMaster ? (
+                    <AdminInlineNumberInput
+                      initial={detailCosts?.freight_value != null ? Number(detailCosts.freight_value) : null}
+                      onSave={(v) => upsertAdminExtra("freight_value", v)}
+                      ariaLabel="Valor de frete"
+                      className="justify-start"
+                    />
+                  ) : (
+                    <p className="text-sm font-semibold">{fmtCurrency(Number(detailCosts?.freight_value) || 0)}</p>
+                  )}
                 </CardContent>
               </Card>
             </div>
