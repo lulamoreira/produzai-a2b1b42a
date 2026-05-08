@@ -294,10 +294,19 @@ export default function MockupTab({
             const piece = m.piece_id ? piecesById.get(m.piece_id) : null;
             const kit = m.kit_id ? kitsById.get(m.kit_id) : null;
             const name = piece?.name || kit?.name || "—";
-            const img = piece?.image_url || kit?.image_url || null;
-            const badge = STATUS_BADGE[m.status as MockupStatus];
+            // Kit image fallback: kit.image_url -> first component piece image
+            let img: string | null = piece?.image_url || kit?.image_url || null;
+            if (!img && kit) {
+              const comps = componentsByParent.get(m.id) || [];
+              for (const c of comps) {
+                const cp = c.piece_id ? piecesById.get(c.piece_id) : null;
+                if (cp?.image_url) { img = cp.image_url; break; }
+              }
+            }
+            const status = effectiveStatus(m);
+            const badge = STATUS_BADGE[status];
             const kitComponentCount = kit
-              ? kitPieces.filter((kp) => kp.kit_id === kit.id).length
+              ? (componentsByParent.get(m.id)?.length ?? kitPieces.filter((kp) => kp.kit_id === kit.id).length)
               : 0;
 
             return (
