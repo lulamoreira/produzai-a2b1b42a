@@ -387,6 +387,7 @@ export default function BudgetSendNegotiatedDialog({
               </div>
             </>
           )}
+          {sending && <UploadProgressPanel status={uploadStatus} />}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
