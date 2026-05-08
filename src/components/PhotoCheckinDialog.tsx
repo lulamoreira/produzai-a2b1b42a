@@ -35,10 +35,17 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [editingCaption, setEditingCaption] = useState<string | null>(null);
   const [captionValue, setCaptionValue] = useState("");
+  const [reinstallFilter, setReinstallFilter] = useState<ReinstallPhotoFilterValue>("all");
+
+  const reinstallFilteredPhotos = reinstallFilter === "all"
+    ? photos
+    : reinstallFilter === "original"
+      ? photos.filter((p) => !p.reinstall_seq || p.reinstall_seq === 0)
+      : photos.filter((p) => (p.reinstall_seq ?? 0) === reinstallFilter);
 
   const filteredPhotos = selectedCategory
-    ? photos.filter((p) => p.category === selectedCategory)
-    : photos;
+    ? reinstallFilteredPhotos.filter((p) => p.category === selectedCategory)
+    : reinstallFilteredPhotos;
 
   const address = [store.street, store.number, store.complement, store.neighborhood, store.city, store.state, store.zip_code]
     .filter(Boolean)
