@@ -89,6 +89,7 @@ export default function MockupTab({
   const [search, setSearch] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
   const [resetTarget, setResetTarget] = useState<MockupStatus | null>(null);
+  const [resetClearAnnotations, setResetClearAnnotations] = useState(true);
   const [resetting, setResetting] = useState(false);
   const qc = useQueryClient();
 
