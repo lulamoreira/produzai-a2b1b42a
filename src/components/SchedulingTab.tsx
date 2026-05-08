@@ -25,7 +25,7 @@ import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp, SlidersHorizontal, MoreHorizontal } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp, SlidersHorizontal, MoreHorizontal, RefreshCw } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -185,7 +185,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   });
 
   // Shared hooks for schedules and occurrence status sync
-  const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
+  const { schedules, scheduleMap, reinstallsByStore } = useCampaignSchedules(campaignId);
   const { storeOccurrenceStatus } = useOccurrenceStatusSync(campaignId);
 
   // Upsert schedule
@@ -1027,6 +1027,17 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     })()}
                     {isReschedule && <span className="badge-base badge-warning">REM</span>}
                     {isCardLocked && <span className="badge-base badge-neutral"><Lock className="w-3 h-3" /> BLOQ</span>}
+                    {(reinstallsByStore[store.id] || []).map((r: any) => (
+                      <span
+                        key={r.id}
+                        className="badge-base inline-flex items-center gap-1 border border-amber-400 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30"
+                        title={r.reinstall_reason || ""}
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        Reinstalação #{r.reinstall_seq}
+                        {r.reinstall_reason ? ` — ${String(r.reinstall_reason).slice(0, 40)}${String(r.reinstall_reason).length > 40 ? "…" : ""}` : ""}
+                      </span>
+                    ))}
                   </div>
                 </div>
 

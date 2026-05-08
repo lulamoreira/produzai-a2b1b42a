@@ -1484,8 +1484,11 @@ export type Database = {
           manual_checkout_at: string | null
           manual_checkout_by: string | null
           manual_checkout_by_name: string | null
+          parent_installation_id: string | null
           photo_checkin: boolean
           photo_checkin_at: string | null
+          reinstall_reason: string | null
+          reinstall_seq: number
           reschedule_date: string | null
           reschedule_enabled: boolean
           reschedule_os: string | null
@@ -1543,8 +1546,11 @@ export type Database = {
           manual_checkout_at?: string | null
           manual_checkout_by?: string | null
           manual_checkout_by_name?: string | null
+          parent_installation_id?: string | null
           photo_checkin?: boolean
           photo_checkin_at?: string | null
+          reinstall_reason?: string | null
+          reinstall_seq?: number
           reschedule_date?: string | null
           reschedule_enabled?: boolean
           reschedule_os?: string | null
@@ -1602,8 +1608,11 @@ export type Database = {
           manual_checkout_at?: string | null
           manual_checkout_by?: string | null
           manual_checkout_by_name?: string | null
+          parent_installation_id?: string | null
           photo_checkin?: boolean
           photo_checkin_at?: string | null
+          reinstall_reason?: string | null
+          reinstall_seq?: number
           reschedule_date?: string | null
           reschedule_enabled?: boolean
           reschedule_os?: string | null
@@ -1643,6 +1652,13 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_schedules_parent_installation_id_fkey"
+            columns: ["parent_installation_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_schedules"
             referencedColumns: ["id"]
           },
           {

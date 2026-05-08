@@ -1037,6 +1037,20 @@ export default function InstallerPortal() {
 
       <main className="max-w-2xl mx-auto p-4 space-y-4">
 
+        {/* Reinstallation banner — read-only for installer */}
+        {((schedule as any)?.reinstall_seq ?? 0) > 0 && (
+          <div className="rounded-xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm text-amber-900 dark:text-amber-100">
+            <p className="font-semibold flex items-center gap-2">
+              🔄 Esta é uma reinstalação #{(schedule as any).reinstall_seq}
+            </p>
+            {(schedule as any)?.reinstall_reason && (
+              <p className="mt-1 text-xs italic">
+                <span className="font-medium not-italic">Motivo:</span> {(schedule as any).reinstall_reason}
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Store info card */}
         <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
           <div className="px-4 py-3 border-b border-border" style={{ background: "rgba(140,111,78,0.06)" }}>

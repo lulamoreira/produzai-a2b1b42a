@@ -8,6 +8,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Schedule } from "@/types/schedule";
 import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
+import ReinstallCard from "@/components/ReinstallCard";
+import NewReinstallDialog from "@/components/NewReinstallDialog";
 import { useOccurrenceStatusSync } from "@/hooks/useOccurrenceStatusSync";
 import { buildAddress, buildContactsByStoreMap } from "@/lib/storeHelpers";
 import { type ClientStore } from "@/hooks/useMultiClientData";
@@ -39,7 +41,7 @@ import {
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
   Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList, Lock, LockOpen,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, SlidersHorizontal, Filter, MoreHorizontal,
-  ArrowUpDown, LayoutGrid, MapPin, LogIn, LogOut, Undo2, UserCheck,
+  ArrowUpDown, LayoutGrid, MapPin, LogIn, LogOut, Undo2, UserCheck, RefreshCw,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -181,7 +183,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const hasAnySelected = selectedStores.size > 0;
 
   // Shared hooks
-  const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
+  const { schedules, scheduleMap, reinstallsByStore } = useCampaignSchedules(campaignId);
+  const [reinstallDialog, setReinstallDialog] = useState<null | { storeId: string; storeName: string; parentId: string; currentMax: number }>(null);
   const { storeOccurrenceStatus } = useOccurrenceStatusSync(campaignId);
 
   // Auto-generate install codes when dual approval is met
@@ -1117,9 +1120,12 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             }
           };
 
+          const reinstalls = reinstallsByStore[store.id] || [];
+          const currentMaxSeq = reinstalls.reduce((m, r) => Math.max(m, (r as any).reinstall_seq ?? 0), 0);
+
           return (
+            <div key={store.id} className="contents">
             <div
-              key={store.id}
               className={cn(
                 "group/card card-base overflow-hidden flex flex-col transition-shadow duration-150 hover:shadow-md relative",
                 isCardLocked && "opacity-80",
@@ -1938,6 +1944,37 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 </div>
               </div>
             </div>
+            {reinstalls.map((r) => (
+              <ReinstallCard
+                key={r.id}
+                reinstall={r as any}
+                campaignId={campaignId}
+                storeName={store.name}
+                canEdit={canEdit}
+                isAdminOrMaster={isAdminOrMaster}
+              />
+            ))}
+            {isAdminOrMaster && schedule && (
+              <div className="ml-0 md:ml-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-dashed border-amber-400 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                  onClick={() =>
+                    setReinstallDialog({
+                      storeId: store.id,
+                      storeName: store.name,
+                      parentId: schedule.id,
+                      currentMax: currentMaxSeq,
+                    })
+                  }
+                >
+                  <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                  Nova reinstalação
+                </Button>
+              </div>
+            )}
+            </div>
           );
         })}
             </div>
@@ -1992,6 +2029,19 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         contacts={previewStore ? (contactsByStore[previewStore.id] || []) : []}
         photos={previewStore ? (photosByStore[previewStore.id] || []) : []}
       />
+
+      {/* New Reinstall Dialog */}
+      {reinstallDialog && (
+        <NewReinstallDialog
+          open={!!reinstallDialog}
+          onOpenChange={(v) => { if (!v) setReinstallDialog(null); }}
+          campaignId={campaignId}
+          storeId={reinstallDialog.storeId}
+          storeName={reinstallDialog.storeName}
+          parentInstallationId={reinstallDialog.parentId}
+          currentMaxSeq={reinstallDialog.currentMax}
+        />
+      )}
     </div>
   );
 };
