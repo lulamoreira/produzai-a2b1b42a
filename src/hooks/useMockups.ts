@@ -260,3 +260,25 @@ export function useRemoveFromMockup() {
     onError: (e: any) => toast.error(e?.message || 'Erro ao remover'),
   });
 }
+
+// ─── Kit helpers ──────────────────────────────────────────────────────────────
+
+export function useKitComponentMockups(
+  parentMockupId: string | undefined,
+  allMockups: CampaignMockup[]
+) {
+  return useMemo(() => {
+    if (!parentMockupId) return [];
+    return allMockups
+      .filter(m => m.parent_mockup_id === parentMockupId)
+      .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+  }, [parentMockupId, allMockups]);
+}
+
+export function computeKitRolledUpStatus(componentMockups: CampaignMockup[]): MockupStatus {
+  if (componentMockups.length === 0) return 'pending';
+  if (componentMockups.some(m => m.status === 'rejected')) return 'rejected';
+  if (componentMockups.some(m => m.status === 'changes_requested')) return 'changes_requested';
+  if (componentMockups.every(m => m.status === 'approved')) return 'approved';
+  return 'pending';
+}
