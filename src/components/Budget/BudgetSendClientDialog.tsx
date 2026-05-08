@@ -21,6 +21,7 @@ import {
 } from "@/lib/exportSupplierBudget";
 import { uploadAndSign as sharedUploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
+import { SendSummaryPanel, type SendSummaryItem } from "@/components/Budget/SendSummaryPanel";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
