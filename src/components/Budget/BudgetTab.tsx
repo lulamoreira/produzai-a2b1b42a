@@ -163,7 +163,7 @@ function AdminInlineNumberInput({
         onKeyDown={(e) => {
           if (e.key === "Enter") (e.target as HTMLInputElement).blur();
           if (e.key === "Escape") {
-            setVal(initialRef.current != null ? String(initialRef.current) : "");
+            setVal(fmt2(initialRef.current));
             (e.target as HTMLInputElement).blur();
           }
         }}
