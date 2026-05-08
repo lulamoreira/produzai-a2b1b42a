@@ -561,6 +561,8 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       toast.error(e?.message || "Erro ao enviar o relatório.");
     } finally {
       setSending(false);
+      setUploadStatus(null);
+      setStageMessage("");
     }
   };
 
