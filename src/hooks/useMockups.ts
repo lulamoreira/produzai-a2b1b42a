@@ -168,6 +168,18 @@ export function useUpdateMockup() {
       if (params.changes.status) {
         updates.reviewed_by = userData?.user?.id;
         updates.reviewed_at = new Date().toISOString();
+        // Clear "alteração proposta" fields whenever status leaves changes_requested,
+        // so nothing stays stored in the DB that could leak into reports later.
+        if (params.changes.status !== 'changes_requested') {
+          updates.alt_name = null;
+          updates.alt_size = null;
+          updates.alt_specification = null;
+          updates.alt_installation = null;
+          updates.alt_name_active = false;
+          updates.alt_size_active = false;
+          updates.alt_specification_active = false;
+          updates.alt_installation_active = false;
+        }
       }
 
       const { error } = await supabase
@@ -182,7 +194,14 @@ export function useUpdateMockup() {
       const previous = qc.getQueryData(key);
       qc.setQueryData(key, (old: CampaignMockup[] | undefined) => {
         if (!old) return old;
-        return old.map(m => m.id === vars.mockupId ? { ...m, ...vars.changes } as CampaignMockup : m);
+        const clearAlts = vars.changes.status && vars.changes.status !== 'changes_requested'
+          ? {
+              alt_name: null, alt_size: null, alt_specification: null, alt_installation: null,
+              alt_name_active: false, alt_size_active: false,
+              alt_specification_active: false, alt_installation_active: false,
+            }
+          : {};
+        return old.map(m => m.id === vars.mockupId ? { ...m, ...vars.changes, ...clearAlts } as CampaignMockup : m);
       });
       return { previous };
     },
