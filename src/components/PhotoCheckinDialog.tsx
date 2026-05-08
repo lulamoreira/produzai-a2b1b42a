@@ -136,6 +136,7 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {filteredPhotos.map((photo, i) => (
                 <div key={photo.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted/30">
+                  <ReinstallPhotoBadge reinstallSeq={photo.reinstall_seq} className="!top-auto !left-auto bottom-2 right-2" />
                   {isVideo(photo) ? (
                     <div className="w-full aspect-square relative cursor-pointer bg-black flex items-center justify-center" onClick={() => setLightboxIndex(i)}>
                       <video src={photo.photo_url} className="w-full h-full object-cover" muted preload="metadata" onError={() => handleMediaError(photo.id, photo.campaign_id)} />
