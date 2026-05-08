@@ -499,6 +499,31 @@ export default function MockupReviewSheet({
                   </div>
                 </>
               )}
+
+              {/* Observações do kit inteiro (salva no mockup pai) */}
+              <div className="mt-4 space-y-2">
+                <Label>Observações do kit</Label>
+                <Textarea
+                  value={obsValue}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setDraft((d) => ({ ...d, observations: v }));
+                    debounceSave("observations", parentMockup.id, { observations: v });
+                  }}
+                  onBlur={() => {
+                    if (debounceRefs.current.observations)
+                      clearTimeout(debounceRefs.current.observations);
+                    saveChanges(
+                      parentMockup.id,
+                      { observations: obsValue || null },
+                      "observations"
+                    );
+                  }}
+                  rows={4}
+                  className="text-base"
+                  placeholder="Observações gerais sobre este kit..."
+                />
+              </div>
             </div>
           )}
 
