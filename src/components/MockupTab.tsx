@@ -30,16 +30,29 @@ import {
 import { toast } from "sonner";
 import EmptyState from "@/components/EmptyState";
 import MockupReviewSheet from "@/components/MockupReviewSheet";
+import { exportMockupPDF } from "@/lib/exportMockupPDF";
+import { exportMockupExcel } from "@/lib/exportMockupExcel";
+import { saveBlobAs } from "@/lib/saveBlobAs";
 
 interface Props {
   campaignId: string;
   campaignName: string;
+  agencyName?: string;
+  clientName?: string;
   pieces: any[];
   kits: any[];
   kitPieces: { kit_id: string; piece_id: string; quantity?: number }[];
 }
 
 type FilterKey = "all" | MockupStatus;
+
+const FILTER_LABEL: Record<FilterKey, string> = {
+  all: "Todas",
+  pending: "Pendentes",
+  approved: "Aprovadas",
+  changes_requested: "Alterações",
+  rejected: "Reprovadas",
+};
 
 const STATUS_BADGE: Record<MockupStatus, { icon: string; cls: string }> = {
   approved: { icon: "✅", cls: "bg-green-600 text-white border-transparent" },
@@ -51,6 +64,8 @@ const STATUS_BADGE: Record<MockupStatus, { icon: string; cls: string }> = {
 export default function MockupTab({
   campaignId,
   campaignName,
+  agencyName = "",
+  clientName = "",
   pieces,
   kits,
   kitPieces,
@@ -148,6 +163,68 @@ export default function MockupTab({
     setReviewOpen(true);
   };
 
+  // Build the export set: include kit components for any top-level kit in the chosen scope
+  const buildExportMockups = (): CampaignMockup[] => {
+    const scope = filter === "all" ? topLevel : filtered;
+    const ids = new Set(scope.map((m) => m.id));
+    const components = mockups.filter(
+      (m) => m.parent_mockup_id && ids.has(m.parent_mockup_id)
+    );
+    return [...scope, ...components];
+  };
+
+  const handleExportPDF = async () => {
+    const tId = toast.loading("Gerando PDF...");
+    try {
+      const exportSet = buildExportMockups();
+      if (filter !== "all") {
+        toast.message(`Exportando ${filtered.length} mockups (filtro: ${FILTER_LABEL[filter]})`);
+      }
+      const { blob, fileName } = await exportMockupPDF({
+        campaignName,
+        agencyName,
+        clientName,
+        mockups: exportSet,
+        pieces,
+        kits,
+        kitPieces,
+      });
+      await saveBlobAs(blob, fileName, {
+        mimeType: "application/pdf",
+        description: "PDF",
+        extension: ".pdf",
+      });
+      toast.success("PDF gerado", { id: tId });
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao gerar PDF", { id: tId });
+    }
+  };
+
+  const handleExportExcel = async () => {
+    const tId = toast.loading("Gerando Excel...");
+    try {
+      const exportSet = buildExportMockups();
+      if (filter !== "all") {
+        toast.message(`Exportando ${filtered.length} mockups (filtro: ${FILTER_LABEL[filter]})`);
+      }
+      const { blob, fileName } = await exportMockupExcel({
+        campaignName,
+        mockups: exportSet,
+        pieces,
+        kits,
+      });
+      await saveBlobAs(blob, fileName, {
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        description: "Excel",
+        extension: ".xlsx",
+      });
+      toast.success("Excel gerado", { id: tId });
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao gerar Excel", { id: tId });
+    }
+  };
+
   const FilterChip = ({ k, label }: { k: FilterKey; label: string }) => (
     <button
       onClick={() => setFilter(k)}
@@ -175,7 +252,7 @@ export default function MockupTab({
               variant="outline"
               size="sm"
               className="min-h-[44px] gap-1.5"
-              onClick={() => toast.info("Em breve")}
+              onClick={handleExportPDF}
             >
               <FileText className="w-4 h-4" /> PDF
             </Button>
@@ -183,7 +260,7 @@ export default function MockupTab({
               variant="outline"
               size="sm"
               className="min-h-[44px] gap-1.5"
-              onClick={() => toast.info("Em breve")}
+              onClick={handleExportExcel}
             >
               <FileSpreadsheet className="w-4 h-4" /> Excel
             </Button>
