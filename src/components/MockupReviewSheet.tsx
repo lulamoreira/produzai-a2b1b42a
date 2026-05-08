@@ -460,6 +460,12 @@ export default function MockupReviewSheet({
                 <ImageOff className="w-10 h-10" />
               </div>
             )}
+            {annotatedUrl && (
+              <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-md bg-amber-500/95 text-white px-2 py-1 text-xs font-semibold shadow">
+                <Pencil className="w-3 h-3" />
+                Imagem alterada
+              </div>
+            )}
             {baseImageUrl && activeMockup && (
               <Button
                 variant="outline"
