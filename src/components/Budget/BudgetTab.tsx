@@ -2108,6 +2108,9 @@ Qualquer dúvida, estamos à disposição.
             <SheetTitle className="flex items-center gap-2">
               {detailSup?.company_name}
               {detailSup?.locked && <Lock className="w-4 h-4 text-muted-foreground" />}
+              {detailSup?.locked && isAdminOrMaster && (
+                <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px]">Edição administrativa</Badge>
+              )}
               {detailSup?.status === "enviado" && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px]">Enviado</Badge>}
             </SheetTitle>
             <SheetDescription>
