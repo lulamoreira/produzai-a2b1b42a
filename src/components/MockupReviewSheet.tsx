@@ -97,13 +97,23 @@ export default function MockupReviewSheet({
   const parentMockup = mockups[currentIndex];
   const isKit = !!parentMockup?.kit_id && !parentMockup.parent_mockup_id;
 
-  // Kit components (sorted)
+  // Kit components — ordered by the underlying piece display_order so it stays stable
+  // regardless of approval/rejection/changes status.
   const kitComponents = useMemo(() => {
     if (!isKit || !parentMockup) return [];
-    return allMockups
-      .filter((m) => m.parent_mockup_id === parentMockup.id)
-      .sort((a, b) => (a.created_at || "").localeCompare(b.created_at || ""));
-  }, [isKit, parentMockup, allMockups]);
+    const list = allMockups.filter((m) => m.parent_mockup_id === parentMockup.id);
+    return [...list].sort((a, b) => {
+      const pa = a.piece_id ? piecesById.get(a.piece_id) : null;
+      const pb = b.piece_id ? piecesById.get(b.piece_id) : null;
+      const oa = pa?.display_order ?? 0;
+      const ob = pb?.display_order ?? 0;
+      if (oa !== ob) return oa - ob;
+      const na = (pa?.name || "").toLowerCase();
+      const nb = (pb?.name || "").toLowerCase();
+      if (na !== nb) return na.localeCompare(nb);
+      return a.id.localeCompare(b.id);
+    });
+  }, [isKit, parentMockup, allMockups, piecesById]);
 
   // The mockup currently being edited (component if drilled-in, else parent)
   const activeMockup: CampaignMockup | undefined =
