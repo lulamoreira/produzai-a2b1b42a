@@ -1125,7 +1125,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           const currentMaxSeq = reinstalls.reduce((m, r) => Math.max(m, (r as any).reinstall_seq ?? 0), 0);
 
           return (
-            <div key={store.id} className="contents">
+            <div key={store.id} className="flex flex-col gap-2">
             <div
               className={cn(
                 "group/card card-base overflow-hidden flex flex-col transition-shadow duration-150 hover:shadow-md relative",
