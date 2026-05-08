@@ -259,11 +259,15 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
 
     // Fields
     if (piece) {
+      // Only surface "ALTERAÇÃO PROPOSTA" when the piece is explicitly marked as
+      // changes_requested. Pendente / Aprovada / Reprovada must NEVER show alterations,
+      // even if alt_*_active flags were left enabled in the database from a prior state.
+      const showAlt = m.status === "changes_requested";
       const fields: [string, any, boolean, any][] = [
-        ["Nome", piece.name, !!m.alt_name_active, m.alt_name],
-        ["Tamanho", piece.size, !!m.alt_size_active, m.alt_size],
-        ["Especificação", piece.specification, !!m.alt_specification_active, m.alt_specification],
-        ["Instalação", piece.installation_instructions, !!m.alt_installation_active, m.alt_installation],
+        ["Nome", piece.name, showAlt && !!m.alt_name_active, m.alt_name],
+        ["Tamanho", piece.size, showAlt && !!m.alt_size_active, m.alt_size],
+        ["Especificação", piece.specification, showAlt && !!m.alt_specification_active, m.alt_specification],
+        ["Instalação", piece.installation_instructions, showAlt && !!m.alt_installation_active, m.alt_installation],
       ];
       for (const [label, orig, active, alt] of fields) {
         // Rough estimate to decide page break
