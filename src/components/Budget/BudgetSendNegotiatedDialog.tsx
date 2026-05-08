@@ -23,8 +23,8 @@ import type { CampaignPiece, CampaignKit, CampaignKitPiece, ClientStore, Campaig
 import { useCampaignPieceLocations, useCampaignPieceSubLocations } from "@/hooks/useMultiClientData";
 import { validateNegotiationRateio, type RateioValidationResult } from "@/lib/validateNegotiationRateio";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { Textarea } from "@/components/ui/textarea";
+import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 
 interface Props {
   open: boolean;
