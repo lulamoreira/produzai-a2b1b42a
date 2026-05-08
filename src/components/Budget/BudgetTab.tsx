@@ -90,6 +90,91 @@ function getDisplayStatus(sup: { status: string; locked: boolean | null; submitt
   return STATUS_MAP[sup.status] || STATUS_MAP.aguardando;
 }
 
+// ─── Admin inline number input (price/freight/installation) ──────
+function AdminInlineNumberInput({
+  initial,
+  onSave,
+  ariaLabel,
+  placeholder = "—",
+  className,
+}: {
+  initial: number | null;
+  onSave: (val: number | null) => Promise<void>;
+  ariaLabel: string;
+  placeholder?: string;
+  className?: string;
+}) {
+  const [val, setVal] = React.useState<string>(initial != null ? String(initial) : "");
+  const [saving, setSaving] = React.useState(false);
+  const [savedFlash, setSavedFlash] = React.useState(false);
+  const initialRef = React.useRef<number | null>(initial);
+  const focusedRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (focusedRef.current) return;
+    if (initial !== initialRef.current) {
+      initialRef.current = initial;
+      setVal(initial != null ? String(initial) : "");
+    }
+  }, [initial]);
+
+  const commit = async () => {
+    focusedRef.current = false;
+    const trimmed = val.trim().replace(",", ".");
+    const num = trimmed === "" ? null : Number(trimmed);
+    const cur = initialRef.current;
+    if (num != null && (Number.isNaN(num) || num < 0)) {
+      setVal(cur != null ? String(cur) : "");
+      return;
+    }
+    if ((num ?? null) === (cur ?? null)) return;
+    setSaving(true);
+    try {
+      await onSave(num);
+      initialRef.current = num;
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 1500);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao salvar");
+      setVal(cur != null ? String(cur) : "");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={cn("inline-flex items-center gap-1 justify-end", className)}>
+      <Input
+        type="number"
+        inputMode="decimal"
+        step="0.01"
+        min="0"
+        value={val}
+        placeholder={placeholder}
+        aria-label={ariaLabel}
+        onFocus={() => { focusedRef.current = true; }}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+          if (e.key === "Escape") {
+            setVal(initialRef.current != null ? String(initialRef.current) : "");
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        className="h-7 w-24 text-xs text-right tabular-nums px-2"
+      />
+      {saving ? (
+        <Loader2 className="w-3 h-3 animate-spin text-muted-foreground shrink-0" />
+      ) : savedFlash ? (
+        <Check className="w-3 h-3 text-emerald-500 shrink-0" />
+      ) : (
+        <span className="w-3 h-3 shrink-0" />
+      )}
+    </div>
+  );
+}
+
 // ─── Main Component ──────────────────────────────────────
 export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, activeAdjustment }: BudgetTabProps) {
   const { t } = useTranslation();
