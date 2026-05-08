@@ -122,7 +122,12 @@ export function getCountryConfig(countryCode?: string | null): CountryConfig {
 
 export function formatCurrencyByCode(value: number, currencyCode?: string | null, locale?: string | null): string {
   const config = Object.values(COUNTRY_CONFIGS).find(c => c.currency === (currencyCode || "BRL")) || COUNTRY_CONFIGS["BR"];
-  return value.toLocaleString(locale || config.currencyLocale, { style: "currency", currency: config.currency });
+  return value.toLocaleString(locale || config.currencyLocale, {
+    style: "currency",
+    currency: config.currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
 /** Format a phone number according to the country's pattern */
