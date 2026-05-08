@@ -2029,6 +2029,19 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         contacts={previewStore ? (contactsByStore[previewStore.id] || []) : []}
         photos={previewStore ? (photosByStore[previewStore.id] || []) : []}
       />
+
+      {/* New Reinstall Dialog */}
+      {reinstallDialog && (
+        <NewReinstallDialog
+          open={!!reinstallDialog}
+          onOpenChange={(v) => { if (!v) setReinstallDialog(null); }}
+          campaignId={campaignId}
+          storeId={reinstallDialog.storeId}
+          storeName={reinstallDialog.storeName}
+          parentInstallationId={reinstallDialog.parentId}
+          currentMaxSeq={reinstallDialog.currentMax}
+        />
+      )}
     </div>
   );
 };
