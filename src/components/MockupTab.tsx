@@ -137,10 +137,20 @@ export default function MockupTab({
   const pct = total > 0 ? Math.round((reviewed / total) * 100) : 0;
 
   const filtered = useMemo(() => {
-    if (filter === "all") return topLevel;
-    return topLevel.filter((m) => effectiveStatus(m) === filter);
+    const q = search.trim().toLowerCase();
+    let list = topLevel;
+    if (filter !== "all") list = list.filter((m) => effectiveStatus(m) === filter);
+    if (q) {
+      list = list.filter((m) => {
+        const piece = m.piece_id ? piecesById.get(m.piece_id) : null;
+        const kit = m.kit_id ? kitsById.get(m.kit_id) : null;
+        const name = (piece?.name || kit?.name || "").toLowerCase();
+        return name.includes(q);
+      });
+    }
+    return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topLevel, filter, componentsByParent]);
+  }, [topLevel, filter, componentsByParent, search, piecesById, kitsById]);
 
   // Pieces eligible to add: not in mockup, not kit_only, not deleted
   const availablePieces = useMemo(() => {
