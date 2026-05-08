@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { RefreshCw, Pencil, Save, X, CalendarIcon, CheckCircle, Trash2 } from "lucide-react";
+import { RefreshCw, Pencil, Save, X, CalendarIcon, CheckCircle, Trash2, Clock, FileText, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUpdateReinstallReason } from "@/hooks/useCampaignSchedules";
 import type { Schedule } from "@/types/schedule";
 
@@ -22,6 +24,8 @@ interface Props {
   isAdminOrMaster: boolean;
 }
 
+const TEAM_NONE = "__none__";
+
 export default function ReinstallCard({ reinstall, campaignId, storeName, canEdit, isAdminOrMaster }: Props) {
   const qc = useQueryClient();
   const updateReason = useUpdateReinstallReason();
@@ -31,12 +35,39 @@ export default function ReinstallCard({ reinstall, campaignId, storeName, canEdi
   const [draft, setDraft] = useState(reason);
   const [dateOpen, setDateOpen] = useState(false);
 
+  const { data: teams = [] } = useQuery({
+    queryKey: ["installation_teams", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("installation_teams")
+        .select("id, name")
+        .eq("campaign_id", campaignId)
+        .order("name");
+      if (error) throw error;
+      return data as { id: string; name: string }[];
+    },
+  });
+
   const isCompleted = !!reinstall.completed_at;
   const scheduledDate = reinstall.scheduled_date
     ? new Date(reinstall.scheduled_date + "T12:00:00")
     : undefined;
 
   const editAllowed = canEdit && (!reinstall.locked || isAdminOrMaster);
+
+  const persist = async (patch: Record<string, any>, successMsg: string) => {
+    const { error } = await supabase
+      .from("campaign_schedules")
+      .update(patch as any)
+      .eq("id", reinstall.id);
+    if (error) {
+      toast.error(error.message);
+      return false;
+    }
+    qc.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+    toast.success(successMsg);
+    return true;
+  };
 
   const handleSaveReason = async () => {
     await updateReason.mutateAsync({
@@ -49,38 +80,31 @@ export default function ReinstallCard({ reinstall, campaignId, storeName, canEdi
 
   const handleSetDate = async (d: Date | undefined) => {
     setDateOpen(false);
-    const newDate = d ? format(d, "yyyy-MM-dd") : null;
-    const { error } = await supabase
-      .from("campaign_schedules")
-      .update({ scheduled_date: newDate } as any)
-      .eq("id", reinstall.id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    qc.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-    toast.success("Data atualizada");
+    await persist({ scheduled_date: d ? format(d, "yyyy-MM-dd") : null }, "Data atualizada");
+  };
+
+  const handleSetTime = async (v: string) => {
+    await persist({ scheduled_time: v || null }, "Horário atualizado");
+  };
+
+  const handleSetOs = async (v: string) => {
+    await persist({ installation_os: v.trim() || null }, "OS atualizada");
+  };
+
+  const handleSetTeam = async (v: string) => {
+    await persist({ team_id: v === TEAM_NONE ? null : v }, "Equipe atualizada");
   };
 
   const handleToggleComplete = async () => {
-    const { error } = await supabase
-      .from("campaign_schedules")
-      .update({ completed_at: isCompleted ? null : new Date().toISOString() } as any)
-      .eq("id", reinstall.id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    qc.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
-    toast.success(isCompleted ? "Marcada como pendente" : "Reinstalação concluída");
+    await persist(
+      { completed_at: isCompleted ? null : new Date().toISOString() },
+      isCompleted ? "Marcada como pendente" : "Reinstalação concluída"
+    );
   };
 
   const handleDelete = async () => {
     if (!confirm(`Excluir reinstalação #${seq} de ${storeName}?`)) return;
-    const { error } = await supabase
-      .from("campaign_schedules")
-      .delete()
-      .eq("id", reinstall.id);
+    const { error } = await supabase.from("campaign_schedules").delete().eq("id", reinstall.id);
     if (error) {
       toast.error(error.message);
       return;
@@ -97,7 +121,7 @@ export default function ReinstallCard({ reinstall, campaignId, storeName, canEdi
       )}
       style={{ padding: 0 }}
     >
-      <div className="p-3 sm:p-4 space-y-2">
+      <div className="p-3 sm:p-4 space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="border-amber-400 text-amber-700 dark:text-amber-300 gap-1">
@@ -112,56 +136,110 @@ export default function ReinstallCard({ reinstall, campaignId, storeName, canEdi
               <Badge variant="secondary" className="text-xs">Pendente</Badge>
             )}
           </div>
-          {isAdminOrMaster && (
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 px-2 text-destructive hover:text-destructive"
-              onClick={handleDelete}
-              title="Excluir reinstalação"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
-          )}
-        </div>
-
-        {/* Scheduled date */}
-        <div className="flex items-center gap-2 text-xs">
-          <span className="font-medium text-foreground">Data:</span>
-          <Popover open={dateOpen} onOpenChange={setDateOpen}>
-            <PopoverTrigger asChild>
+          <div className="flex items-center gap-1">
+            {editAllowed && !isCompleted && (
+              <Button size="sm" variant="outline" className="h-7 px-2 text-xs gap-1" onClick={handleToggleComplete}>
+                <CheckCircle className="w-3 h-3" /> Marcar concluída
+              </Button>
+            )}
+            {editAllowed && isCompleted && (
+              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={handleToggleComplete}>
+                Desfazer
+              </Button>
+            )}
+            {isAdminOrMaster && (
               <Button
                 size="sm"
-                variant="outline"
-                disabled={!editAllowed}
-                className="h-7 px-2 text-xs"
+                variant="ghost"
+                className="h-8 px-2 text-destructive hover:text-destructive"
+                onClick={handleDelete}
+                title="Excluir reinstalação"
               >
-                <CalendarIcon className="w-3 h-3 mr-1" />
-                {scheduledDate
-                  ? format(scheduledDate, "dd/MM/yyyy", { locale: ptBR })
-                  : "Definir data"}
+                <Trash2 className="w-3.5 h-3.5" />
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={scheduledDate}
-                onSelect={handleSetDate}
-                initialFocus
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-          {editAllowed && !isCompleted && (
-            <Button size="sm" variant="outline" className="h-7 px-2 text-xs gap-1" onClick={handleToggleComplete}>
-              <CheckCircle className="w-3 h-3" /> Marcar concluída
-            </Button>
-          )}
-          {editAllowed && isCompleted && (
-            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={handleToggleComplete}>
-              Desfazer
-            </Button>
-          )}
+            )}
+          </div>
+        </div>
+
+        {/* Editable fields grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          {/* Date */}
+          <div className="flex items-center gap-2">
+            <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <span className="font-medium text-foreground shrink-0">Data:</span>
+            <Popover open={dateOpen} onOpenChange={setDateOpen}>
+              <PopoverTrigger asChild>
+                <Button size="sm" variant="outline" disabled={!editAllowed} className="h-7 px-2 text-xs flex-1 justify-start">
+                  {scheduledDate
+                    ? format(scheduledDate, "dd/MM/yyyy", { locale: ptBR })
+                    : "Definir"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={scheduledDate}
+                  onSelect={handleSetDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* Time */}
+          <div className="flex items-center gap-2">
+            <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <span className="font-medium text-foreground shrink-0">Horário:</span>
+            <Input
+              type="time"
+              defaultValue={reinstall.scheduled_time ?? ""}
+              disabled={!editAllowed}
+              onBlur={(e) => {
+                const v = e.target.value;
+                if (v !== (reinstall.scheduled_time ?? "")) handleSetTime(v);
+              }}
+              className="h-7 px-2 text-xs flex-1"
+            />
+          </div>
+
+          {/* OS */}
+          <div className="flex items-center gap-2">
+            <FileText className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <span className="font-medium text-foreground shrink-0">OS:</span>
+            <Input
+              type="text"
+              placeholder="Nº OS"
+              defaultValue={reinstall.installation_os ?? ""}
+              disabled={!editAllowed}
+              onBlur={(e) => {
+                const v = e.target.value;
+                if (v !== (reinstall.installation_os ?? "")) handleSetOs(v);
+              }}
+              className="h-7 px-2 text-xs flex-1"
+            />
+          </div>
+
+          {/* Team */}
+          <div className="flex items-center gap-2">
+            <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <span className="font-medium text-foreground shrink-0">Equipe:</span>
+            <Select
+              value={reinstall.team_id ?? TEAM_NONE}
+              onValueChange={handleSetTeam}
+              disabled={!editAllowed}
+            >
+              <SelectTrigger className="h-7 px-2 text-xs flex-1">
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TEAM_NONE}>— Sem equipe —</SelectItem>
+                {teams.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Reason — editable inline */}
