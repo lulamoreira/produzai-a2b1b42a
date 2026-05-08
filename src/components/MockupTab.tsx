@@ -14,6 +14,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   CheckCircle2,
@@ -28,6 +30,7 @@ import {
   LayoutGrid,
   Search,
   X,
+  RotateCcw,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -36,6 +39,8 @@ import MockupReviewSheet from "@/components/MockupReviewSheet";
 import { exportMockupPDF } from "@/lib/exportMockupPDF";
 import { exportMockupExcel } from "@/lib/exportMockupExcel";
 import { saveBlobAs } from "@/lib/saveBlobAs";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
   campaignId: string;
@@ -82,6 +87,10 @@ export default function MockupTab({
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetTarget, setResetTarget] = useState<MockupStatus | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const qc = useQueryClient();
 
   const piecesById = useMemo(() => {
     const m = new Map<string, any>();
@@ -254,6 +263,41 @@ export default function MockupTab({
     }
   };
 
+  const handleResetAll = async () => {
+    if (!resetTarget) return;
+    setResetting(true);
+    const tId = toast.loading("Zerando mockup...");
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("campaign_mockups")
+        .update({
+          status: resetTarget,
+          alt_name: null,
+          alt_size: null,
+          alt_specification: null,
+          alt_installation: null,
+          alt_name_active: false,
+          alt_size_active: false,
+          alt_specification_active: false,
+          alt_installation_active: false,
+          observations: null,
+          reviewed_by: userData?.user?.id ?? null,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("campaign_id", campaignId);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ["campaign_mockups", campaignId] });
+      toast.success("Mockup zerado com sucesso", { id: tId });
+      setResetOpen(false);
+      setResetTarget(null);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao zerar mockup", { id: tId });
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const FilterChip = ({ k, label }: { k: FilterKey; label: string }) => (
     <button
       onClick={() => setFilter(k)}
@@ -293,6 +337,19 @@ export default function MockupTab({
             >
               <FileSpreadsheet className="w-4 h-4" /> Excel
             </Button>
+            {total > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-h-[44px] gap-1.5 text-destructive hover:text-destructive"
+                onClick={() => {
+                  setResetTarget(null);
+                  setResetOpen(true);
+                }}
+              >
+                <RotateCcw className="w-4 h-4" /> Zerar
+              </Button>
+            )}
           </div>
         </div>
 
@@ -554,6 +611,52 @@ export default function MockupTab({
               ))}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Reset mockup dialog */}
+      <Dialog open={resetOpen} onOpenChange={(v) => { if (!resetting) { setResetOpen(v); if (!v) setResetTarget(null); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Zerar mockup</DialogTitle>
+            <DialogDescription>
+              Esta ação apaga TODAS as observações, alterações propostas e toggles de TODAS as {total} peças/kits desta campanha, e define o status de todas para o que você escolher abaixo. Não pode ser desfeito.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <p className="text-sm font-medium">Definir todas como:</p>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                onClick={() => setResetTarget("pending")}
+                className={`flex items-center gap-2 min-h-[48px] px-3 rounded-md border text-left transition-colors ${resetTarget === "pending" ? "border-primary bg-primary/5" : "border-border"}`}
+              >
+                <Clock className="w-4 h-4 text-muted-foreground" /> ⏳ Pendentes
+              </button>
+              <button
+                type="button"
+                onClick={() => setResetTarget("approved")}
+                className={`flex items-center gap-2 min-h-[48px] px-3 rounded-md border text-left transition-colors ${resetTarget === "approved" ? "border-primary bg-primary/5" : "border-border"}`}
+              >
+                <CheckCircle2 className="w-4 h-4 text-green-600" /> ✅ Aprovadas
+              </button>
+              <button
+                type="button"
+                onClick={() => setResetTarget("rejected")}
+                className={`flex items-center gap-2 min-h-[48px] px-3 rounded-md border text-left transition-colors ${resetTarget === "rejected" ? "border-primary bg-primary/5" : "border-border"}`}
+              >
+                <XCircle className="w-4 h-4 text-red-600" /> ❌ Reprovadas
+              </button>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" disabled={resetting} onClick={() => { setResetOpen(false); setResetTarget(null); }}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" disabled={!resetTarget || resetting} onClick={handleResetAll}>
+              {resetting ? "Zerando..." : "Confirmar e zerar"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
