@@ -1983,7 +1983,7 @@ Qualquer dúvida, estamos à disposição.
       </AlertDialog>
 
       {/* ═══ SUPPLIER DETAIL SHEET ═══ */}
-      <Sheet open={!!detailSupplier} onOpenChange={(o) => !o && setDetailSupplier(null)}>
+      <Sheet open={!!detailSupplier} onOpenChange={(o) => { if (!o) { setDetailSupplier(null); setShowOnlyMissing(false); } }}>
         <SheetContent className="w-full sm:max-w-[min(96vw,1100px)] overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
