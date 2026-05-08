@@ -147,6 +147,7 @@ export async function exportMockupExcel(params: Params): Promise<{ blob: Blob; f
       piece?.installation_instructions || "",
       showAlt && m.alt_installation_active && m.alt_installation ? m.alt_installation : "",
       STATUS_LABEL[status],
+      m.annotated_image_url ? "✏️ Sim" : "—",
       m.observations || "",
       fmtDate(m.reviewed_at),
     ]);
