@@ -255,24 +255,28 @@ export default function MockupReviewSheet({
     const draftValue = draft[draftKey];
     const value = draftValue ?? altValue;
 
+    const showToggle = m.status === "changes_requested";
+
     return (
       <div className="space-y-2 p-4 border-b">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">{label}</Label>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Alterar</span>
-            <Switch
-              checked={isActive}
-              onCheckedChange={(checked) =>
-                saveChanges(m.id, { [activeKey]: checked } as any, `${key}_active`)
-              }
-            />
-          </div>
+          {showToggle && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Alterar</span>
+              <Switch
+                checked={isActive}
+                onCheckedChange={(checked) =>
+                  saveChanges(m.id, { [activeKey]: checked } as any, `${key}_active`)
+                }
+              />
+            </div>
+          )}
         </div>
         <div className="px-3 py-2 bg-muted/50 rounded-md text-base whitespace-pre-wrap break-words">
           {pieceValue || <span className="text-muted-foreground italic">—</span>}
         </div>
-        {isActive &&
+        {showToggle && isActive &&
           (multiline ? (
             <Textarea
               value={value || ""}
