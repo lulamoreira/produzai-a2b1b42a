@@ -90,6 +90,15 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
           {address && <p className="text-xs text-muted-foreground">{address}</p>}
         </div>
 
+        {/* Reinstallation filter (auto-hides if there are no reinstallation photos) */}
+        <div className="px-6 pt-3">
+          <ReinstallPhotoFilter
+            photos={photos}
+            value={reinstallFilter}
+            onChange={(v) => setReinstallFilter(v)}
+          />
+        </div>
+
         {/* Category filter */}
         <div className="px-6 py-3 flex gap-2 flex-wrap">
           <Button
@@ -98,10 +107,10 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
             className="text-xs"
             onClick={() => setSelectedCategory(null)}
           >
-            Todas ({photos.length})
+            Todas ({reinstallFilteredPhotos.length})
           </Button>
           {CATEGORIES.map((cat) => {
-            const count = photos.filter((p) => p.category === cat.value).length;
+            const count = reinstallFilteredPhotos.filter((p) => p.category === cat.value).length;
             return (
               <Button
                 key={cat.value}
