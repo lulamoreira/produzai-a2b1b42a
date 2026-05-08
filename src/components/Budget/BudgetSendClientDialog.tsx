@@ -475,13 +475,13 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   };
 
   const handleSend = async () => {
-    if (!EMAIL_REGEX.test(email.trim())) {
-      toast.error("Informe um e-mail válido.");
+    const merged = mergeRecipients(email, cc);
+    if (merged.invalid.length) {
+      toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
       return;
     }
-    const ccEmail = cc.trim();
-    if (ccEmail && !EMAIL_REGEX.test(ccEmail)) {
-      toast.error("E-mail do CC é inválido.");
+    if (merged.valid.length === 0) {
+      toast.error("Informe pelo menos um e-mail válido.");
       return;
     }
     if (submittedSuppliers.length === 0) {
@@ -544,8 +544,6 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         }
       }
 
-      setStageMessage("Enviando e-mail...");
-
       // Build templateData
       const difference = bestSupplier && budgetAmount != null ? bestSupplier.total - budgetAmount : null;
       const templateData = {
@@ -579,22 +577,23 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         downloadUrls,
       };
 
-      try {
-        await sendOnce(email.trim(), templateData);
-        upsertItem(`E-mail → ${email.trim()}`, "email", "sent");
-      } catch (err: any) {
-        upsertItem(`E-mail → ${email.trim()}`, "email", "failed", err?.message || "Erro ao enviar");
-        throw err;
-      }
-      if (ccEmail) {
+      const toEmails = parseRecipients(email);
+      let anySent = false;
+      let sentIndex = 0;
+      for (const recipient of merged.valid) {
+        sentIndex += 1;
+        const isCc = !toEmails.includes(recipient);
+        const label = `${isCc ? "E-mail (CC)" : "E-mail"} → ${recipient}`;
+        setStageMessage(`Enviando e-mail ${sentIndex}/${merged.valid.length} — ${recipient}`);
         try {
-          await sendOnce(ccEmail, templateData);
-          upsertItem(`E-mail (CC) → ${ccEmail}`, "email", "sent");
+          await sendOnce(recipient, templateData);
+          upsertItem(label, "email", "sent");
+          anySent = true;
         } catch (err: any) {
-          upsertItem(`E-mail (CC) → ${ccEmail}`, "email", "failed", err?.message || "Erro ao enviar");
-          throw err;
+          upsertItem(label, "email", "failed", err?.message || "Erro ao enviar");
         }
       }
+      if (!anySent) throw new Error("Nenhum e-mail foi enviado.");
 
       toast.dismiss(toastId);
       toast.success("Relatório enviado com sucesso!");
