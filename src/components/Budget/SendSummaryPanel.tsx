@@ -2,6 +2,7 @@ import React from "react";
 import { CheckCircle2, XCircle, FileText, Link2, Mail, MessageCircle } from "lucide-react";
 
 export type SummaryItemKind = "file" | "email" | "whatsapp";
+export type { SummaryItemKind as SendSummaryItemKind };
 export type SummaryItemStage = "generated" | "signed" | "sent" | "failed";
 
 export interface SendSummaryItem {
