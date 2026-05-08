@@ -24,7 +24,7 @@ import {
   PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
   Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
   CalendarDays, Camera, DollarSign, Database, Globe, Settings, LayoutGrid, Layers,
-  Sun, Moon,
+  Sun, Moon, Palette,
 } from "lucide-react";
 
 const CAMPAIGN_MODULE_KEYS = [
@@ -36,6 +36,7 @@ const CAMPAIGN_MODULE_KEYS = [
   { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#4A5568" },
   { key: "pieces", tKey: "modules.pieces", icon: LayoutList, color: "#A07850" },
   { key: "matrix", tKey: "modules.matrix", icon: Grid3X3, color: "#8C6F4E" },
+  { key: "mockup", tKey: "modules.mockup", fallbackLabel: "Mockup", icon: Palette, color: "#7A6A8C" },
   { key: "adjustments", tKey: "modules.adjustments", icon: Layers, color: "#6E5A7A", adminOnly: true },
 ];
 
@@ -409,6 +410,7 @@ export default function AppSidebar() {
                               if (mod.key === "history") return false;
                               if ((mod as any).adminOnly && !isAdminOrMaster) return false;
                               if (mod.key === "adjustments") return isAdminOrMaster;
+                              if (mod.key === "mockup") return camp.modules.includes("pieces");
                               return camp.modules.includes(mod.key);
                             }).map((mod) => {
                               const modActive = isCampaignModuleActive(camp.campaignId, mod.key);
@@ -424,7 +426,7 @@ export default function AppSidebar() {
                                   {...hoverHandlers(modActive)}
                                 >
                                   <AquaIcon icon={mod.icon} size="xs" color={mod.color} />
-                                  <span className="truncate">{t(mod.tKey)}</span>
+                                  <span className="truncate">{t(mod.tKey, (mod as any).fallbackLabel ?? mod.tKey)}</span>
                                 </button>
                               );
                             })}
@@ -511,7 +513,7 @@ export default function AppSidebar() {
                               {...hoverHandlers(modActive)}
                             >
                               <AquaIcon icon={mod.icon} size="xs" color={mod.color} />
-                              <span className="truncate">{t(mod.tKey)}</span>
+                              <span className="truncate">{t(mod.tKey, (mod as any).fallbackLabel ?? mod.tKey)}</span>
                             </button>
                           );
                         })}
