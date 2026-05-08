@@ -153,8 +153,10 @@ export default function MockupReviewSheet({
     isKit && kitDrilldownIndex === null
       ? kit?.name || "Kit"
       : piece?.name || kit?.name || "—";
-  const imageUrl =
+  const baseImageUrl =
     isKit && kitDrilldownIndex === null ? kitImage : piece?.image_url || kit?.image_url || null;
+  const annotatedUrl = activeMockup?.annotated_image_url || null;
+  const imageUrl = (showAnnotated && annotatedUrl) ? annotatedUrl : baseImageUrl;
 
   // ─── Navigation ──
   const goToPrev = () => {
