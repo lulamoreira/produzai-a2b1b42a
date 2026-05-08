@@ -82,13 +82,17 @@ export default function MockupReviewSheet({
     return m;
   }, [pieces]);
 
-  // Reset index when sheet opens
+  // Reset index ONLY when sheet opens or the user explicitly opens a different mockup.
+  // Do NOT depend on `mockups` here — that array gets a new reference after every save
+  // (because react-query invalidates and refetches), which would yank the user back to
+  // the initial item and exit kit drill-down mid-typing.
   useEffect(() => {
     if (!open) return;
     const idx = mockups.findIndex((m) => m.id === initialMockupId);
     setCurrentIndex(idx >= 0 ? idx : 0);
     setKitDrilldownIndex(null);
-  }, [open, initialMockupId, mockups]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialMockupId]);
 
   const parentMockup = mockups[currentIndex];
   const isKit = !!parentMockup?.kit_id && !parentMockup.parent_mockup_id;
