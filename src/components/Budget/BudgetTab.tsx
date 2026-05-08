@@ -2023,6 +2023,24 @@ Qualquer dúvida, estamos à disposição.
                   {fmtCurrency(supplierPartialTotals[detailSupplier].total)}
                 </span>
               </div>
+              {(() => {
+                const missingCount = supplierPartialTotals[detailSupplier].totalPiecesNeeded - supplierPartialTotals[detailSupplier].pricedPieces;
+                return (
+                  <div className="flex justify-end pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={showOnlyMissing ? "default" : "outline"}
+                      onClick={() => setShowOnlyMissing((v) => !v)}
+                      disabled={missingCount <= 0 && !showOnlyMissing}
+                      className="h-7 text-xs gap-1.5"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      {showOnlyMissing ? "Mostrar todas" : `Apenas sem preço (${missingCount})`}
+                    </Button>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
