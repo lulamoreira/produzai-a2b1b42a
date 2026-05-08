@@ -184,6 +184,15 @@ export async function exportMockupExcel(params: Params): Promise<{ blob: Blob; f
     };
     statusCell.font = { color: { argb: STATUS_FONT[status] }, bold: true };
     statusCell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+
+    // Annotation column
+    const annCell = row.getCell(12);
+    annCell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    if (m.annotated_image_url) {
+      annCell.font = { color: { argb: "FF15803D" }, bold: true };
+    } else {
+      annCell.font = { color: { argb: "FF9CA3AF" } };
+    }
   };
 
   for (const m of topLevel) {
