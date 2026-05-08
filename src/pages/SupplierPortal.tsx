@@ -1123,21 +1123,25 @@ const SupplierPortal = () => {
                                   {kitPiecesData.filter((kp) => kp.kit_id === row.kitId).length} peça(s) · Qtd kit: {row.totalQty}
                                 </p>
                               </div>
-                              <div className="ml-auto text-right">
-                                {(() => {
-                                  const unitSum = displayRows
-                                    .filter((r) => r.type === "kit_piece" && r.kitId === row.kitId)
-                                    .reduce((s, r) => s + (r.pieceId ? (prices[r.pieceId] ?? 0) : 0), 0);
-                                  return (
-                                    <div className="text-[11px] text-muted-foreground leading-tight">
-                                      Unit. por kit: <span className="font-medium text-foreground">{fmt(unitSum)}</span>
+                              {(() => {
+                                const unitSum = displayRows
+                                  .filter((r) => r.type === "kit_piece" && r.kitId === row.kitId)
+                                  .reduce((s, r) => s + (r.pieceId ? (prices[r.pieceId] ?? 0) : 0), 0);
+                                return (
+                                  <div className="ml-auto flex items-center gap-6">
+                                    <div className="text-right">
+                                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">Unit. por kit</div>
+                                      <span className="text-sm font-semibold text-foreground">{fmt(unitSum)}</span>
                                     </div>
-                                  );
-                                })()}
-                                <span className="text-sm font-semibold text-primary">
-                                  {fmt(kitSectionTotals[row.kitId!] || 0)}
-                                </span>
-                              </div>
+                                    <div className="text-right">
+                                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">Total do kit</div>
+                                      <span className="text-sm font-semibold text-primary">
+                                        {fmt(kitSectionTotals[row.kitId!] || 0)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </TableCell>
                         </TableRow>
