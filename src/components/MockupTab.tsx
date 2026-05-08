@@ -3,6 +3,7 @@ import {
   useCampaignMockups,
   useInitializeMockups,
   useAddPieceToMockup,
+  computeKitRolledUpStatus,
   type CampaignMockup,
   type MockupStatus,
 } from "@/hooks/useMockups";
