@@ -1171,6 +1171,7 @@ export type Database = {
           alt_size_active: boolean | null
           alt_specification: string | null
           alt_specification_active: boolean | null
+          annotated_image_url: string | null
           campaign_id: string
           created_at: string | null
           id: string
@@ -1192,6 +1193,7 @@ export type Database = {
           alt_size_active?: boolean | null
           alt_specification?: string | null
           alt_specification_active?: boolean | null
+          annotated_image_url?: string | null
           campaign_id: string
           created_at?: string | null
           id?: string
@@ -1213,6 +1215,7 @@ export type Database = {
           alt_size_active?: boolean | null
           alt_specification?: string | null
           alt_specification_active?: boolean | null
+          annotated_image_url?: string | null
           campaign_id?: string
           created_at?: string | null
           id?: string

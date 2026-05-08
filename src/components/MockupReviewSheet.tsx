@@ -18,7 +18,9 @@ import {
   Loader2,
   ImageOff,
   Layers,
+  Pencil,
 } from "lucide-react";
+import MockupAnnotationEditor from "./MockupAnnotationEditor";
 import {
   useUpdateMockup,
   computeKitRolledUpStatus,
@@ -74,6 +76,8 @@ export default function MockupReviewSheet({
   const [savingField, setSavingField] = useState<string | null>(null);
   const [savedFlash, setSavedFlash] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [annotationOpen, setAnnotationOpen] = useState(false);
+  const [showAnnotated, setShowAnnotated] = useState(true);
   const debounceRefs = useRef<Record<string, any>>({});
 
   const piecesById = useMemo(() => {
@@ -149,8 +153,10 @@ export default function MockupReviewSheet({
     isKit && kitDrilldownIndex === null
       ? kit?.name || "Kit"
       : piece?.name || kit?.name || "—";
-  const imageUrl =
+  const baseImageUrl =
     isKit && kitDrilldownIndex === null ? kitImage : piece?.image_url || kit?.image_url || null;
+  const annotatedUrl = activeMockup?.annotated_image_url || null;
+  const imageUrl = (showAnnotated && annotatedUrl) ? annotatedUrl : baseImageUrl;
 
   // ─── Navigation ──
   const goToPrev = () => {
@@ -410,6 +416,26 @@ export default function MockupReviewSheet({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto pb-4">
+          {/* Annotated/original toggle */}
+          {annotatedUrl && baseImageUrl && (
+            <div className="flex gap-2 text-xs px-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAnnotated(false)}
+                className={!showAnnotated ? "font-bold" : "text-muted-foreground"}
+              >
+                Original
+              </button>
+              <span className="text-muted-foreground">|</span>
+              <button
+                type="button"
+                onClick={() => setShowAnnotated(true)}
+                className={showAnnotated ? "font-bold text-amber-700" : "text-muted-foreground"}
+              >
+                ✏️ Anotada
+              </button>
+            </div>
+          )}
           {/* Image */}
           <div
             className="relative w-full bg-muted"
@@ -434,7 +460,22 @@ export default function MockupReviewSheet({
                 <ImageOff className="w-10 h-10" />
               </div>
             )}
+            {baseImageUrl && activeMockup && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="absolute bottom-2 right-2 gap-1.5 bg-background/90 z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAnnotationOpen(true);
+                }}
+              >
+                <Pencil className="w-4 h-4" />
+                {annotatedUrl ? "Editar anotação" : "Anotar imagem"}
+              </Button>
+            )}
           </div>
+
 
           <div className="p-3 text-base font-semibold flex items-center gap-2">
             {isKit && kitDrilldownIndex === null && <Layers className="w-4 h-4" />}
@@ -700,6 +741,25 @@ export default function MockupReviewSheet({
               style={{ touchAction: "pinch-zoom" }}
             />
           </div>
+        )}
+
+        {annotationOpen && activeMockup && baseImageUrl && (
+          <MockupAnnotationEditor
+            open={annotationOpen}
+            onOpenChange={setAnnotationOpen}
+            imageUrl={baseImageUrl}
+            existingAnnotationUrl={activeMockup.annotated_image_url}
+            campaignId={campaignId}
+            mockupId={activeMockup.id}
+            onSave={async (url) => {
+              await update.mutateAsync({
+                mockupId: activeMockup.id,
+                campaignId,
+                changes: { annotated_image_url: url },
+              });
+              setShowAnnotated(true);
+            }}
+          />
         )}
       </SheetContent>
     </Sheet>

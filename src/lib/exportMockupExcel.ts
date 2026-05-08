@@ -83,6 +83,7 @@ export async function exportMockupExcel(params: Params): Promise<{ blob: Blob; f
     "Instalação original",
     "Instalação proposta",
     "Status",
+    "Anotação",
     "Observações",
     "Revisado em",
   ];
@@ -99,6 +100,7 @@ export async function exportMockupExcel(params: Params): Promise<{ blob: Blob; f
     { width: 30 },
     { width: 30 },
     { width: 18 },
+    { width: 12 },
     { width: 40 },
     { width: 20 },
   ];
@@ -145,6 +147,7 @@ export async function exportMockupExcel(params: Params): Promise<{ blob: Blob; f
       piece?.installation_instructions || "",
       showAlt && m.alt_installation_active && m.alt_installation ? m.alt_installation : "",
       STATUS_LABEL[status],
+      m.annotated_image_url ? "✏️ Sim" : "—",
       m.observations || "",
       fmtDate(m.reviewed_at),
     ]);
@@ -181,6 +184,15 @@ export async function exportMockupExcel(params: Params): Promise<{ blob: Blob; f
     };
     statusCell.font = { color: { argb: STATUS_FONT[status] }, bold: true };
     statusCell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+
+    // Annotation column
+    const annCell = row.getCell(12);
+    annCell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    if (m.annotated_image_url) {
+      annCell.font = { color: { argb: "FF15803D" }, bold: true };
+    } else {
+      annCell.font = { color: { argb: "FF9CA3AF" } };
+    }
   };
 
   for (const m of topLevel) {
