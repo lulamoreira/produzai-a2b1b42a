@@ -2303,7 +2303,17 @@ Qualquer dúvida, estamos à disposição.
                                   )}
                                 </TableCell>
                                 <TableCell className="text-xs text-right">{qty}</TableCell>
-                                <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(unitPrice) : "—"}</TableCell>
+                                <TableCell className="text-xs text-right">
+                                  {isAdminOrMaster ? (
+                                    <AdminInlineNumberInput
+                                      initial={priceRow ? Number(priceRow.unit_price) : null}
+                                      onSave={(v) => upsertAdminPrice(kp.piece_id, v)}
+                                      ariaLabel={`Preço unitário ${piece?.code ?? kp.piece_id}`}
+                                    />
+                                  ) : (
+                                    priceRow ? fmtCurrency(unitPrice) : "—"
+                                  )}
+                                </TableCell>
                                 <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
                               </TableRow>
                               {sug && isSugExpanded && (
