@@ -1065,8 +1065,8 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
               <p className="text-xs text-muted-foreground">Até 5 emails receberão notificação de novas ocorrências.</p>
               <div className="flex gap-2">
                 <Input
-                  type="email"
-                  placeholder="email@exemplo.com"
+                  type="text"
+                  placeholder="email@exemplo.com, outro@exemplo.com"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddEmail())}
@@ -1075,6 +1075,7 @@ const OccurrencesTab = ({ campaignId, clientId, stores, pieces, canEdit: canEdit
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
+              <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
               {emails.map((em) => (
                 <div key={em.id} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted/50">
                   <span className="text-sm">{em.email}</span>
