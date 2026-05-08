@@ -1970,24 +1970,22 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
               />
             ))}
             {isAdminOrMaster && schedule && (
-              <div className="ml-0 md:ml-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full border-dashed border-amber-400 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                  onClick={() =>
-                    setReinstallDialog({
-                      storeId: store.id,
-                      storeName: store.name,
-                      parentId: schedule.id,
-                      currentMax: currentMaxSeq,
-                    })
-                  }
-                >
-                  <RefreshCw className="w-3.5 h-3.5 mr-1" />
-                  Nova reinstalação
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs gap-2 border-amber-300 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                onClick={() =>
+                  setReinstallDialog({
+                    storeId: store.id,
+                    storeName: store.name,
+                    parentId: schedule.id,
+                    currentMax: currentMaxSeq,
+                  })
+                }
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Nova instalação — {store.name}
+              </Button>
             )}
             </div>
           );
