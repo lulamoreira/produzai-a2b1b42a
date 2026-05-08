@@ -153,8 +153,15 @@ export default function AdjustmentBudgetRequestDialog({
   };
 
   const handleSendEmail = async () => {
-    if (!EMAIL_REGEX.test(email.trim())) { toast.error("E-mail inválido."); return; }
-    if (cc.trim() && !EMAIL_REGEX.test(cc.trim())) { toast.error("CC inválido."); return; }
+    const merged = mergeRecipients(email, cc);
+    if (merged.invalid.length) {
+      toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
+      return;
+    }
+    if (merged.valid.length === 0) {
+      toast.error("Informe pelo menos um e-mail válido.");
+      return;
+    }
     setSending(true);
     setUploadStatus(null);
     setSummaryItems([]);
@@ -171,31 +178,38 @@ export default function AdjustmentBudgetRequestDialog({
         push({ kind: "file", label: "Planilha de reorçamento", stage: "failed", error: err?.message || "Erro" });
         throw err;
       }
-      try {
-        const { error } = await supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "adjustment-quote-request-to-supplier",
-            recipientEmail: email.trim(),
-            idempotencyKey: `adj-quote-${adjustment.id}-${winner!.id}-${Date.now()}`,
-            templateData: {
-              supplierName: winner!.company_name,
-              contactName: winner!.contact_name,
-              agencyName, campaignName,
-              adjustmentName: adjustment.name,
-              changesDescription,
-              customMessage: customMessage.trim() || undefined,
-              downloadUrls: [link],
+      let anySent = false;
+      const toEmails = parseRecipients(email);
+      for (const recipient of merged.valid) {
+        const isCc = !toEmails.includes(recipient);
+        const label = `${isCc ? "E-mail (CC)" : "E-mail"} → ${recipient}`;
+        try {
+          const { error } = await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "adjustment-quote-request-to-supplier",
+              recipientEmail: recipient,
+              idempotencyKey: `adj-quote-${adjustment.id}-${winner!.id}-${recipient}-${Date.now()}`,
+              templateData: {
+                supplierName: winner!.company_name,
+                contactName: winner!.contact_name,
+                agencyName, campaignName,
+                adjustmentName: adjustment.name,
+                changesDescription,
+                customMessage: customMessage.trim() || undefined,
+                downloadUrls: [link],
+              },
             },
-          },
-        });
-        if (error) throw new Error(error.message || "Erro ao enviar");
-        push({ kind: "email", label: `E-mail → ${email.trim()}`, stage: "sent" });
-      } catch (err: any) {
-        push({ kind: "email", label: `E-mail → ${email.trim()}`, stage: "failed", error: err?.message || "Erro" });
-        throw err;
+          });
+          if (error) throw new Error(error.message || "Erro ao enviar");
+          push({ kind: "email", label, stage: "sent" });
+          anySent = true;
+        } catch (err: any) {
+          push({ kind: "email", label, stage: "failed", error: err?.message || "Erro" });
+        }
       }
+      if (!anySent) throw new Error("Nenhum e-mail foi enviado.");
       await persistRequest();
-      toast.success("Reorçamento enviado por e-mail.", { id: tId });
+      toast.success(`Reorçamento enviado para ${merged.valid.length} destinatário(s).`, { id: tId });
     } catch (e: any) {
       toast.error(e?.message || "Falha ao enviar.", { id: tId });
     } finally { setSending(false); setUploadStatus(null); }
