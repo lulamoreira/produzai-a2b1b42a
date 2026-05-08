@@ -416,6 +416,26 @@ export default function MockupReviewSheet({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto pb-4">
+          {/* Annotated/original toggle */}
+          {annotatedUrl && baseImageUrl && (
+            <div className="flex gap-2 text-xs px-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowAnnotated(false)}
+                className={!showAnnotated ? "font-bold" : "text-muted-foreground"}
+              >
+                Original
+              </button>
+              <span className="text-muted-foreground">|</span>
+              <button
+                type="button"
+                onClick={() => setShowAnnotated(true)}
+                className={showAnnotated ? "font-bold text-amber-700" : "text-muted-foreground"}
+              >
+                ✏️ Anotada
+              </button>
+            </div>
+          )}
           {/* Image */}
           <div
             className="relative w-full bg-muted"
@@ -440,7 +460,22 @@ export default function MockupReviewSheet({
                 <ImageOff className="w-10 h-10" />
               </div>
             )}
+            {baseImageUrl && activeMockup && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="absolute bottom-2 right-2 gap-1.5 bg-background/90 z-10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setAnnotationOpen(true);
+                }}
+              >
+                <Pencil className="w-4 h-4" />
+                {annotatedUrl ? "Editar anotação" : "Anotar imagem"}
+              </Button>
+            )}
           </div>
+
 
           <div className="p-3 text-base font-semibold flex items-center gap-2">
             {isKit && kitDrilldownIndex === null && <Layers className="w-4 h-4" />}
