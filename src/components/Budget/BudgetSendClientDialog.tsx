@@ -22,8 +22,8 @@ import {
 import { uploadAndSign as sharedUploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
 import { SendSummaryPanel, type SendSummaryItem, type SummaryItemKind, type SummaryItemStage } from "@/components/Budget/SendSummaryPanel";
-
-import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
+import { Textarea } from "@/components/ui/textarea";
+import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const BUCKET = "budget-files";
