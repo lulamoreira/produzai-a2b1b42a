@@ -2261,6 +2261,7 @@ Qualquer dúvida, estamos à disposição.
                       kitTotal += lineTotal;
                       return { kp, piece, priceRow, unitPrice, qty, lineTotal };
                     });
+                    const kitUnitTotal = pieceRows.reduce((sum, r) => sum + r.unitPrice, 0);
                     const visibleRows = showOnlyMissing
                       ? pieceRows.filter((r) => !r.priceRow || r.unitPrice <= 0)
                       : pieceRows;
@@ -2268,8 +2269,12 @@ Qualquer dúvida, estamos à disposição.
                     return (
                       <React.Fragment key={kit.id}>
                         <TableRow className="bg-muted/40 border-t-2">
-                          <TableCell colSpan={3} className="text-xs font-semibold">
+                          <TableCell colSpan={2} className="text-xs font-semibold">
                             🧩 Kit {kit.code} - {kit.name} <span className="font-normal text-muted-foreground">(Qtd kit: {kitQty})</span>
+                          </TableCell>
+                          <TableCell className="text-xs text-right font-semibold">
+                            <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">Unit. por kit</div>
+                            <div>{fmtCurrency(kitUnitTotal)}</div>
                           </TableCell>
                           <TableCell className="text-xs text-right font-semibold">{fmtCurrency(kitTotal)}</TableCell>
                         </TableRow>
