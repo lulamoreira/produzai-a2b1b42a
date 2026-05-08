@@ -523,6 +523,9 @@ export default function MockupReviewSheet({
                     const v = e.target.value;
                     setDraft((d) => ({ ...d, observations: v }));
                     debounceSave("observations", parentMockup.id, { observations: v });
+                    if (v.trim() !== "" && parentMockup.status !== "changes_requested") {
+                      saveChanges(parentMockup.id, { status: "changes_requested" }, "status");
+                    }
                   }}
                   onBlur={() => {
                     if (debounceRefs.current.observations)
@@ -561,6 +564,9 @@ export default function MockupReviewSheet({
                   const v = e.target.value;
                   setDraft((d) => ({ ...d, observations: v }));
                   debounceSave("observations", activeMockup.id, { observations: v });
+                  if (v.trim() !== "" && activeMockup.status !== "changes_requested") {
+                    saveChanges(activeMockup.id, { status: "changes_requested" }, "status");
+                  }
                 }}
                 onBlur={() => {
                   if (debounceRefs.current.observations)
