@@ -25,7 +25,7 @@ import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp, SlidersHorizontal, MoreHorizontal } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp, SlidersHorizontal, MoreHorizontal, RefreshCw } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
