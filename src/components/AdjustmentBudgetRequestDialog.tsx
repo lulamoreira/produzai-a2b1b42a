@@ -136,7 +136,7 @@ export default function AdjustmentBudgetRequestDialog({
       currentPrices: prices,
       extraCosts: extras,
     });
-    const link = await uploadAndSign(blob, fileName, `adjustment_${adjustment.id}`, campaignId);
+    const link = await uploadAndSign(blob, fileName, `adjustment_${adjustment.id}`, campaignId, setUploadStatus);
     return { link, fileName };
   };
 
