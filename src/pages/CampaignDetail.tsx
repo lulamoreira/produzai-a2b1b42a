@@ -3750,6 +3750,8 @@ const CampaignDetail = () => {
             <MockupTab
               campaignId={campaignId}
               campaignName={campaign?.name || ""}
+              agencyName={agency?.name || ""}
+              clientName={client?.name || ""}
               pieces={pieces}
               kits={kits}
               kitPieces={kitPieces}
