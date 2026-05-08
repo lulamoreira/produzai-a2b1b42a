@@ -185,7 +185,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   });
 
   // Shared hooks for schedules and occurrence status sync
-  const { schedules, scheduleMap } = useCampaignSchedules(campaignId);
+  const { schedules, scheduleMap, reinstallsByStore } = useCampaignSchedules(campaignId);
   const { storeOccurrenceStatus } = useOccurrenceStatusSync(campaignId);
 
   // Upsert schedule
