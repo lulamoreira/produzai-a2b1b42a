@@ -83,6 +83,7 @@ export async function exportMockupExcel(params: Params): Promise<{ blob: Blob; f
     "Instalação original",
     "Instalação proposta",
     "Status",
+    "Anotação",
     "Observações",
     "Revisado em",
   ];
@@ -99,6 +100,7 @@ export async function exportMockupExcel(params: Params): Promise<{ blob: Blob; f
     { width: 30 },
     { width: 30 },
     { width: 18 },
+    { width: 12 },
     { width: 40 },
     { width: 20 },
   ];
