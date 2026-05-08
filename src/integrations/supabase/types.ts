@@ -1161,6 +1161,101 @@ export type Database = {
           },
         ]
       }
+      campaign_mockups: {
+        Row: {
+          alt_installation: string | null
+          alt_installation_active: boolean | null
+          alt_name: string | null
+          alt_name_active: boolean | null
+          alt_size: string | null
+          alt_size_active: boolean | null
+          alt_specification: string | null
+          alt_specification_active: boolean | null
+          campaign_id: string
+          created_at: string | null
+          id: string
+          kit_id: string | null
+          observations: string | null
+          parent_mockup_id: string | null
+          piece_id: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          alt_installation?: string | null
+          alt_installation_active?: boolean | null
+          alt_name?: string | null
+          alt_name_active?: boolean | null
+          alt_size?: string | null
+          alt_size_active?: boolean | null
+          alt_specification?: string | null
+          alt_specification_active?: boolean | null
+          campaign_id: string
+          created_at?: string | null
+          id?: string
+          kit_id?: string | null
+          observations?: string | null
+          parent_mockup_id?: string | null
+          piece_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          alt_installation?: string | null
+          alt_installation_active?: boolean | null
+          alt_name?: string | null
+          alt_name_active?: boolean | null
+          alt_size?: string | null
+          alt_size_active?: boolean | null
+          alt_specification?: string | null
+          alt_specification_active?: boolean | null
+          campaign_id?: string
+          created_at?: string | null
+          id?: string
+          kit_id?: string | null
+          observations?: string | null
+          parent_mockup_id?: string | null
+          piece_id?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_mockups_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_mockups_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_mockups_parent_mockup_id_fkey"
+            columns: ["parent_mockup_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_mockups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_mockups_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_pieces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_notification_emails: {
         Row: {
           campaign_id: string
