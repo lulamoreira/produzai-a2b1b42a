@@ -374,6 +374,7 @@ export default function MockupTab({
             if (!v) setReviewId(null);
           }}
           mockups={filtered}
+          allMockups={mockups}
           initialMockupId={reviewId}
           pieces={pieces}
           kits={kits}
