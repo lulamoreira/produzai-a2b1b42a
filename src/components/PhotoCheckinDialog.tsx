@@ -8,6 +8,8 @@ import { type ClientStore } from "@/hooks/useMultiClientData";
 import { type InstallationPhoto, useUpdateInstallationPhoto, useDeleteInstallationPhoto, isVideo } from "@/hooks/useInstallationPhotos";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useOrphanPhotoCleanup } from "@/hooks/useOrphanPhotoCleanup";
+import { ReinstallPhotoBadge } from "@/components/ReinstallPhotoBadge";
+import { ReinstallPhotoFilter, type ReinstallPhotoFilterValue } from "@/components/ReinstallPhotoFilter";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
