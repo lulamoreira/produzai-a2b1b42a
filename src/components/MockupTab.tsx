@@ -263,6 +263,41 @@ export default function MockupTab({
     }
   };
 
+  const handleResetAll = async () => {
+    if (!resetTarget) return;
+    setResetting(true);
+    const tId = toast.loading("Zerando mockup...");
+    try {
+      const { data: userData } = await supabase.auth.getUser();
+      const { error } = await supabase
+        .from("campaign_mockups")
+        .update({
+          status: resetTarget,
+          alt_name: null,
+          alt_size: null,
+          alt_specification: null,
+          alt_installation: null,
+          alt_name_active: false,
+          alt_size_active: false,
+          alt_specification_active: false,
+          alt_installation_active: false,
+          observations: null,
+          reviewed_by: userData?.user?.id ?? null,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("campaign_id", campaignId);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ["campaign_mockups", campaignId] });
+      toast.success("Mockup zerado com sucesso", { id: tId });
+      setResetOpen(false);
+      setResetTarget(null);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao zerar mockup", { id: tId });
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const FilterChip = ({ k, label }: { k: FilterKey; label: string }) => (
     <button
       onClick={() => setFilter(k)}
