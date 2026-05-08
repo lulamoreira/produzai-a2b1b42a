@@ -410,6 +410,7 @@ export default function AppSidebar() {
                               if (mod.key === "history") return false;
                               if ((mod as any).adminOnly && !isAdminOrMaster) return false;
                               if (mod.key === "adjustments") return isAdminOrMaster;
+                              if (mod.key === "mockup") return camp.modules.includes("pieces");
                               return camp.modules.includes(mod.key);
                             }).map((mod) => {
                               const modActive = isCampaignModuleActive(camp.campaignId, mod.key);
