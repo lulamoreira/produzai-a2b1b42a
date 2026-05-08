@@ -686,23 +686,33 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
               <UploadProgressPanel status={uploadStatus} />
             </div>
           )}
+
+          {!sending && summary.length > 0 && <SendSummaryPanel items={summary} />}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
-            <X className="w-4 h-4 mr-1" /> Cancelar
-          </Button>
-          <Button onClick={handleSend} disabled={sending || submittedSuppliers.length === 0}>
-            {sending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" /> Enviando...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4 mr-1" /> Enviar Relatório
-              </>
-            )}
-          </Button>
+          {!sending && summary.length > 0 ? (
+            <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+              Fechar
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
+                <X className="w-4 h-4 mr-1" /> Cancelar
+              </Button>
+              <Button onClick={handleSend} disabled={sending || submittedSuppliers.length === 0}>
+                {sending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" /> Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-1" /> Enviar Relatório
+                  </>
+                )}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
