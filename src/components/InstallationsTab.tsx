@@ -29,6 +29,7 @@ import { useLogActivity } from "@/hooks/useActivityLogs";
 import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
 import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
+import { ReinstallPhotoBadge } from "@/components/ReinstallPhotoBadge";
 import InstallerPreviewDialog from "@/components/InstallerPreviewDialog";
 // Lazy-loaded: leaflet (~150KB) only ships when the user opens the map view
 const InstallationsMapView = lazy(() => import("@/components/InstallationsMapView"));
