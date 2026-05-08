@@ -148,6 +148,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [editSupplierDraft, setEditSupplierDraft] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
   const [newSupplier, setNewSupplier] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
   const [expandedSuggestionPieceId, setExpandedSuggestionPieceId] = useState<string | null>(null);
+  const [showOnlyMissing, setShowOnlyMissing] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyCode);
   const [showLockConfirm, setShowLockConfirm] = useState(false);
   const [exportingBudget, setExportingBudget] = useState(false);
