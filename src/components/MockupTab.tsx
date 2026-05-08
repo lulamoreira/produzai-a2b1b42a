@@ -495,6 +495,8 @@ export default function MockupTab({
                 if (cp?.image_url) { img = cp.image_url; break; }
               }
             }
+            const annotated = (m as any).annotated_image_url as string | null;
+            if (annotated) img = annotated;
             const status = effectiveStatus(m);
             const badge = STATUS_BADGE[status];
             const kitComponentCount = kit
