@@ -75,12 +75,14 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   const [sending, setSending] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const [stageMessage, setStageMessage] = useState<string>("");
+  const [summary, setSummary] = useState<SendSummaryItem[]>([]);
 
   useEffect(() => {
     if (open) {
       setEmail(clientEmail || "");
       setCc("");
       setIncludeComparative(true);
+      setSummary([]);
     }
   }, [open, clientEmail]);
 
