@@ -761,7 +761,7 @@ export default function MockupReviewSheet({
               await update.mutateAsync({
                 mockupId: activeMockup.id,
                 campaignId,
-                changes: { annotated_image_url: url },
+                changes: { annotated_image_url: url, status: 'changes_requested' },
               });
               setShowAnnotated(true);
             }}
