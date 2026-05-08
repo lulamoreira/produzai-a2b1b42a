@@ -2403,6 +2403,7 @@ export type Database = {
           id: string
           media_type: string
           photo_url: string
+          reinstall_seq: number
           store_id: string
           upload_method: string
           uploaded_by: string | null
@@ -2415,6 +2416,7 @@ export type Database = {
           id?: string
           media_type?: string
           photo_url: string
+          reinstall_seq?: number
           store_id: string
           upload_method?: string
           uploaded_by?: string | null
@@ -2427,6 +2429,7 @@ export type Database = {
           id?: string
           media_type?: string
           photo_url?: string
+          reinstall_seq?: number
           store_id?: string
           upload_method?: string
           uploaded_by?: string | null

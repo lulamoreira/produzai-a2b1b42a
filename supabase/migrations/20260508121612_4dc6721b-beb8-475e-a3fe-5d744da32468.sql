@@ -1,0 +1,2 @@
+ALTER TABLE public.installation_photos ADD COLUMN IF NOT EXISTS reinstall_seq integer NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_installation_photos_reinstall ON public.installation_photos(reinstall_seq) WHERE reinstall_seq > 0;
