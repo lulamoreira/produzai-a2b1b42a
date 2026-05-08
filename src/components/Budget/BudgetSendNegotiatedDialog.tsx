@@ -13,6 +13,7 @@ import {
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import { uploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
+import { SendSummaryPanel, type SendSummaryItem } from "@/components/Budget/SendSummaryPanel";
 import {
   buildNegotiatedProposalWorkbook,
   computeNegotiatedTotals,
