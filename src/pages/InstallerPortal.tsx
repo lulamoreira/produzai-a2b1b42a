@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import PhasePickerDialog, { type PhotoPhase } from "@/components/PhasePickerDialog";
+import { ReinstallPhotoBadge } from "@/components/ReinstallPhotoBadge";
 
 interface PortalData {
   schedule: any;
