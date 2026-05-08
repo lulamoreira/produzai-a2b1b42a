@@ -31,6 +31,7 @@ import {
   Search,
   X,
   RotateCcw,
+  Pencil,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -494,6 +495,8 @@ export default function MockupTab({
                 if (cp?.image_url) { img = cp.image_url; break; }
               }
             }
+            const annotated = (m as any).annotated_image_url as string | null;
+            if (annotated) img = annotated;
             const status = effectiveStatus(m);
             const badge = STATUS_BADGE[status];
             const kitComponentCount = kit
@@ -532,6 +535,14 @@ export default function MockupTab({
                   <div className="absolute top-2 left-2">
                     <Badge variant="secondary" className="gap-1 text-[11px]">
                       <Layers className="w-3 h-3" /> Kit ({kitComponentCount})
+                    </Badge>
+                  </div>
+                )}
+
+                {annotated && (
+                  <div className={`absolute ${kit ? 'top-10' : 'top-2'} left-2`}>
+                    <Badge className="gap-1 text-[11px] bg-amber-500 text-white hover:bg-amber-500">
+                      <Pencil className="w-3 h-3" /> Imagem alterada
                     </Badge>
                   </div>
                 )}
