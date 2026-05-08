@@ -41,7 +41,7 @@ import {
   Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
   Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList, Lock, LockOpen,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, SlidersHorizontal, Filter, MoreHorizontal,
-  ArrowUpDown, LayoutGrid, MapPin, LogIn, LogOut, Undo2, UserCheck,
+  ArrowUpDown, LayoutGrid, MapPin, LogIn, LogOut, Undo2, UserCheck, RefreshCw,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
