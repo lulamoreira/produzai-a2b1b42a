@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { supabasePaginate } from '@/lib/supabasePaginate';
@@ -191,7 +192,27 @@ export function useUpdateMockup() {
       }
       toast.error('Erro ao salvar: ' + (e?.message || 'Tente novamente'));
     },
-    onSettled: (_, __, vars) => {
+    onSettled: async (_, __, vars) => {
+      // Roll up kit status when a kit component is updated
+      try {
+        const updated = qc.getQueryData<CampaignMockup[]>(['campaign_mockups', vars.campaignId]);
+        if (updated) {
+          const current = updated.find(m => m.id === vars.mockupId);
+          if (current?.parent_mockup_id) {
+            const siblings = updated.filter(m => m.parent_mockup_id === current.parent_mockup_id);
+            const newKitStatus = computeKitRolledUpStatus(siblings);
+            const parent = updated.find(m => m.id === current.parent_mockup_id);
+            if (parent && parent.status !== newKitStatus) {
+              await supabase
+                .from('campaign_mockups')
+                .update({ status: newKitStatus })
+                .eq('id', parent.id);
+            }
+          }
+        }
+      } catch {
+        // ignore rollup errors; main update already succeeded
+      }
       qc.invalidateQueries({ queryKey: ['campaign_mockups', vars.campaignId] });
     },
   });
@@ -238,4 +259,26 @@ export function useRemoveFromMockup() {
     },
     onError: (e: any) => toast.error(e?.message || 'Erro ao remover'),
   });
+}
+
+// ─── Kit helpers ──────────────────────────────────────────────────────────────
+
+export function useKitComponentMockups(
+  parentMockupId: string | undefined,
+  allMockups: CampaignMockup[]
+) {
+  return useMemo(() => {
+    if (!parentMockupId) return [];
+    return allMockups
+      .filter(m => m.parent_mockup_id === parentMockupId)
+      .sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+  }, [parentMockupId, allMockups]);
+}
+
+export function computeKitRolledUpStatus(componentMockups: CampaignMockup[]): MockupStatus {
+  if (componentMockups.length === 0) return 'pending';
+  if (componentMockups.some(m => m.status === 'rejected')) return 'rejected';
+  if (componentMockups.some(m => m.status === 'changes_requested')) return 'changes_requested';
+  if (componentMockups.every(m => m.status === 'approved')) return 'approved';
+  return 'pending';
 }
