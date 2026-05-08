@@ -2179,165 +2179,183 @@ Qualquer dúvida, estamos à disposição.
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {/* Standalone pieces */}
-                  {pieces.filter((p) => !p.kit_only).filter((piece) => {
-                    if (!showOnlyMissing) return true;
-                    const priceRow = detailPrices.find((pr) => pr.piece_id === piece.id);
-                    const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
-                    return !priceRow || unitPrice <= 0;
-                  }).sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? ''))).map((piece) => {
-                    const qty = pieceTotals[piece.id] || 0;
-                    const priceRow = detailPrices.find((pr) => pr.piece_id === piece.id);
-                    const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
-                    const lineTotal = unitPrice * qty;
-                    const sug = suggestionsMap[piece.id];
-                    const isSugExpanded = expandedSuggestionPieceId === piece.id;
-                    return (
-                      <React.Fragment key={piece.id}>
-                        <TableRow>
-                          <TableCell className="text-xs font-medium">
-                            {piece.code} - {piece.name}
-                            {sug && sug.orcado_por === "sugerida" ? (
-                              <>
-                                <div className="text-amber-700 text-xs break-words whitespace-normal mt-0.5">
-                                  {sug.suggested_spec}
-                                  <span className="text-amber-500 italic ml-1">(especificação modificada pelo fornecedor)</span>
-                                </div>
-                                {piece.specification && (
-                                  <div className="text-muted-foreground text-[10px] break-words whitespace-normal mt-0.5 line-through">{piece.specification}</div>
-                                )}
-                              </>
-                            ) : (
-                              piece.specification && <div className="text-muted-foreground text-xs break-words whitespace-normal mt-0.5">{piece.specification}</div>
-                            )}
-                            {sug && (
-                              <button onClick={() => setExpandedSuggestionPieceId(isSugExpanded ? null : piece.id)} className="ml-1 inline-flex items-center">
-                                <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[9px] cursor-pointer gap-0.5">
-                                  Sugestão {isSugExpanded ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
-                                </Badge>
-                              </button>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-xs text-right">{qty}</TableCell>
-                          <TableCell className="text-xs text-right">
-                            {isAdminOrMaster ? (
-                              <AdminInlineNumberInput
-                                initial={priceRow ? Number(priceRow.unit_price) : null}
-                                onSave={(v) => upsertAdminPrice(piece.id, v)}
-                                ariaLabel={`Preço unitário ${piece.code}`}
-                              />
-                            ) : (
-                              priceRow ? fmtCurrency(unitPrice) : "—"
-                            )}
-                          </TableCell>
-                          <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
-                        </TableRow>
-                        {sug && isSugExpanded && (
-                          <TableRow className="bg-amber-50/80">
-                            <TableCell colSpan={4} className="text-xs p-3">
-                              <p className="text-amber-800 font-medium mb-1">Sugestão do fornecedor:</p>
-                              <p className="text-amber-700 italic">"{sug.suggested_spec}"</p>
-                              <Badge className={cn("mt-1 text-[9px]", sug.orcado_por === "sugerida" ? "bg-amber-200 text-amber-800" : "bg-muted text-muted-foreground")}>
-                                Orçou pela: {sug.orcado_por === "sugerida" ? "Minha sugestão" : "Especificação original"}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </React.Fragment>
-                    );
-                  })}
-                  {/* Kits expanded into pieces */}
-                  {[...kits].sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? ''))).map((kit) => {
-                    const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
-                    if (kpList.length === 0) return null;
-                    const kitQty = Math.min(...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1))));
-                    let kitTotal = 0;
-                    const pieceRows = kpList.map((kp) => {
-                      const piece = pieces.find((p) => p.id === kp.piece_id) || (null as any);
-                      const priceRow = detailPrices.find((pr) => pr.piece_id === kp.piece_id);
-                      const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
-                      const qty = kitQty * kp.quantity;
-                      const lineTotal = unitPrice * qty;
-                      kitTotal += lineTotal;
-                      return { kp, piece, priceRow, unitPrice, qty, lineTotal };
+                  {(() => {
+                    const codeKey = (c: any) => {
+                      const n = Number(c);
+                      return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
+                    };
+                    type Merged =
+                      | { kind: "piece"; code: any; data: typeof pieces[number] }
+                      | { kind: "kit"; code: any; data: typeof kits[number] };
+                    const merged: Merged[] = [
+                      ...pieces.filter((p) => !p.kit_only).map((p) => ({ kind: "piece" as const, code: p.code, data: p })),
+                      ...kits.map((k) => ({ kind: "kit" as const, code: k.code, data: k })),
+                    ];
+                    merged.sort((a, b) => {
+                      const diff = codeKey(a.code) - codeKey(b.code);
+                      if (diff !== 0) return diff;
+                      return String(a.code ?? "").localeCompare(String(b.code ?? ""));
                     });
-                    const kitUnitTotal = pieceRows.reduce((sum, r) => sum + r.unitPrice, 0);
-                    const visibleRows = showOnlyMissing
-                      ? pieceRows.filter((r) => !r.priceRow || r.unitPrice <= 0)
-                      : pieceRows;
-                    if (showOnlyMissing && visibleRows.length === 0) return null;
-                    return (
-                      <React.Fragment key={kit.id}>
-                        <TableRow className="bg-muted/40 border-t-2">
-                          <TableCell colSpan={2} className="text-xs font-semibold">
-                            🧩 Kit {kit.code} - {kit.name} <span className="font-normal text-muted-foreground">(Qtd kit: {kitQty})</span>
-                          </TableCell>
-                          <TableCell className="text-xs text-right font-semibold">
-                            <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">Unit. por kit</div>
-                            <div>{fmtCurrency(kitUnitTotal)}</div>
-                          </TableCell>
-                          <TableCell className="text-xs text-right font-semibold">{fmtCurrency(kitTotal)}</TableCell>
-                        </TableRow>
-                        {visibleRows.map(({ kp, piece, priceRow, unitPrice, qty, lineTotal }) => {
-                          const sug = piece ? suggestionsMap[piece.id] : null;
-                          const isSugExpanded = expandedSuggestionPieceId === kp.piece_id;
-                          return (
-                            <React.Fragment key={kp.id}>
-                              <TableRow className="bg-muted/10">
-                                <TableCell className="text-xs pl-6">
-                             {piece ? `${piece.code} - ${piece.name}` : kp.piece_id}
-                                  {piece && sug && sug.orcado_por === "sugerida" ? (
-                                    <>
-                                      <div className="text-amber-700 text-xs break-words whitespace-normal mt-0.5">
-                                        {sug.suggested_spec}
-                                        <span className="text-amber-500 italic ml-1">(especificação modificada pelo fornecedor)</span>
-                                      </div>
-                                      {piece.specification && (
-                                        <div className="text-muted-foreground text-[10px] break-words whitespace-normal mt-0.5 line-through">{piece.specification}</div>
-                                      )}
-                                    </>
-                                  ) : (
-                                    piece?.specification && <div className="text-muted-foreground text-xs break-words whitespace-normal mt-0.5">{piece.specification}</div>
-                                  )}
-                                  {sug && (
-                                    <button onClick={() => setExpandedSuggestionPieceId(isSugExpanded ? null : kp.piece_id)} className="ml-1 inline-flex items-center">
-                                      <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[9px] cursor-pointer gap-0.5">
-                                        Sugestão {isSugExpanded ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
-                                      </Badge>
-                                    </button>
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-xs text-right">{qty}</TableCell>
-                                <TableCell className="text-xs text-right">
-                                  {isAdminOrMaster ? (
-                                    <AdminInlineNumberInput
-                                      initial={priceRow ? Number(priceRow.unit_price) : null}
-                                      onSave={(v) => upsertAdminPrice(kp.piece_id, v)}
-                                      ariaLabel={`Preço unitário ${piece?.code ?? kp.piece_id}`}
-                                    />
-                                  ) : (
-                                    priceRow ? fmtCurrency(unitPrice) : "—"
-                                  )}
-                                </TableCell>
-                                <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
-                              </TableRow>
-                              {sug && isSugExpanded && (
-                                <TableRow className="bg-amber-50/80">
-                                  <TableCell colSpan={4} className="text-xs p-3">
-                                    <p className="text-amber-800 font-medium mb-1">Sugestão do fornecedor:</p>
-                                    <p className="text-amber-700 italic">"{sug.suggested_spec}"</p>
-                                    <Badge className={cn("mt-1 text-[9px]", sug.orcado_por === "sugerida" ? "bg-amber-200 text-amber-800" : "bg-muted text-muted-foreground")}>
-                                      Orçou pela: {sug.orcado_por === "sugerida" ? "Minha sugestão" : "Especificação original"}
+                    return merged.map((item) => {
+                      if (item.kind === "piece") {
+                        const piece = item.data;
+                        if (showOnlyMissing) {
+                          const pr0 = detailPrices.find((pr) => pr.piece_id === piece.id);
+                          const up0 = pr0 ? Number(pr0.unit_price) || 0 : 0;
+                          if (pr0 && up0 > 0) return null;
+                        }
+                        const qty = pieceTotals[piece.id] || 0;
+                        const priceRow = detailPrices.find((pr) => pr.piece_id === piece.id);
+                        const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
+                        const lineTotal = unitPrice * qty;
+                        const sug = suggestionsMap[piece.id];
+                        const isSugExpanded = expandedSuggestionPieceId === piece.id;
+                        return (
+                          <React.Fragment key={`piece-${piece.id}`}>
+                            <TableRow>
+                              <TableCell className="text-xs font-medium">
+                                {piece.code} - {piece.name}
+                                {sug && sug.orcado_por === "sugerida" ? (
+                                  <>
+                                    <div className="text-amber-700 text-xs break-words whitespace-normal mt-0.5">
+                                      {sug.suggested_spec}
+                                      <span className="text-amber-500 italic ml-1">(especificação modificada pelo fornecedor)</span>
+                                    </div>
+                                    {piece.specification && (
+                                      <div className="text-muted-foreground text-[10px] break-words whitespace-normal mt-0.5 line-through">{piece.specification}</div>
+                                    )}
+                                  </>
+                                ) : (
+                                  piece.specification && <div className="text-muted-foreground text-xs break-words whitespace-normal mt-0.5">{piece.specification}</div>
+                                )}
+                                {sug && (
+                                  <button onClick={() => setExpandedSuggestionPieceId(isSugExpanded ? null : piece.id)} className="ml-1 inline-flex items-center">
+                                    <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[9px] cursor-pointer gap-0.5">
+                                      Sugestão {isSugExpanded ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
                                     </Badge>
+                                  </button>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-xs text-right">{qty}</TableCell>
+                              <TableCell className="text-xs text-right">
+                                {isAdminOrMaster ? (
+                                  <AdminInlineNumberInput
+                                    initial={priceRow ? Number(priceRow.unit_price) : null}
+                                    onSave={(v) => upsertAdminPrice(piece.id, v)}
+                                    ariaLabel={`Preço unitário ${piece.code}`}
+                                  />
+                                ) : (
+                                  priceRow ? fmtCurrency(unitPrice) : "—"
+                                )}
+                              </TableCell>
+                              <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
+                            </TableRow>
+                            {sug && isSugExpanded && (
+                              <TableRow className="bg-amber-50/80">
+                                <TableCell colSpan={4} className="text-xs p-3">
+                                  <p className="text-amber-800 font-medium mb-1">Sugestão do fornecedor:</p>
+                                  <p className="text-amber-700 italic">"{sug.suggested_spec}"</p>
+                                  <Badge className={cn("mt-1 text-[9px]", sug.orcado_por === "sugerida" ? "bg-amber-200 text-amber-800" : "bg-muted text-muted-foreground")}>
+                                    Orçou pela: {sug.orcado_por === "sugerida" ? "Minha sugestão" : "Especificação original"}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
+                        );
+                      }
+                      const kit = item.data;
+                      const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
+                      if (kpList.length === 0) return null;
+                      const kitQty = Math.min(...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1))));
+                      let kitTotal = 0;
+                      const pieceRows = kpList.map((kp) => {
+                        const piece = pieces.find((p) => p.id === kp.piece_id) || (null as any);
+                        const priceRow = detailPrices.find((pr) => pr.piece_id === kp.piece_id);
+                        const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
+                        const qty = kitQty * kp.quantity;
+                        const lineTotal = unitPrice * qty;
+                        kitTotal += lineTotal;
+                        return { kp, piece, priceRow, unitPrice, qty, lineTotal };
+                      });
+                      const kitUnitTotal = pieceRows.reduce((sum, r) => sum + r.unitPrice, 0);
+                      const visibleRows = showOnlyMissing
+                        ? pieceRows.filter((r) => !r.priceRow || r.unitPrice <= 0)
+                        : pieceRows;
+                      if (showOnlyMissing && visibleRows.length === 0) return null;
+                      return (
+                        <React.Fragment key={`kit-${kit.id}`}>
+                          <TableRow className="bg-muted/40 border-t-2">
+                            <TableCell colSpan={2} className="text-xs font-semibold">
+                              🧩 Kit {kit.code} - {kit.name} <span className="font-normal text-muted-foreground">(Qtd kit: {kitQty})</span>
+                            </TableCell>
+                            <TableCell className="text-xs text-right font-semibold">
+                              <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">Unit. por kit</div>
+                              <div>{fmtCurrency(kitUnitTotal)}</div>
+                            </TableCell>
+                            <TableCell className="text-xs text-right font-semibold">{fmtCurrency(kitTotal)}</TableCell>
+                          </TableRow>
+                          {visibleRows.map(({ kp, piece, priceRow, unitPrice, qty, lineTotal }) => {
+                            const sug = piece ? suggestionsMap[piece.id] : null;
+                            const isSugExpanded = expandedSuggestionPieceId === kp.piece_id;
+                            return (
+                              <React.Fragment key={kp.id}>
+                                <TableRow className="bg-muted/10">
+                                  <TableCell className="text-xs pl-6">
+                                    {piece ? `${piece.code} - ${piece.name}` : kp.piece_id}
+                                    {piece && sug && sug.orcado_por === "sugerida" ? (
+                                      <>
+                                        <div className="text-amber-700 text-xs break-words whitespace-normal mt-0.5">
+                                          {sug.suggested_spec}
+                                          <span className="text-amber-500 italic ml-1">(especificação modificada pelo fornecedor)</span>
+                                        </div>
+                                        {piece.specification && (
+                                          <div className="text-muted-foreground text-[10px] break-words whitespace-normal mt-0.5 line-through">{piece.specification}</div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      piece?.specification && <div className="text-muted-foreground text-xs break-words whitespace-normal mt-0.5">{piece.specification}</div>
+                                    )}
+                                    {sug && (
+                                      <button onClick={() => setExpandedSuggestionPieceId(isSugExpanded ? null : kp.piece_id)} className="ml-1 inline-flex items-center">
+                                        <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[9px] cursor-pointer gap-0.5">
+                                          Sugestão {isSugExpanded ? <ChevronUp className="w-2.5 h-2.5" /> : <ChevronDown className="w-2.5 h-2.5" />}
+                                        </Badge>
+                                      </button>
+                                    )}
                                   </TableCell>
+                                  <TableCell className="text-xs text-right">{qty}</TableCell>
+                                  <TableCell className="text-xs text-right">
+                                    {isAdminOrMaster ? (
+                                      <AdminInlineNumberInput
+                                        initial={priceRow ? Number(priceRow.unit_price) : null}
+                                        onSave={(v) => upsertAdminPrice(kp.piece_id, v)}
+                                        ariaLabel={`Preço unitário ${piece?.code ?? kp.piece_id}`}
+                                      />
+                                    ) : (
+                                      priceRow ? fmtCurrency(unitPrice) : "—"
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="text-xs text-right">{priceRow ? fmtCurrency(lineTotal) : "—"}</TableCell>
                                 </TableRow>
-                              )}
-                            </React.Fragment>
-                          );
-                        })}
-                      </React.Fragment>
-                    );
-                  })}
+                                {sug && isSugExpanded && (
+                                  <TableRow className="bg-amber-50/80">
+                                    <TableCell colSpan={4} className="text-xs p-3">
+                                      <p className="text-amber-800 font-medium mb-1">Sugestão do fornecedor:</p>
+                                      <p className="text-amber-700 italic">"{sug.suggested_spec}"</p>
+                                      <Badge className={cn("mt-1 text-[9px]", sug.orcado_por === "sugerida" ? "bg-amber-200 text-amber-800" : "bg-muted text-muted-foreground")}>
+                                        Orçou pela: {sug.orcado_por === "sugerida" ? "Minha sugestão" : "Especificação original"}
+                                      </Badge>
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
+                        </React.Fragment>
+                      );
+                    });
+                  })()}
                 </TableBody>
               </Table>
             </div>
