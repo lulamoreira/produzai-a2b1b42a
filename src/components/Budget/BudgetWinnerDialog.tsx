@@ -142,28 +142,36 @@ export default function BudgetWinnerDialog({
 
   const executeSend = async () => {
     if (!supplier || !previewTemplateData) return;
-    const ccEmail = cc.trim();
+    const merged = mergeRecipients(email, cc);
+    if (merged.valid.length === 0) return;
 
     setSending(true);
-    const toastId = toast.loading("Enviando comunicado ao fornecedor vencedor...");
+    const toastId = toast.loading(`Enviando comunicado para ${merged.valid.length} destinatário(s)...`);
 
-    try {
-      await sendOnce(email.trim(), previewTemplateData);
-      if (ccEmail) {
-        await sendOnce(ccEmail, previewTemplateData);
+    const failures: string[] = [];
+    let sent = 0;
+    for (const recipient of merged.valid) {
+      try {
+        await sendOnce(recipient, previewTemplateData);
+        sent++;
+      } catch (e: any) {
+        failures.push(`${recipient}: ${e?.message || "erro"}`);
       }
+    }
 
-      toast.dismiss(toastId);
+    toast.dismiss(toastId);
+    if (sent === 0) {
+      toast.error(`Falha ao enviar. ${failures.join(" | ")}`);
+    } else if (failures.length > 0) {
+      toast.warning(`Enviado para ${sent}/${merged.valid.length}. Falhas: ${failures.join(" | ")}`);
+      setPreviewOpen(false);
+      onOpenChange(false);
+    } else {
       toast.success("Comunicado enviado com sucesso!");
       setPreviewOpen(false);
       onOpenChange(false);
-    } catch (e: any) {
-      console.error("Send winner notification error:", e);
-      toast.dismiss(toastId);
-      toast.error(e?.message || "Erro ao enviar comunicado.");
-    } finally {
-      setSending(false);
     }
+    setSending(false);
   };
 
   const handleEditRecipients = () => {
