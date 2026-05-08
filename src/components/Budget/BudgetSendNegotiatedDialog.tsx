@@ -422,24 +422,31 @@ export default function BudgetSendNegotiatedDialog({
             </>
           )}
           {sending && <UploadProgressPanel status={uploadStatus} />}
+          {!sending && summaryItems.length > 0 && <SendSummaryPanel items={summaryItems} />}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
-            Cancelar
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleSendWhatsApp}
-            disabled={sending || loading || !supplier.phone || (validation ? !validation.valid : false)}
-            title={!supplier.phone ? "Fornecedor sem telefone" : "Gerar planilha e abrir WhatsApp"}
-          >
-            <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
-          </Button>
-          <Button onClick={handleSendEmail} disabled={sending || loading || (validation ? !validation.valid : false)}>
-            {sending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Mail className="w-4 h-4 mr-1" />}
-            Enviar por E-mail
-          </Button>
+          {!sending && summaryItems.length > 0 ? (
+            <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Fechar</Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
+                Cancelar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSendWhatsApp}
+                disabled={sending || loading || !supplier.phone || (validation ? !validation.valid : false)}
+                title={!supplier.phone ? "Fornecedor sem telefone" : "Gerar planilha e abrir WhatsApp"}
+              >
+                <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
+              </Button>
+              <Button onClick={handleSendEmail} disabled={sending || loading || (validation ? !validation.valid : false)}>
+                {sending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Mail className="w-4 h-4 mr-1" />}
+                Enviar por E-mail
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
