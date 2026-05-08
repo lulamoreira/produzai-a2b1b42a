@@ -14,6 +14,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   CheckCircle2,
@@ -28,6 +30,7 @@ import {
   LayoutGrid,
   Search,
   X,
+  RotateCcw,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -36,6 +39,8 @@ import MockupReviewSheet from "@/components/MockupReviewSheet";
 import { exportMockupPDF } from "@/lib/exportMockupPDF";
 import { exportMockupExcel } from "@/lib/exportMockupExcel";
 import { saveBlobAs } from "@/lib/saveBlobAs";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Props {
   campaignId: string;
