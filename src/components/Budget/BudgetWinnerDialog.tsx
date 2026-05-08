@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/dialog";
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import BudgetWinnerPreviewDialog from "./BudgetWinnerPreviewDialog";
+import { Textarea } from "@/components/ui/textarea";
+import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const URL_REGEX = /^https?:\/\/.+/i;
 
 interface BudgetWinnerDialogProps {
