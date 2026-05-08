@@ -208,24 +208,25 @@ export default function BudgetWinnerDialog({
 
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="winner-email">E-mail do fornecedor *</Label>
-              <Input
+              <Label htmlFor="winner-email">E-mail(s) do fornecedor *</Label>
+              <Textarea
                 id="winner-email"
-                ref={emailInputRef}
-                type="email"
-                placeholder="fornecedor@empresa.com"
+                ref={emailInputRef as any}
+                rows={2}
+                placeholder="fornecedor1@empresa.com, fornecedor2@empresa.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={busy}
               />
+              <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="winner-cc">CC (opcional)</Label>
-              <Input
+              <Textarea
                 id="winner-cc"
-                type="email"
-                placeholder="copia@empresa.com"
+                rows={2}
+                placeholder="copia1@empresa.com, copia2@empresa.com"
                 value={cc}
                 onChange={(e) => setCc(e.target.value)}
                 disabled={busy}
