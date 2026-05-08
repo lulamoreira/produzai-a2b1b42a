@@ -311,6 +311,7 @@ export default function BudgetSendNegotiatedDialog({
       toast.error(e?.message || "Falha ao gerar planilha.", { id: tId });
     } finally {
       setSending(false);
+      setUploadStatus(null);
     }
   };
 
