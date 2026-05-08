@@ -954,6 +954,40 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     return total;
   }, [detailSupplier, detailPrices, detailCosts, pieceTotals, kitPieceTotals, pieces]);
 
+  // ─── Admin manual edit (works even when supplier is locked) ───
+  const upsertAdminPrice = async (pieceId: string, value: number | null) => {
+    if (!detailSupplier) return;
+    if (value == null) {
+      const { error } = await supabase
+        .from("budget_prices")
+        .delete()
+        .eq("supplier_id", detailSupplier)
+        .eq("piece_id", pieceId);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from("budget_prices")
+        .upsert(
+          { supplier_id: detailSupplier, campaign_id: campaignId, piece_id: pieceId, unit_price: value } as never,
+          { onConflict: "supplier_id,piece_id" }
+        );
+      if (error) throw error;
+    }
+    await queryClient.invalidateQueries({ queryKey: ["budget_prices", campaignId] });
+  };
+
+  const upsertAdminExtra = async (field: "installation_value" | "freight_value", value: number | null) => {
+    if (!detailSupplier) return;
+    const { error } = await supabase
+      .from("budget_extra_costs")
+      .upsert(
+        { supplier_id: detailSupplier, [field]: value ?? 0 } as never,
+        { onConflict: "supplier_id" }
+      );
+    if (error) throw error;
+    await queryClient.invalidateQueries({ queryKey: ["budget_extra_costs", campaignId] });
+  };
+
   return (
     <div className="space-y-6">
       {activeAdjustment && (
