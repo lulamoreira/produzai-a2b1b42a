@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle, Database, Layers, Palette } from "lucide-react";
 import AdjustmentsTab from "@/components/AdjustmentsTab";
+import MockupTab from "@/components/MockupTab";
 import { useActiveAdjustment, useAdjustmentStorePieces, useUpdateAdjustmentStorePiece } from "@/hooks/useAdjustments";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 
@@ -1665,7 +1666,7 @@ const CampaignDetail = () => {
           stores: t("modules.stores"), matrix: t("modules.matrix"), pieces: t("modules.pieces"),
           occurrences: t("modules.occurrences"), scheduling: t("modules.scheduling"),
           installations: t("modules.installations"), budgets: t("modules.budgets"),
-          history: "Histórico",
+          history: "Histórico", mockup: "Mockup",
         };
         const crumbs = [
           { label: agency?.name || "Agência", href: isLimitedMode ? undefined : "/" },
@@ -1764,6 +1765,7 @@ const CampaignDetail = () => {
                 { key: "adjustments", label: "Ajustes", icon: Layers, visible: isAdminOrMaster, color: "#6E5A7A" },
                 { key: "pieces", label: t("modules.pieces"), icon: LayoutList, visible: canViewPieces, color: "#A07850" },
                 { key: "matrix", label: t("modules.matrix"), icon: Grid3X3, visible: canViewCampaignStores, color: "#8C6F4E" },
+                { key: "mockup", label: "Mockup", icon: LayoutGrid, visible: true, color: "#7A6A8C" },
               ]}
               onSelect={(key) => setActiveSection(key)}
             />
@@ -3741,6 +3743,17 @@ const CampaignDetail = () => {
           {/* ─── SECTION: HISTORY ─── */}
           {activeSection === "history" && campaignId && (
             <CampaignActivityHistory campaignId={campaignId} />
+          )}
+
+          {/* ─── SECTION: MOCKUP ─── */}
+          {activeSection === "mockup" && campaignId && (
+            <MockupTab
+              campaignId={campaignId}
+              campaignName={campaign?.name || ""}
+              pieces={pieces}
+              kits={kits}
+              kitPieces={kitPieces}
+            />
           )}
 
           {/* ─── SECTION: LOJA A LOJA ─── */}
