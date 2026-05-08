@@ -180,7 +180,7 @@ export default function AdjustmentBudgetRequestDialog({
       onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao enviar.", { id: tId });
-    } finally { setSending(false); }
+    } finally { setSending(false); setUploadStatus(null); }
   };
 
   const handleSendWhatsApp = async () => {
