@@ -26,7 +26,10 @@ import {
   ImageOff,
   Layers,
   LayoutGrid,
+  Search,
+  X,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import EmptyState from "@/components/EmptyState";
 import MockupReviewSheet from "@/components/MockupReviewSheet";
@@ -78,6 +81,7 @@ export default function MockupTab({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [reviewId, setReviewId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const piecesById = useMemo(() => {
     const m = new Map<string, any>();
@@ -133,10 +137,20 @@ export default function MockupTab({
   const pct = total > 0 ? Math.round((reviewed / total) * 100) : 0;
 
   const filtered = useMemo(() => {
-    if (filter === "all") return topLevel;
-    return topLevel.filter((m) => effectiveStatus(m) === filter);
+    const q = search.trim().toLowerCase();
+    let list = topLevel;
+    if (filter !== "all") list = list.filter((m) => effectiveStatus(m) === filter);
+    if (q) {
+      list = list.filter((m) => {
+        const piece = m.piece_id ? piecesById.get(m.piece_id) : null;
+        const kit = m.kit_id ? kitsById.get(m.kit_id) : null;
+        const name = (piece?.name || kit?.name || "").toLowerCase();
+        return name.includes(q);
+      });
+    }
+    return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [topLevel, filter, componentsByParent]);
+  }, [topLevel, filter, componentsByParent, search, piecesById, kitsById]);
 
   // Pieces eligible to add: not in mockup, not kit_only, not deleted
   const availablePieces = useMemo(() => {
@@ -307,6 +321,28 @@ export default function MockupTab({
             <FilterChip k="approved" label="Aprovadas" />
             <FilterChip k="changes_requested" label="Alterações" />
             <FilterChip k="rejected" label="Reprovadas" />
+          </div>
+        )}
+
+        {total > 0 && (
+          <div className="mt-3 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar peça ou kit pelo nome..."
+              className="pl-9 pr-9 h-10"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
+                aria-label="Limpar busca"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
           </div>
         )}
       </div>
