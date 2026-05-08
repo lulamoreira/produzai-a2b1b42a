@@ -204,7 +204,7 @@ export default function BudgetSendNegotiatedDialog({
       locations: locations as CampaignPieceLocation[],
       subLocations: subLocations as CampaignPieceSubLocation[],
     });
-    const link = await uploadAndSign(blob, fileName, `negociacao_${supplier.id}`, campaignId);
+    const link = await uploadAndSign(blob, fileName, `negociacao_${supplier.id}`, campaignId, setUploadStatus);
     return { link, fileName, totals: t };
   };
 
