@@ -323,6 +323,28 @@ export default function MockupTab({
             <FilterChip k="rejected" label="Reprovadas" />
           </div>
         )}
+
+        {total > 0 && (
+          <div className="mt-3 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar peça ou kit pelo nome..."
+              className="pl-9 pr-9 h-10"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
+                aria-label="Limpar busca"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Empty state */}
