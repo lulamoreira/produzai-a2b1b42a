@@ -95,11 +95,26 @@ export default function MockupTab({
     return m;
   }, [kits]);
 
-  // Top-level mockups (parent_mockup_id null) for the grid
-  const topLevel = useMemo(
-    () => mockups.filter((m) => !m.parent_mockup_id),
-    [mockups]
-  );
+  // Top-level mockups (parent_mockup_id null) for the grid.
+  // ORDER IS STABLE — based on the underlying piece/kit display_order so it does NOT
+  // change when the user marks approved/rejected/changes_requested.
+  const topLevel = useMemo(() => {
+    const list = mockups.filter((m) => !m.parent_mockup_id);
+    const orderOf = (m: CampaignMockup) => {
+      const piece = m.piece_id ? piecesById.get(m.piece_id) : null;
+      const kit = m.kit_id ? kitsById.get(m.kit_id) : null;
+      const ord = piece?.display_order ?? kit?.display_order ?? 0;
+      const name = (piece?.name || kit?.name || "").toLowerCase();
+      return { ord, name };
+    };
+    return [...list].sort((a, b) => {
+      const A = orderOf(a);
+      const B = orderOf(b);
+      if (A.ord !== B.ord) return A.ord - B.ord;
+      if (A.name !== B.name) return A.name.localeCompare(B.name);
+      return a.id.localeCompare(b.id);
+    });
+  }, [mockups, piecesById, kitsById]);
 
   // Components grouped by parent kit mockup id
   const componentsByParent = useMemo(() => {
@@ -486,7 +501,7 @@ export default function MockupTab({
             setReviewOpen(v);
             if (!v) setReviewId(null);
           }}
-          mockups={filtered}
+          mockups={topLevel}
           allMockups={mockups}
           initialMockupId={reviewId}
           pieces={pieces}
