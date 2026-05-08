@@ -250,6 +250,7 @@ export default function BudgetSendNegotiatedDialog({
       toast.error(e?.message || "Falha ao enviar.", { id: tId });
     } finally {
       setSending(false);
+      setUploadStatus(null);
     }
   };
 
