@@ -213,7 +213,7 @@ export default function AdjustmentBudgetRequestDialog({
       onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao gerar planilha.", { id: tId });
-    } finally { setSending(false); }
+    } finally { setSending(false); setUploadStatus(null); }
   };
 
   return (
