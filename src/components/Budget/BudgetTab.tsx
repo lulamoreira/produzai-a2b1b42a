@@ -6,7 +6,7 @@ import { supabasePaginate } from "@/lib/supabasePaginate";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
@@ -148,6 +148,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const [editSupplierDraft, setEditSupplierDraft] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
   const [newSupplier, setNewSupplier] = useState({ company_name: "", contact_name: "", phone: "", email: "" });
   const [expandedSuggestionPieceId, setExpandedSuggestionPieceId] = useState<string | null>(null);
+  const [showOnlyMissing, setShowOnlyMissing] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<string>(currencyCode);
   const [showLockConfirm, setShowLockConfirm] = useState(false);
   const [exportingBudget, setExportingBudget] = useState(false);
@@ -1982,7 +1983,7 @@ Qualquer dúvida, estamos à disposição.
       </AlertDialog>
 
       {/* ═══ SUPPLIER DETAIL SHEET ═══ */}
-      <Sheet open={!!detailSupplier} onOpenChange={(o) => !o && setDetailSupplier(null)}>
+      <Sheet open={!!detailSupplier} onOpenChange={(o) => { if (!o) { setDetailSupplier(null); setShowOnlyMissing(false); } }}>
         <SheetContent className="w-full sm:max-w-[min(96vw,1100px)] overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
@@ -2022,6 +2023,24 @@ Qualquer dúvida, estamos à disposição.
                   {fmtCurrency(supplierPartialTotals[detailSupplier].total)}
                 </span>
               </div>
+              {(() => {
+                const missingCount = supplierPartialTotals[detailSupplier].totalPiecesNeeded - supplierPartialTotals[detailSupplier].pricedPieces;
+                return (
+                  <div className="flex justify-end pt-1">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={showOnlyMissing ? "default" : "outline"}
+                      onClick={() => setShowOnlyMissing((v) => !v)}
+                      disabled={missingCount <= 0 && !showOnlyMissing}
+                      className="h-7 text-xs gap-1.5"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      {showOnlyMissing ? "Mostrar todas" : `Apenas sem preço (${missingCount})`}
+                    </Button>
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -2039,7 +2058,12 @@ Qualquer dúvida, estamos à disposição.
                 </TableHeader>
                 <TableBody>
                   {/* Standalone pieces */}
-                  {pieces.filter((p) => !p.kit_only).sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? ''))).map((piece) => {
+                  {pieces.filter((p) => !p.kit_only).filter((piece) => {
+                    if (!showOnlyMissing) return true;
+                    const priceRow = detailPrices.find((pr) => pr.piece_id === piece.id);
+                    const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
+                    return !priceRow || unitPrice <= 0;
+                  }).sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? ''))).map((piece) => {
                     const qty = pieceTotals[piece.id] || 0;
                     const priceRow = detailPrices.find((pr) => pr.piece_id === piece.id);
                     const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
@@ -2105,6 +2129,10 @@ Qualquer dúvida, estamos à disposição.
                       kitTotal += lineTotal;
                       return { kp, piece, priceRow, unitPrice, qty, lineTotal };
                     });
+                    const visibleRows = showOnlyMissing
+                      ? pieceRows.filter((r) => !r.priceRow || r.unitPrice <= 0)
+                      : pieceRows;
+                    if (showOnlyMissing && visibleRows.length === 0) return null;
                     return (
                       <React.Fragment key={kit.id}>
                         <TableRow className="bg-muted/40 border-t-2">
@@ -2113,7 +2141,7 @@ Qualquer dúvida, estamos à disposição.
                           </TableCell>
                           <TableCell className="text-xs text-right font-semibold">{fmtCurrency(kitTotal)}</TableCell>
                         </TableRow>
-                        {pieceRows.map(({ kp, piece, priceRow, unitPrice, qty, lineTotal }) => {
+                        {visibleRows.map(({ kp, piece, priceRow, unitPrice, qty, lineTotal }) => {
                           const sug = piece ? suggestionsMap[piece.id] : null;
                           const isSugExpanded = expandedSuggestionPieceId === kp.piece_id;
                           return (
