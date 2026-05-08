@@ -13,6 +13,7 @@ import {
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import { uploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
+import { SendSummaryPanel, type SendSummaryItem } from "@/components/Budget/SendSummaryPanel";
 import {
   buildNegotiatedProposalWorkbook,
   computeNegotiatedTotals,
@@ -61,6 +62,7 @@ export default function BudgetSendNegotiatedDialog({
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
+  const [summaryItems, setSummaryItems] = useState<SendSummaryItem[]>([]);
 
   const [prices, setPrices] = useState<NegotiatedProposalParams["prices"]>([]);
   const [extraCosts, setExtraCosts] = useState<NegotiatedProposalParams["extraCosts"] | null>(null);
@@ -76,6 +78,7 @@ export default function BudgetSendNegotiatedDialog({
     if (!open) return;
     setEmail(supplier.email || "");
     setCc(defaultCcEmail || "");
+    setSummaryItems([]);
     setLoading(true);
     (async () => {
       try {
@@ -219,33 +222,51 @@ export default function BudgetSendNegotiatedDialog({
     }
     setSending(true);
     setUploadStatus(null);
+    setSummaryItems([]);
+    const items: SendSummaryItem[] = [];
+    const push = (it: SendSummaryItem) => { items.push(it); setSummaryItems([...items]); };
     const tId = toast.loading("Gerando planilha e enviando...");
     try {
-      const { link, totals: t } = await buildAndUpload();
+      let link: { name: string; url: string };
+      let t: { totalOriginal: number; totalNegotiated: number; savings: number };
+      try {
+        const res = await buildAndUpload();
+        link = res.link;
+        t = res.totals;
+        push({ kind: "file", label: res.fileName, stage: "signed" });
+      } catch (err: any) {
+        push({ kind: "file", label: "Proposta negociada", stage: "failed", error: err?.message || "Erro" });
+        throw err;
+      }
       const diff = t.totalNegotiated - t.totalOriginal;
       const diffDirection: "up" | "down" | "none" = diff > 0 ? "up" : diff < 0 ? "down" : "none";
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "negotiation-proposal-to-supplier",
-          recipientEmail: email.trim(),
-          idempotencyKey: `negotiation-${campaignId}-${supplier.id}-${Date.now()}`,
-          templateData: {
-            supplierName: supplier.company_name,
-            contactName: supplier.contact_name,
-            agencyName,
-            clientName,
-            campaignName,
-            totalOriginalFormatted: fmt(t.totalOriginal),
-            totalNegotiatedFormatted: fmt(t.totalNegotiated),
-            differenceFormatted: fmt(Math.abs(diff)),
-            differenceDirection: diffDirection,
-            downloadUrls: [link],
+      try {
+        const { error } = await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "negotiation-proposal-to-supplier",
+            recipientEmail: email.trim(),
+            idempotencyKey: `negotiation-${campaignId}-${supplier.id}-${Date.now()}`,
+            templateData: {
+              supplierName: supplier.company_name,
+              contactName: supplier.contact_name,
+              agencyName,
+              clientName,
+              campaignName,
+              totalOriginalFormatted: fmt(t.totalOriginal),
+              totalNegotiatedFormatted: fmt(t.totalNegotiated),
+              differenceFormatted: fmt(Math.abs(diff)),
+              differenceDirection: diffDirection,
+              downloadUrls: [link],
+            },
           },
-        },
-      });
-      if (error) throw new Error(error.message || "Erro ao enviar e-mail");
+        });
+        if (error) throw new Error(error.message || "Erro ao enviar e-mail");
+        push({ kind: "email", label: `E-mail → ${email.trim()}`, stage: "sent" });
+      } catch (err: any) {
+        push({ kind: "email", label: `E-mail → ${email.trim()}`, stage: "failed", error: err?.message || "Erro" });
+        throw err;
+      }
       toast.success("E-mail enviado com sucesso.", { id: tId });
-      onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao enviar.", { id: tId });
     } finally {
@@ -262,9 +283,22 @@ export default function BudgetSendNegotiatedDialog({
     }
     setSending(true);
     setUploadStatus(null);
+    setSummaryItems([]);
+    const items: SendSummaryItem[] = [];
+    const push = (it: SendSummaryItem) => { items.push(it); setSummaryItems([...items]); };
     const tId = toast.loading("Gerando planilha...");
     try {
-      const { link, totals: t } = await buildAndUpload();
+      let link: { name: string; url: string };
+      let t: { totalOriginal: number; totalNegotiated: number; savings: number };
+      try {
+        const res = await buildAndUpload();
+        link = res.link;
+        t = res.totals;
+        push({ kind: "file", label: res.fileName, stage: "signed" });
+      } catch (err: any) {
+        push({ kind: "file", label: "Proposta negociada", stage: "failed", error: err?.message || "Erro" });
+        throw err;
+      }
       // Encurta a URL via TinyURL (fallback para URL original em caso de falha)
       let shortUrl = link.url;
       try {
@@ -305,8 +339,8 @@ export default function BudgetSendNegotiatedDialog({
         `Agradecemos pela parceria! 🚀\n\n` +
         `— Equipe ${agencyName}`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waText)}`, "_blank");
+      push({ kind: "whatsapp", label: `WhatsApp → ${phone}`, stage: "sent" });
       toast.success("Mensagem pronta no WhatsApp.", { id: tId });
-      onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao gerar planilha.", { id: tId });
     } finally {
@@ -388,24 +422,31 @@ export default function BudgetSendNegotiatedDialog({
             </>
           )}
           {sending && <UploadProgressPanel status={uploadStatus} />}
+          {!sending && summaryItems.length > 0 && <SendSummaryPanel items={summaryItems} />}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
-            Cancelar
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleSendWhatsApp}
-            disabled={sending || loading || !supplier.phone || (validation ? !validation.valid : false)}
-            title={!supplier.phone ? "Fornecedor sem telefone" : "Gerar planilha e abrir WhatsApp"}
-          >
-            <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
-          </Button>
-          <Button onClick={handleSendEmail} disabled={sending || loading || (validation ? !validation.valid : false)}>
-            {sending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Mail className="w-4 h-4 mr-1" />}
-            Enviar por E-mail
-          </Button>
+          {!sending && summaryItems.length > 0 ? (
+            <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Fechar</Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
+                Cancelar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleSendWhatsApp}
+                disabled={sending || loading || !supplier.phone || (validation ? !validation.valid : false)}
+                title={!supplier.phone ? "Fornecedor sem telefone" : "Gerar planilha e abrir WhatsApp"}
+              >
+                <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
+              </Button>
+              <Button onClick={handleSendEmail} disabled={sending || loading || (validation ? !validation.valid : false)}>
+                {sending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Mail className="w-4 h-4 mr-1" />}
+                Enviar por E-mail
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

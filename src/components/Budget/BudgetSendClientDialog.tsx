@@ -21,6 +21,7 @@ import {
 } from "@/lib/exportSupplierBudget";
 import { uploadAndSign as sharedUploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
+import { SendSummaryPanel, type SendSummaryItem, type SummaryItemKind, type SummaryItemStage } from "@/components/Budget/SendSummaryPanel";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -74,12 +75,14 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   const [sending, setSending] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const [stageMessage, setStageMessage] = useState<string>("");
+  const [summary, setSummary] = useState<SendSummaryItem[]>([]);
 
   useEffect(() => {
     if (open) {
       setEmail(clientEmail || "");
       setCc("");
       setIncludeComparative(true);
+      setSummary([]);
     }
   }, [open, clientEmail]);
 
@@ -487,6 +490,18 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     setSending(true);
     setUploadStatus(null);
     setStageMessage("Iniciando geração das planilhas...");
+    const collected: SendSummaryItem[] = [];
+    setSummary([]);
+    const updateSummary = (items: SendSummaryItem[]) => {
+      setSummary([...items]);
+    };
+    const upsertItem = (label: string, kind: SummaryItemKind, stage: SummaryItemStage, error?: string) => {
+      const idx = collected.findIndex((it) => it.kind === kind && it.label === label);
+      if (idx >= 0) collected[idx] = { ...collected[idx], stage, error };
+      else collected.push({ kind, label, stage, error });
+      updateSummary(collected);
+    };
+
     const toastId = toast.loading("Gerando planilhas e enviando...", {
       description: "Isso pode levar alguns segundos.",
     });
@@ -499,17 +514,32 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       for (const sup of submittedSuppliers) {
         fileIndex += 1;
         setStageMessage(`Gerando planilha ${fileIndex}/${totalFiles} — ${sup.company_name}`);
-        const { blob, fileName } = await buildOneSupplier(sup);
-        const link = await uploadAndSign(blob, fileName, sup.id);
-        downloadUrls.push(link);
+        const label = `Planilha — ${sup.company_name}`;
+        try {
+          const { blob, fileName } = await buildOneSupplier(sup);
+          upsertItem(fileName, "file", "generated");
+          const link = await uploadAndSign(blob, fileName, sup.id);
+          upsertItem(fileName, "file", "signed");
+          downloadUrls.push(link);
+        } catch (err: any) {
+          upsertItem(label, "file", "failed", err?.message || "Erro desconhecido");
+          throw err;
+        }
       }
 
       if (includeComparative && submittedSuppliers.length >= 1) {
         fileIndex += 1;
         setStageMessage(`Gerando planilha ${fileIndex}/${totalFiles} — Comparativo`);
-        const { blob, fileName } = await buildComparativeWorkbook();
-        const link = await uploadAndSign(blob, fileName, "comparativo");
-        downloadUrls.push(link);
+        try {
+          const { blob, fileName } = await buildComparativeWorkbook();
+          upsertItem(fileName, "file", "generated");
+          const link = await uploadAndSign(blob, fileName, "comparativo");
+          upsertItem(fileName, "file", "signed");
+          downloadUrls.push(link);
+        } catch (err: any) {
+          upsertItem("Comparativo", "file", "failed", err?.message || "Erro desconhecido");
+          throw err;
+        }
       }
 
       setStageMessage("Enviando e-mail...");
@@ -547,14 +577,25 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         downloadUrls,
       };
 
-      await sendOnce(email.trim(), templateData);
+      try {
+        await sendOnce(email.trim(), templateData);
+        upsertItem(`E-mail → ${email.trim()}`, "email", "sent");
+      } catch (err: any) {
+        upsertItem(`E-mail → ${email.trim()}`, "email", "failed", err?.message || "Erro ao enviar");
+        throw err;
+      }
       if (ccEmail) {
-        await sendOnce(ccEmail, templateData);
+        try {
+          await sendOnce(ccEmail, templateData);
+          upsertItem(`E-mail (CC) → ${ccEmail}`, "email", "sent");
+        } catch (err: any) {
+          upsertItem(`E-mail (CC) → ${ccEmail}`, "email", "failed", err?.message || "Erro ao enviar");
+          throw err;
+        }
       }
 
       toast.dismiss(toastId);
       toast.success("Relatório enviado com sucesso!");
-      onOpenChange(false);
     } catch (e: any) {
       console.error("Send budget results error:", e);
       toast.dismiss(toastId);
@@ -645,23 +686,33 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
               <UploadProgressPanel status={uploadStatus} />
             </div>
           )}
+
+          {!sending && summary.length > 0 && <SendSummaryPanel items={summary} />}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
-            <X className="w-4 h-4 mr-1" /> Cancelar
-          </Button>
-          <Button onClick={handleSend} disabled={sending || submittedSuppliers.length === 0}>
-            {sending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" /> Enviando...
-              </>
-            ) : (
-              <>
-                <Send className="w-4 h-4 mr-1" /> Enviar Relatório
-              </>
-            )}
-          </Button>
+          {!sending && summary.length > 0 ? (
+            <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+              Fechar
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
+                <X className="w-4 h-4 mr-1" /> Cancelar
+              </Button>
+              <Button onClick={handleSend} disabled={sending || submittedSuppliers.length === 0}>
+                {sending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" /> Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-1" /> Enviar Relatório
+                  </>
+                )}
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

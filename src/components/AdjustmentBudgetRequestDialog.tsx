@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { uploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
+import { SendSummaryPanel, type SendSummaryItem } from "@/components/Budget/SendSummaryPanel";
 import {
   buildAdjustmentProposalWorkbook,
   summarizeAdjustmentChanges,
@@ -40,6 +41,7 @@ export default function AdjustmentBudgetRequestDialog({
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
+  const [summaryItems, setSummaryItems] = useState<SendSummaryItem[]>([]);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const [customMessage, setCustomMessage] = useState("");
@@ -64,6 +66,7 @@ export default function AdjustmentBudgetRequestDialog({
 
   useEffect(() => {
     if (!open) return;
+    setSummaryItems([]);
     setLoading(true);
     (async () => {
       try {
@@ -155,29 +158,45 @@ export default function AdjustmentBudgetRequestDialog({
     if (cc.trim() && !EMAIL_REGEX.test(cc.trim())) { toast.error("CC inválido."); return; }
     setSending(true);
     setUploadStatus(null);
+    setSummaryItems([]);
+    const items: SendSummaryItem[] = [];
+    const push = (it: SendSummaryItem) => { items.push(it); setSummaryItems([...items]); };
     const tId = toast.loading("Gerando planilha e enviando...");
     try {
-      const { link } = await buildAndUpload();
-      const { error } = await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "adjustment-quote-request-to-supplier",
-          recipientEmail: email.trim(),
-          idempotencyKey: `adj-quote-${adjustment.id}-${winner!.id}-${Date.now()}`,
-          templateData: {
-            supplierName: winner!.company_name,
-            contactName: winner!.contact_name,
-            agencyName, campaignName,
-            adjustmentName: adjustment.name,
-            changesDescription,
-            customMessage: customMessage.trim() || undefined,
-            downloadUrls: [link],
+      let link: { name: string; url: string };
+      try {
+        const res = await buildAndUpload();
+        link = res.link;
+        push({ kind: "file", label: res.fileName, stage: "signed" });
+      } catch (err: any) {
+        push({ kind: "file", label: "Planilha de reorçamento", stage: "failed", error: err?.message || "Erro" });
+        throw err;
+      }
+      try {
+        const { error } = await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "adjustment-quote-request-to-supplier",
+            recipientEmail: email.trim(),
+            idempotencyKey: `adj-quote-${adjustment.id}-${winner!.id}-${Date.now()}`,
+            templateData: {
+              supplierName: winner!.company_name,
+              contactName: winner!.contact_name,
+              agencyName, campaignName,
+              adjustmentName: adjustment.name,
+              changesDescription,
+              customMessage: customMessage.trim() || undefined,
+              downloadUrls: [link],
+            },
           },
-        },
-      });
-      if (error) throw new Error(error.message || "Erro ao enviar");
+        });
+        if (error) throw new Error(error.message || "Erro ao enviar");
+        push({ kind: "email", label: `E-mail → ${email.trim()}`, stage: "sent" });
+      } catch (err: any) {
+        push({ kind: "email", label: `E-mail → ${email.trim()}`, stage: "failed", error: err?.message || "Erro" });
+        throw err;
+      }
       await persistRequest();
       toast.success("Reorçamento enviado por e-mail.", { id: tId });
-      onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao enviar.", { id: tId });
     } finally { setSending(false); setUploadStatus(null); }
@@ -188,9 +207,20 @@ export default function AdjustmentBudgetRequestDialog({
     if (!phone) { toast.error("Fornecedor sem telefone."); return; }
     setSending(true);
     setUploadStatus(null);
+    setSummaryItems([]);
+    const items: SendSummaryItem[] = [];
+    const push = (it: SendSummaryItem) => { items.push(it); setSummaryItems([...items]); };
     const tId = toast.loading("Gerando planilha...");
     try {
-      const { link } = await buildAndUpload();
+      let link: { name: string; url: string };
+      try {
+        const res = await buildAndUpload();
+        link = res.link;
+        push({ kind: "file", label: res.fileName, stage: "signed" });
+      } catch (err: any) {
+        push({ kind: "file", label: "Planilha de reorçamento", stage: "failed", error: err?.message || "Erro" });
+        throw err;
+      }
       let shortUrl = link.url;
       try {
         const r = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(link.url)}`);
@@ -208,9 +238,9 @@ export default function AdjustmentBudgetRequestDialog({
         `Por favor, preencha os campos em amarelo e retorne com os novos valores. 🙌\n\n` +
         `— Equipe ${agencyName}`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
+      push({ kind: "whatsapp", label: `WhatsApp → ${phone}`, stage: "sent" });
       await persistRequest();
       toast.success("Mensagem pronta no WhatsApp.", { id: tId });
-      onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao gerar planilha.", { id: tId });
     } finally { setSending(false); setUploadStatus(null); }
@@ -265,18 +295,25 @@ export default function AdjustmentBudgetRequestDialog({
             </>
           )}
           {sending && <UploadProgressPanel status={uploadStatus} />}
+          {!sending && summaryItems.length > 0 && <SendSummaryPanel items={summaryItems} />}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>Cancelar</Button>
-          <Button variant="outline" onClick={handleSendWhatsApp}
-            disabled={sending || loading || !winner || !winner?.phone}>
-            <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
-          </Button>
-          <Button onClick={handleSendEmail} disabled={sending || loading || !winner}>
-            {sending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Mail className="w-4 h-4 mr-1" />}
-            Enviar por E-mail
-          </Button>
+          {!sending && summaryItems.length > 0 ? (
+            <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Fechar</Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>Cancelar</Button>
+              <Button variant="outline" onClick={handleSendWhatsApp}
+                disabled={sending || loading || !winner || !winner?.phone}>
+                <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
+              </Button>
+              <Button onClick={handleSendEmail} disabled={sending || loading || !winner}>
+                {sending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Mail className="w-4 h-4 mr-1" />}
+                Enviar por E-mail
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
