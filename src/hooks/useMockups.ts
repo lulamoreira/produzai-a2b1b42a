@@ -168,6 +168,18 @@ export function useUpdateMockup() {
       if (params.changes.status) {
         updates.reviewed_by = userData?.user?.id;
         updates.reviewed_at = new Date().toISOString();
+        // Clear "alteração proposta" fields whenever status leaves changes_requested,
+        // so nothing stays stored in the DB that could leak into reports later.
+        if (params.changes.status !== 'changes_requested') {
+          updates.alt_name = null;
+          updates.alt_size = null;
+          updates.alt_specification = null;
+          updates.alt_installation = null;
+          updates.alt_name_active = false;
+          updates.alt_size_active = false;
+          updates.alt_specification_active = false;
+          updates.alt_installation_active = false;
+        }
       }
 
       const { error } = await supabase
