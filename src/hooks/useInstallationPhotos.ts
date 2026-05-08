@@ -13,6 +13,7 @@ export type InstallationPhoto = {
   uploaded_by: string | null;
   upload_method: string;
   media_type: string;
+  reinstall_seq?: number | null;
 };
 
 export function isVideo(photo: InstallationPhoto) {

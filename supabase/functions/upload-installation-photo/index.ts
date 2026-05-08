@@ -33,12 +33,13 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     let campaignId: string | null = null;
+    let reinstallSeq = 0;
 
     if (installCode) {
       // New system: validate install code
       const { data: sched, error: schedErr } = await supabase
         .from("campaign_schedules")
-        .select("campaign_id, store_id")
+        .select("campaign_id, store_id, reinstall_seq")
         .eq("install_code", installCode.toLowerCase())
         .eq("store_id", storeId)
         .maybeSingle();
@@ -50,6 +51,7 @@ Deno.serve(async (req) => {
         );
       }
       campaignId = sched.campaign_id;
+      reinstallSeq = (sched as any).reinstall_seq ?? 0;
     } else {
       // Fallback: no code — require campaign_id in form
       const formCampaignId = form.get("campaign_id") as string | null;
@@ -89,6 +91,7 @@ Deno.serve(async (req) => {
         category,
         upload_method: uploadMethod,
         media_type: mediaType,
+        reinstall_seq: reinstallSeq,
       })
       .select()
       .single();

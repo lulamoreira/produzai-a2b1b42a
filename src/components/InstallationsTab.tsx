@@ -29,6 +29,7 @@ import { useLogActivity } from "@/hooks/useActivityLogs";
 import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
 import PhotoCheckinDialog from "@/components/PhotoCheckinDialog";
+import { ReinstallPhotoBadge } from "@/components/ReinstallPhotoBadge";
 import InstallerPreviewDialog from "@/components/InstallerPreviewDialog";
 // Lazy-loaded: leaflet (~150KB) only ships when the user opens the map view
 const InstallationsMapView = lazy(() => import("@/components/InstallationsMapView"));
@@ -1255,16 +1256,25 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 <div className="flex items-center justify-between mt-2.5 gap-2">
                   <div className="flex items-center gap-1.5">
                     {storePhotos.slice(0, 4).map((photo) => (
-                      <img
-                        key={photo.id}
-                        src={getThumbnailUrl(photo.photo_url, 100)}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        className="w-8 h-8 rounded object-cover border border-[var(--border-subtle)]"
-                        onClick={(e) => { e.stopPropagation(); setCheckinStore(store); }}
-                        onError={() => handleMediaError(photo.id, photo.campaign_id)}
-                      />
+                      <div key={photo.id} className="relative">
+                        <img
+                          src={getThumbnailUrl(photo.photo_url, 100)}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className="w-8 h-8 rounded object-cover border border-[var(--border-subtle)]"
+                          onClick={(e) => { e.stopPropagation(); setCheckinStore(store); }}
+                          onError={() => handleMediaError(photo.id, photo.campaign_id)}
+                        />
+                        {((photo as any).reinstall_seq ?? 0) > 0 && (
+                          <span
+                            className="absolute -top-1 -right-1 bg-amber-400 text-amber-950 text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center shadow"
+                            title={`Reinstalação #${(photo as any).reinstall_seq}`}
+                          >
+                            {(photo as any).reinstall_seq}
+                          </span>
+                        )}
+                      </div>
                     ))}
                     {storePhotos.length > 4 && (
                       <span
@@ -1818,16 +1828,21 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                     <div className="space-y-1.5">
                       <div className="flex gap-1.5 flex-wrap">
                         {storePhotos.slice(0, 6).map((photo) => (
-                          <img
-                            key={photo.id}
-                            src={getThumbnailUrl(photo.photo_url, 150)}
-                            alt=""
-                            loading="lazy"
-                            decoding="async"
-                            className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
-                            onClick={() => setCheckinStore(store)}
-                            onError={() => handleMediaError(photo.id, photo.campaign_id)}
-                          />
+                          <div key={photo.id} className="relative">
+                            <img
+                              src={getThumbnailUrl(photo.photo_url, 150)}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                              className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
+                              onClick={() => setCheckinStore(store)}
+                              onError={() => handleMediaError(photo.id, photo.campaign_id)}
+                            />
+                            <ReinstallPhotoBadge
+                              reinstallSeq={(photo as any).reinstall_seq}
+                              className="!top-0.5 !left-0.5"
+                            />
+                          </div>
                         ))}
                         {storePhotos.length > 6 && (
                           <button

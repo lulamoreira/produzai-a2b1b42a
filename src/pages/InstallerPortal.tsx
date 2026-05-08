@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import PhasePickerDialog, { type PhotoPhase } from "@/components/PhasePickerDialog";
+import { ReinstallPhotoBadge } from "@/components/ReinstallPhotoBadge";
 
 interface PortalData {
   schedule: any;
@@ -1263,6 +1264,7 @@ export default function InstallerPortal() {
             <div className="flex gap-1.5 flex-wrap">
               {localPhotos.map((photo: any) => (
                 <div key={photo.id} className="relative w-16 h-16 rounded-md overflow-hidden border border-border group bg-muted/40">
+                  <ReinstallPhotoBadge reinstallSeq={photo.reinstall_seq} className="!top-0.5 !left-0.5" />
                   {photo.photo_url ? (
                     <img
                       src={getThumbnailUrl(photo.photo_url, 200)}

@@ -8,6 +8,8 @@ import { type ClientStore } from "@/hooks/useMultiClientData";
 import { type InstallationPhoto, useUpdateInstallationPhoto, useDeleteInstallationPhoto, isVideo } from "@/hooks/useInstallationPhotos";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useOrphanPhotoCleanup } from "@/hooks/useOrphanPhotoCleanup";
+import { ReinstallPhotoBadge } from "@/components/ReinstallPhotoBadge";
+import { ReinstallPhotoFilter, type ReinstallPhotoFilterValue } from "@/components/ReinstallPhotoFilter";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -33,10 +35,17 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [editingCaption, setEditingCaption] = useState<string | null>(null);
   const [captionValue, setCaptionValue] = useState("");
+  const [reinstallFilter, setReinstallFilter] = useState<ReinstallPhotoFilterValue>("all");
+
+  const reinstallFilteredPhotos = reinstallFilter === "all"
+    ? photos
+    : reinstallFilter === "original"
+      ? photos.filter((p) => !p.reinstall_seq || p.reinstall_seq === 0)
+      : photos.filter((p) => (p.reinstall_seq ?? 0) === reinstallFilter);
 
   const filteredPhotos = selectedCategory
-    ? photos.filter((p) => p.category === selectedCategory)
-    : photos;
+    ? reinstallFilteredPhotos.filter((p) => p.category === selectedCategory)
+    : reinstallFilteredPhotos;
 
   const address = [store.street, store.number, store.complement, store.neighborhood, store.city, store.state, store.zip_code]
     .filter(Boolean)
@@ -81,6 +90,15 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
           {address && <p className="text-xs text-muted-foreground">{address}</p>}
         </div>
 
+        {/* Reinstallation filter (auto-hides if there are no reinstallation photos) */}
+        <div className="px-6 pt-3">
+          <ReinstallPhotoFilter
+            photos={photos}
+            value={reinstallFilter}
+            onChange={(v) => setReinstallFilter(v)}
+          />
+        </div>
+
         {/* Category filter */}
         <div className="px-6 py-3 flex gap-2 flex-wrap">
           <Button
@@ -89,10 +107,10 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
             className="text-xs"
             onClick={() => setSelectedCategory(null)}
           >
-            Todas ({photos.length})
+            Todas ({reinstallFilteredPhotos.length})
           </Button>
           {CATEGORIES.map((cat) => {
-            const count = photos.filter((p) => p.category === cat.value).length;
+            const count = reinstallFilteredPhotos.filter((p) => p.category === cat.value).length;
             return (
               <Button
                 key={cat.value}
@@ -118,6 +136,7 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {filteredPhotos.map((photo, i) => (
                 <div key={photo.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted/30">
+                  <ReinstallPhotoBadge reinstallSeq={photo.reinstall_seq} className="!top-auto !left-auto bottom-2 right-2" />
                   {isVideo(photo) ? (
                     <div className="w-full aspect-square relative cursor-pointer bg-black flex items-center justify-center" onClick={() => setLightboxIndex(i)}>
                       <video src={photo.photo_url} className="w-full h-full object-cover" muted preload="metadata" onError={() => handleMediaError(photo.id, photo.campaign_id)} />
@@ -195,6 +214,11 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
         {/* Lightbox */}
         {currentLightbox && lightboxIndex !== null && (
           <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center" onClick={() => setLightboxIndex(null)}>
+            {(currentLightbox.reinstall_seq ?? 0) > 0 && (
+              <div className="absolute top-4 left-4 z-20">
+                <ReinstallPhotoBadge reinstallSeq={currentLightbox.reinstall_seq} size="md" className="!static" />
+              </div>
+            )}
             <Button
               variant="ghost"
               size="icon"
