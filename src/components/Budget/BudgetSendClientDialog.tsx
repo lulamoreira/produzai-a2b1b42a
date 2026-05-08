@@ -25,6 +25,8 @@ import { SendSummaryPanel, type SendSummaryItem, type SummaryItemKind, type Summ
 import { Textarea } from "@/components/ui/textarea";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 
+import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
+
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const BUCKET = "budget-files";
 
