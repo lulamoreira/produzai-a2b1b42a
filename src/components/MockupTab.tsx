@@ -337,6 +337,19 @@ export default function MockupTab({
             >
               <FileSpreadsheet className="w-4 h-4" /> Excel
             </Button>
+            {total > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="min-h-[44px] gap-1.5 text-destructive hover:text-destructive"
+                onClick={() => {
+                  setResetTarget(null);
+                  setResetOpen(true);
+                }}
+              >
+                <RotateCcw className="w-4 h-4" /> Zerar
+              </Button>
+            )}
           </div>
         </div>
 
