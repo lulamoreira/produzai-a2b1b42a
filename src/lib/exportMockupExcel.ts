@@ -130,18 +130,20 @@ export async function exportMockupExcel(params: Params): Promise<{ blob: Blob; f
     const code = codeOverride ?? piece?.code ?? kit?.code ?? "";
     const baseName = nameOverride || piece?.name || kit?.name || "—";
     const status = overrideStatus || m.status;
+    // Only show alterations when status is changes_requested.
+    const showAlt = status === "changes_requested";
 
     const row = ws.addRow([
       code,
       typeLabel,
       baseName,
-      m.alt_name_active && m.alt_name ? m.alt_name : "",
+      showAlt && m.alt_name_active && m.alt_name ? m.alt_name : "",
       piece?.size || "",
-      m.alt_size_active && m.alt_size ? m.alt_size : "",
+      showAlt && m.alt_size_active && m.alt_size ? m.alt_size : "",
       piece?.specification || "",
-      m.alt_specification_active && m.alt_specification ? m.alt_specification : "",
+      showAlt && m.alt_specification_active && m.alt_specification ? m.alt_specification : "",
       piece?.installation_instructions || "",
-      m.alt_installation_active && m.alt_installation ? m.alt_installation : "",
+      showAlt && m.alt_installation_active && m.alt_installation ? m.alt_installation : "",
       STATUS_LABEL[status],
       m.observations || "",
       fmtDate(m.reviewed_at),
