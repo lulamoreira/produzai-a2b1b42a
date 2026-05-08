@@ -212,12 +212,13 @@ export default function BudgetSendNegotiatedDialog({
   };
 
   const handleSendEmail = async () => {
-    if (!EMAIL_REGEX.test(email.trim())) {
-      toast.error("Informe um e-mail válido.");
+    const merged = mergeRecipients(email, cc);
+    if (merged.invalid.length) {
+      toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
       return;
     }
-    if (cc.trim() && !EMAIL_REGEX.test(cc.trim())) {
-      toast.error("E-mail do CC é inválido.");
+    if (merged.valid.length === 0) {
+      toast.error("Informe pelo menos um e-mail válido.");
       return;
     }
     setSending(true);
@@ -240,33 +241,40 @@ export default function BudgetSendNegotiatedDialog({
       }
       const diff = t.totalNegotiated - t.totalOriginal;
       const diffDirection: "up" | "down" | "none" = diff > 0 ? "up" : diff < 0 ? "down" : "none";
-      try {
-        const { error } = await supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "negotiation-proposal-to-supplier",
-            recipientEmail: email.trim(),
-            idempotencyKey: `negotiation-${campaignId}-${supplier.id}-${Date.now()}`,
-            templateData: {
-              supplierName: supplier.company_name,
-              contactName: supplier.contact_name,
-              agencyName,
-              clientName,
-              campaignName,
-              totalOriginalFormatted: fmt(t.totalOriginal),
-              totalNegotiatedFormatted: fmt(t.totalNegotiated),
-              differenceFormatted: fmt(Math.abs(diff)),
-              differenceDirection: diffDirection,
-              downloadUrls: [link],
+      const toEmails = parseRecipients(email);
+      let anySent = false;
+      for (const recipient of merged.valid) {
+        const isCc = !toEmails.includes(recipient);
+        const label = `${isCc ? "E-mail (CC)" : "E-mail"} → ${recipient}`;
+        try {
+          const { error } = await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "negotiation-proposal-to-supplier",
+              recipientEmail: recipient,
+              idempotencyKey: `negotiation-${campaignId}-${supplier.id}-${recipient}-${Date.now()}`,
+              templateData: {
+                supplierName: supplier.company_name,
+                contactName: supplier.contact_name,
+                agencyName,
+                clientName,
+                campaignName,
+                totalOriginalFormatted: fmt(t.totalOriginal),
+                totalNegotiatedFormatted: fmt(t.totalNegotiated),
+                differenceFormatted: fmt(Math.abs(diff)),
+                differenceDirection: diffDirection,
+                downloadUrls: [link],
+              },
             },
-          },
-        });
-        if (error) throw new Error(error.message || "Erro ao enviar e-mail");
-        push({ kind: "email", label: `E-mail → ${email.trim()}`, stage: "sent" });
-      } catch (err: any) {
-        push({ kind: "email", label: `E-mail → ${email.trim()}`, stage: "failed", error: err?.message || "Erro" });
-        throw err;
+          });
+          if (error) throw new Error(error.message || "Erro ao enviar e-mail");
+          push({ kind: "email", label, stage: "sent" });
+          anySent = true;
+        } catch (err: any) {
+          push({ kind: "email", label, stage: "failed", error: err?.message || "Erro" });
+        }
       }
-      toast.success("E-mail enviado com sucesso.", { id: tId });
+      if (!anySent) throw new Error("Nenhum e-mail foi enviado.");
+      toast.success(`E-mail enviado para ${merged.valid.length} destinatário(s).`, { id: tId });
     } catch (e: any) {
       toast.error(e?.message || "Falha ao enviar.", { id: tId });
     } finally {
