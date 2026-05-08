@@ -1666,7 +1666,7 @@ const CampaignDetail = () => {
           stores: t("modules.stores"), matrix: t("modules.matrix"), pieces: t("modules.pieces"),
           occurrences: t("modules.occurrences"), scheduling: t("modules.scheduling"),
           installations: t("modules.installations"), budgets: t("modules.budgets"),
-          history: "Histórico",
+          history: "Histórico", mockup: "Mockup",
         };
         const crumbs = [
           { label: agency?.name || "Agência", href: isLimitedMode ? undefined : "/" },
