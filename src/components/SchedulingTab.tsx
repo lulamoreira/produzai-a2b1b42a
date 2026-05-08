@@ -1027,6 +1027,17 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     })()}
                     {isReschedule && <span className="badge-base badge-warning">REM</span>}
                     {isCardLocked && <span className="badge-base badge-neutral"><Lock className="w-3 h-3" /> BLOQ</span>}
+                    {(reinstallsByStore[store.id] || []).map((r: any) => (
+                      <span
+                        key={r.id}
+                        className="badge-base inline-flex items-center gap-1 border border-amber-400 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30"
+                        title={r.reinstall_reason || ""}
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        Reinstalação #{r.reinstall_seq}
+                        {r.reinstall_reason ? ` — ${String(r.reinstall_reason).slice(0, 40)}${String(r.reinstall_reason).length > 40 ? "…" : ""}` : ""}
+                      </span>
+                    ))}
                   </div>
                 </div>
 
