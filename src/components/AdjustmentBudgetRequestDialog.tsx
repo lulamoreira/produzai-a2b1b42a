@@ -39,6 +39,7 @@ export default function AdjustmentBudgetRequestDialog({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const [customMessage, setCustomMessage] = useState("");
