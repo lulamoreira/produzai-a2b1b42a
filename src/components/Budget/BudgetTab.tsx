@@ -104,7 +104,8 @@ function AdminInlineNumberInput({
   placeholder?: string;
   className?: string;
 }) {
-  const [val, setVal] = React.useState<string>(initial != null ? String(initial) : "");
+  const fmt2 = (n: number | null) => (n == null ? "" : n.toFixed(2));
+  const [val, setVal] = React.useState<string>(fmt2(initial));
   const [saving, setSaving] = React.useState(false);
   const [savedFlash, setSavedFlash] = React.useState(false);
   const initialRef = React.useRef<number | null>(initial);
@@ -114,7 +115,7 @@ function AdminInlineNumberInput({
     if (focusedRef.current) return;
     if (initial !== initialRef.current) {
       initialRef.current = initial;
-      setVal(initial != null ? String(initial) : "");
+      setVal(fmt2(initial));
     }
   }, [initial]);
 
@@ -124,19 +125,23 @@ function AdminInlineNumberInput({
     const num = trimmed === "" ? null : Number(trimmed);
     const cur = initialRef.current;
     if (num != null && (Number.isNaN(num) || num < 0)) {
-      setVal(cur != null ? String(cur) : "");
+      setVal(fmt2(cur));
       return;
     }
-    if ((num ?? null) === (cur ?? null)) return;
+    if ((num ?? null) === (cur ?? null)) {
+      setVal(fmt2(cur));
+      return;
+    }
     setSaving(true);
     try {
       await onSave(num);
       initialRef.current = num;
+      setVal(fmt2(num));
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 1500);
     } catch (e: any) {
       toast.error(e?.message || "Erro ao salvar");
-      setVal(cur != null ? String(cur) : "");
+      setVal(fmt2(cur));
     } finally {
       setSaving(false);
     }
@@ -158,7 +163,7 @@ function AdminInlineNumberInput({
         onKeyDown={(e) => {
           if (e.key === "Enter") (e.target as HTMLInputElement).blur();
           if (e.key === "Escape") {
-            setVal(initialRef.current != null ? String(initialRef.current) : "");
+            setVal(fmt2(initialRef.current));
             (e.target as HTMLInputElement).blur();
           }
         }}
