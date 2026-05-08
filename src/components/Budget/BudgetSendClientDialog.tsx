@@ -19,7 +19,8 @@ import {
   buildSupplierBudgetWorkbook,
   type SupplierExportRow,
 } from "@/lib/exportSupplierBudget";
-import { uploadAndSign as sharedUploadAndSign } from "@/lib/budgetEmailUpload";
+import { uploadAndSign as sharedUploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
+import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
