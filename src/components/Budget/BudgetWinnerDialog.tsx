@@ -77,13 +77,13 @@ export default function BudgetWinnerDialog({
 
   const handleOpenPreview = async () => {
     if (!supplier) return;
-    if (!EMAIL_REGEX.test(email.trim())) {
-      toast.error("Informe um e-mail válido para o fornecedor.");
+    const merged = mergeRecipients(email, cc);
+    if (merged.invalid.length) {
+      toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
       return;
     }
-    const ccEmail = cc.trim();
-    if (ccEmail && !EMAIL_REGEX.test(ccEmail)) {
-      toast.error("E-mail do CC é inválido.");
+    if (merged.valid.length === 0) {
+      toast.error("Informe pelo menos um e-mail válido para o fornecedor.");
       return;
     }
     const mockup = mockupUrl.trim();
