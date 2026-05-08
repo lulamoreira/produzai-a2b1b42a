@@ -26,7 +26,10 @@ import {
   ImageOff,
   Layers,
   LayoutGrid,
+  Search,
+  X,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import EmptyState from "@/components/EmptyState";
 import MockupReviewSheet from "@/components/MockupReviewSheet";
