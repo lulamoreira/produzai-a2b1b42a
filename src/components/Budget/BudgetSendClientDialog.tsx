@@ -22,6 +22,8 @@ import {
 import { uploadAndSign as sharedUploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
 import { SendSummaryPanel, type SendSummaryItem, type SummaryItemKind, type SummaryItemStage } from "@/components/Budget/SendSummaryPanel";
+import { Textarea } from "@/components/ui/textarea";
+import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -59,7 +61,7 @@ interface BudgetSendClientDialogProps {
   deadline: string | null;
 }
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 
 export default function BudgetSendClientDialog(props: BudgetSendClientDialogProps) {
   const {
@@ -473,13 +475,13 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   };
 
   const handleSend = async () => {
-    if (!EMAIL_REGEX.test(email.trim())) {
-      toast.error("Informe um e-mail válido.");
+    const merged = mergeRecipients(email, cc);
+    if (merged.invalid.length) {
+      toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
       return;
     }
-    const ccEmail = cc.trim();
-    if (ccEmail && !EMAIL_REGEX.test(ccEmail)) {
-      toast.error("E-mail do CC é inválido.");
+    if (merged.valid.length === 0) {
+      toast.error("Informe pelo menos um e-mail válido.");
       return;
     }
     if (submittedSuppliers.length === 0) {
@@ -542,8 +544,6 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         }
       }
 
-      setStageMessage("Enviando e-mail...");
-
       // Build templateData
       const difference = bestSupplier && budgetAmount != null ? bestSupplier.total - budgetAmount : null;
       const templateData = {
@@ -577,22 +577,23 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         downloadUrls,
       };
 
-      try {
-        await sendOnce(email.trim(), templateData);
-        upsertItem(`E-mail → ${email.trim()}`, "email", "sent");
-      } catch (err: any) {
-        upsertItem(`E-mail → ${email.trim()}`, "email", "failed", err?.message || "Erro ao enviar");
-        throw err;
-      }
-      if (ccEmail) {
+      const toEmails = parseRecipients(email);
+      let anySent = false;
+      let sentIndex = 0;
+      for (const recipient of merged.valid) {
+        sentIndex += 1;
+        const isCc = !toEmails.includes(recipient);
+        const label = `${isCc ? "E-mail (CC)" : "E-mail"} → ${recipient}`;
+        setStageMessage(`Enviando e-mail ${sentIndex}/${merged.valid.length} — ${recipient}`);
         try {
-          await sendOnce(ccEmail, templateData);
-          upsertItem(`E-mail (CC) → ${ccEmail}`, "email", "sent");
+          await sendOnce(recipient, templateData);
+          upsertItem(label, "email", "sent");
+          anySent = true;
         } catch (err: any) {
-          upsertItem(`E-mail (CC) → ${ccEmail}`, "email", "failed", err?.message || "Erro ao enviar");
-          throw err;
+          upsertItem(label, "email", "failed", err?.message || "Erro ao enviar");
         }
       }
+      if (!anySent) throw new Error("Nenhum e-mail foi enviado.");
 
       toast.dismiss(toastId);
       toast.success("Relatório enviado com sucesso!");
@@ -619,23 +620,24 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
 
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label htmlFor="recipient-email">E-mail do destinatário *</Label>
-            <Input
+            <Label htmlFor="recipient-email">E-mail(s) do destinatário *</Label>
+            <Textarea
               id="recipient-email"
-              type="email"
-              placeholder="cliente@empresa.com"
+              rows={2}
+              placeholder="cliente1@empresa.com, cliente2@empresa.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={sending}
             />
+            <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="cc-email">CC (opcional)</Label>
-            <Input
+            <Textarea
               id="cc-email"
-              type="email"
-              placeholder="copia@empresa.com"
+              rows={2}
+              placeholder="copia1@empresa.com, copia2@empresa.com"
               value={cc}
               onChange={(e) => setCc(e.target.value)}
               disabled={sending}

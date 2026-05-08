@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/dialog";
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import BudgetWinnerPreviewDialog from "./BudgetWinnerPreviewDialog";
+import { Textarea } from "@/components/ui/textarea";
+import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const URL_REGEX = /^https?:\/\/.+/i;
 
 interface BudgetWinnerDialogProps {
@@ -51,7 +52,7 @@ export default function BudgetWinnerDialog({
   const [previewSubject, setPreviewSubject] = useState("");
   const [previewTemplateData, setPreviewTemplateData] = useState<any>(null);
 
-  const emailInputRef = useRef<HTMLInputElement>(null);
+  const emailInputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (open && supplier) {
@@ -76,13 +77,13 @@ export default function BudgetWinnerDialog({
 
   const handleOpenPreview = async () => {
     if (!supplier) return;
-    if (!EMAIL_REGEX.test(email.trim())) {
-      toast.error("Informe um e-mail válido para o fornecedor.");
+    const merged = mergeRecipients(email, cc);
+    if (merged.invalid.length) {
+      toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
       return;
     }
-    const ccEmail = cc.trim();
-    if (ccEmail && !EMAIL_REGEX.test(ccEmail)) {
-      toast.error("E-mail do CC é inválido.");
+    if (merged.valid.length === 0) {
+      toast.error("Informe pelo menos um e-mail válido para o fornecedor.");
       return;
     }
     const mockup = mockupUrl.trim();
@@ -141,28 +142,36 @@ export default function BudgetWinnerDialog({
 
   const executeSend = async () => {
     if (!supplier || !previewTemplateData) return;
-    const ccEmail = cc.trim();
+    const merged = mergeRecipients(email, cc);
+    if (merged.valid.length === 0) return;
 
     setSending(true);
-    const toastId = toast.loading("Enviando comunicado ao fornecedor vencedor...");
+    const toastId = toast.loading(`Enviando comunicado para ${merged.valid.length} destinatário(s)...`);
 
-    try {
-      await sendOnce(email.trim(), previewTemplateData);
-      if (ccEmail) {
-        await sendOnce(ccEmail, previewTemplateData);
+    const failures: string[] = [];
+    let sent = 0;
+    for (const recipient of merged.valid) {
+      try {
+        await sendOnce(recipient, previewTemplateData);
+        sent++;
+      } catch (e: any) {
+        failures.push(`${recipient}: ${e?.message || "erro"}`);
       }
+    }
 
-      toast.dismiss(toastId);
+    toast.dismiss(toastId);
+    if (sent === 0) {
+      toast.error(`Falha ao enviar. ${failures.join(" | ")}`);
+    } else if (failures.length > 0) {
+      toast.warning(`Enviado para ${sent}/${merged.valid.length}. Falhas: ${failures.join(" | ")}`);
+      setPreviewOpen(false);
+      onOpenChange(false);
+    } else {
       toast.success("Comunicado enviado com sucesso!");
       setPreviewOpen(false);
       onOpenChange(false);
-    } catch (e: any) {
-      console.error("Send winner notification error:", e);
-      toast.dismiss(toastId);
-      toast.error(e?.message || "Erro ao enviar comunicado.");
-    } finally {
-      setSending(false);
     }
+    setSending(false);
   };
 
   const handleEditRecipients = () => {
@@ -199,24 +208,25 @@ export default function BudgetWinnerDialog({
 
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
-              <Label htmlFor="winner-email">E-mail do fornecedor *</Label>
-              <Input
+              <Label htmlFor="winner-email">E-mail(s) do fornecedor *</Label>
+              <Textarea
                 id="winner-email"
                 ref={emailInputRef}
-                type="email"
-                placeholder="fornecedor@empresa.com"
+                rows={2}
+                placeholder="fornecedor1@empresa.com, fornecedor2@empresa.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={busy}
               />
+              <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="winner-cc">CC (opcional)</Label>
-              <Input
+              <Textarea
                 id="winner-cc"
-                type="email"
-                placeholder="copia@empresa.com"
+                rows={2}
+                placeholder="copia1@empresa.com, copia2@empresa.com"
                 value={cc}
                 onChange={(e) => setCc(e.target.value)}
                 disabled={busy}
