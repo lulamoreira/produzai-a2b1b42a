@@ -1828,16 +1828,21 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                     <div className="space-y-1.5">
                       <div className="flex gap-1.5 flex-wrap">
                         {storePhotos.slice(0, 6).map((photo) => (
-                          <img
-                            key={photo.id}
-                            src={getThumbnailUrl(photo.photo_url, 150)}
-                            alt=""
-                            loading="lazy"
-                            decoding="async"
-                            className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
-                            onClick={() => setCheckinStore(store)}
-                            onError={() => handleMediaError(photo.id, photo.campaign_id)}
-                          />
+                          <div key={photo.id} className="relative">
+                            <img
+                              src={getThumbnailUrl(photo.photo_url, 150)}
+                              alt=""
+                              loading="lazy"
+                              decoding="async"
+                              className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
+                              onClick={() => setCheckinStore(store)}
+                              onError={() => handleMediaError(photo.id, photo.campaign_id)}
+                            />
+                            <ReinstallPhotoBadge
+                              reinstallSeq={(photo as any).reinstall_seq}
+                              className="!top-0.5 !left-0.5"
+                            />
+                          </div>
                         ))}
                         {storePhotos.length > 6 && (
                           <button
