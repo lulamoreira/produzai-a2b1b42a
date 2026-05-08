@@ -215,7 +215,7 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
     let y = 38;
 
     // Image (left/center, fixed height)
-    const imgUrl = piece?.image_url || kit?.image_url || null;
+    const imgUrl = m.annotated_image_url || piece?.image_url || kit?.image_url || null;
     const img = await loadImage(imgUrl);
     const imgBoxH = 55;
     if (img) {
@@ -232,6 +232,12 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
         doc.addImage(img.data, x, y, w, h);
       } catch {
         // ignore
+      }
+      if (m.annotated_image_url) {
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(7);
+        doc.setTextColor(...MUTED);
+        doc.text("✏️ Imagem com anotações", pageW / 2, y + h + 3, { align: "center" });
       }
     } else {
       doc.setDrawColor(220);
