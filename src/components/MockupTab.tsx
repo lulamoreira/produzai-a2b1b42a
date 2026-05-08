@@ -33,6 +33,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import EmptyState from "@/components/EmptyState";
 import MockupReviewSheet from "@/components/MockupReviewSheet";
@@ -89,6 +90,7 @@ export default function MockupTab({
   const [search, setSearch] = useState("");
   const [resetOpen, setResetOpen] = useState(false);
   const [resetTarget, setResetTarget] = useState<MockupStatus | null>(null);
+  const [resetClearAnnotations, setResetClearAnnotations] = useState(true);
   const [resetting, setResetting] = useState(false);
   const qc = useQueryClient();
 
@@ -269,22 +271,26 @@ export default function MockupTab({
     const tId = toast.loading("Zerando mockup...");
     try {
       const { data: userData } = await supabase.auth.getUser();
+      const updatePayload: any = {
+        status: resetTarget,
+        alt_name: null,
+        alt_size: null,
+        alt_specification: null,
+        alt_installation: null,
+        alt_name_active: false,
+        alt_size_active: false,
+        alt_specification_active: false,
+        alt_installation_active: false,
+        observations: null,
+        reviewed_by: userData?.user?.id ?? null,
+        reviewed_at: new Date().toISOString(),
+      };
+      if (resetClearAnnotations) {
+        updatePayload.annotated_image_url = null;
+      }
       const { error } = await supabase
         .from("campaign_mockups")
-        .update({
-          status: resetTarget,
-          alt_name: null,
-          alt_size: null,
-          alt_specification: null,
-          alt_installation: null,
-          alt_name_active: false,
-          alt_size_active: false,
-          alt_specification_active: false,
-          alt_installation_active: false,
-          observations: null,
-          reviewed_by: userData?.user?.id ?? null,
-          reviewed_at: new Date().toISOString(),
-        })
+        .update(updatePayload)
         .eq("campaign_id", campaignId);
       if (error) throw error;
       await qc.invalidateQueries({ queryKey: ["campaign_mockups", campaignId] });
@@ -648,6 +654,17 @@ export default function MockupTab({
                 <XCircle className="w-4 h-4 text-red-600" /> ❌ Reprovadas
               </button>
             </div>
+            <label className="flex items-start gap-2 pt-3 cursor-pointer">
+              <Checkbox
+                checked={resetClearAnnotations}
+                onCheckedChange={(v) => setResetClearAnnotations(v === true)}
+                disabled={resetting}
+                className="mt-0.5"
+              />
+              <span className="text-sm">
+                Também remover imagens anotadas (voltar para as imagens originais)
+              </span>
+            </label>
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" disabled={resetting} onClick={() => { setResetOpen(false); setResetTarget(null); }}>
