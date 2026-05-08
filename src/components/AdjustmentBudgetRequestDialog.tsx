@@ -187,6 +187,7 @@ export default function AdjustmentBudgetRequestDialog({
     const phone = (winner?.phone || "").replace(/\D/g, "");
     if (!phone) { toast.error("Fornecedor sem telefone."); return; }
     setSending(true);
+    setUploadStatus(null);
     const tId = toast.loading("Gerando planilha...");
     try {
       const { link } = await buildAndUpload();
