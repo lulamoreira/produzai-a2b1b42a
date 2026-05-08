@@ -19,7 +19,8 @@ import {
   buildSupplierBudgetWorkbook,
   type SupplierExportRow,
 } from "@/lib/exportSupplierBudget";
-import { uploadAndSign as sharedUploadAndSign } from "@/lib/budgetEmailUpload";
+import { uploadAndSign as sharedUploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
+import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -71,6 +72,8 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   const [cc, setCc] = useState("");
   const [includeComparative, setIncludeComparative] = useState(true);
   const [sending, setSending] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
+  const [stageMessage, setStageMessage] = useState<string>("");
 
   useEffect(() => {
     if (open) {
@@ -452,7 +455,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     blob: Blob,
     fileName: string,
     supplierIdOrTag: string,
-  ) => sharedUploadAndSign(blob, fileName, supplierIdOrTag, campaignId);
+  ) => sharedUploadAndSign(blob, fileName, supplierIdOrTag, campaignId, setUploadStatus);
 
   const sendOnce = async (recipient: string, templateData: any) => {
     const { error } = await supabase.functions.invoke("send-transactional-email", {
@@ -482,24 +485,34 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     }
 
     setSending(true);
+    setUploadStatus(null);
+    setStageMessage("Iniciando geração das planilhas...");
     const toastId = toast.loading("Gerando planilhas e enviando...", {
       description: "Isso pode levar alguns segundos.",
     });
 
     try {
       const downloadUrls: { name: string; url: string }[] = [];
+      const totalFiles = submittedSuppliers.length + (includeComparative && submittedSuppliers.length >= 1 ? 1 : 0);
+      let fileIndex = 0;
 
       for (const sup of submittedSuppliers) {
+        fileIndex += 1;
+        setStageMessage(`Gerando planilha ${fileIndex}/${totalFiles} — ${sup.company_name}`);
         const { blob, fileName } = await buildOneSupplier(sup);
         const link = await uploadAndSign(blob, fileName, sup.id);
         downloadUrls.push(link);
       }
 
       if (includeComparative && submittedSuppliers.length >= 1) {
+        fileIndex += 1;
+        setStageMessage(`Gerando planilha ${fileIndex}/${totalFiles} — Comparativo`);
         const { blob, fileName } = await buildComparativeWorkbook();
         const link = await uploadAndSign(blob, fileName, "comparativo");
         downloadUrls.push(link);
       }
+
+      setStageMessage("Enviando e-mail...");
 
       // Build templateData
       const difference = bestSupplier && budgetAmount != null ? bestSupplier.total - budgetAmount : null;
@@ -548,6 +561,8 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       toast.error(e?.message || "Erro ao enviar o relatório.");
     } finally {
       setSending(false);
+      setUploadStatus(null);
+      setStageMessage("");
     }
   };
 
@@ -621,6 +636,15 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
               </div>
             )}
           </div>
+
+          {sending && (
+            <div className="space-y-2">
+              {stageMessage && (
+                <div className="text-xs text-muted-foreground">{stageMessage}</div>
+              )}
+              <UploadProgressPanel status={uploadStatus} />
+            </div>
+          )}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">

@@ -11,7 +11,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
-import { uploadAndSign } from "@/lib/budgetEmailUpload";
+import { uploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
+import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
 import {
   buildNegotiatedProposalWorkbook,
   computeNegotiatedTotals,
@@ -59,6 +60,7 @@ export default function BudgetSendNegotiatedDialog({
   const [cc, setCc] = useState("");
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
 
   const [prices, setPrices] = useState<NegotiatedProposalParams["prices"]>([]);
   const [extraCosts, setExtraCosts] = useState<NegotiatedProposalParams["extraCosts"] | null>(null);
@@ -202,7 +204,7 @@ export default function BudgetSendNegotiatedDialog({
       locations: locations as CampaignPieceLocation[],
       subLocations: subLocations as CampaignPieceSubLocation[],
     });
-    const link = await uploadAndSign(blob, fileName, `negociacao_${supplier.id}`, campaignId);
+    const link = await uploadAndSign(blob, fileName, `negociacao_${supplier.id}`, campaignId, setUploadStatus);
     return { link, fileName, totals: t };
   };
 
@@ -216,6 +218,7 @@ export default function BudgetSendNegotiatedDialog({
       return;
     }
     setSending(true);
+    setUploadStatus(null);
     const tId = toast.loading("Gerando planilha e enviando...");
     try {
       const { link, totals: t } = await buildAndUpload();
@@ -247,6 +250,7 @@ export default function BudgetSendNegotiatedDialog({
       toast.error(e?.message || "Falha ao enviar.", { id: tId });
     } finally {
       setSending(false);
+      setUploadStatus(null);
     }
   };
 
@@ -257,6 +261,7 @@ export default function BudgetSendNegotiatedDialog({
       return;
     }
     setSending(true);
+    setUploadStatus(null);
     const tId = toast.loading("Gerando planilha...");
     try {
       const { link, totals: t } = await buildAndUpload();
@@ -306,6 +311,7 @@ export default function BudgetSendNegotiatedDialog({
       toast.error(e?.message || "Falha ao gerar planilha.", { id: tId });
     } finally {
       setSending(false);
+      setUploadStatus(null);
     }
   };
 
@@ -381,6 +387,7 @@ export default function BudgetSendNegotiatedDialog({
               </div>
             </>
           )}
+          {sending && <UploadProgressPanel status={uploadStatus} />}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">

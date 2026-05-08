@@ -29,26 +29,42 @@ function isTransient(err: unknown): boolean {
   );
 }
 
+export type UploadPhase = "preparing" | "uploading" | "signing" | "retrying" | "done";
+
+export interface UploadStatus {
+  phase: UploadPhase;
+  message: string;
+  /** 0-100 indicative progress */
+  progress: number;
+  attempt: number;
+  fileName: string;
+}
+
+export type UploadStatusCallback = (s: UploadStatus) => void;
+
 /**
  * Upload a file blob to the budget-files bucket and return a 30-day signed
  * URL with a friendly download filename.
  *
  * Robust to transient "Failed to fetch" errors: retries up to 4 times with
- * exponential backoff. Surfaces a clear, actionable error message when it
- * ultimately fails so the user knows what to do.
+ * exponential backoff. Optionally reports progress via onStatus callback.
  */
 export async function uploadAndSign(
   blob: Blob,
   fileName: string,
   tag: string,
   campaignId: string,
+  onStatus?: UploadStatusCallback,
 ): Promise<{ name: string; url: string }> {
   const safeFileName = sanitize(fileName) || `file_${Date.now()}.xlsx`;
   const safeTag = sanitize(tag) || "tag";
   const sizeMb = blob.size / (1024 * 1024);
 
-  // Storage default per-file limit on the project tier — bail out early with
-  // a clear message instead of waiting for a generic network failure.
+  const emit = (s: Omit<UploadStatus, "fileName">) =>
+    onStatus?.({ ...s, fileName });
+
+  emit({ phase: "preparing", message: `Preparando ${fileName} (${sizeMb.toFixed(1)} MB)...`, progress: 5, attempt: 0 });
+
   if (sizeMb > 50) {
     throw new Error(
       `O arquivo ${fileName} tem ${sizeMb.toFixed(1)} MB e excede o limite de 50 MB para upload. Reduza o tamanho e tente novamente.`,
@@ -58,9 +74,18 @@ export async function uploadAndSign(
   let lastErr: unknown = null;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    // New unique path on every attempt to avoid cache/conflict edge cases.
     const path = `${campaignId}/${safeTag}/${Date.now()}_${attempt}_${safeFileName}`;
     try {
+      emit({
+        phase: "uploading",
+        message:
+          attempt === 1
+            ? `Enviando ${fileName}...`
+            : `Reenviando ${fileName} (tentativa ${attempt}/${MAX_ATTEMPTS})...`,
+        progress: 15 + (attempt - 1) * 5,
+        attempt,
+      });
+
       const { error: upErr } = await supabase.storage
         .from(BUCKET)
         .upload(path, blob, { upsert: true, contentType: blob.type || "application/octet-stream" });
@@ -68,11 +93,24 @@ export async function uploadAndSign(
       if (upErr) {
         lastErr = upErr;
         if (attempt < MAX_ATTEMPTS && isTransient(upErr)) {
+          emit({
+            phase: "retrying",
+            message: `Falha temporária no envio. Tentando novamente em alguns segundos...`,
+            progress: 25,
+            attempt,
+          });
           await sleep(BASE_DELAY_MS * 2 ** (attempt - 1));
           continue;
         }
         throw new Error(`Falha no upload de ${fileName}: ${upErr.message}`);
       }
+
+      emit({
+        phase: "signing",
+        message: `Gerando link assinado para ${fileName}...`,
+        progress: 80,
+        attempt,
+      });
 
       const { data, error: signErr } = await supabase.storage
         .from(BUCKET)
@@ -81,12 +119,19 @@ export async function uploadAndSign(
       if (signErr || !data) {
         lastErr = signErr;
         if (attempt < MAX_ATTEMPTS && isTransient(signErr)) {
+          emit({
+            phase: "retrying",
+            message: `Falha ao gerar link. Tentando novamente...`,
+            progress: 70,
+            attempt,
+          });
           await sleep(BASE_DELAY_MS * 2 ** (attempt - 1));
           continue;
         }
         throw new Error(`Falha ao gerar link de ${fileName}: ${signErr?.message ?? "erro desconhecido"}`);
       }
 
+      emit({ phase: "done", message: `Planilha pronta: ${fileName}.`, progress: 100, attempt });
       return { name: fileName, url: data.signedUrl };
     } catch (err) {
       lastErr = err;
@@ -95,10 +140,15 @@ export async function uploadAndSign(
           `[uploadAndSign] tentativa ${attempt}/${MAX_ATTEMPTS} falhou para "${fileName}" (${sizeMb.toFixed(1)} MB):`,
           err,
         );
+        emit({
+          phase: "retrying",
+          message: `Falha de rede. Tentando novamente (${attempt + 1}/${MAX_ATTEMPTS})...`,
+          progress: 25,
+          attempt,
+        });
         await sleep(BASE_DELAY_MS * 2 ** (attempt - 1));
         continue;
       }
-      // Non-transient or out of attempts — re-throw with friendly message.
       const baseMsg = (err as { message?: string })?.message ?? "Erro desconhecido";
       if (isTransient(err)) {
         throw new Error(
@@ -109,7 +159,6 @@ export async function uploadAndSign(
     }
   }
 
-  // Defensive fallback (shouldn't reach here).
   throw new Error(
     `Não foi possível enviar ${fileName}. Último erro: ${(lastErr as { message?: string })?.message ?? "desconhecido"}`,
   );

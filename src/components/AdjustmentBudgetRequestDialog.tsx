@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
-import { uploadAndSign } from "@/lib/budgetEmailUpload";
+import { uploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
+import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
 import {
   buildAdjustmentProposalWorkbook,
   summarizeAdjustmentChanges,
@@ -38,6 +39,7 @@ export default function AdjustmentBudgetRequestDialog({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const [customMessage, setCustomMessage] = useState("");
@@ -134,7 +136,7 @@ export default function AdjustmentBudgetRequestDialog({
       currentPrices: prices,
       extraCosts: extras,
     });
-    const link = await uploadAndSign(blob, fileName, `adjustment_${adjustment.id}`, campaignId);
+    const link = await uploadAndSign(blob, fileName, `adjustment_${adjustment.id}`, campaignId, setUploadStatus);
     return { link, fileName };
   };
 
@@ -152,6 +154,7 @@ export default function AdjustmentBudgetRequestDialog({
     if (!EMAIL_REGEX.test(email.trim())) { toast.error("E-mail inválido."); return; }
     if (cc.trim() && !EMAIL_REGEX.test(cc.trim())) { toast.error("CC inválido."); return; }
     setSending(true);
+    setUploadStatus(null);
     const tId = toast.loading("Gerando planilha e enviando...");
     try {
       const { link } = await buildAndUpload();
@@ -177,13 +180,14 @@ export default function AdjustmentBudgetRequestDialog({
       onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao enviar.", { id: tId });
-    } finally { setSending(false); }
+    } finally { setSending(false); setUploadStatus(null); }
   };
 
   const handleSendWhatsApp = async () => {
     const phone = (winner?.phone || "").replace(/\D/g, "");
     if (!phone) { toast.error("Fornecedor sem telefone."); return; }
     setSending(true);
+    setUploadStatus(null);
     const tId = toast.loading("Gerando planilha...");
     try {
       const { link } = await buildAndUpload();
@@ -209,7 +213,7 @@ export default function AdjustmentBudgetRequestDialog({
       onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao gerar planilha.", { id: tId });
-    } finally { setSending(false); }
+    } finally { setSending(false); setUploadStatus(null); }
   };
 
   return (
@@ -260,6 +264,7 @@ export default function AdjustmentBudgetRequestDialog({
               </div>
             </>
           )}
+          {sending && <UploadProgressPanel status={uploadStatus} />}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
