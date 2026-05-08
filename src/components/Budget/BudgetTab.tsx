@@ -2058,7 +2058,12 @@ Qualquer dúvida, estamos à disposição.
                 </TableHeader>
                 <TableBody>
                   {/* Standalone pieces */}
-                  {pieces.filter((p) => !p.kit_only).sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? ''))).map((piece) => {
+                  {pieces.filter((p) => !p.kit_only).filter((piece) => {
+                    if (!showOnlyMissing) return true;
+                    const priceRow = detailPrices.find((pr) => pr.piece_id === piece.id);
+                    const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
+                    return !priceRow || unitPrice <= 0;
+                  }).sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0) || String(a.code ?? '').localeCompare(String(b.code ?? ''))).map((piece) => {
                     const qty = pieceTotals[piece.id] || 0;
                     const priceRow = detailPrices.find((pr) => pr.piece_id === piece.id);
                     const unitPrice = priceRow ? Number(priceRow.unit_price) || 0 : 0;
