@@ -426,7 +426,7 @@ export default function AppSidebar() {
                                   {...hoverHandlers(modActive)}
                                 >
                                   <AquaIcon icon={mod.icon} size="xs" color={mod.color} />
-                                  <span className="truncate">{t(mod.tKey, (mod as any).fallbackLabel ?? mod.tKey)}</span>
+                                  <span className="truncate">{(mod as any).fallbackLabel ? t(mod.tKey, { defaultValue: (mod as any).fallbackLabel }) : t(mod.tKey)}</span>
                                 </button>
                               );
                             })}
@@ -513,7 +513,7 @@ export default function AppSidebar() {
                               {...hoverHandlers(modActive)}
                             >
                               <AquaIcon icon={mod.icon} size="xs" color={mod.color} />
-                              <span className="truncate">{t(mod.tKey, (mod as any).fallbackLabel ?? mod.tKey)}</span>
+                              <span className="truncate">{(mod as any).fallbackLabel ? t(mod.tKey, { defaultValue: (mod as any).fallbackLabel }) : t(mod.tKey)}</span>
                             </button>
                           );
                         })}
