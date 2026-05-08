@@ -61,7 +61,7 @@ interface BudgetSendClientDialogProps {
   deadline: string | null;
 }
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 
 export default function BudgetSendClientDialog(props: BudgetSendClientDialogProps) {
   const {
