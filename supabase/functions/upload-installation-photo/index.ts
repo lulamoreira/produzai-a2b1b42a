@@ -91,6 +91,7 @@ Deno.serve(async (req) => {
         category,
         upload_method: uploadMethod,
         media_type: mediaType,
+        reinstall_seq: reinstallSeq,
       })
       .select()
       .single();
