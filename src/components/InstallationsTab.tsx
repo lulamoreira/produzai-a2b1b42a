@@ -1256,16 +1256,25 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 <div className="flex items-center justify-between mt-2.5 gap-2">
                   <div className="flex items-center gap-1.5">
                     {storePhotos.slice(0, 4).map((photo) => (
-                      <img
-                        key={photo.id}
-                        src={getThumbnailUrl(photo.photo_url, 100)}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        className="w-8 h-8 rounded object-cover border border-[var(--border-subtle)]"
-                        onClick={(e) => { e.stopPropagation(); setCheckinStore(store); }}
-                        onError={() => handleMediaError(photo.id, photo.campaign_id)}
-                      />
+                      <div key={photo.id} className="relative">
+                        <img
+                          src={getThumbnailUrl(photo.photo_url, 100)}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className="w-8 h-8 rounded object-cover border border-[var(--border-subtle)]"
+                          onClick={(e) => { e.stopPropagation(); setCheckinStore(store); }}
+                          onError={() => handleMediaError(photo.id, photo.campaign_id)}
+                        />
+                        {((photo as any).reinstall_seq ?? 0) > 0 && (
+                          <span
+                            className="absolute -top-1 -right-1 bg-amber-400 text-amber-950 text-[8px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center shadow"
+                            title={`Reinstalação #${(photo as any).reinstall_seq}`}
+                          >
+                            {(photo as any).reinstall_seq}
+                          </span>
+                        )}
+                      </div>
                     ))}
                     {storePhotos.length > 4 && (
                       <span
