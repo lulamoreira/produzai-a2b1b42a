@@ -485,24 +485,34 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     }
 
     setSending(true);
+    setUploadStatus(null);
+    setStageMessage("Iniciando geração das planilhas...");
     const toastId = toast.loading("Gerando planilhas e enviando...", {
       description: "Isso pode levar alguns segundos.",
     });
 
     try {
       const downloadUrls: { name: string; url: string }[] = [];
+      const totalFiles = submittedSuppliers.length + (includeComparative && submittedSuppliers.length >= 1 ? 1 : 0);
+      let fileIndex = 0;
 
       for (const sup of submittedSuppliers) {
+        fileIndex += 1;
+        setStageMessage(`Gerando planilha ${fileIndex}/${totalFiles} — ${sup.company_name}`);
         const { blob, fileName } = await buildOneSupplier(sup);
         const link = await uploadAndSign(blob, fileName, sup.id);
         downloadUrls.push(link);
       }
 
       if (includeComparative && submittedSuppliers.length >= 1) {
+        fileIndex += 1;
+        setStageMessage(`Gerando planilha ${fileIndex}/${totalFiles} — Comparativo`);
         const { blob, fileName } = await buildComparativeWorkbook();
         const link = await uploadAndSign(blob, fileName, "comparativo");
         downloadUrls.push(link);
       }
+
+      setStageMessage("Enviando e-mail...");
 
       // Build templateData
       const difference = bestSupplier && budgetAmount != null ? bestSupplier.total - budgetAmount : null;
