@@ -294,12 +294,13 @@ export default function AdjustmentBudgetRequestDialog({
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="adj-email">E-mail do destinatário</Label>
-                <Input id="adj-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={sending} />
+                <Label htmlFor="adj-email">E-mail(s) do destinatário</Label>
+                <Textarea id="adj-email" rows={2} value={email} onChange={(e) => setEmail(e.target.value)} disabled={sending} placeholder="email1@empresa.com, email2@empresa.com" />
+                <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="adj-cc">CC (opcional)</Label>
-                <Input id="adj-cc" type="email" value={cc} onChange={(e) => setCc(e.target.value)} disabled={sending} placeholder="copia@empresa.com" />
+                <Textarea id="adj-cc" rows={2} value={cc} onChange={(e) => setCc(e.target.value)} disabled={sending} placeholder="copia1@empresa.com, copia2@empresa.com" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="adj-msg">Mensagem (opcional)</Label>
