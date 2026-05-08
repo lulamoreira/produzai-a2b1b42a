@@ -214,6 +214,11 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
         {/* Lightbox */}
         {currentLightbox && lightboxIndex !== null && (
           <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center" onClick={() => setLightboxIndex(null)}>
+            {(currentLightbox.reinstall_seq ?? 0) > 0 && (
+              <div className="absolute top-4 left-4 z-20">
+                <ReinstallPhotoBadge reinstallSeq={currentLightbox.reinstall_seq} size="md" className="!static" />
+              </div>
+            )}
             <Button
               variant="ghost"
               size="icon"
