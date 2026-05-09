@@ -162,7 +162,7 @@ export default function ReinstallCard({ reinstall, campaignId, storeName, canEdi
         </div>
 
         {/* Editable fields grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-2 text-xs">
           {/* Date */}
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -221,7 +221,7 @@ export default function ReinstallCard({ reinstall, campaignId, storeName, canEdi
           </div>
 
           {/* Team */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <Users className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
             <span className="font-medium text-foreground shrink-0">Equipe:</span>
             <Select
@@ -229,7 +229,7 @@ export default function ReinstallCard({ reinstall, campaignId, storeName, canEdi
               onValueChange={handleSetTeam}
               disabled={!editAllowed}
             >
-              <SelectTrigger className="h-7 px-2 text-xs flex-1">
+              <SelectTrigger className="h-7 px-2 text-xs flex-1 min-w-0 [&>span]:truncate [&>span]:block [&>span]:max-w-full">
                 <SelectValue placeholder="Selecionar" />
               </SelectTrigger>
               <SelectContent>
