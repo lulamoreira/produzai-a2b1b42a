@@ -18,6 +18,7 @@ import BudgetSupplierHistorySheet from "@/components/Budget/BudgetSupplierHistor
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ResponsiveToolbar } from "@/components/ResponsiveToolbar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
