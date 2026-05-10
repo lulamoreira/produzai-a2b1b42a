@@ -148,7 +148,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="categories">
-            <CategoryManager />
+            <CategoriesTab />
           </TabsContent>
 
           <TabsContent value="messages">
