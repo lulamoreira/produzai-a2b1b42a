@@ -592,6 +592,13 @@ export default function StoresMatrixTable({
           </TableBody>
         </Table>
       </DndContext>
+      </div>
+      {isMobile && (
+        <div className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-1 border-t">
+          <ChevronsRight className="w-3 h-3" />
+          Deslize para ver mais colunas
+        </div>
+      )}
     </div>
   );
 }
