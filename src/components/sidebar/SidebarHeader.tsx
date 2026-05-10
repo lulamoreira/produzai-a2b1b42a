@@ -19,7 +19,7 @@ interface Props {
 }
 
 export function SidebarHeader({
-  collapsed, onToggleCollapsed, onCloseMobile, onUserAction, agencyName, clientName,
+  collapsed, onToggleCollapsed, onCloseMobile, onUserAction, agencyName, clientName, campaignName,
 }: Props) {
   const { t } = useTranslation();
   const { displayName, avatarUrl } = useDisplayName();
