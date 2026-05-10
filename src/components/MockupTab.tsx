@@ -8,6 +8,7 @@ import {
   type MockupStatus,
 } from "@/hooks/useMockups";
 import { Button } from "@/components/ui/button";
+import { ResponsiveToolbar } from "@/components/ResponsiveToolbar";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
