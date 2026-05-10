@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { paginateQuery } from "../_shared/paginate.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -191,19 +192,25 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("store_id", schedule.store_id);
 
-    // Get pieces for this store
-    const { data: storePieces } = await supabase
-      .from("campaign_store_pieces")
-      .select("*, campaign_pieces(*)")
-      .eq("campaign_id", schedule.campaign_id)
-      .eq("store_id", schedule.store_id);
+    // Get pieces for this store (paginated — campaign_store_pieces can exceed 1000)
+    const storePieces = await paginateQuery<any>((from, to) =>
+      supabase
+        .from("campaign_store_pieces")
+        .select("*, campaign_pieces(*)")
+        .eq("campaign_id", schedule.campaign_id)
+        .eq("store_id", schedule.store_id)
+        .range(from, to)
+    );
 
-    // Get existing photos
-    const { data: photos } = await supabase
-      .from("installation_photos")
-      .select("*")
-      .eq("campaign_id", schedule.campaign_id)
-      .eq("store_id", schedule.store_id);
+    // Get existing photos (paginated)
+    const photos = await paginateQuery<any>((from, to) =>
+      supabase
+        .from("installation_photos")
+        .select("*")
+        .eq("campaign_id", schedule.campaign_id)
+        .eq("store_id", schedule.store_id)
+        .range(from, to)
+    );
 
     // Get team members
     let members: any[] = [];
