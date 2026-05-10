@@ -5,6 +5,10 @@
  * Imported AFTER @tailwind directives in index.css for guaranteed source order.
  */
 
+/* DÍVIDA TÉCNICA: Módulos (ModuleGrid) mantêm suas cores originais no tema Aqua. */
+/* Para tema-rizar os módulos preservando distinção por módulo, seria necessário */
+/* adicionar data-module={key} no <button> de ModuleGrid.tsx em uma task futura. */
+
 :root.aqua,
 html.aqua {
   /* Base colors — saturated Aqua palette */
