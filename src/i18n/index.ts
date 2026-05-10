@@ -16,6 +16,7 @@ i18n.use(initReactI18next).init({
   resources: {
     "pt-BR": { translation: ptBR },
     en: { translation: en },
+    "en-US": { translation: en },
     es: { translation: es },
   },
   lng: "pt-BR",
