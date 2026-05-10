@@ -412,10 +412,26 @@ export function useDeleteCampaign() {
       qc.setQueriesData<Campaign[]>({ queryKey: ["campaigns"] }, (old) =>
         old ? old.filter((c) => c.id !== id) : old
       );
+      // Optimistically remove from sidebar caches so it disappears instantly
+      qc.setQueriesData<any[]>({ queryKey: ["sidebar-client-campaigns"] }, (old) =>
+        Array.isArray(old) ? old.filter((c) => c.id !== id) : old
+      );
+      qc.setQueriesData<any>({ queryKey: ["user_direct_access"] }, (old) =>
+        Array.isArray(old) ? old.filter((c: any) => c.campaignId !== id) : old
+      );
     },
     onSuccess: () => toast.success("Campanha removida!"),
-    onSettled: () => { qc.invalidateQueries({ queryKey: ["campaigns"] }); },
-    onError: (e) => { toast.error("Erro: " + e.message); qc.invalidateQueries({ queryKey: ["campaigns"] }); },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["campaigns"] });
+      qc.invalidateQueries({ queryKey: ["sidebar-client-campaigns"] });
+      qc.invalidateQueries({ queryKey: ["user_direct_access"] });
+    },
+    onError: (e) => {
+      toast.error("Erro: " + e.message);
+      qc.invalidateQueries({ queryKey: ["campaigns"] });
+      qc.invalidateQueries({ queryKey: ["sidebar-client-campaigns"] });
+      qc.invalidateQueries({ queryKey: ["user_direct_access"] });
+    },
   });
 }
 
