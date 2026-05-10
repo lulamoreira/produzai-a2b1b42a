@@ -1,20 +1,25 @@
 import { useState } from "react";
 import JSZip from "jszip";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
-} from "@/components/ui/dialog";
+  AppDialog,
+  AppDialogHeader,
+  AppDialogBody,
+  AppDialogFooter,
+} from "@/components/ui/app-dialog";
+import { ConfirmDestructiveDialog } from "@/components/ui/confirm-destructive-dialog";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { Camera, Download, Trash2, AlertTriangle } from "lucide-react";
+import { Camera, Download, Trash2, MoreVertical, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 
@@ -35,20 +40,29 @@ type CollectedPhoto = {
   url: string;
   bucket: string;
   path: string;
-  folder: string; // top-level folder in zip
+  folder: string;
   storeFolder?: string;
   table: "installation_photos" | "occurrence_photos" | "campaign_messages";
   rowId: string;
   category?: string;
 };
 
+const ALL_SCOPE: Scope = {
+  installations: true,
+  checkin: true,
+  occurrences: true,
+  chat: true,
+};
+
 function sanitize(text: string): string {
-  return text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9 _-]/g, "")
-    .replace(/\s+/g, "_")
-    .substring(0, 60) || "sem_nome";
+  return (
+    text
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9 _-]/g, "")
+      .replace(/\s+/g, "_")
+      .substring(0, 60) || "sem_nome"
+  );
 }
 
 function parseStoragePath(url: string): { bucket: string; path: string } | null {
@@ -63,79 +77,82 @@ function parseStoragePath(url: string): { bucket: string; path: string } | null 
 }
 
 export default function ExportAllPhotosDialog({ campaignId, campaignName, trigger }: Props) {
+  const { t } = useTranslation();
   const { isAdmin } = useUserRole();
   const [open, setOpen] = useState(false);
-  const [scope, setScope] = useState<Scope>({
-    installations: true,
-    checkin: true,
-    occurrences: true,
-    chat: true,
-  });
+  const [scope, setScope] = useState<Scope>(ALL_SCOPE);
   const [deleteAfter, setDeleteAfter] = useState(false);
-  const [deleteOnly, setDeleteOnly] = useState(false);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, label: "" });
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmText, setConfirmText] = useState("");
+  // Confirm flows
+  const [confirmDownloadDeleteOpen, setConfirmDownloadDeleteOpen] = useState(false);
+  const [confirmDownloadDeleteCount, setConfirmDownloadDeleteCount] = useState(0);
+  const [confirmDeleteAllOpen, setConfirmDeleteAllOpen] = useState(false);
+  const [confirmDeleteAllCount, setConfirmDeleteAllCount] = useState(0);
 
   const reset = () => {
     setProgress({ done: 0, total: 0, label: "" });
-    setConfirmText("");
-    setConfirmOpen(false);
-    setDeleteOnly(false);
   };
 
-  const collectPhotos = async (): Promise<{ photos: CollectedPhoto[]; storeMap: Record<string, string> }> => {
+  const collectPhotos = async (
+    activeScope: Scope,
+  ): Promise<{ photos: CollectedPhoto[] }> => {
     const photos: CollectedPhoto[] = [];
 
-    // Build store map for foldering
+    const ids = new Set<string>();
+    const r1 = await supabasePaginate<{ store_id: string | null }>((from, to) =>
+      supabase
+        .from("installation_photos")
+        .select("store_id")
+        .eq("campaign_id", campaignId)
+        .range(from, to) as any,
+    );
+    r1.forEach((x: any) => x.store_id && ids.add(x.store_id));
+    const r2 = await supabasePaginate<{ store_id: string | null }>((from, to) =>
+      supabase
+        .from("occurrences")
+        .select("store_id")
+        .eq("campaign_id", campaignId)
+        .range(from, to) as any,
+    );
+    r2.forEach((x: any) => x.store_id && ids.add(x.store_id));
+
     const { data: stores } = await supabase
       .from("client_stores")
       .select("id, name, nickname, store_code")
-      .in(
-        "id",
-        // We don't have direct list — fetch via campaign relations below; use empty fallback
-        (await (async () => {
-          const ids = new Set<string>();
-          const r1 = await supabasePaginate<{ store_id: string | null }>((from, to) =>
-            supabase.from("installation_photos").select("store_id").eq("campaign_id", campaignId).range(from, to) as any
-          );
-          r1.forEach((x: any) => x.store_id && ids.add(x.store_id));
-          const r2 = await supabasePaginate<{ store_id: string | null }>((from, to) =>
-            supabase.from("occurrences").select("store_id").eq("campaign_id", campaignId).range(from, to) as any
-          );
-          r2.forEach((x: any) => x.store_id && ids.add(x.store_id));
-          return Array.from(ids);
-        })()) as string[]
-      );
+      .in("id", Array.from(ids) as string[]);
+
     const storeMap: Record<string, string> = {};
     (stores || []).forEach((s: any) => {
       storeMap[s.id] = sanitize(s.nickname || s.name || s.store_code || s.id);
     });
 
-    if (scope.installations || scope.checkin) {
-      const data = await supabasePaginate<{ id: string; photo_url: string; category: string; store_id: string }>((from, to) =>
+    if (activeScope.installations || activeScope.checkin) {
+      const data = await supabasePaginate<{
+        id: string;
+        photo_url: string;
+        category: string;
+        store_id: string;
+      }>((from, to) =>
         supabase
           .from("installation_photos")
           .select("id, photo_url, category, store_id")
           .eq("campaign_id", campaignId)
-          .range(from, to) as any
+          .range(from, to) as any,
       );
       data.forEach((p: any) => {
         const isCheckin = p.category === "checkin";
-        if (isCheckin && !scope.checkin) return;
-        if (!isCheckin && !scope.installations) return;
+        if (isCheckin && !activeScope.checkin) return;
+        if (!isCheckin && !activeScope.installations) return;
         const parsed = parseStoragePath(p.photo_url);
         if (!parsed) return;
-        const folder = isCheckin ? "Check-in" : "Instalacoes";
-        const storeFolder = storeMap[p.store_id] || "Loja_Desconhecida";
         photos.push({
           url: p.photo_url,
           bucket: parsed.bucket,
           path: parsed.path,
-          folder,
-          storeFolder,
+          folder: isCheckin ? "Check-in" : "Instalacoes",
+          storeFolder: storeMap[p.store_id] || "Loja_Desconhecida",
           table: "installation_photos",
           rowId: p.id,
           category: p.category,
@@ -143,13 +160,14 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
       });
     }
 
-    if (scope.occurrences) {
-      const occs = await supabasePaginate<{ id: string; store_id: string | null }>((from, to) =>
-        supabase
-          .from("occurrences")
-          .select("id, store_id")
-          .eq("campaign_id", campaignId)
-          .range(from, to) as any
+    if (activeScope.occurrences) {
+      const occs = await supabasePaginate<{ id: string; store_id: string | null }>(
+        (from, to) =>
+          supabase
+            .from("occurrences")
+            .select("id, store_id")
+            .eq("campaign_id", campaignId)
+            .range(from, to) as any,
       );
       const occIds = occs.map((o: any) => o.id);
       const occStoreMap: Record<string, string> = {};
@@ -179,7 +197,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
       }
     }
 
-    if (scope.chat) {
+    if (activeScope.chat) {
       const { data: msgs } = await supabase
         .from("campaign_messages")
         .select("id, image_url")
@@ -200,7 +218,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
       });
     }
 
-    return { photos, storeMap };
+    return { photos };
   };
 
   const buildAndDownloadZip = async (photos: CollectedPhoto[]) => {
@@ -224,12 +242,12 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
           console.warn("Failed to fetch", p.url);
         } finally {
           done++;
-          setProgress({ done, total: photos.length, label: "Baixando arquivos..." });
+          setProgress({ done, total: photos.length, label: t("photoExport.downloading") });
         }
-      })
+      }),
     );
 
-    setProgress({ done: photos.length, total: photos.length, label: "Compactando..." });
+    setProgress({ done: photos.length, total: photos.length, label: t("photoExport.compressing") });
     const content = await zip.generateAsync({ type: "blob" });
     const url = URL.createObjectURL(content);
     const a = document.createElement("a");
@@ -242,23 +260,19 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
   };
 
   const deletePhotos = async (photos: CollectedPhoto[]) => {
-    setProgress({ done: 0, total: photos.length, label: "Excluindo arquivos..." });
+    setProgress({ done: 0, total: photos.length, label: t("photoExport.deleting") });
 
-    // Group by bucket for storage removal
     const byBucket: Record<string, string[]> = {};
     photos.forEach((p) => {
       byBucket[p.bucket] = byBucket[p.bucket] || [];
       byBucket[p.bucket].push(p.path);
     });
     for (const [bucket, paths] of Object.entries(byBucket)) {
-      // Remove in chunks of 100
       for (let i = 0; i < paths.length; i += 100) {
-        const chunk = paths.slice(i, i + 100);
-        await supabase.storage.from(bucket).remove(chunk);
+        await supabase.storage.from(bucket).remove(paths.slice(i, i + 100));
       }
     }
 
-    // Delete DB rows / null out chat columns
     const installIds = photos.filter((p) => p.table === "installation_photos").map((p) => p.rowId);
     const occIds = photos.filter((p) => p.table === "occurrence_photos").map((p) => p.rowId);
     const chatIds = photos.filter((p) => p.table === "campaign_messages").map((p) => p.rowId);
@@ -275,92 +289,202 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
     }
     if (chatIds.length) {
       for (let i = 0; i < chatIds.length; i += 200) {
-        await supabase.from("campaign_messages").update({ image_url: null }).in("id", chatIds.slice(i, i + 200));
+        await supabase
+          .from("campaign_messages")
+          .update({ image_url: null })
+          .in("id", chatIds.slice(i, i + 200));
       }
     }
-
-    setProgress({ done: photos.length, total: photos.length, label: "Concluído" });
   };
 
-  const handleStart = (mode: "download" | "downloadDelete" | "deleteOnly" = "download") => {
+  // ---- Flows ----
+
+  const runDownloadOnly = async () => {
     if (!Object.values(scope).some(Boolean)) {
-      toast.error("Selecione ao menos um tipo de foto");
+      toast.error(t("photoExport.selectAtLeastOne"));
       return;
     }
-    setDeleteOnly(mode === "deleteOnly");
-    setDeleteAfter(mode === "downloadDelete");
-    if (mode === "deleteOnly" || mode === "downloadDelete") {
-      setConfirmOpen(true);
-    } else {
-      void run();
-    }
-  };
-
-  const run = async () => {
     setBusy(true);
     try {
-      setProgress({ done: 0, total: 0, label: "Coletando fotos..." });
-      const { photos } = await collectPhotos();
+      setProgress({ done: 0, total: 0, label: t("photoExport.collecting") });
+      const { photos } = await collectPhotos(scope);
       if (photos.length === 0) {
-        toast.info("Nenhuma foto encontrada para o escopo selecionado.");
-        setBusy(false);
+        toast.info(t("photoExport.noPhotos"));
         return;
       }
-      if (!deleteOnly) {
-        await buildAndDownloadZip(photos);
-        toast.success(`${photos.length} arquivo(s) compactados em ZIP`);
-      }
-
-      if (deleteAfter || deleteOnly) {
-        await deletePhotos(photos);
-        toast.success(`${photos.length} foto(s) excluídas do sistema`);
-      }
+      await buildAndDownloadZip(photos);
+      toast.success(t("photoExport.filesZipped", { count: photos.length }));
       setOpen(false);
       reset();
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.message || "Falha na operação");
+      toast.error(e?.message || t("photoExport.operationFailed"));
     } finally {
       setBusy(false);
     }
   };
 
-  const expectedConfirm = campaignName.trim();
-  const confirmValid = confirmText.trim().toLowerCase() === expectedConfirm.toLowerCase();
+  const startDownloadAndDelete = async () => {
+    if (!Object.values(scope).some(Boolean)) {
+      toast.error(t("photoExport.selectAtLeastOne"));
+      return;
+    }
+    setBusy(true);
+    try {
+      setProgress({ done: 0, total: 0, label: t("photoExport.collecting") });
+      const { photos } = await collectPhotos(scope);
+      if (photos.length === 0) {
+        toast.info(t("photoExport.noPhotos"));
+        setBusy(false);
+        return;
+      }
+      setConfirmDownloadDeleteCount(photos.length);
+      setConfirmDownloadDeleteOpen(true);
+      // keep busy=false so user can interact with confirm
+      setBusy(false);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || t("photoExport.operationFailed"));
+      setBusy(false);
+    }
+  };
+
+  const runDownloadAndDelete = async () => {
+    setBusy(true);
+    try {
+      const { photos } = await collectPhotos(scope);
+      if (photos.length === 0) {
+        toast.info(t("photoExport.noPhotos"));
+        return;
+      }
+      await buildAndDownloadZip(photos);
+      toast.success(t("photoExport.filesZipped", { count: photos.length }));
+      await deletePhotos(photos);
+      toast.success(t("photoExport.filesDeleted", { count: photos.length }));
+      setOpen(false);
+      reset();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || t("photoExport.operationFailed"));
+      throw e;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const startDeleteAll = async () => {
+    setBusy(true);
+    try {
+      const { photos } = await collectPhotos(ALL_SCOPE);
+      if (photos.length === 0) {
+        toast.info(t("photoExport.noPhotos"));
+        return;
+      }
+      setConfirmDeleteAllCount(photos.length);
+      setConfirmDeleteAllOpen(true);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || t("photoExport.operationFailed"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const runDeleteAll = async () => {
+    setBusy(true);
+    try {
+      const { photos } = await collectPhotos(ALL_SCOPE);
+      if (photos.length === 0) {
+        toast.info(t("photoExport.noPhotos"));
+        return;
+      }
+      await deletePhotos(photos);
+      toast.success(t("photoExport.filesDeleted", { count: photos.length }));
+      reset();
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || t("photoExport.operationFailed"));
+      throw e;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const primaryLabel = deleteAfter
+    ? t("photoExport.downloadAndDelete")
+    : t("photoExport.downloadZip");
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(v) => { if (!busy) { setOpen(v); if (!v) reset(); } }}>
-        <DialogTrigger asChild>
-          {trigger || (
-            <Button size="sm" variant="outline" className="h-8 text-xs gap-1">
-              <Camera className="w-3.5 h-3.5" /> Exportar fotos
-            </Button>
-          )}
-        </DialogTrigger>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Download className="w-4 h-4" /> Exportar fotos da campanha
-            </DialogTitle>
-            <DialogDescription>
-              Baixe todas as fotos em um único arquivo ZIP, organizadas por tipo e loja.
-            </DialogDescription>
-          </DialogHeader>
+      <div className="inline-flex items-center gap-1">
+        {trigger ? (
+          <span onClick={() => setOpen(true)}>{trigger}</span>
+        ) : (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 text-xs gap-1"
+            onClick={() => setOpen(true)}
+          >
+            <Camera className="w-3.5 h-3.5" /> {t("photoExport.trigger")}
+          </Button>
+        )}
 
-          <div className="space-y-4 py-2">
+        {isAdmin && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-8 w-8"
+                aria-label={t("common.moreActions")}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() => void startDeleteAll()}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {t("photoExport.deleteAll")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+
+      <AppDialog
+        open={open}
+        onOpenChange={(v) => {
+          if (busy) return;
+          setOpen(v);
+          if (!v) reset();
+        }}
+      >
+        <AppDialogHeader
+          icon={<Download className="w-5 h-5 text-primary" />}
+          title={t("photoExport.title")}
+          description={t("photoExport.description")}
+        />
+        <AppDialogBody>
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Tipos de fotos
-              </Label>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("photoExport.typesLabel")}
+              </p>
               <div className="space-y-2">
                 {[
-                  { key: "installations" as const, label: "Fotos de Instalação" },
-                  { key: "checkin" as const, label: "Fotos de Check-in" },
-                  { key: "occurrences" as const, label: "Fotos de Ocorrências" },
-                  { key: "chat" as const, label: "Imagens do Chat" },
+                  { key: "installations" as const, label: t("photoExport.installations") },
+                  { key: "checkin" as const, label: t("photoExport.checkin") },
+                  { key: "occurrences" as const, label: t("photoExport.occurrences") },
+                  { key: "chat" as const, label: t("photoExport.chat") },
                 ].map((opt) => (
-                  <label key={opt.key} className="flex items-center gap-2 text-sm cursor-pointer">
+                  <label
+                    key={opt.key}
+                    className="flex items-center gap-2 text-sm cursor-pointer"
+                  >
                     <Checkbox
                       checked={scope[opt.key]}
                       onCheckedChange={(v) => setScope((s) => ({ ...s, [opt.key]: !!v }))}
@@ -378,13 +502,15 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
                   checked={deleteAfter}
                   onCheckedChange={(v) => setDeleteAfter(!!v)}
                   disabled={busy}
+                  className="mt-0.5"
                 />
-                <span>
+                <span className="min-w-0">
                   <span className="flex items-center gap-1 font-medium text-destructive">
-                    <Trash2 className="w-3.5 h-3.5" /> Apagar do sistema após download
+                    <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                    {t("photoExport.deleteAfter")}
                   </span>
-                  <span className="block text-xs text-muted-foreground mt-0.5">
-                    As fotos serão excluídas permanentemente do banco de dados e do armazenamento. Esta ação não pode ser desfeita.
+                  <span className="block text-xs text-muted-foreground mt-0.5 break-words">
+                    {t("photoExport.deleteAfterHint")}
                   </span>
                 </span>
               </label>
@@ -400,73 +526,55 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
               </div>
             )}
             {busy && progress.total === 0 && (
-              <div className="text-xs text-muted-foreground">{progress.label || "Processando..."}</div>
+              <div className="text-xs text-muted-foreground">
+                {progress.label || t("photoExport.processing")}
+              </div>
             )}
           </div>
-
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            {isAdmin && (
-              <Button
-                variant="destructive"
-                onClick={() => handleStart("deleteOnly")}
-                disabled={busy}
-                className="gap-1.5 sm:mr-auto"
-              >
-                <Trash2 className="w-4 h-4" />
-                Apagar todas (sem baixar)
-              </Button>
+        </AppDialogBody>
+        <AppDialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
+            {t("common.cancel")}
+          </Button>
+          <Button
+            variant={deleteAfter ? "destructive" : "default"}
+            onClick={() => (deleteAfter ? void startDownloadAndDelete() : void runDownloadOnly())}
+            disabled={busy}
+          >
+            {busy ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                {primaryLabel}
+              </>
+            ) : (
+              primaryLabel
             )}
-            <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
-              Cancelar
-            </Button>
-            <Button onClick={() => handleStart(deleteAfter ? "downloadDelete" : "download")} disabled={busy}>
-              {busy ? "Processando..." : deleteAfter ? "Baixar e apagar" : "Baixar ZIP"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </Button>
+        </AppDialogFooter>
+      </AppDialog>
 
-      <AlertDialog open={confirmOpen} onOpenChange={(v) => !busy && setConfirmOpen(v)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="w-5 h-5" /> Confirmar exclusão permanente
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>
-                  {deleteOnly
-                    ? <>Todas as fotos selecionadas serão <strong>excluídas permanentemente</strong> do sistema, <strong>sem download prévio</strong>. Esta ação não pode ser desfeita.</>
-                    : <>Após o download, todas as fotos selecionadas serão <strong>excluídas permanentemente</strong> do sistema. Esta ação não pode ser desfeita.</>}
-                </p>
-                <p>
-                  Para confirmar, digite o nome da campanha: <strong>{expectedConfirm}</strong>
-                </p>
-                <Input
-                  value={confirmText}
-                  onChange={(e) => setConfirmText(e.target.value)}
-                  placeholder="Digite o nome da campanha"
-                  autoFocus
-                />
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={!confirmValid || busy}
-              onClick={(e) => {
-                e.preventDefault();
-                setConfirmOpen(false);
-                void run();
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteOnly ? "Apagar permanentemente" : "Baixar e apagar"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDestructiveDialog
+        open={confirmDownloadDeleteOpen}
+        onOpenChange={setConfirmDownloadDeleteOpen}
+        title={t("photoExport.downloadAndDeleteTitle")}
+        description={t("photoExport.downloadAndDeleteDescription")}
+        confirmText={t("photoExport.downloadAndDeleteCount", {
+          count: confirmDownloadDeleteCount,
+        })}
+        onConfirm={runDownloadAndDelete}
+        isLoading={busy}
+      />
+
+      <ConfirmDestructiveDialog
+        open={confirmDeleteAllOpen}
+        onOpenChange={setConfirmDeleteAllOpen}
+        title={t("photoExport.deleteAllTitle")}
+        description={t("photoExport.deleteAllDescription")}
+        confirmText={t("photoExport.deleteAllConfirm", { count: confirmDeleteAllCount })}
+        requireTyping="APAGAR"
+        onConfirm={runDeleteAll}
+        isLoading={busy}
+      />
     </>
   );
 }
