@@ -80,9 +80,10 @@ Deno.serve(async (req) => {
         .lte("scheduled_date", rangeEnd.toISOString().split("T")[0]);
     }
 
-    const { data: schedules, error: schedError } = await schedQuery;
-
-    if (schedError) {
+    let schedules: any[] = [];
+    try {
+      schedules = await paginateQuery<any>((from, to) => schedQuery.range(from, to));
+    } catch (_e) {
       return new Response(
         JSON.stringify({ error: "Erro ao buscar agendamentos." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -146,26 +147,42 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get pieces for the campaign
-    const { data: pieces } = await supabase
-      .from("campaign_pieces")
-      .select("*")
-      .eq("campaign_id", campaignId);
+    // Get pieces for the campaign (paginated)
+    const pieces = await paginateQuery<any>((from, to) =>
+      supabase
+        .from("campaign_pieces")
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .range(from, to)
+    );
 
-    // Get store pieces for the stores in valid schedules
+    // Get store pieces — chunk store IDs to keep URL/response within limits
     const storeIds = validSchedules.map((s: any) => s.store_id);
-    const { data: storePieces } = await supabase
-      .from("campaign_store_pieces")
-      .select("*")
-      .eq("campaign_id", campaignId)
-      .in("store_id", storeIds);
+    const storePieces: any[] = [];
+    const photos: any[] = [];
+    const CHUNK = 500;
+    for (let i = 0; i < storeIds.length; i += CHUNK) {
+      const chunk = storeIds.slice(i, i + CHUNK);
+      const sp = await paginateQuery<any>((from, to) =>
+        supabase
+          .from("campaign_store_pieces")
+          .select("*")
+          .eq("campaign_id", campaignId)
+          .in("store_id", chunk)
+          .range(from, to)
+      );
+      storePieces.push(...sp);
 
-    // Get existing photos for these stores
-    const { data: photos } = await supabase
-      .from("installation_photos")
-      .select("*")
-      .eq("campaign_id", campaignId)
-      .in("store_id", storeIds);
+      const ph = await paginateQuery<any>((from, to) =>
+        supabase
+          .from("installation_photos")
+          .select("*")
+          .eq("campaign_id", campaignId)
+          .in("store_id", chunk)
+          .range(from, to)
+      );
+      photos.push(...ph);
+    }
 
     // Get team members
     const { data: members } = await supabase
