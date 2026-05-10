@@ -2,6 +2,9 @@
   "common": {
     "save": "Save",
     "cancel": "Cancel",
+    "typeToConfirm": "Type",
+    "toConfirm": "to confirm",
+    "moreActions": "More actions",
     "delete": "Delete",
     "edit": "Edit",
     "add": "Add",
