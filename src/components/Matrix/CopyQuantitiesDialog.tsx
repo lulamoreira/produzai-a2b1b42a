@@ -45,6 +45,11 @@ interface Props {
   negotiationSupplierId?: string | null;
   isAdjustmentView?: boolean;
   adjustmentId?: string | null;
+  runBulkWithHistory?: (
+    label: string,
+    upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[],
+    deletes: { campaignId: string; storeId: string; pieceId: string }[],
+  ) => Promise<void>;
 }
 
 /** Compute the available "kit count" for a given store, i.e. how many full kits fit. */
