@@ -266,21 +266,30 @@ export default function CategoryEditorV2({ open, onOpenChange, category }: Props
 
   const handleSaveMeta = async () => {
     if (!name.trim()) { toast.error("Informe um nome"); return; }
-    if (isEdit && category?.id) {
-      await updateCat.mutateAsync({
-        id: category.id,
-        name: name.trim(),
-        description: description.trim() || null,
-        color,
-      } as never);
-    } else {
-      await addCat.mutateAsync({
-        name: name.trim(),
-        description: description.trim() || null,
-        color,
-      } as never);
-      toast.info("Categoria criada — reabra para configurar permissões");
-      onOpenChange(false);
+    setSaveState('saving');
+    try {
+      if (isEdit && category?.id) {
+        await updateCat.mutateAsync({
+          id: category.id,
+          name: name.trim(),
+          description: description.trim() || null,
+          color,
+        } as never);
+      } else {
+        await addCat.mutateAsync({
+          name: name.trim(),
+          description: description.trim() || null,
+          color,
+        } as never);
+      }
+      setSaveState('saved');
+      setTimeout(() => {
+        setSaveState('idle');
+        onOpenChange(false);
+      }, 2000);
+    } catch (e) {
+      setSaveState('idle');
+      toast.error("Erro ao salvar");
     }
   };
 
