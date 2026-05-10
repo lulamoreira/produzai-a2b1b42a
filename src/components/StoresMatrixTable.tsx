@@ -5,7 +5,8 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, ArrowUpDown, GripVertical, Check, X } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowUpDown, GripVertical, Check, X, ChevronsRight } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Switch } from "@/components/ui/switch";
 import { getStateColor } from "@/lib/stateColors";
 import type { ClientStore } from "@/hooks/useMultiClientData";
@@ -96,8 +97,19 @@ function DraggableHeaderCell({
     whiteSpace: "nowrap",
   };
 
+  // First column ("name") is sticky on the left and needs an opaque bg so scrolling
+  // doesn't bleed cells underneath. We also paint the header opaque for the sticky-top header.
+  const isFirstCol = col.storeField === "name";
+
   return (
-    <TableHead ref={setNodeRef} style={style}>
+    <TableHead
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "bg-card",
+        isFirstCol && "sticky left-0 z-[11]",
+      )}
+    >
       <div className="flex items-center gap-0.5">
         <button
           className="cursor-grab active:cursor-grabbing touch-none p-0.5 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
