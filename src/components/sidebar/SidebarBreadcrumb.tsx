@@ -20,9 +20,8 @@ export function SidebarBreadcrumb({ collapsed, agencyName, clientName, campaignN
         style={{
           color: "var(--sidebar-text-active, #F5EFE6)",
           wordBreak: "normal",
-          overflowWrap: "normal",
+          overflowWrap: "break-word",
           hyphens: "none",
-出: undefined,
         }}
         title={parts.join(" › ")}
       >
