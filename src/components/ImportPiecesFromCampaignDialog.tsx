@@ -104,13 +104,14 @@ const ImportPiecesFromCampaignDialog = ({
   const { data: remotePieces = [], isLoading: loadingPieces } = useQuery({
     queryKey: ["campaign_pieces_for_import", selectedCampaignId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaign_pieces")
-        .select("*")
-        .eq("campaign_id", selectedCampaignId)
-        .order("code");
-      if (error) throw error;
-      return data as RemotePiece[];
+      return supabasePaginate<RemotePiece>((from, to) =>
+        supabase
+          .from("campaign_pieces")
+          .select("*")
+          .eq("campaign_id", selectedCampaignId)
+          .order("code")
+          .range(from, to) as any
+      );
     },
     enabled: !!selectedCampaignId,
   });

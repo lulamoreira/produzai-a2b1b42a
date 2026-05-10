@@ -300,12 +300,15 @@ const SupplierPortal = () => {
           }
         }
 
-        // 4) ALL pieces (including kit_only)
-        const { data: piecesRaw } = await supabase
-          .from("campaign_pieces")
-          .select("id, name, code, kit_only, image_url, specification, size, installation_instructions, display_order, category, store_category, sub_location")
-          .eq("campaign_id", sup.campaign_id)
-          .order("display_order");
+        // 4) ALL pieces (including kit_only) — paginated
+        const piecesRaw = await supabasePaginate<PieceData>((from, to) =>
+          supabase
+            .from("campaign_pieces")
+            .select("id, name, code, kit_only, image_url, specification, size, installation_instructions, display_order, category, store_category, sub_location")
+            .eq("campaign_id", sup.campaign_id)
+            .order("display_order")
+            .range(from, to) as any
+        );
 
         const pcs = (piecesRaw ?? []) as PieceData[];
         setAllPieces(pcs);

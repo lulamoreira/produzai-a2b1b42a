@@ -7,6 +7,7 @@ import { buildGroupedPieceOptions } from "@/lib/occurrenceHelpers";
 import { SPECIAL_AGENCY, SPECIAL_FORNECEDOR, SPECIAL_CLIENTE, GERAL_LOCATION, NAO_SEI_LOCATION, MAX_OCCURRENCE_PHOTOS } from "@/types/occurrence";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import { useQuery } from "@tanstack/react-query";
 import { useOccurrenceMotives, useAddOccurrence } from "@/hooks/useOccurrences";
 import { Button } from "@/components/ui/button";
@@ -74,13 +75,14 @@ const PublicOccurrence = () => {
   const { data: stores = [] } = useQuery({
     queryKey: ["public_stores", campaign?.client_id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("client_stores")
-        .select("id, name, nickname, phone, email")
-        .eq("client_id", campaign!.client_id)
-        .order("nickname");
-      if (error) throw error;
-      return data;
+      return supabasePaginate<any>((from, to) =>
+        supabase
+          .from("client_stores")
+          .select("id, name, nickname, phone, email")
+          .eq("client_id", campaign!.client_id)
+          .order("nickname")
+          .range(from, to) as any
+      );
     },
     enabled: !!campaign?.client_id,
   });
@@ -88,13 +90,14 @@ const PublicOccurrence = () => {
   const { data: pieces = [] } = useQuery({
     queryKey: ["public_pieces", campaignId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaign_pieces")
-        .select("id, name, code, image_url, kit_only, category")
-        .eq("campaign_id", campaignId!)
-        .order("code");
-      if (error) throw error;
-      return data;
+      return supabasePaginate<any>((from, to) =>
+        supabase
+          .from("campaign_pieces")
+          .select("id, name, code, image_url, kit_only, category")
+          .eq("campaign_id", campaignId!)
+          .order("code")
+          .range(from, to) as any
+      );
     },
     enabled: !!campaignId,
   });

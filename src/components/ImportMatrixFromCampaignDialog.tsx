@@ -72,12 +72,14 @@ const ImportMatrixFromCampaignDialog = ({
   const { data: remotePieces = [] } = useQuery<CampaignPiece[]>({
     queryKey: ["import-matrix-pieces", selectedCampaignId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("campaign_pieces")
-        .select("*")
-        .eq("campaign_id", selectedCampaignId)
-        .order("display_order");
-      return (data || []) as CampaignPiece[];
+      return supabasePaginate<CampaignPiece>((from, to) =>
+        supabase
+          .from("campaign_pieces")
+          .select("*")
+          .eq("campaign_id", selectedCampaignId)
+          .order("display_order")
+          .range(from, to) as any
+      );
     },
     enabled: !!selectedCampaignId,
   });
