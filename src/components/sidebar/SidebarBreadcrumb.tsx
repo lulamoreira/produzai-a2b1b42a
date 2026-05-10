@@ -16,19 +16,19 @@ export function SidebarBreadcrumb({ collapsed, agencyName, clientName, campaignN
         Contexto
       </div>
       <div
-        className="text-[11px] leading-snug"
+        className="text-[11px] leading-snug flex flex-wrap items-start gap-x-1 gap-y-0.5"
         style={{
           color: "var(--sidebar-text-active, #F5EFE6)",
           wordBreak: "normal",
-          overflowWrap: "break-word",
+          overflowWrap: "normal",
           hyphens: "none",
         }}
         title={parts.join(" › ")}
       >
         {parts.map((p, i) => (
-          <span key={i}>
-            {i > 0 && <span className="opacity-40 mx-1">›</span>}
-            <span className="font-medium">{p}</span>
+          <span key={i} className="inline-flex min-w-0 max-w-full items-baseline gap-1">
+            {i > 0 && <span className="opacity-40 flex-shrink-0">›</span>}
+            <span className="font-medium whitespace-normal break-normal">{p}</span>
           </span>
         ))}
       </div>
