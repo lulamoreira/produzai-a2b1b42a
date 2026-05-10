@@ -2965,6 +2965,7 @@ const CampaignDetail = () => {
                   negotiationSupplierId={winnerSupplierId}
                   isAdjustmentView={isAdjustmentView}
                   adjustmentId={activeAdjustmentId}
+                  runBulkWithHistory={runBulkWithHistory}
                   onComplete={async () => {
                     if (isAdjustmentView && activeAdjustmentId) {
                       await queryClient.refetchQueries({ queryKey: ["adjustment_store_pieces", activeAdjustmentId], exact: true, type: "active" });
