@@ -483,18 +483,7 @@ export default function MockupTab({
         </div>
       )}
 
-      {/* Add piece action */}
-      {total > 0 && (
-        <div>
-          <Button
-            variant="outline"
-            className="min-h-[44px] gap-1.5"
-            onClick={() => setAddOpen(true)}
-          >
-            <Plus className="w-4 h-4" /> Adicionar peça ao mockup
-          </Button>
-        </div>
-      )}
+      {/* Add piece action moved to header toolbar */}
 
       {/* Grid */}
       {filtered.length > 0 && (
