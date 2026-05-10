@@ -886,11 +886,16 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       const storeIds = stores.map((s) => s.id);
       let fullStores: any[] = [];
       if (storeIds.length > 0) {
-        const { data: storeRows } = await supabase
-          .from("client_stores")
-          .select("id, name, city, state, store_code")
-          .in("id", storeIds);
-        fullStores = storeRows ?? [];
+        // Chunk .in() to stay under URL limits and the 1000-row response cap
+        const CHUNK = 500;
+        for (let i = 0; i < storeIds.length; i += CHUNK) {
+          const chunk = storeIds.slice(i, i + CHUNK);
+          const { data: storeRows } = await supabase
+            .from("client_stores")
+            .select("id, name, city, state, store_code")
+            .in("id", chunk);
+          if (storeRows) fullStores.push(...storeRows);
+        }
       }
       // Preserve the order of the stores prop
       const storeMap = new Map(fullStores.map((s) => [s.id, s]));

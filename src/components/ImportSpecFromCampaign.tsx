@@ -39,12 +39,14 @@ export default function ImportSpecFromCampaign({ clientId, currentCampaignId, on
   const { data: pieces = [] } = useQuery({
     queryKey: ["import-spec-pieces", selectedCampaign?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("campaign_pieces")
-        .select("id, name, code, size, specification, kit_only")
-        .eq("campaign_id", selectedCampaign!.id)
-        .order("code");
-      return (data || []) as PieceOption[];
+      return supabasePaginate<PieceOption>((from, to) =>
+        supabase
+          .from("campaign_pieces")
+          .select("id, name, code, size, specification, kit_only")
+          .eq("campaign_id", selectedCampaign!.id)
+          .order("code")
+          .range(from, to) as any
+      );
     },
     enabled: !!selectedCampaign,
   });
