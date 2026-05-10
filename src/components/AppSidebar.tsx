@@ -550,96 +550,34 @@ export default function AppSidebar() {
         )}
       </nav>
 
-      {/* Footer */}
-      <div className="shrink-0" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))", paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
+      {/* Footer — single Settings entry; identity & sign-out live in the header user menu */}
+      <div
+        className="shrink-0"
+        style={{
+          borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))",
+          paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+        }}
+      >
         <div className="px-2 pt-2">
           <button
-            onClick={() => setProfileOpen(true)}
-            className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all"
+            onClick={() => setSettingsOpen(true)}
+            className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] transition-all ${collapsed ? "justify-center" : ""}`}
             style={{ color: "var(--sidebar-text, #A89880)" }}
-            onMouseEnter={e => { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--sidebar-item-hover)";
+              e.currentTarget.style.color = "var(--sidebar-text-active)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--sidebar-text)";
+            }}
+            title={collapsed ? t("settings.title", "Configurações") : undefined}
           >
-            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: avatarUrl ? "transparent" : "var(--brand-600, #735A3D)" }}>
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
-              ) : (
-                <span className="text-[13px] font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
-              )}
-            </div>
+            <Settings className="w-4 h-4 flex-shrink-0" />
             {!collapsed && (
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-[13px] font-semibold truncate" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>{displayName}</p>
-                <p className="text-[11px] truncate" style={{ color: "var(--sidebar-text, #A89880)" }}>{roleBadge}</p>
-              </div>
+              <span className="truncate font-medium">{t("settings.title", "Configurações")}</span>
             )}
           </button>
-          <button
-            onClick={signOut}
-            className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[12px] transition-all ${collapsed ? "justify-center" : ""}`}
-            style={{ color: "var(--sidebar-text, #A89880)" }}
-            onMouseEnter={e => { e.currentTarget.style.color = "var(--s-danger, #DC2626)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "var(--sidebar-text, #A89880)"; }}
-            title="Sair"
-          >
-            <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
-            {!collapsed && <span>Sair</span>}
-          </button>
-        </div>
-
-        <div className="px-2 pt-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
-          <div className={`flex ${collapsed ? "flex-col" : ""} items-center gap-1`}>
-            {/* Language selector */}
-            <div className="relative" data-keep-open>
-              <button
-                onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-all"
-                style={{ color: "var(--sidebar-text, #A89880)" }}
-                onMouseEnter={e => { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }}
-                title={t("common.language")}
-              >
-                <Globe className="w-3.5 h-3.5 flex-shrink-0" />
-                {!collapsed && (
-                  <span className="font-medium">
-                    {SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)?.flag || "🇧🇷"}
-                  </span>
-                )}
-              </button>
-              {langOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
-                  <div className="absolute bottom-full left-0 mb-1 z-50 bg-popover border border-border rounded-lg shadow-lg py-1 w-48">
-                    {SUPPORTED_LANGUAGES.map((lang) => (
-                      <button
-                        key={lang.code}
-                        onClick={() => { changeLanguage(lang.code as SupportedLanguage); setLangOpen(false); }}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-accent transition-colors ${currentLanguage === lang.code ? "bg-accent font-semibold" : ""}`}
-                      >
-                        <span>{lang.flag}</span>
-                        <span>{lang.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-            {/* Dark mode toggle */}
-            <button
-              data-keep-open
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-all"
-              style={{ color: "var(--sidebar-text, #A89880)" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }}
-              title={theme === "dark" ? "Light mode" : "Dark mode"}
-            >
-              {theme === "dark"
-                ? <Sun className="w-3.5 h-3.5 flex-shrink-0" />
-                : <Moon className="w-3.5 h-3.5 flex-shrink-0" />}
-            </button>
-            <InviteButton />
-          </div>
         </div>
       </div>
     </div>
