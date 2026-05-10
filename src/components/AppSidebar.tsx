@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useTheme } from "next-themes";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -7,38 +6,33 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useDisplayName, getGreeting } from "@/components/AppHeader";
-import { WhatsNewButton } from "@/components/WhatsNewSheet";
-import { InviteButton } from "@/components/InviteButton";
 import EditProfileDialog from "@/components/EditProfileDialog";
 import AquaIcon from "@/components/AquaIcon";
-import produzaiIcon from "@/assets/produzai-icon.svg";
+import { SidebarHeader } from "@/components/sidebar/SidebarHeader";
+import { SettingsSheet } from "@/components/sidebar/SettingsSheet";
+import { InviteUserDialog } from "@/components/sidebar/InviteUserDialog";
+import { CAMPAIGN_MODULES, MODULE_ICONS, type UserMenuAction } from "@/lib/sidebarRegistry";
+import { openGlobalSearch } from "@/lib/globalSearchBus";
 
 // lucide icons imported below with CAMPAIGN_MODULE_KEYS
-import { useLanguage } from "@/hooks/useLanguage";
-import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 
 import {
-  Building2, Shield, LogOut, Users, Star, Home,
-  PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
-  Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
-  CalendarDays, Camera, DollarSign, Database, Globe, Settings, LayoutGrid, Layers,
-  Sun, Moon, Palette,
+  Building2, Shield, Users, Star, Home,
+  Menu, ChevronDown, ChevronRight,
+  Briefcase, Megaphone, Store, Database, Settings,
 } from "lucide-react";
 
-const CAMPAIGN_MODULE_KEYS = [
-  { key: "scheduling", tKey: "modules.scheduling", icon: CalendarDays, color: "#5C6B3F" },
-  { key: "installations", tKey: "modules.installations", icon: Camera, color: "#7B5E3A" },
-  { key: "loja_a_loja", tKey: "modules.loja_a_loja", icon: LayoutGrid, color: "#5B7B5E" },
-  { key: "stores", tKey: "modules.stores", icon: Store, color: "#6B4F2E" },
-  { key: "occurrences", tKey: "modules.occurrences", icon: AlertTriangle, color: "#7A3B2E" },
-  { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#4A5568" },
-  { key: "pieces", tKey: "modules.pieces", icon: LayoutList, color: "#A07850" },
-  { key: "matrix", tKey: "modules.matrix", icon: Grid3X3, color: "#8C6F4E" },
-  { key: "mockup", tKey: "modules.mockup", fallbackLabel: "Mockup", icon: Palette, color: "#7A6A8C" },
-  { key: "adjustments", tKey: "modules.adjustments", icon: Layers, color: "#6E5A7A", adminOnly: true },
-];
+// Legacy shape kept so the existing render code below works unchanged.
+// Source of truth is sidebarRegistry.CAMPAIGN_MODULES.
+const CAMPAIGN_MODULE_KEYS = CAMPAIGN_MODULES.map((m) => ({
+  key: m.key,
+  tKey: m.labelKey,
+  icon: MODULE_ICONS[m.icon],
+  color: m.color,
+  fallbackLabel: m.label,
+  adminOnly: m.requires === "admin_or_master" || m.requires === "admin",
+}));
 
 // localStorage helpers for expansion state
 const getStoredBool = (key: string, fallback: boolean) => {
