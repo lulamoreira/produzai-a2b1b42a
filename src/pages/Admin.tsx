@@ -266,15 +266,22 @@ function CategoriesTab() {
         onOpenChange={setEditorOpen}
         category={editing}
       />
+
+      <CategoryPreviewSheet
+        open={!!previewCategoryId}
+        onOpenChange={(v) => !v && setPreviewCategoryId(null)}
+        categoryId={previewCategoryId}
+      />
     </div>
   );
 }
 
 function CategoryRow({
-  category, onEdit, onDelete,
+  category, onEdit, onPreview, onDelete,
 }: {
   category: PermissionCategory;
   onEdit: () => void;
+  onPreview: () => void;
   onDelete: () => void;
 }) {
   const { data: userCount = 0 } = useUserCountByCategory(category.id);
