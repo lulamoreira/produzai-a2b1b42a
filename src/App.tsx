@@ -30,6 +30,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Admin = lazy(() => import("./pages/Admin"));
+const CategoryPreview = lazy(() => import("./pages/admin/CategoryPreview"));
 const UserApprovals = lazy(() => import("./pages/UserApprovals"));
 const PublicOccurrence = lazy(() => import("./pages/PublicOccurrence"));
 const PublicOccurrenceDetail = lazy(() => import("./pages/PublicOccurrenceDetail"));
@@ -196,6 +197,7 @@ const App = () => (
                   <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><ErrorBoundary><CampaignDetail /></ErrorBoundary></ProtectedRoute>} />
                   <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                  <Route path="/admin/categories/:id/preview" element={<ProtectedRoute><CategoryPreview /></ProtectedRoute>} />
                   <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
 
                   <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />

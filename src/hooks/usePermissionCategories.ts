@@ -51,6 +51,10 @@ export type PermissionCategory = {
   can_view_lal_ocorrencias?: boolean;
   can_edit_lal_ocorrencias?: boolean;
   can_delete_lal_ocorrencias?: boolean;
+  description?: string | null;
+  color?: string | null;
+  is_system?: boolean | null;
+  display_order?: number | null;
   created_at: string;
 };
 
