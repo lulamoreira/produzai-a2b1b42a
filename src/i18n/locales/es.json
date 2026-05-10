@@ -2,6 +2,9 @@
   "common": {
     "save": "Guardar",
     "cancel": "Cancelar",
+    "typeToConfirm": "Escribe",
+    "toConfirm": "para confirmar",
+    "moreActions": "Más acciones",
     "delete": "Eliminar",
     "edit": "Editar",
     "add": "Agregar",
