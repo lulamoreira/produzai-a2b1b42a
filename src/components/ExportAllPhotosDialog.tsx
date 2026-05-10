@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
