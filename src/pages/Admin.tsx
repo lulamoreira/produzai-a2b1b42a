@@ -8,17 +8,25 @@ import { useUserClientAccess } from "@/hooks/useMultiClientData";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { Users, Tags, Database, UserCheck, Search, MessageSquareText, Bell, Image as ImageIcon } from "lucide-react";
+import { Users, Tags, Database, UserCheck, Search, MessageSquareText, Bell, Image as ImageIcon, Plus, Eye, Edit3, Trash2, Lock } from "lucide-react";
 import { CreateUserDialog } from "@/components/CreateUserDialog";
 import AppLayout from "@/components/AppLayout";
 import NotificationSettingsManager from "@/components/admin/NotificationSettingsManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserPermissionCard from "@/components/admin/UserPermissionCard";
 import CategoryManager from "@/components/admin/CategoryManager";
+import CategoryEditorV2 from "@/components/admin/CategoryEditorV2";
 import SystemMessagesManager from "@/components/admin/SystemMessagesManager";
 import RegeneratePieceImagesPanel from "@/components/admin/RegeneratePieceImagesPanel";
+import { usePermissionCategories, useDeletePermissionCategory, type PermissionCategory } from "@/hooks/usePermissionCategories";
+import { useUserCountByCategory } from "@/hooks/usePermissionGrants";
+import { CATEGORY_COLORS } from "@/lib/permissionRegistry";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const Admin = () => {
   const { t } = useTranslation();
