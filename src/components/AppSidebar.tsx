@@ -253,23 +253,8 @@ export default function AppSidebar() {
         onUserAction={handleUserAction}
         agencyName={agencyName}
         clientName={clientName}
+        campaignName={campaignName}
       />
-
-      {/* Breadcrumb contextual */}
-      {!collapsed && isInsideAgency && (
-        <div className="px-3 py-2 space-y-0.5 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
-          {agencyName && (
-            <div className="text-[11px] font-semibold uppercase tracking-wider truncate" style={{ color: "var(--brand-400, #A88B6A)" }}>
-              {agencyName}
-            </div>
-          )}
-          {(clientName || campaignName) && (
-            <div className="text-[11px] truncate" style={{ color: "var(--sidebar-text, #A89880)" }}>
-              {clientName}{campaignName ? ` › ${campaignName}` : ""}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Navigation */}
       <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-1">
