@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -14,6 +14,9 @@ import { Pencil, Trash2, Undo2, Plus, FileSpreadsheet, X, Save } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { saveBlobAs } from "@/lib/saveBlobAs";
+import { useHistory } from "@/lib/undo/useHistory";
+import { historyStore } from "@/lib/undo/historyStore";
+import { UndoRedoToolbar } from "@/components/UndoRedoToolbar";
 import {
   useAdjustmentPieces,
   useAdjustmentKits,
