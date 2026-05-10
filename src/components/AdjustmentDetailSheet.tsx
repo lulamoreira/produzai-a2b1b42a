@@ -431,7 +431,15 @@ export default function AdjustmentDetailSheet({
                                   <>
                                     <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingKitId(null)}>Cancelar</Button>
                                     <Button size="sm" className="h-7 text-xs" onClick={async () => {
-                                      await updateKit.mutateAsync({ kitId: k.id, adjustmentId: adjustment.id, changes: { name: kitNameDraft } });
+                                      const prevName = k.name;
+                                      const newName = kitNameDraft;
+                                      if (prevName !== newName) {
+                                        await runHistoryCommand({
+                                          label: "Nome do kit (ajuste)",
+                                          do: () => updateKit.mutateAsync({ kitId: k.id, adjustmentId: adjustment.id, changes: { name: newName } }).then(() => undefined),
+                                          undo: () => updateKit.mutateAsync({ kitId: k.id, adjustmentId: adjustment.id, changes: { name: prevName } }).then(() => undefined),
+                                        });
+                                      }
                                       setEditingKitId(null);
                                     }}>Salvar</Button>
                                   </>
