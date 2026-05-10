@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useTheme } from "next-themes";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -7,38 +6,33 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useDisplayName, getGreeting } from "@/components/AppHeader";
-import { WhatsNewButton } from "@/components/WhatsNewSheet";
-import { InviteButton } from "@/components/InviteButton";
 import EditProfileDialog from "@/components/EditProfileDialog";
 import AquaIcon from "@/components/AquaIcon";
-import produzaiIcon from "@/assets/produzai-icon.svg";
+import { SidebarHeader } from "@/components/sidebar/SidebarHeader";
+import { SettingsSheet } from "@/components/sidebar/SettingsSheet";
+import { InviteUserDialog } from "@/components/sidebar/InviteUserDialog";
+import { CAMPAIGN_MODULES, MODULE_ICONS, type UserMenuAction } from "@/lib/sidebarRegistry";
+import { openGlobalSearch } from "@/lib/globalSearchBus";
 
 // lucide icons imported below with CAMPAIGN_MODULE_KEYS
-import { useLanguage } from "@/hooks/useLanguage";
-import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 
 import {
-  Building2, Shield, LogOut, Users, Star, Home,
-  PanelLeftClose, PanelLeft, Menu, X, ChevronDown, ChevronRight,
-  Briefcase, Megaphone, Store, Grid3X3, LayoutList, AlertTriangle,
-  CalendarDays, Camera, DollarSign, Database, Globe, Settings, LayoutGrid, Layers,
-  Sun, Moon, Palette,
+  Building2, Shield, Users, Star, Home,
+  Menu, ChevronDown, ChevronRight,
+  Briefcase, Megaphone, Store, Database, Settings,
 } from "lucide-react";
 
-const CAMPAIGN_MODULE_KEYS = [
-  { key: "scheduling", tKey: "modules.scheduling", icon: CalendarDays, color: "#5C6B3F" },
-  { key: "installations", tKey: "modules.installations", icon: Camera, color: "#7B5E3A" },
-  { key: "loja_a_loja", tKey: "modules.loja_a_loja", icon: LayoutGrid, color: "#5B7B5E" },
-  { key: "stores", tKey: "modules.stores", icon: Store, color: "#6B4F2E" },
-  { key: "occurrences", tKey: "modules.occurrences", icon: AlertTriangle, color: "#7A3B2E" },
-  { key: "budgets", tKey: "modules.budgets", icon: DollarSign, color: "#4A5568" },
-  { key: "pieces", tKey: "modules.pieces", icon: LayoutList, color: "#A07850" },
-  { key: "matrix", tKey: "modules.matrix", icon: Grid3X3, color: "#8C6F4E" },
-  { key: "mockup", tKey: "modules.mockup", fallbackLabel: "Mockup", icon: Palette, color: "#7A6A8C" },
-  { key: "adjustments", tKey: "modules.adjustments", icon: Layers, color: "#6E5A7A", adminOnly: true },
-];
+// Legacy shape kept so the existing render code below works unchanged.
+// Source of truth is sidebarRegistry.CAMPAIGN_MODULES.
+const CAMPAIGN_MODULE_KEYS = CAMPAIGN_MODULES.map((m) => ({
+  key: m.key,
+  tKey: m.labelKey,
+  icon: MODULE_ICONS[m.icon],
+  color: m.color,
+  fallbackLabel: m.label,
+  adminOnly: m.requires === "admin_or_master" || m.requires === "admin",
+}));
 
 // localStorage helpers for expansion state
 const getStoredBool = (key: string, fallback: boolean) => {
@@ -68,20 +62,40 @@ export default function AppSidebar() {
     }
     return Array.from(map.values());
   }, [isLimited, limitedCampaigns]);
-  const { displayName, avatarUrl } = useDisplayName();
   const { collapsed, setCollapsed } = useSidebarState();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useTranslation();
   const [profileOpen, setProfileOpen] = useState(false);
-  const [langOpen, setLangOpen] = useState(false);
-  const { currentLanguage, changeLanguage } = useLanguage();
-  const { theme, setTheme } = useTheme();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   // Admin menu expansion
   const [adminOpen, setAdminOpen] = useState(() => getStoredBool("produzai_admin_menu_open", false));
 
-  // Campaign expansion states: campaignId -> boolean
-  const [campaignExpanded, setCampaignExpanded] = useState<Record<string, boolean>>({});
+  // Campaign expansion states (persisted across reloads as an id list).
+  const [campaignExpanded, setCampaignExpanded] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem("sidebar_expanded_campaigns");
+      const arr: string[] = raw ? JSON.parse(raw) : [];
+      return Object.fromEntries(arr.map((id) => [id, true]));
+    } catch { return {}; }
+  });
+  useEffect(() => {
+    try {
+      const arr = Object.entries(campaignExpanded).filter(([, v]) => v).map(([k]) => k);
+      localStorage.setItem("sidebar_expanded_campaigns", JSON.stringify(arr));
+    } catch {}
+  }, [campaignExpanded]);
+
+  const handleUserAction = useCallback((action: UserMenuAction) => {
+    switch (action) {
+      case "open_profile":  setProfileOpen(true); break;
+      case "open_invite":   setInviteOpen(true); break;
+      case "open_settings": setSettingsOpen(true); break;
+      case "open_search":   openGlobalSearch(); break;
+      case "sign_out":      void signOut(); break;
+    }
+  }, [signOut]);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname, location.search]);
 
@@ -231,22 +245,14 @@ export default function AppSidebar() {
 
   const sidebarContent = (
     <div className="flex h-full min-h-0 flex-col overflow-hidden" onClick={handleSidebarClick}>
-      {/* Logo area */}
-      <div className="flex items-center gap-2 px-3 h-14 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
-        <img src={produzaiIcon} alt="ProduzAI" className="w-7 h-7 rounded-lg flex-shrink-0" />
-        {!collapsed && <span className="text-[15px] font-semibold tracking-tight truncate" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>ProduzAI</span>}
-        <button
-          data-keep-open
-          onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto transition-colors flex-shrink-0 hidden md:block"
-          style={{ color: "var(--sidebar-text, #A89880)" }}
-        >
-          {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-        </button>
-        <button onClick={() => setMobileOpen(false)} className="ml-auto md:hidden" style={{ color: "var(--sidebar-text, #A89880)" }}>
-          <X className="w-5 h-5" />
-        </button>
-      </div>
+      <SidebarHeader
+        collapsed={collapsed}
+        onToggleCollapsed={() => setCollapsed(!collapsed)}
+        onCloseMobile={() => setMobileOpen(false)}
+        onUserAction={handleUserAction}
+        agencyName={agencyName}
+        clientName={clientName}
+      />
 
       {/* Breadcrumb contextual */}
       {!collapsed && isInsideAgency && (
@@ -544,96 +550,34 @@ export default function AppSidebar() {
         )}
       </nav>
 
-      {/* Footer */}
-      <div className="shrink-0" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))", paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}>
+      {/* Footer — single Settings entry; identity & sign-out live in the header user menu */}
+      <div
+        className="shrink-0"
+        style={{
+          borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))",
+          paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))",
+        }}
+      >
         <div className="px-2 pt-2">
           <button
-            onClick={() => setProfileOpen(true)}
-            className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-sm transition-all"
+            onClick={() => setSettingsOpen(true)}
+            className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] transition-all ${collapsed ? "justify-center" : ""}`}
             style={{ color: "var(--sidebar-text, #A89880)" }}
-            onMouseEnter={e => { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--sidebar-item-hover)";
+              e.currentTarget.style.color = "var(--sidebar-text-active)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--sidebar-text)";
+            }}
+            title={collapsed ? t("settings.title", "Configurações") : undefined}
           >
-            <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ background: avatarUrl ? "transparent" : "var(--brand-600, #735A3D)" }}>
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="w-full h-full object-cover rounded-full" />
-              ) : (
-                <span className="text-[13px] font-bold text-white">{displayName.charAt(0).toUpperCase()}</span>
-              )}
-            </div>
+            <Settings className="w-4 h-4 flex-shrink-0" />
             {!collapsed && (
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-[13px] font-semibold truncate" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>{displayName}</p>
-                <p className="text-[11px] truncate" style={{ color: "var(--sidebar-text, #A89880)" }}>{roleBadge}</p>
-              </div>
+              <span className="truncate font-medium">{t("settings.title", "Configurações")}</span>
             )}
           </button>
-          <button
-            onClick={signOut}
-            className={`w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-[12px] transition-all ${collapsed ? "justify-center" : ""}`}
-            style={{ color: "var(--sidebar-text, #A89880)" }}
-            onMouseEnter={e => { e.currentTarget.style.color = "var(--s-danger, #DC2626)"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "var(--sidebar-text, #A89880)"; }}
-            title="Sair"
-          >
-            <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
-            {!collapsed && <span>Sair</span>}
-          </button>
-        </div>
-
-        <div className="px-2 pt-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
-          <div className={`flex ${collapsed ? "flex-col" : ""} items-center gap-1`}>
-            {/* Language selector */}
-            <div className="relative" data-keep-open>
-              <button
-                onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-all"
-                style={{ color: "var(--sidebar-text, #A89880)" }}
-                onMouseEnter={e => { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }}
-                title={t("common.language")}
-              >
-                <Globe className="w-3.5 h-3.5 flex-shrink-0" />
-                {!collapsed && (
-                  <span className="font-medium">
-                    {SUPPORTED_LANGUAGES.find(l => l.code === currentLanguage)?.flag || "🇧🇷"}
-                  </span>
-                )}
-              </button>
-              {langOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
-                  <div className="absolute bottom-full left-0 mb-1 z-50 bg-popover border border-border rounded-lg shadow-lg py-1 w-48">
-                    {SUPPORTED_LANGUAGES.map((lang) => (
-                      <button
-                        key={lang.code}
-                        onClick={() => { changeLanguage(lang.code as SupportedLanguage); setLangOpen(false); }}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-accent transition-colors ${currentLanguage === lang.code ? "bg-accent font-semibold" : ""}`}
-                      >
-                        <span>{lang.flag}</span>
-                        <span>{lang.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-            {/* Dark mode toggle */}
-            <button
-              data-keep-open
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-all"
-              style={{ color: "var(--sidebar-text, #A89880)" }}
-              onMouseEnter={e => { e.currentTarget.style.background = "var(--sidebar-item-hover)"; e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--sidebar-text)"; }}
-              title={theme === "dark" ? "Light mode" : "Dark mode"}
-            >
-              {theme === "dark"
-                ? <Sun className="w-3.5 h-3.5 flex-shrink-0" />
-                : <Moon className="w-3.5 h-3.5 flex-shrink-0" />}
-            </button>
-            <InviteButton />
-          </div>
         </div>
       </div>
     </div>
@@ -657,7 +601,7 @@ export default function AppSidebar() {
 
       {/* Mobile sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-dvh max-h-dvh flex-col w-[220px] overflow-hidden transition-transform duration-300 md:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh max-h-dvh flex-col w-[280px] overflow-hidden transition-transform duration-300 md:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
         style={{ background: "var(--sidebar-bg, #1C1916)", borderRight: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}
       >
         {sidebarContent}
@@ -672,6 +616,8 @@ export default function AppSidebar() {
       </aside>
 
       <EditProfileDialog open={profileOpen} onOpenChange={setProfileOpen} />
+      <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <InviteUserDialog open={inviteOpen} onOpenChange={setInviteOpen} />
     </>
   );
 }
