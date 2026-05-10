@@ -726,9 +726,14 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
     if (oldIndex === -1 || newIndex === -1) return;
     const reordered = arrayMove(vitrines, oldIndex, newIndex);
     const items = reordered.map((t, i) => ({ id: t.id, display_order: i + 1 }));
-    // Keep internos order offset after vitrines
     const internosItems = internos.map((t, i) => ({ id: t.id, display_order: reordered.length + i + 1 }));
-    reorderTipos.mutate({ campaign_id: campaignId, items: [...items, ...internosItems] });
+    const newItems = [...items, ...internosItems];
+    const prevItems = [...vitrines, ...internos].map((t) => ({ id: t.id, display_order: t.display_order }));
+    runHistoryCommand({
+      label: "Reordenar vitrines",
+      do: () => reorderTipos.mutateAsync({ campaign_id: campaignId, items: newItems }).then(() => undefined),
+      undo: () => reorderTipos.mutateAsync({ campaign_id: campaignId, items: prevItems }).then(() => undefined),
+    });
   };
 
   const handleDragEndInternos = (event: DragEndEvent) => {
@@ -738,10 +743,15 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
     const newIndex = internos.findIndex((t) => t.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
     const reordered = arrayMove(internos, oldIndex, newIndex);
-    // Keep vitrines order, offset internos after
     const vitrinesItems = vitrines.map((t, i) => ({ id: t.id, display_order: i + 1 }));
     const items = reordered.map((t, i) => ({ id: t.id, display_order: vitrines.length + i + 1 }));
-    reorderTipos.mutate({ campaign_id: campaignId, items: [...vitrinesItems, ...items] });
+    const newItems = [...vitrinesItems, ...items];
+    const prevItems = [...vitrines, ...internos].map((t) => ({ id: t.id, display_order: t.display_order }));
+    runHistoryCommand({
+      label: "Reordenar internos",
+      do: () => reorderTipos.mutateAsync({ campaign_id: campaignId, items: newItems }).then(() => undefined),
+      undo: () => reorderTipos.mutateAsync({ campaign_id: campaignId, items: prevItems }).then(() => undefined),
+    });
   };
 
   const handleDragEndSubs = (tipoId: string) => (event: DragEndEvent) => {
@@ -753,8 +763,13 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
     const newIndex = subs.findIndex((s) => s.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
     const reordered = arrayMove(subs, oldIndex, newIndex);
-    const items = reordered.map((s, i) => ({ id: s.id, display_order: i + 1 }));
-    reorderSubdivisoes.mutate({ campaign_id: campaignId, items });
+    const newItems = reordered.map((s, i) => ({ id: s.id, display_order: i + 1 }));
+    const prevItems = subs.map((s) => ({ id: s.id, display_order: s.display_order }));
+    runHistoryCommand({
+      label: "Reordenar subdivisões",
+      do: () => reorderSubdivisoes.mutateAsync({ campaign_id: campaignId, items: newItems }).then(() => undefined),
+      undo: () => reorderSubdivisoes.mutateAsync({ campaign_id: campaignId, items: prevItems }).then(() => undefined),
+    });
   };
 
   const handleDragEndPecas = (event: DragEndEvent) => {
@@ -764,8 +779,13 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
     const newIndex = pecas.findIndex((p) => p.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
     const reordered = arrayMove(pecas, oldIndex, newIndex);
-    const items = reordered.map((p, i) => ({ id: p.id, display_order: i + 1 }));
-    reorderPecas.mutate({ items });
+    const newItems = reordered.map((p, i) => ({ id: p.id, display_order: i + 1 }));
+    const prevItems = pecas.map((p) => ({ id: p.id, display_order: p.display_order }));
+    runHistoryCommand({
+      label: "Reordenar peças",
+      do: () => reorderPecas.mutateAsync({ items: newItems }).then(() => undefined),
+      undo: () => reorderPecas.mutateAsync({ items: prevItems }).then(() => undefined),
+    });
   };
 
   // ── Render add tipo form ──
