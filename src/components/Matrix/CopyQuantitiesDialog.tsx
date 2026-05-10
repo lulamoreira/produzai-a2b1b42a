@@ -74,6 +74,7 @@ export default function CopyQuantitiesDialog({
   open, onOpenChange, campaignId, stores, pieces, kits, kitPieces, qtyMap, onComplete,
   isNegotiationView = false, negotiationSupplierId = null,
   isAdjustmentView = false, adjustmentId = null,
+  runBulkWithHistory,
 }: Props) {
   const rateioOptions = { isNegotiationView, negotiationSupplierId, isAdjustmentView, adjustmentId };
   const [source, setSource] = useState<ItemRef | null>(null);
