@@ -278,6 +278,8 @@ export default function AdjustmentDetailSheet({
                   onRedo={redo}
                   undoLabel={undoLabel}
                   redoLabel={redoLabel}
+                  undoCount={undoCount}
+                  redoCount={redoCount}
                 />
               </span>
             )}
