@@ -1,4 +1,7 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useHistory } from "@/lib/undo/useHistory";
+import { historyStore } from "@/lib/undo/historyStore";
+import { UndoRedoToolbar } from "@/components/UndoRedoToolbar";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";
 import {
