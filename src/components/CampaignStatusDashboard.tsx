@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 
