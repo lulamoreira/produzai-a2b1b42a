@@ -269,6 +269,18 @@ export default function AdjustmentDetailSheet({
           <SheetTitle className="flex items-center gap-2 flex-wrap">
             {adjustment.name}
             {readOnly && <Badge variant="secondary">Somente leitura</Badge>}
+            {!readOnly && (
+              <span className="ml-auto">
+                <UndoRedoToolbar
+                  canUndo={canUndo}
+                  canRedo={canRedo}
+                  onUndo={undo}
+                  onRedo={redo}
+                  undoLabel={undoLabel}
+                  redoLabel={redoLabel}
+                />
+              </span>
+            )}
           </SheetTitle>
           <SheetDescription>
             Campanha: <strong>{campaignName}</strong> · {pieces.length} peças · {kits.length} kits
