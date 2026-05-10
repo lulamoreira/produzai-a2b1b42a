@@ -216,7 +216,11 @@ export default function CopyQuantitiesDialog({
       }
       const dedupedUpserts = Array.from(map.values());
 
-      await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
+      if (runBulkWithHistory) {
+        await runBulkWithHistory("Copiar quantidades", dedupedUpserts, deletes);
+      } else {
+        await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
+      }
 
       const totalStores = preview.length;
       toast.success(`Quantidades copiadas em ${totalStores} loja(s).`);
