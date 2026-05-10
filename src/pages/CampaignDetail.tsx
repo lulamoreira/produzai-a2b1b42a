@@ -265,13 +265,6 @@ const CampaignDetail = () => {
   const updateStorePiece = useUpdateCampaignStorePiece();
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
 
-  // ─── Undo/Redo (original rateio only — Phase 1) ───
-  const undoScope = `rateio:${campaignId ?? ""}`;
-  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
-  useEffect(() => {
-    return () => historyStore.clearScope(undoScope);
-  }, [undoScope]);
-
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [rateioBackupOpen, setRateioBackupOpen] = useState(false);
 
