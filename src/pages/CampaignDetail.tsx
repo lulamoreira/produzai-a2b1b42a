@@ -2906,6 +2906,7 @@ const CampaignDetail = () => {
                   negotiationSupplierId={winnerSupplierId}
                   isAdjustmentView={isAdjustmentView}
                   adjustmentId={activeAdjustmentId}
+                  runBulkWithHistory={runBulkWithHistory}
                   customFieldLabels={Array.from({ length: 15 }, (_, idx) => {
                     const i = idx + 1;
                     const label = (client as any)?.[`custom_field_${i}_label`];
