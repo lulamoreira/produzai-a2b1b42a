@@ -4683,6 +4683,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_category_permission: {
+        Args: {
+          _action: string
+          _category_id: string
+          _legacy_column_name?: string
+          _module_key: string
+        }
+        Returns: boolean
+      }
       criar_notificacao: {
         Args: {
           _action_url?: string

@@ -295,3 +295,41 @@ export const CATEGORY_COLORS = [
 ] as const;
 
 export type CategoryColor = (typeof CATEGORY_COLORS)[number]["key"];
+
+/**
+ * Maps a (moduleKey, action) pair from the v2 registry back to the legacy
+ * boolean column name on `permission_categories`. Returns null if no legacy
+ * mapping exists (i.e. it's a brand-new feature with no fallback).
+ */
+export function getLegacyColumnName(moduleKey: string, action: string): string | null {
+  const standardMap: Record<string, string> = {
+    clients: "clients",
+    campaigns: "campaigns",
+    stores: "stores",
+    campaign_stores: "campaign_stores",
+    pieces: "pieces",
+    schedules: "schedules",
+    scheduling: "schedules",
+    installations: "installations",
+    loja_a_loja: "loja_a_loja",
+    "loja_a_loja.estrutura": "lal_estrutura",
+    "loja_a_loja.classificacao": "lal_classificacao",
+    "loja_a_loja.acessos": "lal_acessos",
+    "loja_a_loja.config": "lal_config",
+    "loja_a_loja.ocorrencias": "lal_ocorrencias",
+  };
+
+  const dbModule = standardMap[moduleKey];
+  if (dbModule) {
+    if (action === "view") return `can_view_${dbModule}`;
+    if (action === "edit") return `can_edit_${dbModule}`;
+    if (action === "delete") return `can_delete_${dbModule}`;
+  }
+
+  if (moduleKey === "loja_a_loja.ocorrencias" && action === "special:reporter_data") return "can_edit_reporter_data";
+  if (moduleKey === "loja_a_loja.ocorrencias" && action === "special:lock_cards") return "can_lock_cards";
+  if (moduleKey === "installations" && action === "special:team_codes") return "can_manage_team_codes";
+  if (moduleKey === "installations" && action === "special:photo_checkin") return "can_view_photo_checkin";
+
+  return null;
+}

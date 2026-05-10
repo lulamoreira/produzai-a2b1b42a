@@ -5,6 +5,10 @@ import { useAuth } from "@/hooks/useAuth";
 /**
  * Checks if the current user has a specific permission category name
  * (e.g. 'Master', 'Editor') assigned via client or agency access.
+ *
+ * NOTE (Phase 3): This hook only inspects category names — it does NOT read
+ * any boolean permission columns. Therefore it is unaffected by the migration
+ * to `permission_grants` and continues to work unchanged.
  */
 export function useUserPermissionLevel() {
   const { user } = useAuth();

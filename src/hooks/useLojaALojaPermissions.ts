@@ -45,33 +45,39 @@ const EMPTY_PERMS: LalPermissions = {
   isLoading: false,
 };
 
-type PCRow = Record<string, unknown>;
+const SUB_AREAS = [
+  { name: "estrutura",     moduleKey: "loja_a_loja.estrutura",     legacy: "lal_estrutura" },
+  { name: "classificacao", moduleKey: "loja_a_loja.classificacao", legacy: "lal_classificacao" },
+  { name: "acessos",       moduleKey: "loja_a_loja.acessos",       legacy: "lal_acessos" },
+  { name: "config",        moduleKey: "loja_a_loja.config",        legacy: "lal_config" },
+  { name: "ocorrencias",   moduleKey: "loja_a_loja.ocorrencias",   legacy: "lal_ocorrencias" },
+] as const;
 
-function mergeFlag(acc: PCRow, pc: PCRow, key: string) {
-  if (pc[key]) acc[key] = true;
-}
+const ACTIONS = ["view", "edit", "delete"] as const;
 
-function mergePermissions(rows: PCRow[]): PCRow {
-  const acc: PCRow = {};
-  const keys = [
-    "can_view_loja_a_loja", "can_edit_loja_a_loja", "can_delete_loja_a_loja",
-    "can_view_lal_estrutura", "can_edit_lal_estrutura", "can_delete_lal_estrutura",
-    "can_view_lal_classificacao", "can_edit_lal_classificacao", "can_delete_lal_classificacao",
-    "can_view_lal_acessos", "can_edit_lal_acessos", "can_delete_lal_acessos",
-    "can_view_lal_config", "can_edit_lal_config", "can_delete_lal_config",
-    "can_view_lal_ocorrencias", "can_edit_lal_ocorrencias", "can_delete_lal_ocorrencias",
-  ];
-  for (const r of rows) {
-    for (const k of keys) mergeFlag(acc, r, k);
+async function checkAny(
+  categoryIds: string[], moduleKey: string, action: string, legacyColumn: string,
+): Promise<boolean> {
+  for (const cid of categoryIds) {
+    const { data } = await (supabase.rpc as never as (
+      fn: string, args: Record<string, unknown>,
+    ) => Promise<{ data: boolean | null }>)("check_category_permission", {
+      _category_id: cid,
+      _module_key: moduleKey,
+      _action: action,
+      _legacy_column_name: legacyColumn,
+    });
+    if (data) return true;
   }
-  return acc;
+  return false;
 }
 
 /**
  * Returns granular Loja a Loja permissions for the current user, scoped to the
- * given campaign/client. Admins and Masters always get full access. Other users
- * inherit the highest level of permission across direct client, agency, and
- * campaign-level access categories.
+ * given campaign/client. Admins and Masters always get full access. Other
+ * users inherit the highest level of permission across direct client, agency,
+ * and campaign-level access categories. Reads from `permission_grants` first
+ * with fallback to legacy boolean columns.
  */
 export function useLojaALojaPermissions(
   campaignId: string | undefined,
@@ -81,37 +87,27 @@ export function useLojaALojaPermissions(
   const { isAdminOrMaster, isLoading: roleLoading } = useUserRole();
 
   const { data, isLoading: queryLoading } = useQuery({
-    queryKey: ["lal_permissions", user?.id, clientId, campaignId],
-    queryFn: async (): Promise<PCRow> => {
-      if (!user || (!clientId && !campaignId)) return {};
+    queryKey: ["lal_permissions_v2", user?.id, clientId, campaignId],
+    queryFn: async () => {
+      if (!user || (!clientId && !campaignId)) return EMPTY_PERMS;
 
-      const rows: PCRow[] = [];
-
-      // Master flag: legacy can_edit on client/agency access grants full LAL access
-      const masterRow: PCRow = {
-        can_view_loja_a_loja: true, can_edit_loja_a_loja: true, can_delete_loja_a_loja: true,
-        can_view_lal_estrutura: true, can_edit_lal_estrutura: true, can_delete_lal_estrutura: true,
-        can_view_lal_classificacao: true, can_edit_lal_classificacao: true, can_delete_lal_classificacao: true,
-        can_view_lal_acessos: true, can_edit_lal_acessos: true, can_delete_lal_acessos: true,
-        can_view_lal_config: true, can_edit_lal_config: true, can_delete_lal_config: true,
-        can_view_lal_ocorrencias: true, can_edit_lal_ocorrencias: true, can_delete_lal_ocorrencias: true,
-      };
+      const categoryIds = new Set<string>();
+      let masterFlag = false;
 
       // Direct client access
       if (clientId) {
         const { data: clientAccess } = await supabase
           .from("user_client_access")
-          .select("suspended, can_edit, permission_categories(*)")
+          .select("category_id, can_edit")
           .eq("user_id", user.id)
           .eq("client_id", clientId)
-          .eq("suspended", false)
-          .maybeSingle();
-        if (clientAccess?.permission_categories) {
-          rows.push(clientAccess.permission_categories as PCRow);
-        }
-        if (clientAccess?.can_edit) rows.push(masterRow);
+          .eq("suspended", false);
+        clientAccess?.forEach(r => {
+          if (r.category_id) categoryIds.add(r.category_id);
+          if (r.can_edit) masterFlag = true;
+        });
 
-        // Agency-level access (inherited)
+        // Agency-level access
         const { data: client } = await supabase
           .from("clients")
           .select("agency_id")
@@ -120,15 +116,14 @@ export function useLojaALojaPermissions(
         if (client?.agency_id) {
           const { data: agencyAccess } = await supabase
             .from("user_agency_access")
-            .select("suspended, can_edit, permission_categories(*)")
+            .select("category_id, can_edit")
             .eq("user_id", user.id)
             .eq("agency_id", client.agency_id)
-            .eq("suspended", false)
-            .maybeSingle();
-          if (agencyAccess?.permission_categories) {
-            rows.push(agencyAccess.permission_categories as PCRow);
-          }
-          if (agencyAccess?.can_edit) rows.push(masterRow);
+            .eq("suspended", false);
+          agencyAccess?.forEach(r => {
+            if (r.category_id) categoryIds.add(r.category_id);
+            if (r.can_edit) masterFlag = true;
+          });
         }
       }
 
@@ -136,18 +131,45 @@ export function useLojaALojaPermissions(
       if (campaignId) {
         const { data: campaignAccesses } = await supabase
           .from("user_campaign_access")
-          .select("suspended, permission_categories(*)")
+          .select("category_id")
           .eq("user_id", user.id)
           .eq("campaign_id", campaignId)
           .eq("suspended", false);
-        if (campaignAccesses) {
-          for (const ca of campaignAccesses) {
-            if (ca.permission_categories) rows.push(ca.permission_categories as PCRow);
-          }
-        }
+        campaignAccesses?.forEach(r => r.category_id && categoryIds.add(r.category_id));
       }
 
-      return mergePermissions(rows);
+      if (masterFlag) return { ...ADMIN_PERMS };
+
+      const cidArr = Array.from(categoryIds);
+      if (cidArr.length === 0) return EMPTY_PERMS;
+
+      // Compute per sub-area × action
+      const result: LalPermissions = { ...EMPTY_PERMS };
+      // canDeleteModule = legacy can_delete_loja_a_loja
+      result.canDeleteModule = await checkAny(cidArr, "loja_a_loja", "delete", "can_delete_loja_a_loja");
+
+      for (const sa of SUB_AREAS) {
+        const perms: LalSubAreaPermission = { canView: false, canEdit: false, canDelete: false };
+        for (const act of ACTIONS) {
+          const granted = await checkAny(
+            cidArr, sa.moduleKey, act, `can_${act}_${sa.legacy}`,
+          );
+          if (act === "view") perms.canView = granted;
+          if (act === "edit") perms.canEdit = granted;
+          if (act === "delete") perms.canDelete = granted;
+        }
+        result[sa.name] = perms;
+      }
+
+      result.canViewModule =
+        result.estrutura.canView ||
+        result.classificacao.canView ||
+        result.acessos.canView ||
+        result.config.canView ||
+        result.ocorrencias.canView ||
+        await checkAny(cidArr, "loja_a_loja", "view", "can_view_loja_a_loja");
+
+      return result;
     },
     enabled: !!user && !isAdminOrMaster && (!!clientId || !!campaignId),
   });
@@ -156,42 +178,5 @@ export function useLojaALojaPermissions(
 
   if (isAdminOrMaster) return ADMIN_PERMS;
   if (!data) return { ...EMPTY_PERMS, isLoading };
-
-  const p = data;
-  return {
-    canViewModule:
-      !!p.can_view_loja_a_loja ||
-      !!p.can_view_lal_estrutura ||
-      !!p.can_view_lal_classificacao ||
-      !!p.can_view_lal_acessos ||
-      !!p.can_view_lal_config ||
-      !!p.can_view_lal_ocorrencias,
-    canDeleteModule: !!p.can_delete_loja_a_loja,
-    estrutura: {
-      canView: !!p.can_view_lal_estrutura,
-      canEdit: !!p.can_edit_lal_estrutura,
-      canDelete: !!p.can_delete_lal_estrutura,
-    },
-    classificacao: {
-      canView: !!p.can_view_lal_classificacao,
-      canEdit: !!p.can_edit_lal_classificacao,
-      canDelete: !!p.can_delete_lal_classificacao,
-    },
-    acessos: {
-      canView: !!p.can_view_lal_acessos,
-      canEdit: !!p.can_edit_lal_acessos,
-      canDelete: !!p.can_delete_lal_acessos,
-    },
-    config: {
-      canView: !!p.can_view_lal_config,
-      canEdit: !!p.can_edit_lal_config,
-      canDelete: !!p.can_delete_lal_config,
-    },
-    ocorrencias: {
-      canView: !!p.can_view_lal_ocorrencias,
-      canEdit: !!p.can_edit_lal_ocorrencias,
-      canDelete: !!p.can_delete_lal_ocorrencias,
-    },
-    isLoading,
-  };
+  return { ...data, isLoading };
 }

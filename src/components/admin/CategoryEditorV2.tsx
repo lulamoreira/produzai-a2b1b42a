@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Search, ChevronDown, ChevronRight, Eye, Pencil, Trash2, Lock,
-  Users, Save, AlertTriangle, Sparkles,
+  Users, Save, AlertTriangle, Sparkles, Loader2, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -229,6 +229,7 @@ export default function CategoryEditorV2({ open, onOpenChange, category }: Props
   const [color, setColor] = useState(category?.color || "blue");
   const [query, setQuery] = useState("");
   const [pendingPreset, setPendingPreset] = useState<keyof typeof PERMISSION_PRESETS | null>(null);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   useEffect(() => {
     if (open) {
@@ -236,6 +237,7 @@ export default function CategoryEditorV2({ open, onOpenChange, category }: Props
       setDescription(category?.description || "");
       setColor(category?.color || "blue");
       setQuery("");
+      setSaveState('idle');
     }
   }, [open, category?.id, category?.name, category?.description, category?.color]);
 
@@ -264,21 +266,30 @@ export default function CategoryEditorV2({ open, onOpenChange, category }: Props
 
   const handleSaveMeta = async () => {
     if (!name.trim()) { toast.error("Informe um nome"); return; }
-    if (isEdit && category?.id) {
-      await updateCat.mutateAsync({
-        id: category.id,
-        name: name.trim(),
-        description: description.trim() || null,
-        color,
-      } as never);
-    } else {
-      await addCat.mutateAsync({
-        name: name.trim(),
-        description: description.trim() || null,
-        color,
-      } as never);
-      toast.info("Categoria criada — reabra para configurar permissões");
-      onOpenChange(false);
+    setSaveState('saving');
+    try {
+      if (isEdit && category?.id) {
+        await updateCat.mutateAsync({
+          id: category.id,
+          name: name.trim(),
+          description: description.trim() || null,
+          color,
+        } as never);
+      } else {
+        await addCat.mutateAsync({
+          name: name.trim(),
+          description: description.trim() || null,
+          color,
+        } as never);
+      }
+      setSaveState('saved');
+      setTimeout(() => {
+        setSaveState('idle');
+        onOpenChange(false);
+      }, 2000);
+    } catch (e) {
+      setSaveState('idle');
+      toast.error("Erro ao salvar");
     }
   };
 
@@ -381,9 +392,15 @@ export default function CategoryEditorV2({ open, onOpenChange, category }: Props
               <Users className="w-3.5 h-3.5" />
               {userCount} {userCount === 1 ? "usuário" : "usuários"} usam esta categoria
             </div>
-            <Button size="sm" onClick={handleSaveMeta} disabled={isSystem || !name.trim()}>
-              <Save className="w-3.5 h-3.5 mr-1.5" />
-              {isEdit ? "Salvar dados" : "Criar"}
+            <Button
+              size="sm"
+              onClick={handleSaveMeta}
+              disabled={isSystem || !name.trim() || saveState !== 'idle'}
+              className={cn(saveState === 'saved' && 'bg-green-600 hover:bg-green-600 text-white')}
+            >
+              {saveState === 'saving' && (<><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Salvando...</>)}
+              {saveState === 'saved' && (<><Check className="w-3.5 h-3.5 mr-1.5" /> Salvo</>)}
+              {saveState === 'idle' && (<><Save className="w-3.5 h-3.5 mr-1.5" /> {isEdit ? "Salvar dados" : "Criar"}</>)}
             </Button>
           </div>
 
