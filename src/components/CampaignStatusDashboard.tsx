@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 
@@ -17,24 +18,27 @@ function useCampaignStats(campaignId: string) {
   return useQuery({
     queryKey: ["campaign_stats", campaignId],
     queryFn: async () => {
-      const [schedulesRes, lalOccurrencesRes, photosRes] = await Promise.all([
-        supabase
-          .from("campaign_schedules")
-          .select("id, store_id, completed_at, checkin_timestamp, manual_checkin_at, manual_checkout_at, scheduled_date")
-          .eq("campaign_id", campaignId),
+      const [schedules, lalOccurrencesRes, photosCountRes] = await Promise.all([
+        supabasePaginate<{ id: string; store_id: string; completed_at: string | null; checkin_timestamp: string | null; manual_checkin_at: string | null; manual_checkout_at: string | null; scheduled_date: string | null }>(
+          (from, to) =>
+            supabase
+              .from("campaign_schedules")
+              .select("id, store_id, completed_at, checkin_timestamp, manual_checkin_at, manual_checkout_at, scheduled_date")
+              .eq("campaign_id", campaignId)
+              .range(from, to) as any
+        ),
         supabase
           .from("store_occurrence_reports")
           .select("id, store_id, tratativa_status")
           .eq("campaign_id", campaignId),
         supabase
           .from("installation_photos")
-          .select("id")
+          .select("id", { count: "exact", head: true })
           .eq("campaign_id", campaignId),
       ]);
 
-      const schedules = schedulesRes.data ?? [];
       const lalOccurrences = lalOccurrencesRes.data ?? [];
-      const photos = photosRes.data ?? [];
+      const photosCount = photosCountRes.count ?? 0;
 
       // Loja a Loja: open occurrences = tratativa_status != 'resolvida'
       const openLalOccurrences = lalOccurrences.filter(
@@ -58,7 +62,7 @@ function useCampaignStats(campaignId: string) {
         lojas_com_ocorrencia: storesWithOccurrence,
         checkins_realizados: withCheckin.length,
         sem_checkin: withoutCheckin.length,
-        total_fotos: photos.length,
+        total_fotos: photosCount,
         agendamentos_confirmados: scheduled.length,
       };
     },

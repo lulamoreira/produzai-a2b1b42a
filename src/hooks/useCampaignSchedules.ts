@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import type { Schedule } from "@/types/schedule";
 
 /**
@@ -21,12 +22,13 @@ export function useCampaignSchedules(campaignId?: string) {
   const query = useQuery({
     queryKey: ["campaign_schedules", campaignId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaign_schedules")
-        .select("*")
-        .eq("campaign_id", campaignId!);
-      if (error) throw error;
-      return data as Schedule[];
+      return await supabasePaginate<Schedule>((from, to) =>
+        supabase
+          .from("campaign_schedules")
+          .select("*")
+          .eq("campaign_id", campaignId!)
+          .range(from, to) as any
+      );
     },
     enabled: !!campaignId,
   });

@@ -3,6 +3,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 
 // ─── Types ───────────────────────────────────────────────
 export type OccurrenceMotive = {
@@ -231,13 +232,15 @@ export function useOccurrences(campaignId?: string) {
   return useQuery({
     queryKey: ["occurrences", campaignId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("occurrences")
-        .select("*")
-        .eq("campaign_id", campaignId!)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Occurrence[];
+      const data = await supabasePaginate<Occurrence>((from, to) =>
+        supabase
+          .from("occurrences")
+          .select("*")
+          .eq("campaign_id", campaignId!)
+          .order("created_at", { ascending: false })
+          .range(from, to) as any
+      );
+      return data as Occurrence[];
     },
     select: (data) => data.map(normalizeOccurrenceItem),
     enabled: !!campaignId,
