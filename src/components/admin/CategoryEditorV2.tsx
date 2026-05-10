@@ -4,7 +4,7 @@
  * Writes ONLY to `permission_grants` (Phase 2). Legacy boolean columns are
  * untouched. Old CategoryManager continues to coexist.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
@@ -229,6 +229,15 @@ export default function CategoryEditorV2({ open, onOpenChange, category }: Props
   const [color, setColor] = useState(category?.color || "blue");
   const [query, setQuery] = useState("");
   const [pendingPreset, setPendingPreset] = useState<keyof typeof PERMISSION_PRESETS | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setName(category?.name || "");
+      setDescription(category?.description || "");
+      setColor(category?.color || "blue");
+      setQuery("");
+    }
+  }, [open, category?.id, category?.name, category?.description, category?.color]);
 
   const { data: grants = [] } = useCategoryGrants(category?.id);
   const { data: userCount = 0 } = useUserCountByCategory(category?.id);
