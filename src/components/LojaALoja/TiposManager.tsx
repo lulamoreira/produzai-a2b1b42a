@@ -993,6 +993,8 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                   onRedo={redo}
                   undoLabel={undoLabel}
                   redoLabel={redoLabel}
+                  undoCount={undoCount}
+                  redoCount={redoCount}
                 />
                 {canEdit && (
                   <Button size="sm" className="h-7 text-xs" onClick={() => setShowAddPeca(true)}>
