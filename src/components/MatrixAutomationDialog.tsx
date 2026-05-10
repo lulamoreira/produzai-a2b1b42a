@@ -736,7 +736,7 @@ export default function MatrixAutomationDialog({
     }
     const dedupedUpserts = Array.from(dedupMap.values());
 
-    await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
+    await applyBulk("Automação por filtro", dedupedUpserts, deletes);
 
     return { updated: touchedStores, kept: keepCount, zeroed: 0 };
   };
