@@ -2555,6 +2555,16 @@ const CampaignDetail = () => {
                   {renderStoreFilters()}
                   <div className="flex flex-wrap items-center gap-2">
                     {canEditCampaign && (
+                      <UndoRedoToolbar
+                        canUndo={canUndo}
+                        canRedo={canRedo}
+                        onUndo={undo}
+                        onRedo={redo}
+                        undoLabel={undoLabel}
+                        redoLabel={redoLabel}
+                      />
+                    )}
+                    {canEditCampaign && (
                       <Button
                         size="sm"
                         variant="outline"
