@@ -66,8 +66,8 @@ import ImportWizardDialog from "@/components/ImportWizardDialog";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { exportRateioGrid } from "@/lib/exportRateioGrid";
 import { exportRateioGridPDF } from "@/lib/exportRateioGridPDF";
-import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
-import OccurrencesTab from "@/components/OccurrencesTab";
+// CustomExportDialog removed — see project policy
+// OccurrencesTab removed — replaced by Loja a Loja > Ocorrências
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 import SchedulingTab from "@/components/SchedulingTab";
 import InstallationsTab from "@/components/InstallationsTab";
