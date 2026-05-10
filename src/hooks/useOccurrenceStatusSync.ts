@@ -18,12 +18,14 @@ export function useOccurrenceStatusSync(campaignId?: string) {
   const { data: campaignOccurrences = [] } = useQuery({
     queryKey: ["occurrences_status_sync", campaignId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("occurrences")
-        .select("id, store_id, status")
-        .eq("campaign_id", campaignId!);
-      if (error) throw error;
-      return data as { id: string; store_id: string | null; status: string | null }[];
+      const data = await supabasePaginate<{ id: string; store_id: string | null; status: string | null }>((from, to) =>
+        supabase
+          .from("occurrences")
+          .select("id, store_id, status")
+          .eq("campaign_id", campaignId!)
+          .range(from, to) as any
+      );
+      return data;
     },
     enabled: !!campaignId,
   });
