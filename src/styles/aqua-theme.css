@@ -175,6 +175,57 @@ html.aqua[data-mode="dark"] {
 .aqua aside .aqua-icon:has(svg.lucide-message-circle) { background: linear-gradient(145deg, hsl(200 90% 55%), hsl(210 85% 48%)) !important; }
 .aqua aside .aqua-icon:has(svg.lucide-history) { background: linear-gradient(145deg, hsl(250 70% 60%), hsl(260 65% 50%)) !important; }
 
+/* ====== Aqua content area: cards (scoped to shadcn data-slot) ====== */
+.aqua [data-slot="card"] {
+  box-shadow: 0 8px 32px hsla(200, 60%, 50%, 0.10),
+              inset 0 1px 0 rgba(255,255,255,0.4);
+  border-color: hsla(200, 50%, 70%, 0.25);
+}
+.aqua.dark [data-slot="card"] {
+  box-shadow: 0 8px 32px hsla(210, 80%, 5%, 0.4),
+              inset 0 1px 0 rgba(255,255,255,0.05);
+  border-color: hsla(200, 40%, 30%, 0.4);
+}
+
+/* KPI cards (utility class defined in index.css) */
+.aqua .card-kpi {
+  background: hsla(200, 60%, 99%, 0.85);
+  backdrop-filter: blur(8px) saturate(150%);
+  -webkit-backdrop-filter: blur(8px) saturate(150%);
+  border: 1px solid hsla(200, 60%, 70%, 0.2);
+}
+.aqua.dark .card-kpi {
+  background: hsla(215, 30%, 14%, 0.85);
+  border: 1px solid hsla(200, 40%, 30%, 0.35);
+}
+
+/* ====== Aqua secondary buttons — outline variant only (gel suave) ====== */
+.aqua button.border.border-input.bg-background {
+  background: hsla(200, 70%, 98%, 0.6);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border-color: hsla(200, 80%, 60%, 0.30);
+  box-shadow: inset 0 0 0 1px hsla(200, 80%, 60%, 0.20),
+              0 1px 2px hsla(200, 50%, 40%, 0.08);
+  transition: all 0.18s ease;
+}
+.aqua button.border.border-input.bg-background:hover {
+  background: hsla(200, 80%, 96%, 0.85);
+  box-shadow: inset 0 0 0 1px hsla(200, 90%, 55%, 0.45),
+              0 4px 12px hsla(200, 80%, 50%, 0.18);
+  transform: translateY(-1px);
+}
+.aqua.dark button.border.border-input.bg-background {
+  background: hsla(215, 40%, 16%, 0.6);
+  border-color: hsla(200, 70%, 55%, 0.30);
+  box-shadow: inset 0 0 0 1px hsla(200, 70%, 55%, 0.22);
+}
+.aqua.dark button.border.border-input.bg-background:hover {
+  background: hsla(215, 50%, 20%, 0.8);
+  box-shadow: inset 0 0 0 1px hsla(200, 90%, 60%, 0.50),
+              0 4px 12px hsla(200, 80%, 30%, 0.35);
+}
+
 @media (max-width: 768px) {
   .aqua .aqua-glass,
   .aqua [role="dialog"],
@@ -182,5 +233,10 @@ html.aqua[data-mode="dark"] {
   .aqua [data-radix-popper-content-wrapper] > * {
     backdrop-filter: blur(8px) saturate(160%);
     -webkit-backdrop-filter: blur(8px) saturate(160%);
+  }
+  .aqua .card-kpi,
+  .aqua button.border.border-input.bg-background {
+    backdrop-filter: blur(4px) saturate(140%);
+    -webkit-backdrop-filter: blur(4px) saturate(140%);
   }
 }
