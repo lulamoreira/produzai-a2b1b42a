@@ -3,6 +3,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 
 // ─── Types ───────────────────────────────────────────────
 export type OccurrenceMotive = {
