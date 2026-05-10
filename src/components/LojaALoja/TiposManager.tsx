@@ -985,11 +985,21 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
               <h3 className="text-sm font-semibold text-foreground">
                 Peças {selectedTipo ? `— ${selectedTipo.letra} ${selectedTipo.nome}` : ""}
               </h3>
-              {canEdit && (
-                <Button size="sm" className="h-7 text-xs" onClick={() => setShowAddPeca(true)}>
-                  <Plus className="w-3 h-3 mr-1" /> Peça
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                <UndoRedoToolbar
+                  canUndo={canUndo}
+                  canRedo={canRedo}
+                  onUndo={undo}
+                  onRedo={redo}
+                  undoLabel={undoLabel}
+                  redoLabel={redoLabel}
+                />
+                {canEdit && (
+                  <Button size="sm" className="h-7 text-xs" onClick={() => setShowAddPeca(true)}>
+                    <Plus className="w-3 h-3 mr-1" /> Peça
+                  </Button>
+                )}
+              </div>
             </div>
 
             {loadingPecas ? (
