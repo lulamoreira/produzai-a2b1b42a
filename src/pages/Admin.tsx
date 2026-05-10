@@ -177,3 +177,147 @@ const Admin = () => {
 };
 
 export default Admin;
+
+// ─── Categories tab (Phase 2 UI) ───
+function CategoriesTab() {
+  const { data: categories = [], isLoading } = usePermissionCategories();
+  const deleteCat = useDeletePermissionCategory();
+  const [useNewUI, setUseNewUI] = useState(true);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editing, setEditing] = useState<Partial<PermissionCategory> | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filtered = categories.filter(c =>
+    !search.trim() || c.name.toLowerCase().includes(search.toLowerCase()),
+  );
+
+  const openCreate = () => { setEditing(null); setEditorOpen(true); };
+  const openEdit = (cat: PermissionCategory) => { setEditing(cat); setEditorOpen(true); };
+
+  if (!useNewUI) {
+    return (
+      <div>
+        <div className="flex items-center justify-end mb-3">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+            <Switch checked={useNewUI} onCheckedChange={setUseNewUI} />
+            Nova interface
+          </label>
+        </div>
+        <CategoryManager />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-5 flex-wrap">
+        <h2 className="text-base font-semibold text-foreground">
+          Categorias ({categories.length})
+        </h2>
+        <div className="flex items-center gap-2 ml-auto">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar categoria..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9 w-56"
+            />
+          </div>
+          <Button size="sm" onClick={openCreate}>
+            <Plus className="w-4 h-4 mr-1.5" /> Nova Categoria
+          </Button>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer ml-2">
+            <Switch checked={useNewUI} onCheckedChange={setUseNewUI} />
+            Nova UI
+          </label>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center py-12">
+          <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <p className="text-muted-foreground text-sm py-12 text-center">
+          {search ? "Nenhuma categoria encontrada" : "Nenhuma categoria cadastrada"}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(cat => (
+            <CategoryRow
+              key={cat.id}
+              category={cat}
+              onEdit={() => openEdit(cat)}
+              onDelete={() => {
+                if (cat.is_system) { toast.error("Categoria do sistema não pode ser apagada"); return; }
+                if (confirm(`Apagar categoria "${cat.name}"?`)) deleteCat.mutate(cat.id);
+              }}
+            />
+          ))}
+        </div>
+      )}
+
+      <CategoryEditorV2
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        category={editing}
+      />
+    </div>
+  );
+}
+
+function CategoryRow({
+  category, onEdit, onDelete,
+}: {
+  category: PermissionCategory;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const { data: userCount = 0 } = useUserCountByCategory(category.id);
+  const colorMeta = CATEGORY_COLORS.find(c => c.key === category.color) || CATEGORY_COLORS[1];
+
+  return (
+    <div className="flex items-center gap-3 p-3 border border-border rounded-lg bg-card hover:bg-muted/30 transition-colors">
+      <div className={cn("w-3 h-3 rounded-full shrink-0", colorMeta.class)} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-sm text-foreground truncate">{category.name}</span>
+          {category.is_system && (
+            <Badge variant="secondary" className="gap-1 text-[10px]">
+              <Lock className="w-2.5 h-2.5" /> Sistema
+            </Badge>
+          )}
+          <Badge variant="outline" className="text-[10px]">{userCount} usuários</Badge>
+        </div>
+        {category.description && (
+          <div className="text-xs text-muted-foreground truncate mt-0.5">{category.description}</div>
+        )}
+      </div>
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => window.open(`/admin/categories/${category.id}/preview`, "_blank")}
+          title="Preview"
+        >
+          <Eye className="w-4 h-4" />
+        </Button>
+        <Button variant="ghost" size="sm" onClick={onEdit} title="Editar">
+          <Edit3 className="w-4 h-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDelete}
+          disabled={!!category.is_system}
+          className="text-destructive hover:text-destructive"
+          title="Apagar"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
