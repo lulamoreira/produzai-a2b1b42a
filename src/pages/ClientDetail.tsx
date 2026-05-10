@@ -44,6 +44,7 @@ import AppLayout from "@/components/AppLayout";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
 import ImportWizardDialog from "@/components/ImportWizardDialog";
 import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
+import { ResponsiveToolbar } from "@/components/ResponsiveToolbar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import ComboboxInput from "@/components/ComboboxInput";
@@ -1086,41 +1087,55 @@ const ClientDetail = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => exportClientStores(stores, client.name, agencyInfo?.name)}>
-                  <Download className="w-3 h-3" /> Exportar
-                </Button>
-                <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setCustomExportOpen(true)}>
-                  <Download className="w-3 h-3" /> <span className="hidden sm:inline">Export.</span> Pers.
-                </Button>
-                {canEditStores && (
-                  <>
-                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setStoreImportOpen(true)}>
+              <ResponsiveToolbar
+                primaryActions={
+                  canEditStores ? (
+                    <Button size="sm" variant="outline" className="text-xs h-11 md:h-7 gap-1" onClick={() => setStoreImportOpen(true)}>
                       <Upload className="w-3 h-3" /> Importar
                     </Button>
-                    <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleReviewStoreCodes} disabled={generatingCodes}>
-                      <Sparkles className={`w-3 h-3 ${generatingCodes ? "animate-pulse" : ""}`} /> {generatingCodes ? "..." : "Códigos"}
+                  ) : (
+                    <Button size="sm" variant="outline" className="text-xs h-11 md:h-7 gap-1" onClick={() => exportClientStores(stores, client.name, agencyInfo?.name)}>
+                      <Download className="w-3 h-3" /> Exportar
                     </Button>
-                     <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={handleEnrichStores} disabled={enriching}>
-                       <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "..." : "Enriquecer"}
-                     </Button>
-                     <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => setStoreModelDialogOpen(true)}>
-                       <Tag className="w-3 h-3" /> Modelos
-                     </Button>
-                     {isAdminOrMaster && stores.length > 0 && (
-                       <Button
-                         size="sm"
-                         variant="destructive"
-                         className="text-xs h-7 gap-1"
-                         onClick={() => setDeleteAllStoresOpen(true)}
-                         disabled={bulkDeleting}
-                       >
-                         <Trash2 className="w-3 h-3" /> Apagar todas
-                       </Button>
-                     )}
+                  )
+                }
+                secondaryActions={
+                  <>
+                    {canEditStores && (
+                      <Button size="sm" variant="outline" className="text-xs h-11 md:h-7 gap-1 w-full md:w-auto justify-start md:justify-center" onClick={() => exportClientStores(stores, client.name, agencyInfo?.name)}>
+                        <Download className="w-3 h-3" /> Exportar
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline" className="text-xs h-11 md:h-7 gap-1 w-full md:w-auto justify-start md:justify-center" onClick={() => setCustomExportOpen(true)}>
+                      <Download className="w-3 h-3" /> Export. Pers.
+                    </Button>
+                    {canEditStores && (
+                      <>
+                        <Button size="sm" variant="outline" className="text-xs h-11 md:h-7 gap-1 w-full md:w-auto justify-start md:justify-center" onClick={handleReviewStoreCodes} disabled={generatingCodes}>
+                          <Sparkles className={`w-3 h-3 ${generatingCodes ? "animate-pulse" : ""}`} /> {generatingCodes ? "..." : "Códigos"}
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs h-11 md:h-7 gap-1 w-full md:w-auto justify-start md:justify-center" onClick={handleEnrichStores} disabled={enriching}>
+                          <RefreshCw className={`w-3 h-3 ${enriching ? "animate-spin" : ""}`} /> {enriching ? "..." : "Enriquecer"}
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs h-11 md:h-7 gap-1 w-full md:w-auto justify-start md:justify-center" onClick={() => setStoreModelDialogOpen(true)}>
+                          <Tag className="w-3 h-3" /> Modelos
+                        </Button>
+                        {isAdminOrMaster && stores.length > 0 && (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="text-xs h-11 md:h-7 gap-1 w-full md:w-auto justify-start md:justify-center"
+                            onClick={() => setDeleteAllStoresOpen(true)}
+                            disabled={bulkDeleting}
+                          >
+                            <Trash2 className="w-3 h-3" /> Apagar todas
+                          </Button>
+                        )}
+                      </>
+                    )}
                   </>
-                )}
-              </div>
+                }
+              />
             </div>
 
             {enriching && (

@@ -8,6 +8,7 @@ import {
   type MockupStatus,
 } from "@/hooks/useMockups";
 import { Button } from "@/components/ui/button";
+import { ResponsiveToolbar } from "@/components/ResponsiveToolbar";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -327,37 +328,53 @@ export default function MockupTab({
             <h2 className="text-xl font-semibold">Mockup</h2>
             <p className="text-sm text-muted-foreground">{campaignName}</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="min-h-[44px] gap-1.5"
-              onClick={handleExportPDF}
-            >
-              <FileText className="w-4 h-4" /> PDF
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="min-h-[44px] gap-1.5"
-              onClick={handleExportExcel}
-            >
-              <FileSpreadsheet className="w-4 h-4" /> Excel
-            </Button>
-            {total > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="min-h-[44px] gap-1.5 text-destructive hover:text-destructive"
-                onClick={() => {
-                  setResetTarget(null);
-                  setResetOpen(true);
-                }}
-              >
-                <RotateCcw className="w-4 h-4" /> Zerar
-              </Button>
-            )}
-          </div>
+          <ResponsiveToolbar
+            primaryActions={
+              total > 0 ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-[44px] gap-1.5"
+                  onClick={() => setAddOpen(true)}
+                >
+                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Adicionar peça</span><span className="sm:hidden">Adicionar</span>
+                </Button>
+              ) : null
+            }
+            secondaryActions={
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-[44px] gap-1.5 w-full md:w-auto justify-start md:justify-center"
+                  onClick={handleExportPDF}
+                >
+                  <FileText className="w-4 h-4" /> PDF
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="min-h-[44px] gap-1.5 w-full md:w-auto justify-start md:justify-center"
+                  onClick={handleExportExcel}
+                >
+                  <FileSpreadsheet className="w-4 h-4" /> Excel
+                </Button>
+                {total > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="min-h-[44px] gap-1.5 text-destructive hover:text-destructive w-full md:w-auto justify-start md:justify-center"
+                    onClick={() => {
+                      setResetTarget(null);
+                      setResetOpen(true);
+                    }}
+                  >
+                    <RotateCcw className="w-4 h-4" /> Zerar
+                  </Button>
+                )}
+              </>
+            }
+          />
         </div>
 
         {total > 0 && (
@@ -466,18 +483,7 @@ export default function MockupTab({
         </div>
       )}
 
-      {/* Add piece action */}
-      {total > 0 && (
-        <div>
-          <Button
-            variant="outline"
-            className="min-h-[44px] gap-1.5"
-            onClick={() => setAddOpen(true)}
-          >
-            <Plus className="w-4 h-4" /> Adicionar peça ao mockup
-          </Button>
-        </div>
-      )}
+      {/* Add piece action moved to header toolbar */}
 
       {/* Grid */}
       {filtered.length > 0 && (
