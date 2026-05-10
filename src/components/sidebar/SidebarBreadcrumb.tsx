@@ -16,8 +16,13 @@ export function SidebarBreadcrumb({ collapsed, agencyName, clientName, campaignN
         Contexto
       </div>
       <div
-        className="text-[11px] leading-snug break-words"
-        style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}
+        className="text-[11px] leading-snug"
+        style={{
+          color: "var(--sidebar-text-active, #F5EFE6)",
+          wordBreak: "normal",
+          overflowWrap: "break-word",
+          hyphens: "none",
+        }}
         title={parts.join(" › ")}
       >
         {parts.map((p, i) => (
