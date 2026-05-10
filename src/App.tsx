@@ -213,6 +213,7 @@ const App = () => (
             </SidebarStateProvider>
           </AuthProvider>
         </BrowserRouter>
+        </HistoryShortcutProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </ThemeProvider>
