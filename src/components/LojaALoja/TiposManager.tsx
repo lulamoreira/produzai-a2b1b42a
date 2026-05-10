@@ -608,7 +608,15 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
 
   const handleSaveEditTipo = async () => {
     if (!editingTipoId || !editingTipoNome.trim()) return;
-    await updateTipo.mutateAsync({ id: editingTipoId, campaign_id: campaignId, nome: editingTipoNome.trim() });
+    const newName = editingTipoNome.trim();
+    const prevName = tipos?.find((t) => t.id === editingTipoId)?.nome ?? "";
+    const tipoId = editingTipoId;
+    if (newName === prevName) { setEditingTipoId(null); return; }
+    await runHistoryCommand({
+      label: "Nome do tipo",
+      do: () => updateTipo.mutateAsync({ id: tipoId, campaign_id: campaignId, nome: newName }).then(() => undefined),
+      undo: () => updateTipo.mutateAsync({ id: tipoId, campaign_id: campaignId, nome: prevName }).then(() => undefined),
+    });
     setEditingTipoId(null);
   };
 
