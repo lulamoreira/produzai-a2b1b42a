@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import "./styles/aqua-theme.css";
 import "./i18n";
 
 // Auto-select content on focus for all inputs and textareas
