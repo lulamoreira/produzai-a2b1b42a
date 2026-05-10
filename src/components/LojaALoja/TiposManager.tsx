@@ -453,6 +453,13 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
   const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: allPecas } = useAllLojaALojaPecas(campaignId);
 
+  // ─── Undo/Redo ───
+  const undoScope = `loja-a-loja:${campaignId}`;
+  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
+  useEffect(() => {
+    return () => historyStore.clearScope(undoScope);
+  }, [undoScope]);
+
   // Count pieces per tipo and subdivisao
   const pecaCountByTipo = useMemo(() => {
     const map: Record<string, number> = {};
