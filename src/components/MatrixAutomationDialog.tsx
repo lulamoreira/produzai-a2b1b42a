@@ -674,11 +674,11 @@ export default function MatrixAutomationDialog({
       const upserts = affected.map(s => ({
         campaignId, storeId: s.id, pieceId, quantity: targetQty,
       }));
-      await applyRateioBulk(upserts, [], rateioOptions);
+      await applyBulk("Automação (intervalo)", upserts, []);
     } else {
       // targetQty === 0 → delete rows
       const dels = affected.map(s => ({ campaignId, storeId: s.id, pieceId }));
-      await applyRateioBulk([], dels, rateioOptions);
+      await applyBulk("Automação (zerar)", [], dels);
     }
     return { updated: affected.length };
   };
