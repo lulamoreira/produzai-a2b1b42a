@@ -1,0 +1,149 @@
+/* Aqua Modern Theme — applied when html.aqua
+ * Purely additive. None of the light/dark/system tokens are touched.
+ */
+
+.aqua {
+  /* Base colors — saturated Aqua palette */
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 210 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 200 100% 94%;
+  --secondary-foreground: 210 100% 30%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 20% 45%;
+  --accent: 280 80% 60%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 210 100% 50%;
+  --radius: 0.75rem;
+
+  /* Aqua-specific */
+  --aqua-glass-bg: rgba(255, 255, 255, 0.65);
+  --aqua-glass-border: rgba(255, 255, 255, 0.18);
+  --aqua-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+  --aqua-shadow-strong: 0 12px 48px rgba(31, 38, 135, 0.25);
+
+  /* Sidebar — frosted glass */
+  --sidebar-bg: rgba(245, 250, 255, 0.75);
+  --sidebar-text: hsl(215 20% 35%);
+  --sidebar-text-active: hsl(0 0% 100%);
+  --sidebar-item-hover: rgba(0, 122, 255, 0.08);
+  --sidebar-item-active: linear-gradient(135deg, hsl(210 100% 55%), hsl(220 100% 60%));
+  --sidebar-active-bar: hsl(210 100% 50%);
+
+  /* Module gradients */
+  --aqua-module-scheduling: linear-gradient(135deg, #4A90E2, #357ABD);
+  --aqua-module-installations: linear-gradient(135deg, #FF9500, #FF6B00);
+  --aqua-module-loja_a_loja: linear-gradient(135deg, #34C759, #00A03B);
+  --aqua-module-stores: linear-gradient(135deg, #AF52DE, #8E44AD);
+  --aqua-module-occurrences: linear-gradient(135deg, #FF3B30, #D32F2F);
+  --aqua-module-budgets: linear-gradient(135deg, #007AFF, #0051D5);
+  --aqua-module-pieces: linear-gradient(135deg, #FF9500, #E68900);
+  --aqua-module-matrix: linear-gradient(135deg, #5856D6, #3D3DBE);
+  --aqua-module-mockup: linear-gradient(135deg, #FF2D55, #C7224C);
+  --aqua-module-adjustments: linear-gradient(135deg, #5AC8FA, #00B0E0);
+}
+
+/* Dark variant of Aqua */
+.aqua.dark,
+.aqua[data-mode="dark"] {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 10%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 47% 10%;
+  --popover-foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --border: 217 33% 20%;
+  --input: 217 33% 20%;
+
+  --aqua-glass-bg: rgba(20, 30, 50, 0.65);
+  --aqua-glass-border: rgba(255, 255, 255, 0.08);
+  --sidebar-bg: rgba(18, 25, 40, 0.85);
+  --sidebar-text: hsl(215 20% 70%);
+  --sidebar-item-hover: rgba(100, 180, 255, 0.12);
+}
+
+/* Frosted glass utility */
+.aqua .aqua-glass {
+  background: var(--aqua-glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--aqua-glass-border);
+}
+
+/* Gel effect */
+.aqua .aqua-gel {
+  background: linear-gradient(180deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 50%, rgba(0,0,0,0.05) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    inset 0 -1px 0 rgba(0,0,0,0.05),
+    0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+}
+
+.aqua .aqua-gel:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.5),
+    inset 0 -1px 0 rgba(0,0,0,0.05),
+    0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Soft shadow on cards */
+.aqua .card {
+  box-shadow: var(--aqua-shadow);
+}
+
+/* Generous corners */
+.aqua .rounded-lg { border-radius: 0.75rem; }
+.aqua .rounded-md { border-radius: 0.5rem; }
+
+.aqua body {
+  letter-spacing: -0.011em;
+}
+
+/* Frosted glass on Radix surfaces (Dialog / Sheet / Popover / Dropdown / Tooltip) */
+.aqua [role="dialog"],
+.aqua [role="alertdialog"],
+.aqua [data-radix-popper-content-wrapper] > * {
+  background: var(--aqua-glass-bg) !important;
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--aqua-glass-border);
+}
+
+/* Primary button gel effect (shadcn default variant uses bg-primary) */
+.aqua button.bg-primary {
+  background: linear-gradient(180deg, hsl(210 100% 55%) 0%, hsl(210 100% 45%) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    0 2px 8px hsl(210 100% 50% / 0.3);
+  transition: all 0.2s ease;
+}
+
+.aqua button.bg-primary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* Mobile performance — reduce blur on small screens */
+@media (max-width: 768px) {
+  .aqua .aqua-glass,
+  .aqua [role="dialog"],
+  .aqua [role="alertdialog"],
+  .aqua [data-radix-popper-content-wrapper] > * {
+    backdrop-filter: blur(8px) saturate(160%);
+    -webkit-backdrop-filter: blur(8px) saturate(160%);
+  }
+}
