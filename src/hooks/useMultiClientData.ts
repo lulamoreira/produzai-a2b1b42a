@@ -427,13 +427,14 @@ export function useClientStores(clientId: string | undefined) {
     queryKey: ["client_stores", clientId],
     queryFn: async () => {
       if (!clientId) return [];
-      const { data, error } = await supabase
-        .from("client_stores")
-        .select("*")
-        .eq("client_id", clientId)
-        .order("name");
-      if (error) throw error;
-      return data as ClientStore[];
+      return await supabasePaginate<ClientStore>((from, to) =>
+        supabase
+          .from("client_stores")
+          .select("*")
+          .eq("client_id", clientId)
+          .order("name")
+          .range(from, to) as any
+      );
     },
     enabled: !!clientId,
   });
