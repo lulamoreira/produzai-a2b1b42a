@@ -77,6 +77,11 @@ interface Props {
   negotiationSupplierId?: string | null;
   isAdjustmentView?: boolean;
   adjustmentId?: string | null;
+  runBulkWithHistory?: (
+    label: string,
+    upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[],
+    deletes: { campaignId: string; storeId: string; pieceId: string }[],
+  ) => Promise<void>;
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
@@ -171,9 +176,18 @@ export default function MatrixAutomationDialog({
   customFieldLabels, onComplete,
   isNegotiationView = false, negotiationSupplierId = null,
   isAdjustmentView = false, adjustmentId = null,
+  runBulkWithHistory,
 }: Props) {
   const { t } = useTranslation();
   const rateioOptions = { isNegotiationView, negotiationSupplierId, isAdjustmentView, adjustmentId };
+  const applyBulk = useCallback(async (
+    label: string,
+    upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[],
+    deletes: { campaignId: string; storeId: string; pieceId: string }[],
+  ) => {
+    if (runBulkWithHistory) return runBulkWithHistory(label, upserts, deletes);
+    return applyRateioBulk(upserts, deletes, rateioOptions);
+  }, [runBulkWithHistory, rateioOptions]);
 
 
   const [mainTab, setMainTab] = useState<string>("new");
@@ -660,11 +674,11 @@ export default function MatrixAutomationDialog({
       const upserts = affected.map(s => ({
         campaignId, storeId: s.id, pieceId, quantity: targetQty,
       }));
-      await applyRateioBulk(upserts, [], rateioOptions);
+      await applyBulk("Automação (intervalo)", upserts, []);
     } else {
       // targetQty === 0 → delete rows
       const dels = affected.map(s => ({ campaignId, storeId: s.id, pieceId }));
-      await applyRateioBulk([], dels, rateioOptions);
+      await applyBulk("Automação (zerar)", [], dels);
     }
     return { updated: affected.length };
   };
@@ -722,7 +736,7 @@ export default function MatrixAutomationDialog({
     }
     const dedupedUpserts = Array.from(dedupMap.values());
 
-    await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
+    await applyBulk("Automação por filtro", dedupedUpserts, deletes);
 
     return { updated: touchedStores, kept: keepCount, zeroed: 0 };
   };
@@ -784,7 +798,7 @@ export default function MatrixAutomationDialog({
       }
       const dedupedUpserts = Array.from(dedupMap.values());
 
-      await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
+      await applyBulk("Automação", dedupedUpserts, deletes);
 
       toast.success(t("automation.successMessage", { updated: uniqueUpdateStores, kept: keepCount, zeroed: zeroCount }));
       await onComplete();

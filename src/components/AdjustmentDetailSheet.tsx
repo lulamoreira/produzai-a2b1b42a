@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -14,6 +14,9 @@ import { Pencil, Trash2, Undo2, Plus, FileSpreadsheet, X, Save } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { saveBlobAs } from "@/lib/saveBlobAs";
+import { useHistory } from "@/lib/undo/useHistory";
+import { historyStore } from "@/lib/undo/historyStore";
+import { UndoRedoToolbar } from "@/components/UndoRedoToolbar";
 import {
   useAdjustmentPieces,
   useAdjustmentKits,
@@ -74,6 +77,13 @@ export default function AdjustmentDetailSheet({
   const updateKit = useUpdateAdjustmentKit();
   const restoreKit = useRestoreAdjustmentKit();
 
+  // ─── Undo/Redo (adjustment piece field edits) ───
+  const undoScope = `adjustment-sheet:${adjustment.id}`;
+  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
+  useEffect(() => {
+    return () => historyStore.clearScope(undoScope);
+  }, [undoScope]);
+
   const [filter, setFilter] = useState<"all" | "modified" | "added" | "removed">("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
@@ -113,10 +123,21 @@ export default function AdjustmentDetailSheet({
   };
 
   const handleSaveEdit = async (p: any) => {
-    await updatePiece.mutateAsync({
-      pieceId: p.id,
-      adjustmentId: adjustment.id,
-      changes: editForm,
+    // Snapshot prev field values for undo
+    const prevChanges: Record<string, any> = {};
+    for (const k of Object.keys(editForm)) {
+      prevChanges[k] = (p as any)[k] ?? "";
+    }
+    // Skip if nothing actually changed
+    const hasDiff = Object.keys(editForm).some((k) => String(editForm[k] ?? "") !== String(prevChanges[k] ?? ""));
+    if (!hasDiff) {
+      setEditingId(null);
+      return;
+    }
+    await runHistoryCommand({
+      label: "Campos da peça (ajuste)",
+      do: () => updatePiece.mutateAsync({ pieceId: p.id, adjustmentId: adjustment.id, changes: editForm }).then(() => undefined),
+      undo: () => updatePiece.mutateAsync({ pieceId: p.id, adjustmentId: adjustment.id, changes: prevChanges }).then(() => undefined),
     });
     setEditingId(null);
   };
@@ -248,6 +269,18 @@ export default function AdjustmentDetailSheet({
           <SheetTitle className="flex items-center gap-2 flex-wrap">
             {adjustment.name}
             {readOnly && <Badge variant="secondary">Somente leitura</Badge>}
+            {!readOnly && (
+              <span className="ml-auto">
+                <UndoRedoToolbar
+                  canUndo={canUndo}
+                  canRedo={canRedo}
+                  onUndo={undo}
+                  onRedo={redo}
+                  undoLabel={undoLabel}
+                  redoLabel={redoLabel}
+                />
+              </span>
+            )}
           </SheetTitle>
           <SheetDescription>
             Campanha: <strong>{campaignName}</strong> · {pieces.length} peças · {kits.length} kits
@@ -410,7 +443,15 @@ export default function AdjustmentDetailSheet({
                                   <>
                                     <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditingKitId(null)}>Cancelar</Button>
                                     <Button size="sm" className="h-7 text-xs" onClick={async () => {
-                                      await updateKit.mutateAsync({ kitId: k.id, adjustmentId: adjustment.id, changes: { name: kitNameDraft } });
+                                      const prevName = k.name;
+                                      const newName = kitNameDraft;
+                                      if (prevName !== newName) {
+                                        await runHistoryCommand({
+                                          label: "Nome do kit (ajuste)",
+                                          do: () => updateKit.mutateAsync({ kitId: k.id, adjustmentId: adjustment.id, changes: { name: newName } }).then(() => undefined),
+                                          undo: () => updateKit.mutateAsync({ kitId: k.id, adjustmentId: adjustment.id, changes: { name: prevName } }).then(() => undefined),
+                                        });
+                                      }
                                       setEditingKitId(null);
                                     }}>Salvar</Button>
                                   </>

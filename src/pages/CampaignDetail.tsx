@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
+import { applyRateioBulk } from "@/lib/applyRateioBulk";
 import { getStateColor } from "@/lib/stateColors";
 
 import { useParams, useNavigate, useLocation } from "react-router-dom";
@@ -265,13 +266,6 @@ const CampaignDetail = () => {
   const updateStorePiece = useUpdateCampaignStorePiece();
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
 
-  // ─── Undo/Redo (original rateio only — Phase 1) ───
-  const undoScope = `rateio:${campaignId ?? ""}`;
-  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
-  useEffect(() => {
-    return () => historyStore.clearScope(undoScope);
-  }, [undoScope]);
-
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [rateioBackupOpen, setRateioBackupOpen] = useState(false);
 
@@ -369,6 +363,17 @@ const CampaignDetail = () => {
     isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
   );
   const updateAdjustmentStorePiece = useUpdateAdjustmentStorePiece();
+
+  // ─── Undo/Redo — scope depends on active rateio view ───
+  const undoScope = useMemo(() => {
+    if (isAdjustmentView && activeAdjustmentId) return `adjustment:${activeAdjustmentId}`;
+    if (isNegotiationView && winnerSupplierId) return `negotiation:${winnerSupplierId}:${campaignId ?? ""}`;
+    return `rateio:${campaignId ?? ""}`;
+  }, [isAdjustmentView, activeAdjustmentId, isNegotiationView, winnerSupplierId, campaignId]);
+  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
+  useEffect(() => {
+    return () => historyStore.clearScope(undoScope);
+  }, [undoScope]);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
   const addPieceLocation = useAddCampaignPieceLocation();
@@ -898,6 +903,35 @@ const CampaignDetail = () => {
     return qtyMap[`${storeId}-${pieceId}`] || 0;
   }, [qtyMap, kitPieces]);
 
+  // ─── Bulk apply with undo/redo (used by automation/copy dialogs) ───
+  // Snapshots qtyMap for all affected (store,piece) pairs and produces an inverse op.
+  const runBulkWithHistory = useCallback(async (
+    label: string,
+    upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[],
+    deletes: { campaignId: string; storeId: string; pieceId: string }[],
+  ) => {
+    const rateioOptions = { isNegotiationView, negotiationSupplierId: winnerSupplierId, isAdjustmentView, adjustmentId: activeAdjustmentId };
+    // Snapshot prev quantities for affected pairs
+    const affected = new Map<string, { storeId: string; pieceId: string }>();
+    for (const u of upserts) affected.set(`${u.storeId}|${u.pieceId}`, { storeId: u.storeId, pieceId: u.pieceId });
+    for (const d of deletes) affected.set(`${d.storeId}|${d.pieceId}`, { storeId: d.storeId, pieceId: d.pieceId });
+    const prevUpserts: typeof upserts = [];
+    const prevDeletes: typeof deletes = [];
+    for (const { storeId, pieceId } of affected.values()) {
+      const prev = qtyMap[`${storeId}-${pieceId}`] || 0;
+      if (prev > 0) {
+        prevUpserts.push({ campaignId: campaignId!, storeId, pieceId, quantity: prev });
+      } else {
+        prevDeletes.push({ campaignId: campaignId!, storeId, pieceId });
+      }
+    }
+    await runHistoryCommand({
+      label,
+      do: () => applyRateioBulk(upserts, deletes, rateioOptions),
+      undo: () => applyRateioBulk(prevUpserts, prevDeletes, rateioOptions),
+    });
+  }, [qtyMap, campaignId, isNegotiationView, winnerSupplierId, isAdjustmentView, activeAdjustmentId, runHistoryCommand]);
+
   // ─── Unified save: handles both piece and kit cells ───
   // Kit cells write to N component pieces. We use a SINGLE bulk mutation that
   // performs one optimistic update + parallel writes + ONE final invalidation.
@@ -920,21 +954,42 @@ const CampaignDetail = () => {
       if (cell.pieceId.startsWith("kit-")) {
         const kitId = cell.pieceId.replace("kit-", "");
         const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
-        for (const kp of piecesInKit) {
-          updateAdjustmentStorePiece.mutate({
-            adjustmentId: activeAdjustmentId,
-            storeId: cell.storeId,
-            pieceId: kp.piece_id,
-            quantity: qty * (kp.quantity || 1),
-          });
-        }
+        if (piecesInKit.length === 0) return;
+        const targets = piecesInKit.map((kp) => ({
+          pieceId: kp.piece_id,
+          newQty: qty * (kp.quantity || 1),
+          prevQty: qtyMap[`${cell.storeId}-${kp.piece_id}`] || 0,
+        }));
+        if (targets.every((t) => t.prevQty === t.newQty)) return;
+        runHistoryCommand({
+          label: "Quantidade (kit, ajuste)",
+          do: async () => {
+            await Promise.all(targets.map((t) =>
+              updateAdjustmentStorePiece.mutateAsync({
+                adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: t.pieceId, quantity: t.newQty,
+              })
+            ));
+          },
+          undo: async () => {
+            await Promise.all(targets.map((t) =>
+              updateAdjustmentStorePiece.mutateAsync({
+                adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: t.pieceId, quantity: t.prevQty,
+              })
+            ));
+          },
+        });
         return;
       }
-      updateAdjustmentStorePiece.mutate({
-        adjustmentId: activeAdjustmentId,
-        storeId: cell.storeId,
-        pieceId: cell.pieceId,
-        quantity: qty,
+      const prevQtyAdj = qtyMap[`${cell.storeId}-${cell.pieceId}`] || 0;
+      if (prevQtyAdj === qty) return;
+      runHistoryCommand({
+        label: "Quantidade (ajuste)",
+        do: () => updateAdjustmentStorePiece.mutateAsync({
+          adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: cell.pieceId, quantity: qty,
+        }).then(() => undefined),
+        undo: () => updateAdjustmentStorePiece.mutateAsync({
+          adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: cell.pieceId, quantity: prevQtyAdj,
+        }).then(() => undefined),
       });
       return;
     }
@@ -944,23 +999,46 @@ const CampaignDetail = () => {
       if (cell.pieceId.startsWith("kit-")) {
         const kitId = cell.pieceId.replace("kit-", "");
         const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
-        for (const kp of piecesInKit) {
-          updateNegotiationStorePiece.mutate({
-            supplier_id: winnerSupplierId,
-            campaign_id: campaignId,
-            store_id: cell.storeId,
-            piece_id: kp.piece_id,
-            quantity: qty * (kp.quantity || 1),
-          });
-        }
+        if (piecesInKit.length === 0) return;
+        const targets = piecesInKit.map((kp) => ({
+          pieceId: kp.piece_id,
+          newQty: qty * (kp.quantity || 1),
+          prevQty: qtyMap[`${cell.storeId}-${kp.piece_id}`] || 0,
+        }));
+        if (targets.every((t) => t.prevQty === t.newQty)) return;
+        runHistoryCommand({
+          label: "Quantidade (kit, negociação)",
+          do: async () => {
+            await Promise.all(targets.map((t) =>
+              updateNegotiationStorePiece.mutateAsync({
+                supplier_id: winnerSupplierId, campaign_id: campaignId,
+                store_id: cell.storeId, piece_id: t.pieceId, quantity: t.newQty,
+              })
+            ));
+          },
+          undo: async () => {
+            await Promise.all(targets.map((t) =>
+              updateNegotiationStorePiece.mutateAsync({
+                supplier_id: winnerSupplierId, campaign_id: campaignId,
+                store_id: cell.storeId, piece_id: t.pieceId, quantity: t.prevQty,
+              })
+            ));
+          },
+        });
         return;
       }
-      updateNegotiationStorePiece.mutate({
-        supplier_id: winnerSupplierId,
-        campaign_id: campaignId,
-        store_id: cell.storeId,
-        piece_id: cell.pieceId,
-        quantity: qty,
+      const prevQtyNeg = qtyMap[`${cell.storeId}-${cell.pieceId}`] || 0;
+      if (prevQtyNeg === qty) return;
+      runHistoryCommand({
+        label: "Quantidade (negociação)",
+        do: () => updateNegotiationStorePiece.mutateAsync({
+          supplier_id: winnerSupplierId, campaign_id: campaignId,
+          store_id: cell.storeId, piece_id: cell.pieceId, quantity: qty,
+        }).then(() => undefined),
+        undo: () => updateNegotiationStorePiece.mutateAsync({
+          supplier_id: winnerSupplierId, campaign_id: campaignId,
+          store_id: cell.storeId, piece_id: cell.pieceId, quantity: prevQtyNeg,
+        }).then(() => undefined),
       });
       return;
     }
@@ -2828,6 +2906,7 @@ const CampaignDetail = () => {
                   negotiationSupplierId={winnerSupplierId}
                   isAdjustmentView={isAdjustmentView}
                   adjustmentId={activeAdjustmentId}
+                  runBulkWithHistory={runBulkWithHistory}
                   customFieldLabels={Array.from({ length: 15 }, (_, idx) => {
                     const i = idx + 1;
                     const label = (client as any)?.[`custom_field_${i}_label`];
@@ -2886,6 +2965,7 @@ const CampaignDetail = () => {
                   negotiationSupplierId={winnerSupplierId}
                   isAdjustmentView={isAdjustmentView}
                   adjustmentId={activeAdjustmentId}
+                  runBulkWithHistory={runBulkWithHistory}
                   onComplete={async () => {
                     if (isAdjustmentView && activeAdjustmentId) {
                       await queryClient.refetchQueries({ queryKey: ["adjustment_store_pieces", activeAdjustmentId], exact: true, type: "active" });

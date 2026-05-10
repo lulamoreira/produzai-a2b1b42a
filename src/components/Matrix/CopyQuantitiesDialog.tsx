@@ -45,6 +45,11 @@ interface Props {
   negotiationSupplierId?: string | null;
   isAdjustmentView?: boolean;
   adjustmentId?: string | null;
+  runBulkWithHistory?: (
+    label: string,
+    upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[],
+    deletes: { campaignId: string; storeId: string; pieceId: string }[],
+  ) => Promise<void>;
 }
 
 /** Compute the available "kit count" for a given store, i.e. how many full kits fit. */
@@ -69,6 +74,7 @@ export default function CopyQuantitiesDialog({
   open, onOpenChange, campaignId, stores, pieces, kits, kitPieces, qtyMap, onComplete,
   isNegotiationView = false, negotiationSupplierId = null,
   isAdjustmentView = false, adjustmentId = null,
+  runBulkWithHistory,
 }: Props) {
   const rateioOptions = { isNegotiationView, negotiationSupplierId, isAdjustmentView, adjustmentId };
   const [source, setSource] = useState<ItemRef | null>(null);
@@ -210,7 +216,11 @@ export default function CopyQuantitiesDialog({
       }
       const dedupedUpserts = Array.from(map.values());
 
-      await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
+      if (runBulkWithHistory) {
+        await runBulkWithHistory("Copiar quantidades", dedupedUpserts, deletes);
+      } else {
+        await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
+      }
 
       const totalStores = preview.length;
       toast.success(`Quantidades copiadas em ${totalStores} loja(s).`);
