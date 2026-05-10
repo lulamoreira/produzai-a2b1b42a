@@ -1,4 +1,7 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useHistory } from "@/lib/undo/useHistory";
+import { historyStore } from "@/lib/undo/historyStore";
+import { UndoRedoToolbar } from "@/components/UndoRedoToolbar";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -450,6 +453,13 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
   const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: allPecas } = useAllLojaALojaPecas(campaignId);
 
+  // ─── Undo/Redo ───
+  const undoScope = `loja-a-loja:${campaignId}`;
+  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
+  useEffect(() => {
+    return () => historyStore.clearScope(undoScope);
+  }, [undoScope]);
+
   // Count pieces per tipo and subdivisao
   const pecaCountByTipo = useMemo(() => {
     const map: Record<string, number> = {};
@@ -598,7 +608,15 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
 
   const handleSaveEditTipo = async () => {
     if (!editingTipoId || !editingTipoNome.trim()) return;
-    await updateTipo.mutateAsync({ id: editingTipoId, campaign_id: campaignId, nome: editingTipoNome.trim() });
+    const newName = editingTipoNome.trim();
+    const prevName = tipos?.find((t) => t.id === editingTipoId)?.nome ?? "";
+    const tipoId = editingTipoId;
+    if (newName === prevName) { setEditingTipoId(null); return; }
+    await runHistoryCommand({
+      label: "Nome do tipo",
+      do: () => updateTipo.mutateAsync({ id: tipoId, campaign_id: campaignId, nome: newName }).then(() => undefined),
+      undo: () => updateTipo.mutateAsync({ id: tipoId, campaign_id: campaignId, nome: prevName }).then(() => undefined),
+    });
     setEditingTipoId(null);
   };
 
@@ -637,7 +655,19 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
 
   const handleSaveEditSub = async () => {
     if (!editingSubId || !editingSubNome.trim()) return;
-    await updateSubdivisao.mutateAsync({ id: editingSubId, campaign_id: campaignId, nome: editingSubNome.trim() });
+    const subId = editingSubId;
+    const newName = editingSubNome.trim();
+    let prevName = "";
+    for (const t of tipos ?? []) {
+      const found = t.subdivisoes?.find((s) => s.id === subId);
+      if (found) { prevName = found.nome; break; }
+    }
+    if (newName === prevName) { setEditingSubId(null); return; }
+    await runHistoryCommand({
+      label: "Nome da subdivisão",
+      do: () => updateSubdivisao.mutateAsync({ id: subId, campaign_id: campaignId, nome: newName }).then(() => undefined),
+      undo: () => updateSubdivisao.mutateAsync({ id: subId, campaign_id: campaignId, nome: prevName }).then(() => undefined),
+    });
     setEditingSubId(null);
   };
 
@@ -696,9 +726,14 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
     if (oldIndex === -1 || newIndex === -1) return;
     const reordered = arrayMove(vitrines, oldIndex, newIndex);
     const items = reordered.map((t, i) => ({ id: t.id, display_order: i + 1 }));
-    // Keep internos order offset after vitrines
     const internosItems = internos.map((t, i) => ({ id: t.id, display_order: reordered.length + i + 1 }));
-    reorderTipos.mutate({ campaign_id: campaignId, items: [...items, ...internosItems] });
+    const newItems = [...items, ...internosItems];
+    const prevItems = [...vitrines, ...internos].map((t) => ({ id: t.id, display_order: t.display_order }));
+    runHistoryCommand({
+      label: "Reordenar vitrines",
+      do: () => reorderTipos.mutateAsync({ campaign_id: campaignId, items: newItems }).then(() => undefined),
+      undo: () => reorderTipos.mutateAsync({ campaign_id: campaignId, items: prevItems }).then(() => undefined),
+    });
   };
 
   const handleDragEndInternos = (event: DragEndEvent) => {
@@ -708,10 +743,15 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
     const newIndex = internos.findIndex((t) => t.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
     const reordered = arrayMove(internos, oldIndex, newIndex);
-    // Keep vitrines order, offset internos after
     const vitrinesItems = vitrines.map((t, i) => ({ id: t.id, display_order: i + 1 }));
     const items = reordered.map((t, i) => ({ id: t.id, display_order: vitrines.length + i + 1 }));
-    reorderTipos.mutate({ campaign_id: campaignId, items: [...vitrinesItems, ...items] });
+    const newItems = [...vitrinesItems, ...items];
+    const prevItems = [...vitrines, ...internos].map((t) => ({ id: t.id, display_order: t.display_order }));
+    runHistoryCommand({
+      label: "Reordenar internos",
+      do: () => reorderTipos.mutateAsync({ campaign_id: campaignId, items: newItems }).then(() => undefined),
+      undo: () => reorderTipos.mutateAsync({ campaign_id: campaignId, items: prevItems }).then(() => undefined),
+    });
   };
 
   const handleDragEndSubs = (tipoId: string) => (event: DragEndEvent) => {
@@ -723,8 +763,13 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
     const newIndex = subs.findIndex((s) => s.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
     const reordered = arrayMove(subs, oldIndex, newIndex);
-    const items = reordered.map((s, i) => ({ id: s.id, display_order: i + 1 }));
-    reorderSubdivisoes.mutate({ campaign_id: campaignId, items });
+    const newItems = reordered.map((s, i) => ({ id: s.id, display_order: i + 1 }));
+    const prevItems = subs.map((s) => ({ id: s.id, display_order: s.display_order }));
+    runHistoryCommand({
+      label: "Reordenar subdivisões",
+      do: () => reorderSubdivisoes.mutateAsync({ campaign_id: campaignId, items: newItems }).then(() => undefined),
+      undo: () => reorderSubdivisoes.mutateAsync({ campaign_id: campaignId, items: prevItems }).then(() => undefined),
+    });
   };
 
   const handleDragEndPecas = (event: DragEndEvent) => {
@@ -734,8 +779,13 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
     const newIndex = pecas.findIndex((p) => p.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
     const reordered = arrayMove(pecas, oldIndex, newIndex);
-    const items = reordered.map((p, i) => ({ id: p.id, display_order: i + 1 }));
-    reorderPecas.mutate({ items });
+    const newItems = reordered.map((p, i) => ({ id: p.id, display_order: i + 1 }));
+    const prevItems = pecas.map((p) => ({ id: p.id, display_order: p.display_order }));
+    runHistoryCommand({
+      label: "Reordenar peças",
+      do: () => reorderPecas.mutateAsync({ items: newItems }).then(() => undefined),
+      undo: () => reorderPecas.mutateAsync({ items: prevItems }).then(() => undefined),
+    });
   };
 
   // ── Render add tipo form ──
@@ -935,11 +985,21 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
               <h3 className="text-sm font-semibold text-foreground">
                 Peças {selectedTipo ? `— ${selectedTipo.letra} ${selectedTipo.nome}` : ""}
               </h3>
-              {canEdit && (
-                <Button size="sm" className="h-7 text-xs" onClick={() => setShowAddPeca(true)}>
-                  <Plus className="w-3 h-3 mr-1" /> Peça
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                <UndoRedoToolbar
+                  canUndo={canUndo}
+                  canRedo={canRedo}
+                  onUndo={undo}
+                  onRedo={redo}
+                  undoLabel={undoLabel}
+                  redoLabel={redoLabel}
+                />
+                {canEdit && (
+                  <Button size="sm" className="h-7 text-xs" onClick={() => setShowAddPeca(true)}>
+                    <Plus className="w-3 h-3 mr-1" /> Peça
+                  </Button>
+                )}
+              </div>
             </div>
 
             {loadingPecas ? (
@@ -979,8 +1039,14 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                           onChangeEditName={setEditingPecaNome}
                           onBlurEditName={() => {
                             const trimmed = editingPecaNome.trim();
-                            if (trimmed && trimmed !== peca.nome) {
-                              updatePecaNome.mutate({ id: peca.id, nome: trimmed });
+                            const prevName = peca.nome;
+                            const pecaId = peca.id;
+                            if (trimmed && trimmed !== prevName) {
+                              runHistoryCommand({
+                                label: "Nome da peça",
+                                do: () => updatePecaNome.mutateAsync({ id: pecaId, nome: trimmed }).then(() => undefined),
+                                undo: () => updatePecaNome.mutateAsync({ id: pecaId, nome: prevName }).then(() => undefined),
+                              });
                             }
                             setEditingPecaId(null);
                           }}
