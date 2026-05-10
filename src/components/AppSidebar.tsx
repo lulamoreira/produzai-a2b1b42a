@@ -474,56 +474,32 @@ export default function AppSidebar() {
                 const isExpanded = campaignExpanded[camp.id] ?? (camp.id === campaignId);
                 const isActiveCampaign = campaignId === camp.id;
                 const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
+                const filteredModules = CAMPAIGN_MODULE_KEYS.filter(mod => {
+                  if (mod.key === "budgets" && !isAdminOrMaster) return false;
+                  if (mod.key === "history") return false;
+                  if ((mod as any).adminOnly && !isAdminOrMaster) return false;
+                  return true;
+                }).map(m => ({
+                  key: m.key,
+                  tKey: m.tKey,
+                  icon: m.icon,
+                  color: m.color,
+                  fallbackLabel: (m as any).fallbackLabel,
+                }));
                 return (
-                  <div key={camp.id} className={`rounded-md ${isActiveCampaign ? "bg-muted/30" : ""}`}>
-                    <div className="flex items-center gap-0.5">
-                      <button
-                        onClick={() => handleCampaignHomeNavigate(campBasePath)}
-                        className="flex-1 truncate text-left px-2 py-1.5 rounded-md text-[12px] font-semibold uppercase tracking-wider transition-all"
-                        style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
-                        onMouseEnter={e => { e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
-                        onMouseLeave={e => { if (!isActiveCampaign) e.currentTarget.style.color = "var(--brand-300, #C4AD92)"; }}
-                      >
-                        {camp.name}
-                      </button>
-                      <button
-                        data-keep-open
-                        onClick={() => toggleCampaignExpanded(camp.id)}
-                        className="flex-shrink-0 p-1 rounded transition-all"
-                        style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
-                      >
-                        <ChevronDown className="w-3 h-3 opacity-40 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }} />
-                      </button>
-                    </div>
-                    <div className={`overflow-hidden transition-all duration-200 ease-out ${isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}>
-                      <div className="relative ml-2 pl-3 mt-1 mb-1 space-y-0.5">
-                        <span className="absolute left-0 top-0 bottom-0 w-px bg-border" />
-                        {CAMPAIGN_MODULE_KEYS.filter(mod => {
-                          if (mod.key === "budgets" && !isAdminOrMaster) return false;
-                          if (mod.key === "history") return false;
-                          if ((mod as any).adminOnly && !isAdminOrMaster) return false;
-                          return true;
-                        }).map((mod) => {
-                          const modActive = isCampaignModuleActive(camp.id, mod.key);
-                          return (
-                            <button
-                              key={mod.key}
-                              onClick={() => handleNavigate(`${campBasePath}?section=${mod.key}`)}
-                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-all relative before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
-                              style={modActive
-                                ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", fontWeight: 600, borderLeft: "3px solid var(--sidebar-active-bar)" }
-                                : { color: "var(--sidebar-text)" }
-                              }
-                              {...hoverHandlers(modActive)}
-                            >
-                              <AquaIcon icon={mod.icon} size="xs" color={mod.color} />
-                              <span className="truncate">{(mod as any).fallbackLabel ? t(mod.tKey, { defaultValue: (mod as any).fallbackLabel }) : t(mod.tKey)}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
+                  <CampaignNavItem
+                    key={camp.id}
+                    campaignId={camp.id}
+                    campaignName={camp.name}
+                    modules={filteredModules}
+                    isExpanded={isExpanded}
+                    onToggleExpand={() => toggleCampaignExpanded(camp.id)}
+                    onNavigateHome={() => handleCampaignHomeNavigate(campBasePath)}
+                    onNavigateModule={(k) => handleNavigate(`${campBasePath}?section=${k}`)}
+                    isActive={isActiveCampaign}
+                    isModuleActive={(k) => isCampaignModuleActive(camp.id, k)}
+                    collapsed={collapsed}
+                  />
                 );
               })}
             </div>
