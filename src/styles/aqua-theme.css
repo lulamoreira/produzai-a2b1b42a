@@ -12,9 +12,9 @@
 :root.aqua,
 html.aqua {
   /* Base colors — saturated Aqua palette */
-  --background: 210 40% 98%;
+  --background: 200 50% 97%;
   --foreground: 222 47% 11%;
-  --card: 0 0% 100%;
+  --card: 200 60% 99%;
   --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
@@ -26,8 +26,14 @@ html.aqua {
   --muted-foreground: 215 20% 45%;
   --accent: 280 80% 60%;
   --accent-foreground: 0 0% 100%;
-  --destructive: 0 84% 60%;
+  --destructive: 350 85% 55%;
   --destructive-foreground: 0 0% 100%;
+  --success: 165 80% 38%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 95% 50%;
+  --warning-foreground: 30 80% 12%;
+  --info: 195 90% 45%;
+  --info-foreground: 0 0% 100%;
   --border: 214 32% 91%;
   --input: 214 32% 91%;
   --ring: 210 100% 50%;
