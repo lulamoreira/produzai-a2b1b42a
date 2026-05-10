@@ -1,83 +1,82 @@
 /* Aqua Modern Theme — applied when html.aqua
  * Purely additive. None of the light/dark/system tokens are touched.
- * Variables wrapped in @layer base + high-specificity selector
- * (:root.aqua, html.aqua) so they reliably override the default :root tokens.
+ * High-specificity selectors (:root.aqua, html.aqua) ensure these tokens
+ * override the default :root tokens regardless of cascade-layer behavior.
+ * Imported AFTER @tailwind directives in index.css for guaranteed source order.
  */
 
-@layer base {
-  :root.aqua,
-  html.aqua {
-    /* Base colors — saturated Aqua palette */
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 210 100% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 200 100% 94%;
-    --secondary-foreground: 210 100% 30%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 20% 45%;
-    --accent: 280 80% 60%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 210 100% 50%;
-    --radius: 0.75rem;
+:root.aqua,
+html.aqua {
+  /* Base colors — saturated Aqua palette */
+  --background: 210 40% 98%;
+  --foreground: 222 47% 11%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+  --primary: 210 100% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 200 100% 94%;
+  --secondary-foreground: 210 100% 30%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 20% 45%;
+  --accent: 280 80% 60%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 210 100% 50%;
+  --radius: 0.75rem;
 
-    /* Aqua-specific */
-    --aqua-glass-bg: rgba(255, 255, 255, 0.65);
-    --aqua-glass-border: rgba(255, 255, 255, 0.18);
-    --aqua-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
-    --aqua-shadow-strong: 0 12px 48px rgba(31, 38, 135, 0.25);
+  /* Aqua-specific */
+  --aqua-glass-bg: rgba(255, 255, 255, 0.65);
+  --aqua-glass-border: rgba(255, 255, 255, 0.18);
+  --aqua-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+  --aqua-shadow-strong: 0 12px 48px rgba(31, 38, 135, 0.25);
 
-    /* Sidebar — frosted glass */
-    --sidebar-bg: rgba(245, 250, 255, 0.75);
-    --sidebar-text: hsl(215 20% 35%);
-    --sidebar-text-active: hsl(0 0% 100%);
-    --sidebar-item-hover: rgba(0, 122, 255, 0.08);
-    --sidebar-item-active: linear-gradient(135deg, hsl(210 100% 55%), hsl(220 100% 60%));
-    --sidebar-active-bar: hsl(210 100% 50%);
+  /* Sidebar — frosted glass */
+  --sidebar-bg: rgba(245, 250, 255, 0.75);
+  --sidebar-text: hsl(215 20% 35%);
+  --sidebar-text-active: hsl(0 0% 100%);
+  --sidebar-item-hover: rgba(0, 122, 255, 0.08);
+  --sidebar-item-active: linear-gradient(135deg, hsl(210 100% 55%), hsl(220 100% 60%));
+  --sidebar-active-bar: hsl(210 100% 50%);
 
-    /* Module gradients */
-    --aqua-module-scheduling: linear-gradient(135deg, #4A90E2, #357ABD);
-    --aqua-module-installations: linear-gradient(135deg, #FF9500, #FF6B00);
-    --aqua-module-loja_a_loja: linear-gradient(135deg, #34C759, #00A03B);
-    --aqua-module-stores: linear-gradient(135deg, #AF52DE, #8E44AD);
-    --aqua-module-occurrences: linear-gradient(135deg, #FF3B30, #D32F2F);
-    --aqua-module-budgets: linear-gradient(135deg, #007AFF, #0051D5);
-    --aqua-module-pieces: linear-gradient(135deg, #FF9500, #E68900);
-    --aqua-module-matrix: linear-gradient(135deg, #5856D6, #3D3DBE);
-    --aqua-module-mockup: linear-gradient(135deg, #FF2D55, #C7224C);
-    --aqua-module-adjustments: linear-gradient(135deg, #5AC8FA, #00B0E0);
-  }
+  /* Module gradients */
+  --aqua-module-scheduling: linear-gradient(135deg, #4A90E2, #357ABD);
+  --aqua-module-installations: linear-gradient(135deg, #FF9500, #FF6B00);
+  --aqua-module-loja_a_loja: linear-gradient(135deg, #34C759, #00A03B);
+  --aqua-module-stores: linear-gradient(135deg, #AF52DE, #8E44AD);
+  --aqua-module-occurrences: linear-gradient(135deg, #FF3B30, #D32F2F);
+  --aqua-module-budgets: linear-gradient(135deg, #007AFF, #0051D5);
+  --aqua-module-pieces: linear-gradient(135deg, #FF9500, #E68900);
+  --aqua-module-matrix: linear-gradient(135deg, #5856D6, #3D3DBE);
+  --aqua-module-mockup: linear-gradient(135deg, #FF2D55, #C7224C);
+  --aqua-module-adjustments: linear-gradient(135deg, #5AC8FA, #00B0E0);
+}
 
-  /* Dark variant of Aqua */
-  :root.aqua.dark,
-  html.aqua.dark,
-  :root.aqua[data-mode="dark"],
-  html.aqua[data-mode="dark"] {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 10%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
+/* Dark variant of Aqua */
+:root.aqua.dark,
+html.aqua.dark,
+:root.aqua[data-mode="dark"],
+html.aqua[data-mode="dark"] {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+  --card: 222 47% 10%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222 47% 10%;
+  --popover-foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --border: 217 33% 20%;
+  --input: 217 33% 20%;
 
-    --aqua-glass-bg: rgba(20, 30, 50, 0.65);
-    --aqua-glass-border: rgba(255, 255, 255, 0.08);
-    --sidebar-bg: rgba(18, 25, 40, 0.85);
-    --sidebar-text: hsl(215 20% 70%);
-    --sidebar-item-hover: rgba(100, 180, 255, 0.12);
-  }
+  --aqua-glass-bg: rgba(20, 30, 50, 0.65);
+  --aqua-glass-border: rgba(255, 255, 255, 0.08);
+  --sidebar-bg: rgba(18, 25, 40, 0.85);
+  --sidebar-text: hsl(215 20% 70%);
+  --sidebar-item-hover: rgba(100, 180, 255, 0.12);
 }
 
 /* ====== Utility classes — outside @layer base for higher precedence ====== */
