@@ -245,22 +245,14 @@ export default function AppSidebar() {
 
   const sidebarContent = (
     <div className="flex h-full min-h-0 flex-col overflow-hidden" onClick={handleSidebarClick}>
-      {/* Logo area */}
-      <div className="flex items-center gap-2 px-3 h-14 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
-        <img src={produzaiIcon} alt="ProduzAI" className="w-7 h-7 rounded-lg flex-shrink-0" />
-        {!collapsed && <span className="text-[15px] font-semibold tracking-tight truncate" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>ProduzAI</span>}
-        <button
-          data-keep-open
-          onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto transition-colors flex-shrink-0 hidden md:block"
-          style={{ color: "var(--sidebar-text, #A89880)" }}
-        >
-          {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-        </button>
-        <button onClick={() => setMobileOpen(false)} className="ml-auto md:hidden" style={{ color: "var(--sidebar-text, #A89880)" }}>
-          <X className="w-5 h-5" />
-        </button>
-      </div>
+      <SidebarHeader
+        collapsed={collapsed}
+        onToggleCollapsed={() => setCollapsed(!collapsed)}
+        onCloseMobile={() => setMobileOpen(false)}
+        onUserAction={handleUserAction}
+        agencyName={agencyName}
+        clientName={clientName}
+      />
 
       {/* Breadcrumb contextual */}
       {!collapsed && isInsideAgency && (
