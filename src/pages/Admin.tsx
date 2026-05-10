@@ -251,6 +251,7 @@ function CategoriesTab() {
               key={cat.id}
               category={cat}
               onEdit={() => openEdit(cat)}
+              onPreview={() => setPreviewCategoryId(cat.id)}
               onDelete={() => {
                 if (cat.is_system) { toast.error("Categoria do sistema não pode ser apagada"); return; }
                 if (confirm(`Apagar categoria "${cat.name}"?`)) deleteCat.mutate(cat.id);
