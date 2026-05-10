@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import type { ReportData } from "@/lib/exportExecutiveReport";
