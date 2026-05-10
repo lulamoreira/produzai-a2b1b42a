@@ -21,32 +21,43 @@ interface Props {
 }
 
 async function fetchReportData(campaignId: string, clientId: string, campaignName: string, clientName: string): Promise<ReportData> {
-  const [storesRes, schedulesRes, occurrencesRes, photosRes] = await Promise.all([
-    supabase
-      .from("client_stores")
-      .select("id, name, city, state, store_model")
-      .eq("client_id", clientId),
-    supabase
-      .from("campaign_schedules")
-      .select("store_id, scheduled_date, completed_at, checkin_timestamp, photo_checkin")
-      .eq("campaign_id", campaignId),
-    supabase
-      .from("occurrences")
-      .select("store_id, status, priority, description, created_at, resolved_date, motive_id")
-      .eq("campaign_id", campaignId),
-    supabase
-      .from("installation_photos")
-      .select("store_id, category")
-      .eq("campaign_id", campaignId),
+  const [stores, schedules, occurrences, photos] = await Promise.all([
+    supabasePaginate<{ id: string; name: string; city: string | null; state: string | null; store_model: string | null }>(
+      (from, to) =>
+        supabase
+          .from("client_stores")
+          .select("id, name, city, state, store_model")
+          .eq("client_id", clientId)
+          .range(from, to) as any
+    ),
+    supabasePaginate<{ store_id: string; scheduled_date: string | null; completed_at: string | null; checkin_timestamp: string | null; photo_checkin: boolean | null }>(
+      (from, to) =>
+        supabase
+          .from("campaign_schedules")
+          .select("store_id, scheduled_date, completed_at, checkin_timestamp, photo_checkin")
+          .eq("campaign_id", campaignId)
+          .range(from, to) as any
+    ),
+    supabasePaginate<{ store_id: string | null; status: string | null; priority: string | null; description: string | null; created_at: string | null; resolved_date: string | null; motive_id: string | null }>(
+      (from, to) =>
+        supabase
+          .from("occurrences")
+          .select("store_id, status, priority, description, created_at, resolved_date, motive_id")
+          .eq("campaign_id", campaignId)
+          .range(from, to) as any
+    ),
+    supabasePaginate<{ store_id: string | null; category: string | null }>(
+      (from, to) =>
+        supabase
+          .from("installation_photos")
+          .select("store_id, category")
+          .eq("campaign_id", campaignId)
+          .range(from, to) as any
+    ),
   ]);
 
-  if (storesRes.error) throw storesRes.error;
-  if (schedulesRes.error) throw schedulesRes.error;
-  if (occurrencesRes.error) throw occurrencesRes.error;
-  if (photosRes.error) throw photosRes.error;
-
   // Fetch motive descriptions for occurrences that have a motive_id
-  const motiveIds = [...new Set((occurrencesRes.data || []).filter((o) => o.motive_id).map((o) => o.motive_id!))];
+  const motiveIds = [...new Set(occurrences.filter((o) => o.motive_id).map((o) => o.motive_id!))];
   let motiveMap: Record<string, string> = {};
   if (motiveIds.length > 0) {
     const { data: motives } = await supabase
@@ -59,15 +70,15 @@ async function fetchReportData(campaignId: string, clientId: string, campaignNam
   return {
     campaignName,
     clientName,
-    stores: storesRes.data || [],
-    schedules: (schedulesRes.data || []).map((s) => ({
+    stores,
+    schedules: schedules.map((s) => ({
       store_id: s.store_id,
       scheduled_date: s.scheduled_date,
       completed_at: s.completed_at,
       checkin_timestamp: s.checkin_timestamp,
       photo_checkin: s.photo_checkin,
     })),
-    occurrences: (occurrencesRes.data || []).map((o) => ({
+    occurrences: occurrences.map((o) => ({
       store_id: o.store_id,
       status: o.status,
       priority: o.priority,
@@ -76,7 +87,7 @@ async function fetchReportData(campaignId: string, clientId: string, campaignNam
       resolved_date: o.resolved_date,
       motive_description: o.motive_id ? motiveMap[o.motive_id] || "" : "",
     })),
-    photos: (photosRes.data || []).map((p) => ({
+    photos: photos.map((p) => ({
       store_id: p.store_id,
       category: p.category,
     })),
