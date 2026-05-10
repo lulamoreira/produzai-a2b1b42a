@@ -563,7 +563,10 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
 
       <ConfirmDestructiveDialog
         open={confirmDownloadDeleteOpen}
-        onOpenChange={setConfirmDownloadDeleteOpen}
+        onOpenChange={(v) => {
+          setConfirmDownloadDeleteOpen(v);
+          if (!v) photosToProcessRef.current = null;
+        }}
         title={t("photoExport.downloadAndDeleteTitle")}
         description={t("photoExport.downloadAndDeleteDescription")}
         confirmText={t("photoExport.downloadAndDeleteCount", {
@@ -575,7 +578,10 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
 
       <ConfirmDestructiveDialog
         open={confirmDeleteAllOpen}
-        onOpenChange={setConfirmDeleteAllOpen}
+        onOpenChange={(v) => {
+          setConfirmDeleteAllOpen(v);
+          if (!v) photosToProcessRef.current = null;
+        }}
         title={t("photoExport.deleteAllTitle")}
         description={t("photoExport.deleteAllDescription")}
         confirmText={t("photoExport.deleteAllConfirm", { count: confirmDeleteAllCount })}
