@@ -175,6 +175,7 @@ const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="produzai-theme">
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <HistoryShortcutProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
