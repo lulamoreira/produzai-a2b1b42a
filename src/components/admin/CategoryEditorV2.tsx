@@ -229,6 +229,7 @@ export default function CategoryEditorV2({ open, onOpenChange, category }: Props
   const [color, setColor] = useState(category?.color || "blue");
   const [query, setQuery] = useState("");
   const [pendingPreset, setPendingPreset] = useState<keyof typeof PERMISSION_PRESETS | null>(null);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
 
   useEffect(() => {
     if (open) {
@@ -236,6 +237,7 @@ export default function CategoryEditorV2({ open, onOpenChange, category }: Props
       setDescription(category?.description || "");
       setColor(category?.color || "blue");
       setQuery("");
+      setSaveState('idle');
     }
   }, [open, category?.id, category?.name, category?.description, category?.color]);
 
