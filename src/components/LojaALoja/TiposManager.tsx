@@ -1039,8 +1039,14 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                           onChangeEditName={setEditingPecaNome}
                           onBlurEditName={() => {
                             const trimmed = editingPecaNome.trim();
-                            if (trimmed && trimmed !== peca.nome) {
-                              updatePecaNome.mutate({ id: peca.id, nome: trimmed });
+                            const prevName = peca.nome;
+                            const pecaId = peca.id;
+                            if (trimmed && trimmed !== prevName) {
+                              runHistoryCommand({
+                                label: "Nome da peça",
+                                do: () => updatePecaNome.mutateAsync({ id: pecaId, nome: trimmed }).then(() => undefined),
+                                undo: () => updatePecaNome.mutateAsync({ id: pecaId, nome: prevName }).then(() => undefined),
+                              });
                             }
                             setEditingPecaId(null);
                           }}
