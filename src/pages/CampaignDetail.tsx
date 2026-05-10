@@ -24,6 +24,9 @@ import { useClientPermission } from "@/hooks/useClientPermission";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useLojaALojaPermissions } from "@/hooks/useLojaALojaPermissions";
 import { Button } from "@/components/ui/button";
+import { useHistory } from "@/lib/undo/useHistory";
+import { historyStore } from "@/lib/undo/historyStore";
+import { UndoRedoToolbar } from "@/components/UndoRedoToolbar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -261,6 +264,13 @@ const CampaignDetail = () => {
   const updatePiece = useUpdateCampaignPiece();
   const updateStorePiece = useUpdateCampaignStorePiece();
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
+
+  // ─── Undo/Redo (original rateio only — Phase 1) ───
+  const undoScope = `rateio:${campaignId ?? ""}`;
+  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
+  useEffect(() => {
+    return () => historyStore.clearScope(undoScope);
+  }, [undoScope]);
 
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [rateioBackupOpen, setRateioBackupOpen] = useState(false);
@@ -960,24 +970,53 @@ const CampaignDetail = () => {
       const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
       if (piecesInKit.length === 0) return;
 
-      bulkUpdateStorePieces.mutate({
-        campaignId,
-        storeId: cell.storeId,
-        updates: piecesInKit.map((kp) => ({
-          pieceId: kp.piece_id,
-          quantity: qty * (kp.quantity || 1),
-        })),
+      const newUpdates = piecesInKit.map((kp) => ({
+        pieceId: kp.piece_id,
+        quantity: qty * (kp.quantity || 1),
+      }));
+      const prevUpdates = piecesInKit.map((kp) => ({
+        pieceId: kp.piece_id,
+        quantity: qtyMap[`${cell.storeId}-${kp.piece_id}`] || 0,
+      }));
+
+      runHistoryCommand({
+        label: "Quantidade (kit)",
+        do: () =>
+          bulkUpdateStorePieces.mutateAsync({
+            campaignId,
+            storeId: cell.storeId,
+            updates: newUpdates,
+          }).then(() => undefined),
+        undo: () =>
+          bulkUpdateStorePieces.mutateAsync({
+            campaignId,
+            storeId: cell.storeId,
+            updates: prevUpdates,
+          }).then(() => undefined),
       });
       return;
     }
 
-    updateStorePiece.mutate({
-      campaignId,
-      storeId: cell.storeId,
-      pieceId: cell.pieceId,
-      quantity: qty,
+    const prevQty = qtyMap[`${cell.storeId}-${cell.pieceId}`] || 0;
+    if (prevQty === qty) return;
+    runHistoryCommand({
+      label: "Quantidade",
+      do: () =>
+        updateStorePiece.mutateAsync({
+          campaignId,
+          storeId: cell.storeId,
+          pieceId: cell.pieceId,
+          quantity: qty,
+        }).then(() => undefined),
+      undo: () =>
+        updateStorePiece.mutateAsync({
+          campaignId,
+          storeId: cell.storeId,
+          pieceId: cell.pieceId,
+          quantity: prevQty,
+        }).then(() => undefined),
     });
-  }, [campaignId, kitPieces, updateStorePiece, bulkUpdateStorePieces, isNegotiationView, winnerSupplierId, updateNegotiationStorePiece, isAdjustmentView, activeAdjustmentId, updateAdjustmentStorePiece]);
+  }, [campaignId, kitPieces, updateStorePiece, bulkUpdateStorePieces, isNegotiationView, winnerSupplierId, updateNegotiationStorePiece, isAdjustmentView, activeAdjustmentId, updateAdjustmentStorePiece, qtyMap, runHistoryCommand]);
 
   // ─── Atomic transition: save current cell (if any) and open the new one ───
   // The save runs SYNCHRONOUSLY using editValueRef.current as the source of
@@ -2515,6 +2554,16 @@ const CampaignDetail = () => {
                   <div className="px-3 pb-2.5">
                   {renderStoreFilters()}
                   <div className="flex flex-wrap items-center gap-2">
+                    {canEditCampaign && (
+                      <UndoRedoToolbar
+                        canUndo={canUndo}
+                        canRedo={canRedo}
+                        onUndo={undo}
+                        onRedo={redo}
+                        undoLabel={undoLabel}
+                        redoLabel={redoLabel}
+                      />
+                    )}
                     {canEditCampaign && (
                       <Button
                         size="sm"

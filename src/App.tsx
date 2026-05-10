@@ -18,6 +18,7 @@ import { NameConfirmDialog } from "@/components/NameConfirmDialog";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HistoryShortcutProvider } from "@/lib/undo/HistoryShortcutProvider";
 
 // Lazy-loaded page components (one chunk per route)
 const AgencySelect = lazy(() => import("./pages/AgencySelect"));
@@ -175,6 +176,7 @@ const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="produzai-theme">
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <HistoryShortcutProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -212,6 +214,7 @@ const App = () => (
             </SidebarStateProvider>
           </AuthProvider>
         </BrowserRouter>
+        </HistoryShortcutProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </ThemeProvider>
