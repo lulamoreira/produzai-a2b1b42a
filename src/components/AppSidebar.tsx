@@ -62,20 +62,40 @@ export default function AppSidebar() {
     }
     return Array.from(map.values());
   }, [isLimited, limitedCampaigns]);
-  const { displayName, avatarUrl } = useDisplayName();
   const { collapsed, setCollapsed } = useSidebarState();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { t } = useTranslation();
   const [profileOpen, setProfileOpen] = useState(false);
-  const [langOpen, setLangOpen] = useState(false);
-  const { currentLanguage, changeLanguage } = useLanguage();
-  const { theme, setTheme } = useTheme();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   // Admin menu expansion
   const [adminOpen, setAdminOpen] = useState(() => getStoredBool("produzai_admin_menu_open", false));
 
-  // Campaign expansion states: campaignId -> boolean
-  const [campaignExpanded, setCampaignExpanded] = useState<Record<string, boolean>>({});
+  // Campaign expansion states (persisted across reloads as an id list).
+  const [campaignExpanded, setCampaignExpanded] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem("sidebar_expanded_campaigns");
+      const arr: string[] = raw ? JSON.parse(raw) : [];
+      return Object.fromEntries(arr.map((id) => [id, true]));
+    } catch { return {}; }
+  });
+  useEffect(() => {
+    try {
+      const arr = Object.entries(campaignExpanded).filter(([, v]) => v).map(([k]) => k);
+      localStorage.setItem("sidebar_expanded_campaigns", JSON.stringify(arr));
+    } catch {}
+  }, [campaignExpanded]);
+
+  const handleUserAction = useCallback((action: UserMenuAction) => {
+    switch (action) {
+      case "open_profile":  setProfileOpen(true); break;
+      case "open_invite":   setInviteOpen(true); break;
+      case "open_settings": setSettingsOpen(true); break;
+      case "open_search":   openGlobalSearch(); break;
+      case "sign_out":      void signOut(); break;
+    }
+  }, [signOut]);
 
   useEffect(() => { setMobileOpen(false); }, [location.pathname, location.search]);
 
