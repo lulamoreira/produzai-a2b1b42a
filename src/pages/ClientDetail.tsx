@@ -44,6 +44,7 @@ import AppLayout from "@/components/AppLayout";
 import { exportClientStores, exportCampaigns, parseCampaignsImport } from "@/lib/exportMultiClient";
 import ImportWizardDialog from "@/components/ImportWizardDialog";
 import CustomExportDialog, { type ExportFieldDef } from "@/components/CustomExportDialog";
+import { ResponsiveToolbar } from "@/components/ResponsiveToolbar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import ComboboxInput from "@/components/ComboboxInput";
