@@ -62,7 +62,7 @@ function useCampaignStats(campaignId: string) {
         lojas_com_ocorrencia: storesWithOccurrence,
         checkins_realizados: withCheckin.length,
         sem_checkin: withoutCheckin.length,
-        total_fotos: photos.length,
+        total_fotos: photosCount,
         agendamentos_confirmados: scheduled.length,
       };
     },
