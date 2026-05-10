@@ -175,7 +175,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="produzai-theme" themes={['light', 'dark', 'system', 'aqua']}>
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem={true} storageKey="produzai-theme" themes={['light', 'dark', 'aqua']}>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <HistoryShortcutProvider>
