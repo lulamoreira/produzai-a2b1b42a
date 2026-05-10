@@ -123,10 +123,21 @@ export default function AdjustmentDetailSheet({
   };
 
   const handleSaveEdit = async (p: any) => {
-    await updatePiece.mutateAsync({
-      pieceId: p.id,
-      adjustmentId: adjustment.id,
-      changes: editForm,
+    // Snapshot prev field values for undo
+    const prevChanges: Record<string, any> = {};
+    for (const k of Object.keys(editForm)) {
+      prevChanges[k] = (p as any)[k] ?? "";
+    }
+    // Skip if nothing actually changed
+    const hasDiff = Object.keys(editForm).some((k) => String(editForm[k] ?? "") !== String(prevChanges[k] ?? ""));
+    if (!hasDiff) {
+      setEditingId(null);
+      return;
+    }
+    await runHistoryCommand({
+      label: "Campos da peça (ajuste)",
+      do: () => updatePiece.mutateAsync({ pieceId: p.id, adjustmentId: adjustment.id, changes: editForm }).then(() => undefined),
+      undo: () => updatePiece.mutateAsync({ pieceId: p.id, adjustmentId: adjustment.id, changes: prevChanges }).then(() => undefined),
     });
     setEditingId(null);
   };
