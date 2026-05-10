@@ -4,6 +4,7 @@ import { ChevronDown, PanelLeft, PanelLeftClose, X } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useDisplayName, getGreeting } from "@/components/AppHeader";
 import { UserMenu } from "@/components/sidebar/UserMenu";
+import { SidebarBreadcrumb } from "@/components/sidebar/SidebarBreadcrumb";
 import type { UserMenuAction } from "@/lib/sidebarRegistry";
 import produzaiIcon from "@/assets/produzai-icon.svg";
 
@@ -14,6 +15,7 @@ interface Props {
   onUserAction: (action: UserMenuAction) => void;
   agencyName?: string | null;
   clientName?: string | null;
+  campaignName?: string | null;
 }
 
 export function SidebarHeader({
