@@ -72,9 +72,9 @@ html.aqua {
 html.aqua.dark,
 :root.aqua[data-mode="dark"],
 html.aqua[data-mode="dark"] {
-  --background: 222 47% 6%;
+  --background: 215 35% 9%;
   --foreground: 210 40% 98%;
-  --card: 222 47% 10%;
+  --card: 215 30% 13%;
   --card-foreground: 210 40% 98%;
   --popover: 222 47% 10%;
   --popover-foreground: 210 40% 98%;
@@ -82,6 +82,14 @@ html.aqua[data-mode="dark"] {
   --muted-foreground: 215 20% 65%;
   --border: 217 33% 20%;
   --input: 217 33% 20%;
+  --destructive: 350 85% 62%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 165 75% 52%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 95% 60%;
+  --warning-foreground: 30 80% 10%;
+  --info: 195 90% 58%;
+  --info-foreground: 0 0% 100%;
 
   --aqua-glass-bg: rgba(20, 30, 50, 0.65);
   --aqua-glass-border: rgba(255, 255, 255, 0.08);
