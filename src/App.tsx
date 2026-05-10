@@ -18,6 +18,7 @@ import { NameConfirmDialog } from "@/components/NameConfirmDialog";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { HistoryShortcutProvider } from "@/lib/undo/HistoryShortcutProvider";
 
 // Lazy-loaded page components (one chunk per route)
 const AgencySelect = lazy(() => import("./pages/AgencySelect"));
