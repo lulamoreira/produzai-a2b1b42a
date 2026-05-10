@@ -20,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserPermissionCard from "@/components/admin/UserPermissionCard";
 import CategoryManager from "@/components/admin/CategoryManager";
 import CategoryEditorV2 from "@/components/admin/CategoryEditorV2";
+import { CategoryPreviewSheet } from "@/components/admin/CategoryPreviewSheet";
 import SystemMessagesManager from "@/components/admin/SystemMessagesManager";
 import RegeneratePieceImagesPanel from "@/components/admin/RegeneratePieceImagesPanel";
 import { usePermissionCategories, useDeletePermissionCategory, type PermissionCategory } from "@/hooks/usePermissionCategories";
@@ -186,6 +187,7 @@ function CategoriesTab() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<PermissionCategory> | null>(null);
   const [search, setSearch] = useState("");
+  const [previewCategoryId, setPreviewCategoryId] = useState<string | null>(null);
 
   const filtered = categories.filter(c =>
     !search.trim() || c.name.toLowerCase().includes(search.toLowerCase()),
@@ -249,6 +251,7 @@ function CategoriesTab() {
               key={cat.id}
               category={cat}
               onEdit={() => openEdit(cat)}
+              onPreview={() => setPreviewCategoryId(cat.id)}
               onDelete={() => {
                 if (cat.is_system) { toast.error("Categoria do sistema não pode ser apagada"); return; }
                 if (confirm(`Apagar categoria "${cat.name}"?`)) deleteCat.mutate(cat.id);
@@ -263,15 +266,22 @@ function CategoriesTab() {
         onOpenChange={setEditorOpen}
         category={editing}
       />
+
+      <CategoryPreviewSheet
+        open={!!previewCategoryId}
+        onOpenChange={(v) => !v && setPreviewCategoryId(null)}
+        categoryId={previewCategoryId}
+      />
     </div>
   );
 }
 
 function CategoryRow({
-  category, onEdit, onDelete,
+  category, onEdit, onPreview, onDelete,
 }: {
   category: PermissionCategory;
   onEdit: () => void;
+  onPreview: () => void;
   onDelete: () => void;
 }) {
   const { data: userCount = 0 } = useUserCountByCategory(category.id);
@@ -298,7 +308,7 @@ function CategoryRow({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => window.open(`/admin/categories/${category.id}/preview`, "_blank")}
+          onClick={onPreview}
           title="Preview"
         >
           <Eye className="w-4 h-4" />
