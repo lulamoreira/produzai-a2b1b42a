@@ -644,7 +644,7 @@ export default function AppSidebar() {
       {/* Mobile menu button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-3 left-3 z-40 lg:hidden w-9 h-9 rounded-lg flex items-center justify-center shadow-lg"
+        className="fixed top-3 left-3 z-40 md:hidden w-9 h-9 rounded-lg flex items-center justify-center shadow-lg"
         style={{ background: "var(--sidebar-bg, #1C1916)", color: "var(--sidebar-text-active, #F5EFE6)" }}
       >
         <Menu className="w-5 h-5" />
@@ -652,12 +652,12 @@ export default function AppSidebar() {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Mobile sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-dvh max-h-dvh flex-col w-[220px] overflow-hidden transition-transform duration-300 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh max-h-dvh flex-col w-[220px] overflow-hidden transition-transform duration-300 md:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
         style={{ background: "var(--sidebar-bg, #1C1916)", borderRight: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}
       >
         {sidebarContent}
@@ -665,7 +665,7 @@ export default function AppSidebar() {
 
       {/* Desktop sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 hidden h-dvh max-h-dvh lg:flex flex-col overflow-hidden transition-all duration-300 ${collapsed ? "w-[60px]" : "w-[220px]"}`}
+        className={`fixed inset-y-0 left-0 z-30 hidden h-dvh max-h-dvh md:flex flex-col overflow-hidden transition-all duration-300 ${collapsed ? "w-[60px]" : "w-[220px]"}`}
         style={{ background: "var(--sidebar-bg, #1C1916)", borderRight: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}
       >
         {sidebarContent}
