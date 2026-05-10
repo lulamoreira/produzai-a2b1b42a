@@ -341,28 +341,27 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
       const { photos } = await collectPhotos(scope);
       if (photos.length === 0) {
         toast.info(t("photoExport.noPhotos"));
-        setBusy(false);
         return;
       }
+      photosToProcessRef.current = photos;
       setConfirmDownloadDeleteCount(photos.length);
       setConfirmDownloadDeleteOpen(true);
-      // keep busy=false so user can interact with confirm
-      setBusy(false);
     } catch (e: any) {
       console.error(e);
       toast.error(e?.message || t("photoExport.operationFailed"));
+    } finally {
       setBusy(false);
     }
   };
 
   const runDownloadAndDelete = async () => {
+    const photos = photosToProcessRef.current;
+    if (!photos || photos.length === 0) {
+      toast.info(t("photoExport.noPhotos"));
+      return;
+    }
     setBusy(true);
     try {
-      const { photos } = await collectPhotos(scope);
-      if (photos.length === 0) {
-        toast.info(t("photoExport.noPhotos"));
-        return;
-      }
       await buildAndDownloadZip(photos);
       toast.success(t("photoExport.filesZipped", { count: photos.length }));
       await deletePhotos(photos);
@@ -375,6 +374,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
       throw e;
     } finally {
       setBusy(false);
+      photosToProcessRef.current = null;
     }
   };
 
@@ -386,6 +386,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
         toast.info(t("photoExport.noPhotos"));
         return;
       }
+      photosToProcessRef.current = photos;
       setConfirmDeleteAllCount(photos.length);
       setConfirmDeleteAllOpen(true);
     } catch (e: any) {
@@ -397,13 +398,13 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
   };
 
   const runDeleteAll = async () => {
+    const photos = photosToProcessRef.current;
+    if (!photos || photos.length === 0) {
+      toast.info(t("photoExport.noPhotos"));
+      return;
+    }
     setBusy(true);
     try {
-      const { photos } = await collectPhotos(ALL_SCOPE);
-      if (photos.length === 0) {
-        toast.info(t("photoExport.noPhotos"));
-        return;
-      }
       await deletePhotos(photos);
       toast.success(t("photoExport.filesDeleted", { count: photos.length }));
       reset();
@@ -413,6 +414,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
       throw e;
     } finally {
       setBusy(false);
+      photosToProcessRef.current = null;
     }
   };
 
