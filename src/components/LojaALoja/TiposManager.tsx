@@ -655,7 +655,19 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
 
   const handleSaveEditSub = async () => {
     if (!editingSubId || !editingSubNome.trim()) return;
-    await updateSubdivisao.mutateAsync({ id: editingSubId, campaign_id: campaignId, nome: editingSubNome.trim() });
+    const subId = editingSubId;
+    const newName = editingSubNome.trim();
+    let prevName = "";
+    for (const t of tipos ?? []) {
+      const found = t.subdivisoes?.find((s) => s.id === subId);
+      if (found) { prevName = found.nome; break; }
+    }
+    if (newName === prevName) { setEditingSubId(null); return; }
+    await runHistoryCommand({
+      label: "Nome da subdivisão",
+      do: () => updateSubdivisao.mutateAsync({ id: subId, campaign_id: campaignId, nome: newName }).then(() => undefined),
+      undo: () => updateSubdivisao.mutateAsync({ id: subId, campaign_id: campaignId, nome: prevName }).then(() => undefined),
+    });
     setEditingSubId(null);
   };
 
