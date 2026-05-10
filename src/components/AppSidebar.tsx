@@ -513,7 +513,7 @@ export default function AppSidebar() {
                 const isActiveCampaign = campaignId === camp.id;
                 const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
                 return (
-                  <div key={camp.id}>
+                  <div key={camp.id} className={`rounded-md ${isActiveCampaign ? "bg-muted/30" : ""}`}>
                     <div className="flex items-center gap-0.5">
                       <button
                         onClick={() => handleCampaignHomeNavigate(campBasePath)}
@@ -533,8 +533,9 @@ export default function AppSidebar() {
                         <ChevronDown className="w-3 h-3 opacity-40 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }} />
                       </button>
                     </div>
-                    {isExpanded && (
-                      <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
+                    <div className={`overflow-hidden transition-all duration-200 ease-out ${isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}>
+                      <div className="relative ml-2 pl-3 mt-1 mb-1 space-y-0.5">
+                        <span className="absolute left-0 top-0 bottom-0 w-px bg-border" />
                         {CAMPAIGN_MODULE_KEYS.filter(mod => {
                           if (mod.key === "budgets" && !isAdminOrMaster) return false;
                           if (mod.key === "history") return false;
@@ -546,7 +547,7 @@ export default function AppSidebar() {
                             <button
                               key={mod.key}
                               onClick={() => handleNavigate(`${campBasePath}?section=${mod.key}`)}
-                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
+                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-all relative before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
                               style={modActive
                                 ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", fontWeight: 600, borderLeft: "3px solid var(--sidebar-active-bar)" }
                                 : { color: "var(--sidebar-text)" }
@@ -559,7 +560,7 @@ export default function AppSidebar() {
                           );
                         })}
                       </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}
