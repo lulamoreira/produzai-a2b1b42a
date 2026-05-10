@@ -924,21 +924,42 @@ const CampaignDetail = () => {
       if (cell.pieceId.startsWith("kit-")) {
         const kitId = cell.pieceId.replace("kit-", "");
         const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
-        for (const kp of piecesInKit) {
-          updateAdjustmentStorePiece.mutate({
-            adjustmentId: activeAdjustmentId,
-            storeId: cell.storeId,
-            pieceId: kp.piece_id,
-            quantity: qty * (kp.quantity || 1),
-          });
-        }
+        if (piecesInKit.length === 0) return;
+        const targets = piecesInKit.map((kp) => ({
+          pieceId: kp.piece_id,
+          newQty: qty * (kp.quantity || 1),
+          prevQty: qtyMap[`${cell.storeId}-${kp.piece_id}`] || 0,
+        }));
+        if (targets.every((t) => t.prevQty === t.newQty)) return;
+        runHistoryCommand({
+          label: "Quantidade (kit, ajuste)",
+          do: async () => {
+            await Promise.all(targets.map((t) =>
+              updateAdjustmentStorePiece.mutateAsync({
+                adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: t.pieceId, quantity: t.newQty,
+              })
+            ));
+          },
+          undo: async () => {
+            await Promise.all(targets.map((t) =>
+              updateAdjustmentStorePiece.mutateAsync({
+                adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: t.pieceId, quantity: t.prevQty,
+              })
+            ));
+          },
+        });
         return;
       }
-      updateAdjustmentStorePiece.mutate({
-        adjustmentId: activeAdjustmentId,
-        storeId: cell.storeId,
-        pieceId: cell.pieceId,
-        quantity: qty,
+      const prevQtyAdj = qtyMap[`${cell.storeId}-${cell.pieceId}`] || 0;
+      if (prevQtyAdj === qty) return;
+      runHistoryCommand({
+        label: "Quantidade (ajuste)",
+        do: () => updateAdjustmentStorePiece.mutateAsync({
+          adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: cell.pieceId, quantity: qty,
+        }).then(() => undefined),
+        undo: () => updateAdjustmentStorePiece.mutateAsync({
+          adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: cell.pieceId, quantity: prevQtyAdj,
+        }).then(() => undefined),
       });
       return;
     }
@@ -948,23 +969,46 @@ const CampaignDetail = () => {
       if (cell.pieceId.startsWith("kit-")) {
         const kitId = cell.pieceId.replace("kit-", "");
         const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
-        for (const kp of piecesInKit) {
-          updateNegotiationStorePiece.mutate({
-            supplier_id: winnerSupplierId,
-            campaign_id: campaignId,
-            store_id: cell.storeId,
-            piece_id: kp.piece_id,
-            quantity: qty * (kp.quantity || 1),
-          });
-        }
+        if (piecesInKit.length === 0) return;
+        const targets = piecesInKit.map((kp) => ({
+          pieceId: kp.piece_id,
+          newQty: qty * (kp.quantity || 1),
+          prevQty: qtyMap[`${cell.storeId}-${kp.piece_id}`] || 0,
+        }));
+        if (targets.every((t) => t.prevQty === t.newQty)) return;
+        runHistoryCommand({
+          label: "Quantidade (kit, negociação)",
+          do: async () => {
+            await Promise.all(targets.map((t) =>
+              updateNegotiationStorePiece.mutateAsync({
+                supplier_id: winnerSupplierId, campaign_id: campaignId,
+                store_id: cell.storeId, piece_id: t.pieceId, quantity: t.newQty,
+              })
+            ));
+          },
+          undo: async () => {
+            await Promise.all(targets.map((t) =>
+              updateNegotiationStorePiece.mutateAsync({
+                supplier_id: winnerSupplierId, campaign_id: campaignId,
+                store_id: cell.storeId, piece_id: t.pieceId, quantity: t.prevQty,
+              })
+            ));
+          },
+        });
         return;
       }
-      updateNegotiationStorePiece.mutate({
-        supplier_id: winnerSupplierId,
-        campaign_id: campaignId,
-        store_id: cell.storeId,
-        piece_id: cell.pieceId,
-        quantity: qty,
+      const prevQtyNeg = qtyMap[`${cell.storeId}-${cell.pieceId}`] || 0;
+      if (prevQtyNeg === qty) return;
+      runHistoryCommand({
+        label: "Quantidade (negociação)",
+        do: () => updateNegotiationStorePiece.mutateAsync({
+          supplier_id: winnerSupplierId, campaign_id: campaignId,
+          store_id: cell.storeId, piece_id: cell.pieceId, quantity: qty,
+        }).then(() => undefined),
+        undo: () => updateNegotiationStorePiece.mutateAsync({
+          supplier_id: winnerSupplierId, campaign_id: campaignId,
+          store_id: cell.storeId, piece_id: cell.pieceId, quantity: prevQtyNeg,
+        }).then(() => undefined),
       });
       return;
     }
