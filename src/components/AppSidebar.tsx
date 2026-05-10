@@ -273,10 +273,17 @@ export default function AppSidebar() {
       {/* Navigation */}
       <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-1">
 
+        {/* Section label: Geral */}
+        {!collapsed && (
+          <div className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-1 opacity-50">
+            {t("sidebar.section_general", "Geral")}
+          </div>
+        )}
+
         {/* ── Início (visible for all users) ── */}
         <button
           onClick={() => handleNavigate("/")}
-          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+          className="group w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
           style={itemStyle(location.pathname === "/" || location.pathname === "/favorites" || location.pathname === "/agencies" || location.pathname === "/my-campaigns")}
           {...hoverHandlers(location.pathname === "/" || location.pathname === "/favorites" || location.pathname === "/agencies" || location.pathname === "/my-campaigns")}
           title={collapsed ? t("sidebar.home", "Início") : undefined}
@@ -290,7 +297,7 @@ export default function AppSidebar() {
         {isAdminOrMaster && (
           <button
             onClick={() => handleNavigate("/agencies")}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
             style={itemStyle(location.pathname === "/agencies")}
             {...hoverHandlers(location.pathname === "/agencies")}
             title={collapsed ? t("sidebar.agencies", "Agências") : undefined}
@@ -303,7 +310,7 @@ export default function AppSidebar() {
         {/* ── Favoritos (all authenticated users) ── */}
         <button
           onClick={() => handleNavigate("/favorites")}
-          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
           style={itemStyle(location.pathname === "/favorites")}
           {...hoverHandlers(location.pathname === "/favorites")}
           title={collapsed ? t("sidebar.favorites", "Favoritos") : undefined}
@@ -311,6 +318,13 @@ export default function AppSidebar() {
           <AquaIcon icon={Star} size="sm" color="#eab308" />
           {!collapsed && <span className="truncate font-medium">{t("sidebar.favorites", "Favoritos")}</span>}
         </button>
+
+        {/* Section label: Administração */}
+        {!collapsed && isAdminOrMaster && (
+          <div className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-3 opacity-50">
+            {t("sidebar.section_admin", "Administração")}
+          </div>
+        )}
 
         {/* ── Admin (fixed, admin/master only) ── */}
         {isAdminOrMaster && (
