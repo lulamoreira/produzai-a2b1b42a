@@ -187,6 +187,7 @@ function CategoriesTab() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<PermissionCategory> | null>(null);
   const [search, setSearch] = useState("");
+  const [previewCategoryId, setPreviewCategoryId] = useState<string | null>(null);
 
   const filtered = categories.filter(c =>
     !search.trim() || c.name.toLowerCase().includes(search.toLowerCase()),
