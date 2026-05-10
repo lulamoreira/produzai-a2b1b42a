@@ -30,6 +30,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Admin = lazy(() => import("./pages/Admin"));
+const CategoryPreview = lazy(() => import("./pages/admin/CategoryPreview"));
 const UserApprovals = lazy(() => import("./pages/UserApprovals"));
 const PublicOccurrence = lazy(() => import("./pages/PublicOccurrence"));
 const PublicOccurrenceDetail = lazy(() => import("./pages/PublicOccurrenceDetail"));
