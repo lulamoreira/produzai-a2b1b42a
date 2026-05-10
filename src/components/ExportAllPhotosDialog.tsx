@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
@@ -91,8 +91,14 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
   const [confirmDeleteAllOpen, setConfirmDeleteAllOpen] = useState(false);
   const [confirmDeleteAllCount, setConfirmDeleteAllCount] = useState(0);
 
+  // Snapshot of photos collected at confirmation time — guarantees the
+  // user confirms the exact set that gets processed, even if uploads happen
+  // concurrently between the confirm dialog opening and onConfirm firing.
+  const photosToProcessRef = useRef<CollectedPhoto[] | null>(null);
+
   const reset = () => {
     setProgress({ done: 0, total: 0, label: "" });
+    photosToProcessRef.current = null;
   };
 
   const collectPhotos = async (
@@ -335,28 +341,27 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
       const { photos } = await collectPhotos(scope);
       if (photos.length === 0) {
         toast.info(t("photoExport.noPhotos"));
-        setBusy(false);
         return;
       }
+      photosToProcessRef.current = photos;
       setConfirmDownloadDeleteCount(photos.length);
       setConfirmDownloadDeleteOpen(true);
-      // keep busy=false so user can interact with confirm
-      setBusy(false);
     } catch (e: any) {
       console.error(e);
       toast.error(e?.message || t("photoExport.operationFailed"));
+    } finally {
       setBusy(false);
     }
   };
 
   const runDownloadAndDelete = async () => {
+    const photos = photosToProcessRef.current;
+    if (!photos || photos.length === 0) {
+      toast.info(t("photoExport.noPhotos"));
+      return;
+    }
     setBusy(true);
     try {
-      const { photos } = await collectPhotos(scope);
-      if (photos.length === 0) {
-        toast.info(t("photoExport.noPhotos"));
-        return;
-      }
       await buildAndDownloadZip(photos);
       toast.success(t("photoExport.filesZipped", { count: photos.length }));
       await deletePhotos(photos);
@@ -369,6 +374,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
       throw e;
     } finally {
       setBusy(false);
+      photosToProcessRef.current = null;
     }
   };
 
@@ -380,6 +386,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
         toast.info(t("photoExport.noPhotos"));
         return;
       }
+      photosToProcessRef.current = photos;
       setConfirmDeleteAllCount(photos.length);
       setConfirmDeleteAllOpen(true);
     } catch (e: any) {
@@ -391,13 +398,13 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
   };
 
   const runDeleteAll = async () => {
+    const photos = photosToProcessRef.current;
+    if (!photos || photos.length === 0) {
+      toast.info(t("photoExport.noPhotos"));
+      return;
+    }
     setBusy(true);
     try {
-      const { photos } = await collectPhotos(ALL_SCOPE);
-      if (photos.length === 0) {
-        toast.info(t("photoExport.noPhotos"));
-        return;
-      }
       await deletePhotos(photos);
       toast.success(t("photoExport.filesDeleted", { count: photos.length }));
       reset();
@@ -407,6 +414,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
       throw e;
     } finally {
       setBusy(false);
+      photosToProcessRef.current = null;
     }
   };
 
@@ -555,7 +563,10 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
 
       <ConfirmDestructiveDialog
         open={confirmDownloadDeleteOpen}
-        onOpenChange={setConfirmDownloadDeleteOpen}
+        onOpenChange={(v) => {
+          setConfirmDownloadDeleteOpen(v);
+          if (!v) photosToProcessRef.current = null;
+        }}
         title={t("photoExport.downloadAndDeleteTitle")}
         description={t("photoExport.downloadAndDeleteDescription")}
         confirmText={t("photoExport.downloadAndDeleteCount", {
@@ -567,7 +578,10 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
 
       <ConfirmDestructiveDialog
         open={confirmDeleteAllOpen}
-        onOpenChange={setConfirmDeleteAllOpen}
+        onOpenChange={(v) => {
+          setConfirmDeleteAllOpen(v);
+          if (!v) photosToProcessRef.current = null;
+        }}
         title={t("photoExport.deleteAllTitle")}
         description={t("photoExport.deleteAllDescription")}
         confirmText={t("photoExport.deleteAllConfirm", { count: confirmDeleteAllCount })}
