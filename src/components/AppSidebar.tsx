@@ -273,10 +273,17 @@ export default function AppSidebar() {
       {/* Navigation */}
       <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 space-y-1">
 
+        {/* Section label: Geral */}
+        {!collapsed && (
+          <div className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-1 opacity-50">
+            {t("sidebar.section_general", "Geral")}
+          </div>
+        )}
+
         {/* ── Início (visible for all users) ── */}
         <button
           onClick={() => handleNavigate("/")}
-          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+          className="group w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
           style={itemStyle(location.pathname === "/" || location.pathname === "/favorites" || location.pathname === "/agencies" || location.pathname === "/my-campaigns")}
           {...hoverHandlers(location.pathname === "/" || location.pathname === "/favorites" || location.pathname === "/agencies" || location.pathname === "/my-campaigns")}
           title={collapsed ? t("sidebar.home", "Início") : undefined}
@@ -290,7 +297,7 @@ export default function AppSidebar() {
         {isAdminOrMaster && (
           <button
             onClick={() => handleNavigate("/agencies")}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
             style={itemStyle(location.pathname === "/agencies")}
             {...hoverHandlers(location.pathname === "/agencies")}
             title={collapsed ? t("sidebar.agencies", "Agências") : undefined}
@@ -303,7 +310,7 @@ export default function AppSidebar() {
         {/* ── Favoritos (all authenticated users) ── */}
         <button
           onClick={() => handleNavigate("/favorites")}
-          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
           style={itemStyle(location.pathname === "/favorites")}
           {...hoverHandlers(location.pathname === "/favorites")}
           title={collapsed ? t("sidebar.favorites", "Favoritos") : undefined}
@@ -311,6 +318,13 @@ export default function AppSidebar() {
           <AquaIcon icon={Star} size="sm" color="#eab308" />
           {!collapsed && <span className="truncate font-medium">{t("sidebar.favorites", "Favoritos")}</span>}
         </button>
+
+        {/* Section label: Administração */}
+        {!collapsed && isAdminOrMaster && (
+          <div className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-3 opacity-50">
+            {t("sidebar.section_admin", "Administração")}
+          </div>
+        )}
 
         {/* ── Admin (fixed, admin/master only) ── */}
         {isAdminOrMaster && (
@@ -334,37 +348,40 @@ export default function AppSidebar() {
                 </>
               )}
             </button>
-            {!collapsed && adminOpen && (
-              <div className="ml-4 pl-2 mt-0.5 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
-                <button
-                  onClick={() => handleNavigate("/admin")}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
-                  style={itemStyle(location.pathname === "/admin" && !location.search.includes("tab=backup"))}
-                  {...hoverHandlers(location.pathname === "/admin" && !location.search.includes("tab=backup"))}
-                >
-                  <AquaIcon icon={Users} size="xs" color="#7A3B2E" />
-                  <span className="truncate">{t("sidebar.admin_users", "Usuários")}</span>
-                </button>
-                <button
-                  onClick={() => handleNavigate("/approvals")}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
-                  style={itemStyle(location.pathname === "/approvals")}
-                  {...hoverHandlers(location.pathname === "/approvals")}
-                >
-                  <AquaIcon icon={Shield} size="xs" color="#5C6B3F" />
-                  <span className="truncate">{t("sidebar.approvals")}</span>
-                </button>
-                {isAdmin && (
+            {!collapsed && (
+              <div className={`overflow-hidden transition-all duration-200 ease-out ${adminOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
+                <div className="relative ml-4 pl-3 mt-1 mb-1 space-y-0.5">
+                  <span className="absolute left-0 top-0 bottom-0 w-px bg-border" />
                   <button
-                    onClick={() => handleNavigate("/admin?tab=backup")}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
-                    style={itemStyle(location.pathname === "/admin" && location.search.includes("tab=backup"))}
-                    {...hoverHandlers(location.pathname === "/admin" && location.search.includes("tab=backup"))}
+                    onClick={() => handleNavigate("/admin")}
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all relative before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
+                    style={itemStyle(location.pathname === "/admin" && !location.search.includes("tab=backup"))}
+                    {...hoverHandlers(location.pathname === "/admin" && !location.search.includes("tab=backup"))}
                   >
-                    <AquaIcon icon={Database} size="xs" color="#4A5568" />
-                    <span className="truncate">Backup</span>
+                    <AquaIcon icon={Users} size="xs" color="#7A3B2E" />
+                    <span className="truncate">{t("sidebar.admin_users", "Usuários")}</span>
                   </button>
-                )}
+                  <button
+                    onClick={() => handleNavigate("/approvals")}
+                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all relative before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
+                    style={itemStyle(location.pathname === "/approvals")}
+                    {...hoverHandlers(location.pathname === "/approvals")}
+                  >
+                    <AquaIcon icon={Shield} size="xs" color="#5C6B3F" />
+                    <span className="truncate">{t("sidebar.approvals")}</span>
+                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => handleNavigate("/admin?tab=backup")}
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all relative before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
+                      style={itemStyle(location.pathname === "/admin" && location.search.includes("tab=backup"))}
+                      {...hoverHandlers(location.pathname === "/admin" && location.search.includes("tab=backup"))}
+                    >
+                      <AquaIcon icon={Database} size="xs" color="#4A5568" />
+                      <span className="truncate">Backup</span>
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -405,7 +422,7 @@ export default function AppSidebar() {
                     const isActiveCampaign = campaignId === camp.campaignId;
                     const campBasePath = `/agency/${group.agencyId}/clients/${group.clientId}/campaigns/${camp.campaignId}`;
                     return (
-                      <div key={camp.campaignId}>
+                      <div key={camp.campaignId} className={`rounded-md ${isActiveCampaign ? "bg-muted/30" : ""}`}>
                         <div className="flex items-center gap-0.5">
                           <button
                             onClick={() => handleCampaignHomeNavigate(campBasePath)}
@@ -425,8 +442,9 @@ export default function AppSidebar() {
                             <ChevronDown className="w-3 h-3 opacity-40 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }} />
                           </button>
                         </div>
-                        {isExpanded && (
-                          <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
+                        <div className={`overflow-hidden transition-all duration-200 ease-out ${isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}>
+                          <div className="relative ml-2 pl-3 mt-1 mb-1 space-y-0.5">
+                            <span className="absolute left-0 top-0 bottom-0 w-px bg-border" />
                             {CAMPAIGN_MODULE_KEYS.filter(mod => {
                               if (mod.key === "budgets") return false;
                               if (mod.key === "history") return false;
@@ -440,7 +458,7 @@ export default function AppSidebar() {
                                 <button
                                   key={mod.key}
                                   onClick={() => handleNavigate(`${campBasePath}?section=${mod.key}`)}
-                                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
+                                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-all relative before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
                                   style={modActive
                                     ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", fontWeight: 600, borderLeft: "3px solid var(--sidebar-active-bar)" }
                                     : { color: "var(--sidebar-text)" }
@@ -453,7 +471,7 @@ export default function AppSidebar() {
                               );
                             })}
                           </div>
-                        )}
+                        </div>
                       </div>
                     );
                   })}
@@ -495,7 +513,7 @@ export default function AppSidebar() {
                 const isActiveCampaign = campaignId === camp.id;
                 const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
                 return (
-                  <div key={camp.id}>
+                  <div key={camp.id} className={`rounded-md ${isActiveCampaign ? "bg-muted/30" : ""}`}>
                     <div className="flex items-center gap-0.5">
                       <button
                         onClick={() => handleCampaignHomeNavigate(campBasePath)}
@@ -515,8 +533,9 @@ export default function AppSidebar() {
                         <ChevronDown className="w-3 h-3 opacity-40 transition-transform duration-200" style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }} />
                       </button>
                     </div>
-                    {isExpanded && (
-                      <div className="ml-2 pl-2 space-y-0.5" style={{ borderLeft: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
+                    <div className={`overflow-hidden transition-all duration-200 ease-out ${isExpanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"}`}>
+                      <div className="relative ml-2 pl-3 mt-1 mb-1 space-y-0.5">
+                        <span className="absolute left-0 top-0 bottom-0 w-px bg-border" />
                         {CAMPAIGN_MODULE_KEYS.filter(mod => {
                           if (mod.key === "budgets" && !isAdminOrMaster) return false;
                           if (mod.key === "history") return false;
@@ -528,7 +547,7 @@ export default function AppSidebar() {
                             <button
                               key={mod.key}
                               onClick={() => handleNavigate(`${campBasePath}?section=${mod.key}`)}
-                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all"
+                              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-all relative before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
                               style={modActive
                                 ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", fontWeight: 600, borderLeft: "3px solid var(--sidebar-active-bar)" }
                                 : { color: "var(--sidebar-text)" }
@@ -541,7 +560,7 @@ export default function AppSidebar() {
                           );
                         })}
                       </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}
