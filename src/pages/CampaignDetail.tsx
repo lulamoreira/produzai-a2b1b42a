@@ -902,6 +902,35 @@ const CampaignDetail = () => {
     return qtyMap[`${storeId}-${pieceId}`] || 0;
   }, [qtyMap, kitPieces]);
 
+  // ─── Bulk apply with undo/redo (used by automation/copy dialogs) ───
+  // Snapshots qtyMap for all affected (store,piece) pairs and produces an inverse op.
+  const runBulkWithHistory = useCallback(async (
+    label: string,
+    upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[],
+    deletes: { campaignId: string; storeId: string; pieceId: string }[],
+  ) => {
+    const rateioOptions = { isNegotiationView, negotiationSupplierId: winnerSupplierId, isAdjustmentView, adjustmentId: activeAdjustmentId };
+    // Snapshot prev quantities for affected pairs
+    const affected = new Map<string, { storeId: string; pieceId: string }>();
+    for (const u of upserts) affected.set(`${u.storeId}|${u.pieceId}`, { storeId: u.storeId, pieceId: u.pieceId });
+    for (const d of deletes) affected.set(`${d.storeId}|${d.pieceId}`, { storeId: d.storeId, pieceId: d.pieceId });
+    const prevUpserts: typeof upserts = [];
+    const prevDeletes: typeof deletes = [];
+    for (const { storeId, pieceId } of affected.values()) {
+      const prev = qtyMap[`${storeId}-${pieceId}`] || 0;
+      if (prev > 0) {
+        prevUpserts.push({ campaignId: campaignId!, storeId, pieceId, quantity: prev });
+      } else {
+        prevDeletes.push({ campaignId: campaignId!, storeId, pieceId });
+      }
+    }
+    await runHistoryCommand({
+      label,
+      do: () => applyRateioBulk(upserts, deletes, rateioOptions),
+      undo: () => applyRateioBulk(prevUpserts, prevDeletes, rateioOptions),
+    });
+  }, [qtyMap, campaignId, isNegotiationView, winnerSupplierId, isAdjustmentView, activeAdjustmentId, runHistoryCommand]);
+
   // ─── Unified save: handles both piece and kit cells ───
   // Kit cells write to N component pieces. We use a SINGLE bulk mutation that
   // performs one optimistic update + parallel writes + ONE final invalidation.
