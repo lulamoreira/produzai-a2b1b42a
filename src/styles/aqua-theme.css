@@ -1,8 +1,12 @@
 /* Aqua Modern Theme — applied when html.aqua
  * Purely additive. None of the light/dark/system tokens are touched.
+ * High-specificity selectors (:root.aqua, html.aqua) ensure these tokens
+ * override the default :root tokens regardless of cascade-layer behavior.
+ * Imported AFTER @tailwind directives in index.css for guaranteed source order.
  */
 
-.aqua {
+:root.aqua,
+html.aqua {
   /* Base colors — saturated Aqua palette */
   --background: 210 40% 98%;
   --foreground: 222 47% 11%;
@@ -53,8 +57,10 @@
 }
 
 /* Dark variant of Aqua */
-.aqua.dark,
-.aqua[data-mode="dark"] {
+:root.aqua.dark,
+html.aqua.dark,
+:root.aqua[data-mode="dark"],
+html.aqua[data-mode="dark"] {
   --background: 222 47% 6%;
   --foreground: 210 40% 98%;
   --card: 222 47% 10%;
@@ -72,6 +78,8 @@
   --sidebar-text: hsl(215 20% 70%);
   --sidebar-item-hover: rgba(100, 180, 255, 0.12);
 }
+
+/* ====== Utility classes — outside @layer base for higher precedence ====== */
 
 /* Frosted glass utility */
 .aqua .aqua-glass {

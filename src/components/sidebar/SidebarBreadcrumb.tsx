@@ -15,7 +15,11 @@ export function SidebarBreadcrumb({ collapsed, agencyName, clientName, campaignN
       <div className="text-[10px] font-semibold uppercase tracking-wider opacity-50 mb-1">
         Contexto
       </div>
-      <div className="text-[11px] truncate" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>
+      <div
+        className="text-[11px] leading-snug break-words"
+        style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}
+        title={parts.join(" › ")}
+      >
         {parts.map((p, i) => (
           <span key={i}>
             {i > 0 && <span className="opacity-40 mx-1">›</span>}
