@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Search, ChevronDown, ChevronRight, Eye, Pencil, Trash2, Lock,
-  Users, Save, AlertTriangle, Sparkles,
+  Users, Save, AlertTriangle, Sparkles, Loader2, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
