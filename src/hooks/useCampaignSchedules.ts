@@ -22,13 +22,13 @@ export function useCampaignSchedules(campaignId?: string) {
   const query = useQuery({
     queryKey: ["campaign_schedules", campaignId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaign_schedules")
-        .select("*")
-        .eq("campaign_id", campaignId!);
-      if (error) throw error;
-      return data as Schedule[];
-    },
+      return await supabasePaginate<Schedule>((from, to) =>
+        supabase
+          .from("campaign_schedules")
+          .select("*")
+          .eq("campaign_id", campaignId!)
+          .range(from, to) as any
+      );
     enabled: !!campaignId,
   });
 
