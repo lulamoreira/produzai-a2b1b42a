@@ -4,6 +4,7 @@
 import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import { computeStoreOccurrenceStatus } from "@/lib/occurrenceHelpers";
 
 /**
