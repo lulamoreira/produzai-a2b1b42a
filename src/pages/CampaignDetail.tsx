@@ -370,7 +370,7 @@ const CampaignDetail = () => {
     if (isNegotiationView && winnerSupplierId) return `negotiation:${winnerSupplierId}:${campaignId ?? ""}`;
     return `rateio:${campaignId ?? ""}`;
   }, [isAdjustmentView, activeAdjustmentId, isNegotiationView, winnerSupplierId, campaignId]);
-  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
+  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel, undoCount, redoCount } = useHistory(undoScope);
   useEffect(() => {
     return () => historyStore.clearScope(undoScope);
   }, [undoScope]);
