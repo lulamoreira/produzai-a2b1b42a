@@ -19,6 +19,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HistoryShortcutProvider } from "@/lib/undo/HistoryShortcutProvider";
+import { GlobalSearchMount } from "@/components/sidebar/GlobalSearch";
 
 // Lazy-loaded page components (one chunk per route)
 const AgencySelect = lazy(() => import("./pages/AgencySelect"));
@@ -105,6 +106,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     <>
       <PendingUsersAlert />
       <NameConfirmDialog />
+      <GlobalSearchMount />
       {children}
     </>
   );
