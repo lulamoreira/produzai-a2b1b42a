@@ -3,6 +3,8 @@ export type Command = {
   do: () => Promise<void>;
   undo: () => Promise<void>;
   scope: string;
+  checkConflict?: () => Promise<boolean>;
+  conflictMessage?: string;
 };
 
 type ScopeHistory = {
@@ -13,6 +15,7 @@ type ScopeHistory = {
 const MAX_STACK = 50;
 const state = new Map<string, ScopeHistory>();
 const listeners = new Set<() => void>();
+const conflictListeners = new Set<(msg: string) => void>();
 
 function getScope(scope: string): ScopeHistory {
   if (!state.has(scope)) state.set(scope, { undoStack: [], redoStack: [] });
@@ -37,11 +40,31 @@ export const historyStore = {
     const cmd = s.undoStack.pop();
     if (!cmd) return;
     notify();
+
+    if (cmd.checkConflict) {
+      try {
+        const hasConflict = await cmd.checkConflict();
+        if (hasConflict) {
+          const msg =
+            cmd.conflictMessage ||
+            `Não é possível desfazer "${cmd.label}" — o dado foi alterado por outro usuário.`;
+          conflictListeners.forEach((fn) => fn(msg));
+          notify();
+          throw new Error("__conflict__");
+        }
+      } catch (e: any) {
+        if (e?.message === "__conflict__") throw e;
+        // conflict check itself failed — proceed with undo
+      }
+    }
+
     try {
       await cmd.undo();
       s.redoStack.push(cmd);
-    } catch {
+    } catch (e) {
       s.undoStack.push(cmd);
+      notify();
+      throw e;
     }
     notify();
   },
@@ -54,8 +77,10 @@ export const historyStore = {
     try {
       await cmd.do();
       s.undoStack.push(cmd);
-    } catch {
+    } catch (e) {
       s.redoStack.push(cmd);
+      notify();
+      throw e;
     }
     notify();
   },
@@ -78,6 +103,14 @@ export const historyStore = {
     return stack && stack.length ? stack[stack.length - 1].label : null;
   },
 
+  undoCount(scope: string): number {
+    return state.get(scope)?.undoStack.length ?? 0;
+  },
+
+  redoCount(scope: string): number {
+    return state.get(scope)?.redoStack.length ?? 0;
+  },
+
   clearScope(scope: string) {
     state.delete(scope);
     notify();
@@ -87,6 +120,13 @@ export const historyStore = {
     listeners.add(fn);
     return () => {
       listeners.delete(fn);
+    };
+  },
+
+  onConflict(fn: (msg: string) => void) {
+    conflictListeners.add(fn);
+    return () => {
+      conflictListeners.delete(fn);
     };
   },
 };

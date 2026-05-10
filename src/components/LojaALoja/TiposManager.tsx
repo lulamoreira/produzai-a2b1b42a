@@ -455,7 +455,7 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
 
   // ─── Undo/Redo ───
   const undoScope = `loja-a-loja:${campaignId}`;
-  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
+  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel, undoCount, redoCount } = useHistory(undoScope);
   useEffect(() => {
     return () => historyStore.clearScope(undoScope);
   }, [undoScope]);
@@ -993,6 +993,8 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
                   onRedo={redo}
                   undoLabel={undoLabel}
                   redoLabel={redoLabel}
+                  undoCount={undoCount}
+                  redoCount={redoCount}
                 />
                 {canEdit && (
                   <Button size="sm" className="h-7 text-xs" onClick={() => setShowAddPeca(true)}>

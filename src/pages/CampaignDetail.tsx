@@ -370,7 +370,7 @@ const CampaignDetail = () => {
     if (isNegotiationView && winnerSupplierId) return `negotiation:${winnerSupplierId}:${campaignId ?? ""}`;
     return `rateio:${campaignId ?? ""}`;
   }, [isAdjustmentView, activeAdjustmentId, isNegotiationView, winnerSupplierId, campaignId]);
-  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
+  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel, undoCount, redoCount } = useHistory(undoScope);
   useEffect(() => {
     return () => historyStore.clearScope(undoScope);
   }, [undoScope]);
@@ -1079,6 +1079,17 @@ const CampaignDetail = () => {
     if (prevQty === qty) return;
     runHistoryCommand({
       label: "Quantidade",
+      checkConflict: async () => {
+        const { data } = await supabase
+          .from("campaign_store_pieces")
+          .select("quantity")
+          .eq("campaign_id", campaignId)
+          .eq("store_id", cell.storeId)
+          .eq("piece_id", cell.pieceId)
+          .maybeSingle();
+        return data !== null && data.quantity !== prevQty && data.quantity !== qty;
+      },
+      conflictMessage: `Quantidade alterada por outro usuário — desfazer não aplicado.`,
       do: () =>
         updateStorePiece.mutateAsync({
           campaignId,
@@ -2640,6 +2651,8 @@ const CampaignDetail = () => {
                         onRedo={redo}
                         undoLabel={undoLabel}
                         redoLabel={redoLabel}
+                        undoCount={undoCount}
+                        redoCount={redoCount}
                       />
                     )}
                     {canEditCampaign && (

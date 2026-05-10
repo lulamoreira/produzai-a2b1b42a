@@ -79,7 +79,7 @@ export default function AdjustmentDetailSheet({
 
   // ─── Undo/Redo (adjustment piece field edits) ───
   const undoScope = `adjustment-sheet:${adjustment.id}`;
-  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
+  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel, undoCount, redoCount } = useHistory(undoScope);
   useEffect(() => {
     return () => historyStore.clearScope(undoScope);
   }, [undoScope]);
@@ -278,6 +278,8 @@ export default function AdjustmentDetailSheet({
                   onRedo={redo}
                   undoLabel={undoLabel}
                   redoLabel={redoLabel}
+                  undoCount={undoCount}
+                  redoCount={redoCount}
                 />
               </span>
             )}
