@@ -798,7 +798,7 @@ export default function MatrixAutomationDialog({
       }
       const dedupedUpserts = Array.from(dedupMap.values());
 
-      await applyRateioBulk(dedupedUpserts, deletes, rateioOptions);
+      await applyBulk("Automação", dedupedUpserts, deletes);
 
       toast.success(t("automation.successMessage", { updated: uniqueUpdateStores, kept: keepCount, zeroed: zeroCount }));
       await onComplete();
