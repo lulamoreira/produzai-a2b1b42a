@@ -50,6 +50,8 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     specialActions: [
       { key: "team_codes", label: "Gerenciar códigos de equipe", description: "Criar e revogar códigos de acesso para equipes de instalação" },
       { key: "photo_checkin", label: "Ver fotos de check-in", description: "Visualizar fotos enviadas no check-in dos instaladores" },
+      { key: "reinstall", label: "Solicitar reinstalação", description: "Criar pedidos de reinstalação em lojas" },
+      { key: "export", label: "Exportar relatórios", description: "Gerar PDF e Excel com fotos e status de instalação" },
     ],
   },
   {
@@ -64,7 +66,18 @@ export const PERMISSION_MODULES: PermissionModule[] = [
       { key: "loja_a_loja.classificacao", label: "Classificação", icon: "Tag", category: "campaign", actions: ["view", "edit", "delete"] },
       { key: "loja_a_loja.acessos", label: "Acessos", icon: "Key", category: "campaign", actions: ["view", "edit", "delete"] },
       { key: "loja_a_loja.config", label: "Configuração", icon: "Settings", category: "campaign", actions: ["view", "edit", "delete"] },
-      { key: "loja_a_loja.ocorrencias", label: "Ocorrências (LaL)", icon: "AlertCircle", category: "campaign", actions: ["view", "edit", "delete"] },
+      {
+        key: "loja_a_loja.ocorrencias",
+        label: "Ocorrências (LaL)",
+        icon: "AlertCircle",
+        category: "campaign",
+        actions: ["view", "edit", "delete"],
+        specialActions: [
+          { key: "reporter_data", label: "Editar dados do lojista", description: "Alterar nome/telefone do reportante" },
+          { key: "lock_cards", label: "Bloquear cards", description: "Travar edição de ocorrências" },
+          { key: "export", label: "Exportar relatórios", description: "Gerar PDF e Excel com dados de ocorrências" },
+        ],
+      },
     ],
   },
   {
@@ -84,18 +97,6 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     actions: ["view", "edit", "delete"],
   },
   {
-    key: "occurrences",
-    label: "Ocorrências",
-    icon: "AlertTriangle",
-    category: "campaign",
-    description: "Reportes e tratativas durante a campanha",
-    actions: ["view", "edit", "delete"],
-    specialActions: [
-      { key: "reporter_data", label: "Editar dados do lojista", description: "Alterar nome/telefone do reportante" },
-      { key: "lock_cards", label: "Bloquear cards", description: "Travar edição de ocorrências" },
-    ],
-  },
-  {
     key: "budgets",
     label: "Orçamentos",
     icon: "DollarSign",
@@ -110,6 +111,9 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     category: "campaign",
     description: "Catálogo de peças da campanha",
     actions: ["view", "edit", "delete"],
+    specialActions: [
+      { key: "export", label: "Exportar catálogo", description: "Baixar lista de peças em Excel" },
+    ],
   },
   {
     key: "matrix",
@@ -118,6 +122,9 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     category: "campaign",
     description: "Distribuição de peças por loja",
     actions: ["view", "edit", "delete"],
+    specialActions: [
+      { key: "export", label: "Exportar Rateio", description: "Baixar planilha completa do rateio" },
+    ],
   },
   {
     key: "mockup",
@@ -126,6 +133,10 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     category: "campaign",
     description: "Aprovação visual de peças e kits",
     actions: ["view", "edit", "delete"],
+    specialActions: [
+      { key: "annotate", label: "Anotar imagens", description: "Adicionar marcações e anotações em fotos de mockup" },
+      { key: "export", label: "Exportar Mockup", description: "Gerar PDF e Excel do mockup" },
+    ],
   },
   {
     key: "adjustments",
@@ -152,6 +163,10 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     category: "cross_cutting",
     description: "Criação e gestão de campanhas",
     actions: ["view", "edit", "delete"],
+    specialActions: [
+      { key: "view_activity_log", label: "Ver histórico de atividade", description: "Acessar log de mudanças da campanha" },
+      { key: "backup_restore", label: "Backup e restauração", description: "Criar snapshots e restaurar dados da campanha" },
+    ],
   },
 
   // ─── Admin pages ───
@@ -203,6 +218,14 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     description: "Gestão de imagens do sistema",
     actions: ["view", "edit", "delete"],
   },
+  {
+    key: "admin.messages",
+    label: "Mensagens do Sistema",
+    icon: "MessageSquare",
+    category: "admin",
+    description: "Avisos globais para usuários",
+    actions: ["view", "edit", "delete"],
+  },
 ];
 
 // Quick-preset templates for the new editor.
@@ -241,7 +264,6 @@ export const PERMISSION_PRESETS: Record<
       "loja_a_loja",
       "stores",
       "campaign_stores",
-      "occurrences",
       "pieces",
       "matrix",
       "mockup",
@@ -254,7 +276,7 @@ export const PERMISSION_PRESETS: Record<
   operational_store: {
     label: "Operacional Loja",
     description: "Acesso restrito a operações de loja",
-    grants: ["stores", "campaign_stores", "scheduling", "installations", "occurrences"]
+    grants: ["stores", "campaign_stores", "scheduling", "installations"]
       .flatMap((k) => [
         { module_key: k, action: "view" },
         { module_key: k, action: "edit" },
