@@ -35,11 +35,12 @@ html.aqua {
   --aqua-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
   --aqua-shadow-strong: 0 12px 48px rgba(31, 38, 135, 0.25);
 
-  /* Sidebar — frosted glass */
-  --sidebar-bg: rgba(245, 250, 255, 0.75);
-  --sidebar-text: hsl(215 20% 35%);
+  /* Sidebar — distinct deep aqua gradient */
+  --sidebar-bg: linear-gradient(180deg, hsl(215 60% 22%) 0%, hsl(220 65% 16%) 100%);
+  --sidebar-border-raw: rgba(255, 255, 255, 0.08);
+  --sidebar-text: hsl(210 30% 75%);
   --sidebar-text-active: hsl(0 0% 100%);
-  --sidebar-item-hover: rgba(0, 122, 255, 0.08);
+  --sidebar-item-hover: rgba(120, 180, 255, 0.12);
   --sidebar-item-active: linear-gradient(135deg, hsl(210 100% 55%), hsl(220 100% 60%));
   --sidebar-active-bar: hsl(210 100% 50%);
 
