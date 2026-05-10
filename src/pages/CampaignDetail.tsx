@@ -362,6 +362,17 @@ const CampaignDetail = () => {
     isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
   );
   const updateAdjustmentStorePiece = useUpdateAdjustmentStorePiece();
+
+  // ─── Undo/Redo — scope depends on active rateio view ───
+  const undoScope = useMemo(() => {
+    if (isAdjustmentView && activeAdjustmentId) return `adjustment:${activeAdjustmentId}`;
+    if (isNegotiationView && winnerSupplierId) return `negotiation:${winnerSupplierId}:${campaignId ?? ""}`;
+    return `rateio:${campaignId ?? ""}`;
+  }, [isAdjustmentView, activeAdjustmentId, isNegotiationView, winnerSupplierId, campaignId]);
+  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
+  useEffect(() => {
+    return () => historyStore.clearScope(undoScope);
+  }, [undoScope]);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
   const addPieceLocation = useAddCampaignPieceLocation();
