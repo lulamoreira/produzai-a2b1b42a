@@ -310,6 +310,7 @@ export default function AppSidebar() {
         {isAdminOrMaster && (
           <div>
             <button
+              data-keep-open
               onClick={toggleAdmin}
               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all"
               style={itemStyle(location.pathname.startsWith("/admin") || location.pathname === "/approvals")}
@@ -410,6 +411,7 @@ export default function AppSidebar() {
                             {camp.campaignName}
                           </button>
                           <button
+                            data-keep-open
                             onClick={() => toggleCampaignExpanded(camp.campaignId)}
                             className="flex-shrink-0 p-1 rounded transition-all"
                             style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
@@ -499,6 +501,7 @@ export default function AppSidebar() {
                         {camp.name}
                       </button>
                       <button
+                        data-keep-open
                         onClick={() => toggleCampaignExpanded(camp.id)}
                         className="flex-shrink-0 p-1 rounded transition-all"
                         style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
@@ -581,7 +584,7 @@ export default function AppSidebar() {
         <div className="px-2 pt-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
           <div className={`flex ${collapsed ? "flex-col" : ""} items-center gap-1`}>
             {/* Language selector */}
-            <div className="relative">
+            <div className="relative" data-keep-open>
               <button
                 onClick={() => setLangOpen(!langOpen)}
                 className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-all"
@@ -617,6 +620,7 @@ export default function AppSidebar() {
             </div>
             {/* Dark mode toggle */}
             <button
+              data-keep-open
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-all"
               style={{ color: "var(--sidebar-text, #A89880)" }}
