@@ -20,9 +20,10 @@ export function SettingsSheet({ open, onOpenChange }: Props) {
   const { currentLanguage, changeLanguage } = useLanguage();
 
   const themeOptions = [
-    { value: "light",  label: t("settings.theme_light",  "Claro"),   icon: Sun },
-    { value: "dark",   label: t("settings.theme_dark",   "Escuro"),  icon: Moon },
-    { value: "system", label: t("settings.theme_system", "Sistema"), icon: Monitor },
+    { value: "light",  label: t("settings.theme_light",  "Claro"),   icon: Sun,      special: false },
+    { value: "dark",   label: t("settings.theme_dark",   "Escuro"),  icon: Moon,     special: false },
+    { value: "system", label: t("settings.theme_system", "Sistema"), icon: Monitor,  special: false },
+    { value: "aqua",   label: t("settings.theme_aqua",   "Aqua"),    icon: Sparkles, special: true  },
   ];
 
   return (
@@ -44,7 +45,7 @@ export function SettingsSheet({ open, onOpenChange }: Props) {
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
               {t("settings.theme", "Tema")}
             </h3>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {themeOptions.map((opt) => {
                 const Icon = opt.icon;
                 const active = theme === opt.value;
@@ -52,13 +53,17 @@ export function SettingsSheet({ open, onOpenChange }: Props) {
                   <button
                     key={opt.value}
                     onClick={() => setTheme(opt.value)}
-                    className={`relative min-h-[72px] rounded-lg border-2 flex flex-col items-center justify-center gap-1.5 transition-all ${
+                    className={`relative min-h-[72px] rounded-lg border-2 flex flex-col items-center justify-center gap-1.5 transition-all overflow-hidden ${
                       active
                         ? "border-primary bg-primary/10"
                         : "border-border hover:border-muted-foreground/40"
+                    } ${
+                      opt.special && !active
+                        ? "bg-gradient-to-br from-sky-50 via-white to-fuchsia-50 dark:from-sky-950/40 dark:via-background dark:to-fuchsia-950/40"
+                        : ""
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
+                    <Icon className={`w-5 h-5 ${opt.special ? "text-sky-500" : ""}`} />
                     <span className="text-xs font-medium">{opt.label}</span>
                     {active && (
                       <Check className="absolute top-1.5 right-1.5 w-3.5 h-3.5 text-primary" />
