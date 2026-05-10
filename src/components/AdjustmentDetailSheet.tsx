@@ -77,6 +77,13 @@ export default function AdjustmentDetailSheet({
   const updateKit = useUpdateAdjustmentKit();
   const restoreKit = useRestoreAdjustmentKit();
 
+  // ─── Undo/Redo (adjustment piece field edits) ───
+  const undoScope = `adjustment-sheet:${adjustment.id}`;
+  const { canUndo, canRedo, undo, redo, run: runHistoryCommand, undoLabel, redoLabel } = useHistory(undoScope);
+  useEffect(() => {
+    return () => historyStore.clearScope(undoScope);
+  }, [undoScope]);
+
   const [filter, setFilter] = useState<"all" | "modified" | "added" | "removed">("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
