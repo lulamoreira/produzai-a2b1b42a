@@ -3,9 +3,6 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import './styles/aqua-theme.css';
-
 @layer base {
   :root {
     --background: 30 18% 95%;
