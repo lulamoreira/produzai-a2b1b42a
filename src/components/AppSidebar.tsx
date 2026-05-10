@@ -216,20 +216,34 @@ export default function AppSidebar() {
     },
   });
 
+  // Auto-close drawer on mobile when any non-opt-out element inside is clicked.
+  // Items that should keep the drawer open (toggles, expanders, theme/lang pickers)
+  // mark themselves with `data-keep-open`.
+  const handleSidebarClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!mobileOpen) return;
+    const target = e.target as HTMLElement | null;
+    if (!target) return;
+    const actionable = target.closest("button, a, [role='menuitem']");
+    if (!actionable) return;
+    if ((actionable as HTMLElement).closest("[data-keep-open]")) return;
+    setMobileOpen(false);
+  }, [mobileOpen]);
+
   const sidebarContent = (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden" onClick={handleSidebarClick}>
       {/* Logo area */}
       <div className="flex items-center gap-2 px-3 h-14 flex-shrink-0" style={{ borderBottom: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
         <img src={produzaiIcon} alt="ProduzAI" className="w-7 h-7 rounded-lg flex-shrink-0" />
         {!collapsed && <span className="text-[15px] font-semibold tracking-tight truncate" style={{ color: "var(--sidebar-text-active, #F5EFE6)" }}>ProduzAI</span>}
         <button
+          data-keep-open
           onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto transition-colors flex-shrink-0 hidden lg:block"
+          className="ml-auto transition-colors flex-shrink-0 hidden md:block"
           style={{ color: "var(--sidebar-text, #A89880)" }}
         >
           {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
         </button>
-        <button onClick={() => setMobileOpen(false)} className="ml-auto lg:hidden" style={{ color: "var(--sidebar-text, #A89880)" }}>
+        <button onClick={() => setMobileOpen(false)} className="ml-auto md:hidden" style={{ color: "var(--sidebar-text, #A89880)" }}>
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -296,6 +310,7 @@ export default function AppSidebar() {
         {isAdminOrMaster && (
           <div>
             <button
+              data-keep-open
               onClick={toggleAdmin}
               className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all"
               style={itemStyle(location.pathname.startsWith("/admin") || location.pathname === "/approvals")}
@@ -396,6 +411,7 @@ export default function AppSidebar() {
                             {camp.campaignName}
                           </button>
                           <button
+                            data-keep-open
                             onClick={() => toggleCampaignExpanded(camp.campaignId)}
                             className="flex-shrink-0 p-1 rounded transition-all"
                             style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
@@ -485,6 +501,7 @@ export default function AppSidebar() {
                         {camp.name}
                       </button>
                       <button
+                        data-keep-open
                         onClick={() => toggleCampaignExpanded(camp.id)}
                         className="flex-shrink-0 p-1 rounded transition-all"
                         style={{ color: isActiveCampaign ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
@@ -567,7 +584,7 @@ export default function AppSidebar() {
         <div className="px-2 pt-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}>
           <div className={`flex ${collapsed ? "flex-col" : ""} items-center gap-1`}>
             {/* Language selector */}
-            <div className="relative">
+            <div className="relative" data-keep-open>
               <button
                 onClick={() => setLangOpen(!langOpen)}
                 className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-all"
@@ -603,6 +620,7 @@ export default function AppSidebar() {
             </div>
             {/* Dark mode toggle */}
             <button
+              data-keep-open
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-all"
               style={{ color: "var(--sidebar-text, #A89880)" }}
@@ -626,7 +644,7 @@ export default function AppSidebar() {
       {/* Mobile menu button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-3 left-3 z-40 lg:hidden w-9 h-9 rounded-lg flex items-center justify-center shadow-lg"
+        className="fixed top-3 left-3 z-40 md:hidden w-9 h-9 rounded-lg flex items-center justify-center shadow-lg"
         style={{ background: "var(--sidebar-bg, #1C1916)", color: "var(--sidebar-text-active, #F5EFE6)" }}
       >
         <Menu className="w-5 h-5" />
@@ -634,12 +652,12 @@ export default function AppSidebar() {
 
       {/* Mobile overlay */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} />
+        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Mobile sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-dvh max-h-dvh flex-col w-[220px] overflow-hidden transition-transform duration-300 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 flex h-dvh max-h-dvh flex-col w-[220px] overflow-hidden transition-transform duration-300 md:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
         style={{ background: "var(--sidebar-bg, #1C1916)", borderRight: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}
       >
         {sidebarContent}
@@ -647,7 +665,7 @@ export default function AppSidebar() {
 
       {/* Desktop sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-30 hidden h-dvh max-h-dvh lg:flex flex-col overflow-hidden transition-all duration-300 ${collapsed ? "w-[60px]" : "w-[220px]"}`}
+        className={`fixed inset-y-0 left-0 z-30 hidden h-dvh max-h-dvh md:flex flex-col overflow-hidden transition-all duration-300 ${collapsed ? "w-[60px]" : "w-[220px]"}`}
         style={{ background: "var(--sidebar-bg, #1C1916)", borderRight: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }}
       >
         {sidebarContent}

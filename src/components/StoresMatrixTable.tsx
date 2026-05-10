@@ -5,7 +5,8 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, ArrowUpDown, GripVertical, Check, X } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowUpDown, GripVertical, Check, X, ChevronsRight } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Switch } from "@/components/ui/switch";
 import { getStateColor } from "@/lib/stateColors";
 import type { ClientStore } from "@/hooks/useMultiClientData";
@@ -96,8 +97,19 @@ function DraggableHeaderCell({
     whiteSpace: "nowrap",
   };
 
+  // First column ("name") is sticky on the left and needs an opaque bg so scrolling
+  // doesn't bleed cells underneath. We also paint the header opaque for the sticky-top header.
+  const isFirstCol = col.storeField === "name";
+
   return (
-    <TableHead ref={setNodeRef} style={style}>
+    <TableHead
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "bg-card",
+        isFirstCol && "sticky left-0 z-[11]",
+      )}
+    >
       <div className="flex items-center gap-0.5">
         <button
           className="cursor-grab active:cursor-grabbing touch-none p-0.5 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
@@ -467,47 +479,60 @@ export default function StoresMatrixTable({
     setEditingCell({ storeId, field });
   }, []);
 
-  return (
-    <div className="border border-border rounded-lg overflow-x-auto">
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <Table className="min-w-[1200px]">
-          <TableHeader>
-            <TableRow>
-              <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}>
-                {orderedColumns.map((col) => (
-                  <DraggableHeaderCell
-                    key={col.key}
-                    col={col}
-                    sortKey={sortKey}
-                    sortDir={sortDir}
-                    onSort={handleSort}
-                  />
-                ))}
-              </SortableContext>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredStores.map((store) => (
-              <TableRow key={store.id}>
-                {orderedColumns.map((col) => {
-                  const isNameCol = col.storeField === "name";
-                  const isEditingThis = editingCell?.storeId === store.id && editingCell?.field === col.storeField;
-                  const displayVal = getCellDisplay(store, col);
+  const isMobile = useIsMobile();
 
-                  if (isNameCol) {
-                    return (
-                      <TableCell key={col.key} className="font-medium sticky left-0 z-[5] bg-card">
-                        <button
-                          type="button"
-                          className="text-left hover:underline underline-offset-2 transition-colors cursor-pointer px-2 py-0.5 rounded-md text-xs"
-                          style={{ backgroundColor: getStateColor(store.state).bg, color: getStateColor(store.state).text }}
-                          onClick={() => onOpenEditStore?.(store)}
+  return (
+    <div className="border border-border rounded-lg overflow-hidden">
+      <div className="overflow-x-auto">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <Table className="min-w-[1200px]">
+            <TableHeader className="sticky top-0 z-10 bg-card border-b">
+              <TableRow>
+                <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}>
+                  {orderedColumns.map((col) => (
+                    <DraggableHeaderCell
+                      key={col.key}
+                      col={col}
+                      sortKey={sortKey}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                    />
+                  ))}
+                </SortableContext>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredStores.map((store) => (
+                <TableRow key={store.id} className="group">
+                  {orderedColumns.map((col) => {
+                    const isNameCol = col.storeField === "name";
+                    const isEditingThis = editingCell?.storeId === store.id && editingCell?.field === col.storeField;
+                    const displayVal = getCellDisplay(store, col);
+
+                    if (isNameCol) {
+                      return (
+                        <TableCell
+                          key={col.key}
+                          className={cn(
+                            "font-medium sticky left-0 z-[5]",
+                            // Always-on opaque bg matching row state so the frozen
+                            // column never goes transparent during horizontal scroll.
+                            "bg-card group-hover:bg-muted/50",
+                            // Right-edge shadow indicating more content to scroll.
+                            "after:content-[''] after:absolute after:top-0 after:right-0 after:bottom-0 after:w-2 after:bg-gradient-to-r after:from-black/10 after:to-transparent after:pointer-events-none"
+                          )}
                         >
-                          {store.name}
-                        </button>
-                      </TableCell>
-                    );
-                  }
+                          <button
+                            type="button"
+                            className="text-left hover:underline underline-offset-2 transition-colors cursor-pointer px-2 py-0.5 rounded-md text-xs"
+                            style={{ backgroundColor: getStateColor(store.state).bg, color: getStateColor(store.state).text }}
+                            onClick={() => onOpenEditStore?.(store)}
+                          >
+                            {store.name}
+                          </button>
+                        </TableCell>
+                      );
+                    }
 
                   // Boolean field: render as Switch
                   if (col.fieldType === "boolean") {
@@ -567,6 +592,13 @@ export default function StoresMatrixTable({
           </TableBody>
         </Table>
       </DndContext>
+      </div>
+      {isMobile && (
+        <div className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-1 border-t">
+          <ChevronsRight className="w-3 h-3" />
+          Deslize para ver mais colunas
+        </div>
+      )}
     </div>
   );
 }
