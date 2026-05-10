@@ -60,7 +60,7 @@ export function ConfirmDestructiveDialog({
   };
 
   return (
-    <AppDialog open={open} onOpenChange={(v) => !loading && onOpenChange(v)}>
+    <AppDialog open={open} onOpenChange={(v) => !loading && onOpenChange(v)} hideCloseButton>
       <AppDialogHeader
         icon={<AlertTriangle className="w-5 h-5 text-destructive" />}
         title={title}
