@@ -103,10 +103,13 @@ export function useStoreContactsByClient(clientId: string | undefined) {
     queryFn: async () => {
       if (!clientId) return [];
       // Get all store IDs for this client, then get contacts
-      const { data: stores } = await supabase
-        .from("client_stores")
-        .select("id")
-        .eq("client_id", clientId);
+      const stores = await supabasePaginate<{ id: string }>((from, to) =>
+        supabase
+          .from("client_stores")
+          .select("id")
+          .eq("client_id", clientId)
+          .range(from, to) as any
+      );
       if (!stores?.length) return [];
       const storeIds = stores.map(s => s.id);
       const { data, error } = await supabase
