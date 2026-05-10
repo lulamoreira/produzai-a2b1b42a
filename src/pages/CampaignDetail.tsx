@@ -2651,6 +2651,8 @@ const CampaignDetail = () => {
                         onRedo={redo}
                         undoLabel={undoLabel}
                         redoLabel={redoLabel}
+                        undoCount={undoCount}
+                        redoCount={redoCount}
                       />
                     )}
                     {canEditCampaign && (
