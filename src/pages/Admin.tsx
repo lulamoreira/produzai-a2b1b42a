@@ -308,7 +308,7 @@ function CategoryRow({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => window.open(`/admin/categories/${category.id}/preview`, "_blank")}
+          onClick={onPreview}
           title="Preview"
         >
           <Eye className="w-4 h-4" />
