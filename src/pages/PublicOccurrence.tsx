@@ -7,6 +7,7 @@ import { buildGroupedPieceOptions } from "@/lib/occurrenceHelpers";
 import { SPECIAL_AGENCY, SPECIAL_FORNECEDOR, SPECIAL_CLIENTE, GERAL_LOCATION, NAO_SEI_LOCATION, MAX_OCCURRENCE_PHOTOS } from "@/types/occurrence";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import { useQuery } from "@tanstack/react-query";
 import { useOccurrenceMotives, useAddOccurrence } from "@/hooks/useOccurrences";
 import { Button } from "@/components/ui/button";
