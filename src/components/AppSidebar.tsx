@@ -11,6 +11,7 @@ import AquaIcon from "@/components/AquaIcon";
 import { SidebarHeader } from "@/components/sidebar/SidebarHeader";
 import { SettingsSheet } from "@/components/sidebar/SettingsSheet";
 import { InviteUserDialog } from "@/components/sidebar/InviteUserDialog";
+import { CampaignNavItem } from "@/components/sidebar/CampaignNavItem";
 import { CAMPAIGN_MODULES, MODULE_ICONS, type UserMenuAction } from "@/lib/sidebarRegistry";
 import { openGlobalSearch } from "@/lib/globalSearchBus";
 
