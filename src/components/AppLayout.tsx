@@ -85,7 +85,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
         <button
           type="button"
           onClick={handleBack}
-          className="lg:hidden fixed left-3 z-[100] pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl active:scale-95 transition-transform mobile-back-btn"
+          className="md:hidden fixed left-3 z-[100] pointer-events-auto w-12 h-12 flex items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl active:scale-95 transition-transform mobile-back-btn"
           style={{ bottom: "calc(1rem + env(safe-area-inset-bottom))" }}
           aria-label="Voltar"
         >
@@ -94,7 +94,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
       )}
 
       {/* Fixed notification bell + chat + history for mobile */}
-      <div className="lg:hidden fixed top-3 right-3 z-40 flex items-center gap-1.5">
+      <div className="md:hidden fixed top-3 right-3 z-40 flex items-center gap-1.5">
         {campaignId && (
           <Button
             size="icon"
@@ -134,21 +134,21 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
         <NotificationBell />
       </div>
 
-      <div className={`min-h-dvh transition-all duration-300 ${collapsed ? "lg:pl-[60px]" : "lg:pl-[220px]"}`}>
+      <div className={`min-h-dvh transition-all duration-300 ${collapsed ? "md:pl-[60px]" : "md:pl-[220px]"}`}>
         {/* Always-visible desktop header bar */}
-        <header className={`sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border pl-4 sm:pl-6 ${campaignId ? "pr-28 lg:pr-6" : "pr-14 lg:pr-6"} py-2`}>
+        <header className={`sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border pl-4 sm:pl-6 ${campaignId ? "pr-28 md:pr-6" : "pr-14 md:pr-6"} py-2`}>
           <div className="flex items-center justify-between gap-3">
             {!isRootPage && (
               <button
                 type="button"
                 onClick={handleBack}
-                className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted transition-colors flex-shrink-0"
+                className="hidden md:flex items-center justify-center w-7 h-7 rounded-md hover:bg-muted transition-colors flex-shrink-0"
                 aria-label="Voltar"
               >
                 <ChevronLeft className="w-4 h-4 text-muted-foreground" />
               </button>
             )}
-            <div className="w-9 lg:hidden flex-shrink-0" />
+            <div className="w-9 md:hidden flex-shrink-0" />
             <div className="flex items-center gap-1 min-w-0 flex-1">
               {breadcrumbs && breadcrumbs.length > 1 ? (
                 <div className="flex flex-wrap items-center gap-1">
@@ -174,7 +174,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {campaignId && (
-                <div className="hidden lg:block">
+                <div className="hidden md:block">
                   <Button
                     size="icon"
                     variant="outline"
@@ -187,7 +187,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
                 </div>
               )}
               {campaignId && (
-                <div className="hidden lg:block">
+                <div className="hidden md:block">
                   <Button
                     size="icon"
                     variant="outline"
@@ -199,7 +199,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
                 </div>
               )}
               {campaignId && (
-                <div className="hidden lg:block">
+                <div className="hidden md:block">
                   <Button
                     size="icon"
                     variant="outline"
@@ -215,7 +215,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
                   </Button>
                 </div>
               )}
-              <div className="hidden lg:block">
+              <div className="hidden md:block">
                 <NotificationBell />
               </div>
               {headerRight}
@@ -223,7 +223,7 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
           </div>
           {breadcrumbs && breadcrumbs.length > 0 && (
             <div className="mt-0.5 flex items-start gap-3">
-              <div className="w-9 lg:hidden flex-shrink-0" />
+              <div className="w-9 md:hidden flex-shrink-0" />
               <div className="min-w-0 flex-1 text-sm font-bold text-foreground leading-tight">
                 {breadcrumbs[breadcrumbs.length - 1]?.href ? (
                   <button
