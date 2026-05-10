@@ -77,6 +77,11 @@ interface Props {
   negotiationSupplierId?: string | null;
   isAdjustmentView?: boolean;
   adjustmentId?: string | null;
+  runBulkWithHistory?: (
+    label: string,
+    upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[],
+    deletes: { campaignId: string; storeId: string; pieceId: string }[],
+  ) => Promise<void>;
 }
 
 /* ─── Helpers ────────────────────────────────────────────── */
