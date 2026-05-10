@@ -146,7 +146,17 @@ html.aqua[data-mode="dark"] {
   transform: translateY(-1px);
 }
 
-/* Mobile performance — reduce blur on small screens */
+/* Sidebar icon containers — recolor earthy AquaIcon to vibrant per-item palette */
+.aqua aside .aqua-icon { background: linear-gradient(145deg, hsl(210 100% 55%), hsl(220 90% 45%)) !important; }
+.aqua aside .aqua-icon:has(svg.lucide-building-2) { background: linear-gradient(145deg, hsl(280 75% 60%), hsl(265 70% 48%)) !important; }
+.aqua aside .aqua-icon:has(svg.lucide-star) { background: linear-gradient(145deg, hsl(38 95% 55%), hsl(28 90% 48%)) !important; }
+.aqua aside .aqua-icon:has(svg.lucide-settings) { background: linear-gradient(145deg, hsl(170 70% 45%), hsl(190 75% 42%)) !important; }
+.aqua aside .aqua-icon:has(svg.lucide-shield) { background: linear-gradient(145deg, hsl(340 80% 58%), hsl(355 75% 50%)) !important; }
+.aqua aside .aqua-icon:has(svg.lucide-bell) { background: linear-gradient(145deg, hsl(45 95% 55%), hsl(35 90% 48%)) !important; }
+.aqua aside .aqua-icon:has(svg.lucide-calendar) { background: linear-gradient(145deg, hsl(150 65% 45%), hsl(165 70% 40%)) !important; }
+.aqua aside .aqua-icon:has(svg.lucide-message-circle) { background: linear-gradient(145deg, hsl(200 90% 55%), hsl(210 85% 48%)) !important; }
+.aqua aside .aqua-icon:has(svg.lucide-history) { background: linear-gradient(145deg, hsl(250 70% 60%), hsl(260 65% 50%)) !important; }
+
 @media (max-width: 768px) {
   .aqua .aqua-glass,
   .aqua [role="dialog"],
