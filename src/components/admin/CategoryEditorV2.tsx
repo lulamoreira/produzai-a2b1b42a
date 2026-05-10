@@ -392,9 +392,15 @@ export default function CategoryEditorV2({ open, onOpenChange, category }: Props
               <Users className="w-3.5 h-3.5" />
               {userCount} {userCount === 1 ? "usuário" : "usuários"} usam esta categoria
             </div>
-            <Button size="sm" onClick={handleSaveMeta} disabled={isSystem || !name.trim()}>
-              <Save className="w-3.5 h-3.5 mr-1.5" />
-              {isEdit ? "Salvar dados" : "Criar"}
+            <Button
+              size="sm"
+              onClick={handleSaveMeta}
+              disabled={isSystem || !name.trim() || saveState !== 'idle'}
+              className={cn(saveState === 'saved' && 'bg-green-600 hover:bg-green-600 text-white')}
+            >
+              {saveState === 'saving' && (<><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Salvando...</>)}
+              {saveState === 'saved' && (<><Check className="w-3.5 h-3.5 mr-1.5" /> Salvo</>)}
+              {saveState === 'idle' && (<><Save className="w-3.5 h-3.5 mr-1.5" /> {isEdit ? "Salvar dados" : "Criar"}</>)}
             </Button>
           </div>
 
