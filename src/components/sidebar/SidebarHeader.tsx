@@ -146,6 +146,13 @@ export function SidebarHeader({
           trigger={trigger}
         />
       </div>
+
+      <SidebarBreadcrumb
+        collapsed={collapsed}
+        agencyName={agencyName}
+        clientName={clientName}
+        campaignName={campaignName}
+      />
     </div>
   );
 }
