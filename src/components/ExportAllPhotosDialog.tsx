@@ -98,10 +98,14 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
         // We don't have direct list — fetch via campaign relations below; use empty fallback
         (await (async () => {
           const ids = new Set<string>();
-          const r1 = await supabase.from("installation_photos").select("store_id").eq("campaign_id", campaignId);
-          r1.data?.forEach((x: any) => x.store_id && ids.add(x.store_id));
-          const r2 = await supabase.from("occurrences").select("store_id").eq("campaign_id", campaignId);
-          r2.data?.forEach((x: any) => x.store_id && ids.add(x.store_id));
+          const r1 = await supabasePaginate<{ store_id: string | null }>((from, to) =>
+            supabase.from("installation_photos").select("store_id").eq("campaign_id", campaignId).range(from, to) as any
+          );
+          r1.forEach((x: any) => x.store_id && ids.add(x.store_id));
+          const r2 = await supabasePaginate<{ store_id: string | null }>((from, to) =>
+            supabase.from("occurrences").select("store_id").eq("campaign_id", campaignId).range(from, to) as any
+          );
+          r2.forEach((x: any) => x.store_id && ids.add(x.store_id));
           return Array.from(ids);
         })()) as string[]
       );
@@ -111,11 +115,14 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
     });
 
     if (scope.installations || scope.checkin) {
-      const { data } = await supabase
-        .from("installation_photos")
-        .select("id, photo_url, category, store_id")
-        .eq("campaign_id", campaignId);
-      (data || []).forEach((p: any) => {
+      const data = await supabasePaginate<{ id: string; photo_url: string; category: string; store_id: string }>((from, to) =>
+        supabase
+          .from("installation_photos")
+          .select("id, photo_url, category, store_id")
+          .eq("campaign_id", campaignId)
+          .range(from, to) as any
+      );
+      data.forEach((p: any) => {
         const isCheckin = p.category === "checkin";
         if (isCheckin && !scope.checkin) return;
         if (!isCheckin && !scope.installations) return;
@@ -137,13 +144,16 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
     }
 
     if (scope.occurrences) {
-      const { data: occs } = await supabase
-        .from("occurrences")
-        .select("id, store_id")
-        .eq("campaign_id", campaignId);
-      const occIds = (occs || []).map((o: any) => o.id);
+      const occs = await supabasePaginate<{ id: string; store_id: string | null }>((from, to) =>
+        supabase
+          .from("occurrences")
+          .select("id, store_id")
+          .eq("campaign_id", campaignId)
+          .range(from, to) as any
+      );
+      const occIds = occs.map((o: any) => o.id);
       const occStoreMap: Record<string, string> = {};
-      (occs || []).forEach((o: any) => {
+      occs.forEach((o: any) => {
         occStoreMap[o.id] = o.store_id;
       });
       if (occIds.length) {
