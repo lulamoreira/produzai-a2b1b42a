@@ -29,6 +29,7 @@ export function useCampaignSchedules(campaignId?: string) {
           .eq("campaign_id", campaignId!)
           .range(from, to) as any
       );
+    },
     enabled: !!campaignId,
   });
 
