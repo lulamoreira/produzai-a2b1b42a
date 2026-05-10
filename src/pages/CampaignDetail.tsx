@@ -573,7 +573,11 @@ const CampaignDetail = () => {
     }
     const newUrl = `${location.pathname}${params.toString() ? `?${params}` : ""}`;
     navigate(newUrl, { replace: true, state: location.state });
-  }, [location.pathname, location.search, location.state, navigate]);
+    // Persist last-visited section so the sidebar can resume it.
+    if (section && campaignId) {
+      import("@/lib/sidebarLastVisited").then((m) => m.setLastVisitedSection(campaignId, section)).catch(() => {});
+    }
+  }, [location.pathname, location.search, location.state, navigate, campaignId]);
 
   // ─── Matrix editing ────────────────────────────────────
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
