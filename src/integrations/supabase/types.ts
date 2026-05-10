@@ -3257,8 +3257,12 @@ export type Database = {
           can_view_pieces: boolean
           can_view_schedules: boolean
           can_view_stores: boolean
+          color: string | null
           created_at: string
+          description: string | null
+          display_order: number | null
           id: string
+          is_system: boolean | null
           name: string
         }
         Insert: {
@@ -3308,8 +3312,12 @@ export type Database = {
           can_view_pieces?: boolean
           can_view_schedules?: boolean
           can_view_stores?: boolean
+          color?: string | null
           created_at?: string
+          description?: string | null
+          display_order?: number | null
           id?: string
+          is_system?: boolean | null
           name: string
         }
         Update: {
@@ -3359,11 +3367,50 @@ export type Database = {
           can_view_pieces?: boolean
           can_view_schedules?: boolean
           can_view_stores?: boolean
+          color?: string | null
           created_at?: string
+          description?: string | null
+          display_order?: number | null
           id?: string
+          is_system?: boolean | null
           name?: string
         }
         Relationships: []
+      }
+      permission_grants: {
+        Row: {
+          action: string
+          category_id: string
+          created_at: string | null
+          granted: boolean
+          id: string
+          module_key: string
+        }
+        Insert: {
+          action: string
+          category_id: string
+          created_at?: string | null
+          granted?: boolean
+          id?: string
+          module_key: string
+        }
+        Update: {
+          action?: string
+          category_id?: string
+          created_at?: string | null
+          granted?: boolean
+          id?: string
+          module_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "permission_grants_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "permission_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pieces: {
         Row: {
@@ -4688,6 +4735,15 @@ export type Database = {
       }
       has_client_edit_access: {
         Args: { _client_id: string; _user_id: string }
+        Returns: boolean
+      }
+      has_module_permission: {
+        Args: {
+          _action: string
+          _category_id: string
+          _module_key: string
+          _user_id: string
+        }
         Returns: boolean
       }
       has_permission_category: {
