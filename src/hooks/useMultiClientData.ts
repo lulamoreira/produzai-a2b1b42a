@@ -409,6 +409,10 @@ export function useDeleteCampaign() {
       if (error) throw error;
     },
     onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: ["campaigns"] });
+      await qc.cancelQueries({ queryKey: ["sidebar-client-campaigns"] });
+      await qc.cancelQueries({ queryKey: ["user_direct_access"] });
+
       qc.setQueriesData<Campaign[]>({ queryKey: ["campaigns"] }, (old) =>
         old ? old.filter((c) => c.id !== id) : old
       );
