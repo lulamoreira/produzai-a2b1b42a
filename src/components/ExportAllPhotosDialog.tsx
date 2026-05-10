@@ -94,7 +94,7 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
   // Snapshot of photos collected at confirmation time — guarantees the
   // user confirms the exact set that gets processed, even if uploads happen
   // concurrently between the confirm dialog opening and onConfirm firing.
-  const photosToProcessRef = React.useRef<CollectedPhoto[] | null>(null);
+  const photosToProcessRef = useRef<CollectedPhoto[] | null>(null);
 
   const reset = () => {
     setProgress({ done: 0, total: 0, label: "" });
