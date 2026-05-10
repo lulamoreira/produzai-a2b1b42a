@@ -200,14 +200,16 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
   const { data: teamStoreCounts = {} } = useQuery({
     queryKey: ["team_store_counts", campaignId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaign_schedules")
-        .select("team_id")
-        .eq("campaign_id", campaignId)
-        .not("team_id", "is", null);
-      if (error) throw error;
+      const data = await supabasePaginate<{ team_id: string | null }>((from, to) =>
+        supabase
+          .from("campaign_schedules")
+          .select("team_id")
+          .eq("campaign_id", campaignId)
+          .not("team_id", "is", null)
+          .range(from, to) as any
+      );
       const counts: Record<string, number> = {};
-      (data || []).forEach((s) => {
+      data.forEach((s) => {
         if (s.team_id) counts[s.team_id] = (counts[s.team_id] || 0) + 1;
       });
       return counts;
