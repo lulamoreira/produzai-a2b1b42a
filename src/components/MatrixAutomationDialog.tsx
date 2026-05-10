@@ -176,9 +176,18 @@ export default function MatrixAutomationDialog({
   customFieldLabels, onComplete,
   isNegotiationView = false, negotiationSupplierId = null,
   isAdjustmentView = false, adjustmentId = null,
+  runBulkWithHistory,
 }: Props) {
   const { t } = useTranslation();
   const rateioOptions = { isNegotiationView, negotiationSupplierId, isAdjustmentView, adjustmentId };
+  const applyBulk = useCallback(async (
+    label: string,
+    upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[],
+    deletes: { campaignId: string; storeId: string; pieceId: string }[],
+  ) => {
+    if (runBulkWithHistory) return runBulkWithHistory(label, upserts, deletes);
+    return applyRateioBulk(upserts, deletes, rateioOptions);
+  }, [runBulkWithHistory, rateioOptions]);
 
 
   const [mainTab, setMainTab] = useState<string>("new");
