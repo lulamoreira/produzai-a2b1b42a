@@ -1425,16 +1425,20 @@ Qualquer dúvida, estamos à disposição.
 
       {/* ═══ SUPPLIERS SECTION ═══ */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-foreground">Fornecedores</h3>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" className="gap-1" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
-              <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
-            </Button>
-            <Button size="sm" variant="outline" className="gap-1" onClick={() => setAddOpen(true)}>
-              <Plus className="w-3.5 h-3.5" /> Adicionar Fornecedor
-            </Button>
-          </div>
+          <ResponsiveToolbar
+            primaryActions={
+              <Button size="sm" className="gap-1 min-h-[44px] md:min-h-0" onClick={() => setAddOpen(true)}>
+                <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Adicionar Fornecedor</span><span className="sm:hidden">Adicionar</span>
+              </Button>
+            }
+            secondaryActions={
+              <Button size="sm" variant="outline" className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
+                <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
+              </Button>
+            }
+          />
         </div>
 
         {suppliers.length === 0 ? (
