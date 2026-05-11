@@ -3,7 +3,7 @@ import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, LogOut, Package, Camera, Building2, Star, ArrowRight } from "lucide-react";
+import { Store, Grid3X3, LayoutList, AlertTriangle, CalendarDays, LogOut, Package, Camera, Building2, Star, ArrowRight, Palette, GitMerge, DollarSign } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import ModuleGrid from "@/components/ModuleGrid";
 import { useCampaignFavorites, useToggleFavorite } from "@/hooks/useCampaignFavorites";
@@ -25,6 +25,9 @@ const MyCampaigns = () => {
     scheduling: { label: t("modules.scheduling"), icon: CalendarDays },
     installations: { label: t("modules.installations"), icon: Camera },
     loja_a_loja: { label: "Loja a Loja", icon: Building2 },
+    mockup: { label: t("modules.mockup", "Mockup"), icon: Palette },
+    adjustments: { label: t("modules.adjustments", "Ajustes"), icon: GitMerge },
+    budgets: { label: t("modules.budgets", "Orçamentos"), icon: DollarSign },
   };
 
   if (isLoading) {
