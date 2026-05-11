@@ -84,6 +84,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
   const [newCampaignClientId, setNewCampaignClientId] = useState("");
   const [newCampaignId, setNewCampaignId] = useState("");
   const [newCampaignCategoryId, setNewCampaignCategoryId] = useState("");
+  const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null);
 
   const { data: campaignsForClient = [] } = useCampaigns(newCampaignClientId || undefined);
 
@@ -154,6 +155,34 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
     setAddingCampaign(false); setNewCampaignClientId(""); setNewCampaignId(""); setNewCampaignCategoryId("");
   };
 
+  const handleImpersonate = async () => {
+    setImpersonatingUserId(userInfo.user_id);
+    const { data, error } = await supabase.functions.invoke("impersonate-user", {
+      body: { userId: userInfo.user_id, redirectTo: window.location.origin + "/" },
+    });
+
+    if (error || (!data?.tokenHash && !data?.emailOtp)) {
+      setImpersonatingUserId(null);
+      toast.error("Erro ao impersonar: " + (error?.message || data?.error || "credenciais não geradas"));
+      return;
+    }
+
+    const verifyResult = data.tokenHash
+      ? await supabase.auth.verifyOtp({ type: "magiclink", token_hash: data.tokenHash })
+      : await supabase.auth.verifyOtp({ type: "magiclink", email: data.email, token: data.emailOtp });
+
+    if (verifyResult.error) {
+      setImpersonatingUserId(null);
+      toast.error("Erro ao entrar na conta: " + verifyResult.error.message);
+      return;
+    }
+
+    sessionStorage.removeItem("preview_user_id");
+    sessionStorage.removeItem("preview_user_name");
+    toast.success(`Entrando como ${capitalizeName(userInfo.display_name) || "usuário"}...`);
+    window.location.assign("/");
+  };
+
   const roleBadge = () => {
     if (userInfo.role === "admin") return <Badge variant="default" className="text-[10px] uppercase tracking-wider">Admin</Badge>;
     if (userInfo.role === "master") return <Badge variant="outline" className="text-[10px] uppercase tracking-wider bg-orange-500/15 text-orange-700 border-orange-500/30">Master</Badge>;
@@ -209,8 +238,16 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
   return (
     <div className="border border-border rounded-xl bg-card overflow-hidden transition-shadow hover:shadow-md">
       {/* Header */}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded(!expanded)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded(!expanded);
+          }
+        }}
         className="w-full flex items-center gap-3 px-5 py-4 hover:bg-muted/30 transition-colors text-left"
       >
         {expanded ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
@@ -259,37 +296,23 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
               </button>
               {isAdmin && (
                 <button
-                  title="Impersonar: gera um link mágico de login deste usuário e copia para a área de transferência. Abra uma janela anônima (Ctrl+Shift+N) e cole o link para entrar de verdade como ele."
+                  type="button"
+                  disabled={impersonatingUserId === userInfo.user_id}
+                  title="Impersonar: entra imediatamente na conta deste usuário nesta aba."
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const { data, error } = await supabase.functions.invoke("impersonate-user", {
-                      body: { userId: userInfo.user_id, redirectTo: window.location.origin + "/" },
-                    });
-                    if (error || !data?.url) {
-                      toast.error("Erro: " + (error?.message || data?.error || "falha ao gerar link"));
-                      return;
-                    }
-                    try {
-                      await navigator.clipboard.writeText(data.url);
-                      toast.success(
-                        "Link copiado! Agora abra uma janela anônima (Ctrl+Shift+N ou Cmd+Shift+N) e cole o link lá.",
-                        { duration: 8000 }
-                      );
-                    } catch {
-                      window.open(data.url, "_blank", "noopener");
-                      toast.success("Link aberto em nova aba. Atenção: isso pode deslogar sua sessão atual.");
-                    }
+                    await handleImpersonate();
                   }}
-                  className="h-8 px-2.5 inline-flex items-center justify-center gap-1.5 rounded-md border border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300 transition-colors text-xs font-medium"
+                  className="h-8 px-2.5 inline-flex items-center justify-center gap-1.5 rounded-md border border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100 disabled:opacity-60 disabled:cursor-wait dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300 transition-colors text-xs font-medium"
                 >
                   <LogIn className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Impersonar</span>
+                  <span className="hidden sm:inline">{impersonatingUserId === userInfo.user_id ? "Entrando..." : "Impersonar"}</span>
                 </button>
               )}
             </>
           )}
         </div>
-      </button>
+      </div>
 
       {/* Expanded Content */}
       {expanded && (
@@ -574,7 +597,7 @@ function UserProfileDetails({ userId, agencies, clients }: {
   const { data: email } = useQuery({
     queryKey: ["user_email", userId],
     queryFn: async () => {
-      const { data } = await supabase.rpc("get_user_email" as any, { _user_id: userId });
+      const { data } = await supabase.rpc("get_user_email", { _user_id: userId });
       return (data as string) ?? null;
     },
     staleTime: 5 * 60_000,

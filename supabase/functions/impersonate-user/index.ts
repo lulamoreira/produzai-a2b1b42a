@@ -1,9 +1,9 @@
-// Generates a magic link to log in as another user (admin-only).
+// Generates one-time credentials to log in as another user (admin-only).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
@@ -29,7 +29,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { userId, redirectTo } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const userId = typeof body?.userId === "string" ? body.userId : "";
+    const redirectTo = typeof body?.redirectTo === "string" ? body.redirectTo : undefined;
     if (!userId) {
       return new Response(JSON.stringify({ error: "userId required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -44,11 +46,26 @@ Deno.serve(async (req) => {
       email: target.user.email,
       options: { redirectTo: redirectTo || undefined },
     });
-    if (linkErr || !link?.properties?.action_link) {
+    const properties = link?.properties as {
+      action_link?: string;
+      hashed_token?: string;
+      email_otp?: string;
+    } | undefined;
+    const tokenHashFromUrl = properties?.action_link
+      ? new URL(properties.action_link).searchParams.get("token_hash") ?? new URL(properties.action_link).searchParams.get("token") ?? undefined
+      : undefined;
+    const tokenHash = properties?.hashed_token ?? tokenHashFromUrl;
+
+    if (linkErr || (!tokenHash && !properties?.email_otp)) {
       return new Response(JSON.stringify({ error: linkErr?.message || "Failed to generate link" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    return new Response(JSON.stringify({ url: link.properties.action_link }), {
+    return new Response(JSON.stringify({
+      tokenHash,
+      emailOtp: properties?.email_otp,
+      email: target.user.email,
+      url: properties?.action_link,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
