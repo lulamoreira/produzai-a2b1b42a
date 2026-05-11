@@ -280,9 +280,10 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                       toast.success("Link aberto em nova aba. Atenção: isso pode deslogar sua sessão atual.");
                     }
                   }}
-                  className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  className="h-8 px-2.5 inline-flex items-center justify-center gap-1.5 rounded-md border border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300 transition-colors text-xs font-medium"
                 >
                   <LogIn className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Impersonar</span>
                 </button>
               )}
             </>
