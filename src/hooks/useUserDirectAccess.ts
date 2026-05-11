@@ -149,6 +149,13 @@ export function useUserDirectAccess() {
               pc.can_view_lal_ocorrencias;
             if (lalView) entry.modules.add("loja_a_loja");
           }
+
+          // v2 grants for modules with no legacy column
+          if (ca.category_id) {
+            for (const mk of ["mockup", "adjustments", "budgets"] as const) {
+              if (grantedV2Modules.has(`${ca.category_id}:${mk}`)) entry.modules.add(mk);
+            }
+          }
         }
 
         campaignsResult = Array.from(mergedMap.values()).map((e) => ({
