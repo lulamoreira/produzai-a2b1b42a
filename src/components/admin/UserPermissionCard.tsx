@@ -30,6 +30,7 @@ import {
   ChevronDown, ChevronRight, Edit3, Plus, Trash2,
   PauseCircle, PlayCircle, Building2, KeyRound, Shield, Megaphone,
   User as UserIcon, Mail, Phone, Briefcase, Calendar, Languages, Palette, MessageCircle, IdCard,
+  Eye, LogIn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -238,6 +239,47 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
           {isCurrentUser && <span className="text-xs text-muted-foreground italic">(Você)</span>}
           {!isAdminOrMasterUser && totalAccesses > 0 && (
             <Badge variant="outline" className="text-[10px]">{totalAccesses} acesso{totalAccesses !== 1 ? "s" : ""}</Badge>
+          )}
+          {!isCurrentUser && (
+            <>
+              <button
+                title="Visualizar como este usuário (preview, sem alterar sua sessão)"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const url = new URL(window.location.origin + "/");
+                  url.searchParams.set("preview_as", userInfo.user_id);
+                  if (userInfo.display_name) url.searchParams.set("preview_name", userInfo.display_name);
+                  window.open(url.toString(), "_blank", "noopener");
+                }}
+                className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Eye className="w-3.5 h-3.5" />
+              </button>
+              {isAdmin && (
+                <button
+                  title="Entrar como este usuário (login real — vai deslogar você desta sessão; abra em janela anônima)"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const ok = window.confirm(
+                      "Atenção: isto vai gerar um login real como este usuário e VAI DESLOGAR você desta sessão.\n\nRecomendado: abra antes uma janela anônima e cole o link lá.\n\nDeseja continuar?"
+                    );
+                    if (!ok) return;
+                    const { data, error } = await supabase.functions.invoke("impersonate-user", {
+                      body: { userId: userInfo.user_id, redirectTo: window.location.origin + "/" },
+                    });
+                    if (error || !data?.url) {
+                      toast.error("Erro: " + (error?.message || data?.error || "falha ao gerar link"));
+                      return;
+                    }
+                    window.open(data.url, "_blank", "noopener");
+                    toast.success("Link de login aberto em nova aba.");
+                  }}
+                  className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </>
           )}
         </div>
       </button>

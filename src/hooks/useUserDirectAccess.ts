@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePreviewUser } from "@/hooks/usePreviewUser";
 
 export type CampaignAccess = {
   campaignId: string;
@@ -20,19 +21,21 @@ export type ClientAccess = {
 
 export function useUserDirectAccess() {
   const { user } = useAuth();
+  const { previewUserId } = usePreviewUser();
   const { isAdminOrMaster, isLoading: roleLoading } = useUserRole();
+  const effectiveId = previewUserId ?? user?.id;
 
   const { data, isLoading } = useQuery({
-    queryKey: ["user_direct_access", user?.id, isAdminOrMaster],
+    queryKey: ["user_direct_access", effectiveId, isAdminOrMaster],
     queryFn: async (): Promise<{ isLimited: boolean; campaigns: CampaignAccess[]; clients: ClientAccess[] }> => {
-      if (!user) return { isLimited: false, campaigns: [], clients: [] };
+      if (!effectiveId) return { isLimited: false, campaigns: [], clients: [] };
       if (isAdminOrMaster) return { isLimited: false, campaigns: [], clients: [] };
 
       // Check agency-level access — if present, user is NOT limited
       const { data: agencyAccess } = await supabase
         .from("user_agency_access")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveId)
         .eq("suspended", false)
         .limit(1);
 
@@ -44,7 +47,7 @@ export function useUserDirectAccess() {
       const { data: clientAccess } = await supabase
         .from("user_client_access")
         .select("client_id, clients(id, name, agency_id)")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveId)
         .eq("suspended", false);
 
       const directClients: ClientAccess[] = (clientAccess ?? [])
@@ -66,7 +69,7 @@ export function useUserDirectAccess() {
             can_view_installations, can_view_loja_a_loja
           )
         `)
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveId)
         .eq("suspended", false);
 
       let campaignsResult: CampaignAccess[] = [];
@@ -125,7 +128,7 @@ export function useUserDirectAccess() {
 
       return { isLimited: true, campaigns: campaignsResult, clients: directClients };
     },
-    enabled: !!user && !roleLoading,
+    enabled: !!effectiveId && !roleLoading,
   });
 
   return {

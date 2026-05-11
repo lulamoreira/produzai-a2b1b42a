@@ -20,6 +20,8 @@ import { Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HistoryShortcutProvider } from "@/lib/undo/HistoryShortcutProvider";
 import { GlobalSearchMount } from "@/components/sidebar/GlobalSearch";
+import { PreviewUserProvider } from "@/hooks/usePreviewUser";
+import { PreviewUserBanner } from "@/components/PreviewUserBanner";
 
 // Lazy-loaded page components (one chunk per route)
 const AgencySelect = lazy(() => import("./pages/AgencySelect"));
@@ -183,8 +185,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <PreviewUserProvider>
             <SidebarStateProvider>
             <ErrorBoundary>
+              <PreviewUserBanner />
               <Suspense fallback={<RouteFallback />}>
                 <Routes>
                   <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
@@ -214,6 +218,7 @@ const App = () => (
               </Suspense>
             </ErrorBoundary>
             </SidebarStateProvider>
+            </PreviewUserProvider>
           </AuthProvider>
         </BrowserRouter>
         </HistoryShortcutProvider>
