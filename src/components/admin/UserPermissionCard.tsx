@@ -238,8 +238,16 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
   return (
     <div className="border border-border rounded-xl bg-card overflow-hidden transition-shadow hover:shadow-md">
       {/* Header */}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded(!expanded)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded(!expanded);
+          }
+        }}
         className="w-full flex items-center gap-3 px-5 py-4 hover:bg-muted/30 transition-colors text-left"
       >
         {expanded ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
@@ -304,7 +312,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
             </>
           )}
         </div>
-      </button>
+      </div>
 
       {/* Expanded Content */}
       {expanded && (
