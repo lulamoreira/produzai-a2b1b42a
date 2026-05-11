@@ -63,6 +63,7 @@ export function useUserDirectAccess() {
         .from("user_campaign_access")
         .select(`
           campaign_id,
+          category_id,
           permission_categories (
             can_view_stores, can_view_campaign_stores, can_view_pieces,
             can_view_occurrences, can_view_schedules, can_view_campaigns,
