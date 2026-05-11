@@ -1185,6 +1185,28 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     Original: {fmtCurrency(winnerOriginalTotal)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">{(winnerSupplier as any).company_name}</p>
+                  {(() => {
+                    const ec = extraCosts.find((e) => e.supplier_id === (winnerSupplier as any).id) as any;
+                    const installation = Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0);
+                    const freight = Number(ec?.adjusted_freight_value ?? ec?.freight_value ?? 0);
+                    const production = Math.max(0, winnerNegotiatedTotal - installation - freight);
+                    return (
+                      <div className="mt-3 pt-3 border-t border-border/60 space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Produção</span>
+                          <span className="font-medium tabular-nums">{fmtCurrency(production)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Frete</span>
+                          <span className="font-medium tabular-nums">{fmtCurrency(freight)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Instalação</span>
+                          <span className="font-medium tabular-nums">{fmtCurrency(installation)}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </>
               ) : bestSupplier ? (
                 <>
@@ -1193,6 +1215,30 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     <p className="text-[11px] text-muted-foreground mt-0.5">{fmtBRL(bestSupplier.total * exchangeRate)}</p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">{bestSupplier.name}</p>
+                  {(() => {
+                    const sup = suppliers.find((s) => s.name === bestSupplier.name) as any;
+                    if (!sup) return null;
+                    const ec = extraCosts.find((e) => e.supplier_id === sup.id) as any;
+                    const installation = Number(ec?.installation_value ?? 0);
+                    const freight = Number(ec?.freight_value ?? 0);
+                    const production = Math.max(0, bestSupplier.total - installation - freight);
+                    return (
+                      <div className="mt-3 pt-3 border-t border-border/60 space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Produção</span>
+                          <span className="font-medium tabular-nums">{fmtCurrency(production)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Frete</span>
+                          <span className="font-medium tabular-nums">{fmtCurrency(freight)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-muted-foreground">Instalação</span>
+                          <span className="font-medium tabular-nums">{fmtCurrency(installation)}</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">Sem propostas</p>
