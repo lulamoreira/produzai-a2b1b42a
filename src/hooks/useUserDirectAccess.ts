@@ -128,7 +128,7 @@ export function useUserDirectAccess() {
 
       return { isLimited: true, campaigns: campaignsResult, clients: directClients };
     },
-    enabled: !!user && !roleLoading,
+    enabled: !!effectiveId && !roleLoading,
   });
 
   return {
