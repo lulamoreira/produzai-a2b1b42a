@@ -288,31 +288,17 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
               </button>
               {isAdmin && (
                 <button
-                  title="Impersonar: gera um link mágico de login deste usuário e copia para a área de transferência. Abra uma janela anônima (Ctrl+Shift+N) e cole o link para entrar de verdade como ele."
+                  type="button"
+                  disabled={impersonatingUserId === userInfo.user_id}
+                  title="Impersonar: entra imediatamente na conta deste usuário nesta aba."
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const { data, error } = await supabase.functions.invoke("impersonate-user", {
-                      body: { userId: userInfo.user_id, redirectTo: window.location.origin + "/" },
-                    });
-                    if (error || !data?.url) {
-                      toast.error("Erro: " + (error?.message || data?.error || "falha ao gerar link"));
-                      return;
-                    }
-                    try {
-                      await navigator.clipboard.writeText(data.url);
-                      toast.success(
-                        "Link copiado! Agora abra uma janela anônima (Ctrl+Shift+N ou Cmd+Shift+N) e cole o link lá.",
-                        { duration: 8000 }
-                      );
-                    } catch {
-                      window.open(data.url, "_blank", "noopener");
-                      toast.success("Link aberto em nova aba. Atenção: isso pode deslogar sua sessão atual.");
-                    }
+                    await handleImpersonate();
                   }}
-                  className="h-8 px-2.5 inline-flex items-center justify-center gap-1.5 rounded-md border border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300 transition-colors text-xs font-medium"
+                  className="h-8 px-2.5 inline-flex items-center justify-center gap-1.5 rounded-md border border-blue-300 bg-blue-50 text-blue-800 hover:bg-blue-100 disabled:opacity-60 disabled:cursor-wait dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300 transition-colors text-xs font-medium"
                 >
                   <LogIn className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Impersonar</span>
+                  <span className="hidden sm:inline">{impersonatingUserId === userInfo.user_id ? "Entrando..." : "Impersonar"}</span>
                 </button>
               )}
             </>
