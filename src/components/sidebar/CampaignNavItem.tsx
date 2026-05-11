@@ -34,13 +34,10 @@ export function CampaignNavItem({
   const { t } = useTranslation();
 
   const handleCampaignClick = () => {
-    const last = getLastVisitedSection(campaignId);
-    if (last && modules.some((m) => m.key === last)) {
-      onNavigateModule(last);
-    } else {
-      onNavigateHome();
-    }
+    // Sempre vai para a tela inicial da campanha (KPIs + ModuleGrid)
+    onNavigateHome();
   };
+
 
   if (collapsed) {
     return (
