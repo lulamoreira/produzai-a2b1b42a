@@ -151,9 +151,10 @@ export function useUserDirectAccess() {
             if (lalView) entry.modules.add("loja_a_loja");
           }
 
-          // v2 grants for modules with no legacy column
+          // v2 grants for modules with no legacy column (Mockup/Ajustes only;
+          // Budgets is admin-only).
           if (ca.category_id) {
-            for (const mk of ["mockup", "adjustments", "budgets"] as const) {
+            for (const mk of ["mockup", "adjustments"] as const) {
               if (grantedV2Modules.has(`${ca.category_id}:${mk}`)) entry.modules.add(mk);
             }
           }
