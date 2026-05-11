@@ -226,6 +226,50 @@ html.aqua[data-mode="dark"] {
               0 4px 12px hsla(200, 80%, 30%, 0.35);
 }
 
+/* ====== ModuleGrid icon tiles — vibrant per-module gradients ====== */
+/* Targets the inner 44x44 colored square; overrides inline style. */
+.aqua button > div.w-11.h-11.rounded-xl {
+  background: linear-gradient(145deg, hsl(210 100% 55%), hsl(220 90% 48%)) !important;
+  box-shadow: 0 4px 12px hsla(210, 90%, 50%, 0.28),
+              inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-calendar-days) {
+  background: linear-gradient(145deg, hsl(150 70% 48%), hsl(165 75% 40%)) !important;
+  box-shadow: 0 4px 12px hsla(155, 70%, 42%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-camera) {
+  background: linear-gradient(145deg, hsl(28 95% 58%), hsl(18 90% 50%)) !important;
+  box-shadow: 0 4px 12px hsla(25, 90%, 50%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-layout-grid) {
+  background: linear-gradient(145deg, hsl(280 75% 60%), hsl(265 70% 50%)) !important;
+  box-shadow: 0 4px 12px hsla(275, 70%, 52%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-store) {
+  background: linear-gradient(145deg, hsl(195 90% 52%), hsl(210 90% 48%)) !important;
+  box-shadow: 0 4px 12px hsla(200, 85%, 48%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-alert-triangle) {
+  background: linear-gradient(145deg, hsl(350 85% 60%), hsl(355 80% 50%)) !important;
+  box-shadow: 0 4px 12px hsla(352, 80%, 52%, 0.32), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-dollar-sign) {
+  background: linear-gradient(145deg, hsl(165 75% 42%), hsl(175 80% 36%)) !important;
+  box-shadow: 0 4px 12px hsla(170, 75%, 38%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-layers) {
+  background: linear-gradient(145deg, hsl(255 75% 65%), hsl(245 70% 55%)) !important;
+  box-shadow: 0 4px 12px hsla(250, 70%, 55%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-layout-list) {
+  background: linear-gradient(145deg, hsl(38 95% 55%), hsl(28 90% 48%)) !important;
+  box-shadow: 0 4px 12px hsla(33, 90%, 50%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-grid-3x3) {
+  background: linear-gradient(145deg, hsl(220 85% 60%), hsl(235 80% 52%)) !important;
+  box-shadow: 0 4px 12px hsla(228, 80%, 55%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
+}
+
 @media (max-width: 768px) {
   .aqua .aqua-glass,
   .aqua [role="dialog"],
