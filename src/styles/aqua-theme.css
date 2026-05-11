@@ -249,47 +249,47 @@ html.aqua[data-mode="dark"] {
 
 /* ====== ModuleGrid icon tiles — vibrant per-module gradients ====== */
 /* Targets the inner 44x44 colored square; overrides inline style. */
-.aqua button > div.w-11.h-11.rounded-xl {
-  background: linear-gradient(145deg, hsl(210 100% 55%), hsl(220 90% 48%)) !important;
-  box-shadow: 0 4px 12px hsla(210, 90%, 50%, 0.28),
-              inset 0 1px 0 rgba(255,255,255,0.35);
+/* Base aqua gloss: gradient diagonal + sheen branca no topo + sombra colorida */
+.aqua [data-module] {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(160deg, hsl(var(--mod-h) var(--mod-s) calc(var(--mod-l) + 12%)) 0%, hsl(var(--mod-h) var(--mod-s) var(--mod-l)) 55%, hsl(var(--mod-h) var(--mod-s) calc(var(--mod-l) - 10%)) 100%) !important;
+  box-shadow:
+    0 6px 14px hsla(var(--mod-h), var(--mod-s), var(--mod-l), 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -2px 4px hsla(var(--mod-h), var(--mod-s), calc(var(--mod-l) - 18%), 0.45);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
 }
-.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-calendar-days) {
-  background: linear-gradient(145deg, hsl(150 70% 48%), hsl(165 75% 40%)) !important;
-  box-shadow: 0 4px 12px hsla(155, 70%, 42%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
+.aqua [data-module]::before {
+  content: "";
+  position: absolute;
+  inset: 1px 1px 50% 1px;
+  border-radius: 10px 10px 14px 14px / 10px 10px 20px 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.10) 100%);
+  pointer-events: none;
 }
-.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-camera) {
-  background: linear-gradient(145deg, hsl(28 95% 58%), hsl(18 90% 50%)) !important;
-  box-shadow: 0 4px 12px hsla(25, 90%, 50%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
+.aqua button:hover > [data-module] {
+  transform: translateY(-1px) scale(1.04);
+  filter: brightness(1.08) saturate(1.1);
+  box-shadow:
+    0 10px 22px hsla(var(--mod-h), var(--mod-s), var(--mod-l), 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -2px 4px hsla(var(--mod-h), var(--mod-s), calc(var(--mod-l) - 18%), 0.5);
 }
-.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-layout-grid) {
-  background: linear-gradient(145deg, hsl(280 75% 60%), hsl(265 70% 50%)) !important;
-  box-shadow: 0 4px 12px hsla(275, 70%, 52%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
-}
-.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-store) {
-  background: linear-gradient(145deg, hsl(195 90% 52%), hsl(210 90% 48%)) !important;
-  box-shadow: 0 4px 12px hsla(200, 85%, 48%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
-}
-.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-alert-triangle) {
-  background: linear-gradient(145deg, hsl(350 85% 60%), hsl(355 80% 50%)) !important;
-  box-shadow: 0 4px 12px hsla(352, 80%, 52%, 0.32), inset 0 1px 0 rgba(255,255,255,0.35);
-}
-.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-dollar-sign) {
-  background: linear-gradient(145deg, hsl(165 75% 42%), hsl(175 80% 36%)) !important;
-  box-shadow: 0 4px 12px hsla(170, 75%, 38%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
-}
-.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-layers) {
-  background: linear-gradient(145deg, hsl(255 75% 65%), hsl(245 70% 55%)) !important;
-  box-shadow: 0 4px 12px hsla(250, 70%, 55%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
-}
-.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-layout-list) {
-  background: linear-gradient(145deg, hsl(38 95% 55%), hsl(28 90% 48%)) !important;
-  box-shadow: 0 4px 12px hsla(33, 90%, 50%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
-}
-.aqua button > div.w-11.h-11.rounded-xl:has(> svg.lucide-grid-3x3) {
-  background: linear-gradient(145deg, hsl(220 85% 60%), hsl(235 80% 52%)) !important;
-  box-shadow: 0 4px 12px hsla(228, 80%, 55%, 0.30), inset 0 1px 0 rgba(255,255,255,0.35);
-}
+
+/* Cores únicas por módulo (10 hues bem distintos) */
+.aqua [data-module="scheduling"]    { --mod-h: 145; --mod-s: 70%; --mod-l: 45%; } /* verde */
+.aqua [data-module="installations"] { --mod-h:  20; --mod-s: 92%; --mod-l: 55%; } /* laranja */
+.aqua [data-module="loja_a_loja"]   { --mod-h: 290; --mod-s: 75%; --mod-l: 58%; } /* magenta */
+.aqua [data-module="stores"]        { --mod-h: 200; --mod-s: 90%; --mod-l: 50%; } /* ciano */
+.aqua [data-module="occurrences"]   { --mod-h: 355; --mod-s: 82%; --mod-l: 56%; } /* vermelho coral */
+.aqua [data-module="budgets"]       { --mod-h: 165; --mod-s: 78%; --mod-l: 40%; } /* turquesa */
+.aqua [data-module="adjustments"]   { --mod-h: 255; --mod-s: 75%; --mod-l: 62%; } /* índigo */
+.aqua [data-module="pieces"]        { --mod-h:  40; --mod-s: 95%; --mod-l: 52%; } /* âmbar */
+.aqua [data-module="matrix"]        { --mod-h: 220; --mod-s: 88%; --mod-l: 55%; } /* azul */
+.aqua [data-module="mockup"]        { --mod-h: 320; --mod-s: 78%; --mod-l: 60%; } /* rosa pink */
+.aqua [data-module="history"]       { --mod-h: 270; --mod-s: 60%; --mod-l: 55%; } /* roxo */
+
 
 @media (max-width: 768px) {
   .aqua .aqua-glass,

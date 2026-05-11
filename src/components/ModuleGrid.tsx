@@ -52,6 +52,7 @@ const ModuleGrid = ({ items, onSelect }: ModuleGridProps) => {
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
           >
             <div
+              data-module={key}
               className="w-11 h-11 rounded-xl flex items-center justify-center"
               style={{ background: color || MODULE_COLORS[key] || "#8C6F4E" }}
             >
