@@ -589,7 +589,7 @@ function UserProfileDetails({ userId, agencies, clients }: {
   const { data: email } = useQuery({
     queryKey: ["user_email", userId],
     queryFn: async () => {
-      const { data } = await supabase.rpc("get_user_email" as any, { _user_id: userId });
+      const { data } = await supabase.rpc("get_user_email", { _user_id: userId });
       return (data as string) ?? null;
     },
     staleTime: 5 * 60_000,
