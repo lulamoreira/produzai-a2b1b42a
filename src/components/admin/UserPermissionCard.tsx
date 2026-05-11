@@ -243,7 +243,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
           {!isCurrentUser && (
             <>
               <button
-                title="Visualizar como este usuário (preview na mesma aba — use o botão Sair no banner amarelo para voltar)"
+                title="Pré-visualizar: ver o sistema com o menu/permissões deste usuário, sem sair da sua conta. Para voltar, clique em 'Sair' no banner amarelo no topo."
                 onClick={(e) => {
                   e.stopPropagation();
                   sessionStorage.setItem("preview_user_id", userInfo.user_id);
@@ -252,13 +252,14 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                   }
                   window.location.href = "/";
                 }}
-                className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                className="h-8 px-2.5 inline-flex items-center justify-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300 transition-colors text-xs font-medium"
               >
                 <Eye className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Ver como</span>
               </button>
               {isAdmin && (
                 <button
-                  title="Entrar como este usuário (abra em janela anônima para não deslogar sua sessão)"
+                  title="Impersonar: gera um link mágico de login deste usuário e copia para a área de transferência. Abra uma janela anônima (Ctrl+Shift+N) e cole o link para entrar de verdade como ele."
                   onClick={async (e) => {
                     e.stopPropagation();
                     const { data, error } = await supabase.functions.invoke("impersonate-user", {
