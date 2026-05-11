@@ -81,9 +81,39 @@ export function useUserDirectAccess() {
           .select("id, name, client_id, clients(name, agency_id)")
           .in("id", campaignIds);
 
+        // v2 grants: collect categories used and look up view-grants for
+        // modules that have NO legacy boolean column (mockup, adjustments, budgets).
+        const categoryIds = Array.from(
+          new Set(
+            (campaignAccess as Array<{ category_id?: string | null }>)
+              .map((ca) => ca.category_id)
+              .filter((x): x is string => !!x),
+          ),
+        );
+        const grantedV2Modules = new Set<string>();
+        if (categoryIds.length > 0) {
+          const { data: grants } = await (supabase as never as {
+            from: (t: string) => {
+              select: (s: string) => {
+                in: (c: string, v: string[]) => {
+                  in: (c: string, v: string[]) => {
+                    eq: (c: string, v: string) => Promise<{ data: Array<{ category_id: string; module_key: string }> | null }>;
+                  };
+                };
+              };
+            };
+          })
+            .from("permission_grants")
+            .select("category_id, module_key")
+            .in("category_id", categoryIds)
+            .in("module_key", ["mockup", "adjustments", "budgets"])
+            .eq("action", "view");
+          (grants ?? []).forEach((g) => grantedV2Modules.add(`${g.category_id}:${g.module_key}`));
+        }
+
         const mergedMap = new Map<string, { campaignId: string; modules: Set<string>; campaignName: string; clientName: string; clientId: string; agencyId: string }>();
 
-        for (const ca of campaignAccess) {
+        for (const ca of campaignAccess as Array<{ campaign_id: string; category_id?: string | null; permission_categories: Record<string, boolean> | null }>) {
           const campaign = campaigns?.find((c) => c.id === ca.campaign_id);
           const pc = ca.permission_categories as Record<string, boolean> | null;
           const client = campaign?.clients as { name: string; agency_id: string } | null;
