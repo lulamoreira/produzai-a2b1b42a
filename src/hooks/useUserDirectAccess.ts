@@ -107,7 +107,7 @@ export function useUserDirectAccess() {
             .from("permission_grants")
             .select("category_id, module_key")
             .in("category_id", categoryIds)
-            .in("module_key", ["mockup", "adjustments", "budgets"])
+            .in("module_key", ["mockup", "adjustments"])
             .eq("action", "view");
           (grants ?? []).forEach((g) => grantedV2Modules.add(`${g.category_id}:${g.module_key}`));
         }
@@ -136,10 +136,11 @@ export function useUserDirectAccess() {
             if (pc.can_view_stores || pc.can_view_campaign_stores) entry.modules.add("stores");
             if (pc.can_view_campaign_stores) entry.modules.add("matrix");
             if (pc.can_view_pieces) entry.modules.add("pieces");
-            if (pc.can_view_occurrences) entry.modules.add("occurrences");
+            // `occurrences` (legacy module) is intentionally NOT exposed —
+            // replaced by Loja a Loja › Ocorrências.
             if (pc.can_view_schedules) entry.modules.add("scheduling");
             if (pc.can_view_installations) entry.modules.add("installations");
-            if (pc.can_view_campaigns) entry.modules.add("budgets");
+            // `budgets` is Admin-only — never exposed to limited users.
             const lalView =
               pc.can_view_loja_a_loja ||
               pc.can_view_lal_estrutura ||
@@ -150,9 +151,10 @@ export function useUserDirectAccess() {
             if (lalView) entry.modules.add("loja_a_loja");
           }
 
-          // v2 grants for modules with no legacy column
+          // v2 grants for modules with no legacy column (Mockup/Ajustes only;
+          // Budgets is admin-only).
           if (ca.category_id) {
-            for (const mk of ["mockup", "adjustments", "budgets"] as const) {
+            for (const mk of ["mockup", "adjustments"] as const) {
               if (grantedV2Modules.has(`${ca.category_id}:${mk}`)) entry.modules.add(mk);
             }
           }
