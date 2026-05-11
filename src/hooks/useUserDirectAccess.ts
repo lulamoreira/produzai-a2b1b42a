@@ -47,7 +47,7 @@ export function useUserDirectAccess() {
       const { data: clientAccess } = await supabase
         .from("user_client_access")
         .select("client_id, clients(id, name, agency_id)")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveId)
         .eq("suspended", false);
 
       const directClients: ClientAccess[] = (clientAccess ?? [])
@@ -69,7 +69,7 @@ export function useUserDirectAccess() {
             can_view_installations, can_view_loja_a_loja
           )
         `)
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveId)
         .eq("suspended", false);
 
       let campaignsResult: CampaignAccess[] = [];
