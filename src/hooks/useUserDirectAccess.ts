@@ -135,6 +135,7 @@ export function useUserDirectAccess() {
           if (pc) {
             if (pc.can_view_stores || pc.can_view_campaign_stores) entry.modules.add("stores");
             if (pc.can_view_campaign_stores) entry.modules.add("matrix");
+            if (pc.can_view_pieces) entry.modules.add("pieces");
             // `occurrences` (legacy module) is intentionally NOT exposed —
             // replaced by Loja a Loja › Ocorrências.
             if (pc.can_view_schedules) entry.modules.add("scheduling");
