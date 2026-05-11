@@ -243,13 +243,14 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
           {!isCurrentUser && (
             <>
               <button
-                title="Visualizar como este usuário (preview, sem alterar sua sessão)"
+                title="Visualizar como este usuário (preview na mesma aba — use o botão Sair no banner amarelo para voltar)"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const url = new URL(window.location.origin + "/");
-                  url.searchParams.set("preview_as", userInfo.user_id);
-                  if (userInfo.display_name) url.searchParams.set("preview_name", userInfo.display_name);
-                  window.open(url.toString(), "_blank", "noopener");
+                  sessionStorage.setItem("preview_user_id", userInfo.user_id);
+                  if (userInfo.display_name) {
+                    sessionStorage.setItem("preview_user_name", userInfo.display_name);
+                  }
+                  window.location.href = "/";
                 }}
                 className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
               >
