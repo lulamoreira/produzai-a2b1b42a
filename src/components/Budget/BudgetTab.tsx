@@ -1216,7 +1216,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   )}
                   <p className="text-xs text-muted-foreground mt-1">{bestSupplier.name}</p>
                   {(() => {
-                    const sup = suppliers.find((s) => s.name === bestSupplier.name) as any;
+                    const sup = (suppliers as any[]).find((s) => s.company_name === bestSupplier.name);
                     if (!sup) return null;
                     const ec = extraCosts.find((e) => e.supplier_id === sup.id) as any;
                     const installation = Number(ec?.installation_value ?? 0);
