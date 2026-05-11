@@ -84,6 +84,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
   const [newCampaignClientId, setNewCampaignClientId] = useState("");
   const [newCampaignId, setNewCampaignId] = useState("");
   const [newCampaignCategoryId, setNewCampaignCategoryId] = useState("");
+  const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null);
 
   const { data: campaignsForClient = [] } = useCampaigns(newCampaignClientId || undefined);
 
@@ -152,6 +153,34 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
     if (existing) { toast.error("Já possui este acesso com a mesma categoria."); return; }
     addCampaignAccess.mutate({ user_id: userInfo.user_id, campaign_id: newCampaignId, category_id: newCampaignCategoryId });
     setAddingCampaign(false); setNewCampaignClientId(""); setNewCampaignId(""); setNewCampaignCategoryId("");
+  };
+
+  const handleImpersonate = async () => {
+    setImpersonatingUserId(userInfo.user_id);
+    const { data, error } = await supabase.functions.invoke("impersonate-user", {
+      body: { userId: userInfo.user_id, redirectTo: window.location.origin + "/" },
+    });
+
+    if (error || (!data?.tokenHash && !data?.emailOtp)) {
+      setImpersonatingUserId(null);
+      toast.error("Erro ao impersonar: " + (error?.message || data?.error || "credenciais não geradas"));
+      return;
+    }
+
+    const verifyResult = data.tokenHash
+      ? await supabase.auth.verifyOtp({ type: "magiclink", token_hash: data.tokenHash })
+      : await supabase.auth.verifyOtp({ type: "magiclink", email: data.email, token: data.emailOtp });
+
+    if (verifyResult.error) {
+      setImpersonatingUserId(null);
+      toast.error("Erro ao entrar na conta: " + verifyResult.error.message);
+      return;
+    }
+
+    sessionStorage.removeItem("preview_user_id");
+    sessionStorage.removeItem("preview_user_name");
+    toast.success(`Entrando como ${capitalizeName(userInfo.display_name) || "usuário"}...`);
+    window.location.assign("/");
   };
 
   const roleBadge = () => {
