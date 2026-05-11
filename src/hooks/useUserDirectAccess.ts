@@ -135,11 +135,11 @@ export function useUserDirectAccess() {
           if (pc) {
             if (pc.can_view_stores || pc.can_view_campaign_stores) entry.modules.add("stores");
             if (pc.can_view_campaign_stores) entry.modules.add("matrix");
-            if (pc.can_view_pieces) entry.modules.add("pieces");
-            if (pc.can_view_occurrences) entry.modules.add("occurrences");
+            // `occurrences` (legacy module) is intentionally NOT exposed —
+            // replaced by Loja a Loja › Ocorrências.
             if (pc.can_view_schedules) entry.modules.add("scheduling");
             if (pc.can_view_installations) entry.modules.add("installations");
-            if (pc.can_view_campaigns) entry.modules.add("budgets");
+            // `budgets` is Admin-only — never exposed to limited users.
             const lalView =
               pc.can_view_loja_a_loja ||
               pc.can_view_lal_estrutura ||
