@@ -257,13 +257,9 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
               </button>
               {isAdmin && (
                 <button
-                  title="Entrar como este usuário (login real — vai deslogar você desta sessão; abra em janela anônima)"
+                  title="Entrar como este usuário (abra em janela anônima para não deslogar sua sessão)"
                   onClick={async (e) => {
                     e.stopPropagation();
-                    const ok = window.confirm(
-                      "Atenção: isto vai gerar um login real como este usuário e VAI DESLOGAR você desta sessão.\n\nRecomendado: abra antes uma janela anônima e cole o link lá.\n\nDeseja continuar?"
-                    );
-                    if (!ok) return;
                     const { data, error } = await supabase.functions.invoke("impersonate-user", {
                       body: { userId: userInfo.user_id, redirectTo: window.location.origin + "/" },
                     });
@@ -271,8 +267,16 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                       toast.error("Erro: " + (error?.message || data?.error || "falha ao gerar link"));
                       return;
                     }
-                    window.open(data.url, "_blank", "noopener");
-                    toast.success("Link de login aberto em nova aba.");
+                    try {
+                      await navigator.clipboard.writeText(data.url);
+                      toast.success(
+                        "Link copiado! Agora abra uma janela anônima (Ctrl+Shift+N ou Cmd+Shift+N) e cole o link lá.",
+                        { duration: 8000 }
+                      );
+                    } catch {
+                      window.open(data.url, "_blank", "noopener");
+                      toast.success("Link aberto em nova aba. Atenção: isso pode deslogar sua sessão atual.");
+                    }
                   }}
                   className="h-7 w-7 inline-flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                 >
