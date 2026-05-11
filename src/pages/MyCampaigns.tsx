@@ -25,6 +25,9 @@ const MyCampaigns = () => {
     scheduling: { label: t("modules.scheduling"), icon: CalendarDays },
     installations: { label: t("modules.installations"), icon: Camera },
     loja_a_loja: { label: "Loja a Loja", icon: Building2 },
+    mockup: { label: t("modules.mockup", "Mockup"), icon: Palette },
+    adjustments: { label: t("modules.adjustments", "Ajustes"), icon: GitMerge },
+    budgets: { label: t("modules.budgets", "Orçamentos"), icon: DollarSign },
   };
 
   if (isLoading) {
