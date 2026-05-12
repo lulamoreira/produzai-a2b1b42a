@@ -264,7 +264,7 @@ export default function AdjustmentDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-5xl overflow-y-auto">
+      <SheetContent side="right" className="w-screen sm:max-w-none sm:w-[96vw] overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 flex-wrap">
             {adjustment.name}
