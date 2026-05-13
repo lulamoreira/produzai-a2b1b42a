@@ -180,6 +180,20 @@ export default function AdjustmentsTab({
     await deleteMut.mutateAsync({ adjustmentId: a.id, campaignId });
   };
 
+  const handleResync = async (a: CampaignAdjustment) => {
+    const fonte = hasNegotiationRateio && winnerSupplierId ? "rateio da negociação" : "rateio original da campanha";
+    if (!confirm(
+      `Ressincronizar o rateio do ajuste "${a.name}" com o ${fonte}?\n\n` +
+      `Todas as quantidades por loja deste ajuste serão substituídas pelas do ${fonte}. ` +
+      `Peças removidas no ajuste continuam removidas. Esta ação não pode ser desfeita.`
+    )) return;
+    await resyncMut.mutateAsync({
+      adjustmentId: a.id,
+      campaignId,
+      winnerSupplierId: winnerSupplierId ?? null,
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
