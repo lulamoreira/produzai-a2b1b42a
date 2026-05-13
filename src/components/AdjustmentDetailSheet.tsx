@@ -739,20 +739,41 @@ export default function AdjustmentDetailSheet({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="text-xs">Kit</TableHead>
                         <TableHead className="text-xs w-32">Status</TableHead>
+                        <TableHead className="text-xs">Kit (atual no ajuste)</TableHead>
+                        <TableHead className="text-xs">O que mudou</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {kits.filter((k: any) => k.change_type !== "unchanged").map((k: any) => {
                         const code = k.source_kit_id ? kitCodeBySourceId.get(k.source_kit_id) : undefined;
+                        const origName = k.source_kit_id ? kitNameBySourceId.get(k.source_kit_id) : undefined;
+                        let detail: React.ReactNode = "—";
+                        if (k.change_type === "added") {
+                          detail = <span className="text-emerald-700">Kit criado dentro deste ajuste (não existia no original).</span>;
+                        } else if (k.change_type === "removed") {
+                          detail = <span className="text-destructive">Kit excluído neste ajuste{origName ? ` (era "${origName}")` : ""}.</span>;
+                        } else if (k.change_type === "modified") {
+                          if (origName && origName !== k.name) {
+                            detail = (
+                              <span>
+                                Nome alterado de <span className="line-through text-muted-foreground">{origName}</span>{" "}
+                                <span className="mx-1">→</span>{" "}
+                                <span className="text-amber-700 font-medium">{k.name}</span>
+                              </span>
+                            );
+                          } else {
+                            detail = <span className="text-muted-foreground">Composição de peças alterada (ver tabela abaixo).</span>;
+                          }
+                        }
                         return (
                           <TableRow key={k.id}>
+                            <TableCell><ChangeBadge type={k.change_type} /></TableCell>
                             <TableCell className={`text-xs ${k.change_type === "removed" ? "line-through opacity-70" : ""}`}>
                               {code != null && <span className="font-mono text-muted-foreground mr-2">{code}</span>}
                               {k.name}
                             </TableCell>
-                            <TableCell><ChangeBadge type={k.change_type} /></TableCell>
+                            <TableCell className="text-xs">{detail}</TableCell>
                           </TableRow>
                         );
                       })}
