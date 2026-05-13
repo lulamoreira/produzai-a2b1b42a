@@ -664,13 +664,54 @@ const CampaignDetail = () => {
     const map: Record<string, number> = {};
     if (isNegotiationView) {
       negotiationStorePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
+  // Translation maps for adjustment view: adj_piece_id <-> source (campaign) piece_id
+  const adjPieceIdToSrc = useMemo(() => {
+    const m = new Map<string, string>();
+    (adjustmentPiecesMeta as any[]).forEach((p) => {
+      if (p.source_piece_id) m.set(p.id, p.source_piece_id);
+    });
+    return m;
+  }, [adjustmentPiecesMeta]);
+  const srcPieceIdToAdj = useMemo(() => {
+    const m = new Map<string, string>();
+    (adjustmentPiecesMeta as any[]).forEach((p) => {
+      if (p.source_piece_id && !p.is_deleted) m.set(p.source_piece_id, p.id);
+    });
+    return m;
+  }, [adjustmentPiecesMeta]);
+  const deletedSrcPieceIds = useMemo(() => {
+    const s = new Set<string>();
+    (adjustmentPiecesMeta as any[]).forEach((p) => {
+      if (p.is_deleted && p.source_piece_id) s.add(p.source_piece_id);
+    });
+    return s;
+  }, [adjustmentPiecesMeta]);
+  const deletedSrcKitIds = useMemo(() => {
+    const s = new Set<string>();
+    (adjustmentKitsMeta as any[]).forEach((k) => {
+      if (k.is_deleted && k.source_kit_id) s.add(k.source_kit_id);
+    });
+    return s;
+  }, [adjustmentKitsMeta]);
+
+  // ─── Derived data ──────────────────────────────────────
+  const qtyMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (isNegotiationView) {
+      negotiationStorePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
     } else if (isAdjustmentView) {
-      (adjustmentStorePieces as any[]).forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
+      // adjustmentStorePieces.piece_id references campaign_adjustment_pieces.id;
+      // translate back to the source campaign piece id so the matrix grid (which
+      // uses original piece ids) can look values up correctly.
+      (adjustmentStorePieces as any[]).forEach((sp) => {
+        const srcId = adjPieceIdToSrc.get(sp.piece_id) || sp.piece_id;
+        map[`${sp.store_id}-${srcId}`] = Number(sp.quantity) || 0;
+      });
     } else {
       storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
     }
     return map;
-  }, [storePieces, negotiationStorePieces, adjustmentStorePieces, isNegotiationView, isAdjustmentView]);
+  }, [storePieces, negotiationStorePieces, adjustmentStorePieces, isNegotiationView, isAdjustmentView, adjPieceIdToSrc]);
 
   // Always-original map (used for side-by-side comparison in adjustment view)
   const originalQtyMap = useMemo(() => {
