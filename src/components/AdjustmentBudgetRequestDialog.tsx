@@ -422,7 +422,10 @@ export default function AdjustmentBudgetRequestDialog({
               <div className="rounded-md border bg-muted/30 p-2.5 text-xs space-y-1">
                 <div className="font-medium text-foreground">Será enviado em anexo:</div>
                 <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
-                  <li>Planilha de reorçamento (3 abas: Reorçamento, Rateio do Ajuste, Comparativo) com a base {useNegotiationBaseline ? "da Negociação vigente" : "Original"}.</li>
+                  <li>Planilha completa de reorçamento — todas as peças e kits em ordem crescente de código, com destaque visual nas linhas alteradas.</li>
+                  <li>Aba <strong>Modificações</strong> — detalhamento de peças alteradas/removidas/novas e kits modificados (incluindo peças adicionadas/removidas dentro dos kits).</li>
+                  <li>Aba <strong>Matriz Lojas × Peças</strong> — rateio do ajuste por loja.</li>
+                  <li>Base de comparação: {useNegotiationBaseline ? "Negociação vigente" : "Rateio Original"}.</li>
                 </ul>
               </div>
 
