@@ -32,11 +32,15 @@ interface Props {
   agencyName: string;
   clientName: string;
   currencyCode: string;
+  winnerSupplierId?: string | null;
+  hasNegotiationRateio?: boolean;
 }
 
 export default function AdjustmentBudgetRequestDialog({
   open, onOpenChange, adjustment, campaignId, campaignName, agencyName, clientName, currencyCode,
+  winnerSupplierId, hasNegotiationRateio,
 }: Props) {
+  const useNegotiationBaseline = !!(hasNegotiationRateio && winnerSupplierId);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [preparingPreview, setPreparingPreview] = useState(false);
@@ -98,7 +102,7 @@ export default function AdjustmentBudgetRequestDialog({
           return;
         }
 
-        const [pricesRes, extrasRes, storesRes, origSpRows] = await Promise.all([
+        const [pricesRes, extrasRes, storesRes, baselineSpRows] = await Promise.all([
           supabase.from("budget_prices" as any)
             .select("piece_id, unit_price, adjusted_unit_price")
             .eq("supplier_id", (w as any).id),
@@ -109,12 +113,20 @@ export default function AdjustmentBudgetRequestDialog({
             ? supabase.from("client_stores" as any)
                 .select("id, name, nickname, city, state").eq("client_id", _clientId)
             : Promise.resolve({ data: [], error: null } as any),
-          supabasePaginate<any>((from, to) =>
-            supabase.from("campaign_store_pieces" as any)
-              .select("store_id, piece_id, quantity")
-              .eq("campaign_id", campaignId)
-              .range(from, to) as any
-          ),
+          // Use negotiation rateio as the baseline whenever it exists; otherwise fall back to original.
+          useNegotiationBaseline
+            ? supabasePaginate<any>((from, to) =>
+                (supabase.from("budget_negotiation_store_pieces" as any) as any)
+                  .select("store_id, piece_id, quantity")
+                  .eq("supplier_id", winnerSupplierId as string)
+                  .range(from, to)
+              )
+            : supabasePaginate<any>((from, to) =>
+                supabase.from("campaign_store_pieces" as any)
+                  .select("store_id, piece_id, quantity")
+                  .eq("campaign_id", campaignId)
+                  .range(from, to) as any
+              ),
         ]);
         setPrices(((pricesRes.data as any[]) || []).filter((p) => p.piece_id));
         setExtras({
@@ -122,7 +134,7 @@ export default function AdjustmentBudgetRequestDialog({
           freight_value: Number((extrasRes.data as any)?.freight_value || 0),
         });
         setStores(((storesRes.data as any[]) || []));
-        setOrigSp((origSpRows || []).map((r: any) => ({
+        setOrigSp((baselineSpRows || []).map((r: any) => ({
           store_id: r.store_id, piece_id: r.piece_id, quantity: Number(r.quantity || 0),
         })));
       } catch (e: any) {
@@ -131,7 +143,7 @@ export default function AdjustmentBudgetRequestDialog({
         setLoading(false);
       }
     })();
-  }, [open, campaignId, adjustment.id]);
+  }, [open, campaignId, adjustment.id, useNegotiationBaseline, winnerSupplierId]);
 
   const buildAndUpload = async () => {
     if (!winner) throw new Error("Nenhum fornecedor vencedor encontrado para esta campanha.");
@@ -147,6 +159,7 @@ export default function AdjustmentBudgetRequestDialog({
       adjustmentStorePieces: adjSpFlat,
       currentPrices: prices,
       extraCosts: extras,
+      baselineIsNegotiation: useNegotiationBaseline,
     });
     const link = await uploadAndSign(blob, fileName, `adjustment_${adjustment.id}`, campaignId, setUploadStatus);
     return { link, fileName };
@@ -341,19 +354,19 @@ export default function AdjustmentBudgetRequestDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !sending && onOpenChange(o)}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Send className="w-5 h-5" /> Solicitar Reorçamento — {adjustment.name}
+      <DialogContent className="max-w-xl">
+        <DialogHeader className="space-y-1.5">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Send className="w-4 h-4 text-primary" /> Solicitar Reorçamento
           </DialogTitle>
-          <DialogDescription>
-            Envie a planilha de reorçamento ao fornecedor vencedor com os novos quantitativos.
+          <DialogDescription className="text-xs">
+            {adjustment.name} · {useNegotiationBaseline ? "comparando com a Negociação vigente" : "comparando com o Original"}.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-3 py-1">
           {loading ? (
-            <div className="flex items-center gap-2 text-muted-foreground py-6">
+            <div className="flex items-center gap-2 text-muted-foreground py-6 text-sm">
               <Loader2 className="w-4 h-4 animate-spin" /> Carregando...
             </div>
           ) : !winner ? (
@@ -362,29 +375,47 @@ export default function AdjustmentBudgetRequestDialog({
             </div>
           ) : (
             <>
-              <div className="rounded-md border border-border bg-muted/30 p-3 text-sm space-y-1">
-                <div><strong>{winner.company_name}</strong></div>
-                <div className="text-xs text-muted-foreground">
-                  {winner.contact_name} · {winner.email || "sem e-mail"} · {winner.phone || "sem telefone"}
+              <div className="rounded-lg border bg-card p-3">
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Fornecedor vencedor</div>
+                <div className="text-sm font-semibold">{winner.company_name}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {winner.contact_name || "—"} · {winner.email || "sem e-mail"} · {winner.phone || "sem telefone"}
                 </div>
               </div>
 
-              <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-2.5 text-xs text-amber-900 dark:text-amber-200">
-                Alterações: {changesDescription}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-md border bg-amber-50/60 dark:bg-amber-950/20 p-2 text-center">
+                  <div className="text-[10px] uppercase tracking-wide text-amber-900/70 dark:text-amber-200/70">Modificadas</div>
+                  <div className="text-base font-semibold text-amber-900 dark:text-amber-200">{summary.modified}</div>
+                </div>
+                <div className="rounded-md border bg-emerald-50/60 dark:bg-emerald-950/20 p-2 text-center">
+                  <div className="text-[10px] uppercase tracking-wide text-emerald-900/70 dark:text-emerald-200/70">Novas</div>
+                  <div className="text-base font-semibold text-emerald-900 dark:text-emerald-200">{summary.added}</div>
+                </div>
+                <div className="rounded-md border bg-rose-50/60 dark:bg-rose-950/20 p-2 text-center">
+                  <div className="text-[10px] uppercase tracking-wide text-rose-900/70 dark:text-rose-200/70">Removidas</div>
+                  <div className="text-base font-semibold text-rose-900 dark:text-rose-200">{summary.removed}</div>
+                </div>
+              </div>
+
+              <div className="rounded-md border bg-muted/30 p-2.5 text-xs space-y-1">
+                <div className="font-medium text-foreground">Será enviado em anexo:</div>
+                <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
+                  <li>Planilha de reorçamento (3 abas: Reorçamento, Rateio do Ajuste, Comparativo) com a base {useNegotiationBaseline ? "da Negociação vigente" : "Original"}.</li>
+                </ul>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="adj-email">E-mail(s) do destinatário</Label>
-                <Textarea id="adj-email" rows={2} value={email} onChange={(e) => setEmail(e.target.value)} disabled={sending} placeholder="email1@empresa.com, email2@empresa.com" />
-                <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
+                <Label htmlFor="adj-email" className="text-xs">E-mail(s) do destinatário</Label>
+                <Textarea id="adj-email" rows={2} value={email} onChange={(e) => setEmail(e.target.value)} disabled={sending} placeholder="email1@empresa.com, email2@empresa.com" className="text-sm" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="adj-cc">CC (opcional)</Label>
-                <Textarea id="adj-cc" rows={2} value={cc} onChange={(e) => setCc(e.target.value)} disabled={sending} placeholder="copia1@empresa.com, copia2@empresa.com" />
+                <Label htmlFor="adj-cc" className="text-xs">CC (opcional)</Label>
+                <Textarea id="adj-cc" rows={1} value={cc} onChange={(e) => setCc(e.target.value)} disabled={sending} placeholder="copia@empresa.com" className="text-sm" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="adj-msg">Mensagem (opcional)</Label>
-                <Textarea id="adj-msg" rows={3} value={customMessage} onChange={(e) => setCustomMessage(e.target.value)} disabled={sending} placeholder="Mensagem personalizada que será incluída no e-mail/WhatsApp." />
+                <Label htmlFor="adj-msg" className="text-xs">Mensagem (opcional)</Label>
+                <Textarea id="adj-msg" rows={2} value={customMessage} onChange={(e) => setCustomMessage(e.target.value)} disabled={sending} placeholder="Mensagem personalizada incluída no e-mail/WhatsApp." className="text-sm" />
               </div>
             </>
           )}
@@ -418,6 +449,7 @@ export default function AdjustmentBudgetRequestDialog({
         cc={cc.trim()}
         subject={previewSubject}
         html={previewHtml}
+        attachments={preparedLink ? [preparedLink] : []}
         sending={sending}
         onConfirm={handleConfirmSend}
         onSendTest={handleSendTest}

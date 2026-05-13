@@ -16,6 +16,7 @@ interface Props {
   cc: string;
   subject: string;
   html: string;
+  attachments?: { name: string; url: string }[];
   sending: boolean;
   /** Send to the real recipients and persist the request as submitted. */
   onConfirm: () => void;
@@ -24,7 +25,7 @@ interface Props {
 }
 
 export default function AdjustmentQuotePreviewDialog({
-  open, onOpenChange, to, cc, subject, html, sending, onConfirm, onSendTest,
+  open, onOpenChange, to, cc, subject, html, attachments = [], sending, onConfirm, onSendTest,
 }: Props) {
   const [testEmail, setTestEmail] = useState("");
   const [testing, setTesting] = useState(false);
@@ -70,6 +71,18 @@ export default function AdjustmentQuotePreviewDialog({
             <span className="font-medium text-muted-foreground">Assunto:</span>
             <span className="break-all">{subject}</span>
           </div>
+          {attachments.length > 0 && (
+            <div className="grid grid-cols-[70px_1fr] gap-1">
+              <span className="font-medium text-muted-foreground">Anexos:</span>
+              <ul className="space-y-0.5">
+                {attachments.map((a, i) => (
+                  <li key={i} className="break-all">
+                    📎 <a href={a.url} target="_blank" rel="noreferrer" className="underline text-primary">{a.name}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 min-h-0 border rounded-md overflow-hidden bg-white">

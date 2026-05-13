@@ -32,10 +32,13 @@ export interface AdjustmentProposalParams {
   kits: any[];
   kitPieces: any[];
   stores: { id: string; name: string; nickname?: string | null; city?: string | null; state?: string | null }[];
+  /** Previous rateio (negotiation when it exists, otherwise original campaign rateio). */
   originalStorePieces: { store_id: string; piece_id: string; quantity: number }[];
   adjustmentStorePieces: { store_id: string; piece_id: string; quantity: number }[];
   currentPrices: { piece_id: string; unit_price: number; adjusted_unit_price: number | null }[];
   extraCosts: { installation_value: number; freight_value: number };
+  /** Whether the "originalStorePieces" baseline came from a negotiation. Drives column labels. */
+  baselineIsNegotiation?: boolean;
 }
 
 export interface AdjustmentChangeSummary {
@@ -120,11 +123,12 @@ export async function buildAdjustmentProposalWorkbook(
   t3.alignment = { horizontal: "center", vertical: "middle" };
   ws1.getRow(3).height = 22;
 
+  const baselineLabel = params.baselineIsNegotiation ? "Qtd Negociada" : "Qtd Original";
   const headerRow1 = ws1.getRow(5);
   headerRow1.values = [
     "Código",
     "Item / Especificação",
-    "Qtd Original",
+    baselineLabel,
     "Qtd Ajuste",
     "Δ Qtd",
     "Preço Atual",
@@ -402,7 +406,7 @@ export async function buildAdjustmentProposalWorkbook(
   }
 
   const summary = [
-    ["", "Original", "Ajuste", "Δ"],
+    ["", baselineLabel.replace("Qtd ", ""), "Ajuste", "Δ"],
     ["Unidades Totais", totQtyOrig, totQtyAdj, totQtyAdj - totQtyOrig],
     ["Valor Total (mesmos preços)", totValOrig, totValAdj, totValAdj - totValOrig],
   ];
@@ -425,7 +429,7 @@ export async function buildAdjustmentProposalWorkbook(
   });
   ws3.addRow([]);
 
-  const headers3 = ["Peça", "Preço Atual", "Qtd Original", "Qtd Ajuste", "Δ Qtd", "Total Original", "Total Ajuste", "Δ Total"];
+  const headers3 = ["Peça", "Preço Atual", baselineLabel, "Qtd Ajuste", "Δ Qtd", `Total ${params.baselineIsNegotiation ? "Negociado" : "Original"}`, "Total Ajuste", "Δ Total"];
   const h3 = ws3.addRow(headers3);
   h3.height = 26;
   h3.eachCell((c) => {
