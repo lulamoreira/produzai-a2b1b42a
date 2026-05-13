@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { Fragment, useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -352,7 +352,7 @@ export default function AdjustmentDetailSheet({
                       const removed = p.change_type === "removed";
                       const snap = p.original_snapshot || {};
                       return (
-                        <>
+                        <Fragment key={p.id}>
                           <TableRow key={p.id} className={removed ? "opacity-60" : ""}>
                             <TableCell className="text-xs">{p.code}</TableCell>
                             <TableCell className={`text-xs ${removed ? "line-through" : ""}`}>{p.name}</TableCell>
@@ -415,7 +415,7 @@ export default function AdjustmentDetailSheet({
                               </TableCell>
                             </TableRow>
                           )}
-                        </>
+                        </Fragment>
                       );
                     })}
                   </TableBody>
