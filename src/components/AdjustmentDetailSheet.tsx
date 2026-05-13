@@ -55,7 +55,8 @@ function ChangeBadge({ type }: { type: string }) {
 export default function AdjustmentDetailSheet({
   open, onOpenChange, adjustment, campaignId, campaignName,
 }: Props) {
-  const readOnly = adjustment.status !== "draft";
+  // Ajuste é sempre editável (mesmo Ativo ou Substituído)
+  const readOnly = false;
   const { data: pieces = [], isLoading: piecesLoading } = useAdjustmentPieces(adjustment.id);
   const { data: kits = [], isLoading: kitsLoading } = useAdjustmentKits(adjustment.id);
   const { data: adjStorePieces = [] } = useAdjustmentStorePieces(adjustment.id);
