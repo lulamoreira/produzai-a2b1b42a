@@ -3363,7 +3363,16 @@ const CampaignDetail = () => {
                                     </TableCell>
                                   );
                                 })}
-                                <TableCell className="text-center font-bold text-sm">{storeTotal}</TableCell>
+                                <TableCell className="text-center font-bold text-sm">
+                                  <div className="leading-tight">
+                                    <div>{storeTotal}</div>
+                                    {showStoreDelta && (
+                                      <div className={`text-[9px] font-normal ${storeTotal > storeTotalOriginal ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                                        orig: {storeTotalOriginal}
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
                               </TableRow>
                             );
                           })}
