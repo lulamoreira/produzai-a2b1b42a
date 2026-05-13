@@ -270,14 +270,14 @@ export default function AdjustmentDetailSheet({
       totalAdj += adjQty;
       totalBase += baseQty;
       if (adjQty !== baseQty) {
-        rows.push({ name: p.name, base: baseQty, adj: adjQty, delta: adjQty - baseQty });
+        rows.push({ code: p.code, name: p.name, base: baseQty, adj: adjQty, delta: adjQty - baseQty });
       }
     });
     return { rows, totalBase, totalAdj };
   }, [adjStorePieces, baseStorePieces, pieces]);
 
   const changedPieceRows = useMemo(() => {
-    const out: { piece: string; field: string; orig: any; adj: any }[] = [];
+    const out: { code: number | undefined; piece: string; field: string; orig: any; adj: any }[] = [];
     pieces.forEach((p: any) => {
       if (p.change_type !== "modified") return;
       const snap = p.original_snapshot || {};
@@ -285,12 +285,62 @@ export default function AdjustmentDetailSheet({
         const o = snap[f.key] ?? "";
         const a = (p as any)[f.key] ?? "";
         if (String(o) !== String(a)) {
-          out.push({ piece: p.name, field: f.label, orig: o, adj: a });
+          out.push({ code: p.code, piece: p.name, field: f.label, orig: o, adj: a });
         }
       });
     });
     return out;
   }, [pieces]);
+
+  // Kit composition changes (pieces added/removed/quantity changed inside each kit).
+  // Compares original `campaign_kit_pieces` (per source_kit_id) against the
+  // adjustment's `campaign_adjustment_kit_pieces` (per adj kit), translating
+  // adjustment piece ids back to source piece ids via `pieces[].source_piece_id`.
+  const adjPieceIdToSrc = useMemo(() => {
+    const m = new Map<string, string | null>();
+    pieces.forEach((p: any) => m.set(p.id, p.source_piece_id ?? null));
+    return m;
+  }, [pieces]);
+
+  const changedKitPieceRows = useMemo(() => {
+    type Row = { kitCode: number | undefined; kitName: string; pieceCode: number | undefined; pieceName: string; change: "added" | "removed" | "qty"; origQty: number; adjQty: number };
+    const out: Row[] = [];
+    (kits as any[]).forEach((k: any) => {
+      if (k.change_type === "added" || k.change_type === "removed" || k.is_deleted) return;
+      // Build the original composition (source piece id -> qty)
+      const origMap = new Map<string, number>();
+      if (k.source_kit_id) {
+        (origKitPieces as any[]).filter((kp) => kp.kit_id === k.source_kit_id).forEach((kp) => {
+          origMap.set(kp.piece_id, Number(kp.quantity || 0));
+        });
+      }
+      // Build adjustment composition mapped to source piece ids
+      const adjMapKp = new Map<string, number>();
+      (adjKitPieces as any[]).filter((kp) => kp.kit_id === k.id).forEach((kp) => {
+        const srcPid = adjPieceIdToSrc.get(kp.piece_id) ?? kp.piece_id;
+        adjMapKp.set(srcPid as string, Number(kp.quantity || 0));
+      });
+      const allPids = new Set<string>([...origMap.keys(), ...adjMapKp.keys()]);
+      const kitCode = k.source_kit_id ? kitCodeBySourceId.get(k.source_kit_id) : undefined;
+      allPids.forEach((pid) => {
+        const o = origMap.get(pid) ?? 0;
+        const a = adjMapKp.get(pid) ?? 0;
+        if (o === a) return;
+        const meta = pieceMetaBySourceId.get(pid);
+        const row: Row = {
+          kitCode,
+          kitName: k.name,
+          pieceCode: meta?.code,
+          pieceName: meta?.name ?? "—",
+          change: o === 0 ? "added" : a === 0 ? "removed" : "qty",
+          origQty: o,
+          adjQty: a,
+        };
+        out.push(row);
+      });
+    });
+    return out;
+  }, [kits, origKitPieces, adjKitPieces, adjPieceIdToSrc, kitCodeBySourceId, pieceMetaBySourceId]);
 
   const handleExport = async () => {
     const tId = toast.loading("Gerando comparativo...");
