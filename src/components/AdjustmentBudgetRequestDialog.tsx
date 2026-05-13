@@ -449,6 +449,7 @@ export default function AdjustmentBudgetRequestDialog({
         cc={cc.trim()}
         subject={previewSubject}
         html={previewHtml}
+        attachments={preparedLink ? [preparedLink] : []}
         sending={sending}
         onConfirm={handleConfirmSend}
         onSendTest={handleSendTest}
