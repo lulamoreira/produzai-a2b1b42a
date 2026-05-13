@@ -78,6 +78,45 @@ export default function AdjustmentDetailSheet({
     return m;
   }, [sourceKits]);
 
+  // Source pieces (for code/name lookup of pieces inside kits — including those
+  // removed from a kit in the adjustment, which would not be in `pieces`).
+  const { data: sourcePieces = [] } = useQuery({
+    queryKey: ["campaign_pieces_for_adjustment", campaignId],
+    enabled: open && !!campaignId,
+    queryFn: async () =>
+      supabasePaginate<any>((from, to) =>
+        supabase.from("campaign_pieces").select("id, code, name").eq("campaign_id", campaignId).range(from, to) as any
+      ),
+  });
+  const pieceMetaBySourceId = useMemo(() => {
+    const m = new Map<string, { code: number; name: string }>();
+    (sourcePieces as any[]).forEach((p) => { if (p.id) m.set(p.id, { code: p.code, name: p.name }); });
+    return m;
+  }, [sourcePieces]);
+
+  // Original kit composition (campaign_kit_pieces) for kit-pieces change detection.
+  const { data: origKitPieces = [] } = useQuery({
+    queryKey: ["campaign_kit_pieces_for_adjustment", campaignId],
+    enabled: open && !!campaignId,
+    queryFn: async () => {
+      const kitIds = (sourceKits as any[]).map((k: any) => k.id).filter(Boolean);
+      if (kitIds.length === 0) return [];
+      return supabasePaginate<any>((from, to) =>
+        supabase.from("campaign_kit_pieces").select("kit_id, piece_id, quantity").in("kit_id", kitIds).range(from, to) as any
+      );
+    },
+  });
+
+  // Adjustment kit composition.
+  const { data: adjKitPieces = [] } = useQuery({
+    queryKey: ["adjustment_kit_pieces_compare", adjustment.id],
+    enabled: open && !!adjustment.id,
+    queryFn: async () =>
+      supabasePaginate<any>((from, to) =>
+        supabase.from("campaign_adjustment_kit_pieces").select("kit_id, piece_id, quantity").eq("adjustment_id", adjustment.id).range(from, to) as any
+      ),
+  });
+
   const rateioBaseLabel = hasNegotiationRateio && winnerSupplierId ? "negociação" : "original";
   const rateioBaseColumnLabel = hasNegotiationRateio && winnerSupplierId ? "Qtd negociação" : "Qtd original";
 
@@ -223,7 +262,7 @@ export default function AdjustmentDetailSheet({
 
     let totalBase = 0;
     let totalAdj = 0;
-    const rows: { name: string; base: number; adj: number; delta: number }[] = [];
+    const rows: { code: number | undefined; name: string; base: number; adj: number; delta: number }[] = [];
     pieces.forEach((p: any) => {
       if (p.change_type === "removed" || p.is_deleted) return;
       const adjQty = adjMap.get(p.id) || 0;
@@ -231,14 +270,14 @@ export default function AdjustmentDetailSheet({
       totalAdj += adjQty;
       totalBase += baseQty;
       if (adjQty !== baseQty) {
-        rows.push({ name: p.name, base: baseQty, adj: adjQty, delta: adjQty - baseQty });
+        rows.push({ code: p.code, name: p.name, base: baseQty, adj: adjQty, delta: adjQty - baseQty });
       }
     });
     return { rows, totalBase, totalAdj };
   }, [adjStorePieces, baseStorePieces, pieces]);
 
   const changedPieceRows = useMemo(() => {
-    const out: { piece: string; field: string; orig: any; adj: any }[] = [];
+    const out: { code: number | undefined; piece: string; field: string; orig: any; adj: any }[] = [];
     pieces.forEach((p: any) => {
       if (p.change_type !== "modified") return;
       const snap = p.original_snapshot || {};
@@ -246,12 +285,62 @@ export default function AdjustmentDetailSheet({
         const o = snap[f.key] ?? "";
         const a = (p as any)[f.key] ?? "";
         if (String(o) !== String(a)) {
-          out.push({ piece: p.name, field: f.label, orig: o, adj: a });
+          out.push({ code: p.code, piece: p.name, field: f.label, orig: o, adj: a });
         }
       });
     });
     return out;
   }, [pieces]);
+
+  // Kit composition changes (pieces added/removed/quantity changed inside each kit).
+  // Compares original `campaign_kit_pieces` (per source_kit_id) against the
+  // adjustment's `campaign_adjustment_kit_pieces` (per adj kit), translating
+  // adjustment piece ids back to source piece ids via `pieces[].source_piece_id`.
+  const adjPieceIdToSrc = useMemo(() => {
+    const m = new Map<string, string | null>();
+    pieces.forEach((p: any) => m.set(p.id, p.source_piece_id ?? null));
+    return m;
+  }, [pieces]);
+
+  const changedKitPieceRows = useMemo(() => {
+    type Row = { kitCode: number | undefined; kitName: string; pieceCode: number | undefined; pieceName: string; change: "added" | "removed" | "qty"; origQty: number; adjQty: number };
+    const out: Row[] = [];
+    (kits as any[]).forEach((k: any) => {
+      if (k.change_type === "added" || k.change_type === "removed" || k.is_deleted) return;
+      // Build the original composition (source piece id -> qty)
+      const origMap = new Map<string, number>();
+      if (k.source_kit_id) {
+        (origKitPieces as any[]).filter((kp) => kp.kit_id === k.source_kit_id).forEach((kp) => {
+          origMap.set(kp.piece_id, Number(kp.quantity || 0));
+        });
+      }
+      // Build adjustment composition mapped to source piece ids
+      const adjMapKp = new Map<string, number>();
+      (adjKitPieces as any[]).filter((kp) => kp.kit_id === k.id).forEach((kp) => {
+        const srcPid = adjPieceIdToSrc.get(kp.piece_id) ?? kp.piece_id;
+        adjMapKp.set(srcPid as string, Number(kp.quantity || 0));
+      });
+      const allPids = new Set<string>([...origMap.keys(), ...adjMapKp.keys()]);
+      const kitCode = k.source_kit_id ? kitCodeBySourceId.get(k.source_kit_id) : undefined;
+      allPids.forEach((pid) => {
+        const o = origMap.get(pid) ?? 0;
+        const a = adjMapKp.get(pid) ?? 0;
+        if (o === a) return;
+        const meta = pieceMetaBySourceId.get(pid);
+        const row: Row = {
+          kitCode,
+          kitName: k.name,
+          pieceCode: meta?.code,
+          pieceName: meta?.name ?? "—",
+          change: o === 0 ? "added" : a === 0 ? "removed" : "qty",
+          origQty: o,
+          adjQty: a,
+        };
+        out.push(row);
+      });
+    });
+    return out;
+  }, [kits, origKitPieces, adjKitPieces, adjPieceIdToSrc, kitCodeBySourceId, pieceMetaBySourceId]);
 
   const handleExport = async () => {
     const tId = toast.loading("Gerando comparativo...");
@@ -554,7 +643,10 @@ export default function AdjustmentDetailSheet({
                     )}
                     {changedPieceRows.map((r, i) => (
                       <TableRow key={i}>
-                        <TableCell className="text-xs">{r.piece}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.code != null && <span className="font-mono text-muted-foreground mr-2">{r.code}</span>}
+                          {r.piece}
+                        </TableCell>
                         <TableCell className="text-xs">{r.field}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{String(r.orig) || "—"}</TableCell>
                         <TableCell className="text-xs text-amber-600 font-semibold">{String(r.adj) || "—"}</TableCell>
@@ -665,6 +757,49 @@ export default function AdjustmentDetailSheet({
               </div>
             )}
 
+            {/* Kit composition changes (pieces inside kits) */}
+            {changedKitPieceRows.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold mb-1 flex items-center gap-2">
+                  Composição de kits alterada <Badge variant="secondary">{changedKitPieceRows.length}</Badge>
+                </h3>
+                <div className="border rounded-md overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Kit</TableHead>
+                        <TableHead className="text-xs">Peça</TableHead>
+                        <TableHead className="text-xs w-28">Alteração</TableHead>
+                        <TableHead className="text-xs text-right w-20">Qtd original</TableHead>
+                        <TableHead className="text-xs text-right w-20">Qtd ajuste</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {changedKitPieceRows.map((r, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="text-xs">
+                            {r.kitCode != null && <span className="font-mono text-muted-foreground mr-2">{r.kitCode}</span>}
+                            {r.kitName}
+                          </TableCell>
+                          <TableCell className={`text-xs ${r.change === "removed" ? "line-through opacity-70" : ""}`}>
+                            {r.pieceCode != null && <span className="font-mono text-muted-foreground mr-2">{r.pieceCode}</span>}
+                            {r.pieceName}
+                          </TableCell>
+                          <TableCell>
+                            {r.change === "added" && <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white">Nova</Badge>}
+                            {r.change === "removed" && <Badge className="bg-destructive text-destructive-foreground">Removida</Badge>}
+                            {r.change === "qty" && <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Qtd</Badge>}
+                          </TableCell>
+                          <TableCell className="text-xs text-right text-muted-foreground">{r.origQty}</TableCell>
+                          <TableCell className="text-xs text-right font-semibold">{r.adjQty}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
             <div>
               <h3 className="text-xs font-semibold mb-1">Comparativo de rateio</h3>
               <div className="grid grid-cols-3 gap-2 mb-2">
@@ -693,7 +828,10 @@ export default function AdjustmentDetailSheet({
                     )}
                     {rateioCompare.rows.map((r, i) => (
                       <TableRow key={i}>
-                        <TableCell className="text-xs">{r.name}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.code != null && <span className="font-mono text-muted-foreground mr-2">{r.code}</span>}
+                          {r.name}
+                        </TableCell>
                         <TableCell className="text-xs text-right text-muted-foreground">{r.base}</TableCell>
                         <TableCell className="text-xs text-right">{r.adj}</TableCell>
                         <TableCell className={`text-xs text-right font-semibold ${r.delta > 0 ? "text-emerald-600" : "text-destructive"}`}>
