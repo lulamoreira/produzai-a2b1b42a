@@ -362,6 +362,12 @@ const CampaignDetail = () => {
   const { data: adjustmentStorePieces = [] } = useAdjustmentStorePieces(
     isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
   );
+  const { data: adjustmentPiecesMeta = [] } = useAdjustmentPieces(
+    isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
+  );
+  const { data: adjustmentKitsMeta = [] } = useAdjustmentKits(
+    isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
+  );
   const updateAdjustmentStorePiece = useUpdateAdjustmentStorePiece();
 
   // ─── Undo/Redo — scope depends on active rateio view ───
