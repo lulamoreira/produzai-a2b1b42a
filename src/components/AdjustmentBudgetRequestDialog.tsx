@@ -388,8 +388,8 @@ export default function AdjustmentBudgetRequestDialog({
               </div>
             </>
           )}
-          {sending && <UploadProgressPanel status={uploadStatus} />}
-          {!sending && summaryItems.length > 0 && <SendSummaryPanel items={summaryItems} />}
+          {(sending || preparingPreview) && <UploadProgressPanel status={uploadStatus} />}
+          {!sending && !preparingPreview && summaryItems.length > 0 && <SendSummaryPanel items={summaryItems} />}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -397,19 +397,31 @@ export default function AdjustmentBudgetRequestDialog({
             <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Fechar</Button>
           ) : (
             <>
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>Cancelar</Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending || preparingPreview}>Cancelar</Button>
               <Button variant="outline" onClick={handleSendWhatsApp}
-                disabled={sending || loading || !winner || !winner?.phone}>
+                disabled={sending || preparingPreview || loading || !winner || !winner?.phone}>
                 <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
               </Button>
-              <Button onClick={handleSendEmail} disabled={sending || loading || !winner}>
-                {sending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Mail className="w-4 h-4 mr-1" />}
-                Enviar por E-mail
+              <Button onClick={handleOpenPreview} disabled={sending || preparingPreview || loading || !winner}>
+                {preparingPreview ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Eye className="w-4 h-4 mr-1" />}
+                Visualizar e enviar
               </Button>
             </>
           )}
         </DialogFooter>
       </DialogContent>
+
+      <AdjustmentQuotePreviewDialog
+        open={previewOpen}
+        onOpenChange={(o) => { if (!sending) setPreviewOpen(o); }}
+        to={email.trim()}
+        cc={cc.trim()}
+        subject={previewSubject}
+        html={previewHtml}
+        sending={sending}
+        onConfirm={handleConfirmSend}
+        onSendTest={handleSendTest}
+      />
     </Dialog>
   );
 }
