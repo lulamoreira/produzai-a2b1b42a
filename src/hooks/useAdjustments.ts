@@ -580,10 +580,19 @@ export function useResyncAdjustmentRateio() {
           .insert(payload.slice(i, i + 500) as any);
         if (error) throw error;
       }
-      return { count: payload.length, source: winnerSupplierId && sourceRows.length > 0 ? "negotiation" : "original" };
+      const source: AdjustmentSyncedWith = winnerSupplierId && sourceRows.length > 0 && srcToAdj.size > 0
+        ? "negotiation"
+        : "original";
+      await supabase
+        .from("campaign_adjustments")
+        .update({ synced_with: source } as any)
+        .eq("id", adjustmentId);
+      return { count: payload.length, source };
     },
     onSuccess: (res, vars) => {
       qc.invalidateQueries({ queryKey: ["adjustment_store_pieces", vars.adjustmentId] });
+      qc.invalidateQueries({ queryKey: ["campaign_adjustments", vars.campaignId] });
+      qc.invalidateQueries({ queryKey: ["active_adjustment", vars.campaignId] });
       toast.success(
         `Rateio do ajuste ressincronizado a partir do rateio ${res.source === "negotiation" ? "da negociação" : "original"} (${res.count} células).`,
       );
