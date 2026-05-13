@@ -100,16 +100,19 @@ export default function AdjustmentDetailSheet({
   }, [sourcePieces]);
 
   // Original kit composition (campaign_kit_pieces) for kit-pieces change detection.
+  // IMPORTANT: queryKey must depend on the actual list of source kit ids; otherwise
+  // the first run (before sourceKits loaded) caches an empty result and never refetches.
+  const sourceKitIds = useMemo(
+    () => (sourceKits as any[]).map((k: any) => k.id).filter(Boolean) as string[],
+    [sourceKits]
+  );
   const { data: origKitPieces = [] } = useQuery({
-    queryKey: ["campaign_kit_pieces_for_adjustment", campaignId],
-    enabled: open && !!campaignId,
-    queryFn: async () => {
-      const kitIds = (sourceKits as any[]).map((k: any) => k.id).filter(Boolean);
-      if (kitIds.length === 0) return [];
-      return supabasePaginate<any>((from, to) =>
-        supabase.from("campaign_kit_pieces").select("kit_id, piece_id, quantity").in("kit_id", kitIds).range(from, to) as any
-      );
-    },
+    queryKey: ["campaign_kit_pieces_for_adjustment", campaignId, sourceKitIds.length],
+    enabled: open && !!campaignId && sourceKitIds.length > 0,
+    queryFn: async () =>
+      supabasePaginate<any>((from, to) =>
+        supabase.from("campaign_kit_pieces").select("kit_id, piece_id, quantity").in("kit_id", sourceKitIds).range(from, to) as any
+      ),
   });
 
   // Adjustment kit composition.
