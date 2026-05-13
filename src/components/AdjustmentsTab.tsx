@@ -63,12 +63,15 @@ export default function AdjustmentsTab({
   agencyName,
   clientName,
   currencyCode,
+  winnerSupplierId,
+  hasNegotiationRateio,
 }: AdjustmentsTabProps) {
   const { data: adjustments = [], isLoading } = useCampaignAdjustments(campaignId);
   const { data: activeAdjustment } = useActiveAdjustment(campaignId);
   const createMut = useCreateAdjustment();
   const statusMut = useUpdateAdjustmentStatus();
   const deleteMut = useDeleteAdjustment();
+  const resyncMut = useResyncAdjustmentRateio();
 
   const { data: budgetRequests = [] } = useQuery({
     queryKey: ['adjustment_budget_requests', campaignId],
