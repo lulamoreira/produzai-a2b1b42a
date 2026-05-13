@@ -448,6 +448,7 @@ export default function AdjustmentDetailSheet({
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-20">Código</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead className="w-28">Status</TableHead>
                       <TableHead className="w-40 text-right">Ações</TableHead>
@@ -455,13 +456,17 @@ export default function AdjustmentDetailSheet({
                   </TableHeader>
                   <TableBody>
                     {kits.length === 0 && (
-                      <TableRow><TableCell colSpan={3} className="text-center text-xs text-muted-foreground py-6">Nenhum kit.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">Nenhum kit.</TableCell></TableRow>
                     )}
                     {kits.map((k: any) => {
                       const removed = k.change_type === "removed";
                       const isEditing = editingKitId === k.id;
+                      const code = k.source_kit_id ? kitCodeBySourceId.get(k.source_kit_id) : undefined;
                       return (
                         <TableRow key={k.id} className={removed ? "opacity-60" : ""}>
+                          <TableCell className={`text-xs font-mono ${removed ? "line-through text-muted-foreground" : "text-muted-foreground"}`}>
+                            {code ?? "—"}
+                          </TableCell>
                           <TableCell className={`text-xs ${removed ? "line-through" : ""}`}>
                             {isEditing ? (
                               <Input value={kitNameDraft} onChange={(e) => setKitNameDraft(e.target.value)} className="h-8 text-xs" />
