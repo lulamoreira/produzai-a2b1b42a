@@ -3384,7 +3384,20 @@ const CampaignDetail = () => {
                               if (col.type === "piece") {
                                 const p = col.data;
                                 const pieceTotal = filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
-                                return <TableCell key={p.id} className={`text-center text-sm border-l border-border/70 ${tint}`}>{pieceTotal}</TableCell>;
+                                const pieceTotalOrig = filteredStores.reduce((s, st) => s + (originalQtyMap[`${st.id}-${p.id}`] || 0), 0);
+                                const showPieceDelta = isAdjustmentView && pieceTotal !== pieceTotalOrig;
+                                return (
+                                  <TableCell key={p.id} className={`text-center text-sm border-l border-border/70 ${tint}`}>
+                                    <div className="leading-tight">
+                                      <div>{pieceTotal}</div>
+                                      {showPieceDelta && (
+                                        <div className={`text-[9px] font-normal ${pieceTotal > pieceTotalOrig ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                                          orig: {pieceTotalOrig}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                );
                               }
                               const kit = col.data;
                               const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
