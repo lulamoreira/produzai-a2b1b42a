@@ -727,11 +727,19 @@ const CampaignDetail = () => {
   }, [storePieces, negotiationStorePieces, adjustmentStorePieces, isNegotiationView, isAdjustmentView, adjPieceIdToSrc]);
 
   // Always-original map (used for side-by-side comparison in adjustment view)
+  // Baseline used to compute deltas in Adjustment view.
+  // Always compares against negotiation rateio if it exists, otherwise the original.
+  const baselineIsNegotiation = hasNegotiationRateio && !!winnerSupplierId && negotiationStorePieces.length > 0;
   const originalQtyMap = useMemo(() => {
     const map: Record<string, number> = {};
-    storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
+    if (baselineIsNegotiation) {
+      negotiationStorePieces.forEach((sp: any) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
+    } else {
+      storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
+    }
     return map;
-  }, [storePieces]);
+  }, [storePieces, negotiationStorePieces, baselineIsNegotiation]);
+  const baselineLabel = baselineIsNegotiation ? "neg" : "orig";
 
   const totalPieces = useMemo(() => storePieces.reduce((s, sp) => s + sp.quantity, 0), [storePieces]);
 
@@ -3393,12 +3401,12 @@ const CampaignDetail = () => {
                                                 : "text-muted-foreground/40"
                                             }`}
                                             disabled={!canEditCampaign}
-                                            title={showDelta ? `Original: ${originalQty} · Ajustado: ${qty}` : undefined}
+                                            title={showDelta ? `${baselineIsNegotiation ? "Negociado" : "Original"}: ${originalQty} · Ajustado: ${qty}` : undefined}
                                           >
                                             <span>{qty > 0 ? qty : "—"}</span>
                                             {showDelta && (
                                               <span className={`text-[9px] font-normal ${deltaUp ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                                                orig: {originalQty} {deltaUp ? "▲" : "▼"}
+                                                {baselineLabel}: {originalQty} {deltaUp ? "▲" : "▼"}
                                               </span>
                                             )}
                                           </button>
@@ -3476,7 +3484,7 @@ const CampaignDetail = () => {
                                     <div>{storeTotal}</div>
                                     {showStoreDelta && (
                                       <div className={`text-[9px] font-normal ${storeTotal > storeTotalOriginal ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                                        orig: {storeTotalOriginal}
+                                        {baselineLabel}: {storeTotalOriginal}
                                       </div>
                                     )}
                                   </div>
@@ -3500,7 +3508,7 @@ const CampaignDetail = () => {
                                       <div>{pieceTotal}</div>
                                       {showPieceDelta && (
                                         <div className={`text-[9px] font-normal ${pieceTotal > pieceTotalOrig ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
-                                          orig: {pieceTotalOrig}
+                                          {baselineLabel}: {pieceTotalOrig}
                                         </div>
                                       )}
                                     </div>
