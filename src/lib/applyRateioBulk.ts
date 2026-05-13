@@ -18,6 +18,8 @@ export interface RateioBulkOptions {
   negotiationSupplierId?: string | null;
   isAdjustmentView?: boolean;
   adjustmentId?: string | null;
+  /** Map of source (campaign) piece_id -> adjustment piece_id. Required for adjustment writes. */
+  srcToAdjPieceId?: Map<string, string>;
 }
 
 export async function applyRateioBulk(
