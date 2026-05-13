@@ -5,6 +5,8 @@ import { supabasePaginate } from "@/lib/supabasePaginate";
 
 export type AdjustmentStatus = "draft" | "active" | "superseded";
 
+export type AdjustmentSyncedWith = "original" | "negotiation";
+
 export interface CampaignAdjustment {
   id: string;
   campaign_id: string;
@@ -15,6 +17,7 @@ export interface CampaignAdjustment {
   created_by: string | null;
   approved_at: string | null;
   approved_by?: string | null;
+  synced_with?: AdjustmentSyncedWith;
 }
 
 export function useCampaignAdjustments(campaignId: string | undefined) {
