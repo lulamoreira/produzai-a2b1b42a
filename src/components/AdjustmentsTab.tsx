@@ -242,19 +242,22 @@ export default function AdjustmentsTab({
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-sm font-semibold text-foreground truncate">{a.name}</p>
                   <StatusBadge status={a.status} />
-                  {a.synced_with && (
-                    <Badge
-                      variant="outline"
-                      className={
-                        a.synced_with === "negotiation"
-                          ? "border-blue-300 text-blue-700 dark:text-blue-300"
-                          : "border-slate-300 text-slate-700 dark:text-slate-300"
-                      }
-                      title="Origem usada como base do rateio do ajuste"
-                    >
-                      Sincronizado com: {a.synced_with === "negotiation" ? "Negociação" : "Original"}
-                    </Badge>
-                  )}
+                  {(() => {
+                    const effectiveSync = (hasNegotiationRateio && winnerSupplierId) ? "negotiation" : "original";
+                    return (
+                      <Badge
+                        variant="outline"
+                        className={
+                          effectiveSync === "negotiation"
+                            ? "border-blue-300 text-blue-700 dark:text-blue-300"
+                            : "border-slate-300 text-slate-700 dark:text-slate-300"
+                        }
+                        title="Origem usada como base do rateio do ajuste"
+                      >
+                        Sincronizado com: {effectiveSync === "negotiation" ? "Negociação" : "Original"}
+                      </Badge>
+                    );
+                  })()}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
                   Criado em{" "}
