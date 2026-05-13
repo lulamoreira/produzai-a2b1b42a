@@ -1003,34 +1003,49 @@ const CampaignDetail = () => {
     }
 
     // ─── Adjustment rateio: write to campaign_adjustment_store_pieces ───
+    // The matrix uses original (campaign) piece ids, but the adjustment table
+    // stores adjustment piece ids — translate before writing.
     if (isAdjustmentView && activeAdjustmentId) {
       if (cell.pieceId.startsWith("kit-")) {
         const kitId = cell.pieceId.replace("kit-", "");
         const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
         if (piecesInKit.length === 0) return;
-        const targets = piecesInKit.map((kp) => ({
-          pieceId: kp.piece_id,
-          newQty: qty * (kp.quantity || 1),
-          prevQty: qtyMap[`${cell.storeId}-${kp.piece_id}`] || 0,
-        }));
+        const targets = piecesInKit
+          .map((kp) => {
+            const adjPid = srcPieceIdToAdj.get(kp.piece_id);
+            if (!adjPid) return null;
+            return {
+              srcPieceId: kp.piece_id,
+              adjPieceId: adjPid,
+              newQty: qty * (kp.quantity || 1),
+              prevQty: qtyMap[`${cell.storeId}-${kp.piece_id}`] || 0,
+            };
+          })
+          .filter(Boolean) as { srcPieceId: string; adjPieceId: string; newQty: number; prevQty: number }[];
+        if (targets.length === 0) return;
         if (targets.every((t) => t.prevQty === t.newQty)) return;
         runHistoryCommand({
           label: "Quantidade (kit, ajuste)",
           do: async () => {
             await Promise.all(targets.map((t) =>
               updateAdjustmentStorePiece.mutateAsync({
-                adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: t.pieceId, quantity: t.newQty,
+                adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: t.adjPieceId, quantity: t.newQty,
               })
             ));
           },
           undo: async () => {
             await Promise.all(targets.map((t) =>
               updateAdjustmentStorePiece.mutateAsync({
-                adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: t.pieceId, quantity: t.prevQty,
+                adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: t.adjPieceId, quantity: t.prevQty,
               })
             ));
           },
         });
+        return;
+      }
+      const adjPieceId = srcPieceIdToAdj.get(cell.pieceId);
+      if (!adjPieceId) {
+        toast.error("Esta peça não existe no ajuste atual.");
         return;
       }
       const prevQtyAdj = qtyMap[`${cell.storeId}-${cell.pieceId}`] || 0;
@@ -1038,10 +1053,10 @@ const CampaignDetail = () => {
       runHistoryCommand({
         label: "Quantidade (ajuste)",
         do: () => updateAdjustmentStorePiece.mutateAsync({
-          adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: cell.pieceId, quantity: qty,
+          adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: adjPieceId, quantity: qty,
         }).then(() => undefined),
         undo: () => updateAdjustmentStorePiece.mutateAsync({
-          adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: cell.pieceId, quantity: prevQtyAdj,
+          adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: adjPieceId, quantity: prevQtyAdj,
         }).then(() => undefined),
       });
       return;
