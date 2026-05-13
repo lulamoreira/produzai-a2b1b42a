@@ -463,6 +463,8 @@ export default function AdjustmentsTab({
           agencyName={agencyName}
           clientName={clientName}
           currencyCode={currencyCode}
+          winnerSupplierId={winnerSupplierId}
+          hasNegotiationRateio={!!hasNegotiationRateio}
         />
       )}
 
