@@ -643,7 +643,10 @@ export default function AdjustmentDetailSheet({
                     )}
                     {changedPieceRows.map((r, i) => (
                       <TableRow key={i}>
-                        <TableCell className="text-xs">{r.piece}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.code != null && <span className="font-mono text-muted-foreground mr-2">{r.code}</span>}
+                          {r.piece}
+                        </TableCell>
                         <TableCell className="text-xs">{r.field}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{String(r.orig) || "—"}</TableCell>
                         <TableCell className="text-xs text-amber-600 font-semibold">{String(r.adj) || "—"}</TableCell>
