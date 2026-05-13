@@ -353,7 +353,7 @@ const CampaignDetail = () => {
     }
   }, [campaignId, queryClient, winnerSupplierId]);
 
-  const { data: negotiationStorePieces = [] } = useNegotiationStorePieces(
+  const { data: negotiationStorePieces = [], isFetching: negotiationStorePiecesFetching } = useNegotiationStorePieces(
     winnerSupplierId,
     campaignId,
     isNegotiationView || hasNegotiationRateio,
@@ -3926,6 +3926,9 @@ const CampaignDetail = () => {
               agencyName={agency?.name || ""}
               clientName={client?.name || ""}
               currencyCode={(client as any)?.currency_code || "BRL"}
+              winnerSupplierId={winnerSupplierId}
+              hasNegotiationRateio={hasNegotiationRateio}
+              negotiationRateioLoading={hasNegotiationRateio && negotiationStorePiecesFetching && negotiationStorePieces.length === 0}
             />
           )}
 
