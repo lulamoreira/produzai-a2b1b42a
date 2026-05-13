@@ -305,16 +305,32 @@ const CampaignDetail = () => {
   const isNegotiationView = rateioSource === "negotiation" && hasNegotiationRateio && !!winnerSupplierId;
   const isAdjustmentView = rateioSource === "adjustment" && !!activeAdjustment;
   const activeAdjustmentId = activeAdjustment?.id ?? null;
+
+  // The "vigente" (current binding) source: adjustment > negotiation > original.
+  const vigenteSource: "original" | "negotiation" | "adjustment" =
+    activeAdjustment ? "adjustment"
+    : (hasNegotiationRateio && winnerSupplierId ? "negotiation" : "original");
+  const isViewingVigente = rateioSource === vigenteSource;
+
+  // Default-select the vigente source on first load (once existence queries settle).
+  const didInitRateioSource = useRef(false);
+  useEffect(() => {
+    if (didInitRateioSource.current) return;
+    if (negRateioFetching) return;
+    didInitRateioSource.current = true;
+    setRateioSource(vigenteSource);
+  }, [negRateioFetching, vigenteSource]);
+
   // Only revert to original once the existence query has settled, to avoid
   // racing the snapshot insert triggered by "Editar Rateio da Negociação".
   useEffect(() => {
     if (rateioSource === "negotiation" && !hasNegotiationRateio && !negRateioFetching) {
-      setRateioSource("original");
+      setRateioSource(vigenteSource);
     }
     if (rateioSource === "adjustment" && !activeAdjustment) {
-      setRateioSource("original");
+      setRateioSource(vigenteSource);
     }
-  }, [rateioSource, hasNegotiationRateio, negRateioFetching, activeAdjustment]);
+  }, [rateioSource, hasNegotiationRateio, negRateioFetching, activeAdjustment, vigenteSource]);
 
   const handleCancelNegotiationRateio = useCallback(async () => {
     if (!winnerSupplierId) return;
