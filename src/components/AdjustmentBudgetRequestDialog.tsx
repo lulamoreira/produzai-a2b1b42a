@@ -175,6 +175,7 @@ export default function AdjustmentBudgetRequestDialog({
       campaignName, agencyName, clientName, currencyCode,
       supplier: { id: winner.id, company_name: winner.company_name, contact_name: winner.contact_name },
       pieces, kits, kitPieces, stores,
+      sourceKits, sourcePieces, originalKitPieces,
       originalStorePieces: origSp,
       adjustmentStorePieces: adjSpFlat,
       currentPrices: prices,
