@@ -666,6 +666,13 @@ const CampaignDetail = () => {
     return map;
   }, [storePieces, negotiationStorePieces, adjustmentStorePieces, isNegotiationView, isAdjustmentView]);
 
+  // Always-original map (used for side-by-side comparison in adjustment view)
+  const originalQtyMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
+    return map;
+  }, [storePieces]);
+
   const totalPieces = useMemo(() => storePieces.reduce((s, sp) => s + sp.quantity, 0), [storePieces]);
 
   // Unique cities, states, store_categories from pieces
