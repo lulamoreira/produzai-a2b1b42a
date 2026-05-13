@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Send, Loader2, MessageCircle, Mail } from "lucide-react";
+import { Send, Loader2, MessageCircle, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -22,6 +21,7 @@ import {
   useAdjustmentPieces, useAdjustmentKits, useAdjustmentKitPieces, useAdjustmentStorePieces,
 } from "@/hooks/useAdjustments";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
+import AdjustmentQuotePreviewDialog from "@/components/AdjustmentQuotePreviewDialog";
 
 interface Props {
   open: boolean;
