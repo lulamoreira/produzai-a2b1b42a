@@ -32,10 +32,13 @@ export interface AdjustmentProposalParams {
   kits: any[];
   kitPieces: any[];
   stores: { id: string; name: string; nickname?: string | null; city?: string | null; state?: string | null }[];
+  /** Previous rateio (negotiation when it exists, otherwise original campaign rateio). */
   originalStorePieces: { store_id: string; piece_id: string; quantity: number }[];
   adjustmentStorePieces: { store_id: string; piece_id: string; quantity: number }[];
   currentPrices: { piece_id: string; unit_price: number; adjusted_unit_price: number | null }[];
   extraCosts: { installation_value: number; freight_value: number };
+  /** Whether the "originalStorePieces" baseline came from a negotiation. Drives column labels. */
+  baselineIsNegotiation?: boolean;
 }
 
 export interface AdjustmentChangeSummary {
