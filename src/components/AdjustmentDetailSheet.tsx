@@ -78,6 +78,45 @@ export default function AdjustmentDetailSheet({
     return m;
   }, [sourceKits]);
 
+  // Source pieces (for code/name lookup of pieces inside kits — including those
+  // removed from a kit in the adjustment, which would not be in `pieces`).
+  const { data: sourcePieces = [] } = useQuery({
+    queryKey: ["campaign_pieces_for_adjustment", campaignId],
+    enabled: open && !!campaignId,
+    queryFn: async () =>
+      supabasePaginate<any>((from, to) =>
+        supabase.from("campaign_pieces").select("id, code, name").eq("campaign_id", campaignId).range(from, to) as any
+      ),
+  });
+  const pieceMetaBySourceId = useMemo(() => {
+    const m = new Map<string, { code: number; name: string }>();
+    (sourcePieces as any[]).forEach((p) => { if (p.id) m.set(p.id, { code: p.code, name: p.name }); });
+    return m;
+  }, [sourcePieces]);
+
+  // Original kit composition (campaign_kit_pieces) for kit-pieces change detection.
+  const { data: origKitPieces = [] } = useQuery({
+    queryKey: ["campaign_kit_pieces_for_adjustment", campaignId],
+    enabled: open && !!campaignId,
+    queryFn: async () => {
+      const kitIds = (sourceKits as any[]).map((k: any) => k.id).filter(Boolean);
+      if (kitIds.length === 0) return [];
+      return supabasePaginate<any>((from, to) =>
+        supabase.from("campaign_kit_pieces").select("kit_id, piece_id, quantity").in("kit_id", kitIds).range(from, to) as any
+      );
+    },
+  });
+
+  // Adjustment kit composition.
+  const { data: adjKitPieces = [] } = useQuery({
+    queryKey: ["adjustment_kit_pieces_compare", adjustment.id],
+    enabled: open && !!adjustment.id,
+    queryFn: async () =>
+      supabasePaginate<any>((from, to) =>
+        supabase.from("campaign_adjustment_kit_pieces").select("kit_id, piece_id, quantity").eq("adjustment_id", adjustment.id).range(from, to) as any
+      ),
+  });
+
   const rateioBaseLabel = hasNegotiationRateio && winnerSupplierId ? "negociação" : "original";
   const rateioBaseColumnLabel = hasNegotiationRateio && winnerSupplierId ? "Qtd negociação" : "Qtd original";
 
