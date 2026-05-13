@@ -67,6 +67,9 @@ export default function AdjustmentBudgetRequestDialog({
   });
   const [stores, setStores] = useState<any[]>([]);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [sourceKits, setSourceKits] = useState<{ id: string; code: number; name: string }[]>([]);
+  const [sourcePieces, setSourcePieces] = useState<{ id: string; code: number; name: string }[]>([]);
+  const [originalKitPieces, setOriginalKitPieces] = useState<{ kit_id: string; piece_id: string; quantity: number }[]>([]);
 
   const { data: pieces = [] } = useAdjustmentPieces(adjustment.id);
   const { data: kits = [] } = useAdjustmentKits(adjustment.id);
@@ -102,7 +105,7 @@ export default function AdjustmentBudgetRequestDialog({
           return;
         }
 
-        const [pricesRes, extrasRes, storesRes, baselineSpRows] = await Promise.all([
+        const [pricesRes, extrasRes, storesRes, baselineSpRows, srcKitsRes, srcPiecesRes, origKpRows] = await Promise.all([
           supabase.from("budget_prices" as any)
             .select("piece_id, unit_price, adjusted_unit_price")
             .eq("supplier_id", (w as any).id),
@@ -127,6 +130,13 @@ export default function AdjustmentBudgetRequestDialog({
                   .eq("campaign_id", campaignId)
                   .range(from, to) as any
               ),
+          supabase.from("campaign_kits").select("id, code, name").eq("campaign_id", campaignId),
+          supabase.from("campaign_pieces").select("id, code, name").eq("campaign_id", campaignId),
+          supabasePaginate<any>((from, to) =>
+            supabase.from("campaign_kit_pieces" as any)
+              .select("kit_id, piece_id, quantity")
+              .range(from, to) as any
+          ),
         ]);
         setPrices(((pricesRes.data as any[]) || []).filter((p) => p.piece_id));
         setExtras({
@@ -137,6 +147,16 @@ export default function AdjustmentBudgetRequestDialog({
         setOrigSp((baselineSpRows || []).map((r: any) => ({
           store_id: r.store_id, piece_id: r.piece_id, quantity: Number(r.quantity || 0),
         })));
+        setSourceKits(((srcKitsRes.data as any[]) || []) as any);
+        setSourcePieces(((srcPiecesRes.data as any[]) || []) as any);
+        // Filter origKpRows to only kits that belong to this campaign (the
+        // unfiltered table is keyed by kit_id; ensure scope by intersecting
+        // with the campaign's source kits).
+        const validKitIds = new Set(((srcKitsRes.data as any[]) || []).map((k: any) => k.id));
+        setOriginalKitPieces(
+          ((origKpRows as any[]) || []).filter((r) => validKitIds.has(r.kit_id))
+            .map((r: any) => ({ kit_id: r.kit_id, piece_id: r.piece_id, quantity: Number(r.quantity || 0) }))
+        );
       } catch (e: any) {
         toast.error(e?.message || "Falha ao carregar dados.");
       } finally {
@@ -155,6 +175,7 @@ export default function AdjustmentBudgetRequestDialog({
       campaignName, agencyName, clientName, currencyCode,
       supplier: { id: winner.id, company_name: winner.company_name, contact_name: winner.contact_name },
       pieces, kits, kitPieces, stores,
+      sourceKits, sourcePieces, originalKitPieces,
       originalStorePieces: origSp,
       adjustmentStorePieces: adjSpFlat,
       currentPrices: prices,
@@ -401,7 +422,10 @@ export default function AdjustmentBudgetRequestDialog({
               <div className="rounded-md border bg-muted/30 p-2.5 text-xs space-y-1">
                 <div className="font-medium text-foreground">Será enviado em anexo:</div>
                 <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
-                  <li>Planilha de reorçamento (3 abas: Reorçamento, Rateio do Ajuste, Comparativo) com a base {useNegotiationBaseline ? "da Negociação vigente" : "Original"}.</li>
+                  <li>Planilha completa de reorçamento — todas as peças e kits em ordem crescente de código, com destaque visual nas linhas alteradas.</li>
+                  <li>Aba <strong>Modificações</strong> — detalhamento de peças alteradas/removidas/novas e kits modificados (incluindo peças adicionadas/removidas dentro dos kits).</li>
+                  <li>Aba <strong>Matriz Lojas × Peças</strong> — rateio do ajuste por loja.</li>
+                  <li>Base de comparação: {useNegotiationBaseline ? "Negociação vigente" : "Rateio Original"}.</li>
                 </ul>
               </div>
 
