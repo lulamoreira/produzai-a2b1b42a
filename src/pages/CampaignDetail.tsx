@@ -2580,8 +2580,8 @@ const CampaignDetail = () => {
                       : rateioSource === "negotiation"
                       ? `Rateio da Negociação · ${winnerSupplierName}`
                       : "Rateio Original";
-                  const adjSyncedLabel =
-                    activeAdjustment?.synced_with === "negotiation" ? "Negociação" : "Original";
+                  // Sincronização efetiva: se existe negociação, o ajuste sempre se baseia nela; senão, no original.
+                  const adjSyncedLabel = (hasNegotiationRateio && winnerSupplierId) ? "Negociação" : "Original";
 
                   return (
                     <div
