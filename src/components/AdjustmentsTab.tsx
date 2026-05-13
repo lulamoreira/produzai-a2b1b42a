@@ -112,6 +112,10 @@ export default function AdjustmentsTab({
       toast.error("Informe um nome para o ajuste");
       return;
     }
+    if (negotiationRateioLoading) {
+      toast.error("Aguarde o rateio da negociação carregar antes de criar o ajuste.");
+      return;
+    }
     const tId = toast.loading("Criando ajuste e clonando dados da campanha...");
     try {
       await createMut.mutateAsync({
