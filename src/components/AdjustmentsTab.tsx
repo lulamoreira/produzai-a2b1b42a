@@ -66,6 +66,7 @@ export default function AdjustmentsTab({
   currencyCode,
   winnerSupplierId,
   hasNegotiationRateio,
+  negotiationRateioLoading,
 }: AdjustmentsTabProps) {
   const { data: adjustments = [], isLoading } = useCampaignAdjustments(campaignId);
   const { data: activeAdjustment } = useActiveAdjustment(campaignId);
