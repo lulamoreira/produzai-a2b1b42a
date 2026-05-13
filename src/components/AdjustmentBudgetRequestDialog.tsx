@@ -67,6 +67,9 @@ export default function AdjustmentBudgetRequestDialog({
   });
   const [stores, setStores] = useState<any[]>([]);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [sourceKits, setSourceKits] = useState<{ id: string; code: number; name: string }[]>([]);
+  const [sourcePieces, setSourcePieces] = useState<{ id: string; code: number; name: string }[]>([]);
+  const [originalKitPieces, setOriginalKitPieces] = useState<{ kit_id: string; piece_id: string; quantity: number }[]>([]);
 
   const { data: pieces = [] } = useAdjustmentPieces(adjustment.id);
   const { data: kits = [] } = useAdjustmentKits(adjustment.id);
