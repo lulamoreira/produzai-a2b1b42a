@@ -3539,8 +3539,8 @@ const CampaignDetail = () => {
                               const tint = columnTints[colIdx] || "";
                               if (col.type === "piece") {
                                 const p = col.data;
-                                const pieceTotal = filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
-                                const pieceTotalOrig = filteredStores.reduce((s, st) => s + (originalQtyMap[`${st.id}-${p.id}`] || 0), 0);
+                                const pieceTotal = matrixStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
+                                const pieceTotalOrig = matrixStores.reduce((s, st) => s + (originalQtyMap[`${st.id}-${p.id}`] || 0), 0);
                                 const showPieceDelta = isAdjustmentView && pieceTotal !== pieceTotalOrig;
                                 return (
                                   <TableCell key={p.id} className={`text-center text-sm border-l border-border/70 ${tint}`}>
