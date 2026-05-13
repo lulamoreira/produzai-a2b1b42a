@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput } from "lucide-react";
+import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput, RotateCcw } from "lucide-react";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import AdjustmentRegisterResponseDialog from "./AdjustmentRegisterResponseDialog";
 import { Button } from "@/components/ui/button";
@@ -135,6 +135,29 @@ export default function AdjustmentsTab({
       campaignId,
       status: "active",
     });
+  };
+
+  const handleReactivate = async (a: CampaignAdjustment) => {
+    const msg = activeAdjustment
+      ? `Reativar "${a.name}"?\n\nO ajuste ativo atual ("${activeAdjustment.name}") será automaticamente marcado como Substituído, e o rateio voltará a refletir este ajuste.`
+      : `Reativar "${a.name}"? Ele voltará a ser o ajuste vigente da campanha.`;
+    if (!confirm(msg)) return;
+    try {
+      if (activeAdjustment && activeAdjustment.id !== a.id) {
+        await statusMut.mutateAsync({
+          adjustmentId: activeAdjustment.id,
+          campaignId,
+          status: "superseded",
+        });
+      }
+      await statusMut.mutateAsync({
+        adjustmentId: a.id,
+        campaignId,
+        status: "active",
+      });
+    } catch {
+      // toast já tratado no hook
+    }
   };
 
   const handleSupersede = async (a: CampaignAdjustment) => {
@@ -318,14 +341,26 @@ export default function AdjustmentsTab({
                   </>
                 )}
                 {a.status === "superseded" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs gap-1"
-                    onClick={() => setEditingAdjustment(a)}
-                  >
-                    <Eye className="w-3.5 h-3.5" /> Ver detalhes
-                  </Button>
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => setEditingAdjustment(a)}
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Ver detalhes
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1 border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                      onClick={() => handleReactivate(a)}
+                      disabled={statusMut.isPending}
+                      title="Volta a ser o ajuste vigente. O ativo atual (se houver) é movido para Substituído."
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Reativar
+                    </Button>
+                  </>
                 )}
               </div>
             </div>

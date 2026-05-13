@@ -666,6 +666,13 @@ const CampaignDetail = () => {
     return map;
   }, [storePieces, negotiationStorePieces, adjustmentStorePieces, isNegotiationView, isAdjustmentView]);
 
+  // Always-original map (used for side-by-side comparison in adjustment view)
+  const originalQtyMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
+    return map;
+  }, [storePieces]);
+
   const totalPieces = useMemo(() => storePieces.reduce((s, sp) => s + sp.quantity, 0), [storePieces]);
 
   // Unique cities, states, store_categories from pieces
@@ -3191,7 +3198,9 @@ const CampaignDetail = () => {
                             // refletindo a soma efetiva de itens enviados para a loja —
                             // tanto via peças individuais quanto via composição de kits.
                             const storeTotalReal = pieces.reduce((sum, p) => sum + (qtyMap[`${store.id}-${p.id}`] || 0), 0);
+                            const storeTotalOriginal = pieces.reduce((sum, p) => sum + (originalQtyMap[`${store.id}-${p.id}`] || 0), 0);
                             const storeTotal = storeTotalReal;
+                            const showStoreDelta = isAdjustmentView && storeTotalOriginal !== storeTotalReal;
                             const hasAnyStoreWithQty = activeFilteredStores.some(
                               (st) => st.id !== store.id && pieces.some((p) => (qtyMap[`${st.id}-${p.id}`] || 0) > 0)
                             );
@@ -3224,6 +3233,9 @@ const CampaignDetail = () => {
                                     const p = col.data;
                                     const key = `${store.id}-${p.id}`;
                                     const qty = qtyMap[key] || 0;
+                                    const originalQty = originalQtyMap[key] || 0;
+                                    const showDelta = isAdjustmentView && originalQty !== qty;
+                                    const deltaUp = qty > originalQty;
                                     const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === p.id;
                                     return (
                                       <TableCell key={p.id} className={`text-center p-1 border-l border-border/70 ${tint}`}>
@@ -3265,7 +3277,7 @@ const CampaignDetail = () => {
                                         ) : (
                                           <button
                                             onClick={() => handleCellClick(store.id, p.id)}
-                                            className={`w-full h-8 text-sm rounded transition-colors ${
+                                            className={`w-full ${showDelta ? "h-10 leading-tight flex flex-col items-center justify-center" : "h-8"} text-sm rounded transition-colors ${
                                               qty > 0
                                                 ? "bg-primary/10 text-primary font-semibold hover:bg-primary/20"
                                                 : canEditCampaign
@@ -3273,8 +3285,14 @@ const CampaignDetail = () => {
                                                 : "text-muted-foreground/40"
                                             }`}
                                             disabled={!canEditCampaign}
+                                            title={showDelta ? `Original: ${originalQty} · Ajustado: ${qty}` : undefined}
                                           >
-                                            {qty > 0 ? qty : "—"}
+                                            <span>{qty > 0 ? qty : "—"}</span>
+                                            {showDelta && (
+                                              <span className={`text-[9px] font-normal ${deltaUp ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                                                orig: {originalQty} {deltaUp ? "▲" : "▼"}
+                                              </span>
+                                            )}
                                           </button>
                                         )}
                                       </TableCell>
@@ -3345,7 +3363,16 @@ const CampaignDetail = () => {
                                     </TableCell>
                                   );
                                 })}
-                                <TableCell className="text-center font-bold text-sm">{storeTotal}</TableCell>
+                                <TableCell className="text-center font-bold text-sm">
+                                  <div className="leading-tight">
+                                    <div>{storeTotal}</div>
+                                    {showStoreDelta && (
+                                      <div className={`text-[9px] font-normal ${storeTotal > storeTotalOriginal ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                                        orig: {storeTotalOriginal}
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
                               </TableRow>
                             );
                           })}
@@ -3357,7 +3384,20 @@ const CampaignDetail = () => {
                               if (col.type === "piece") {
                                 const p = col.data;
                                 const pieceTotal = filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
-                                return <TableCell key={p.id} className={`text-center text-sm border-l border-border/70 ${tint}`}>{pieceTotal}</TableCell>;
+                                const pieceTotalOrig = filteredStores.reduce((s, st) => s + (originalQtyMap[`${st.id}-${p.id}`] || 0), 0);
+                                const showPieceDelta = isAdjustmentView && pieceTotal !== pieceTotalOrig;
+                                return (
+                                  <TableCell key={p.id} className={`text-center text-sm border-l border-border/70 ${tint}`}>
+                                    <div className="leading-tight">
+                                      <div>{pieceTotal}</div>
+                                      {showPieceDelta && (
+                                        <div className={`text-[9px] font-normal ${pieceTotal > pieceTotalOrig ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                                          orig: {pieceTotalOrig}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                );
                               }
                               const kit = col.data;
                               const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
