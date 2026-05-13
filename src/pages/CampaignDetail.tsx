@@ -313,13 +313,16 @@ const CampaignDetail = () => {
   const isViewingVigente = rateioSource === vigenteSource;
 
   // Default-select the vigente source on first load (once existence queries settle).
+  // We must wait for BOTH the negotiation existence query AND the active adjustment
+  // query to settle, otherwise vigenteSource defaults to "original" prematurely.
   const didInitRateioSource = useRef(false);
   useEffect(() => {
     if (didInitRateioSource.current) return;
     if (negRateioFetching) return;
+    if (activeAdjustmentLoading) return;
     didInitRateioSource.current = true;
     setRateioSource(vigenteSource);
-  }, [negRateioFetching, vigenteSource]);
+  }, [negRateioFetching, activeAdjustmentLoading, vigenteSource]);
 
   // Only revert to original once the existence query has settled, to avoid
   // racing the snapshot insert triggered by "Editar Rateio da Negociação".
