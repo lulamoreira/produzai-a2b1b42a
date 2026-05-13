@@ -353,7 +353,7 @@ const CampaignDetail = () => {
     }
   }, [campaignId, queryClient, winnerSupplierId]);
 
-  const { data: negotiationStorePieces = [] } = useNegotiationStorePieces(
+  const { data: negotiationStorePieces = [], isFetching: negotiationStorePiecesFetching } = useNegotiationStorePieces(
     winnerSupplierId,
     campaignId,
     isNegotiationView || hasNegotiationRateio,
