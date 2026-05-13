@@ -659,11 +659,6 @@ const CampaignDetail = () => {
     };
   }, [activeSection, filterSidebarCollapsed]);
 
-  // ─── Derived data ──────────────────────────────────────
-  const qtyMap = useMemo(() => {
-    const map: Record<string, number> = {};
-    if (isNegotiationView) {
-      negotiationStorePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
   // Translation maps for adjustment view: adj_piece_id <-> source (campaign) piece_id
   const adjPieceIdToSrc = useMemo(() => {
     const m = new Map<string, string>();
