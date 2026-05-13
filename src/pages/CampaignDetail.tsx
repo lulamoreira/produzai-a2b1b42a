@@ -356,7 +356,7 @@ const CampaignDetail = () => {
   const { data: negotiationStorePieces = [] } = useNegotiationStorePieces(
     winnerSupplierId,
     campaignId,
-    isNegotiationView
+    isNegotiationView || hasNegotiationRateio,
   );
   const updateNegotiationStorePiece = useUpdateNegotiationStorePiece();
   const { data: adjustmentStorePieces = [] } = useAdjustmentStorePieces(
