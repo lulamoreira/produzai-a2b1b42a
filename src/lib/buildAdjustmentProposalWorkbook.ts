@@ -406,7 +406,7 @@ export async function buildAdjustmentProposalWorkbook(
   }
 
   const summary = [
-    ["", "Original", "Ajuste", "Δ"],
+    ["", baselineLabel.replace("Qtd ", ""), "Ajuste", "Δ"],
     ["Unidades Totais", totQtyOrig, totQtyAdj, totQtyAdj - totQtyOrig],
     ["Valor Total (mesmos preços)", totValOrig, totValAdj, totValAdj - totValOrig],
   ];
