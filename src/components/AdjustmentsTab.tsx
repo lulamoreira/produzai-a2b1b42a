@@ -39,6 +39,7 @@ interface AdjustmentsTabProps {
   currencyCode: string;
   winnerSupplierId?: string | null;
   hasNegotiationRateio?: boolean;
+  negotiationRateioLoading?: boolean;
 }
 
 function StatusBadge({ status }: { status: AdjustmentStatus }) {
