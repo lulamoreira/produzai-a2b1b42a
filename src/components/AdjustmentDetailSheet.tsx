@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { Fragment, useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -35,6 +35,8 @@ interface Props {
   adjustment: CampaignAdjustment;
   campaignId: string;
   campaignName: string;
+  winnerSupplierId?: string | null;
+  hasNegotiationRateio?: boolean;
 }
 
 const PIECE_FIELDS: { key: string; label: string }[] = [
@@ -53,7 +55,7 @@ function ChangeBadge({ type }: { type: string }) {
 }
 
 export default function AdjustmentDetailSheet({
-  open, onOpenChange, adjustment, campaignId, campaignName,
+  open, onOpenChange, adjustment, campaignId, campaignName, winnerSupplierId, hasNegotiationRateio,
 }: Props) {
   // Ajuste é sempre editável (mesmo Ativo ou Substituído)
   const readOnly = false;
@@ -61,11 +63,22 @@ export default function AdjustmentDetailSheet({
   const { data: kits = [], isLoading: kitsLoading } = useAdjustmentKits(adjustment.id);
   const { data: adjStorePieces = [] } = useAdjustmentStorePieces(adjustment.id);
 
-  // Original campaign store_pieces for rateio comparison
-  const { data: origStorePieces = [] } = useQuery({
-    queryKey: ["campaign_store_pieces_for_compare", campaignId],
+  const rateioBaseLabel = hasNegotiationRateio && winnerSupplierId ? "negociação" : "original";
+  const rateioBaseColumnLabel = hasNegotiationRateio && winnerSupplierId ? "Qtd negociação" : "Qtd original";
+
+  // Source rateio for comparison: negotiation when it exists, original only as fallback.
+  const { data: baseStorePieces = [] } = useQuery({
+    queryKey: ["adjustment_rateio_base_for_compare", campaignId, winnerSupplierId, hasNegotiationRateio],
     enabled: open,
     queryFn: async () => {
+      if (hasNegotiationRateio && winnerSupplierId) {
+        return supabasePaginate<any>((from, to) =>
+          (supabase.from("budget_negotiation_store_pieces" as any) as any)
+            .select("piece_id, store_id, quantity")
+            .eq("supplier_id", winnerSupplierId)
+            .range(from, to)
+        );
+      }
       return supabasePaginate<any>((from, to) =>
         (supabase.from("campaign_store_pieces") as any).select("piece_id, store_id, quantity").eq("campaign_id", campaignId).range(from, to)
       );
@@ -188,25 +201,26 @@ export default function AdjustmentDetailSheet({
     const sourceByAdjPieceId = new Map<string, string | null>();
     pieces.forEach((p: any) => sourceByAdjPieceId.set(p.id, p.source_piece_id));
 
-    const origMap = new Map<string, number>(); // source piece id -> qty
-    origStorePieces.forEach((sp: any) => {
-      origMap.set(sp.piece_id, (origMap.get(sp.piece_id) || 0) + Number(sp.quantity || 0));
+    const baseMap = new Map<string, number>(); // source piece id -> qty
+    baseStorePieces.forEach((sp: any) => {
+      baseMap.set(sp.piece_id, (baseMap.get(sp.piece_id) || 0) + Number(sp.quantity || 0));
     });
 
-    let totalOrig = 0;
+    let totalBase = 0;
     let totalAdj = 0;
-    const rows: { name: string; orig: number; adj: number; delta: number }[] = [];
+    const rows: { name: string; base: number; adj: number; delta: number }[] = [];
     pieces.forEach((p: any) => {
+      if (p.change_type === "removed" || p.is_deleted) return;
       const adjQty = adjMap.get(p.id) || 0;
-      const origQty = p.source_piece_id ? (origMap.get(p.source_piece_id) || 0) : 0;
+      const baseQty = p.source_piece_id ? (baseMap.get(p.source_piece_id) || 0) : 0;
       totalAdj += adjQty;
-      totalOrig += origQty;
-      if (adjQty !== origQty) {
-        rows.push({ name: p.name, orig: origQty, adj: adjQty, delta: adjQty - origQty });
+      totalBase += baseQty;
+      if (adjQty !== baseQty) {
+        rows.push({ name: p.name, base: baseQty, adj: adjQty, delta: adjQty - baseQty });
       }
     });
-    return { rows, totalOrig, totalAdj };
-  }, [adjStorePieces, origStorePieces, pieces]);
+    return { rows, totalBase, totalAdj };
+  }, [adjStorePieces, baseStorePieces, pieces]);
 
   const changedPieceRows = useMemo(() => {
     const out: { piece: string; field: string; orig: any; adj: any }[] = [];
@@ -242,11 +256,11 @@ export default function AdjustmentDetailSheet({
       ws1.columns.forEach((c) => (c.width = 28));
 
       const ws2 = wb.addWorksheet("Rateio");
-      ws2.addRow(["Peça", "Qtd original", "Qtd ajuste", "Δ"]);
+      ws2.addRow(["Peça", rateioBaseColumnLabel, "Qtd ajuste", "Δ"]);
       ws2.getRow(1).font = { bold: true };
-      rateioCompare.rows.forEach((r) => ws2.addRow([r.name, r.orig, r.adj, r.delta]));
+      rateioCompare.rows.forEach((r) => ws2.addRow([r.name, r.base, r.adj, r.delta]));
       ws2.addRow([]);
-      ws2.addRow(["TOTAL", rateioCompare.totalOrig, rateioCompare.totalAdj, rateioCompare.totalAdj - rateioCompare.totalOrig]).font = { bold: true } as any;
+      ws2.addRow(["TOTAL", rateioCompare.totalBase, rateioCompare.totalAdj, rateioCompare.totalAdj - rateioCompare.totalBase]).font = { bold: true } as any;
       ws2.columns.forEach((c) => (c.width = 20));
 
       const buf = await wb.xlsx.writeBuffer();
@@ -338,7 +352,7 @@ export default function AdjustmentDetailSheet({
                       const removed = p.change_type === "removed";
                       const snap = p.original_snapshot || {};
                       return (
-                        <>
+                        <Fragment key={p.id}>
                           <TableRow key={p.id} className={removed ? "opacity-60" : ""}>
                             <TableCell className="text-xs">{p.code}</TableCell>
                             <TableCell className={`text-xs ${removed ? "line-through" : ""}`}>{p.name}</TableCell>
@@ -401,7 +415,7 @@ export default function AdjustmentDetailSheet({
                               </TableCell>
                             </TableRow>
                           )}
-                        </>
+                        </Fragment>
                       );
                     })}
                   </TableBody>
@@ -628,12 +642,12 @@ export default function AdjustmentDetailSheet({
             <div>
               <h3 className="text-xs font-semibold mb-1">Comparativo de rateio</h3>
               <div className="grid grid-cols-3 gap-2 mb-2">
-                <div className="border rounded-md p-2"><p className="text-[11px] text-muted-foreground">Total original</p><p className="text-base font-bold">{rateioCompare.totalOrig}</p></div>
+                <div className="border rounded-md p-2"><p className="text-[11px] text-muted-foreground">Total {rateioBaseLabel}</p><p className="text-base font-bold">{rateioCompare.totalBase}</p></div>
                 <div className="border rounded-md p-2"><p className="text-[11px] text-muted-foreground">Total ajuste</p><p className="text-base font-bold">{rateioCompare.totalAdj}</p></div>
                 <div className="border rounded-md p-2">
                   <p className="text-[11px] text-muted-foreground">Diferença</p>
-                  <p className={`text-base font-bold ${rateioCompare.totalAdj - rateioCompare.totalOrig > 0 ? "text-emerald-600" : rateioCompare.totalAdj - rateioCompare.totalOrig < 0 ? "text-destructive" : ""}`}>
-                    {rateioCompare.totalAdj - rateioCompare.totalOrig > 0 ? "+" : ""}{rateioCompare.totalAdj - rateioCompare.totalOrig}
+                  <p className={`text-base font-bold ${rateioCompare.totalAdj - rateioCompare.totalBase > 0 ? "text-emerald-600" : rateioCompare.totalAdj - rateioCompare.totalBase < 0 ? "text-destructive" : ""}`}>
+                    {rateioCompare.totalAdj - rateioCompare.totalBase > 0 ? "+" : ""}{rateioCompare.totalAdj - rateioCompare.totalBase}
                   </p>
                 </div>
               </div>
@@ -642,7 +656,7 @@ export default function AdjustmentDetailSheet({
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-xs">Peça</TableHead>
-                      <TableHead className="text-xs text-right">Qtd original</TableHead>
+                      <TableHead className="text-xs text-right">{rateioBaseColumnLabel}</TableHead>
                       <TableHead className="text-xs text-right">Qtd ajuste</TableHead>
                       <TableHead className="text-xs text-right">Δ</TableHead>
                     </TableRow>
@@ -654,7 +668,7 @@ export default function AdjustmentDetailSheet({
                     {rateioCompare.rows.map((r, i) => (
                       <TableRow key={i}>
                         <TableCell className="text-xs">{r.name}</TableCell>
-                        <TableCell className="text-xs text-right text-muted-foreground">{r.orig}</TableCell>
+                        <TableCell className="text-xs text-right text-muted-foreground">{r.base}</TableCell>
                         <TableCell className="text-xs text-right">{r.adj}</TableCell>
                         <TableCell className={`text-xs text-right font-semibold ${r.delta > 0 ? "text-emerald-600" : "text-destructive"}`}>
                           {r.delta > 0 ? "+" : ""}{r.delta}
