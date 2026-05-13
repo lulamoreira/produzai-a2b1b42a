@@ -1,18 +1,39 @@
-// Builds a 3-sheet Excel workbook for the Adjustment quote request.
-// Reuses the visual style of buildNegotiatedProposalWorkbook.
+// Builds the adjustment ("reorçamento") workbook sent to the supplier.
+//
+// Layout matches the standard Supplier Budget export (exportSupplierBudget.ts):
+//   Sheet 1: "Orçamento"           — every piece + kit, ascending Código,
+//                                     adjusted quantities + current prices,
+//                                     changed rows highlighted.
+//   Sheet 2: "Matriz Lojas x Peças" — the Rateio matrix (delegated to
+//                                     appendMatrixSheets) using the adjustment
+//                                     quantities.
+//   Sheet 3: "Modificações"        — full breakdown of every change
+//                                     (standalone pieces and kits/kit-pieces).
+//
+// The baseline used for "what changed" is the negotiated rateio when one
+// exists, otherwise the original campaign rateio — that decision is taken
+// by the caller and passed in via `originalStorePieces` + `baselineIsNegotiation`.
+
+import { appendMatrixSheets } from "@/lib/exportMatrixExcelJS";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 const BROWN = "FF8C6F4E";
-const DARK = "FF4A2C2A";
+const DARK = "FF1C1916";
 const BEIGE = "FFF7F3EC";
 const WHITE = "FFFFFFFF";
 const BORDER = "FFE5E7EB";
-const RED_BG = "FFFFF0F0";
-const GREEN_BG = "FFE6F4EA";
-const YELLOW_FILL = "FFFFFFE0";
-const RED_FONT = "FFC53030";
-const GREEN_FONT = "FF2F855A";
+const KIT_BG = "FFEDE3D4";
+const GREY = "FF999999";
+
+// Highlight palette (used on Sheet 1 and Sheet 3 to mark changes)
+const CHANGE_BG = "FFFFF7CC";       // light yellow — modified row
+const CHANGE_FONT = "FF8A6D00";     // amber font
+const ADDED_BG = "FFE6F4EA";        // light green — new
+const ADDED_FONT = "FF2F855A";
+const REMOVED_BG = "FFFFF0F0";      // light red — removed
+const REMOVED_FONT = "FFC53030";
+const YELLOW_INPUT = "FFFFFFE0";    // editable "novo preço" cells
 
 function moneyFormat(currencyCode: string) {
   if (currencyCode === "USD") return '"US$" #,##0.00;[Red]-"US$" #,##0.00;-';
@@ -21,6 +42,14 @@ function moneyFormat(currencyCode: string) {
   return '"R$" #,##0.00;[Red]-"R$" #,##0.00;-';
 }
 
+const PIECE_FIELD_LABELS: Record<string, string> = {
+  name: "Nome",
+  specification: "Especificação",
+  size: "Tamanho",
+  category: "Categoria",
+  sub_location: "Sub-localização",
+};
+
 export interface AdjustmentProposalParams {
   adjustment: { id: string; name: string };
   campaignName: string;
@@ -28,16 +57,37 @@ export interface AdjustmentProposalParams {
   clientName: string;
   currencyCode: string;
   supplier: { id: string; company_name: string; contact_name: string };
-  pieces: any[]; // campaign_adjustment_pieces
+
+  /** Adjustment pieces (campaign_adjustment_pieces) — includes is_new / is_deleted / change_type. */
+  pieces: any[];
+  /** Adjustment kits (campaign_adjustment_kits). */
   kits: any[];
+  /** Adjustment kit composition (campaign_adjustment_kit_pieces). */
   kitPieces: any[];
+
+  /** Source kits from campaign_kits (used for the kit Código + original name). */
+  sourceKits: { id: string; code: number; name: string }[];
+  /** Source pieces from campaign_pieces (used to resolve names of pieces that
+   *  were removed from a kit and have no row in the adjustment_pieces list). */
+  sourcePieces: { id: string; code: number; name: string }[];
+  /** Original kit composition (campaign_kit_pieces) for change detection. */
+  originalKitPieces: { kit_id: string; piece_id: string; quantity: number }[];
+
   stores: { id: string; name: string; nickname?: string | null; city?: string | null; state?: string | null }[];
-  /** Previous rateio (negotiation when it exists, otherwise original campaign rateio). */
+
+  /** Previous rateio (negotiation when it exists, otherwise original campaign rateio).
+   *  piece_id refers to the **source** (campaign_pieces) id. */
   originalStorePieces: { store_id: string; piece_id: string; quantity: number }[];
+  /** Adjustment rateio (campaign_adjustment_store_pieces).
+   *  piece_id refers to the **adjustment** piece id. */
   adjustmentStorePieces: { store_id: string; piece_id: string; quantity: number }[];
+
+  /** budget_prices for the winner supplier. piece_id = source piece id. */
   currentPrices: { piece_id: string; unit_price: number; adjusted_unit_price: number | null }[];
   extraCosts: { installation_value: number; freight_value: number };
-  /** Whether the "originalStorePieces" baseline came from a negotiation. Drives column labels. */
+
+  /** True if `originalStorePieces` came from a negotiation rather than the
+   *  original campaign rateio. Drives wording in the Modificações sheet. */
   baselineIsNegotiation?: boolean;
 }
 
@@ -57,6 +107,23 @@ export function summarizeAdjustmentChanges(pieces: any[]): AdjustmentChangeSumma
   return { modified, added, removed };
 }
 
+type RowKind = "kit_header" | "kit_piece" | "standalone_piece";
+type ChangeKind = "unchanged" | "modified" | "added" | "removed" | "qty";
+
+interface OrcamentoRow {
+  kind: RowKind;
+  code: number | undefined;
+  name: string;
+  specification?: string;
+  size?: string;
+  qty: number;
+  unitPrice: number | null;
+  lineTotal: number;
+  change: ChangeKind;
+  /** kit code this kit_piece belongs to (only for kit_piece rows) */
+  parentKitCode?: number;
+}
+
 export async function buildAdjustmentProposalWorkbook(
   params: AdjustmentProposalParams,
 ): Promise<{ blob: Blob; fileName: string }> {
@@ -68,36 +135,215 @@ export async function buildAdjustmentProposalWorkbook(
 
   const money = moneyFormat(params.currencyCode);
 
-  // Resolve "current price" by source_piece_id (adjustment pieces reference original)
-  const priceBySource = new Map<string, { unit: number; adjusted: number | null }>();
-  for (const p of params.currentPrices) {
-    priceBySource.set(p.piece_id, {
-      unit: Number(p.unit_price || 0),
-      adjusted: p.adjusted_unit_price != null ? Number(p.adjusted_unit_price) : null,
-    });
+  // ── Lookup maps ────────────────────────────────────────────────────────
+  const sourceKitById = new Map(params.sourceKits.map((k) => [k.id, k]));
+  const sourcePieceById = new Map(params.sourcePieces.map((p) => [p.id, p]));
+
+  // Adjustment piece id -> source piece id (and back).
+  const adjPieceById = new Map<string, any>();
+  const adjBySourcePieceId = new Map<string, any>();
+  for (const p of params.pieces) {
+    adjPieceById.set(p.id, p);
+    if (p.source_piece_id) adjBySourcePieceId.set(p.source_piece_id, p);
   }
-  const priceFor = (adjPiece: any): number => {
-    const src = adjPiece.source_piece_id;
-    if (!src) return 0;
-    const pr = priceBySource.get(src);
-    if (!pr) return 0;
-    return pr.adjusted ?? pr.unit ?? 0;
+
+  // Quantity per adjustment piece id (sum across stores).
+  const adjQtyByPieceId = new Map<string, number>();
+  for (const sp of params.adjustmentStorePieces) {
+    adjQtyByPieceId.set(sp.piece_id, (adjQtyByPieceId.get(sp.piece_id) || 0) + Number(sp.quantity || 0));
+  }
+  // Baseline (negotiated or original) qty per source piece id.
+  const baseQtyBySourceId = new Map<string, number>();
+  for (const sp of params.originalStorePieces) {
+    baseQtyBySourceId.set(sp.piece_id, (baseQtyBySourceId.get(sp.piece_id) || 0) + Number(sp.quantity || 0));
+  }
+
+  // Price per source piece id (adjusted ?? unit).
+  const priceBySourceId = new Map<string, number>();
+  for (const pr of params.currentPrices) {
+    const v = pr.adjusted_unit_price != null ? Number(pr.adjusted_unit_price) : Number(pr.unit_price || 0);
+    priceBySourceId.set(pr.piece_id, v);
+  }
+  const priceForAdjPiece = (p: any): number => {
+    if (!p.source_piece_id) return 0;
+    return priceBySourceId.get(p.source_piece_id) ?? 0;
   };
 
-  // Sum maps
-  const origSumBySource: Record<string, number> = {};
-  for (const sp of params.originalStorePieces) {
-    origSumBySource[sp.piece_id] = (origSumBySource[sp.piece_id] || 0) + Number(sp.quantity || 0);
-  }
-  const adjSumByPiece: Record<string, number> = {};
-  for (const sp of params.adjustmentStorePieces) {
-    adjSumByPiece[sp.piece_id] = (adjSumByPiece[sp.piece_id] || 0) + Number(sp.quantity || 0);
+  // ── Compute kit-pieces change map (per adjustment kit) ─────────────────
+  // For each adjustment kit, what changed inside (added / removed / qty).
+  type KitPieceChange = {
+    sourcePieceId: string;
+    pieceCode: number | undefined;
+    pieceName: string;
+    change: "added" | "removed" | "qty";
+    origQty: number;
+    adjQty: number;
+  };
+  const kitPieceChangesByAdjKit = new Map<string, KitPieceChange[]>();
+  for (const k of params.kits) {
+    const orig = new Map<string, number>(); // source_piece_id -> qty
+    if (k.source_kit_id) {
+      params.originalKitPieces
+        .filter((kp) => kp.kit_id === k.source_kit_id)
+        .forEach((kp) => orig.set(kp.piece_id, Number(kp.quantity || 0)));
+    }
+    const cur = new Map<string, number>(); // source_piece_id -> qty
+    params.kitPieces
+      .filter((kp) => kp.kit_id === k.id)
+      .forEach((kp) => {
+        const adjP = adjPieceById.get(kp.piece_id);
+        const srcId = adjP?.source_piece_id ?? kp.piece_id;
+        cur.set(srcId, Number(kp.quantity || 0));
+      });
+    const ids = new Set<string>([...orig.keys(), ...cur.keys()]);
+    const out: KitPieceChange[] = [];
+    ids.forEach((pid) => {
+      const o = orig.get(pid) ?? 0;
+      const a = cur.get(pid) ?? 0;
+      if (o === a) return;
+      const meta =
+        sourcePieceById.get(pid) ||
+        (adjBySourcePieceId.get(pid) && {
+          code: adjBySourcePieceId.get(pid).code,
+          name: adjBySourcePieceId.get(pid).name,
+        });
+      out.push({
+        sourcePieceId: pid,
+        pieceCode: meta?.code,
+        pieceName: meta?.name ?? "—",
+        change: o === 0 ? "added" : a === 0 ? "removed" : "qty",
+        origQty: o,
+        adjQty: a,
+      });
+    });
+    if (out.length > 0) kitPieceChangesByAdjKit.set(k.id, out);
   }
 
+  // ── Build the unified row list for Sheet 1 ─────────────────────────────
+  // Strategy:
+  //   • One "kit_header" row per adjustment kit, followed by its component
+  //     "kit_piece" rows (drawn from the adjustment composition).
+  //   • One "standalone_piece" row per non-kit_only piece that is NOT a
+  //     component of any kit in this adjustment.
+  //   • A piece is a "kit component" iff it appears in adjustment kit_pieces.
+  //   • Rows are produced grouped by the kit/piece's Código (ascending),
+  //     with kit components emitted under their kit header.
+
+  const piecesInAnyAdjKit = new Set<string>(params.kitPieces.map((kp) => kp.piece_id));
+
+  const kitTotalQty = (kitId: string): number => {
+    const kpList = params.kitPieces.filter((kp) => kp.kit_id === kitId);
+    if (kpList.length === 0) return 0;
+    return Math.min(
+      ...kpList.map((kp) => {
+        const total = adjQtyByPieceId.get(kp.piece_id) || 0;
+        return Math.floor(total / (Number(kp.quantity) || 1));
+      })
+    );
+  };
+
+  const isPieceChanged = (p: any): ChangeKind => {
+    if (p.is_deleted) return "removed";
+    if (p.is_new || p.change_type === "added") return "added";
+    if (p.change_type === "modified") return "modified";
+    // Quantity-only change vs baseline:
+    const adjQ = adjQtyByPieceId.get(p.id) || 0;
+    const baseQ = p.source_piece_id ? (baseQtyBySourceId.get(p.source_piece_id) || 0) : 0;
+    if (adjQ !== baseQ) return "qty";
+    return "unchanged";
+  };
+
+  const isKitChanged = (k: any): ChangeKind => {
+    if (k.is_deleted) return "removed";
+    if (k.change_type === "added") return "added";
+    if (k.change_type === "modified") return "modified";
+    if ((kitPieceChangesByAdjKit.get(k.id)?.length ?? 0) > 0) return "modified";
+    return "unchanged";
+  };
+
+  type Group = { code: number; render: () => OrcamentoRow[] };
+  const groups: Group[] = [];
+
+  // Kit groups
+  for (const k of params.kits) {
+    const sk = k.source_kit_id ? sourceKitById.get(k.source_kit_id) : null;
+    const kitCode = sk?.code ?? Number.MAX_SAFE_INTEGER;
+    groups.push({
+      code: kitCode,
+      render: () => {
+        const out: OrcamentoRow[] = [];
+        const kQty = kitTotalQty(k.id);
+        out.push({
+          kind: "kit_header",
+          code: sk?.code,
+          name: k.name,
+          qty: kQty,
+          unitPrice: null,
+          lineTotal: 0,
+          change: isKitChanged(k),
+        });
+        // Kit pieces — emit in ascending piece code order
+        const kpEntries = params.kitPieces
+          .filter((kp) => kp.kit_id === k.id)
+          .map((kp) => {
+            const adjP = adjPieceById.get(kp.piece_id);
+            return { kp, adjP };
+          })
+          .filter((x) => !!x.adjP)
+          .sort((a, b) => (a.adjP.code ?? 0) - (b.adjP.code ?? 0));
+        for (const { kp, adjP } of kpEntries) {
+          const qty = (adjQtyByPieceId.get(adjP.id) || 0);
+          const price = priceForAdjPiece(adjP);
+          out.push({
+            kind: "kit_piece",
+            code: adjP.code,
+            name: adjP.name,
+            specification: adjP.specification,
+            size: adjP.size,
+            qty,
+            unitPrice: price,
+            lineTotal: price * qty,
+            change: isPieceChanged(adjP),
+            parentKitCode: sk?.code,
+          });
+        }
+        return out;
+      },
+    });
+  }
+
+  // Standalone pieces (not part of any adjustment kit, and not kit_only)
+  for (const p of params.pieces) {
+    if (p.kit_only) continue;
+    if (piecesInAnyAdjKit.has(p.id)) continue;
+    const code = (p.code as number | undefined) ?? Number.MAX_SAFE_INTEGER;
+    groups.push({
+      code,
+      render: () => {
+        const qty = adjQtyByPieceId.get(p.id) || 0;
+        const price = priceForAdjPiece(p);
+        return [{
+          kind: "standalone_piece",
+          code: p.code,
+          name: p.name,
+          specification: p.specification,
+          size: p.size,
+          qty,
+          unitPrice: price,
+          lineTotal: price * qty,
+          change: isPieceChanged(p),
+        }];
+      },
+    });
+  }
+
+  groups.sort((a, b) => a.code - b.code);
+  const orcamentoRows: OrcamentoRow[] = groups.flatMap((g) => g.render());
+
   // ─────────────────────────────────────────────────────────
-  // SHEET 1 — Reorçamento
+  // SHEET 1 — Orçamento
   // ─────────────────────────────────────────────────────────
-  const ws1 = wb.addWorksheet("Reorçamento", { views: [{ showGridLines: false }] });
+  const ws1 = wb.addWorksheet("Orçamento", { views: [{ showGridLines: false }] });
 
   ws1.mergeCells("A1:H1");
   const t1 = ws1.getCell("A1");
@@ -109,7 +355,7 @@ export async function buildAdjustmentProposalWorkbook(
 
   ws1.mergeCells("A2:H2");
   const t2 = ws1.getCell("A2");
-  t2.value = `${(params.campaignName || "").toUpperCase()} — REORÇAMENTO PÓS-MOCKUP`;
+  t2.value = `${(params.campaignName || "").toUpperCase()} — REORÇAMENTO`;
   t2.font = { name: "Arial", size: 14, bold: true, color: { argb: WHITE } };
   t2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
   t2.alignment = { horizontal: "center", vertical: "middle" };
@@ -117,26 +363,28 @@ export async function buildAdjustmentProposalWorkbook(
 
   ws1.mergeCells("A3:H3");
   const t3 = ws1.getCell("A3");
-  t3.value = `Fornecedor: ${params.supplier.company_name} | Ajuste: ${params.adjustment.name}`;
+  t3.value = `Fornecedor: ${params.supplier.company_name} · Ajuste: ${params.adjustment.name}`;
   t3.font = { name: "Arial", size: 11, bold: true, color: { argb: DARK } };
   t3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
   t3.alignment = { horizontal: "center", vertical: "middle" };
   ws1.getRow(3).height = 22;
 
-  const baselineLabel = params.baselineIsNegotiation ? "Qtd Negociada" : "Qtd Original";
-  const headerRow1 = ws1.getRow(5);
-  headerRow1.values = [
+  ws1.getRow(4).height = 6;
+
+  const headerRowIdx = 5;
+  const header = ws1.getRow(headerRowIdx);
+  header.values = [
+    "Foto",
+    "Tipo",
     "Código",
     "Item / Especificação",
-    baselineLabel,
-    "Qtd Ajuste",
-    "Δ Qtd",
+    "Qtd Total",
     "Preço Atual",
     "Total Atual",
     "Novo Preço",
   ];
-  headerRow1.height = 24;
-  headerRow1.eachCell((cell) => {
+  header.height = 24;
+  header.eachCell((cell) => {
     cell.font = { bold: true, color: { argb: WHITE } };
     cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
     cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
@@ -148,52 +396,44 @@ export async function buildAdjustmentProposalWorkbook(
     };
   });
 
+  let bodyEvenIdx = 0;
   let totalCurrent = 0;
-  let evenIdx = 0;
+  for (const r of orcamentoRows) {
+    const isKitHeader = r.kind === "kit_header";
+    const baseBg = isKitHeader ? KIT_BG : (bodyEvenIdx % 2 === 0 ? WHITE : BEIGE);
+    if (!isKitHeader) bodyEvenIdx++;
 
-  // Sort: kept/modified first, then added, then removed
-  const orderRank = (p: any) => (p.is_deleted ? 2 : (p.is_new ? 1 : 0));
-  const piecesSorted = [...params.pieces].sort(
-    (a, b) => orderRank(a) - orderRank(b) || (a.code || 0) - (b.code || 0),
-  );
+    // Override background for changed rows
+    let bg = baseBg;
+    if (r.change === "added") bg = ADDED_BG;
+    else if (r.change === "removed") bg = REMOVED_BG;
+    else if (r.change === "modified" || r.change === "qty") bg = CHANGE_BG;
 
-  for (const p of piecesSorted) {
-    if (p.kit_only) continue;
-    const qOrig = p.is_new ? 0 : (p.source_piece_id ? (origSumBySource[p.source_piece_id] || 0) : 0);
-    const qAdj = p.is_deleted ? 0 : (adjSumByPiece[p.id] || 0);
-    const dQty = qAdj - qOrig;
-    const price = priceFor(p);
-    const lineTotal = price * qAdj;
-    totalCurrent += lineTotal;
-
-    const codeLabel = p.is_new
-      ? `${p.code} (NOVA)`
-      : p.is_deleted
-      ? `${p.code} (REMOVIDA)`
-      : `${p.code}`;
-
-    const desc = [p.name, p.specification, p.size].filter(Boolean).join(" — ");
+    const codeCell = r.code != null ? r.code : "";
+    const desc = [r.name, r.specification, r.size].filter(Boolean).join(" — ");
 
     const row = ws1.addRow([
-      codeLabel,
+      "📷",
+      isKitHeader ? "Kit" : r.kind === "kit_piece" ? "Peça do Kit" : "Peça",
+      codeCell,
       desc,
-      qOrig,
-      qAdj,
-      dQty,
-      price,
-      lineTotal,
-      null, // empty for supplier
+      r.qty,
+      isKitHeader ? null : r.unitPrice,
+      isKitHeader ? null : r.lineTotal,
+      null, // Novo Preço — supplier fills
     ]);
-    const bg = evenIdx % 2 === 0 ? WHITE : BEIGE;
-    evenIdx++;
 
+    if (!isKitHeader) totalCurrent += r.lineTotal;
+
+    row.height = 22;
     row.eachCell({ includeEmpty: true }, (cell, col) => {
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
       cell.alignment = {
         vertical: "middle",
         wrapText: true,
-        horizontal: col >= 3 ? "right" : col === 1 ? "center" : "left",
+        horizontal: col >= 5 ? "right" : col === 1 || col === 3 ? "center" : "left",
       };
+      cell.font = { bold: isKitHeader };
       cell.border = {
         top: { style: "thin", color: { argb: BORDER } },
         bottom: { style: "thin", color: { argb: BORDER } },
@@ -203,275 +443,325 @@ export async function buildAdjustmentProposalWorkbook(
       if (col === 6 || col === 7) cell.numFmt = money;
     });
 
-    if (p.is_deleted) {
-      row.eachCell({ includeEmpty: true }, (cell) => {
-        cell.font = { strike: true, color: { argb: RED_FONT } };
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: RED_BG } };
-      });
-    } else if (p.is_new) {
-      row.getCell(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: GREEN_BG } };
-      row.getCell(1).font = { bold: true, color: { argb: GREEN_FONT } };
-    }
+    // Photo placeholder cell styling
+    const photoCell = row.getCell(1);
+    photoCell.font = { name: "Arial", size: 14, color: { argb: GREY } };
 
-    if (dQty !== 0 && !p.is_deleted) {
-      const isPositive = dQty > 0;
-      const dCell = row.getCell(5);
-      dCell.font = { color: { argb: WHITE }, bold: true };
-      dCell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: isPositive ? "FF22C55E" : "FFDC2626" },
+    // Highlight the Tipo cell for changed rows + add a status word
+    if (r.change !== "unchanged") {
+      const statusText =
+        r.change === "added" ? "NOVA" :
+        r.change === "removed" ? "REMOVIDA" :
+        r.change === "modified" ? "MODIFICADA" :
+        "QTD ALTERADA";
+      const cCode = row.getCell(3);
+      cCode.value = `${codeCell !== "" ? codeCell : "—"} (${statusText})`;
+      cCode.font = {
+        bold: true,
+        color: { argb:
+          r.change === "added" ? ADDED_FONT :
+          r.change === "removed" ? REMOVED_FONT :
+          CHANGE_FONT },
       };
-      dCell.alignment = { vertical: "middle", horizontal: "center" };
+      if (r.change === "removed") {
+        row.eachCell({ includeEmpty: false }, (c) => {
+          c.font = { ...(c.font || {}), strike: true, color: { argb: REMOVED_FONT } };
+        });
+      }
     }
 
-    // Yellow editable cell for "Novo Preço"
-    const newPriceCell = row.getCell(8);
-    newPriceCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_FILL } };
-    newPriceCell.numFmt = money;
-    newPriceCell.border = {
-      top: { style: "medium", color: { argb: BROWN } },
-      bottom: { style: "medium", color: { argb: BROWN } },
-      left: { style: "medium", color: { argb: BROWN } },
-      right: { style: "medium", color: { argb: BROWN } },
-    };
+    // Yellow editable "Novo Preço" cell only on real piece rows
+    if (!isKitHeader) {
+      const npCell = row.getCell(8);
+      npCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_INPUT } };
+      npCell.numFmt = money;
+      npCell.border = {
+        top: { style: "medium", color: { argb: BROWN } },
+        bottom: { style: "medium", color: { argb: BROWN } },
+        left: { style: "medium", color: { argb: BROWN } },
+        right: { style: "medium", color: { argb: BROWN } },
+      };
+    }
   }
 
-  // Footer rows
+  // Totals
   ws1.addRow([]);
-
-  const addExtraRow = (label: string, value: number) => {
+  const addTotalRow = (label: string, value: number | null, emphasized = false, editable = false) => {
     const r = ws1.addRow(["", "", "", "", "", label, value, null]);
     r.getCell(6).alignment = { horizontal: "right", vertical: "middle" };
-    r.getCell(6).font = { bold: true };
-    r.getCell(7).numFmt = money;
     r.getCell(7).alignment = { horizontal: "right", vertical: "middle" };
-    const newCell = r.getCell(8);
-    newCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_FILL } };
-    newCell.numFmt = money;
-    newCell.border = {
-      top: { style: "medium", color: { argb: BROWN } },
-      bottom: { style: "medium", color: { argb: BROWN } },
-      left: { style: "medium", color: { argb: BROWN } },
-      right: { style: "medium", color: { argb: BROWN } },
-    };
-    return r;
+    r.getCell(7).numFmt = money;
+    if (emphasized) {
+      r.getCell(6).font = { bold: true, color: { argb: WHITE } };
+      r.getCell(7).font = { bold: true, color: { argb: WHITE } };
+      r.getCell(6).fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
+      r.getCell(7).fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
+    } else {
+      r.getCell(6).font = { bold: true };
+    }
+    if (editable) {
+      const np = r.getCell(8);
+      np.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_INPUT } };
+      np.numFmt = money;
+      np.border = {
+        top: { style: "medium", color: { argb: BROWN } },
+        bottom: { style: "medium", color: { argb: BROWN } },
+        left: { style: "medium", color: { argb: BROWN } },
+        right: { style: "medium", color: { argb: BROWN } },
+      };
+    }
   };
-  addExtraRow("Instalação:", Number(params.extraCosts.installation_value || 0));
-  addExtraRow("Frete / Despacho:", Number(params.extraCosts.freight_value || 0));
-
-  const totalAll =
+  addTotalRow("Total dos Itens", totalCurrent);
+  addTotalRow("Instalação", Number(params.extraCosts.installation_value || 0), false, true);
+  addTotalRow("Frete / Despacho", Number(params.extraCosts.freight_value || 0), false, true);
+  const grand =
     totalCurrent +
     Number(params.extraCosts.installation_value || 0) +
     Number(params.extraCosts.freight_value || 0);
-
-  const totRow = ws1.addRow(["", "", "", "", "", "TOTAL ATUAL:", totalAll, null]);
-  totRow.height = 24;
-  ["F", "G"].forEach((c) => {
-    const cell = totRow.getCell(c);
-    cell.font = { bold: true, color: { argb: WHITE } };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
-    cell.alignment = { horizontal: "right", vertical: "middle" };
-  });
-  totRow.getCell(7).numFmt = money;
-
-  const totReoRow = ws1.addRow(["", "", "", "", "", "TOTAL REORÇAMENTO:", null, null]);
-  totReoRow.height = 24;
-  totReoRow.getCell(6).font = { bold: true, color: { argb: WHITE } };
-  totReoRow.getCell(6).fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
-  totReoRow.getCell(6).alignment = { horizontal: "right", vertical: "middle" };
-  const tReoCell = totReoRow.getCell(7);
-  tReoCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_FILL } };
-  tReoCell.numFmt = money;
-  tReoCell.border = {
-    top: { style: "medium", color: { argb: BROWN } },
-    bottom: { style: "medium", color: { argb: BROWN } },
-    left: { style: "medium", color: { argb: BROWN } },
-    right: { style: "medium", color: { argb: BROWN } },
-  };
+  addTotalRow("TOTAL ATUAL", grand, true);
+  addTotalRow("TOTAL REORÇAMENTO", null, true, true);
 
   ws1.addRow([]);
   const noteRow = ws1.addRow([
-    "* Preencha os campos destacados em amarelo com os novos valores propostos e retorne este arquivo.",
+    "* Preencha as células destacadas em amarelo (coluna \"Novo Preço\") com os valores propostos e devolva o arquivo. Linhas destacadas indicam itens com alteração nesta solicitação.",
   ]);
   ws1.mergeCells(`A${noteRow.number}:H${noteRow.number}`);
   const nc = noteRow.getCell(1);
   nc.font = { italic: true, color: { argb: DARK }, size: 10 };
   nc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
   nc.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
-  noteRow.height = 26;
+  noteRow.height = 28;
 
   ws1.columns = [
-    { width: 14 },
-    { width: 50 },
-    { width: 12 },
-    { width: 12 },
-    { width: 10 },
-    { width: 14 },
-    { width: 16 },
-    { width: 16 },
+    { width: 8 },   // Foto
+    { width: 14 },  // Tipo
+    { width: 18 },  // Código (wider to fit "(MODIFICADA)" suffix)
+    { width: 50 },  // Item
+    { width: 12 },  // Qtd
+    { width: 16 },  // Preço Atual
+    { width: 16 },  // Total Atual
+    { width: 16 },  // Novo Preço
   ];
-  ws1.views = [{ state: "frozen", ySplit: 5 }];
+  ws1.views = [{ state: "frozen", ySplit: headerRowIdx }];
 
   // ─────────────────────────────────────────────────────────
-  // SHEET 2 — Rateio do Ajuste (matrix Stores × Pieces)
+  // SHEET 2 — Matriz Lojas x Peças (mesmo formato do Rateio)
   // ─────────────────────────────────────────────────────────
-  const ws2 = wb.addWorksheet("Rateio do Ajuste", { views: [{ showGridLines: false }] });
-
-  const visiblePieces = piecesSorted.filter((p) => !p.kit_only);
-  const adjQtyMap: Record<string, number> = {};
+  const matrixQtyMap: Record<string, number> = {};
   for (const sp of params.adjustmentStorePieces) {
-    adjQtyMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity || 0);
+    matrixQtyMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity || 0);
+  }
+  // Filter pieces to those displayed (non-kit_only, not deleted)
+  const matrixPieces = params.pieces
+    .filter((p: any) => !p.kit_only && !p.is_deleted)
+    .map((p: any) => ({
+      ...p,
+      store_category: p.category,
+      specification: p.specification || "",
+    }));
+
+  // Adjustment kits don't carry codes — synthesize from sourceKitById for matrix labels.
+  const matrixKits = params.kits
+    .filter((k: any) => !k.is_deleted)
+    .map((k: any) => {
+      const sk = k.source_kit_id ? sourceKitById.get(k.source_kit_id) : null;
+      return { ...k, code: sk?.code ?? 0 };
+    });
+
+  try {
+    await appendMatrixSheets(wb, {
+      stores: params.stores as any,
+      pieces: matrixPieces as any,
+      qtyMap: matrixQtyMap,
+      campaignName: params.campaignName,
+      kits: matrixKits as any,
+      kitPieces: params.kitPieces as any,
+      locations: [],
+      subLocations: [],
+      allPieces: matrixPieces as any,
+      agencyName: params.agencyName,
+      clientName: params.clientName,
+      reservedSheetNames: new Set(["orçamento", "modificações"]),
+      skipDashboard: true,
+      skipKitTabs: true,
+    });
+  } catch {
+    // Fail-soft: matrix is decorative; never block the export.
   }
 
-  // Header
-  const h2Row = ws2.getRow(1);
-  h2Row.values = ["Loja", "Cidade/UF", ...visiblePieces.map((p) => `${p.code} - ${p.name}`)];
-  h2Row.height = 28;
-  h2Row.eachCell((cell, col) => {
-    cell.font = { bold: true, color: { argb: WHITE } };
-    cell.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-    cell.border = {
-      top: { style: "thin", color: { argb: BORDER } },
-      bottom: { style: "thin", color: { argb: BORDER } },
-      left: { style: "thin", color: { argb: BORDER } },
-      right: { style: "thin", color: { argb: BORDER } },
-    };
-    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
-    if (col >= 3) {
-      const piece = visiblePieces[col - 3];
-      if (piece?.is_new) {
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF22C55E" } };
-      } else if (piece?.is_deleted) {
-        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFDC2626" } };
-        cell.font = { bold: true, color: { argb: WHITE }, strike: true };
-      }
-    }
-  });
+  // ─────────────────────────────────────────────────────────
+  // SHEET 3 — Modificações
+  // ─────────────────────────────────────────────────────────
+  const ws3 = wb.addWorksheet("Modificações", { views: [{ showGridLines: false }] });
 
-  let evenStoreIdx = 0;
-  for (const store of params.stores) {
-    const cityState = [store.city, store.state].filter(Boolean).join(" / ");
-    const row = ws2.addRow([
-      store.nickname || store.name,
-      cityState,
-      ...visiblePieces.map((p) => adjQtyMap[`${store.id}-${p.id}`] || 0),
-    ]);
-    const bg = evenStoreIdx % 2 === 0 ? WHITE : BEIGE;
-    evenStoreIdx++;
-    row.eachCell({ includeEmpty: true }, (cell, col) => {
-      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
-      cell.alignment = {
-        vertical: "middle",
-        horizontal: col <= 2 ? "left" : "center",
-        wrapText: col <= 2,
-      };
-      cell.border = {
+  const writeSectionTitle = (title: string) => {
+    const r = ws3.addRow([title]);
+    ws3.mergeCells(`A${r.number}:F${r.number}`);
+    const c = r.getCell(1);
+    c.value = title;
+    c.font = { bold: true, color: { argb: WHITE }, size: 12 };
+    c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
+    c.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
+    r.height = 24;
+  };
+  const writeTableHeader = (cols: string[]) => {
+    const r = ws3.addRow(cols);
+    r.eachCell((c) => {
+      c.font = { bold: true, color: { argb: WHITE } };
+      c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
+      c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+      c.border = {
         top: { style: "thin", color: { argb: BORDER } },
         bottom: { style: "thin", color: { argb: BORDER } },
         left: { style: "thin", color: { argb: BORDER } },
         right: { style: "thin", color: { argb: BORDER } },
       };
-      if (col >= 3 && Number(cell.value || 0) === 0) {
-        cell.font = { color: { argb: "FFBBBBBB" } };
-      }
     });
-  }
-
-  ws2.columns = [
-    { width: 30 },
-    { width: 24 },
-    ...visiblePieces.map(() => ({ width: 12 })),
-  ];
-  ws2.views = [{ state: "frozen", xSplit: 2, ySplit: 1 }];
-
-  // ─────────────────────────────────────────────────────────
-  // SHEET 3 — Comparativo
-  // ─────────────────────────────────────────────────────────
-  const ws3 = wb.addWorksheet("Comparativo", { views: [{ showGridLines: false }] });
-
-  // Compute totals (qty × current prices for both)
-  let totQtyOrig = 0, totQtyAdj = 0;
-  let totValOrig = 0, totValAdj = 0;
-  const detail: Array<{ label: string; qOrig: number; qAdj: number; price: number; tOrig: number; tAdj: number; }> = [];
-  for (const p of visiblePieces) {
-    const qOrig = p.is_new ? 0 : (p.source_piece_id ? (origSumBySource[p.source_piece_id] || 0) : 0);
-    const qAdj = p.is_deleted ? 0 : (adjSumByPiece[p.id] || 0);
-    const price = priceFor(p);
-    const tOrig = price * qOrig;
-    const tAdj = price * qAdj;
-    totQtyOrig += qOrig; totQtyAdj += qAdj;
-    totValOrig += tOrig; totValAdj += tAdj;
-    detail.push({ label: `${p.code} - ${p.name}`, qOrig, qAdj, price, tOrig, tAdj });
-  }
-
-  const summary = [
-    ["", baselineLabel.replace("Qtd ", ""), "Ajuste", "Δ"],
-    ["Unidades Totais", totQtyOrig, totQtyAdj, totQtyAdj - totQtyOrig],
-    ["Valor Total (mesmos preços)", totValOrig, totValAdj, totValAdj - totValOrig],
-  ];
-  summary.forEach((rowVals, i) => {
-    const r = ws3.addRow(rowVals);
     r.height = 22;
-    if (i === 0) {
-      r.eachCell((c) => {
-        c.font = { bold: true, color: { argb: WHITE } };
-        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
-        c.alignment = { horizontal: "center", vertical: "middle" };
-      });
-    } else {
-      r.getCell(1).font = { bold: true };
-      [2, 3, 4].forEach((col) => {
-        r.getCell(col).alignment = { horizontal: "right" };
-        if (i === 2) r.getCell(col).numFmt = money;
-      });
+  };
+  const styleDataRow = (r: any, kind: ChangeKind) => {
+    const bg =
+      kind === "added" ? ADDED_BG :
+      kind === "removed" ? REMOVED_BG :
+      kind === "modified" || kind === "qty" ? CHANGE_BG : WHITE;
+    r.eachCell({ includeEmpty: true }, (c: any) => {
+      c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
+      c.alignment = c.alignment || { vertical: "middle" };
+      c.alignment = { ...c.alignment, vertical: "middle", wrapText: true };
+      c.border = {
+        top: { style: "thin", color: { argb: BORDER } },
+        bottom: { style: "thin", color: { argb: BORDER } },
+        left: { style: "thin", color: { argb: BORDER } },
+        right: { style: "thin", color: { argb: BORDER } },
+      };
+    });
+  };
+
+  const baselineLabel = params.baselineIsNegotiation ? "Negociado" : "Original";
+
+  // ── Section 1: Standalone pieces (regular, non-kit) ──────────────────
+  const standalonePieces = params.pieces.filter((p: any) => !p.kit_only && !piecesInAnyAdjKit.has(p.id));
+  const piecePieceChangeRows: { p: any; kind: ChangeKind }[] = [];
+  for (const p of standalonePieces) {
+    const k = isPieceChanged(p);
+    if (k !== "unchanged") piecePieceChangeRows.push({ p, kind: k });
+  }
+
+  writeSectionTitle("Peças (alteradas, removidas e novas)");
+  writeTableHeader([
+    "Código",
+    "Peça",
+    "Alteração",
+    "Detalhe",
+    `Qtd ${baselineLabel}`,
+    "Qtd Ajuste",
+  ]);
+
+  if (piecePieceChangeRows.length === 0) {
+    const r = ws3.addRow(["—", "Nenhuma peça (não-kit) com alteração.", "", "", "", ""]);
+    ws3.mergeCells(`B${r.number}:F${r.number}`);
+    r.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
+    r.getCell(2).font = { italic: true, color: { argb: GREY } };
+    styleDataRow(r, "unchanged");
+  } else {
+    for (const { p, kind } of piecePieceChangeRows) {
+      const adjQ = adjQtyByPieceId.get(p.id) || 0;
+      const baseQ = p.source_piece_id ? (baseQtyBySourceId.get(p.source_piece_id) || 0) : 0;
+
+      if (kind === "added") {
+        const r = ws3.addRow([p.code ?? "", p.name, "Nova", "Peça incluída no ajuste.", 0, adjQ]);
+        styleDataRow(r, "added");
+      } else if (kind === "removed") {
+        const r = ws3.addRow([p.code ?? "", p.name, "Removida", "Peça removida do ajuste.", baseQ, 0]);
+        styleDataRow(r, "removed");
+      } else if (kind === "modified") {
+        const snap = p.original_snapshot || {};
+        const fields = Object.keys(PIECE_FIELD_LABELS).filter((k) => String(snap[k] ?? "") !== String((p as any)[k] ?? ""));
+        const detail = fields.length === 0
+          ? "Campos modificados."
+          : fields.map((k) => `${PIECE_FIELD_LABELS[k]}: "${snap[k] ?? ""}" → "${(p as any)[k] ?? ""}"`).join("\n");
+        const r = ws3.addRow([p.code ?? "", p.name, "Modificada", detail, baseQ, adjQ]);
+        styleDataRow(r, "modified");
+        r.getCell(4).alignment = { vertical: "top", wrapText: true };
+        r.height = Math.max(22, Math.min(120, 14 + 14 * Math.max(1, fields.length)));
+      } else if (kind === "qty") {
+        const r = ws3.addRow([p.code ?? "", p.name, "Quantidade", `${baseQ} → ${adjQ} (${adjQ - baseQ >= 0 ? "+" : ""}${adjQ - baseQ})`, baseQ, adjQ]);
+        styleDataRow(r, "qty");
+      }
     }
-  });
+  }
+
   ws3.addRow([]);
 
-  const headers3 = ["Peça", "Preço Atual", baselineLabel, "Qtd Ajuste", "Δ Qtd", `Total ${params.baselineIsNegotiation ? "Negociado" : "Original"}`, "Total Ajuste", "Δ Total"];
-  const h3 = ws3.addRow(headers3);
-  h3.height = 26;
-  h3.eachCell((c) => {
-    c.font = { bold: true, color: { argb: WHITE } };
-    c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
-    c.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-    c.border = {
-      top: { style: "thin", color: { argb: BORDER } },
-      bottom: { style: "thin", color: { argb: BORDER } },
-      left: { style: "thin", color: { argb: BORDER } },
-      right: { style: "thin", color: { argb: BORDER } },
-    };
-  });
+  // ── Section 2: Kits & kit-pieces ─────────────────────────────────────
+  writeSectionTitle("Kits (alterados, removidos e novos) — incluindo peças dentro dos kits");
+  writeTableHeader([
+    "Cód. Kit",
+    "Kit",
+    "Cód. Peça",
+    "Peça do Kit",
+    "Alteração",
+    "Detalhe",
+  ]);
 
-  for (const d of detail) {
-    const dQty = d.qAdj - d.qOrig;
-    const dTot = d.tAdj - d.tOrig;
-    const r = ws3.addRow([d.label, d.price, d.qOrig, d.qAdj, dQty, d.tOrig, d.tAdj, dTot]);
-    r.eachCell({ includeEmpty: true }, (cell, col) => {
-      cell.alignment = { vertical: "middle", horizontal: col === 1 ? "left" : "right" };
-      cell.border = {
-        top: { style: "thin", color: { argb: BORDER } },
-        bottom: { style: "thin", color: { argb: BORDER } },
-        left: { style: "thin", color: { argb: BORDER } },
-        right: { style: "thin", color: { argb: BORDER } },
-      };
-      if ([2, 6, 7, 8].includes(col)) cell.numFmt = money;
-    });
-    if (dQty !== 0) {
-      const dc = r.getCell(5);
-      dc.font = { color: { argb: WHITE }, bold: true };
-      dc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: dQty > 0 ? "FF22C55E" : "FFDC2626" } };
-      dc.alignment = { vertical: "middle", horizontal: "center" };
+  const changedKits = params.kits.filter((k: any) => isKitChanged(k) !== "unchanged");
+  if (changedKits.length === 0) {
+    const r = ws3.addRow(["—", "Nenhum kit com alteração.", "", "", "", ""]);
+    ws3.mergeCells(`B${r.number}:F${r.number}`);
+    r.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
+    r.getCell(2).font = { italic: true, color: { argb: GREY } };
+    styleDataRow(r, "unchanged");
+  } else {
+    for (const k of changedKits) {
+      const sk = k.source_kit_id ? sourceKitById.get(k.source_kit_id) : null;
+      const kCode = sk?.code ?? "";
+      const kKind = isKitChanged(k);
+
+      // Kit-level row
+      let kitDetail = "";
+      if (kKind === "added") kitDetail = "Kit adicionado no ajuste.";
+      else if (kKind === "removed") kitDetail = "Kit removido do ajuste.";
+      else {
+        const parts: string[] = [];
+        if (sk && sk.name && sk.name !== k.name) parts.push(`Nome: "${sk.name}" → "${k.name}"`);
+        const kp = kitPieceChangesByAdjKit.get(k.id) ?? [];
+        if (kp.length > 0) parts.push(`${kp.length} peça(s) do kit alteradas (ver linhas abaixo)`);
+        kitDetail = parts.join("\n") || "Kit modificado.";
+      }
+      const kr = ws3.addRow([kCode, k.name, "—", "—", kKind === "added" ? "Novo" : kKind === "removed" ? "Removido" : "Modificado", kitDetail]);
+      styleDataRow(kr, kKind);
+      kr.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
+      kr.getCell(6).alignment = { vertical: "top", wrapText: true };
+      kr.eachCell({ includeEmpty: false }, (c: any) => { c.font = { ...(c.font || {}), bold: true }; });
+
+      // Kit-piece rows
+      const kpChanges = kitPieceChangesByAdjKit.get(k.id) ?? [];
+      for (const ch of kpChanges) {
+        const detail =
+          ch.change === "added"  ? `Peça adicionada ao kit (qtd por kit: ${ch.adjQty}).` :
+          ch.change === "removed" ? `Peça removida do kit (era ${ch.origQty} por kit).` :
+                                    `Quantidade por kit: ${ch.origQty} → ${ch.adjQty} (${ch.adjQty - ch.origQty >= 0 ? "+" : ""}${ch.adjQty - ch.origQty}).`;
+        const label =
+          ch.change === "added" ? "Peça nova no kit" :
+          ch.change === "removed" ? "Peça removida do kit" :
+          "Qtd por kit alterada";
+        const r = ws3.addRow(["", "↳ " + (k.name || ""), ch.pieceCode ?? "", ch.pieceName, label, detail]);
+        styleDataRow(r, ch.change === "added" ? "added" : ch.change === "removed" ? "removed" : "qty");
+        r.getCell(2).font = { italic: true, color: { argb: GREY } };
+      }
     }
-    if (dTot !== 0) r.getCell(8).font = { bold: true, color: { argb: dTot > 0 ? GREEN_FONT : RED_FONT } };
   }
 
   ws3.columns = [
-    { width: 38 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 10 }, { width: 16 }, { width: 16 }, { width: 14 },
+    { width: 12 },
+    { width: 36 },
+    { width: 12 },
+    { width: 36 },
+    { width: 22 },
+    { width: 60 },
   ];
 
-  // Build blob
+  // ── Build blob ────────────────────────────────────────────────────────
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: XLSX_MIME });
 
