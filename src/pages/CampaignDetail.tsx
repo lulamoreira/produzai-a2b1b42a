@@ -748,6 +748,27 @@ const CampaignDetail = () => {
   }, [storePieces, negotiationStorePieces, baselineIsNegotiation, isAdjustmentView, deletedSrcPieceIds]);
   const baselineLabel = baselineIsNegotiation ? "neg" : "orig";
 
+  // Stores that exist in the baseline rateio (negotiation if exists, else original).
+  // Stores added to the campaign AFTER the baseline are considered "new" and only
+  // appear in the adjustment view, highlighted as new.
+  const baselineStoreIds = useMemo(() => {
+    const s = new Set<string>();
+    if (baselineIsNegotiation) {
+      negotiationStorePieces.forEach((sp: any) => s.add(sp.store_id));
+    } else {
+      storePieces.forEach((sp: any) => s.add(sp.store_id));
+    }
+    return s;
+  }, [baselineIsNegotiation, negotiationStorePieces, storePieces]);
+  const newStoreIds = useMemo(() => {
+    // Only meaningful when there is a baseline (negotiation OR existing original assignments).
+    // If campaign has no baseline assignments at all, every store is "new" — so skip the marker.
+    if (baselineStoreIds.size === 0) return new Set<string>();
+    const s = new Set<string>();
+    stores.forEach((st) => { if (!baselineStoreIds.has(st.id)) s.add(st.id); });
+    return s;
+  }, [stores, baselineStoreIds]);
+
   const totalPieces = useMemo(() => storePieces.reduce((s, sp) => s + sp.quantity, 0), [storePieces]);
 
   // Unique cities, states, store_categories from pieces
