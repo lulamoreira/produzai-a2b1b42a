@@ -16,6 +16,7 @@ interface Props {
   cc: string;
   subject: string;
   html: string;
+  attachments?: { name: string; url: string }[];
   sending: boolean;
   /** Send to the real recipients and persist the request as submitted. */
   onConfirm: () => void;
