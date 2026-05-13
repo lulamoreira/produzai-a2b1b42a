@@ -256,11 +256,11 @@ export default function AdjustmentDetailSheet({
       ws1.columns.forEach((c) => (c.width = 28));
 
       const ws2 = wb.addWorksheet("Rateio");
-      ws2.addRow(["Peça", "Qtd original", "Qtd ajuste", "Δ"]);
+      ws2.addRow(["Peça", rateioBaseColumnLabel, "Qtd ajuste", "Δ"]);
       ws2.getRow(1).font = { bold: true };
-      rateioCompare.rows.forEach((r) => ws2.addRow([r.name, r.orig, r.adj, r.delta]));
+      rateioCompare.rows.forEach((r) => ws2.addRow([r.name, r.base, r.adj, r.delta]));
       ws2.addRow([]);
-      ws2.addRow(["TOTAL", rateioCompare.totalOrig, rateioCompare.totalAdj, rateioCompare.totalAdj - rateioCompare.totalOrig]).font = { bold: true } as any;
+      ws2.addRow(["TOTAL", rateioCompare.totalBase, rateioCompare.totalAdj, rateioCompare.totalAdj - rateioCompare.totalBase]).font = { bold: true } as any;
       ws2.columns.forEach((c) => (c.width = 20));
 
       const buf = await wb.xlsx.writeBuffer();
@@ -642,12 +642,12 @@ export default function AdjustmentDetailSheet({
             <div>
               <h3 className="text-xs font-semibold mb-1">Comparativo de rateio</h3>
               <div className="grid grid-cols-3 gap-2 mb-2">
-                <div className="border rounded-md p-2"><p className="text-[11px] text-muted-foreground">Total original</p><p className="text-base font-bold">{rateioCompare.totalOrig}</p></div>
+                <div className="border rounded-md p-2"><p className="text-[11px] text-muted-foreground">Total {rateioBaseLabel}</p><p className="text-base font-bold">{rateioCompare.totalBase}</p></div>
                 <div className="border rounded-md p-2"><p className="text-[11px] text-muted-foreground">Total ajuste</p><p className="text-base font-bold">{rateioCompare.totalAdj}</p></div>
                 <div className="border rounded-md p-2">
                   <p className="text-[11px] text-muted-foreground">Diferença</p>
-                  <p className={`text-base font-bold ${rateioCompare.totalAdj - rateioCompare.totalOrig > 0 ? "text-emerald-600" : rateioCompare.totalAdj - rateioCompare.totalOrig < 0 ? "text-destructive" : ""}`}>
-                    {rateioCompare.totalAdj - rateioCompare.totalOrig > 0 ? "+" : ""}{rateioCompare.totalAdj - rateioCompare.totalOrig}
+                  <p className={`text-base font-bold ${rateioCompare.totalAdj - rateioCompare.totalBase > 0 ? "text-emerald-600" : rateioCompare.totalAdj - rateioCompare.totalBase < 0 ? "text-destructive" : ""}`}>
+                    {rateioCompare.totalAdj - rateioCompare.totalBase > 0 ? "+" : ""}{rateioCompare.totalAdj - rateioCompare.totalBase}
                   </p>
                 </div>
               </div>
@@ -656,7 +656,7 @@ export default function AdjustmentDetailSheet({
                   <TableHeader>
                     <TableRow>
                       <TableHead className="text-xs">Peça</TableHead>
-                      <TableHead className="text-xs text-right">Qtd original</TableHead>
+                      <TableHead className="text-xs text-right">{rateioBaseColumnLabel}</TableHead>
                       <TableHead className="text-xs text-right">Qtd ajuste</TableHead>
                       <TableHead className="text-xs text-right">Δ</TableHead>
                     </TableRow>
@@ -668,7 +668,7 @@ export default function AdjustmentDetailSheet({
                     {rateioCompare.rows.map((r, i) => (
                       <TableRow key={i}>
                         <TableCell className="text-xs">{r.name}</TableCell>
-                        <TableCell className="text-xs text-right text-muted-foreground">{r.orig}</TableCell>
+                        <TableCell className="text-xs text-right text-muted-foreground">{r.base}</TableCell>
                         <TableCell className="text-xs text-right">{r.adj}</TableCell>
                         <TableCell className={`text-xs text-right font-semibold ${r.delta > 0 ? "text-emerald-600" : "text-destructive"}`}>
                           {r.delta > 0 ? "+" : ""}{r.delta}
