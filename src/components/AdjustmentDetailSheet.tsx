@@ -63,6 +63,21 @@ export default function AdjustmentDetailSheet({
   const { data: kits = [], isLoading: kitsLoading } = useAdjustmentKits(adjustment.id);
   const { data: adjStorePieces = [] } = useAdjustmentStorePieces(adjustment.id);
 
+  // Source kits (for code lookup — adjustment kits don't carry the code field).
+  const { data: sourceKits = [] } = useQuery({
+    queryKey: ["campaign_kits_for_adjustment", campaignId],
+    enabled: open && !!campaignId,
+    queryFn: async () =>
+      supabasePaginate<any>((from, to) =>
+        supabase.from("campaign_kits").select("id, code").eq("campaign_id", campaignId).range(from, to) as any
+      ),
+  });
+  const kitCodeBySourceId = useMemo(() => {
+    const m = new Map<string, number>();
+    (sourceKits as any[]).forEach((k) => { if (k.id != null && k.code != null) m.set(k.id, k.code); });
+    return m;
+  }, [sourceKits]);
+
   const rateioBaseLabel = hasNegotiationRateio && winnerSupplierId ? "negociação" : "original";
   const rateioBaseColumnLabel = hasNegotiationRateio && winnerSupplierId ? "Qtd negociação" : "Qtd original";
 
