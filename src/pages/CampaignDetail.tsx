@@ -259,7 +259,7 @@ const CampaignDetail = () => {
   const { data: clientStoreModels = [] } = useClientStoreModels(clientId);
   const { data: pieces = [], isLoading: loadingPieces } = useCampaignPieces(campaignId);
   const { data: storePieces = [] } = useCampaignStorePieces(campaignId);
-  const { data: activeAdjustment } = useActiveAdjustment(campaignId);
+  const { data: activeAdjustment, isLoading: activeAdjustmentLoading } = useActiveAdjustment(campaignId);
   const { data: allAdjustments = [] } = useCampaignAdjustments(campaignId);
   const hasAnyAdjustment = allAdjustments.length > 0;
   const addPiece = useAddCampaignPiece();
