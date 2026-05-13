@@ -1,0 +1,1 @@
+DELETE FROM campaign_adjustment_budget_request WHERE adjustment_id = '172023cc-18e7-4b94-a1e5-119a8289b866';
