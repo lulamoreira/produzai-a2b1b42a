@@ -531,6 +531,100 @@ export default function AdjustmentDetailSheet({
               </div>
             </div>
 
+            {/* Removed pieces */}
+            <div>
+              <h3 className="text-xs font-semibold mb-1 flex items-center gap-2">
+                Peças removidas <Badge className="bg-destructive text-destructive-foreground">{counts.removed}</Badge>
+              </h3>
+              <div className="border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs w-16">Código</TableHead>
+                      <TableHead className="text-xs">Nome</TableHead>
+                      <TableHead className="text-xs">Especificação</TableHead>
+                      <TableHead className="text-xs">Tamanho</TableHead>
+                      <TableHead className="text-xs">Localização</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pieces.filter((p: any) => p.change_type === "removed").length === 0 && (
+                      <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-4">Nenhuma peça removida.</TableCell></TableRow>
+                    )}
+                    {pieces.filter((p: any) => p.change_type === "removed").map((p: any) => (
+                      <TableRow key={p.id} className="opacity-70">
+                        <TableCell className="text-xs">{p.code}</TableCell>
+                        <TableCell className="text-xs line-through">{p.name}</TableCell>
+                        <TableCell className="text-xs">{p.specification || "—"}</TableCell>
+                        <TableCell className="text-xs">{p.size || "—"}</TableCell>
+                        <TableCell className="text-xs">{[p.category, p.sub_location].filter(Boolean).join(" / ") || "—"}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            {/* Added pieces */}
+            {counts.added > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold mb-1 flex items-center gap-2">
+                  Peças novas <Badge className="bg-emerald-600 text-white">{counts.added}</Badge>
+                </h3>
+                <div className="border rounded-md overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs w-16">Código</TableHead>
+                        <TableHead className="text-xs">Nome</TableHead>
+                        <TableHead className="text-xs">Especificação</TableHead>
+                        <TableHead className="text-xs">Tamanho</TableHead>
+                        <TableHead className="text-xs">Localização</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pieces.filter((p: any) => p.change_type === "added").map((p: any) => (
+                        <TableRow key={p.id}>
+                          <TableCell className="text-xs">{p.code}</TableCell>
+                          <TableCell className="text-xs font-medium">{p.name}</TableCell>
+                          <TableCell className="text-xs">{p.specification || "—"}</TableCell>
+                          <TableCell className="text-xs">{p.size || "—"}</TableCell>
+                          <TableCell className="text-xs">{[p.category, p.sub_location].filter(Boolean).join(" / ") || "—"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
+            {/* Removed/changed kits */}
+            {counts.kitsChanged > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold mb-1 flex items-center gap-2">
+                  Kits alterados <Badge variant="secondary">{counts.kitsChanged}</Badge>
+                </h3>
+                <div className="border rounded-md overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Kit</TableHead>
+                        <TableHead className="text-xs w-32">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {kits.filter((k: any) => k.change_type !== "unchanged").map((k: any) => (
+                        <TableRow key={k.id}>
+                          <TableCell className={`text-xs ${k.change_type === "removed" ? "line-through opacity-70" : ""}`}>{k.name}</TableCell>
+                          <TableCell><ChangeBadge type={k.change_type} /></TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
             <div>
               <h3 className="text-xs font-semibold mb-1">Comparativo de rateio</h3>
               <div className="grid grid-cols-3 gap-2 mb-2">
