@@ -19,6 +19,7 @@ import {
   useCreateAdjustment,
   useUpdateAdjustmentStatus,
   useDeleteAdjustment,
+  useResyncAdjustmentRateio,
   type CampaignAdjustment,
   type AdjustmentStatus,
 } from "@/hooks/useAdjustments";
