@@ -3343,7 +3343,7 @@ const CampaignDetail = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {activeFilteredStores.map((store) => {
+                          {matrixStores.map((store) => {
                             // Total real considera TODAS as peças (incluindo kit_only),
                             // refletindo a soma efetiva de itens enviados para a loja —
                             // tanto via peças individuais quanto via composição de kits.
@@ -3351,15 +3351,21 @@ const CampaignDetail = () => {
                             const storeTotalOriginal = pieces.reduce((sum, p) => sum + (originalQtyMap[`${store.id}-${p.id}`] || 0), 0);
                             const storeTotal = storeTotalReal;
                             const showStoreDelta = isAdjustmentView && storeTotalOriginal !== storeTotalReal;
-                            const hasAnyStoreWithQty = activeFilteredStores.some(
+                            const hasAnyStoreWithQty = matrixStores.some(
                               (st) => st.id !== store.id && pieces.some((p) => (qtyMap[`${st.id}-${p.id}`] || 0) > 0)
                             );
                             const isEmptyStore = storeTotalReal === 0 && hasAnyStoreWithQty;
+                            const isNewStore = isAdjustmentView && newStoreIds.has(store.id);
                             return (
-                              <TableRow key={store.id}>
-                                <TableCell className="sticky left-0 bg-card z-[5] font-medium">
+                              <TableRow key={store.id} className={isNewStore ? "bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/40" : ""}>
+                                <TableCell className={`sticky left-0 z-[5] font-medium ${isNewStore ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-card"}`}>
                                   <div>
                                     <span className="text-sm">{store.name}</span>
+                                    {isNewStore && (
+                                      <span className="ml-1.5 inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-600 text-white">
+                                        Nova
+                                      </span>
+                                    )}
                                     {store.state && (
                                       <span
                                         className="ml-1.5 inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded"
