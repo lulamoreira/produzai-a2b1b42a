@@ -102,7 +102,7 @@ export default function AdjustmentBudgetRequestDialog({
           return;
         }
 
-        const [pricesRes, extrasRes, storesRes, origSpRows] = await Promise.all([
+        const [pricesRes, extrasRes, storesRes, baselineSpRows] = await Promise.all([
           supabase.from("budget_prices" as any)
             .select("piece_id, unit_price, adjusted_unit_price")
             .eq("supplier_id", (w as any).id),
@@ -113,12 +113,20 @@ export default function AdjustmentBudgetRequestDialog({
             ? supabase.from("client_stores" as any)
                 .select("id, name, nickname, city, state").eq("client_id", _clientId)
             : Promise.resolve({ data: [], error: null } as any),
-          supabasePaginate<any>((from, to) =>
-            supabase.from("campaign_store_pieces" as any)
-              .select("store_id, piece_id, quantity")
-              .eq("campaign_id", campaignId)
-              .range(from, to) as any
-          ),
+          // Use negotiation rateio as the baseline whenever it exists; otherwise fall back to original.
+          useNegotiationBaseline
+            ? supabasePaginate<any>((from, to) =>
+                (supabase.from("budget_negotiation_store_pieces" as any) as any)
+                  .select("store_id, piece_id, quantity")
+                  .eq("supplier_id", winnerSupplierId as string)
+                  .range(from, to)
+              )
+            : supabasePaginate<any>((from, to) =>
+                supabase.from("campaign_store_pieces" as any)
+                  .select("store_id, piece_id, quantity")
+                  .eq("campaign_id", campaignId)
+                  .range(from, to) as any
+              ),
         ]);
         setPrices(((pricesRes.data as any[]) || []).filter((p) => p.piece_id));
         setExtras({
@@ -126,7 +134,7 @@ export default function AdjustmentBudgetRequestDialog({
           freight_value: Number((extrasRes.data as any)?.freight_value || 0),
         });
         setStores(((storesRes.data as any[]) || []));
-        setOrigSp((origSpRows || []).map((r: any) => ({
+        setOrigSp((baselineSpRows || []).map((r: any) => ({
           store_id: r.store_id, piece_id: r.piece_id, quantity: Number(r.quantity || 0),
         })));
       } catch (e: any) {
@@ -135,7 +143,7 @@ export default function AdjustmentBudgetRequestDialog({
         setLoading(false);
       }
     })();
-  }, [open, campaignId, adjustment.id]);
+  }, [open, campaignId, adjustment.id, useNegotiationBaseline, winnerSupplierId]);
 
   const buildAndUpload = async () => {
     if (!winner) throw new Error("Nenhum fornecedor vencedor encontrado para esta campanha.");
