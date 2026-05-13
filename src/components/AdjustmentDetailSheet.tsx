@@ -647,12 +647,18 @@ export default function AdjustmentDetailSheet({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {kits.filter((k: any) => k.change_type !== "unchanged").map((k: any) => (
-                        <TableRow key={k.id}>
-                          <TableCell className={`text-xs ${k.change_type === "removed" ? "line-through opacity-70" : ""}`}>{k.name}</TableCell>
-                          <TableCell><ChangeBadge type={k.change_type} /></TableCell>
-                        </TableRow>
-                      ))}
+                      {kits.filter((k: any) => k.change_type !== "unchanged").map((k: any) => {
+                        const code = k.source_kit_id ? kitCodeBySourceId.get(k.source_kit_id) : undefined;
+                        return (
+                          <TableRow key={k.id}>
+                            <TableCell className={`text-xs ${k.change_type === "removed" ? "line-through opacity-70" : ""}`}>
+                              {code != null && <span className="font-mono text-muted-foreground mr-2">{code}</span>}
+                              {k.name}
+                            </TableCell>
+                            <TableCell><ChangeBadge type={k.change_type} /></TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
