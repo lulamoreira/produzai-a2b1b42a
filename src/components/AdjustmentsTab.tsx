@@ -126,6 +126,7 @@ export default function AdjustmentsTab({
         kits,
         kitPieces,
         storePieces,
+        syncedWith: hasNegotiationRateio && winnerSupplierId ? "negotiation" : "original",
       });
       toast.dismiss(tId);
       setCreateOpen(false);
