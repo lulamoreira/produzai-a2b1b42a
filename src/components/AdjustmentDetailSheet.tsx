@@ -757,6 +757,49 @@ export default function AdjustmentDetailSheet({
               </div>
             )}
 
+            {/* Kit composition changes (pieces inside kits) */}
+            {changedKitPieceRows.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold mb-1 flex items-center gap-2">
+                  Composição de kits alterada <Badge variant="secondary">{changedKitPieceRows.length}</Badge>
+                </h3>
+                <div className="border rounded-md overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Kit</TableHead>
+                        <TableHead className="text-xs">Peça</TableHead>
+                        <TableHead className="text-xs w-28">Alteração</TableHead>
+                        <TableHead className="text-xs text-right w-20">Qtd original</TableHead>
+                        <TableHead className="text-xs text-right w-20">Qtd ajuste</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {changedKitPieceRows.map((r, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="text-xs">
+                            {r.kitCode != null && <span className="font-mono text-muted-foreground mr-2">{r.kitCode}</span>}
+                            {r.kitName}
+                          </TableCell>
+                          <TableCell className={`text-xs ${r.change === "removed" ? "line-through opacity-70" : ""}`}>
+                            {r.pieceCode != null && <span className="font-mono text-muted-foreground mr-2">{r.pieceCode}</span>}
+                            {r.pieceName}
+                          </TableCell>
+                          <TableCell>
+                            {r.change === "added" && <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white">Nova</Badge>}
+                            {r.change === "removed" && <Badge className="bg-destructive text-destructive-foreground">Removida</Badge>}
+                            {r.change === "qty" && <Badge className="bg-amber-500 hover:bg-amber-600 text-white">Qtd</Badge>}
+                          </TableCell>
+                          <TableCell className="text-xs text-right text-muted-foreground">{r.origQty}</TableCell>
+                          <TableCell className="text-xs text-right font-semibold">{r.adjQty}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
             <div>
               <h3 className="text-xs font-semibold mb-1">Comparativo de rateio</h3>
               <div className="grid grid-cols-3 gap-2 mb-2">
