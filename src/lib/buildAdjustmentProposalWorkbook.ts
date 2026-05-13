@@ -429,7 +429,7 @@ export async function buildAdjustmentProposalWorkbook(
   });
   ws3.addRow([]);
 
-  const headers3 = ["Peça", "Preço Atual", "Qtd Original", "Qtd Ajuste", "Δ Qtd", "Total Original", "Total Ajuste", "Δ Total"];
+  const headers3 = ["Peça", "Preço Atual", baselineLabel, "Qtd Ajuste", "Δ Qtd", `Total ${params.baselineIsNegotiation ? "Negociado" : "Original"}`, "Total Ajuste", "Δ Total"];
   const h3 = ws3.addRow(headers3);
   h3.height = 26;
   h3.eachCell((c) => {
