@@ -3928,6 +3928,7 @@ const CampaignDetail = () => {
               currencyCode={(client as any)?.currency_code || "BRL"}
               winnerSupplierId={winnerSupplierId}
               hasNegotiationRateio={hasNegotiationRateio}
+              negotiationRateioLoading={hasNegotiationRateio && negotiationStorePiecesFetching && negotiationStorePieces.length === 0}
             />
           )}
 
