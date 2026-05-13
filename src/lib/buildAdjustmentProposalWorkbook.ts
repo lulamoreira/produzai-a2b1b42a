@@ -123,11 +123,12 @@ export async function buildAdjustmentProposalWorkbook(
   t3.alignment = { horizontal: "center", vertical: "middle" };
   ws1.getRow(3).height = 22;
 
+  const baselineLabel = params.baselineIsNegotiation ? "Qtd Negociada" : "Qtd Original";
   const headerRow1 = ws1.getRow(5);
   headerRow1.values = [
     "Código",
     "Item / Especificação",
-    "Qtd Original",
+    baselineLabel,
     "Qtd Ajuste",
     "Δ Qtd",
     "Preço Atual",
