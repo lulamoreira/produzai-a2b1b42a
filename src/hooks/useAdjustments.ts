@@ -129,6 +129,7 @@ export function useCreateAdjustment() {
       kits: any[];
       kitPieces: any[];
       storePieces: any[];
+      syncedWith?: AdjustmentSyncedWith;
     }) => {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData?.user?.id;
@@ -141,6 +142,7 @@ export function useCreateAdjustment() {
           notes: params.notes || null,
           status: "draft",
           created_by: userId,
+          synced_with: params.syncedWith || "original",
         } as any)
         .select()
         .single();
