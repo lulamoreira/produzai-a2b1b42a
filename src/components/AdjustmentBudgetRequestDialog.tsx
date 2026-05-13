@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Send, Loader2, MessageCircle, Mail } from "lucide-react";
+import { Send, Loader2, MessageCircle, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -22,6 +21,7 @@ import {
   useAdjustmentPieces, useAdjustmentKits, useAdjustmentKitPieces, useAdjustmentStorePieces,
 } from "@/hooks/useAdjustments";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
+import AdjustmentQuotePreviewDialog from "@/components/AdjustmentQuotePreviewDialog";
 
 interface Props {
   open: boolean;
@@ -39,11 +39,21 @@ export default function AdjustmentBudgetRequestDialog({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [preparingPreview, setPreparingPreview] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const [summaryItems, setSummaryItems] = useState<SendSummaryItem[]>([]);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const [customMessage, setCustomMessage] = useState("");
+
+  // Preview state — populated after the workbook is uploaded and the email
+  // template is rendered server-side. Reused for both real send and test send
+  // so the recipient sees byte-for-byte the same email the tester previewed.
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [previewSubject, setPreviewSubject] = useState("");
+  const [preparedLink, setPreparedLink] = useState<{ name: string; url: string } | null>(null);
+  const [preparedTemplateData, setPreparedTemplateData] = useState<Record<string, any> | null>(null);
 
   const [winner, setWinner] = useState<any | null>(null);
   const [origSp, setOrigSp] = useState<any[]>([]);
@@ -152,7 +162,22 @@ export default function AdjustmentBudgetRequestDialog({
     } as any, { onConflict: "adjustment_id,supplier_id" } as any);
   };
 
-  const handleSendEmail = async () => {
+  const buildTemplateData = (link: { name: string; url: string }): Record<string, any> => ({
+    supplierName: winner!.company_name,
+    contactName: winner!.contact_name,
+    agencyName, campaignName,
+    adjustmentName: adjustment.name,
+    changesDescription,
+    customMessage: customMessage.trim() || undefined,
+    downloadUrls: [link],
+  });
+
+  /**
+   * Step 1: validate recipients, generate the workbook, upload it, and render
+   * the email HTML server-side. Then open the preview dialog. Nothing is
+   * persisted and no email goes out yet.
+   */
+  const handleOpenPreview = async () => {
     const merged = mergeRecipients(email, cc);
     if (merged.invalid.length) {
       toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
@@ -162,22 +187,48 @@ export default function AdjustmentBudgetRequestDialog({
       toast.error("Informe pelo menos um e-mail válido.");
       return;
     }
-    setSending(true);
+    setPreparingPreview(true);
     setUploadStatus(null);
+    setSummaryItems([]);
+    const tId = toast.loading("Gerando planilha e pré-visualização...");
+    try {
+      const { link } = await buildAndUpload();
+      const templateData = buildTemplateData(link);
+      const { data, error } = await supabase.functions.invoke("render-transactional-email", {
+        body: {
+          templateName: "adjustment-quote-request-to-supplier",
+          templateData,
+        },
+      });
+      if (error) throw new Error(error.message || "Falha ao gerar a pré-visualização.");
+      if (!data?.html) throw new Error("Pré-visualização vazia.");
+      setPreviewHtml(data.html);
+      setPreviewSubject(data.subject || "");
+      setPreparedLink(link);
+      setPreparedTemplateData(templateData);
+      setPreviewOpen(true);
+      toast.dismiss(tId);
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao preparar pré-visualização.", { id: tId });
+    } finally {
+      setPreparingPreview(false);
+      setUploadStatus(null);
+    }
+  };
+
+  /**
+   * Step 2a: confirm send to the real recipients. Persists the request as
+   * "submitted" so the campaign accounts the reorçamento.
+   */
+  const handleConfirmSend = async () => {
+    if (!winner || !preparedTemplateData) return;
+    const merged = mergeRecipients(email, cc);
+    setSending(true);
     setSummaryItems([]);
     const items: SendSummaryItem[] = [];
     const push = (it: SendSummaryItem) => { items.push(it); setSummaryItems([...items]); };
-    const tId = toast.loading("Gerando planilha e enviando...");
+    const tId = toast.loading("Enviando reorçamento...");
     try {
-      let link: { name: string; url: string };
-      try {
-        const res = await buildAndUpload();
-        link = res.link;
-        push({ kind: "file", label: res.fileName, stage: "signed" });
-      } catch (err: any) {
-        push({ kind: "file", label: "Planilha de reorçamento", stage: "failed", error: err?.message || "Erro" });
-        throw err;
-      }
       let anySent = false;
       const toEmails = parseRecipients(email);
       for (const recipient of merged.valid) {
@@ -188,16 +239,8 @@ export default function AdjustmentBudgetRequestDialog({
             body: {
               templateName: "adjustment-quote-request-to-supplier",
               recipientEmail: recipient,
-              idempotencyKey: `adj-quote-${adjustment.id}-${winner!.id}-${recipient}-${Date.now()}`,
-              templateData: {
-                supplierName: winner!.company_name,
-                contactName: winner!.contact_name,
-                agencyName, campaignName,
-                adjustmentName: adjustment.name,
-                changesDescription,
-                customMessage: customMessage.trim() || undefined,
-                downloadUrls: [link],
-              },
+              idempotencyKey: `adj-quote-${adjustment.id}-${winner.id}-${recipient}-${Date.now()}`,
+              templateData: preparedTemplateData,
             },
           });
           if (error) throw new Error(error.message || "Erro ao enviar");
@@ -209,10 +252,47 @@ export default function AdjustmentBudgetRequestDialog({
       }
       if (!anySent) throw new Error("Nenhum e-mail foi enviado.");
       await persistRequest();
+      setPreviewOpen(false);
       toast.success(`Reorçamento enviado para ${merged.valid.length} destinatário(s).`, { id: tId });
     } catch (e: any) {
       toast.error(e?.message || "Falha ao enviar.", { id: tId });
-    } finally { setSending(false); setUploadStatus(null); }
+    } finally {
+      setSending(false);
+    }
+  };
+
+  /**
+   * Step 2b: send a one-off test copy to a single address. CRITICAL:
+   * does NOT call persistRequest, so this never marks the reorçamento as
+   * solicited. Subject gets a "[TESTE]" prefix so testers can spot it.
+   */
+  const handleSendTest = async (testEmail: string) => {
+    if (!winner || !preparedTemplateData) return;
+    const tId = toast.loading(`Enviando teste para ${testEmail}...`);
+    try {
+      const testTemplateData = {
+        ...preparedTemplateData,
+        // Tag the body so the recipient knows this is a test; we cannot mutate
+        // the subject through templateData (subject() only sees fields it knows),
+        // so we prepend a banner-like marker to the custom message.
+        customMessage:
+          `[CÓPIA DE TESTE — não notifica o fornecedor]\n` +
+          (preparedTemplateData.customMessage || ""),
+      };
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "adjustment-quote-request-to-supplier",
+          recipientEmail: testEmail,
+          // Unique idempotency key so multiple tests are not deduped.
+          idempotencyKey: `adj-quote-TEST-${adjustment.id}-${testEmail}-${Date.now()}`,
+          templateData: testTemplateData,
+        },
+      });
+      if (error) throw new Error(error.message || "Erro ao enviar teste");
+      toast.success(`Teste enviado para ${testEmail}.`, { id: tId });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao enviar teste.", { id: tId });
+    }
   };
 
   const handleSendWhatsApp = async () => {
@@ -308,8 +388,8 @@ export default function AdjustmentBudgetRequestDialog({
               </div>
             </>
           )}
-          {sending && <UploadProgressPanel status={uploadStatus} />}
-          {!sending && summaryItems.length > 0 && <SendSummaryPanel items={summaryItems} />}
+          {(sending || preparingPreview) && <UploadProgressPanel status={uploadStatus} />}
+          {!sending && !preparingPreview && summaryItems.length > 0 && <SendSummaryPanel items={summaryItems} />}
         </div>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -317,19 +397,31 @@ export default function AdjustmentBudgetRequestDialog({
             <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Fechar</Button>
           ) : (
             <>
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>Cancelar</Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending || preparingPreview}>Cancelar</Button>
               <Button variant="outline" onClick={handleSendWhatsApp}
-                disabled={sending || loading || !winner || !winner?.phone}>
+                disabled={sending || preparingPreview || loading || !winner || !winner?.phone}>
                 <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
               </Button>
-              <Button onClick={handleSendEmail} disabled={sending || loading || !winner}>
-                {sending ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Mail className="w-4 h-4 mr-1" />}
-                Enviar por E-mail
+              <Button onClick={handleOpenPreview} disabled={sending || preparingPreview || loading || !winner}>
+                {preparingPreview ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Eye className="w-4 h-4 mr-1" />}
+                Visualizar e enviar
               </Button>
             </>
           )}
         </DialogFooter>
       </DialogContent>
+
+      <AdjustmentQuotePreviewDialog
+        open={previewOpen}
+        onOpenChange={(o) => { if (!sending) setPreviewOpen(o); }}
+        to={email.trim()}
+        cc={cc.trim()}
+        subject={previewSubject}
+        html={previewHtml}
+        sending={sending}
+        onConfirm={handleConfirmSend}
+        onSendTest={handleSendTest}
+      />
     </Dialog>
   );
 }
