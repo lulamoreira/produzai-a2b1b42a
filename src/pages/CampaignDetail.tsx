@@ -3913,7 +3913,15 @@ const CampaignDetail = () => {
               pieces={pieces}
               kits={kits}
               kitPieces={kitPieces}
-              storePieces={storePieces}
+              storePieces={
+                hasNegotiationRateio && negotiationStorePieces.length > 0
+                  ? (negotiationStorePieces as any[]).map((sp) => ({
+                      store_id: sp.store_id,
+                      piece_id: sp.piece_id,
+                      quantity: Number(sp.quantity) || 0,
+                    }))
+                  : storePieces
+              }
               stores={stores}
               agencyName={agency?.name || ""}
               clientName={client?.name || ""}
