@@ -341,14 +341,26 @@ export default function AdjustmentsTab({
                   </>
                 )}
                 {a.status === "superseded" && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs gap-1"
-                    onClick={() => setEditingAdjustment(a)}
-                  >
-                    <Eye className="w-3.5 h-3.5" /> Ver detalhes
-                  </Button>
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => setEditingAdjustment(a)}
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Ver detalhes
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1 border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                      onClick={() => handleReactivate(a)}
+                      disabled={statusMut.isPending}
+                      title="Volta a ser o ajuste vigente. O ativo atual (se houver) é movido para Substituído."
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Reativar
+                    </Button>
+                  </>
                 )}
               </div>
             </div>
