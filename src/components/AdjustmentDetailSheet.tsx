@@ -63,6 +63,21 @@ export default function AdjustmentDetailSheet({
   const { data: kits = [], isLoading: kitsLoading } = useAdjustmentKits(adjustment.id);
   const { data: adjStorePieces = [] } = useAdjustmentStorePieces(adjustment.id);
 
+  // Source kits (for code lookup — adjustment kits don't carry the code field).
+  const { data: sourceKits = [] } = useQuery({
+    queryKey: ["campaign_kits_for_adjustment", campaignId],
+    enabled: open && !!campaignId,
+    queryFn: async () =>
+      supabasePaginate<any>((from, to) =>
+        supabase.from("campaign_kits").select("id, code").eq("campaign_id", campaignId).range(from, to) as any
+      ),
+  });
+  const kitCodeBySourceId = useMemo(() => {
+    const m = new Map<string, number>();
+    (sourceKits as any[]).forEach((k) => { if (k.id != null && k.code != null) m.set(k.id, k.code); });
+    return m;
+  }, [sourceKits]);
+
   const rateioBaseLabel = hasNegotiationRateio && winnerSupplierId ? "negociação" : "original";
   const rateioBaseColumnLabel = hasNegotiationRateio && winnerSupplierId ? "Qtd negociação" : "Qtd original";
 
@@ -433,6 +448,7 @@ export default function AdjustmentDetailSheet({
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-20">Código</TableHead>
                       <TableHead>Nome</TableHead>
                       <TableHead className="w-28">Status</TableHead>
                       <TableHead className="w-40 text-right">Ações</TableHead>
@@ -440,13 +456,17 @@ export default function AdjustmentDetailSheet({
                   </TableHeader>
                   <TableBody>
                     {kits.length === 0 && (
-                      <TableRow><TableCell colSpan={3} className="text-center text-xs text-muted-foreground py-6">Nenhum kit.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-6">Nenhum kit.</TableCell></TableRow>
                     )}
                     {kits.map((k: any) => {
                       const removed = k.change_type === "removed";
                       const isEditing = editingKitId === k.id;
+                      const code = k.source_kit_id ? kitCodeBySourceId.get(k.source_kit_id) : undefined;
                       return (
                         <TableRow key={k.id} className={removed ? "opacity-60" : ""}>
+                          <TableCell className={`text-xs font-mono ${removed ? "line-through text-muted-foreground" : "text-muted-foreground"}`}>
+                            {code ?? "—"}
+                          </TableCell>
                           <TableCell className={`text-xs ${removed ? "line-through" : ""}`}>
                             {isEditing ? (
                               <Input value={kitNameDraft} onChange={(e) => setKitNameDraft(e.target.value)} className="h-8 text-xs" />
@@ -627,12 +647,18 @@ export default function AdjustmentDetailSheet({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {kits.filter((k: any) => k.change_type !== "unchanged").map((k: any) => (
-                        <TableRow key={k.id}>
-                          <TableCell className={`text-xs ${k.change_type === "removed" ? "line-through opacity-70" : ""}`}>{k.name}</TableCell>
-                          <TableCell><ChangeBadge type={k.change_type} /></TableCell>
-                        </TableRow>
-                      ))}
+                      {kits.filter((k: any) => k.change_type !== "unchanged").map((k: any) => {
+                        const code = k.source_kit_id ? kitCodeBySourceId.get(k.source_kit_id) : undefined;
+                        return (
+                          <TableRow key={k.id}>
+                            <TableCell className={`text-xs ${k.change_type === "removed" ? "line-through opacity-70" : ""}`}>
+                              {code != null && <span className="font-mono text-muted-foreground mr-2">{code}</span>}
+                              {k.name}
+                            </TableCell>
+                            <TableCell><ChangeBadge type={k.change_type} /></TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>

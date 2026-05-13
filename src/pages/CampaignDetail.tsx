@@ -748,6 +748,27 @@ const CampaignDetail = () => {
   }, [storePieces, negotiationStorePieces, baselineIsNegotiation, isAdjustmentView, deletedSrcPieceIds]);
   const baselineLabel = baselineIsNegotiation ? "neg" : "orig";
 
+  // Stores that exist in the baseline rateio (negotiation if exists, else original).
+  // Stores added to the campaign AFTER the baseline are considered "new" and only
+  // appear in the adjustment view, highlighted as new.
+  const baselineStoreIds = useMemo(() => {
+    const s = new Set<string>();
+    if (baselineIsNegotiation) {
+      negotiationStorePieces.forEach((sp: any) => s.add(sp.store_id));
+    } else {
+      storePieces.forEach((sp: any) => s.add(sp.store_id));
+    }
+    return s;
+  }, [baselineIsNegotiation, negotiationStorePieces, storePieces]);
+  const newStoreIds = useMemo(() => {
+    // Only meaningful when there is a baseline (negotiation OR existing original assignments).
+    // If campaign has no baseline assignments at all, every store is "new" — so skip the marker.
+    if (baselineStoreIds.size === 0) return new Set<string>();
+    const s = new Set<string>();
+    stores.forEach((st) => { if (!baselineStoreIds.has(st.id)) s.add(st.id); });
+    return s;
+  }, [stores, baselineStoreIds]);
+
   const totalPieces = useMemo(() => storePieces.reduce((s, sp) => s + sp.quantity, 0), [storePieces]);
 
   // Unique cities, states, store_categories from pieces
@@ -798,6 +819,12 @@ const CampaignDetail = () => {
 
   const allEnabled = useMemo(() => filteredStores.every(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
   const activeFilteredStores = useMemo(() => filteredStores.filter(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
+  // Stores rendered in the rateio matrix: hide "new stores" (added after baseline) when
+  // we're not viewing the adjustment, since they were not part of the original/negotiation rateio.
+  const matrixStores = useMemo(
+    () => isAdjustmentView ? activeFilteredStores : activeFilteredStores.filter(s => !newStoreIds.has(s.id)),
+    [activeFilteredStores, isAdjustmentView, newStoreIds]
+  );
 
   // ─── Filtered pieces: exclude kit_only from normal views ─
   const visiblePieces = useMemo(() => pieces.filter(p => !p.kit_only), [pieces]);
@@ -3316,7 +3343,7 @@ const CampaignDetail = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {activeFilteredStores.map((store) => {
+                          {matrixStores.map((store) => {
                             // Total real considera TODAS as peças (incluindo kit_only),
                             // refletindo a soma efetiva de itens enviados para a loja —
                             // tanto via peças individuais quanto via composição de kits.
@@ -3324,15 +3351,21 @@ const CampaignDetail = () => {
                             const storeTotalOriginal = pieces.reduce((sum, p) => sum + (originalQtyMap[`${store.id}-${p.id}`] || 0), 0);
                             const storeTotal = storeTotalReal;
                             const showStoreDelta = isAdjustmentView && storeTotalOriginal !== storeTotalReal;
-                            const hasAnyStoreWithQty = activeFilteredStores.some(
+                            const hasAnyStoreWithQty = matrixStores.some(
                               (st) => st.id !== store.id && pieces.some((p) => (qtyMap[`${st.id}-${p.id}`] || 0) > 0)
                             );
                             const isEmptyStore = storeTotalReal === 0 && hasAnyStoreWithQty;
+                            const isNewStore = isAdjustmentView && newStoreIds.has(store.id);
                             return (
-                              <TableRow key={store.id}>
-                                <TableCell className="sticky left-0 bg-card z-[5] font-medium">
+                              <TableRow key={store.id} className={isNewStore ? "bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/40" : ""}>
+                                <TableCell className={`sticky left-0 z-[5] font-medium ${isNewStore ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-card"}`}>
                                   <div>
                                     <span className="text-sm">{store.name}</span>
+                                    {isNewStore && (
+                                      <span className="ml-1.5 inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-600 text-white">
+                                        Nova
+                                      </span>
+                                    )}
                                     {store.state && (
                                       <span
                                         className="ml-1.5 inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded"
@@ -3506,8 +3539,8 @@ const CampaignDetail = () => {
                               const tint = columnTints[colIdx] || "";
                               if (col.type === "piece") {
                                 const p = col.data;
-                                const pieceTotal = filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
-                                const pieceTotalOrig = filteredStores.reduce((s, st) => s + (originalQtyMap[`${st.id}-${p.id}`] || 0), 0);
+                                const pieceTotal = matrixStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0);
+                                const pieceTotalOrig = matrixStores.reduce((s, st) => s + (originalQtyMap[`${st.id}-${p.id}`] || 0), 0);
                                 const showPieceDelta = isAdjustmentView && pieceTotal !== pieceTotalOrig;
                                 return (
                                   <TableCell key={p.id} className={`text-center text-sm border-l border-border/70 ${tint}`}>
@@ -3525,7 +3558,7 @@ const CampaignDetail = () => {
                               const kit = col.data;
                               const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
                               const kitTotal = kitPiecesForKit.length > 0
-                                ? filteredStores.reduce((total, st) => {
+                                ? matrixStores.reduce((total, st) => {
                                     const minQty = Math.min(...kitPiecesForKit.map(kp => {
                                       const storeQty = qtyMap[`${st.id}-${kp.piece_id}`] || 0;
                                       return Math.floor(storeQty / (kp.quantity || 1));
@@ -3536,7 +3569,7 @@ const CampaignDetail = () => {
                               return <TableCell key={`kit-total-${kit.id}`} className={`text-center text-sm border-l border-border/70 ${tint}`}>{kitTotal}</TableCell>;
                             })}
                             <TableCell className="text-center text-sm text-primary">
-                              {pieces.reduce((total, p) => total + filteredStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0), 0)}
+                              {pieces.reduce((total, p) => total + matrixStores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0), 0)}
                             </TableCell>
                           </TableRow>
                         </TableBody>
