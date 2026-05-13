@@ -162,7 +162,22 @@ export default function AdjustmentBudgetRequestDialog({
     } as any, { onConflict: "adjustment_id,supplier_id" } as any);
   };
 
-  const handleSendEmail = async () => {
+  const buildTemplateData = (link: { name: string; url: string }): Record<string, any> => ({
+    supplierName: winner!.company_name,
+    contactName: winner!.contact_name,
+    agencyName, campaignName,
+    adjustmentName: adjustment.name,
+    changesDescription,
+    customMessage: customMessage.trim() || undefined,
+    downloadUrls: [link],
+  });
+
+  /**
+   * Step 1: validate recipients, generate the workbook, upload it, and render
+   * the email HTML server-side. Then open the preview dialog. Nothing is
+   * persisted and no email goes out yet.
+   */
+  const handleOpenPreview = async () => {
     const merged = mergeRecipients(email, cc);
     if (merged.invalid.length) {
       toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
@@ -172,22 +187,48 @@ export default function AdjustmentBudgetRequestDialog({
       toast.error("Informe pelo menos um e-mail válido.");
       return;
     }
-    setSending(true);
+    setPreparingPreview(true);
     setUploadStatus(null);
+    setSummaryItems([]);
+    const tId = toast.loading("Gerando planilha e pré-visualização...");
+    try {
+      const { link } = await buildAndUpload();
+      const templateData = buildTemplateData(link);
+      const { data, error } = await supabase.functions.invoke("render-transactional-email", {
+        body: {
+          templateName: "adjustment-quote-request-to-supplier",
+          templateData,
+        },
+      });
+      if (error) throw new Error(error.message || "Falha ao gerar a pré-visualização.");
+      if (!data?.html) throw new Error("Pré-visualização vazia.");
+      setPreviewHtml(data.html);
+      setPreviewSubject(data.subject || "");
+      setPreparedLink(link);
+      setPreparedTemplateData(templateData);
+      setPreviewOpen(true);
+      toast.dismiss(tId);
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao preparar pré-visualização.", { id: tId });
+    } finally {
+      setPreparingPreview(false);
+      setUploadStatus(null);
+    }
+  };
+
+  /**
+   * Step 2a: confirm send to the real recipients. Persists the request as
+   * "submitted" so the campaign accounts the reorçamento.
+   */
+  const handleConfirmSend = async () => {
+    if (!winner || !preparedTemplateData) return;
+    const merged = mergeRecipients(email, cc);
+    setSending(true);
     setSummaryItems([]);
     const items: SendSummaryItem[] = [];
     const push = (it: SendSummaryItem) => { items.push(it); setSummaryItems([...items]); };
-    const tId = toast.loading("Gerando planilha e enviando...");
+    const tId = toast.loading("Enviando reorçamento...");
     try {
-      let link: { name: string; url: string };
-      try {
-        const res = await buildAndUpload();
-        link = res.link;
-        push({ kind: "file", label: res.fileName, stage: "signed" });
-      } catch (err: any) {
-        push({ kind: "file", label: "Planilha de reorçamento", stage: "failed", error: err?.message || "Erro" });
-        throw err;
-      }
       let anySent = false;
       const toEmails = parseRecipients(email);
       for (const recipient of merged.valid) {
@@ -198,16 +239,8 @@ export default function AdjustmentBudgetRequestDialog({
             body: {
               templateName: "adjustment-quote-request-to-supplier",
               recipientEmail: recipient,
-              idempotencyKey: `adj-quote-${adjustment.id}-${winner!.id}-${recipient}-${Date.now()}`,
-              templateData: {
-                supplierName: winner!.company_name,
-                contactName: winner!.contact_name,
-                agencyName, campaignName,
-                adjustmentName: adjustment.name,
-                changesDescription,
-                customMessage: customMessage.trim() || undefined,
-                downloadUrls: [link],
-              },
+              idempotencyKey: `adj-quote-${adjustment.id}-${winner.id}-${recipient}-${Date.now()}`,
+              templateData: preparedTemplateData,
             },
           });
           if (error) throw new Error(error.message || "Erro ao enviar");
@@ -219,10 +252,47 @@ export default function AdjustmentBudgetRequestDialog({
       }
       if (!anySent) throw new Error("Nenhum e-mail foi enviado.");
       await persistRequest();
+      setPreviewOpen(false);
       toast.success(`Reorçamento enviado para ${merged.valid.length} destinatário(s).`, { id: tId });
     } catch (e: any) {
       toast.error(e?.message || "Falha ao enviar.", { id: tId });
-    } finally { setSending(false); setUploadStatus(null); }
+    } finally {
+      setSending(false);
+    }
+  };
+
+  /**
+   * Step 2b: send a one-off test copy to a single address. CRITICAL:
+   * does NOT call persistRequest, so this never marks the reorçamento as
+   * solicited. Subject gets a "[TESTE]" prefix so testers can spot it.
+   */
+  const handleSendTest = async (testEmail: string) => {
+    if (!winner || !preparedTemplateData) return;
+    const tId = toast.loading(`Enviando teste para ${testEmail}...`);
+    try {
+      const testTemplateData = {
+        ...preparedTemplateData,
+        // Tag the body so the recipient knows this is a test; we cannot mutate
+        // the subject through templateData (subject() only sees fields it knows),
+        // so we prepend a banner-like marker to the custom message.
+        customMessage:
+          `[CÓPIA DE TESTE — não notifica o fornecedor]\n` +
+          (preparedTemplateData.customMessage || ""),
+      };
+      const { error } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "adjustment-quote-request-to-supplier",
+          recipientEmail: testEmail,
+          // Unique idempotency key so multiple tests are not deduped.
+          idempotencyKey: `adj-quote-TEST-${adjustment.id}-${testEmail}-${Date.now()}`,
+          templateData: testTemplateData,
+        },
+      });
+      if (error) throw new Error(error.message || "Erro ao enviar teste");
+      toast.success(`Teste enviado para ${testEmail}.`, { id: tId });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao enviar teste.", { id: tId });
+    }
   };
 
   const handleSendWhatsApp = async () => {
