@@ -32,11 +32,15 @@ interface Props {
   agencyName: string;
   clientName: string;
   currencyCode: string;
+  winnerSupplierId?: string | null;
+  hasNegotiationRateio?: boolean;
 }
 
 export default function AdjustmentBudgetRequestDialog({
   open, onOpenChange, adjustment, campaignId, campaignName, agencyName, clientName, currencyCode,
+  winnerSupplierId, hasNegotiationRateio,
 }: Props) {
+  const useNegotiationBaseline = !!(hasNegotiationRateio && winnerSupplierId);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [preparingPreview, setPreparingPreview] = useState(false);
