@@ -963,7 +963,7 @@ const CampaignDetail = () => {
     upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[],
     deletes: { campaignId: string; storeId: string; pieceId: string }[],
   ) => {
-    const rateioOptions = { isNegotiationView, negotiationSupplierId: winnerSupplierId, isAdjustmentView, adjustmentId: activeAdjustmentId };
+    const rateioOptions = { isNegotiationView, negotiationSupplierId: winnerSupplierId, isAdjustmentView, adjustmentId: activeAdjustmentId, srcToAdjPieceId };
     // Snapshot prev quantities for affected pairs
     const affected = new Map<string, { storeId: string; pieceId: string }>();
     for (const u of upserts) affected.set(`${u.storeId}|${u.pieceId}`, { storeId: u.storeId, pieceId: u.pieceId });
