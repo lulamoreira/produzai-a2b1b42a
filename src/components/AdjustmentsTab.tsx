@@ -37,6 +37,8 @@ interface AdjustmentsTabProps {
   agencyName: string;
   clientName: string;
   currencyCode: string;
+  winnerSupplierId?: string | null;
+  hasNegotiationRateio?: boolean;
 }
 
 function StatusBadge({ status }: { status: AdjustmentStatus }) {
