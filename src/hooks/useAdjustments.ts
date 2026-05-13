@@ -5,6 +5,8 @@ import { supabasePaginate } from "@/lib/supabasePaginate";
 
 export type AdjustmentStatus = "draft" | "active" | "superseded";
 
+export type AdjustmentSyncedWith = "original" | "negotiation";
+
 export interface CampaignAdjustment {
   id: string;
   campaign_id: string;
@@ -15,6 +17,7 @@ export interface CampaignAdjustment {
   created_by: string | null;
   approved_at: string | null;
   approved_by?: string | null;
+  synced_with?: AdjustmentSyncedWith;
 }
 
 export function useCampaignAdjustments(campaignId: string | undefined) {
@@ -126,6 +129,7 @@ export function useCreateAdjustment() {
       kits: any[];
       kitPieces: any[];
       storePieces: any[];
+      syncedWith?: AdjustmentSyncedWith;
     }) => {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData?.user?.id;
@@ -138,6 +142,7 @@ export function useCreateAdjustment() {
           notes: params.notes || null,
           status: "draft",
           created_by: userId,
+          synced_with: params.syncedWith || "original",
         } as any)
         .select()
         .single();
@@ -575,10 +580,19 @@ export function useResyncAdjustmentRateio() {
           .insert(payload.slice(i, i + 500) as any);
         if (error) throw error;
       }
-      return { count: payload.length, source: winnerSupplierId && sourceRows.length > 0 ? "negotiation" : "original" };
+      const source: AdjustmentSyncedWith = winnerSupplierId && sourceRows.length > 0 && srcToAdj.size > 0
+        ? "negotiation"
+        : "original";
+      await supabase
+        .from("campaign_adjustments")
+        .update({ synced_with: source } as any)
+        .eq("id", adjustmentId);
+      return { count: payload.length, source };
     },
     onSuccess: (res, vars) => {
       qc.invalidateQueries({ queryKey: ["adjustment_store_pieces", vars.adjustmentId] });
+      qc.invalidateQueries({ queryKey: ["campaign_adjustments", vars.campaignId] });
+      qc.invalidateQueries({ queryKey: ["active_adjustment", vars.campaignId] });
       toast.success(
         `Rateio do ajuste ressincronizado a partir do rateio ${res.source === "negotiation" ? "da negociação" : "original"} (${res.count} células).`,
       );

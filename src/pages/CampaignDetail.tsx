@@ -52,7 +52,7 @@ import {
 import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle, Database, Layers, Palette } from "lucide-react";
 import AdjustmentsTab from "@/components/AdjustmentsTab";
 import MockupTab from "@/components/MockupTab";
-import { useActiveAdjustment, useAdjustmentStorePieces, useUpdateAdjustmentStorePiece, useAdjustmentPieces, useAdjustmentKits } from "@/hooks/useAdjustments";
+import { useActiveAdjustment, useAdjustmentStorePieces, useUpdateAdjustmentStorePiece, useAdjustmentPieces, useAdjustmentKits, useCampaignAdjustments } from "@/hooks/useAdjustments";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -260,6 +260,8 @@ const CampaignDetail = () => {
   const { data: pieces = [], isLoading: loadingPieces } = useCampaignPieces(campaignId);
   const { data: storePieces = [] } = useCampaignStorePieces(campaignId);
   const { data: activeAdjustment } = useActiveAdjustment(campaignId);
+  const { data: allAdjustments = [] } = useCampaignAdjustments(campaignId);
+  const hasAnyAdjustment = allAdjustments.length > 0;
   const addPiece = useAddCampaignPiece();
   const deletePiece = useDeleteCampaignPiece();
   const updatePiece = useUpdateCampaignPiece();
@@ -303,16 +305,32 @@ const CampaignDetail = () => {
   const isNegotiationView = rateioSource === "negotiation" && hasNegotiationRateio && !!winnerSupplierId;
   const isAdjustmentView = rateioSource === "adjustment" && !!activeAdjustment;
   const activeAdjustmentId = activeAdjustment?.id ?? null;
+
+  // The "vigente" (current binding) source: adjustment > negotiation > original.
+  const vigenteSource: "original" | "negotiation" | "adjustment" =
+    activeAdjustment ? "adjustment"
+    : (hasNegotiationRateio && winnerSupplierId ? "negotiation" : "original");
+  const isViewingVigente = rateioSource === vigenteSource;
+
+  // Default-select the vigente source on first load (once existence queries settle).
+  const didInitRateioSource = useRef(false);
+  useEffect(() => {
+    if (didInitRateioSource.current) return;
+    if (negRateioFetching) return;
+    didInitRateioSource.current = true;
+    setRateioSource(vigenteSource);
+  }, [negRateioFetching, vigenteSource]);
+
   // Only revert to original once the existence query has settled, to avoid
   // racing the snapshot insert triggered by "Editar Rateio da Negociação".
   useEffect(() => {
     if (rateioSource === "negotiation" && !hasNegotiationRateio && !negRateioFetching) {
-      setRateioSource("original");
+      setRateioSource(vigenteSource);
     }
     if (rateioSource === "adjustment" && !activeAdjustment) {
-      setRateioSource("original");
+      setRateioSource(vigenteSource);
     }
-  }, [rateioSource, hasNegotiationRateio, negRateioFetching, activeAdjustment]);
+  }, [rateioSource, hasNegotiationRateio, negRateioFetching, activeAdjustment, vigenteSource]);
 
   const handleCancelNegotiationRateio = useCallback(async () => {
     if (!winnerSupplierId) return;
@@ -2539,166 +2557,189 @@ const CampaignDetail = () => {
                     </TabsList>
                   </div>
                   <TabsContent value="planilha" className="flex-1 flex flex-col overflow-hidden mt-0 data-[state=inactive]:hidden">
-                {/* Active adjustment hint */}
-                {activeAdjustment && rateioSource === "original" && (
-                  <div className="border-b border-amber-200 bg-amber-50 dark:bg-amber-900/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200 flex items-center gap-2">
-                    <Layers className="w-3.5 h-3.5 shrink-0" />
-                    <span>
-                      Existe um ajuste ativo (<strong>{activeAdjustment.name}</strong>). O rateio original está sendo exibido.{" "}
-                      <button className="underline ml-1" onClick={() => setRateioSource("adjustment")}>
-                        Ver rateio do ajuste
-                      </button>
-                    </span>
-                  </div>
-                )}
-                {/* Negotiation rateio banner + source toggle */}
-                {hasNegotiationRateio && winnerSupplierId && (
-                  <div
-                    className={`border-b px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
-                      isNegotiationView
-                        ? "border-blue-200 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/10"
-                        : "border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10"
-                    }`}
-                  >
-                    <div className={`text-xs flex items-start gap-2 ${
-                      isNegotiationView ? "text-blue-900 dark:text-blue-200" : "text-amber-900 dark:text-amber-200"
-                    }`}>
-                      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                      <span>
-                        {isNegotiationView
-                          ? <>Editando <strong>rateio de negociação</strong> — <strong>{winnerSupplierName}</strong>. Alterações aqui não afetam o rateio original.</>
-                          : <>⚠️ Existe uma negociação ativa com <strong>{winnerSupplierName}</strong>. O rateio de negociação é independente do rateio original.</>}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={rateioSource === "original" ? "default" : "outline"}
-                        className="h-7 text-xs"
-                        onClick={() => setRateioSource("original")}
-                      >
-                        Rateio Original
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={rateioSource === "negotiation" ? "default" : "outline"}
-                        className="h-7 text-xs"
-                        onClick={() => setRateioSource("negotiation")}
-                      >
-                        Rateio da Negociação
-                      </Button>
-                      {isNegotiationView && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs ml-1"
-                          onClick={() => setActiveSection("budgets")}
-                        >
-                          ← Voltar à Negociação
-                        </Button>
-                      )}
-                      {isNegotiationView && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button type="button" size="sm" variant="outline" className="h-7 text-xs">
-                              Restaurar original
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Restaurar rateio da negociação?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Isso descarta as alterações feitas no rateio da negociação e copia novamente o rateio original congelado.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleResetNegotiationRateio}>
-                                Restaurar original
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button type="button" size="sm" variant="outline" className="h-7 text-xs text-destructive hover:text-destructive">
-                            Cancelar negociação
+                {/* (legacy "active adjustment hint" replaced by unified banner below) */}
+                {/* Unified rateio source banner — shows the "vigente" prominently with discrete access to historical views. */}
+                {(activeAdjustment || (hasNegotiationRateio && winnerSupplierId)) && (() => {
+                  const vigenteLabel =
+                    vigenteSource === "adjustment"
+                      ? `Rateio do Ajuste · ${activeAdjustment?.name ?? ""}`
+                      : vigenteSource === "negotiation"
+                      ? `Rateio da Negociação · ${winnerSupplierName}`
+                      : "Rateio Original";
+                  const currentLabel =
+                    rateioSource === "adjustment"
+                      ? `Rateio do Ajuste · ${activeAdjustment?.name ?? ""}`
+                      : rateioSource === "negotiation"
+                      ? `Rateio da Negociação · ${winnerSupplierName}`
+                      : "Rateio Original";
+                  const adjSyncedLabel =
+                    activeAdjustment?.synced_with === "negotiation" ? "Negociação" : "Original";
+
+                  return (
+                    <div
+                      className={`border-b px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                        isViewingVigente
+                          ? "border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/60 dark:bg-emerald-900/10"
+                          : "border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10"
+                      }`}
+                    >
+                      <div className="flex items-start gap-2 text-xs min-w-0">
+                        <span
+                          className={`mt-1 inline-block h-2 w-2 rounded-full shrink-0 ${
+                            isViewingVigente ? "bg-emerald-500" : "bg-amber-500"
+                          }`}
+                        />
+                        <div className="min-w-0">
+                          {isViewingVigente ? (
+                            <>
+                              <div className="font-medium text-foreground">
+                                Rateio vigente: <span className="font-semibold">{vigenteLabel}</span>
+                              </div>
+                              {vigenteSource === "adjustment" && (
+                                <div className="text-[11px] text-muted-foreground mt-0.5">
+                                  Sincronizado com: <strong>{adjSyncedLabel}</strong>
+                                  {" · "}Edições aqui valem para o ajuste; o rateio original e o da negociação ficam preservados.
+                                </div>
+                              )}
+                              {vigenteSource === "negotiation" && (
+                                <div className="text-[11px] text-muted-foreground mt-0.5">
+                                  O rateio original congelado fica preservado em "Ver rateios anteriores".
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <div className="font-medium text-amber-900 dark:text-amber-200">
+                                Visualizando rateio histórico (somente leitura): <span className="font-semibold">{currentLabel}</span>
+                              </div>
+                              <div className="text-[11px] text-amber-800/80 dark:text-amber-200/80 mt-0.5">
+                                Este rateio não é mais o vigente. As edições devem ser feitas no rateio vigente: <strong>{vigenteLabel}</strong>.
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {!isViewingVigente && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="default"
+                            className="h-7 text-xs"
+                            onClick={() => setRateioSource(vigenteSource)}
+                          >
+                            ← Voltar ao vigente
                           </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Cancelar negociação?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Isso remove o rateio e os ajustes da negociação. O rateio original congelado permanece preservado.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleCancelNegotiationRateio}>
-                              Confirmar cancelamento
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                        )}
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button type="button" size="sm" variant="outline" className="h-7 text-xs">
+                              Ver rateios anteriores ▾
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-64">
+                            {vigenteSource !== "original" && (
+                              <DropdownMenuItem onClick={() => setRateioSource("original")}>
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-medium">Rateio Original</span>
+                                  <span className="text-[10px] text-muted-foreground">Congelado · somente leitura</span>
+                                </div>
+                              </DropdownMenuItem>
+                            )}
+                            {vigenteSource !== "negotiation" && hasNegotiationRateio && winnerSupplierId && (
+                              <DropdownMenuItem onClick={() => setRateioSource("negotiation")}>
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-medium">Rateio da Negociação</span>
+                                  <span className="text-[10px] text-muted-foreground">{winnerSupplierName} · somente leitura</span>
+                                </div>
+                              </DropdownMenuItem>
+                            )}
+                            {vigenteSource !== "adjustment" && activeAdjustment && (
+                              <DropdownMenuItem onClick={() => setRateioSource("adjustment")}>
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-medium">Rateio do Ajuste</span>
+                                  <span className="text-[10px] text-muted-foreground">{activeAdjustment.name}</span>
+                                </div>
+                              </DropdownMenuItem>
+                            )}
+                            {isNegotiationView && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => setActiveSection("budgets")}>
+                                  <span className="text-xs">← Voltar à Negociação</span>
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        {/* Negotiation-only actions, only when viewing/editing the negotiation rateio as vigente */}
+                        {isNegotiationView && isViewingVigente && (
+                          <>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button type="button" size="sm" variant="outline" className="h-7 text-xs">
+                                  Restaurar original
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Restaurar rateio da negociação?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Isso descarta as alterações feitas no rateio da negociação e copia novamente o rateio original congelado.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                                  <AlertDialogAction onClick={handleResetNegotiationRateio}>
+                                    Restaurar original
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+
+                            {hasAnyAdjustment ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled
+                                className="h-7 text-xs text-muted-foreground"
+                                title="Não é possível cancelar a negociação porque já existe um ajuste vinculado a ela. Exclua todos os ajustes antes."
+                              >
+                                Cancelar negociação
+                              </Button>
+                            ) : (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button type="button" size="sm" variant="outline" className="h-7 text-xs text-destructive hover:text-destructive">
+                                    Cancelar negociação
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Cancelar negociação?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Isso remove o rateio e os ajustes da negociação. O rateio original congelado permanece preservado.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleCancelNegotiationRateio}>
+                                      Confirmar cancelamento
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-                {/* Adjustment rateio banner + source toggle */}
-                {activeAdjustment && (
-                  <div
-                    className={`border-b px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
-                      isAdjustmentView
-                        ? "border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-900/10"
-                        : "border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10"
-                    }`}
-                  >
-                    <div className={`text-xs flex items-start gap-2 ${
-                      isAdjustmentView ? "text-emerald-900 dark:text-emerald-200" : "text-amber-900 dark:text-amber-200"
-                    }`}>
-                      <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                      <span>
-                        {isAdjustmentView
-                          ? <>Editando rateio do ajuste <strong>{activeAdjustment.name}</strong>. Alterações aqui não afetam o rateio original.</>
-                          : <>📐 Existe um ajuste ativo: <strong>{activeAdjustment.name}</strong>. O rateio do ajuste pode ser diferente do original.</>}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={rateioSource === "original" ? "default" : "outline"}
-                        className="h-7 text-xs"
-                        onClick={() => setRateioSource("original")}
-                      >
-                        Rateio Original
-                      </Button>
-                      {hasNegotiationRateio && winnerSupplierId && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={rateioSource === "negotiation" ? "default" : "outline"}
-                          className="h-7 text-xs"
-                          onClick={() => setRateioSource("negotiation")}
-                        >
-                          Rateio da Negociação
-                        </Button>
-                      )}
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={rateioSource === "adjustment" ? "default" : "outline"}
-                        className="h-7 text-xs"
-                        onClick={() => setRateioSource("adjustment")}
-                      >
-                        Rateio do Ajuste
-                      </Button>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
                 {/* Toolbar */}
                 <div className="border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between px-3 py-1">
