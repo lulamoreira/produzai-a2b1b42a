@@ -159,6 +159,7 @@ export default function AdjustmentBudgetRequestDialog({
       adjustmentStorePieces: adjSpFlat,
       currentPrices: prices,
       extraCosts: extras,
+      baselineIsNegotiation: useNegotiationBaseline,
     });
     const link = await uploadAndSign(blob, fileName, `adjustment_${adjustment.id}`, campaignId, setUploadStatus);
     return { link, fileName };
