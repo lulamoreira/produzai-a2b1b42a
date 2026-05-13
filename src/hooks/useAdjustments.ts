@@ -27,7 +27,7 @@ export function useCampaignAdjustments(campaignId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("campaign_adjustments")
-        .select("id, campaign_id, name, status, notes, created_at, created_by, approved_at, approved_by")
+        .select("id, campaign_id, name, status, notes, created_at, created_by, approved_at, approved_by, synced_with")
         .eq("campaign_id", campaignId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -527,12 +527,14 @@ export function useResyncAdjustmentRateio() {
 
       // 2) Fetch source rateio: prefer negotiation, fallback to original.
       let sourceRows: { store_id: string; piece_id: string; quantity: number }[] = [];
+      let source: AdjustmentSyncedWith = "original";
       if (winnerSupplierId) {
         const { count } = await supabase
           .from("budget_negotiation_store_pieces" as never)
           .select("id", { count: "exact", head: true })
           .eq("supplier_id", winnerSupplierId);
         if ((count ?? 0) > 0) {
+          source = "negotiation";
           sourceRows = await supabasePaginate<any>((from, to) =>
             supabase
               .from("budget_negotiation_store_pieces" as never)
@@ -580,9 +582,6 @@ export function useResyncAdjustmentRateio() {
           .insert(payload.slice(i, i + 500) as any);
         if (error) throw error;
       }
-      const source: AdjustmentSyncedWith = winnerSupplierId && sourceRows.length > 0 && srcToAdj.size > 0
-        ? "negotiation"
-        : "original";
       await supabase
         .from("campaign_adjustments")
         .update({ synced_with: source } as any)
