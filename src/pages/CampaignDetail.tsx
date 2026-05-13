@@ -1732,11 +1732,21 @@ const CampaignDetail = () => {
       });
     }
 
+    // Hide pieces that were removed in the active adjustment when viewing it
+    if (isAdjustmentView && deletedSrcPieceIds.size > 0) {
+      filtered = filtered.filter((p) => !deletedSrcPieceIds.has(p.id));
+    }
+
     return filtered;
-  }, [visiblePieces, storeCategoryFilter, pieceFilters, filterLogicMode]);
+  }, [visiblePieces, storeCategoryFilter, pieceFilters, filterLogicMode, isAdjustmentView, deletedSrcPieceIds]);
 
   // Kits appear as virtual columns in the matrix
-  const matrixKits = kits;
+  const matrixKits = useMemo(() => {
+    if (isAdjustmentView && deletedSrcKitIds.size > 0) {
+      return kits.filter((k) => !deletedSrcKitIds.has(k.id));
+    }
+    return kits;
+  }, [kits, isAdjustmentView, deletedSrcKitIds]);
 
   const getKitCategory = useCallback((kit: CampaignKit) => {
     if (kit.category) return kit.category;
