@@ -734,12 +734,18 @@ const CampaignDetail = () => {
   const originalQtyMap = useMemo(() => {
     const map: Record<string, number> = {};
     if (baselineIsNegotiation) {
-      negotiationStorePieces.forEach((sp: any) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
+      negotiationStorePieces.forEach((sp: any) => {
+        if (isAdjustmentView && deletedSrcPieceIds.has(sp.piece_id)) return;
+        map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0;
+      });
     } else {
-      storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
+      storePieces.forEach((sp) => {
+        if (isAdjustmentView && deletedSrcPieceIds.has(sp.piece_id)) return;
+        map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity;
+      });
     }
     return map;
-  }, [storePieces, negotiationStorePieces, baselineIsNegotiation]);
+  }, [storePieces, negotiationStorePieces, baselineIsNegotiation, isAdjustmentView, deletedSrcPieceIds]);
   const baselineLabel = baselineIsNegotiation ? "neg" : "orig";
 
   const totalPieces = useMemo(() => storePieces.reduce((s, sp) => s + sp.quantity, 0), [storePieces]);
