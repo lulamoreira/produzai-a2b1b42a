@@ -819,6 +819,12 @@ const CampaignDetail = () => {
 
   const allEnabled = useMemo(() => filteredStores.every(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
   const activeFilteredStores = useMemo(() => filteredStores.filter(s => isStoreEnabled(s.id)), [filteredStores, storeEnabledMap]);
+  // Stores rendered in the rateio matrix: hide "new stores" (added after baseline) when
+  // we're not viewing the adjustment, since they were not part of the original/negotiation rateio.
+  const matrixStores = useMemo(
+    () => isAdjustmentView ? activeFilteredStores : activeFilteredStores.filter(s => !newStoreIds.has(s.id)),
+    [activeFilteredStores, isAdjustmentView, newStoreIds]
+  );
 
   // ─── Filtered pieces: exclude kit_only from normal views ─
   const visiblePieces = useMemo(() => pieces.filter(p => !p.kit_only), [pieces]);
