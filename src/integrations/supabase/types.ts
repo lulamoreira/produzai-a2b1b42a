@@ -886,6 +886,7 @@ export type Database = {
           name: string
           notes: string | null
           status: string
+          synced_with: string
         }
         Insert: {
           approved_at?: string | null
@@ -897,6 +898,7 @@ export type Database = {
           name: string
           notes?: string | null
           status?: string
+          synced_with?: string
         }
         Update: {
           approved_at?: string | null
@@ -908,6 +910,7 @@ export type Database = {
           name?: string
           notes?: string | null
           status?: string
+          synced_with?: string
         }
         Relationships: [
           {
