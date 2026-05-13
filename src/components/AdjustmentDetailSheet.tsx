@@ -69,12 +69,17 @@ export default function AdjustmentDetailSheet({
     enabled: open && !!campaignId,
     queryFn: async () =>
       supabasePaginate<any>((from, to) =>
-        supabase.from("campaign_kits").select("id, code").eq("campaign_id", campaignId).range(from, to) as any
+        supabase.from("campaign_kits").select("id, code, name").eq("campaign_id", campaignId).range(from, to) as any
       ),
   });
   const kitCodeBySourceId = useMemo(() => {
     const m = new Map<string, number>();
     (sourceKits as any[]).forEach((k) => { if (k.id != null && k.code != null) m.set(k.id, k.code); });
+    return m;
+  }, [sourceKits]);
+  const kitNameBySourceId = useMemo(() => {
+    const m = new Map<string, string>();
+    (sourceKits as any[]).forEach((k) => { if (k.id != null && k.name != null) m.set(k.id, k.name); });
     return m;
   }, [sourceKits]);
 
