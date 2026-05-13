@@ -490,6 +490,103 @@ export function useUpdateAdjustmentStatus() {
   });
 }
 
+/**
+ * Re-seeds an adjustment's store_pieces from the negotiation rateio (preferred)
+ * or the original campaign rateio. Replaces all existing rows for the adjustment.
+ *
+ * Skips deleted (is_deleted=true) adjustment pieces so removed items stay removed.
+ */
+export function useResyncAdjustmentRateio() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      adjustmentId: string;
+      campaignId: string;
+      winnerSupplierId?: string | null;
+    }) => {
+      const { adjustmentId, campaignId, winnerSupplierId } = params;
+
+      // 1) Fetch adjustment pieces to build source_piece_id -> adj piece_id map.
+      const adjPieces = await supabasePaginate<any>((from, to) =>
+        supabase
+          .from("campaign_adjustment_pieces")
+          .select("id, source_piece_id, is_deleted")
+          .eq("adjustment_id", adjustmentId)
+          .range(from, to) as any,
+      );
+      const srcToAdj = new Map<string, string>();
+      for (const ap of adjPieces) {
+        if (ap.is_deleted) continue;
+        if (ap.source_piece_id) srcToAdj.set(ap.source_piece_id, ap.id);
+      }
+
+      // 2) Fetch source rateio: prefer negotiation, fallback to original.
+      let sourceRows: { store_id: string; piece_id: string; quantity: number }[] = [];
+      if (winnerSupplierId) {
+        const { count } = await supabase
+          .from("budget_negotiation_store_pieces" as never)
+          .select("id", { count: "exact", head: true })
+          .eq("supplier_id", winnerSupplierId);
+        if ((count ?? 0) > 0) {
+          sourceRows = await supabasePaginate<any>((from, to) =>
+            supabase
+              .from("budget_negotiation_store_pieces" as never)
+              .select("store_id, piece_id, quantity")
+              .eq("supplier_id", winnerSupplierId)
+              .range(from, to) as any,
+          );
+        }
+      }
+      if (sourceRows.length === 0) {
+        sourceRows = await supabasePaginate<any>((from, to) =>
+          supabase
+            .from("campaign_store_pieces")
+            .select("store_id, piece_id, quantity")
+            .eq("campaign_id", campaignId)
+            .range(from, to) as any,
+        );
+      }
+
+      // 3) Build payload, translating piece_ids and skipping removed pieces.
+      const payload = sourceRows
+        .filter((r) => Number(r.quantity || 0) > 0)
+        .map((r) => {
+          const adjPid = srcToAdj.get(r.piece_id);
+          if (!adjPid) return null;
+          return {
+            adjustment_id: adjustmentId,
+            store_id: r.store_id,
+            piece_id: adjPid,
+            quantity: Number(r.quantity),
+          };
+        })
+        .filter(Boolean) as any[];
+
+      // 4) Wipe existing rows then insert.
+      const { error: delErr } = await supabase
+        .from("campaign_adjustment_store_pieces")
+        .delete()
+        .eq("adjustment_id", adjustmentId);
+      if (delErr) throw delErr;
+
+      for (let i = 0; i < payload.length; i += 500) {
+        const { error } = await supabase
+          .from("campaign_adjustment_store_pieces")
+          .insert(payload.slice(i, i + 500) as any);
+        if (error) throw error;
+      }
+      return { count: payload.length, source: winnerSupplierId && sourceRows.length > 0 ? "negotiation" : "original" };
+    },
+    onSuccess: (res, vars) => {
+      qc.invalidateQueries({ queryKey: ["adjustment_store_pieces", vars.adjustmentId] });
+      toast.success(
+        `Rateio do ajuste ressincronizado a partir do rateio ${res.source === "negotiation" ? "da negociação" : "original"} (${res.count} células).`,
+      );
+    },
+    onError: (e: any) => toast.error(e?.message || "Erro ao ressincronizar rateio"),
+  });
+}
+
 export function useDeleteAdjustment() {
   const qc = useQueryClient();
   return useMutation({
