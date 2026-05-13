@@ -448,6 +448,8 @@ export default function AdjustmentsTab({
           adjustment={editingAdjustment}
           campaignId={campaignId}
           campaignName={campaignName}
+          winnerSupplierId={winnerSupplierId}
+          hasNegotiationRateio={hasNegotiationRateio}
         />
       )}
 
