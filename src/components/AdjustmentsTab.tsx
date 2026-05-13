@@ -137,6 +137,29 @@ export default function AdjustmentsTab({
     });
   };
 
+  const handleReactivate = async (a: CampaignAdjustment) => {
+    const msg = activeAdjustment
+      ? `Reativar "${a.name}"?\n\nO ajuste ativo atual ("${activeAdjustment.name}") será automaticamente marcado como Substituído, e o rateio voltará a refletir este ajuste.`
+      : `Reativar "${a.name}"? Ele voltará a ser o ajuste vigente da campanha.`;
+    if (!confirm(msg)) return;
+    try {
+      if (activeAdjustment && activeAdjustment.id !== a.id) {
+        await statusMut.mutateAsync({
+          adjustmentId: activeAdjustment.id,
+          campaignId,
+          status: "superseded",
+        });
+      }
+      await statusMut.mutateAsync({
+        adjustmentId: a.id,
+        campaignId,
+        status: "active",
+      });
+    } catch {
+      // toast já tratado no hook
+    }
+  };
+
   const handleSupersede = async (a: CampaignAdjustment) => {
     if (!confirm(`Marcar "${a.name}" como Substituído?`)) return;
     await statusMut.mutateAsync({
