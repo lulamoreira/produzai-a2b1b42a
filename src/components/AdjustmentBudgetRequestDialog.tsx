@@ -39,11 +39,21 @@ export default function AdjustmentBudgetRequestDialog({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [preparingPreview, setPreparingPreview] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const [summaryItems, setSummaryItems] = useState<SendSummaryItem[]>([]);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const [customMessage, setCustomMessage] = useState("");
+
+  // Preview state — populated after the workbook is uploaded and the email
+  // template is rendered server-side. Reused for both real send and test send
+  // so the recipient sees byte-for-byte the same email the tester previewed.
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState("");
+  const [previewSubject, setPreviewSubject] = useState("");
+  const [preparedLink, setPreparedLink] = useState<{ name: string; url: string } | null>(null);
+  const [preparedTemplateData, setPreparedTemplateData] = useState<Record<string, any> | null>(null);
 
   const [winner, setWinner] = useState<any | null>(null);
   const [origSp, setOrigSp] = useState<any[]>([]);
