@@ -25,7 +25,7 @@ interface Props {
 }
 
 export default function AdjustmentQuotePreviewDialog({
-  open, onOpenChange, to, cc, subject, html, sending, onConfirm, onSendTest,
+  open, onOpenChange, to, cc, subject, html, attachments = [], sending, onConfirm, onSendTest,
 }: Props) {
   const [testEmail, setTestEmail] = useState("");
   const [testing, setTesting] = useState(false);
