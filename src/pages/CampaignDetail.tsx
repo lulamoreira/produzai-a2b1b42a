@@ -3198,7 +3198,9 @@ const CampaignDetail = () => {
                             // refletindo a soma efetiva de itens enviados para a loja —
                             // tanto via peças individuais quanto via composição de kits.
                             const storeTotalReal = pieces.reduce((sum, p) => sum + (qtyMap[`${store.id}-${p.id}`] || 0), 0);
+                            const storeTotalOriginal = pieces.reduce((sum, p) => sum + (originalQtyMap[`${store.id}-${p.id}`] || 0), 0);
                             const storeTotal = storeTotalReal;
+                            const showStoreDelta = isAdjustmentView && storeTotalOriginal !== storeTotalReal;
                             const hasAnyStoreWithQty = activeFilteredStores.some(
                               (st) => st.id !== store.id && pieces.some((p) => (qtyMap[`${st.id}-${p.id}`] || 0) > 0)
                             );
