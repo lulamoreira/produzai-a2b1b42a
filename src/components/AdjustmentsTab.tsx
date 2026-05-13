@@ -19,7 +19,6 @@ import {
   useCreateAdjustment,
   useUpdateAdjustmentStatus,
   useDeleteAdjustment,
-  useResyncAdjustmentRateio,
   type CampaignAdjustment,
   type AdjustmentStatus,
 } from "@/hooks/useAdjustments";
@@ -73,7 +72,6 @@ export default function AdjustmentsTab({
   const createMut = useCreateAdjustment();
   const statusMut = useUpdateAdjustmentStatus();
   const deleteMut = useDeleteAdjustment();
-  const resyncMut = useResyncAdjustmentRateio();
 
   const { data: budgetRequests = [] } = useQuery({
     queryKey: ['adjustment_budget_requests', campaignId],
@@ -185,20 +183,6 @@ export default function AdjustmentsTab({
   const handleDelete = async (a: CampaignAdjustment) => {
     if (!confirm(`Excluir o ajuste "${a.name}"? Essa ação não pode ser desfeita.`)) return;
     await deleteMut.mutateAsync({ adjustmentId: a.id, campaignId });
-  };
-
-  const handleResync = async (a: CampaignAdjustment) => {
-    const fonte = hasNegotiationRateio && winnerSupplierId ? "rateio da negociação" : "rateio original da campanha";
-    if (!confirm(
-      `Ressincronizar o rateio do ajuste "${a.name}" com o ${fonte}?\n\n` +
-      `Todas as quantidades por loja deste ajuste serão substituídas pelas do ${fonte}. ` +
-      `Peças removidas no ajuste continuam removidas. Esta ação não pode ser desfeita.`
-    )) return;
-    await resyncMut.mutateAsync({
-      adjustmentId: a.id,
-      campaignId,
-      winnerSupplierId: winnerSupplierId ?? null,
-    });
   };
 
   return (
@@ -368,21 +352,6 @@ export default function AdjustmentsTab({
                       onClick={() => setRequestDialogAdjustment(a)}
                     >
                       <Send className="w-3.5 h-3.5" /> Solicitar Reorçamento
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => handleResync(a)}
-                      disabled={resyncMut.isPending}
-                      title={
-                        hasNegotiationRateio && winnerSupplierId
-                          ? "Substitui o rateio do ajuste pelo rateio da negociação atual."
-                          : "Substitui o rateio do ajuste pelo rateio original da campanha."
-                      }
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                      {hasNegotiationRateio && winnerSupplierId ? "Sincronizar c/ Negociação" : "Sincronizar c/ Original"}
                     </Button>
                     <Button
                       size="sm"
