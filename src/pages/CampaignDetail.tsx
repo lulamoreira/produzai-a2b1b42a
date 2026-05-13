@@ -52,7 +52,7 @@ import {
 import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle, Database, Layers, Palette } from "lucide-react";
 import AdjustmentsTab from "@/components/AdjustmentsTab";
 import MockupTab from "@/components/MockupTab";
-import { useActiveAdjustment, useAdjustmentStorePieces, useUpdateAdjustmentStorePiece } from "@/hooks/useAdjustments";
+import { useActiveAdjustment, useAdjustmentStorePieces, useUpdateAdjustmentStorePiece, useAdjustmentPieces, useAdjustmentKits } from "@/hooks/useAdjustments";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -356,10 +356,16 @@ const CampaignDetail = () => {
   const { data: negotiationStorePieces = [] } = useNegotiationStorePieces(
     winnerSupplierId,
     campaignId,
-    isNegotiationView
+    isNegotiationView || hasNegotiationRateio,
   );
   const updateNegotiationStorePiece = useUpdateNegotiationStorePiece();
   const { data: adjustmentStorePieces = [] } = useAdjustmentStorePieces(
+    isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
+  );
+  const { data: adjustmentPiecesMeta = [] } = useAdjustmentPieces(
+    isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
+  );
+  const { data: adjustmentKitsMeta = [] } = useAdjustmentKits(
     isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
   );
   const updateAdjustmentStorePiece = useUpdateAdjustmentStorePiece();
@@ -653,18 +659,54 @@ const CampaignDetail = () => {
     };
   }, [activeSection, filterSidebarCollapsed]);
 
+  // Translation maps for adjustment view: adj_piece_id <-> source (campaign) piece_id
+  const adjPieceIdToSrc = useMemo(() => {
+    const m = new Map<string, string>();
+    (adjustmentPiecesMeta as any[]).forEach((p) => {
+      if (p.source_piece_id) m.set(p.id, p.source_piece_id);
+    });
+    return m;
+  }, [adjustmentPiecesMeta]);
+  const srcPieceIdToAdj = useMemo(() => {
+    const m = new Map<string, string>();
+    (adjustmentPiecesMeta as any[]).forEach((p) => {
+      if (p.source_piece_id && !p.is_deleted) m.set(p.source_piece_id, p.id);
+    });
+    return m;
+  }, [adjustmentPiecesMeta]);
+  const deletedSrcPieceIds = useMemo(() => {
+    const s = new Set<string>();
+    (adjustmentPiecesMeta as any[]).forEach((p) => {
+      if (p.is_deleted && p.source_piece_id) s.add(p.source_piece_id);
+    });
+    return s;
+  }, [adjustmentPiecesMeta]);
+  const deletedSrcKitIds = useMemo(() => {
+    const s = new Set<string>();
+    (adjustmentKitsMeta as any[]).forEach((k) => {
+      if (k.is_deleted && k.source_kit_id) s.add(k.source_kit_id);
+    });
+    return s;
+  }, [adjustmentKitsMeta]);
+
   // ─── Derived data ──────────────────────────────────────
   const qtyMap = useMemo(() => {
     const map: Record<string, number> = {};
     if (isNegotiationView) {
       negotiationStorePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
     } else if (isAdjustmentView) {
-      (adjustmentStorePieces as any[]).forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
+      // adjustmentStorePieces.piece_id references campaign_adjustment_pieces.id;
+      // translate back to the source campaign piece id so the matrix grid (which
+      // uses original piece ids) can look values up correctly.
+      (adjustmentStorePieces as any[]).forEach((sp) => {
+        const srcId = adjPieceIdToSrc.get(sp.piece_id) || sp.piece_id;
+        map[`${sp.store_id}-${srcId}`] = Number(sp.quantity) || 0;
+      });
     } else {
       storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = sp.quantity; });
     }
     return map;
-  }, [storePieces, negotiationStorePieces, adjustmentStorePieces, isNegotiationView, isAdjustmentView]);
+  }, [storePieces, negotiationStorePieces, adjustmentStorePieces, isNegotiationView, isAdjustmentView, adjPieceIdToSrc]);
 
   // Always-original map (used for side-by-side comparison in adjustment view)
   const originalQtyMap = useMemo(() => {
@@ -921,7 +963,7 @@ const CampaignDetail = () => {
     upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[],
     deletes: { campaignId: string; storeId: string; pieceId: string }[],
   ) => {
-    const rateioOptions = { isNegotiationView, negotiationSupplierId: winnerSupplierId, isAdjustmentView, adjustmentId: activeAdjustmentId };
+    const rateioOptions = { isNegotiationView, negotiationSupplierId: winnerSupplierId, isAdjustmentView, adjustmentId: activeAdjustmentId, srcToAdjPieceId: srcPieceIdToAdj };
     // Snapshot prev quantities for affected pairs
     const affected = new Map<string, { storeId: string; pieceId: string }>();
     for (const u of upserts) affected.set(`${u.storeId}|${u.pieceId}`, { storeId: u.storeId, pieceId: u.pieceId });
@@ -961,34 +1003,49 @@ const CampaignDetail = () => {
     }
 
     // ─── Adjustment rateio: write to campaign_adjustment_store_pieces ───
+    // The matrix uses original (campaign) piece ids, but the adjustment table
+    // stores adjustment piece ids — translate before writing.
     if (isAdjustmentView && activeAdjustmentId) {
       if (cell.pieceId.startsWith("kit-")) {
         const kitId = cell.pieceId.replace("kit-", "");
         const piecesInKit = kitPieces.filter((kp) => kp.kit_id === kitId);
         if (piecesInKit.length === 0) return;
-        const targets = piecesInKit.map((kp) => ({
-          pieceId: kp.piece_id,
-          newQty: qty * (kp.quantity || 1),
-          prevQty: qtyMap[`${cell.storeId}-${kp.piece_id}`] || 0,
-        }));
+        const targets = piecesInKit
+          .map((kp) => {
+            const adjPid = srcPieceIdToAdj.get(kp.piece_id);
+            if (!adjPid) return null;
+            return {
+              srcPieceId: kp.piece_id,
+              adjPieceId: adjPid,
+              newQty: qty * (kp.quantity || 1),
+              prevQty: qtyMap[`${cell.storeId}-${kp.piece_id}`] || 0,
+            };
+          })
+          .filter(Boolean) as { srcPieceId: string; adjPieceId: string; newQty: number; prevQty: number }[];
+        if (targets.length === 0) return;
         if (targets.every((t) => t.prevQty === t.newQty)) return;
         runHistoryCommand({
           label: "Quantidade (kit, ajuste)",
           do: async () => {
             await Promise.all(targets.map((t) =>
               updateAdjustmentStorePiece.mutateAsync({
-                adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: t.pieceId, quantity: t.newQty,
+                adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: t.adjPieceId, quantity: t.newQty,
               })
             ));
           },
           undo: async () => {
             await Promise.all(targets.map((t) =>
               updateAdjustmentStorePiece.mutateAsync({
-                adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: t.pieceId, quantity: t.prevQty,
+                adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: t.adjPieceId, quantity: t.prevQty,
               })
             ));
           },
         });
+        return;
+      }
+      const adjPieceId = srcPieceIdToAdj.get(cell.pieceId);
+      if (!adjPieceId) {
+        toast.error("Esta peça não existe no ajuste atual.");
         return;
       }
       const prevQtyAdj = qtyMap[`${cell.storeId}-${cell.pieceId}`] || 0;
@@ -996,10 +1053,10 @@ const CampaignDetail = () => {
       runHistoryCommand({
         label: "Quantidade (ajuste)",
         do: () => updateAdjustmentStorePiece.mutateAsync({
-          adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: cell.pieceId, quantity: qty,
+          adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: adjPieceId, quantity: qty,
         }).then(() => undefined),
         undo: () => updateAdjustmentStorePiece.mutateAsync({
-          adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: cell.pieceId, quantity: prevQtyAdj,
+          adjustmentId: activeAdjustmentId, storeId: cell.storeId, pieceId: adjPieceId, quantity: prevQtyAdj,
         }).then(() => undefined),
       });
       return;
@@ -1690,11 +1747,21 @@ const CampaignDetail = () => {
       });
     }
 
+    // Hide pieces that were removed in the active adjustment when viewing it
+    if (isAdjustmentView && deletedSrcPieceIds.size > 0) {
+      filtered = filtered.filter((p) => !deletedSrcPieceIds.has(p.id));
+    }
+
     return filtered;
-  }, [visiblePieces, storeCategoryFilter, pieceFilters, filterLogicMode]);
+  }, [visiblePieces, storeCategoryFilter, pieceFilters, filterLogicMode, isAdjustmentView, deletedSrcPieceIds]);
 
   // Kits appear as virtual columns in the matrix
-  const matrixKits = kits;
+  const matrixKits = useMemo(() => {
+    if (isAdjustmentView && deletedSrcKitIds.size > 0) {
+      return kits.filter((k) => !deletedSrcKitIds.has(k.id));
+    }
+    return kits;
+  }, [kits, isAdjustmentView, deletedSrcKitIds]);
 
   const getKitCategory = useCallback((kit: CampaignKit) => {
     if (kit.category) return kit.category;
@@ -3846,7 +3913,15 @@ const CampaignDetail = () => {
               pieces={pieces}
               kits={kits}
               kitPieces={kitPieces}
-              storePieces={storePieces}
+              storePieces={
+                hasNegotiationRateio && negotiationStorePieces.length > 0
+                  ? (negotiationStorePieces as any[]).map((sp) => ({
+                      store_id: sp.store_id,
+                      piece_id: sp.piece_id,
+                      quantity: Number(sp.quantity) || 0,
+                    }))
+                  : storePieces
+              }
               stores={stores}
               agencyName={agency?.name || ""}
               clientName={client?.name || ""}
