@@ -262,7 +262,7 @@ export default function AdjustmentDetailSheet({
 
     let totalBase = 0;
     let totalAdj = 0;
-    const rows: { name: string; base: number; adj: number; delta: number }[] = [];
+    const rows: { code: number | undefined; name: string; base: number; adj: number; delta: number }[] = [];
     pieces.forEach((p: any) => {
       if (p.change_type === "removed" || p.is_deleted) return;
       const adjQty = adjMap.get(p.id) || 0;
