@@ -353,6 +353,21 @@ export default function AdjustmentsTab({
                       size="sm"
                       variant="outline"
                       className="h-7 text-xs gap-1"
+                      onClick={() => handleResync(a)}
+                      disabled={resyncMut.isPending}
+                      title={
+                        hasNegotiationRateio && winnerSupplierId
+                          ? "Substitui o rateio do ajuste pelo rateio da negociação atual."
+                          : "Substitui o rateio do ajuste pelo rateio original da campanha."
+                      }
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      {hasNegotiationRateio && winnerSupplierId ? "Sincronizar c/ Negociação" : "Sincronizar c/ Original"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
                       onClick={() => handleSupersede(a)}
                       disabled={statusMut.isPending}
                     >
