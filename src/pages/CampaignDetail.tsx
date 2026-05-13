@@ -3231,6 +3231,9 @@ const CampaignDetail = () => {
                                     const p = col.data;
                                     const key = `${store.id}-${p.id}`;
                                     const qty = qtyMap[key] || 0;
+                                    const originalQty = originalQtyMap[key] || 0;
+                                    const showDelta = isAdjustmentView && originalQty !== qty;
+                                    const deltaUp = qty > originalQty;
                                     const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === p.id;
                                     return (
                                       <TableCell key={p.id} className={`text-center p-1 border-l border-border/70 ${tint}`}>
@@ -3272,7 +3275,7 @@ const CampaignDetail = () => {
                                         ) : (
                                           <button
                                             onClick={() => handleCellClick(store.id, p.id)}
-                                            className={`w-full h-8 text-sm rounded transition-colors ${
+                                            className={`w-full ${showDelta ? "h-10 leading-tight flex flex-col items-center justify-center" : "h-8"} text-sm rounded transition-colors ${
                                               qty > 0
                                                 ? "bg-primary/10 text-primary font-semibold hover:bg-primary/20"
                                                 : canEditCampaign
@@ -3280,8 +3283,14 @@ const CampaignDetail = () => {
                                                 : "text-muted-foreground/40"
                                             }`}
                                             disabled={!canEditCampaign}
+                                            title={showDelta ? `Original: ${originalQty} · Ajustado: ${qty}` : undefined}
                                           >
-                                            {qty > 0 ? qty : "—"}
+                                            <span>{qty > 0 ? qty : "—"}</span>
+                                            {showDelta && (
+                                              <span className={`text-[9px] font-normal ${deltaUp ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                                                orig: {originalQty} {deltaUp ? "▲" : "▼"}
+                                              </span>
+                                            )}
                                           </button>
                                         )}
                                       </TableCell>
