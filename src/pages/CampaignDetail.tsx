@@ -3926,6 +3926,8 @@ const CampaignDetail = () => {
               agencyName={agency?.name || ""}
               clientName={client?.name || ""}
               currencyCode={(client as any)?.currency_code || "BRL"}
+              winnerSupplierId={winnerSupplierId}
+              hasNegotiationRateio={hasNegotiationRateio}
             />
           )}
 
