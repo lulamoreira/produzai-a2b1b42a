@@ -785,7 +785,10 @@ export default function AdjustmentDetailSheet({
                     )}
                     {rateioCompare.rows.map((r, i) => (
                       <TableRow key={i}>
-                        <TableCell className="text-xs">{r.name}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.code != null && <span className="font-mono text-muted-foreground mr-2">{r.code}</span>}
+                          {r.name}
+                        </TableCell>
                         <TableCell className="text-xs text-right text-muted-foreground">{r.base}</TableCell>
                         <TableCell className="text-xs text-right">{r.adj}</TableCell>
                         <TableCell className={`text-xs text-right font-semibold ${r.delta > 0 ? "text-emerald-600" : "text-destructive"}`}>
