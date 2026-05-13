@@ -27,15 +27,22 @@ export async function applyRateioBulk(
   deletes: RateioDelete[],
   options: RateioBulkOptions
 ): Promise<void> {
-  const { isNegotiationView, negotiationSupplierId, isAdjustmentView, adjustmentId } = options;
+  const { isNegotiationView, negotiationSupplierId, isAdjustmentView, adjustmentId, srcToAdjPieceId } = options;
   if (isAdjustmentView && adjustmentId) {
+    const translate = (pid: string) => srcToAdjPieceId?.get(pid) ?? pid;
     if (upserts.length > 0) {
-      const payload = upserts.map(u => ({
-        adjustment_id: adjustmentId,
-        store_id: u.storeId,
-        piece_id: u.pieceId,
-        quantity: u.quantity,
-      }));
+      const payload = upserts
+        .map(u => {
+          const adjPid = srcToAdjPieceId?.get(u.pieceId);
+          if (srcToAdjPieceId && !adjPid) return null; // piece not in adjustment (e.g. removed)
+          return {
+            adjustment_id: adjustmentId,
+            store_id: u.storeId,
+            piece_id: adjPid ?? u.pieceId,
+            quantity: u.quantity,
+          };
+        })
+        .filter(Boolean) as any[];
       for (let i = 0; i < payload.length; i += 500) {
         const { error } = await supabase
           .from('campaign_adjustment_store_pieces' as never)
@@ -45,12 +52,13 @@ export async function applyRateioBulk(
     }
     if (deletes.length > 0) {
       for (const d of deletes) {
+        const adjPid = translate(d.pieceId);
         const { error } = await supabase
           .from('campaign_adjustment_store_pieces' as never)
           .delete()
           .eq('adjustment_id', adjustmentId)
           .eq('store_id', d.storeId)
-          .eq('piece_id', d.pieceId);
+          .eq('piece_id', adjPid);
         if (error) throw error;
       }
     }
