@@ -3558,7 +3558,7 @@ const CampaignDetail = () => {
                               const kit = col.data;
                               const kitPiecesForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
                               const kitTotal = kitPiecesForKit.length > 0
-                                ? filteredStores.reduce((total, st) => {
+                                ? matrixStores.reduce((total, st) => {
                                     const minQty = Math.min(...kitPiecesForKit.map(kp => {
                                       const storeQty = qtyMap[`${st.id}-${kp.piece_id}`] || 0;
                                       return Math.floor(storeQty / (kp.quantity || 1));
