@@ -292,6 +292,8 @@ export async function buildAdjustmentProposalWorkbook(
   //     with kit components emitted under their kit header.
 
   const piecesInAnyAdjKit = new Set<string>(params.kitPieces.map((kp) => kp.piece_id));
+  const sourcePiecesInAnyKit = new Set<string>(params.originalKitPieces.map((kp) => kp.piece_id));
+  const isKitPiece = (p: any) => piecesInAnyAdjKit.has(p.id) || (!!p.source_piece_id && sourcePiecesInAnyKit.has(p.source_piece_id));
 
   const kitTotalQty = (kitId: string): number => {
     const kpList = params.kitPieces.filter((kp) => kp.kit_id === kitId);
@@ -377,7 +379,7 @@ export async function buildAdjustmentProposalWorkbook(
   // Standalone pieces (not part of any adjustment kit, and not kit_only)
   for (const p of params.pieces) {
     if (p.kit_only) continue;
-    if (piecesInAnyAdjKit.has(p.id)) continue;
+    if (isKitPiece(p)) continue;
     const code = (p.code as number | undefined) ?? Number.MAX_SAFE_INTEGER;
     groups.push({
       code,
@@ -620,6 +622,7 @@ export async function buildAdjustmentProposalWorkbook(
       ...p,
       store_category: p.category,
       specification: p.specification || "",
+      image_url: pieceImageUrl(p),
     }));
 
   // Adjustment kits don't carry codes — synthesize from sourceKitById for matrix labels.
@@ -627,7 +630,7 @@ export async function buildAdjustmentProposalWorkbook(
     .filter((k: any) => !k.is_deleted)
     .map((k: any) => {
       const sk = k.source_kit_id ? sourceKitById.get(k.source_kit_id) : null;
-      return { ...k, code: sk?.code ?? 0 };
+      return { ...k, code: sk?.code ?? 0, image_url: kitImageUrl(k) };
     });
 
   try {
@@ -646,6 +649,7 @@ export async function buildAdjustmentProposalWorkbook(
       reservedSheetNames: new Set(["orçamento", "modificações"]),
       skipDashboard: true,
       skipKitTabs: true,
+      sortByCode: true,
     });
   } catch {
     // Fail-soft: matrix is decorative; never block the export.
