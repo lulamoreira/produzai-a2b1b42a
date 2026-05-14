@@ -164,6 +164,16 @@ export async function buildAdjustmentProposalWorkbook(
   // ── Lookup maps ────────────────────────────────────────────────────────
   const sourceKitById = new Map(params.sourceKits.map((k) => [k.id, k]));
   const sourcePieceById = new Map(params.sourcePieces.map((p) => [p.id, p]));
+  const pieceImageUrl = (p: any): string | null => {
+    const source = p?.source_piece_id ? sourcePieceById.get(p.source_piece_id) : undefined;
+    return pickPieceImageUrl({ ...(source || {}), ...(p || {}) }, "report");
+  };
+  const sourcePieceImageUrl = (sourcePieceId: string): string | null =>
+    pickPieceImageUrl(sourcePieceById.get(sourcePieceId), "report");
+  const kitImageUrl = (k: any): string | null => {
+    const source = k?.source_kit_id ? sourceKitById.get(k.source_kit_id) : undefined;
+    return (k?.image_report_url || k?.image_url || source?.image_url || null) as string | null;
+  };
 
   // Adjustment piece id -> source piece id (and back).
   const adjPieceById = new Map<string, any>();
@@ -201,9 +211,10 @@ export async function buildAdjustmentProposalWorkbook(
     sourcePieceId: string;
     pieceCode: number | undefined;
     pieceName: string;
-    change: "added" | "removed" | "qty";
+    change: "added" | "removed" | "qty" | "modified";
     origQty: number;
     adjQty: number;
+    detail?: string;
   };
   const kitPieceChangesByAdjKit = new Map<string, KitPieceChange[]>();
   for (const k of params.kits) {
