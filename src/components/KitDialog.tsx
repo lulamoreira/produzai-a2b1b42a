@@ -886,7 +886,7 @@ export function KitDetailDialog({
                                 O que deseja fazer com esta peça?
                               </AlertDialogDescription>
                             </AlertDialogHeader>
-                            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                            <AlertDialogFooter className="flex-col sm:flex-row gap-2 flex-wrap">
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => {
@@ -896,6 +896,19 @@ export function KitDetailDialog({
                               >
                                 Manter peça (disponível para kits)
                               </AlertDialogAction>
+                              {onUpdatePiece && (
+                                <AlertDialogAction
+                                  onClick={async () => {
+                                    onDeleteKitPiece(kp.id);
+                                    await onUpdatePiece({ id: p.id, kit_only: false });
+                                    toast.success(`Peça "${p.name}" agora é uma peça normal (fora do kit).`);
+                                  }}
+                                  className="bg-emerald-600 text-white hover:bg-emerald-700"
+                                  title="Remove do kit e converte em peça comum, mantendo o mesmo código"
+                                >
+                                  Tornar peça normal (fora do kit)
+                                </AlertDialogAction>
+                              )}
                               {onDeletePiece && (
                                 <AlertDialogAction
                                   onClick={() => {
