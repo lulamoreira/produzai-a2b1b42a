@@ -70,6 +70,7 @@ export default function AdjustmentBudgetRequestDialog({
   const [sourceKits, setSourceKits] = useState<{ id: string; code: number; name: string }[]>([]);
   const [sourcePieces, setSourcePieces] = useState<{ id: string; code: number; name: string }[]>([]);
   const [originalKitPieces, setOriginalKitPieces] = useState<{ kit_id: string; piece_id: string; quantity: number }[]>([]);
+  const [adjustmentStoresSnapshot, setAdjustmentStoresSnapshot] = useState<any[]>([]);
 
   const { data: pieces = [] } = useAdjustmentPieces(adjustment.id);
   const { data: kits = [] } = useAdjustmentKits(adjustment.id);
@@ -105,7 +106,7 @@ export default function AdjustmentBudgetRequestDialog({
           return;
         }
 
-        const [pricesRes, extrasRes, storesRes, baselineSpRows, srcKitsRes, srcPiecesRes, origKpRows] = await Promise.all([
+        const [pricesRes, extrasRes, storesRes, baselineSpRows, srcKitsRes, srcPiecesRes, origKpRows, snapStoreRows] = await Promise.all([
           supabase.from("budget_prices" as any)
             .select("piece_id, unit_price, adjusted_unit_price")
             .eq("supplier_id", (w as any).id),
@@ -137,6 +138,12 @@ export default function AdjustmentBudgetRequestDialog({
               .select("kit_id, piece_id, quantity")
               .range(from, to) as any
           ),
+          supabasePaginate<any>((from, to) =>
+            supabase.from("campaign_adjustment_stores" as any)
+              .select("source_store_id, name, nickname, city, state, store_code, showcase_count")
+              .eq("adjustment_id", adjustment.id)
+              .range(from, to) as any
+          ),
         ]);
         setPrices(((pricesRes.data as any[]) || []).filter((p) => p.piece_id));
         setExtras({
@@ -157,6 +164,7 @@ export default function AdjustmentBudgetRequestDialog({
           ((origKpRows as any[]) || []).filter((r) => validKitIds.has(r.kit_id))
             .map((r: any) => ({ kit_id: r.kit_id, piece_id: r.piece_id, quantity: Number(r.quantity || 0) }))
         );
+        setAdjustmentStoresSnapshot(((snapStoreRows as any[]) || []));
       } catch (e: any) {
         toast.error(e?.message || "Falha ao carregar dados.");
       } finally {
@@ -176,6 +184,7 @@ export default function AdjustmentBudgetRequestDialog({
       supplier: { id: winner.id, company_name: winner.company_name, contact_name: winner.contact_name },
       pieces, kits, kitPieces, stores,
       sourceKits, sourcePieces, originalKitPieces,
+      adjustmentStoresSnapshot,
       originalStorePieces: origSp,
       adjustmentStorePieces: adjSpFlat,
       currentPrices: prices,
