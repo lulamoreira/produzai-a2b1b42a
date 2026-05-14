@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput, RotateCcw } from "lucide-react";
+import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput, RotateCcw, XCircle } from "lucide-react";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import AdjustmentRegisterResponseDialog from "./AdjustmentRegisterResponseDialog";
 import { Button } from "@/components/ui/button";
@@ -72,6 +72,23 @@ export default function AdjustmentsTab({
   const createMut = useCreateAdjustment();
   const statusMut = useUpdateAdjustmentStatus();
   const deleteMut = useDeleteAdjustment();
+  const qc = useQueryClient();
+
+  const handleCancelResend = async (adjustmentId: string) => {
+    if (!window.confirm("Anular este reenvio? O reorçamento deixará de constar como solicitado e o fornecedor não será notificado dessa ação. (O e-mail já enviado não pode ser recolhido.)")) return;
+    const tId = toast.loading("Anulando reenvio...");
+    try {
+      const { error } = await supabase
+        .from('campaign_adjustment_budget_request' as any)
+        .delete()
+        .eq('adjustment_id', adjustmentId);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ['adjustment_budget_requests', campaignId] });
+      toast.success("Reenvio anulado com sucesso.", { id: tId });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao anular reenvio.", { id: tId });
+    }
+  };
 
   const { data: budgetRequests = [] } = useQuery({
     queryKey: ['adjustment_budget_requests', campaignId],
@@ -287,6 +304,15 @@ export default function AdjustmentsTab({
                           className="h-7 text-xs gap-1.5 border-amber-400 text-amber-700 hover:bg-amber-50"
                         >
                           <FileInput className="w-3.5 h-3.5" /> Registrar Resposta
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCancelResend(a.id)}
+                          className="h-7 text-xs gap-1.5 border-red-300 text-red-700 hover:bg-red-50"
+                          title="Anula a marcação de reorçamento solicitado no sistema (não recolhe o e-mail já enviado)"
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Anular Reenvio
                         </Button>
                       </div>
                     )}
