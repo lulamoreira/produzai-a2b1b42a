@@ -284,6 +284,19 @@ export default function AdjustmentDetailSheet({
     return { rows, totalBase, totalAdj };
   }, [adjStorePieces, baseStorePieces, pieces]);
 
+  // Kit composition changes (pieces added/removed/quantity changed inside each kit).
+  // Compares original `campaign_kit_pieces` (per source_kit_id) against the
+  // adjustment's `campaign_adjustment_kit_pieces` (per adj kit), translating
+  // adjustment piece ids back to source piece ids via `pieces[].source_piece_id`.
+  const adjPieceIdToSrc = useMemo(() => {
+    const m = new Map<string, string | null>();
+    pieces.forEach((p: any) => m.set(p.id, p.source_piece_id ?? null));
+    return m;
+  }, [pieces]);
+  const sourcePiecesInAnyKit = useMemo(() => new Set((origKitPieces as any[]).map((kp) => kp.piece_id)), [origKitPieces]);
+  const adjPiecesInAnyKit = useMemo(() => new Set((adjKitPieces as any[]).map((kp) => kp.piece_id)), [adjKitPieces]);
+  const isPieceInsideKit = (p: any) => adjPiecesInAnyKit.has(p.id) || (!!p.source_piece_id && sourcePiecesInAnyKit.has(p.source_piece_id));
+
   const changedPieceRows = useMemo(() => {
     const out: { code: number | undefined; piece: string; field: string; orig: any; adj: any }[] = [];
     pieces.forEach((p: any) => {
@@ -300,19 +313,6 @@ export default function AdjustmentDetailSheet({
     });
     return out;
   }, [pieces, sourcePiecesInAnyKit, adjPiecesInAnyKit]);
-
-  // Kit composition changes (pieces added/removed/quantity changed inside each kit).
-  // Compares original `campaign_kit_pieces` (per source_kit_id) against the
-  // adjustment's `campaign_adjustment_kit_pieces` (per adj kit), translating
-  // adjustment piece ids back to source piece ids via `pieces[].source_piece_id`.
-  const adjPieceIdToSrc = useMemo(() => {
-    const m = new Map<string, string | null>();
-    pieces.forEach((p: any) => m.set(p.id, p.source_piece_id ?? null));
-    return m;
-  }, [pieces]);
-  const sourcePiecesInAnyKit = useMemo(() => new Set((origKitPieces as any[]).map((kp) => kp.piece_id)), [origKitPieces]);
-  const adjPiecesInAnyKit = useMemo(() => new Set((adjKitPieces as any[]).map((kp) => kp.piece_id)), [adjKitPieces]);
-  const isPieceInsideKit = (p: any) => adjPiecesInAnyKit.has(p.id) || (!!p.source_piece_id && sourcePiecesInAnyKit.has(p.source_piece_id));
 
   const changedKitPieceRows = useMemo(() => {
     type Row = { kitCode: number | undefined; kitName: string; pieceCode: number | undefined; pieceName: string; change: "added" | "removed" | "qty" | "modified"; origQty: number; adjQty: number };
