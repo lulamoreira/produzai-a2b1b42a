@@ -138,6 +138,12 @@ export default function AdjustmentBudgetRequestDialog({
               .select("kit_id, piece_id, quantity")
               .range(from, to) as any
           ),
+          supabasePaginate<any>((from, to) =>
+            supabase.from("campaign_adjustment_stores" as any)
+              .select("source_store_id, name, nickname, city, state, store_code, showcase_count")
+              .eq("adjustment_id", adjustment.id)
+              .range(from, to) as any
+          ),
         ]);
         setPrices(((pricesRes.data as any[]) || []).filter((p) => p.piece_id));
         setExtras({
