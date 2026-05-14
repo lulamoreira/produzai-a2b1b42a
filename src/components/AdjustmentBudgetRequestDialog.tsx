@@ -15,6 +15,7 @@ import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
 import { SendSummaryPanel, type SendSummaryItem } from "@/components/Budget/SendSummaryPanel";
 import {
   buildAdjustmentProposalWorkbook,
+  computeAdjustmentStoreChanges,
   summarizeAdjustmentChanges,
 } from "@/lib/buildAdjustmentProposalWorkbook";
 import {
@@ -78,8 +79,13 @@ export default function AdjustmentBudgetRequestDialog({
   const { data: adjSp = [] } = useAdjustmentStorePieces(adjustment.id);
 
   const summary = useMemo(() => summarizeAdjustmentChanges(pieces), [pieces]);
+  const storeChanges = useMemo(
+    () => computeAdjustmentStoreChanges(stores as any[], adjustmentStoresSnapshot as any[], origSp as any[]),
+    [stores, adjustmentStoresSnapshot, origSp],
+  );
   const changesDescription =
-    `${summary.modified} peça(s) modificada(s), ${summary.added} nova(s), ${summary.removed} removida(s)`;
+    `${summary.modified} peça(s) modificada(s), ${summary.added} nova(s), ${summary.removed} removida(s); ` +
+    `${storeChanges.added.length} loja(s) adicionada(s), ${storeChanges.removed.length} removida(s)`;
 
   useEffect(() => {
     if (!open) return;
@@ -115,7 +121,7 @@ export default function AdjustmentBudgetRequestDialog({
             .eq("supplier_id", (w as any).id).maybeSingle(),
           _clientId
             ? supabase.from("client_stores" as any)
-                .select("id, name, nickname, city, state, showcase_count").eq("client_id", _clientId)
+                .select("id, name, nickname, city, state, store_code, showcase_count").eq("client_id", _clientId)
             : Promise.resolve({ data: [], error: null } as any),
           // Use negotiation rateio as the baseline whenever it exists; otherwise fall back to original.
           useNegotiationBaseline
