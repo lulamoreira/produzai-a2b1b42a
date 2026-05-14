@@ -158,9 +158,10 @@ export function computeAdjustmentStoreChanges(
   const changeMap = new Map<string, "added" | "removed">();
 
   for (const s of currentStores) {
-    const missingFromSnapshot = snapshotById.size > 0 && !snapshotById.has(s.id);
-    const missingFromBaseline = baselineIds.size > 0 && !baselineIds.has(s.id);
-    if (missingFromSnapshot || missingFromBaseline) {
+    const isAdded = snapshotById.size > 0
+      ? !snapshotById.has(s.id)
+      : baselineIds.size > 0 && !baselineIds.has(s.id);
+    if (isAdded) {
       addedById.set(s.id, s);
       changeMap.set(s.id, "added");
     }
