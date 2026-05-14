@@ -695,8 +695,21 @@ export async function buildAdjustmentProposalWorkbook(
       return { ...k, code: sk?.code ?? 0, image_url: kitImageUrl(k) };
     });
 
+  // Build a change map (item id -> change kind) so the matrix tab can
+  // visually highlight pieces/kits that were altered in this adjustment.
+  const matrixChangeMap = new Map<string, "added" | "removed" | "modified" | "qty">();
+  for (const p of matrixPieces) {
+    const k = isPieceChanged(p);
+    if (k !== "unchanged") matrixChangeMap.set(p.id, k as any);
+  }
+  for (const k of matrixKits) {
+    const ck = isKitChanged(k);
+    if (ck !== "unchanged") matrixChangeMap.set(k.id, ck as any);
+  }
+
+  let matrixSheetName: string | null = null;
   try {
-    await appendMatrixSheets(wb, {
+    matrixSheetName = await appendMatrixSheets(wb, {
       stores: params.stores as any,
       pieces: matrixPieces as any,
       qtyMap: matrixQtyMap,
@@ -712,9 +725,19 @@ export async function buildAdjustmentProposalWorkbook(
       skipDashboard: true,
       skipKitTabs: true,
       sortByCode: true,
-    });
+      changeMap: matrixChangeMap,
+    } as any) ?? null;
   } catch {
     // Fail-soft: matrix is decorative; never block the export.
+  }
+
+  // Append legend at the bottom of the matrix sheet too
+  if (matrixSheetName) {
+    const matrixWs = wb.getWorksheet(matrixSheetName);
+    if (matrixWs) {
+      matrixWs.addRow([]);
+      writeLegend(matrixWs, "F");
+    }
   }
 
   // ─────────────────────────────────────────────────────────
