@@ -21,6 +21,7 @@ import {
   useAdjustmentPieces,
   useAdjustmentKits,
   useAdjustmentStorePieces,
+  useAdjustmentStores,
   useUpdateAdjustmentPiece,
   useAddAdjustmentPiece,
   useRestoreAdjustmentPiece,
@@ -62,6 +63,37 @@ export default function AdjustmentDetailSheet({
   const { data: pieces = [], isLoading: piecesLoading } = useAdjustmentPieces(adjustment.id);
   const { data: kits = [], isLoading: kitsLoading } = useAdjustmentKits(adjustment.id);
   const { data: adjStorePieces = [] } = useAdjustmentStorePieces(adjustment.id);
+  const { data: adjStoresSnapshot = [] } = useAdjustmentStores(adjustment.id);
+
+  // Current client stores (to compute added/removed compared to snapshot)
+  const { data: currentStores = [] } = useQuery({
+    queryKey: ["adjustment_current_client_stores", campaignId],
+    enabled: open && !!campaignId,
+    queryFn: async () => {
+      const { data: campRow } = await supabase
+        .from("campaigns").select("client_id").eq("id", campaignId).maybeSingle();
+      const clientId = (campRow as any)?.client_id;
+      if (!clientId) return [] as any[];
+      return supabasePaginate<any>((from, to) =>
+        supabase
+          .from("client_stores")
+          .select("id, name, nickname, city, state, store_code, showcase_count")
+          .eq("client_id", clientId)
+          .range(from, to) as any
+      );
+    },
+  });
+
+  const storeChanges = useMemo(() => {
+    const snap = adjStoresSnapshot as any[];
+    const cur = currentStores as any[];
+    const snapBySrc = new Map<string, any>();
+    snap.forEach((s) => { if (s.source_store_id) snapBySrc.set(s.source_store_id, s); });
+    const curIds = new Set<string>(cur.map((s) => s.id));
+    const added = cur.filter((s) => !snapBySrc.has(s.id));
+    const removed = snap.filter((s) => s.source_store_id && !curIds.has(s.source_store_id));
+    return { added, removed };
+  }, [adjStoresSnapshot, currentStores]);
 
   // Source kits (for code lookup — adjustment kits don't carry the code field).
   const { data: sourceKits = [] } = useQuery({
@@ -428,6 +460,14 @@ export default function AdjustmentDetailSheet({
           <TabsList>
             <TabsTrigger value="pieces">Peças</TabsTrigger>
             <TabsTrigger value="kits">Kits</TabsTrigger>
+            <TabsTrigger value="stores">
+              Lojas
+              {(storeChanges.added.length + storeChanges.removed.length) > 0 && (
+                <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">
+                  {storeChanges.added.length + storeChanges.removed.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="compare">Comparativo</TabsTrigger>
           </TabsList>
 
@@ -626,13 +666,101 @@ export default function AdjustmentDetailSheet({
             )}
           </TabsContent>
 
+          {/* STORES TAB */}
+          <TabsContent value="stores" className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="border rounded-md p-3">
+                <p className="text-[11px] text-muted-foreground">Lojas adicionadas</p>
+                <p className="text-lg font-bold text-emerald-600">+{storeChanges.added.length}</p>
+              </div>
+              <div className="border rounded-md p-3">
+                <p className="text-[11px] text-muted-foreground">Lojas removidas</p>
+                <p className="text-lg font-bold text-destructive">-{storeChanges.removed.length}</p>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-semibold mb-1 flex items-center gap-2">
+                Lojas adicionadas <Badge className="bg-emerald-600 text-white">{storeChanges.added.length}</Badge>
+              </h3>
+              <div className="border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Código</TableHead>
+                      <TableHead className="text-xs">Nome</TableHead>
+                      <TableHead className="text-xs">Apelido</TableHead>
+                      <TableHead className="text-xs">Cidade/UF</TableHead>
+                      <TableHead className="text-xs text-right">Vitrines</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {storeChanges.added.length === 0 && (
+                      <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-4">Nenhuma loja adicionada após a criação do ajuste.</TableCell></TableRow>
+                    )}
+                    {storeChanges.added.map((s: any) => (
+                      <TableRow key={s.id} className="bg-emerald-50/40 dark:bg-emerald-950/20">
+                        <TableCell className="text-xs font-mono">{s.store_code || "—"}</TableCell>
+                        <TableCell className="text-xs font-medium">{s.name}</TableCell>
+                        <TableCell className="text-xs">{s.nickname || "—"}</TableCell>
+                        <TableCell className="text-xs">{[s.city, s.state].filter(Boolean).join(" / ") || "—"}</TableCell>
+                        <TableCell className="text-xs text-right">{Number(s.showcase_count || 0)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-semibold mb-1 flex items-center gap-2">
+                Lojas removidas <Badge className="bg-destructive text-destructive-foreground">{storeChanges.removed.length}</Badge>
+              </h3>
+              <div className="border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Código</TableHead>
+                      <TableHead className="text-xs">Nome</TableHead>
+                      <TableHead className="text-xs">Apelido</TableHead>
+                      <TableHead className="text-xs">Cidade/UF</TableHead>
+                      <TableHead className="text-xs text-right">Vitrines</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {storeChanges.removed.length === 0 && (
+                      <TableRow><TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-4">Nenhuma loja removida desde a criação do ajuste.</TableCell></TableRow>
+                    )}
+                    {storeChanges.removed.map((s: any) => (
+                      <TableRow key={s.id} className="bg-destructive/5 opacity-80">
+                        <TableCell className="text-xs font-mono line-through">{s.store_code || "—"}</TableCell>
+                        <TableCell className="text-xs font-medium line-through">{s.name}</TableCell>
+                        <TableCell className="text-xs line-through">{s.nickname || "—"}</TableCell>
+                        <TableCell className="text-xs">{[s.city, s.state].filter(Boolean).join(" / ") || "—"}</TableCell>
+                        <TableCell className="text-xs text-right">{Number(s.showcase_count || 0)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
           {/* COMPARE TAB */}
           <TabsContent value="compare" className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               <div className="border rounded-md p-3"><p className="text-[11px] text-muted-foreground">Modificadas</p><p className="text-lg font-bold text-amber-600">{counts.modified}</p></div>
               <div className="border rounded-md p-3"><p className="text-[11px] text-muted-foreground">Novas</p><p className="text-lg font-bold text-emerald-600">{counts.added}</p></div>
               <div className="border rounded-md p-3"><p className="text-[11px] text-muted-foreground">Removidas</p><p className="text-lg font-bold text-destructive">{counts.removed}</p></div>
               <div className="border rounded-md p-3"><p className="text-[11px] text-muted-foreground">Kits alterados</p><p className="text-lg font-bold">{counts.kitsChanged}</p></div>
+              <div className="border rounded-md p-3">
+                <p className="text-[11px] text-muted-foreground">Lojas alteradas</p>
+                <p className="text-lg font-bold">
+                  <span className="text-emerald-600">+{storeChanges.added.length}</span>
+                  <span className="text-muted-foreground mx-1">/</span>
+                  <span className="text-destructive">-{storeChanges.removed.length}</span>
+                </p>
+              </div>
             </div>
 
             <div className="flex justify-end">
