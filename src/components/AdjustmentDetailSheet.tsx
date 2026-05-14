@@ -21,6 +21,7 @@ import {
   useAdjustmentPieces,
   useAdjustmentKits,
   useAdjustmentStorePieces,
+  useAdjustmentStores,
   useUpdateAdjustmentPiece,
   useAddAdjustmentPiece,
   useRestoreAdjustmentPiece,
