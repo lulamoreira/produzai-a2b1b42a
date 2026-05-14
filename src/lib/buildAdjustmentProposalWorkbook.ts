@@ -1083,6 +1083,7 @@ export async function buildAdjustmentProposalWorkbook(
     }
   }
 
+  ws3.columns = [
     { width: 14 },
     { width: 12 },
     { width: 36 },
