@@ -63,6 +63,37 @@ export default function AdjustmentDetailSheet({
   const { data: pieces = [], isLoading: piecesLoading } = useAdjustmentPieces(adjustment.id);
   const { data: kits = [], isLoading: kitsLoading } = useAdjustmentKits(adjustment.id);
   const { data: adjStorePieces = [] } = useAdjustmentStorePieces(adjustment.id);
+  const { data: adjStoresSnapshot = [] } = useAdjustmentStores(adjustment.id);
+
+  // Current client stores (to compute added/removed compared to snapshot)
+  const { data: currentStores = [] } = useQuery({
+    queryKey: ["adjustment_current_client_stores", campaignId],
+    enabled: open && !!campaignId,
+    queryFn: async () => {
+      const { data: campRow } = await supabase
+        .from("campaigns").select("client_id").eq("id", campaignId).maybeSingle();
+      const clientId = (campRow as any)?.client_id;
+      if (!clientId) return [] as any[];
+      return supabasePaginate<any>((from, to) =>
+        supabase
+          .from("client_stores")
+          .select("id, name, nickname, city, state, store_code, showcase_count")
+          .eq("client_id", clientId)
+          .range(from, to) as any
+      );
+    },
+  });
+
+  const storeChanges = useMemo(() => {
+    const snap = adjStoresSnapshot as any[];
+    const cur = currentStores as any[];
+    const snapBySrc = new Map<string, any>();
+    snap.forEach((s) => { if (s.source_store_id) snapBySrc.set(s.source_store_id, s); });
+    const curIds = new Set<string>(cur.map((s) => s.id));
+    const added = cur.filter((s) => !snapBySrc.has(s.id));
+    const removed = snap.filter((s) => s.source_store_id && !curIds.has(s.source_store_id));
+    return { added, removed };
+  }, [adjStoresSnapshot, currentStores]);
 
   // Source kits (for code lookup — adjustment kits don't carry the code field).
   const { data: sourceKits = [] } = useQuery({
