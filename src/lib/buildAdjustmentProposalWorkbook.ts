@@ -897,9 +897,20 @@ export async function buildAdjustmentProposalWorkbook(
     }));
 
   // Adjustment kits don't carry codes — synthesize from sourceKitById for matrix labels.
-  // Removed kits must NOT appear in the Matriz Lojas x Peças tab.
+  // Removed/empty kits must NOT appear in the Matriz Lojas x Peças tab. A kit is
+  // considered empty when it has no remaining live (non-deleted) component pieces
+  // OR when the resolved kit quantity (min over component qtys) is zero.
   const matrixKits = params.kits
     .filter((k: any) => !k.is_deleted && isKitChanged(k) !== "removed")
+    .filter((k: any) => {
+      const liveKp = params.kitPieces.filter((kp) => {
+        if (kp.kit_id !== k.id) return false;
+        const adjP = adjPieceById.get(kp.piece_id);
+        return !!adjP && !adjP.is_deleted;
+      });
+      if (liveKp.length === 0) return false;
+      return kitTotalQty(k.id) > 0;
+    })
     .map((k: any) => {
       const sk = k.source_kit_id ? sourceKitById.get(k.source_kit_id) : null;
       return { ...k, code: sk?.code ?? 0, image_url: kitImageUrl(k) };
