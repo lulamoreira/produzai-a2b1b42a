@@ -3,6 +3,7 @@ import { Send, Loader2, MessageCircle, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -42,6 +43,7 @@ export default function AdjustmentBudgetRequestDialog({
   winnerSupplierId, hasNegotiationRateio,
 }: Props) {
   const useNegotiationBaseline = !!(hasNegotiationRateio && winnerSupplierId);
+  const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [preparingPreview, setPreparingPreview] = useState(false);
@@ -209,6 +211,7 @@ export default function AdjustmentBudgetRequestDialog({
       status: "submitted",
       request_sent_at: new Date().toISOString(),
     } as any, { onConflict: "adjustment_id,supplier_id" } as any);
+    await qc.invalidateQueries({ queryKey: ['adjustment_budget_requests', campaignId] });
   };
 
   const buildTemplateData = (link: { name: string; url: string }): Record<string, any> => ({
