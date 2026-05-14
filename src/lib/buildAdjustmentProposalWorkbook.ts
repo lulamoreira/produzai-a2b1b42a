@@ -323,7 +323,9 @@ export async function buildAdjustmentProposalWorkbook(
 
   // Final store list for the matrix: ONLY current stores (removed stores
   // appear only in the "Modificações / Comparação" sheet, not in the matrix).
-  const matrixStores: DisplayStore[] = [...params.stores];
+  const matrixStores: DisplayStore[] = [...params.stores].sort(
+    (a, b) => (a.state || "").localeCompare(b.state || "", "pt-BR") || (a.name || "").localeCompare(b.name || "", "pt-BR")
+  );
 
   // For the matrix highlight we only mark added stores (they are present in
   // the matrix). Removed stores are not in the matrix, so they don't need highlighting there.
