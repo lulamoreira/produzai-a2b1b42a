@@ -309,6 +309,9 @@ export default function AdjustmentDetailSheet({
     pieces.forEach((p: any) => m.set(p.id, p.source_piece_id ?? null));
     return m;
   }, [pieces]);
+  const sourcePiecesInAnyKit = useMemo(() => new Set((origKitPieces as any[]).map((kp) => kp.piece_id)), [origKitPieces]);
+  const adjPiecesInAnyKit = useMemo(() => new Set((adjKitPieces as any[]).map((kp) => kp.piece_id)), [adjKitPieces]);
+  const isPieceInsideKit = (p: any) => adjPiecesInAnyKit.has(p.id) || (!!p.source_piece_id && sourcePiecesInAnyKit.has(p.source_piece_id));
 
   const changedKitPieceRows = useMemo(() => {
     type Row = { kitCode: number | undefined; kitName: string; pieceCode: number | undefined; pieceName: string; change: "added" | "removed" | "qty"; origQty: number; adjQty: number };
@@ -325,6 +328,8 @@ export default function AdjustmentDetailSheet({
       // Build adjustment composition mapped to source piece ids
       const adjMapKp = new Map<string, number>();
       (adjKitPieces as any[]).filter((kp) => kp.kit_id === k.id).forEach((kp) => {
+        const adjPiece = (pieces as any[]).find((p: any) => p.id === kp.piece_id);
+        if (adjPiece?.is_deleted || adjPiece?.change_type === "removed") return;
         const srcPid = adjPieceIdToSrc.get(kp.piece_id) ?? kp.piece_id;
         adjMapKp.set(srcPid as string, Number(kp.quantity || 0));
       });
@@ -333,7 +338,9 @@ export default function AdjustmentDetailSheet({
       allPids.forEach((pid) => {
         const o = origMap.get(pid) ?? 0;
         const a = adjMapKp.get(pid) ?? 0;
-        if (o === a) return;
+        const adjPiece = (pieces as any[]).find((p: any) => p.source_piece_id === pid);
+        const fieldsChanged = adjPiece?.change_type === "modified" && isPieceInsideKit(adjPiece);
+        if (o === a && !fieldsChanged) return;
         const meta = pieceMetaBySourceId.get(pid);
         const row: Row = {
           kitCode,
