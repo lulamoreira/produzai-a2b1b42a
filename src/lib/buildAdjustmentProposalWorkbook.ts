@@ -711,6 +711,23 @@ export async function buildAdjustmentProposalWorkbook(
   ];
   ws1.views = [{ state: "frozen", ySplit: headerRowIdx }];
 
+  // Protect sheet so supplier can only edit yellow input cells
+  // (Novo Preço Unit. / Novo Total / Instalação / Frete reorçados).
+  // Cells flagged with `protection.locked = false` above stay editable.
+  await ws1.protect("", {
+    selectLockedCells: true,
+    selectUnlockedCells: true,
+    formatCells: false,
+    formatColumns: false,
+    formatRows: false,
+    insertRows: false,
+    insertColumns: false,
+    deleteRows: false,
+    deleteColumns: false,
+    sort: false,
+    autoFilter: false,
+  } as any);
+
   // ─────────────────────────────────────────────────────────
   // SHEET 2 — Matriz Lojas x Peças (mesmo formato do Rateio)
   // ─────────────────────────────────────────────────────────
