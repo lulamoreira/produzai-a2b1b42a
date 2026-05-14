@@ -732,8 +732,25 @@ export async function buildAdjustmentProposalWorkbook(
   // SHEET 2 — Matriz Lojas x Peças (mesmo formato do Rateio)
   // ─────────────────────────────────────────────────────────
   const matrixQtyMap: Record<string, number> = {};
+  // 1) Adjustment rateio (overrides baseline for explicitly changed pieces).
   for (const sp of params.adjustmentStorePieces) {
     matrixQtyMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity || 0);
+  }
+  // 2) Fallback for kit-internal pieces that have NO entry in adjustmentStorePieces:
+  //    use the baseline qty (negotiation when present, otherwise original) mapped
+  //    from the source piece id to the adjustment piece id used by kit_pieces.
+  //    This prevents modified kits (metadata-only) from showing rateio = 0 in the
+  //    Matriz Lojas x Peças tab. The standard rule applies: if the user did not
+  //    manually change the kit's rateio, we keep the previous rateio as-is.
+  for (const kp of params.kitPieces) {
+    const adjP = adjPieceById.get(kp.piece_id);
+    if (!adjP || !adjP.source_piece_id) continue;
+    for (const sp of params.originalStorePieces) {
+      if (sp.piece_id !== adjP.source_piece_id) continue;
+      const key = `${sp.store_id}-${kp.piece_id}`;
+      if (matrixQtyMap[key] !== undefined) continue;
+      matrixQtyMap[key] = Number(sp.quantity || 0);
+    }
   }
   // Filter pieces to those displayed (non-kit_only, not deleted)
   const matrixPieces = params.pieces
