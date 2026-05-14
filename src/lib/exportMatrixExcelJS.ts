@@ -524,7 +524,34 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
     }
   }
 
-  // Kit tabs
+  // Apply store-row highlights (added/removed stores)
+  if (storeChangeMap && storeChangeMap.size > 0) {
+    const STORE_META_COLS = Math.max(effectiveStoreFields.length, 1);
+    const META_ROWS = META_LABELS.length;
+    const firstStoreRow = META_ROWS + 2 + 1; // meta rows + title + stores header
+    const lastCol = STORE_META_COLS + allColumns.length;
+    const storeTone: Record<string, { bg: string; font: string }> = {
+      added:   { bg: "FFD1FAE5", font: "FF065F46" }, // green
+      removed: { bg: "FFFEE2E2", font: "FF991B1B" }, // red
+    };
+    for (let si = 0; si < stores.length; si++) {
+      const kind = storeChangeMap.get(stores[si].id);
+      if (!kind) continue;
+      const tone = storeTone[kind];
+      const rowNum = firstStoreRow + si;
+      for (let colNum = 1; colNum <= lastCol; colNum++) {
+        const cell = ws.getCell(rowNum, colNum);
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: tone.bg } };
+        const baseFont = (cell.font || {}) as any;
+        cell.font = {
+          ...baseFont,
+          color: { argb: tone.font },
+          bold: colNum === 1 ? true : baseFont.bold,
+          strike: kind === "removed",
+        };
+      }
+    }
+  }
   if (skipKitTabs) {
     if (skipDashboard || !dashboardSheetName) return mainSheetName;
   }
