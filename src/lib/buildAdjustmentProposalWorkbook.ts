@@ -74,7 +74,20 @@ export interface AdjustmentProposalParams {
   /** Original kit composition (campaign_kit_pieces) for change detection. */
   originalKitPieces: { kit_id: string; piece_id: string; quantity: number }[];
 
+  /** Current live stores (from client_stores). */
   stores: { id: string; name: string; nickname?: string | null; city?: string | null; state?: string | null; showcase_count?: number | null }[];
+
+  /** Snapshot of stores at adjustment creation (campaign_adjustment_stores).
+   *  Used to detect added/removed stores between the adjustment baseline and now. */
+  adjustmentStoresSnapshot?: {
+    source_store_id: string | null;
+    name: string;
+    nickname?: string | null;
+    city?: string | null;
+    state?: string | null;
+    store_code?: string | null;
+    showcase_count?: number | null;
+  }[];
 
   /** Previous rateio (negotiation when it exists, otherwise original campaign rateio).
    *  piece_id refers to the **source** (campaign_pieces) id. */
@@ -147,6 +160,8 @@ function writeLegend(ws: any, lastColLetter: string) {
     { bg: CHANGE_BG, font: CHANGE_FONT, label: "Modificada", desc: "Item ou quantidade alterada nesta solicitação." },
     { bg: ADDED_BG, font: ADDED_FONT, label: "Nova", desc: "Item incluído neste reorçamento." },
     { bg: REMOVED_BG, font: REMOVED_FONT, label: "Removida", desc: "Item removido neste reorçamento." },
+    { bg: "FFD1FAE5", font: "FF065F46", label: "Loja nova", desc: "Loja incluída após o orçamento original (linha verde na Matriz)." },
+    { bg: "FFFEE2E2", font: "FF991B1B", label: "Loja removida", desc: "Loja excluída após o orçamento original (linha vermelha riscada na Matriz)." },
   ];
   const titleRow = ws.addRow(["Legenda de cores"]);
   ws.mergeCells(`A${titleRow.number}:${lastColLetter}${titleRow.number}`);
@@ -214,7 +229,48 @@ export async function buildAdjustmentProposalWorkbook(
     return (k?.image_report_url || k?.image_url || source?.image_url || null) as string | null;
   };
 
-  // Adjustment piece id -> source piece id (and back).
+  // ── Store diff (added/removed) ────────────────────────────────────────
+  // Compare snapshot (taken at adjustment creation) vs current live stores.
+  const snapshotStores = params.adjustmentStoresSnapshot ?? [];
+  const currentStoreIds = new Set(params.stores.map((s) => s.id));
+  const snapshotIds = new Set(snapshotStores.map((s) => s.source_store_id).filter(Boolean) as string[]);
+
+  type StoreChange = "added" | "removed";
+  const storeChangeMap = new Map<string, StoreChange>();
+  type DisplayStore = { id: string; name: string; nickname?: string | null; city?: string | null; state?: string | null; showcase_count?: number | null };
+  const removedStores: DisplayStore[] = [];
+  const addedStores: DisplayStore[] = [];
+
+  if (snapshotStores.length > 0) {
+    // Removed: in snapshot, not in current.
+    for (const s of snapshotStores) {
+      if (!s.source_store_id) continue;
+      if (!currentStoreIds.has(s.source_store_id)) {
+        storeChangeMap.set(s.source_store_id, "removed");
+        removedStores.push({
+          id: s.source_store_id,
+          name: s.name,
+          nickname: s.nickname ?? null,
+          city: s.city ?? null,
+          state: s.state ?? null,
+          showcase_count: s.showcase_count ?? 0,
+        });
+      }
+    }
+    // Added: in current, not in snapshot.
+    for (const s of params.stores) {
+      if (!snapshotIds.has(s.id)) {
+        storeChangeMap.set(s.id, "added");
+        addedStores.push(s);
+      }
+    }
+  }
+
+  // Final store list for the matrix: current + removed (so the supplier sees them).
+  const matrixStores: DisplayStore[] = [
+    ...params.stores,
+    ...removedStores,
+  ];
   const adjPieceById = new Map<string, any>();
   const adjBySourcePieceId = new Map<string, any>();
   for (const p of params.pieces) {
@@ -796,7 +852,7 @@ export async function buildAdjustmentProposalWorkbook(
   let matrixSheetName: string | null = null;
   try {
     matrixSheetName = await appendMatrixSheets(wb, {
-      stores: params.stores as any,
+      stores: matrixStores as any,
       pieces: matrixPieces as any,
       qtyMap: matrixQtyMap,
       campaignName: params.campaignName,
@@ -812,6 +868,7 @@ export async function buildAdjustmentProposalWorkbook(
       skipKitTabs: true,
       sortByCode: true,
       changeMap: matrixChangeMap,
+      storeChangeMap,
     } as any) ?? null;
   } catch {
     // Fail-soft: matrix is decorative; never block the export.
@@ -1001,6 +1058,28 @@ export async function buildAdjustmentProposalWorkbook(
         r.getCell(3).font = { italic: true, color: { argb: GREY } };
         await addImageToCell(ws3, r.number, 1, sourcePieceImageUrl(ch.sourcePieceId));
       }
+    }
+  }
+
+  // ── Section 3: Lojas (added & removed) ───────────────────────────────
+  ws3.addRow([]);
+  writeSectionTitle("Lojas (adicionadas e removidas)");
+  writeTableHeader(["—", "Loja", "Cidade/UF", "Código", "Vitrines", "Alteração", "Detalhe"]);
+  if (addedStores.length === 0 && removedStores.length === 0) {
+    const r = ws3.addRow(["—", "Nenhuma loja adicionada ou removida desde o orçamento original.", "", "", "", "", ""]);
+    ws3.mergeCells(`B${r.number}:G${r.number}`);
+    r.getCell(2).font = { italic: true, color: { argb: GREY } };
+    styleDataRow(r, "unchanged");
+  } else {
+    for (const s of addedStores) {
+      const r = ws3.addRow(["", s.name, [s.city, s.state].filter(Boolean).join("/"), "", Number(s.showcase_count || 0), "Nova", "Loja incluída após o orçamento original."]);
+      styleDataRow(r, "added");
+      r.height = 28;
+    }
+    for (const s of removedStores) {
+      const r = ws3.addRow(["", s.name, [s.city, s.state].filter(Boolean).join("/"), "", Number(s.showcase_count || 0), "Removida", "Loja excluída após o orçamento original."]);
+      styleDataRow(r, "removed");
+      r.height = 28;
     }
   }
 

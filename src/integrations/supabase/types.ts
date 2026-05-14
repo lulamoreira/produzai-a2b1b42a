@@ -875,6 +875,65 @@ export type Database = {
           },
         ]
       }
+      campaign_adjustment_stores: {
+        Row: {
+          adjustment_id: string
+          change_type: string
+          city: string | null
+          created_at: string
+          id: string
+          is_deleted: boolean
+          is_new: boolean
+          name: string
+          nickname: string | null
+          original_snapshot: Json | null
+          showcase_count: number
+          source_store_id: string | null
+          state: string | null
+          store_code: string | null
+        }
+        Insert: {
+          adjustment_id: string
+          change_type?: string
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          is_new?: boolean
+          name: string
+          nickname?: string | null
+          original_snapshot?: Json | null
+          showcase_count?: number
+          source_store_id?: string | null
+          state?: string | null
+          store_code?: string | null
+        }
+        Update: {
+          adjustment_id?: string
+          change_type?: string
+          city?: string | null
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          is_new?: boolean
+          name?: string
+          nickname?: string | null
+          original_snapshot?: Json | null
+          showcase_count?: number
+          source_store_id?: string | null
+          state?: string | null
+          store_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_adjustment_stores_adjustment_id_fkey"
+            columns: ["adjustment_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_adjustments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_adjustments: {
         Row: {
           approved_at: string | null

@@ -118,6 +118,22 @@ export function useAdjustmentKitPieces(adjustmentId: string | undefined) {
   });
 }
 
+export function useAdjustmentStores(adjustmentId: string | undefined) {
+  return useQuery({
+    queryKey: ["adjustment_stores", adjustmentId],
+    enabled: !!adjustmentId,
+    queryFn: async () => {
+      return supabasePaginate<any>((from, to) =>
+        supabase
+          .from("campaign_adjustment_stores" as any)
+          .select("*")
+          .eq("adjustment_id", adjustmentId!)
+          .range(from, to) as any
+      );
+    },
+  });
+}
+
 export function useCreateAdjustment() {
   const qc = useQueryClient();
   return useMutation({
@@ -241,6 +257,38 @@ export function useCreateAdjustment() {
           .from("campaign_adjustment_store_pieces")
           .insert(spPayload.slice(i, i + 500) as any);
         if (error) throw error;
+      }
+
+      // Snapshot the campaign's current store list (so we can later detect
+      // stores that were added or removed AFTER the adjustment was created).
+      try {
+        const { data: campRow } = await supabase
+          .from("campaigns").select("client_id").eq("id", params.campaignId).maybeSingle();
+        const _clientId = (campRow as any)?.client_id;
+        if (_clientId) {
+          const { data: storeRows } = await supabase
+            .from("client_stores")
+            .select("id, name, nickname, city, state, store_code, showcase_count")
+            .eq("client_id", _clientId);
+          const storesPayload = ((storeRows as any[]) || []).map((s) => ({
+            adjustment_id: adjustmentId,
+            source_store_id: s.id,
+            name: s.name,
+            nickname: s.nickname || null,
+            city: s.city || null,
+            state: s.state || null,
+            store_code: s.store_code || null,
+            showcase_count: Number(s.showcase_count || 0),
+            change_type: "unchanged" as const,
+            original_snapshot: s,
+          }));
+          for (let i = 0; i < storesPayload.length; i += 500) {
+            await supabase.from("campaign_adjustment_stores" as any)
+              .insert(storesPayload.slice(i, i + 500) as any);
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to snapshot stores for adjustment", e);
       }
 
       return adj as any;
