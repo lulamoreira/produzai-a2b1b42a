@@ -409,7 +409,10 @@ export async function buildAdjustmentProposalWorkbook(
   // ─────────────────────────────────────────────────────────
   const ws1 = wb.addWorksheet("Orçamento", { views: [{ showGridLines: false }] });
 
-  ws1.mergeCells("A1:H1");
+  const TOTAL_COLS = 9;
+  const lastColLetter = "I";
+
+  ws1.mergeCells(`A1:${lastColLetter}1`);
   const t1 = ws1.getCell("A1");
   t1.value = [params.agencyName, params.clientName].filter(Boolean).join(" | ") || "ProduzAI";
   t1.font = { name: "Arial", size: 10, color: { argb: WHITE } };
@@ -417,7 +420,7 @@ export async function buildAdjustmentProposalWorkbook(
   t1.alignment = { horizontal: "center", vertical: "middle" };
   ws1.getRow(1).height = 20;
 
-  ws1.mergeCells("A2:H2");
+  ws1.mergeCells(`A2:${lastColLetter}2`);
   const t2 = ws1.getCell("A2");
   t2.value = `${(params.campaignName || "").toUpperCase()} — REORÇAMENTO`;
   t2.font = { name: "Arial", size: 14, bold: true, color: { argb: WHITE } };
@@ -425,7 +428,7 @@ export async function buildAdjustmentProposalWorkbook(
   t2.alignment = { horizontal: "center", vertical: "middle" };
   ws1.getRow(2).height = 26;
 
-  ws1.mergeCells("A3:H3");
+  ws1.mergeCells(`A3:${lastColLetter}3`);
   const t3 = ws1.getCell("A3");
   t3.value = `Fornecedor: ${params.supplier.company_name} · Ajuste: ${params.adjustment.name}`;
   t3.font = { name: "Arial", size: 11, bold: true, color: { argb: DARK } };
@@ -445,7 +448,8 @@ export async function buildAdjustmentProposalWorkbook(
     "Qtd Total",
     "Preço Atual",
     "Total Atual",
-    "Novo Preço",
+    "Novo Preço Unit.",
+    "Novo Total",
   ];
   header.height = 24;
   header.eachCell((cell) => {
