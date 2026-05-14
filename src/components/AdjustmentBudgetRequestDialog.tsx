@@ -106,7 +106,7 @@ export default function AdjustmentBudgetRequestDialog({
           return;
         }
 
-        const [pricesRes, extrasRes, storesRes, baselineSpRows, srcKitsRes, srcPiecesRes, origKpRows] = await Promise.all([
+        const [pricesRes, extrasRes, storesRes, baselineSpRows, srcKitsRes, srcPiecesRes, origKpRows, snapStoreRows] = await Promise.all([
           supabase.from("budget_prices" as any)
             .select("piece_id, unit_price, adjusted_unit_price")
             .eq("supplier_id", (w as any).id),
