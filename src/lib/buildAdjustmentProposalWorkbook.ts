@@ -503,6 +503,7 @@ export async function buildAdjustmentProposalWorkbook(
           unitPrice: null,
           lineTotal: 0,
           change: isKitChanged(k),
+          imageUrl: kitImageUrl(k),
         });
         // Kit pieces — emit in ascending piece code order
         const kpEntries = params.kitPieces
@@ -527,6 +528,7 @@ export async function buildAdjustmentProposalWorkbook(
             lineTotal: price * qty,
             change: isPieceChanged(adjP),
             parentKitCode: sk?.code,
+            imageUrl: pieceImageUrl(adjP),
           });
         }
         return out;
@@ -554,6 +556,7 @@ export async function buildAdjustmentProposalWorkbook(
           unitPrice: price,
           lineTotal: price * qty,
           change: isPieceChanged(p),
+          imageUrl: pieceImageUrl(p),
         }];
       },
     });
