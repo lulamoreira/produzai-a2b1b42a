@@ -460,6 +460,14 @@ export default function AdjustmentDetailSheet({
           <TabsList>
             <TabsTrigger value="pieces">Peças</TabsTrigger>
             <TabsTrigger value="kits">Kits</TabsTrigger>
+            <TabsTrigger value="stores">
+              Lojas
+              {(storeChanges.added.length + storeChanges.removed.length) > 0 && (
+                <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">
+                  {storeChanges.added.length + storeChanges.removed.length}
+                </Badge>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="compare">Comparativo</TabsTrigger>
           </TabsList>
 
