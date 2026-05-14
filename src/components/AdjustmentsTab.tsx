@@ -72,6 +72,23 @@ export default function AdjustmentsTab({
   const createMut = useCreateAdjustment();
   const statusMut = useUpdateAdjustmentStatus();
   const deleteMut = useDeleteAdjustment();
+  const qc = useQueryClient();
+
+  const handleCancelResend = async (adjustmentId: string) => {
+    if (!window.confirm("Anular este reenvio? O reorçamento deixará de constar como solicitado e o fornecedor não será notificado dessa ação. (O e-mail já enviado não pode ser recolhido.)")) return;
+    const tId = toast.loading("Anulando reenvio...");
+    try {
+      const { error } = await supabase
+        .from('campaign_adjustment_budget_request' as any)
+        .delete()
+        .eq('adjustment_id', adjustmentId);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ['adjustment_budget_requests', campaignId] });
+      toast.success("Reenvio anulado com sucesso.", { id: tId });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao anular reenvio.", { id: tId });
+    }
+  };
 
   const { data: budgetRequests = [] } = useQuery({
     queryKey: ['adjustment_budget_requests', campaignId],
