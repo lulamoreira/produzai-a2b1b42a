@@ -762,9 +762,9 @@ export async function buildAdjustmentProposalWorkbook(
       matrixQtyMap[key] = Number(sp.quantity || 0);
     }
   }
-  // Filter pieces to those displayed (non-kit_only, not deleted)
+  // Filter pieces to those displayed (non-kit_only, not deleted, not removed in this adjustment)
   const matrixPieces = params.pieces
-    .filter((p: any) => !p.kit_only && !p.is_deleted)
+    .filter((p: any) => !p.kit_only && !p.is_deleted && isPieceChanged(p) !== "removed")
     .map((p: any) => ({
       ...p,
       store_category: p.category,
@@ -773,8 +773,9 @@ export async function buildAdjustmentProposalWorkbook(
     }));
 
   // Adjustment kits don't carry codes — synthesize from sourceKitById for matrix labels.
+  // Removed kits must NOT appear in the Matriz Lojas x Peças tab.
   const matrixKits = params.kits
-    .filter((k: any) => !k.is_deleted)
+    .filter((k: any) => !k.is_deleted && isKitChanged(k) !== "removed")
     .map((k: any) => {
       const sk = k.source_kit_id ? sourceKitById.get(k.source_kit_id) : null;
       return { ...k, code: sk?.code ?? 0, image_url: kitImageUrl(k) };
