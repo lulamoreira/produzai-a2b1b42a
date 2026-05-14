@@ -505,6 +505,8 @@ export async function buildAdjustmentProposalWorkbook(
 
   let bodyEvenIdx = 0;
   let totalCurrent = 0;
+  let itemFirstRow = 0;
+  let itemLastRow = 0;
   for (const r of orcamentoRows) {
     const isKitHeader = r.kind === "kit_header";
     const baseBg = isKitHeader ? KIT_BG : (bodyEvenIdx % 2 === 0 ? WHITE : BEIGE);
