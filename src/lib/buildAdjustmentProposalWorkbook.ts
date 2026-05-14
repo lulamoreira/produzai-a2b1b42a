@@ -928,6 +928,10 @@ export async function buildAdjustmentProposalWorkbook(
     { width: 60 },
   ];
 
+  // Legenda de cores na aba Modificações
+  ws3.addRow([]);
+  writeLegend(ws3, "G");
+
   // ── Build blob ────────────────────────────────────────────────────────
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: XLSX_MIME });
