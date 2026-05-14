@@ -770,6 +770,7 @@ export async function buildAdjustmentProposalWorkbook(
   // ── Section 2: Kits & kit-pieces ─────────────────────────────────────
   writeSectionTitle("Kits (alterados, removidos e novos) — incluindo peças dentro dos kits");
   writeTableHeader([
+    "Imagem",
     "Cód. Kit",
     "Kit",
     "Cód. Peça",
@@ -780,8 +781,8 @@ export async function buildAdjustmentProposalWorkbook(
 
   const changedKits = params.kits.filter((k: any) => isKitChanged(k) !== "unchanged");
   if (changedKits.length === 0) {
-    const r = ws3.addRow(["—", "Nenhum kit com alteração.", "", "", "", ""]);
-    ws3.mergeCells(`B${r.number}:F${r.number}`);
+    const r = ws3.addRow(["—", "Nenhum kit com alteração.", "", "", "", "", ""]);
+    ws3.mergeCells(`B${r.number}:G${r.number}`);
     r.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
     r.getCell(2).font = { italic: true, color: { argb: GREY } };
     styleDataRow(r, "unchanged");
@@ -802,11 +803,13 @@ export async function buildAdjustmentProposalWorkbook(
         if (kp.length > 0) parts.push(`${kp.length} peça(s) do kit alteradas (ver linhas abaixo)`);
         kitDetail = parts.join("\n") || "Kit modificado.";
       }
-      const kr = ws3.addRow([kCode, k.name, "—", "—", kKind === "added" ? "Novo" : kKind === "removed" ? "Removido" : "Modificado", kitDetail]);
+      const kr = ws3.addRow(["", kCode, k.name, "—", "—", kKind === "added" ? "Novo" : kKind === "removed" ? "Removido" : "Modificado", kitDetail]);
       styleDataRow(kr, kKind);
-      kr.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
-      kr.getCell(6).alignment = { vertical: "top", wrapText: true };
+      kr.height = 58;
+      kr.getCell(2).alignment = { horizontal: "center", vertical: "middle" };
+      kr.getCell(7).alignment = { vertical: "top", wrapText: true };
       kr.eachCell({ includeEmpty: false }, (c: any) => { c.font = { ...(c.font || {}), bold: true }; });
+      await addImageToCell(ws3, kr.number, 1, kitImageUrl(k));
 
       // Kit-piece rows
       const kpChanges = kitPieceChangesByAdjKit.get(k.id) ?? [];
@@ -814,19 +817,24 @@ export async function buildAdjustmentProposalWorkbook(
         const detail =
           ch.change === "added"  ? `Peça adicionada ao kit (qtd por kit: ${ch.adjQty}).` :
           ch.change === "removed" ? `Peça removida do kit (era ${ch.origQty} por kit).` :
+          ch.change === "modified" ? (ch.detail || "Campos da peça alterados dentro do kit.") :
                                     `Quantidade por kit: ${ch.origQty} → ${ch.adjQty} (${ch.adjQty - ch.origQty >= 0 ? "+" : ""}${ch.adjQty - ch.origQty}).`;
         const label =
           ch.change === "added" ? "Peça nova no kit" :
           ch.change === "removed" ? "Peça removida do kit" :
+          ch.change === "modified" ? "Peça alterada no kit" :
           "Qtd por kit alterada";
-        const r = ws3.addRow(["", "↳ " + (k.name || ""), ch.pieceCode ?? "", ch.pieceName, label, detail]);
-        styleDataRow(r, ch.change === "added" ? "added" : ch.change === "removed" ? "removed" : "qty");
-        r.getCell(2).font = { italic: true, color: { argb: GREY } };
+        const r = ws3.addRow(["", "", "↳ " + (k.name || ""), ch.pieceCode ?? "", ch.pieceName, label, detail]);
+        styleDataRow(r, ch.change === "added" ? "added" : ch.change === "removed" ? "removed" : ch.change === "modified" ? "modified" : "qty");
+        r.height = 58;
+        r.getCell(3).font = { italic: true, color: { argb: GREY } };
+        await addImageToCell(ws3, r.number, 1, sourcePieceImageUrl(ch.sourcePieceId));
       }
     }
   }
 
   ws3.columns = [
+    { width: 14 },
     { width: 12 },
     { width: 36 },
     { width: 12 },
