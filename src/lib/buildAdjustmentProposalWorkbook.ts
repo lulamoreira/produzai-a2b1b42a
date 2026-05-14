@@ -204,6 +204,25 @@ export async function buildAdjustmentProposalWorkbook(
     if (!p.source_piece_id) return 0;
     return priceBySourceId.get(p.source_piece_id) ?? 0;
   };
+  const imageCache = new Map<string, Promise<WorkbookImage | null>>();
+  const addImageToCell = async (ws: any, rowNumber: number, colNumber: number, url?: string | null) => {
+    if (!url) return;
+    if (!imageCache.has(url)) imageCache.set(url, fetchWorkbookImage(url));
+    const img = await imageCache.get(url)!;
+    if (!img) return;
+    const maxW = 72;
+    const maxH = 54;
+    const ratio = img.width / img.height;
+    let w = maxW;
+    let h = w / ratio;
+    if (h > maxH) { h = maxH; w = h * ratio; }
+    const imageId = wb.addImage({ base64: img.base64, extension: img.ext });
+    ws.addImage(imageId, {
+      tl: { col: colNumber - 1 + 0.08, row: rowNumber - 1 + 0.12 },
+      ext: { width: Math.round(w), height: Math.round(h) },
+    });
+    ws.getCell(rowNumber, colNumber).value = "";
+  };
 
   // ── Compute kit-pieces change map (per adjustment kit) ─────────────────
   // For each adjustment kit, what changed inside (added / removed / qty).
