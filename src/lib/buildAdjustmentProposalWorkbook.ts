@@ -505,6 +505,8 @@ export async function buildAdjustmentProposalWorkbook(
 
   let bodyEvenIdx = 0;
   let totalCurrent = 0;
+  let itemFirstRow = 0;
+  let itemLastRow = 0;
   for (const r of orcamentoRows) {
     const isKitHeader = r.kind === "kit_header";
     const baseBg = isKitHeader ? KIT_BG : (bodyEvenIdx % 2 === 0 ? WHITE : BEIGE);
@@ -538,7 +540,15 @@ export async function buildAdjustmentProposalWorkbook(
       isKitHeader ? null : (repeatCurrentPrice ? r.lineTotal : null),
     ]);
 
-    if (!isKitHeader) totalCurrent += r.lineTotal;
+    if (!isKitHeader) {
+      totalCurrent += r.lineTotal;
+      if (itemFirstRow === 0) itemFirstRow = row.number;
+      itemLastRow = row.number;
+    } else {
+      // include kit header rows in the SUM range (they're null, won't affect)
+      if (itemFirstRow === 0) itemFirstRow = row.number;
+      itemLastRow = row.number;
+    }
 
     row.height = 22;
     row.eachCell({ includeEmpty: true }, (cell, col) => {
@@ -595,6 +605,7 @@ export async function buildAdjustmentProposalWorkbook(
       for (const c of [npUnit, npTotal]) {
         c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_INPUT } };
         c.numFmt = money;
+        c.protection = { locked: false };
         c.border = {
           top: { style: "medium", color: { argb: BROWN } },
           bottom: { style: "medium", color: { argb: BROWN } },
@@ -607,7 +618,13 @@ export async function buildAdjustmentProposalWorkbook(
 
   // Totals
   ws1.addRow([]);
-  const addTotalRow = (label: string, value: number | null, emphasized = false, editable = false) => {
+  const addTotalRow = (
+    label: string,
+    value: number | null,
+    emphasized = false,
+    editable = false,
+    newTotal: number | { formula: string } | null = null,
+  ) => {
     const r = ws1.addRow(["", "", "", "", "", label, value, null, null]);
     r.getCell(6).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).alignment = { horizontal: "right", vertical: "middle" };
@@ -620,27 +637,51 @@ export async function buildAdjustmentProposalWorkbook(
     } else {
       r.getCell(6).font = { bold: true };
     }
+    const np = r.getCell(9);
+    np.alignment = { horizontal: "right", vertical: "middle" };
+    np.numFmt = money;
     if (editable) {
-      const np = r.getCell(9);
       np.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_INPUT } };
-      np.numFmt = money;
+      np.protection = { locked: false };
       np.border = {
         top: { style: "medium", color: { argb: BROWN } },
         bottom: { style: "medium", color: { argb: BROWN } },
         left: { style: "medium", color: { argb: BROWN } },
         right: { style: "medium", color: { argb: BROWN } },
       };
+    } else if (emphasized) {
+      np.font = { bold: true, color: { argb: WHITE } };
+      np.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
+    } else {
+      np.font = { bold: true };
     }
+    if (newTotal !== null) np.value = newTotal as any;
+    return r;
   };
-  addTotalRow("Total dos Itens", totalCurrent);
-  addTotalRow("Instalação", Number(params.extraCosts.installation_value || 0), false, true);
-  addTotalRow("Frete / Despacho", Number(params.extraCosts.freight_value || 0), false, true);
+  const itemsRow = addTotalRow(
+    "Total dos Itens",
+    totalCurrent,
+    false,
+    false,
+    itemFirstRow > 0 ? { formula: `SUM(I${itemFirstRow}:I${itemLastRow})` } : 0,
+  );
+  const instRow = addTotalRow("Instalação", Number(params.extraCosts.installation_value || 0), false, true);
+  // pre-fill yellow new value with the current value (supplier can edit)
+  instRow.getCell(9).value = Number(params.extraCosts.installation_value || 0);
+  const freightRow = addTotalRow("Frete / Despacho", Number(params.extraCosts.freight_value || 0), false, true);
+  freightRow.getCell(9).value = Number(params.extraCosts.freight_value || 0);
   const grand =
     totalCurrent +
     Number(params.extraCosts.installation_value || 0) +
     Number(params.extraCosts.freight_value || 0);
   addTotalRow("TOTAL ATUAL", grand, true);
-  addTotalRow("TOTAL REORÇAMENTO", null, true, true);
+  addTotalRow(
+    "TOTAL REORÇAMENTO",
+    null,
+    true,
+    false,
+    { formula: `I${itemsRow.number}+I${instRow.number}+I${freightRow.number}` },
+  );
 
   ws1.addRow([]);
   // Legenda de cores (reutilizada nas três abas)
@@ -669,6 +710,23 @@ export async function buildAdjustmentProposalWorkbook(
     { width: 16 },  // Novo Total
   ];
   ws1.views = [{ state: "frozen", ySplit: headerRowIdx }];
+
+  // Protect sheet so supplier can only edit yellow input cells
+  // (Novo Preço Unit. / Novo Total / Instalação / Frete reorçados).
+  // Cells flagged with `protection.locked = false` above stay editable.
+  await ws1.protect("", {
+    selectLockedCells: true,
+    selectUnlockedCells: true,
+    formatCells: false,
+    formatColumns: false,
+    formatRows: false,
+    insertRows: false,
+    insertColumns: false,
+    deleteRows: false,
+    deleteColumns: false,
+    sort: false,
+    autoFilter: false,
+  } as any);
 
   // ─────────────────────────────────────────────────────────
   // SHEET 2 — Matriz Lojas x Peças (mesmo formato do Rateio)
