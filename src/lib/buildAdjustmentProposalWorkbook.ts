@@ -15,6 +15,7 @@
 // by the caller and passed in via `originalStorePieces` + `baselineIsNegotiation`.
 
 import { appendMatrixSheets } from "@/lib/exportMatrixExcelJS";
+import { pickPieceImageUrl } from "@/lib/pieceImageVariants";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -66,10 +67,10 @@ export interface AdjustmentProposalParams {
   kitPieces: any[];
 
   /** Source kits from campaign_kits (used for the kit Código + original name). */
-  sourceKits: { id: string; code: number; name: string }[];
+  sourceKits: { id: string; code: number; name: string; image_url?: string | null }[];
   /** Source pieces from campaign_pieces (used to resolve names of pieces that
    *  were removed from a kit and have no row in the adjustment_pieces list). */
-  sourcePieces: { id: string; code: number; name: string }[];
+  sourcePieces: { id: string; code: number; name: string; image_url?: string | null; image_thumb_url?: string | null; image_report_url?: string | null; image_full_url?: string | null }[];
   /** Original kit composition (campaign_kit_pieces) for change detection. */
   originalKitPieces: { kit_id: string; piece_id: string; quantity: number }[];
 
