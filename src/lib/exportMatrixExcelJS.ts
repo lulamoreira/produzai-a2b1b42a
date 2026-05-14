@@ -646,6 +646,8 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
   dash.getColumn(1).width = 12;
   dash.getColumn(2).width = 40;
   dash.getColumn(3).width = 20;
+
+  return mainSheetName;
 }
 
 // ─── Thin wrapper: standalone Rateio export (creates workbook + saves) ───
