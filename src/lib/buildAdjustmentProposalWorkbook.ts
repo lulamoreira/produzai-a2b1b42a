@@ -111,6 +111,31 @@ export function summarizeAdjustmentChanges(pieces: any[]): AdjustmentChangeSumma
 type RowKind = "kit_header" | "kit_piece" | "standalone_piece";
 type ChangeKind = "unchanged" | "modified" | "added" | "removed" | "qty";
 
+type WorkbookImage = { base64: string; ext: "png" | "jpeg"; width: number; height: number };
+
+async function fetchWorkbookImage(url?: string | null): Promise<WorkbookImage | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const buffer = await blob.arrayBuffer();
+    const uint8 = new Uint8Array(buffer);
+    let binary = "";
+    uint8.forEach((b) => { binary += String.fromCharCode(b); });
+    const blobUrl = URL.createObjectURL(blob);
+    const size = await new Promise<{ width: number; height: number }>((resolve) => {
+      const img = new Image();
+      img.onload = () => { resolve({ width: img.naturalWidth, height: img.naturalHeight }); URL.revokeObjectURL(blobUrl); };
+      img.onerror = () => { resolve({ width: 160, height: 120 }); URL.revokeObjectURL(blobUrl); };
+      img.src = blobUrl;
+    });
+    return { base64: btoa(binary), ext: blob.type.includes("png") ? "png" : "jpeg", ...size };
+  } catch {
+    return null;
+  }
+}
+
 interface OrcamentoRow {
   kind: RowKind;
   code: number | undefined;
