@@ -74,7 +74,7 @@ export interface AdjustmentProposalParams {
   /** Original kit composition (campaign_kit_pieces) for change detection. */
   originalKitPieces: { kit_id: string; piece_id: string; quantity: number }[];
 
-  stores: { id: string; name: string; nickname?: string | null; city?: string | null; state?: string | null }[];
+  stores: { id: string; name: string; nickname?: string | null; city?: string | null; state?: string | null; showcase_count?: number | null }[];
 
   /** Previous rateio (negotiation when it exists, otherwise original campaign rateio).
    *  piece_id refers to the **source** (campaign_pieces) id. */
