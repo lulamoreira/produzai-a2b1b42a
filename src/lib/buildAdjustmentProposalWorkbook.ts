@@ -631,6 +631,10 @@ export async function buildAdjustmentProposalWorkbook(
     newTotal: number | { formula: string } | null = null,
   ) => {
     const r = ws1.addRow(["", "", "", "", "", label, value, null, null]);
+    // Apply vertical-center to every cell in the row (including empties)
+    r.eachCell({ includeEmpty: true }, (c) => {
+      c.alignment = { ...(c.alignment || {}), vertical: "middle" };
+    });
     r.getCell(6).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).numFmt = money;
@@ -661,6 +665,7 @@ export async function buildAdjustmentProposalWorkbook(
       np.font = { bold: true };
     }
     if (newTotal !== null) np.value = newTotal as any;
+    r.height = 22;
     return r;
   };
   const itemsRow = addTotalRow(
