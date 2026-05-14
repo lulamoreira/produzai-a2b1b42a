@@ -833,7 +833,7 @@ export async function buildAdjustmentProposalWorkbook(
   noteRow.height = 28;
 
   ws1.columns = [
-    { width: 8 },   // Foto
+    { width: 12 },  // Foto
     { width: 14 },  // Tipo
     { width: 18 },  // Código
     { width: 50 },  // Item
