@@ -243,8 +243,8 @@ function writeLegend(ws: any, lastColLetter: string) {
     { bg: CHANGE_BG, font: CHANGE_FONT, label: "Modificada", desc: "Item ou quantidade alterada nesta solicitação." },
     { bg: ADDED_BG, font: ADDED_FONT, label: "Nova", desc: "Item incluído neste reorçamento." },
     { bg: REMOVED_BG, font: REMOVED_FONT, label: "Removida", desc: "Item removido neste reorçamento." },
-    { bg: "FFD1FAE5", font: "FF065F46", label: "Loja nova", desc: "Loja incluída após o orçamento original (linha verde na Matriz)." },
-    { bg: "FFFEE2E2", font: "FF991B1B", label: "Loja removida", desc: "Loja excluída após o orçamento original (linha vermelha riscada na Matriz)." },
+    { bg: "FFD1FAE5", font: "FF065F46", label: "Loja nova", desc: "Loja incluída após o orçamento original (destaque verde na Matriz)." },
+    { bg: "FFFEE2E2", font: "FF991B1B", label: "Loja removida", desc: "Loja excluída após o orçamento original (listada apenas na aba Comparação)." },
   ];
   const titleRow = ws.addRow(["Legenda de cores"]);
   ws.mergeCells(`A${titleRow.number}:${lastColLetter}${titleRow.number}`);
@@ -321,11 +321,16 @@ export async function buildAdjustmentProposalWorkbook(
     params.originalStorePieces,
   );
 
-  // Final store list for the matrix: current + removed (so the supplier sees them).
-  const matrixStores: DisplayStore[] = [
-    ...params.stores,
-    ...removedStores,
-  ];
+  // Final store list for the matrix: ONLY current stores (removed stores
+  // appear only in the "Modificações / Comparação" sheet, not in the matrix).
+  const matrixStores: DisplayStore[] = [...params.stores];
+
+  // For the matrix highlight we only mark added stores (they are present in
+  // the matrix). Removed stores are not in the matrix, so they don't need highlighting there.
+  const matrixStoreChangeMap = new Map<string, "added">();
+  for (const [id, kind] of storeChangeMap) {
+    if (kind === "added") matrixStoreChangeMap.set(id, kind);
+  }
   const adjPieceById = new Map<string, any>();
   const adjBySourcePieceId = new Map<string, any>();
   for (const p of params.pieces) {
@@ -923,7 +928,7 @@ export async function buildAdjustmentProposalWorkbook(
       skipKitTabs: true,
       sortByCode: true,
       changeMap: matrixChangeMap,
-      storeChangeMap,
+      storeChangeMap: matrixStoreChangeMap,
     } as any) ?? null;
   } catch {
     // Fail-soft: matrix is decorative; never block the export.
