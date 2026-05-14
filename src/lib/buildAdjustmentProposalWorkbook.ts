@@ -74,7 +74,20 @@ export interface AdjustmentProposalParams {
   /** Original kit composition (campaign_kit_pieces) for change detection. */
   originalKitPieces: { kit_id: string; piece_id: string; quantity: number }[];
 
+  /** Current live stores (from client_stores). */
   stores: { id: string; name: string; nickname?: string | null; city?: string | null; state?: string | null; showcase_count?: number | null }[];
+
+  /** Snapshot of stores at adjustment creation (campaign_adjustment_stores).
+   *  Used to detect added/removed stores between the adjustment baseline and now. */
+  adjustmentStoresSnapshot?: {
+    source_store_id: string | null;
+    name: string;
+    nickname?: string | null;
+    city?: string | null;
+    state?: string | null;
+    store_code?: string | null;
+    showcase_count?: number | null;
+  }[];
 
   /** Previous rateio (negotiation when it exists, otherwise original campaign rateio).
    *  piece_id refers to the **source** (campaign_pieces) id. */
