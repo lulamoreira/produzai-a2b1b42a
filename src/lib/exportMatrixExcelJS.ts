@@ -396,6 +396,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
     skipKitTabs,
     sortByCode,
     changeMap,
+    storeChangeMap,
   } = params;
 
   const effectiveStoreFields = storeFields && storeFields.length > 0 ? storeFields : DEFAULT_STORE_FIELDS;
