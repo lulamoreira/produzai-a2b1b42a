@@ -662,7 +662,7 @@ export async function buildAdjustmentProposalWorkbook(
 
   const writeSectionTitle = (title: string) => {
     const r = ws3.addRow([title]);
-    ws3.mergeCells(`A${r.number}:F${r.number}`);
+    ws3.mergeCells(`A${r.number}:G${r.number}`);
     const c = r.getCell(1);
     c.value = title;
     c.font = { bold: true, color: { argb: WHITE }, size: 12 };
@@ -706,7 +706,7 @@ export async function buildAdjustmentProposalWorkbook(
   const baselineLabel = params.baselineIsNegotiation ? "Negociado" : "Original";
 
   // ── Section 1: Standalone pieces (regular, non-kit) ──────────────────
-  const standalonePieces = params.pieces.filter((p: any) => !p.kit_only && !piecesInAnyAdjKit.has(p.id));
+  const standalonePieces = params.pieces.filter((p: any) => !p.kit_only && !isKitPiece(p));
   const piecePieceChangeRows: { p: any; kind: ChangeKind }[] = [];
   for (const p of standalonePieces) {
     const k = isPieceChanged(p);
@@ -715,6 +715,7 @@ export async function buildAdjustmentProposalWorkbook(
 
   writeSectionTitle("Peças (alteradas, removidas e novas)");
   writeTableHeader([
+    "Imagem",
     "Código",
     "Peça",
     "Alteração",
@@ -724,8 +725,8 @@ export async function buildAdjustmentProposalWorkbook(
   ]);
 
   if (piecePieceChangeRows.length === 0) {
-    const r = ws3.addRow(["—", "Nenhuma peça (não-kit) com alteração.", "", "", "", ""]);
-    ws3.mergeCells(`B${r.number}:F${r.number}`);
+    const r = ws3.addRow(["—", "Nenhuma peça (não-kit) com alteração.", "", "", "", "", ""]);
+    ws3.mergeCells(`B${r.number}:G${r.number}`);
     r.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
     r.getCell(2).font = { italic: true, color: { argb: GREY } };
     styleDataRow(r, "unchanged");
@@ -735,24 +736,31 @@ export async function buildAdjustmentProposalWorkbook(
       const baseQ = p.source_piece_id ? (baseQtyBySourceId.get(p.source_piece_id) || 0) : 0;
 
       if (kind === "added") {
-        const r = ws3.addRow([p.code ?? "", p.name, "Nova", "Peça incluída no ajuste.", 0, adjQ]);
+        const r = ws3.addRow(["", p.code ?? "", p.name, "Nova", "Peça incluída no ajuste.", 0, adjQ]);
         styleDataRow(r, "added");
+        r.height = 58;
+        await addImageToCell(ws3, r.number, 1, pieceImageUrl(p));
       } else if (kind === "removed") {
-        const r = ws3.addRow([p.code ?? "", p.name, "Removida", "Peça removida do ajuste.", baseQ, 0]);
+        const r = ws3.addRow(["", p.code ?? "", p.name, "Removida", "Peça removida do ajuste.", baseQ, 0]);
         styleDataRow(r, "removed");
+        r.height = 58;
+        await addImageToCell(ws3, r.number, 1, pieceImageUrl(p));
       } else if (kind === "modified") {
         const snap = p.original_snapshot || {};
         const fields = Object.keys(PIECE_FIELD_LABELS).filter((k) => String(snap[k] ?? "") !== String((p as any)[k] ?? ""));
         const detail = fields.length === 0
           ? "Campos modificados."
           : fields.map((k) => `${PIECE_FIELD_LABELS[k]}: "${snap[k] ?? ""}" → "${(p as any)[k] ?? ""}"`).join("\n");
-        const r = ws3.addRow([p.code ?? "", p.name, "Modificada", detail, baseQ, adjQ]);
+        const r = ws3.addRow(["", p.code ?? "", p.name, "Modificada", detail, baseQ, adjQ]);
         styleDataRow(r, "modified");
-        r.getCell(4).alignment = { vertical: "top", wrapText: true };
-        r.height = Math.max(22, Math.min(120, 14 + 14 * Math.max(1, fields.length)));
+        r.getCell(5).alignment = { vertical: "top", wrapText: true };
+        r.height = Math.max(58, Math.min(120, 14 + 14 * Math.max(1, fields.length)));
+        await addImageToCell(ws3, r.number, 1, pieceImageUrl(p));
       } else if (kind === "qty") {
-        const r = ws3.addRow([p.code ?? "", p.name, "Quantidade", `${baseQ} → ${adjQ} (${adjQ - baseQ >= 0 ? "+" : ""}${adjQ - baseQ})`, baseQ, adjQ]);
+        const r = ws3.addRow(["", p.code ?? "", p.name, "Quantidade", `${baseQ} → ${adjQ} (${adjQ - baseQ >= 0 ? "+" : ""}${adjQ - baseQ})`, baseQ, adjQ]);
         styleDataRow(r, "qty");
+        r.height = 58;
+        await addImageToCell(ws3, r.number, 1, pieceImageUrl(p));
       }
     }
   }
