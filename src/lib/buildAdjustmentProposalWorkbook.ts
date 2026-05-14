@@ -1061,7 +1061,28 @@ export async function buildAdjustmentProposalWorkbook(
     }
   }
 
-  ws3.columns = [
+  // ── Section 3: Lojas (added & removed) ───────────────────────────────
+  ws3.addRow([]);
+  writeSectionTitle("Lojas (adicionadas e removidas)");
+  writeTableHeader(["—", "Loja", "Cidade/UF", "Código", "Vitrines", "Alteração", "Detalhe"]);
+  if (addedStores.length === 0 && removedStores.length === 0) {
+    const r = ws3.addRow(["—", "Nenhuma loja adicionada ou removida desde o orçamento original.", "", "", "", "", ""]);
+    ws3.mergeCells(`B${r.number}:G${r.number}`);
+    r.getCell(2).font = { italic: true, color: { argb: GREY } };
+    styleDataRow(r, "unchanged");
+  } else {
+    for (const s of addedStores) {
+      const r = ws3.addRow(["", s.name, [s.city, s.state].filter(Boolean).join("/"), "", Number(s.showcase_count || 0), "Nova", "Loja incluída após o orçamento original."]);
+      styleDataRow(r, "added");
+      r.height = 28;
+    }
+    for (const s of removedStores) {
+      const r = ws3.addRow(["", s.name, [s.city, s.state].filter(Boolean).join("/"), "", Number(s.showcase_count || 0), "Removida", "Loja excluída após o orçamento original."]);
+      styleDataRow(r, "removed");
+      r.height = 28;
+    }
+  }
+
     { width: 14 },
     { width: 12 },
     { width: 36 },
