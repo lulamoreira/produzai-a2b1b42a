@@ -305,6 +305,15 @@ export default function AdjustmentsTab({
                         >
                           <FileInput className="w-3.5 h-3.5" /> Registrar Resposta
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCancelResend(a.id)}
+                          className="h-7 text-xs gap-1.5 border-red-300 text-red-700 hover:bg-red-50"
+                          title="Anula a marcação de reorçamento solicitado no sistema (não recolhe o e-mail já enviado)"
+                        >
+                          <XCircle className="w-3.5 h-3.5" /> Anular Reenvio
+                        </Button>
                       </div>
                     )}
                     {req.status === "approved" && (() => {
