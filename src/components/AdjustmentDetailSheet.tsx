@@ -410,6 +410,20 @@ export default function AdjustmentDetailSheet({
       ws2.addRow(["TOTAL", rateioCompare.totalBase, rateioCompare.totalAdj, rateioCompare.totalAdj - rateioCompare.totalBase]).font = { bold: true } as any;
       ws2.columns.forEach((c) => (c.width = 20));
 
+      const ws3 = wb.addWorksheet("Lojas");
+      ws3.addRow(["Tipo", "Código", "Loja", "Apelido", "Cidade/UF", "Vitrines"]);
+      ws3.getRow(1).font = { bold: true };
+      storeChanges.added.forEach((s: any) => {
+        const r = ws3.addRow(["Adicionada", s.store_code || "", s.name, s.nickname || "", [s.city, s.state].filter(Boolean).join(" / "), Number(s.showcase_count || 0)]);
+        r.eachCell((cell) => { cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD1FAE5" } } as any; });
+      });
+      storeChanges.removed.forEach((s: any) => {
+        const r = ws3.addRow(["Removida", s.store_code || "", s.name, s.nickname || "", [s.city, s.state].filter(Boolean).join(" / "), Number(s.showcase_count || 0)]);
+        r.eachCell((cell) => { cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEE2E2" } } as any; cell.font = { ...(cell.font || {}), strike: true }; });
+      });
+      if (storeChanges.added.length === 0 && storeChanges.removed.length === 0) ws3.addRow(["—", "", "Nenhuma loja adicionada ou removida.", "", "", ""]);
+      ws3.columns.forEach((c) => (c.width = 22));
+
       const buf = await wb.xlsx.writeBuffer();
       await saveBlobAs(
         new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
