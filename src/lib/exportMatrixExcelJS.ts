@@ -523,7 +523,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
 
   // Kit tabs
   if (skipKitTabs) {
-    if (skipDashboard || !dashboardSheetName) return;
+    if (skipDashboard || !dashboardSheetName) return mainSheetName;
   }
   for (const kit of skipKitTabs ? [] : kits) {
     const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
