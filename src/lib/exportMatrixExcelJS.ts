@@ -365,6 +365,8 @@ export type AppendMatrixParams = {
   skipKitTabs?: boolean;
   /** When true, order pieces and kits by their numeric Código instead of display_order. */
   sortByCode?: boolean;
+  /** Optional: highlight the columns (and their store-row cells) for these item ids in the main matrix. */
+  changeMap?: Map<string, "added" | "removed" | "modified" | "qty">;
 };
 
 /**
