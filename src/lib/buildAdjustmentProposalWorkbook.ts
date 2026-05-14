@@ -480,6 +480,13 @@ export async function buildAdjustmentProposalWorkbook(
     const codeCell = r.code != null ? r.code : "";
     const desc = [r.name, r.specification, r.size].filter(Boolean).join(" — ");
 
+    // Decide whether the "Novo Preço" cells are editable inputs (yellow)
+    // or just a repeat of the current price (normal background).
+    // Rule: only items that were actually changed get the yellow input.
+    // Unchanged items keep the same price, repeated with the row's normal bg.
+    const needsNewPriceInput = !isKitHeader && (r.change === "added" || r.change === "modified" || r.change === "qty");
+    const repeatCurrentPrice = !isKitHeader && r.change === "unchanged";
+
     const row = ws1.addRow([
       "📷",
       isKitHeader ? "Kit" : r.kind === "kit_piece" ? "Peça do Kit" : "Peça",
@@ -488,7 +495,8 @@ export async function buildAdjustmentProposalWorkbook(
       r.qty,
       isKitHeader ? null : r.unitPrice,
       isKitHeader ? null : r.lineTotal,
-      null, // Novo Preço — supplier fills
+      isKitHeader ? null : (repeatCurrentPrice ? r.unitPrice : null),
+      isKitHeader ? null : (repeatCurrentPrice ? r.lineTotal : null),
     ]);
 
     if (!isKitHeader) totalCurrent += r.lineTotal;
@@ -508,7 +516,7 @@ export async function buildAdjustmentProposalWorkbook(
         left: { style: "thin", color: { argb: BORDER } },
         right: { style: "thin", color: { argb: BORDER } },
       };
-      if (col === 6 || col === 7) cell.numFmt = money;
+      if (col === 6 || col === 7 || col === 8 || col === 9) cell.numFmt = money;
     });
 
     // Photo placeholder cell styling
@@ -538,17 +546,23 @@ export async function buildAdjustmentProposalWorkbook(
       }
     }
 
-    // Yellow editable "Novo Preço" cell only on real piece rows
-    if (!isKitHeader) {
-      const npCell = row.getCell(8);
-      npCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_INPUT } };
-      npCell.numFmt = money;
-      npCell.border = {
-        top: { style: "medium", color: { argb: BROWN } },
-        bottom: { style: "medium", color: { argb: BROWN } },
-        left: { style: "medium", color: { argb: BROWN } },
-        right: { style: "medium", color: { argb: BROWN } },
-      };
+    // Yellow editable cells only on rows that actually changed
+    if (needsNewPriceInput) {
+      const npUnit = row.getCell(8);
+      const npTotal = row.getCell(9);
+      // Total = Qty * Novo Preço Unit.  (col E = 5, col H = 8)
+      const formulaTotal = { formula: `IF(H${row.number}="","",E${row.number}*H${row.number})` } as any;
+      npTotal.value = formulaTotal;
+      for (const c of [npUnit, npTotal]) {
+        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_INPUT } };
+        c.numFmt = money;
+        c.border = {
+          top: { style: "medium", color: { argb: BROWN } },
+          bottom: { style: "medium", color: { argb: BROWN } },
+          left: { style: "medium", color: { argb: BROWN } },
+          right: { style: "medium", color: { argb: BROWN } },
+        };
+      }
     }
   }
 
