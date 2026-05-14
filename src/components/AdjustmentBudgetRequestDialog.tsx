@@ -211,6 +211,7 @@ export default function AdjustmentBudgetRequestDialog({
       status: "submitted",
       request_sent_at: new Date().toISOString(),
     } as any, { onConflict: "adjustment_id,supplier_id" } as any);
+    await qc.invalidateQueries({ queryKey: ['adjustment_budget_requests', campaignId] });
   };
 
   const buildTemplateData = (link: { name: string; url: string }): Record<string, any> => ({
