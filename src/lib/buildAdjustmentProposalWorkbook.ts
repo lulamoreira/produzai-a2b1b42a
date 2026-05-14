@@ -550,7 +550,12 @@ export async function buildAdjustmentProposalWorkbook(
       itemLastRow = row.number;
     }
 
-    row.height = 22;
+    // Auto-fit row height: estimate lines from the description column (width 50)
+    // and the spec/size content. Keep a sensible minimum so single-line rows
+    // still breathe, and a ceiling so kit headers don't grow unbounded.
+    const descLen = desc.length;
+    const estimatedLines = Math.max(1, Math.ceil(descLen / 48));
+    row.height = Math.min(120, Math.max(22, 16 + estimatedLines * 14));
     row.eachCell({ includeEmpty: true }, (cell, col) => {
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
       cell.alignment = {
