@@ -164,6 +164,7 @@ export default function AdjustmentBudgetRequestDialog({
           ((origKpRows as any[]) || []).filter((r) => validKitIds.has(r.kit_id))
             .map((r: any) => ({ kit_id: r.kit_id, piece_id: r.piece_id, quantity: Number(r.quantity || 0) }))
         );
+        setAdjustmentStoresSnapshot(((snapStoreRows as any[]) || []));
       } catch (e: any) {
         toast.error(e?.message || "Falha ao carregar dados.");
       } finally {
