@@ -229,6 +229,7 @@ export async function buildAdjustmentProposalWorkbook(
       .filter((kp) => kp.kit_id === k.id)
       .forEach((kp) => {
         const adjP = adjPieceById.get(kp.piece_id);
+        if (adjP?.is_deleted) return;
         const srcId = adjP?.source_piece_id ?? kp.piece_id;
         cur.set(srcId, Number(kp.quantity || 0));
       });
@@ -237,7 +238,11 @@ export async function buildAdjustmentProposalWorkbook(
     ids.forEach((pid) => {
       const o = orig.get(pid) ?? 0;
       const a = cur.get(pid) ?? 0;
-      if (o === a) return;
+      const adjP = adjBySourcePieceId.get(pid);
+      const fieldChanges = adjP?.change_type === "modified"
+        ? Object.keys(PIECE_FIELD_LABELS).filter((key) => String((adjP.original_snapshot || {})[key] ?? "") !== String(adjP[key] ?? ""))
+        : [];
+      if (o === a && fieldChanges.length === 0) return;
       const meta =
         sourcePieceById.get(pid) ||
         (adjBySourcePieceId.get(pid) && {
@@ -247,10 +252,11 @@ export async function buildAdjustmentProposalWorkbook(
       out.push({
         sourcePieceId: pid,
         pieceCode: meta?.code,
-        pieceName: meta?.name ?? "—",
-        change: o === 0 ? "added" : a === 0 ? "removed" : "qty",
+        pieceName: adjP?.name ?? meta?.name ?? "—",
+        change: o === 0 ? "added" : a === 0 ? "removed" : fieldChanges.length > 0 ? "modified" : "qty",
         origQty: o,
         adjQty: a,
+        detail: fieldChanges.map((key) => `${PIECE_FIELD_LABELS[key]}: "${(adjP.original_snapshot || {})[key] ?? ""}" → "${adjP[key] ?? ""}"`).join("\n"),
       });
     });
     if (out.length > 0) kitPieceChangesByAdjKit.set(k.id, out);
