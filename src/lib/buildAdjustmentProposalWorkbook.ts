@@ -605,6 +605,7 @@ export async function buildAdjustmentProposalWorkbook(
       for (const c of [npUnit, npTotal]) {
         c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_INPUT } };
         c.numFmt = money;
+        c.protection = { locked: false };
         c.border = {
           top: { style: "medium", color: { argb: BROWN } },
           bottom: { style: "medium", color: { argb: BROWN } },
