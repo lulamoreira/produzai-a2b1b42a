@@ -17,6 +17,7 @@ import { saveBlobAs } from "@/lib/saveBlobAs";
 import { useHistory } from "@/lib/undo/useHistory";
 import { historyStore } from "@/lib/undo/historyStore";
 import { UndoRedoToolbar } from "@/components/UndoRedoToolbar";
+import { computeAdjustmentStoreChanges } from "@/lib/buildAdjustmentProposalWorkbook";
 import {
   useAdjustmentPieces,
   useAdjustmentKits,
@@ -83,17 +84,6 @@ export default function AdjustmentDetailSheet({
       );
     },
   });
-
-  const storeChanges = useMemo(() => {
-    const snap = adjStoresSnapshot as any[];
-    const cur = currentStores as any[];
-    const snapBySrc = new Map<string, any>();
-    snap.forEach((s) => { if (s.source_store_id) snapBySrc.set(s.source_store_id, s); });
-    const curIds = new Set<string>(cur.map((s) => s.id));
-    const added = cur.filter((s) => !snapBySrc.has(s.id));
-    const removed = snap.filter((s) => s.source_store_id && !curIds.has(s.source_store_id));
-    return { added, removed };
-  }, [adjStoresSnapshot, currentStores]);
 
   // Source kits (for code lookup — adjustment kits don't carry the code field).
   const { data: sourceKits = [] } = useQuery({
