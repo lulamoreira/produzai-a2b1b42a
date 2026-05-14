@@ -43,6 +43,7 @@ export default function AdjustmentBudgetRequestDialog({
   winnerSupplierId, hasNegotiationRateio,
 }: Props) {
   const useNegotiationBaseline = !!(hasNegotiationRateio && winnerSupplierId);
+  const qc = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [preparingPreview, setPreparingPreview] = useState(false);
