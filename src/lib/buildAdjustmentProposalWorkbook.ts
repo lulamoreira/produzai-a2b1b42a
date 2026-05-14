@@ -285,6 +285,7 @@ interface OrcamentoRow {
   change: ChangeKind;
   /** kit code this kit_piece belongs to (only for kit_piece rows) */
   parentKitCode?: number;
+  imageUrl?: string | null;
 }
 
 export async function buildAdjustmentProposalWorkbook(
