@@ -285,6 +285,7 @@ interface OrcamentoRow {
   change: ChangeKind;
   /** kit code this kit_piece belongs to (only for kit_piece rows) */
   parentKitCode?: number;
+  imageUrl?: string | null;
 }
 
 export async function buildAdjustmentProposalWorkbook(
@@ -502,6 +503,7 @@ export async function buildAdjustmentProposalWorkbook(
           unitPrice: null,
           lineTotal: 0,
           change: isKitChanged(k),
+          imageUrl: kitImageUrl(k),
         });
         // Kit pieces — emit in ascending piece code order
         const kpEntries = params.kitPieces
@@ -526,6 +528,7 @@ export async function buildAdjustmentProposalWorkbook(
             lineTotal: price * qty,
             change: isPieceChanged(adjP),
             parentKitCode: sk?.code,
+            imageUrl: pieceImageUrl(adjP),
           });
         }
         return out;
@@ -553,6 +556,7 @@ export async function buildAdjustmentProposalWorkbook(
           unitPrice: price,
           lineTotal: price * qty,
           change: isPieceChanged(p),
+          imageUrl: pieceImageUrl(p),
         }];
       },
     });
@@ -669,11 +673,10 @@ export async function buildAdjustmentProposalWorkbook(
     }
 
     // Auto-fit row height: estimate lines from the description column (width 50)
-    // and the spec/size content. Keep a sensible minimum so single-line rows
-    // still breathe, and a ceiling so kit headers don't grow unbounded.
+    // and the spec/size content. Min height bumped to fit photo (~54px).
     const descLen = desc.length;
     const estimatedLines = Math.max(1, Math.ceil(descLen / 48));
-    row.height = Math.min(120, Math.max(22, 16 + estimatedLines * 14));
+    row.height = Math.min(120, Math.max(58, 16 + estimatedLines * 14));
     row.eachCell({ includeEmpty: true }, (cell, col) => {
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
       cell.alignment = {
@@ -691,9 +694,12 @@ export async function buildAdjustmentProposalWorkbook(
       if (col === 6 || col === 7 || col === 8 || col === 9) cell.numFmt = money;
     });
 
-    // Photo placeholder cell styling
+    // Photo: try to embed actual image; if missing, leave camera placeholder
     const photoCell = row.getCell(1);
     photoCell.font = { name: "Arial", size: 14, color: { argb: GREY } };
+    if (r.imageUrl) {
+      await addImageToCell(ws1, row.number, 1, r.imageUrl);
+    }
 
     // Highlight the Tipo cell for changed rows + add a status word
     if (r.change !== "unchanged") {
@@ -827,7 +833,7 @@ export async function buildAdjustmentProposalWorkbook(
   noteRow.height = 28;
 
   ws1.columns = [
-    { width: 8 },   // Foto
+    { width: 12 },  // Foto
     { width: 14 },  // Tipo
     { width: 18 },  // Código
     { width: 50 },  // Item
@@ -891,9 +897,20 @@ export async function buildAdjustmentProposalWorkbook(
     }));
 
   // Adjustment kits don't carry codes — synthesize from sourceKitById for matrix labels.
-  // Removed kits must NOT appear in the Matriz Lojas x Peças tab.
+  // Removed/empty kits must NOT appear in the Matriz Lojas x Peças tab. A kit is
+  // considered empty when it has no remaining live (non-deleted) component pieces
+  // OR when the resolved kit quantity (min over component qtys) is zero.
   const matrixKits = params.kits
     .filter((k: any) => !k.is_deleted && isKitChanged(k) !== "removed")
+    .filter((k: any) => {
+      const liveKp = params.kitPieces.filter((kp) => {
+        if (kp.kit_id !== k.id) return false;
+        const adjP = adjPieceById.get(kp.piece_id);
+        return !!adjP && !adjP.is_deleted;
+      });
+      if (liveKp.length === 0) return false;
+      return kitTotalQty(k.id) > 0;
+    })
     .map((k: any) => {
       const sk = k.source_kit_id ? sourceKitById.get(k.source_kit_id) : null;
       return { ...k, code: sk?.code ?? 0, image_url: kitImageUrl(k) };
@@ -960,6 +977,9 @@ export async function buildAdjustmentProposalWorkbook(
     c.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
     r.height = 24;
   };
+  // Modificações: borders mais escuras e ligeiramente mais grossas para
+  // separar visualmente colunas e linhas (sem alterar o resto do layout).
+  const MOD_BORDER = "FF6B7280";
   const writeTableHeader = (cols: string[]) => {
     const r = ws3.addRow(cols);
     r.eachCell((c) => {
@@ -967,10 +987,10 @@ export async function buildAdjustmentProposalWorkbook(
       c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
       c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
       c.border = {
-        top: { style: "thin", color: { argb: BORDER } },
-        bottom: { style: "thin", color: { argb: BORDER } },
-        left: { style: "thin", color: { argb: BORDER } },
-        right: { style: "thin", color: { argb: BORDER } },
+        top: { style: "medium", color: { argb: MOD_BORDER } },
+        bottom: { style: "medium", color: { argb: MOD_BORDER } },
+        left: { style: "medium", color: { argb: MOD_BORDER } },
+        right: { style: "medium", color: { argb: MOD_BORDER } },
       };
     });
     r.height = 22;
@@ -985,10 +1005,10 @@ export async function buildAdjustmentProposalWorkbook(
       c.alignment = c.alignment || { vertical: "middle" };
       c.alignment = { ...c.alignment, vertical: "middle", wrapText: true };
       c.border = {
-        top: { style: "thin", color: { argb: BORDER } },
-        bottom: { style: "thin", color: { argb: BORDER } },
-        left: { style: "thin", color: { argb: BORDER } },
-        right: { style: "thin", color: { argb: BORDER } },
+        top: { style: "thin", color: { argb: MOD_BORDER } },
+        bottom: { style: "thin", color: { argb: MOD_BORDER } },
+        left: { style: "thin", color: { argb: MOD_BORDER } },
+        right: { style: "thin", color: { argb: MOD_BORDER } },
       };
     });
   };
