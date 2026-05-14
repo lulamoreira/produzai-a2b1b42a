@@ -257,6 +257,11 @@ export default function AdjustmentBudgetRequestDialog({
   const handleConfirmSend = async () => {
     if (!winner || !preparedTemplateData) return;
     const merged = mergeRecipients(email, cc);
+    const confirmMsg =
+      `Confirma o envio do reorçamento ao fornecedor?\n\n` +
+      `Destinatário(s): ${merged.valid.join(", ")}\n\n` +
+      `Esta ação marcará o reorçamento como SOLICITADO no sistema.`;
+    if (!window.confirm(confirmMsg)) return;
     setSending(true);
     setSummaryItems([]);
     const items: SendSummaryItem[] = [];
