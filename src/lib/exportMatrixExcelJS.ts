@@ -374,7 +374,7 @@ export type AppendMatrixParams = {
  * to an EXISTING workbook. Used by both the standalone Rateio export and the
  * Supplier Budget export (which appends these sheets after its own "Orçamento" tab).
  */
-export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMatrixParams) {
+export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMatrixParams): Promise<string> {
   const {
     stores,
     pieces,
