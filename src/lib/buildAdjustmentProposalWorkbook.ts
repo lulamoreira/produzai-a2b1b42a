@@ -977,6 +977,9 @@ export async function buildAdjustmentProposalWorkbook(
     c.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
     r.height = 24;
   };
+  // Modificações: borders mais escuras e ligeiramente mais grossas para
+  // separar visualmente colunas e linhas (sem alterar o resto do layout).
+  const MOD_BORDER = "FF6B7280";
   const writeTableHeader = (cols: string[]) => {
     const r = ws3.addRow(cols);
     r.eachCell((c) => {
@@ -984,10 +987,10 @@ export async function buildAdjustmentProposalWorkbook(
       c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
       c.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
       c.border = {
-        top: { style: "thin", color: { argb: BORDER } },
-        bottom: { style: "thin", color: { argb: BORDER } },
-        left: { style: "thin", color: { argb: BORDER } },
-        right: { style: "thin", color: { argb: BORDER } },
+        top: { style: "medium", color: { argb: MOD_BORDER } },
+        bottom: { style: "medium", color: { argb: MOD_BORDER } },
+        left: { style: "medium", color: { argb: MOD_BORDER } },
+        right: { style: "medium", color: { argb: MOD_BORDER } },
       };
     });
     r.height = 22;
@@ -1002,10 +1005,10 @@ export async function buildAdjustmentProposalWorkbook(
       c.alignment = c.alignment || { vertical: "middle" };
       c.alignment = { ...c.alignment, vertical: "middle", wrapText: true };
       c.border = {
-        top: { style: "thin", color: { argb: BORDER } },
-        bottom: { style: "thin", color: { argb: BORDER } },
-        left: { style: "thin", color: { argb: BORDER } },
-        right: { style: "thin", color: { argb: BORDER } },
+        top: { style: "thin", color: { argb: MOD_BORDER } },
+        bottom: { style: "thin", color: { argb: MOD_BORDER } },
+        left: { style: "thin", color: { argb: MOD_BORDER } },
+        right: { style: "thin", color: { argb: MOD_BORDER } },
       };
     });
   };
