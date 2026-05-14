@@ -363,6 +363,8 @@ export type AppendMatrixParams = {
   skipDashboard?: boolean;
   /** When true, skip generating individual tabs for each kit (kits still appear as columns in main matrix). */
   skipKitTabs?: boolean;
+  /** When true, order pieces and kits by their numeric Código instead of display_order. */
+  sortByCode?: boolean;
 };
 
 /**
@@ -388,6 +390,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
     reservedSheetNames,
     skipDashboard,
     skipKitTabs,
+    sortByCode,
   } = params;
 
   const effectiveStoreFields = storeFields && storeFields.length > 0 ? storeFields : DEFAULT_STORE_FIELDS;
@@ -425,12 +428,16 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
       _type: "kit" as const,
       display_order: k.display_order,
     })),
-  ].sort(
-    (a, b) =>
-      (a.display_order ?? 0) - (b.display_order ?? 0)
+  ].sort((a, b) => {
+    if (sortByCode) {
+      return (Number(a.code ?? Number.MAX_SAFE_INTEGER) - Number(b.code ?? Number.MAX_SAFE_INTEGER))
+        || (a._type === b._type ? 0 : a._type === "piece" ? -1 : 1)
+        || (a.id < b.id ? -1 : 1);
+    }
+    return (a.display_order ?? 0) - (b.display_order ?? 0)
       || (a._type === b._type ? 0 : a._type === "piece" ? -1 : 1)
-      || (a.id < b.id ? -1 : 1),
-  );
+      || (a.id < b.id ? -1 : 1);
+  });
 
   // Build kit sheet names map first.
   // Excel forbids \ / ? * [ ] : in sheet names and limits length to 31 chars.
