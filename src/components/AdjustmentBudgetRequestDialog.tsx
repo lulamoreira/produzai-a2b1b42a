@@ -114,7 +114,7 @@ export default function AdjustmentBudgetRequestDialog({
             .eq("supplier_id", (w as any).id).maybeSingle(),
           _clientId
             ? supabase.from("client_stores" as any)
-                .select("id, name, nickname, city, state").eq("client_id", _clientId)
+                .select("id, name, nickname, city, state, showcase_count").eq("client_id", _clientId)
             : Promise.resolve({ data: [], error: null } as any),
           // Use negotiation rateio as the baseline whenever it exists; otherwise fall back to original.
           useNegotiationBaseline
