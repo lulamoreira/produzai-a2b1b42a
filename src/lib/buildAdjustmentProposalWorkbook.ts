@@ -928,7 +928,7 @@ export async function buildAdjustmentProposalWorkbook(
       skipKitTabs: true,
       sortByCode: true,
       changeMap: matrixChangeMap,
-      storeChangeMap,
+      storeChangeMap: matrixStoreChangeMap,
     } as any) ?? null;
   } catch {
     // Fail-soft: matrix is decorative; never block the export.
