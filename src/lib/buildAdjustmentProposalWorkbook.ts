@@ -312,41 +312,13 @@ export async function buildAdjustmentProposalWorkbook(
   };
 
   // ── Store diff (added/removed) ────────────────────────────────────────
-  // Compare snapshot (taken at adjustment creation) vs current live stores.
-  const snapshotStores = params.adjustmentStoresSnapshot ?? [];
-  const currentStoreIds = new Set(params.stores.map((s) => s.id));
-  const snapshotIds = new Set(snapshotStores.map((s) => s.source_store_id).filter(Boolean) as string[]);
-
-  type StoreChange = "added" | "removed";
-  const storeChangeMap = new Map<string, StoreChange>();
-  type DisplayStore = { id: string; name: string; nickname?: string | null; city?: string | null; state?: string | null; showcase_count?: number | null };
-  const removedStores: DisplayStore[] = [];
-  const addedStores: DisplayStore[] = [];
-
-  if (snapshotStores.length > 0) {
-    // Removed: in snapshot, not in current.
-    for (const s of snapshotStores) {
-      if (!s.source_store_id) continue;
-      if (!currentStoreIds.has(s.source_store_id)) {
-        storeChangeMap.set(s.source_store_id, "removed");
-        removedStores.push({
-          id: s.source_store_id,
-          name: s.name,
-          nickname: s.nickname ?? null,
-          city: s.city ?? null,
-          state: s.state ?? null,
-          showcase_count: s.showcase_count ?? 0,
-        });
-      }
-    }
-    // Added: in current, not in snapshot.
-    for (const s of params.stores) {
-      if (!snapshotIds.has(s.id)) {
-        storeChangeMap.set(s.id, "added");
-        addedStores.push(s);
-      }
-    }
-  }
+  // Compare snapshot (taken at adjustment creation) and baseline rateio vs current live stores.
+  type DisplayStore = AdjustmentStoreForDiff;
+  const { added: addedStores, removed: removedStores, changeMap: storeChangeMap } = computeAdjustmentStoreChanges(
+    params.stores,
+    params.adjustmentStoresSnapshot ?? [],
+    params.originalStorePieces,
+  );
 
   // Final store list for the matrix: current + removed (so the supplier sees them).
   const matrixStores: DisplayStore[] = [
@@ -1154,12 +1126,12 @@ export async function buildAdjustmentProposalWorkbook(
     styleDataRow(r, "unchanged");
   } else {
     for (const s of addedStores) {
-      const r = ws3.addRow(["", s.name, [s.city, s.state].filter(Boolean).join("/"), "", Number(s.showcase_count || 0), "Nova", "Loja incluída após o orçamento original."]);
+      const r = ws3.addRow(["", s.name, [s.city, s.state].filter(Boolean).join("/"), s.store_code || "", Number(s.showcase_count || 0), "Nova", "Loja incluída após o orçamento original."]);
       styleDataRow(r, "added");
       r.height = 28;
     }
     for (const s of removedStores) {
-      const r = ws3.addRow(["", s.name, [s.city, s.state].filter(Boolean).join("/"), "", Number(s.showcase_count || 0), "Removida", "Loja excluída após o orçamento original."]);
+      const r = ws3.addRow(["", s.name, [s.city, s.state].filter(Boolean).join("/"), s.store_code || "", Number(s.showcase_count || 0), "Removida", "Loja excluída após o orçamento original."]);
       styleDataRow(r, "removed");
       r.height = 28;
     }
