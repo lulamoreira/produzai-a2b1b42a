@@ -540,7 +540,15 @@ export async function buildAdjustmentProposalWorkbook(
       isKitHeader ? null : (repeatCurrentPrice ? r.lineTotal : null),
     ]);
 
-    if (!isKitHeader) totalCurrent += r.lineTotal;
+    if (!isKitHeader) {
+      totalCurrent += r.lineTotal;
+      if (itemFirstRow === 0) itemFirstRow = row.number;
+      itemLastRow = row.number;
+    } else {
+      // include kit header rows in the SUM range (they're null, won't affect)
+      if (itemFirstRow === 0) itemFirstRow = row.number;
+      itemLastRow = row.number;
+    }
 
     row.height = 22;
     row.eachCell({ includeEmpty: true }, (cell, col) => {
