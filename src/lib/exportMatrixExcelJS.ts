@@ -487,6 +487,40 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
   const ws = wb.addWorksheet(mainSheetName);
   await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames, effectiveStoreFields);
 
+  // Apply change highlights to the main matrix columns (meta rows + store rows).
+  if (changeMap && changeMap.size > 0) {
+    const STORE_META_COLS = Math.max(effectiveStoreFields.length, 1);
+    const META_ROWS = META_LABELS.length;
+    const firstMetaRow = 2;
+    const lastMetaRow = firstMetaRow + META_ROWS - 1;
+    const firstStoreRow = lastMetaRow + 2; // skip stores header row
+    const lastStoreRow = firstStoreRow + stores.length - 1;
+    const palette: Record<string, { bg: string; font: string }> = {
+      added:    { bg: "FFE6F4EA", font: "FF2F855A" },
+      removed:  { bg: "FFFFF0F0", font: "FFC53030" },
+      modified: { bg: "FFFFF7CC", font: "FF8A6D00" },
+      qty:      { bg: "FFFFF7CC", font: "FF8A6D00" },
+    };
+    for (let i = 0; i < allColumns.length; i++) {
+      const item = allColumns[i];
+      const kind = changeMap.get(item.id);
+      if (!kind) continue;
+      const colNum = STORE_META_COLS + 1 + i;
+      const tone = palette[kind];
+      // Re-paint the meta-area cells (rows 2..lastMetaRow) for this column
+      for (let rowNum = firstMetaRow; rowNum <= lastMetaRow; rowNum++) {
+        const cell = ws.getCell(rowNum, colNum);
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: tone.bg } };
+        cell.font = { ...(cell.font || {}), color: { argb: tone.font }, bold: true };
+      }
+      // Lightly tint the store-row cells too (keep value visible)
+      for (let rowNum = firstStoreRow; rowNum <= lastStoreRow; rowNum++) {
+        const cell = ws.getCell(rowNum, colNum);
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: tone.bg } };
+      }
+    }
+  }
+
   // Kit tabs
   if (skipKitTabs) {
     if (skipDashboard || !dashboardSheetName) return;
