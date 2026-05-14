@@ -557,7 +557,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
     await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`, colors, locData, undefined, effectiveStoreFields);
   }
 
-  if (skipDashboard || !dashboardSheetName) return;
+  if (skipDashboard || !dashboardSheetName) return mainSheetName;
 
   // Dashboard tab
   const { PRIMARY, SECONDARY, LIGHT, BORDER } = colors;
