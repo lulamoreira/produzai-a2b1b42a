@@ -569,20 +569,20 @@ export async function buildAdjustmentProposalWorkbook(
   // Totals
   ws1.addRow([]);
   const addTotalRow = (label: string, value: number | null, emphasized = false, editable = false) => {
-    const r = ws1.addRow(["", "", "", "", "", label, value, null]);
+    const r = ws1.addRow(["", "", "", "", "", label, value, null, null]);
     r.getCell(6).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).numFmt = money;
     if (emphasized) {
-      r.getCell(6).font = { bold: true, color: { argb: WHITE } };
-      r.getCell(7).font = { bold: true, color: { argb: WHITE } };
-      r.getCell(6).fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
-      r.getCell(7).fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
+      for (const cn of [6, 7]) {
+        r.getCell(cn).font = { bold: true, color: { argb: WHITE } };
+        r.getCell(cn).fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
+      }
     } else {
       r.getCell(6).font = { bold: true };
     }
     if (editable) {
-      const np = r.getCell(8);
+      const np = r.getCell(9);
       np.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_INPUT } };
       np.numFmt = money;
       np.border = {
@@ -604,10 +604,14 @@ export async function buildAdjustmentProposalWorkbook(
   addTotalRow("TOTAL REORÇAMENTO", null, true, true);
 
   ws1.addRow([]);
+  // Legenda de cores (reutilizada nas três abas)
+  writeLegend(ws1, lastColLetter);
+
+  ws1.addRow([]);
   const noteRow = ws1.addRow([
-    "* Preencha as células destacadas em amarelo (coluna \"Novo Preço\") com os valores propostos e devolva o arquivo. Linhas destacadas indicam itens com alteração nesta solicitação.",
+    "* Preencha as células destacadas em amarelo (colunas \"Novo Preço Unit.\" e \"Novo Total\") nas linhas que tiveram alteração. Itens sem alteração já vêm com o preço atual repetido.",
   ]);
-  ws1.mergeCells(`A${noteRow.number}:H${noteRow.number}`);
+  ws1.mergeCells(`A${noteRow.number}:${lastColLetter}${noteRow.number}`);
   const nc = noteRow.getCell(1);
   nc.font = { italic: true, color: { argb: DARK }, size: 10 };
   nc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
@@ -617,12 +621,13 @@ export async function buildAdjustmentProposalWorkbook(
   ws1.columns = [
     { width: 8 },   // Foto
     { width: 14 },  // Tipo
-    { width: 18 },  // Código (wider to fit "(MODIFICADA)" suffix)
+    { width: 18 },  // Código
     { width: 50 },  // Item
     { width: 12 },  // Qtd
     { width: 16 },  // Preço Atual
     { width: 16 },  // Total Atual
-    { width: 16 },  // Novo Preço
+    { width: 16 },  // Novo Preço Unit.
+    { width: 16 },  // Novo Total
   ];
   ws1.views = [{ state: "frozen", ySplit: headerRowIdx }];
 
