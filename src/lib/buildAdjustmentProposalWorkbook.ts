@@ -850,7 +850,7 @@ export async function buildAdjustmentProposalWorkbook(
   let matrixSheetName: string | null = null;
   try {
     matrixSheetName = await appendMatrixSheets(wb, {
-      stores: params.stores as any,
+      stores: matrixStores as any,
       pieces: matrixPieces as any,
       qtyMap: matrixQtyMap,
       campaignName: params.campaignName,
@@ -866,6 +866,7 @@ export async function buildAdjustmentProposalWorkbook(
       skipKitTabs: true,
       sortByCode: true,
       changeMap: matrixChangeMap,
+      storeChangeMap,
     } as any) ?? null;
   } catch {
     // Fail-soft: matrix is decorative; never block the export.
