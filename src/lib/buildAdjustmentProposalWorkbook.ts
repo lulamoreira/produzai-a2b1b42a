@@ -15,6 +15,7 @@
 // by the caller and passed in via `originalStorePieces` + `baselineIsNegotiation`.
 
 import { appendMatrixSheets } from "@/lib/exportMatrixExcelJS";
+import { pickPieceImageUrl } from "@/lib/pieceImageVariants";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -66,10 +67,10 @@ export interface AdjustmentProposalParams {
   kitPieces: any[];
 
   /** Source kits from campaign_kits (used for the kit Código + original name). */
-  sourceKits: { id: string; code: number; name: string }[];
+  sourceKits: { id: string; code: number; name: string; image_url?: string | null }[];
   /** Source pieces from campaign_pieces (used to resolve names of pieces that
    *  were removed from a kit and have no row in the adjustment_pieces list). */
-  sourcePieces: { id: string; code: number; name: string }[];
+  sourcePieces: { id: string; code: number; name: string; image_url?: string | null; image_thumb_url?: string | null; image_report_url?: string | null; image_full_url?: string | null }[];
   /** Original kit composition (campaign_kit_pieces) for change detection. */
   originalKitPieces: { kit_id: string; piece_id: string; quantity: number }[];
 
@@ -110,6 +111,31 @@ export function summarizeAdjustmentChanges(pieces: any[]): AdjustmentChangeSumma
 type RowKind = "kit_header" | "kit_piece" | "standalone_piece";
 type ChangeKind = "unchanged" | "modified" | "added" | "removed" | "qty";
 
+type WorkbookImage = { base64: string; ext: "png" | "jpeg"; width: number; height: number };
+
+async function fetchWorkbookImage(url?: string | null): Promise<WorkbookImage | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const buffer = await blob.arrayBuffer();
+    const uint8 = new Uint8Array(buffer);
+    let binary = "";
+    uint8.forEach((b) => { binary += String.fromCharCode(b); });
+    const blobUrl = URL.createObjectURL(blob);
+    const size = await new Promise<{ width: number; height: number }>((resolve) => {
+      const img = new Image();
+      img.onload = () => { resolve({ width: img.naturalWidth, height: img.naturalHeight }); URL.revokeObjectURL(blobUrl); };
+      img.onerror = () => { resolve({ width: 160, height: 120 }); URL.revokeObjectURL(blobUrl); };
+      img.src = blobUrl;
+    });
+    return { base64: btoa(binary), ext: blob.type.includes("png") ? "png" : "jpeg", ...size };
+  } catch {
+    return null;
+  }
+}
+
 interface OrcamentoRow {
   kind: RowKind;
   code: number | undefined;
@@ -138,6 +164,16 @@ export async function buildAdjustmentProposalWorkbook(
   // ── Lookup maps ────────────────────────────────────────────────────────
   const sourceKitById = new Map(params.sourceKits.map((k) => [k.id, k]));
   const sourcePieceById = new Map(params.sourcePieces.map((p) => [p.id, p]));
+  const pieceImageUrl = (p: any): string | null => {
+    const source = p?.source_piece_id ? sourcePieceById.get(p.source_piece_id) : undefined;
+    return pickPieceImageUrl({ ...(source || {}), ...(p || {}) }, "report");
+  };
+  const sourcePieceImageUrl = (sourcePieceId: string): string | null =>
+    pickPieceImageUrl(sourcePieceById.get(sourcePieceId), "report");
+  const kitImageUrl = (k: any): string | null => {
+    const source = k?.source_kit_id ? sourceKitById.get(k.source_kit_id) : undefined;
+    return (k?.image_report_url || k?.image_url || source?.image_url || null) as string | null;
+  };
 
   // Adjustment piece id -> source piece id (and back).
   const adjPieceById = new Map<string, any>();
@@ -168,6 +204,25 @@ export async function buildAdjustmentProposalWorkbook(
     if (!p.source_piece_id) return 0;
     return priceBySourceId.get(p.source_piece_id) ?? 0;
   };
+  const imageCache = new Map<string, Promise<WorkbookImage | null>>();
+  const addImageToCell = async (ws: any, rowNumber: number, colNumber: number, url?: string | null) => {
+    if (!url) return;
+    if (!imageCache.has(url)) imageCache.set(url, fetchWorkbookImage(url));
+    const img = await imageCache.get(url)!;
+    if (!img) return;
+    const maxW = 72;
+    const maxH = 54;
+    const ratio = img.width / img.height;
+    let w = maxW;
+    let h = w / ratio;
+    if (h > maxH) { h = maxH; w = h * ratio; }
+    const imageId = wb.addImage({ base64: img.base64, extension: img.ext });
+    ws.addImage(imageId, {
+      tl: { col: colNumber - 1 + 0.08, row: rowNumber - 1 + 0.12 },
+      ext: { width: Math.round(w), height: Math.round(h) },
+    });
+    ws.getCell(rowNumber, colNumber).value = "";
+  };
 
   // ── Compute kit-pieces change map (per adjustment kit) ─────────────────
   // For each adjustment kit, what changed inside (added / removed / qty).
@@ -175,9 +230,10 @@ export async function buildAdjustmentProposalWorkbook(
     sourcePieceId: string;
     pieceCode: number | undefined;
     pieceName: string;
-    change: "added" | "removed" | "qty";
+    change: "added" | "removed" | "qty" | "modified";
     origQty: number;
     adjQty: number;
+    detail?: string;
   };
   const kitPieceChangesByAdjKit = new Map<string, KitPieceChange[]>();
   for (const k of params.kits) {
@@ -192,6 +248,7 @@ export async function buildAdjustmentProposalWorkbook(
       .filter((kp) => kp.kit_id === k.id)
       .forEach((kp) => {
         const adjP = adjPieceById.get(kp.piece_id);
+        if (adjP?.is_deleted) return;
         const srcId = adjP?.source_piece_id ?? kp.piece_id;
         cur.set(srcId, Number(kp.quantity || 0));
       });
@@ -200,7 +257,11 @@ export async function buildAdjustmentProposalWorkbook(
     ids.forEach((pid) => {
       const o = orig.get(pid) ?? 0;
       const a = cur.get(pid) ?? 0;
-      if (o === a) return;
+      const adjP = adjBySourcePieceId.get(pid);
+      const fieldChanges = adjP?.change_type === "modified"
+        ? Object.keys(PIECE_FIELD_LABELS).filter((key) => String((adjP.original_snapshot || {})[key] ?? "") !== String(adjP[key] ?? ""))
+        : [];
+      if (o === a && fieldChanges.length === 0) return;
       const meta =
         sourcePieceById.get(pid) ||
         (adjBySourcePieceId.get(pid) && {
@@ -210,10 +271,11 @@ export async function buildAdjustmentProposalWorkbook(
       out.push({
         sourcePieceId: pid,
         pieceCode: meta?.code,
-        pieceName: meta?.name ?? "—",
-        change: o === 0 ? "added" : a === 0 ? "removed" : "qty",
+        pieceName: adjP?.name ?? meta?.name ?? "—",
+        change: o === 0 ? "added" : a === 0 ? "removed" : fieldChanges.length > 0 ? "modified" : "qty",
         origQty: o,
         adjQty: a,
+        detail: fieldChanges.map((key) => `${PIECE_FIELD_LABELS[key]}: "${(adjP.original_snapshot || {})[key] ?? ""}" → "${adjP[key] ?? ""}"`).join("\n"),
       });
     });
     if (out.length > 0) kitPieceChangesByAdjKit.set(k.id, out);
@@ -230,6 +292,8 @@ export async function buildAdjustmentProposalWorkbook(
   //     with kit components emitted under their kit header.
 
   const piecesInAnyAdjKit = new Set<string>(params.kitPieces.map((kp) => kp.piece_id));
+  const sourcePiecesInAnyKit = new Set<string>(params.originalKitPieces.map((kp) => kp.piece_id));
+  const isKitPiece = (p: any) => piecesInAnyAdjKit.has(p.id) || (!!p.source_piece_id && sourcePiecesInAnyKit.has(p.source_piece_id));
 
   const kitTotalQty = (kitId: string): number => {
     const kpList = params.kitPieces.filter((kp) => kp.kit_id === kitId);
@@ -315,7 +379,7 @@ export async function buildAdjustmentProposalWorkbook(
   // Standalone pieces (not part of any adjustment kit, and not kit_only)
   for (const p of params.pieces) {
     if (p.kit_only) continue;
-    if (piecesInAnyAdjKit.has(p.id)) continue;
+    if (isKitPiece(p)) continue;
     const code = (p.code as number | undefined) ?? Number.MAX_SAFE_INTEGER;
     groups.push({
       code,
@@ -558,6 +622,7 @@ export async function buildAdjustmentProposalWorkbook(
       ...p,
       store_category: p.category,
       specification: p.specification || "",
+      image_url: pieceImageUrl(p),
     }));
 
   // Adjustment kits don't carry codes — synthesize from sourceKitById for matrix labels.
@@ -565,7 +630,7 @@ export async function buildAdjustmentProposalWorkbook(
     .filter((k: any) => !k.is_deleted)
     .map((k: any) => {
       const sk = k.source_kit_id ? sourceKitById.get(k.source_kit_id) : null;
-      return { ...k, code: sk?.code ?? 0 };
+      return { ...k, code: sk?.code ?? 0, image_url: kitImageUrl(k) };
     });
 
   try {
@@ -584,6 +649,7 @@ export async function buildAdjustmentProposalWorkbook(
       reservedSheetNames: new Set(["orçamento", "modificações"]),
       skipDashboard: true,
       skipKitTabs: true,
+      sortByCode: true,
     });
   } catch {
     // Fail-soft: matrix is decorative; never block the export.
@@ -596,7 +662,7 @@ export async function buildAdjustmentProposalWorkbook(
 
   const writeSectionTitle = (title: string) => {
     const r = ws3.addRow([title]);
-    ws3.mergeCells(`A${r.number}:F${r.number}`);
+    ws3.mergeCells(`A${r.number}:G${r.number}`);
     const c = r.getCell(1);
     c.value = title;
     c.font = { bold: true, color: { argb: WHITE }, size: 12 };
@@ -640,7 +706,7 @@ export async function buildAdjustmentProposalWorkbook(
   const baselineLabel = params.baselineIsNegotiation ? "Negociado" : "Original";
 
   // ── Section 1: Standalone pieces (regular, non-kit) ──────────────────
-  const standalonePieces = params.pieces.filter((p: any) => !p.kit_only && !piecesInAnyAdjKit.has(p.id));
+  const standalonePieces = params.pieces.filter((p: any) => !p.kit_only && !isKitPiece(p));
   const piecePieceChangeRows: { p: any; kind: ChangeKind }[] = [];
   for (const p of standalonePieces) {
     const k = isPieceChanged(p);
@@ -649,6 +715,7 @@ export async function buildAdjustmentProposalWorkbook(
 
   writeSectionTitle("Peças (alteradas, removidas e novas)");
   writeTableHeader([
+    "Imagem",
     "Código",
     "Peça",
     "Alteração",
@@ -658,8 +725,8 @@ export async function buildAdjustmentProposalWorkbook(
   ]);
 
   if (piecePieceChangeRows.length === 0) {
-    const r = ws3.addRow(["—", "Nenhuma peça (não-kit) com alteração.", "", "", "", ""]);
-    ws3.mergeCells(`B${r.number}:F${r.number}`);
+    const r = ws3.addRow(["—", "Nenhuma peça (não-kit) com alteração.", "", "", "", "", ""]);
+    ws3.mergeCells(`B${r.number}:G${r.number}`);
     r.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
     r.getCell(2).font = { italic: true, color: { argb: GREY } };
     styleDataRow(r, "unchanged");
@@ -669,24 +736,31 @@ export async function buildAdjustmentProposalWorkbook(
       const baseQ = p.source_piece_id ? (baseQtyBySourceId.get(p.source_piece_id) || 0) : 0;
 
       if (kind === "added") {
-        const r = ws3.addRow([p.code ?? "", p.name, "Nova", "Peça incluída no ajuste.", 0, adjQ]);
+        const r = ws3.addRow(["", p.code ?? "", p.name, "Nova", "Peça incluída no ajuste.", 0, adjQ]);
         styleDataRow(r, "added");
+        r.height = 58;
+        await addImageToCell(ws3, r.number, 1, pieceImageUrl(p));
       } else if (kind === "removed") {
-        const r = ws3.addRow([p.code ?? "", p.name, "Removida", "Peça removida do ajuste.", baseQ, 0]);
+        const r = ws3.addRow(["", p.code ?? "", p.name, "Removida", "Peça removida do ajuste.", baseQ, 0]);
         styleDataRow(r, "removed");
+        r.height = 58;
+        await addImageToCell(ws3, r.number, 1, pieceImageUrl(p));
       } else if (kind === "modified") {
         const snap = p.original_snapshot || {};
         const fields = Object.keys(PIECE_FIELD_LABELS).filter((k) => String(snap[k] ?? "") !== String((p as any)[k] ?? ""));
         const detail = fields.length === 0
           ? "Campos modificados."
           : fields.map((k) => `${PIECE_FIELD_LABELS[k]}: "${snap[k] ?? ""}" → "${(p as any)[k] ?? ""}"`).join("\n");
-        const r = ws3.addRow([p.code ?? "", p.name, "Modificada", detail, baseQ, adjQ]);
+        const r = ws3.addRow(["", p.code ?? "", p.name, "Modificada", detail, baseQ, adjQ]);
         styleDataRow(r, "modified");
-        r.getCell(4).alignment = { vertical: "top", wrapText: true };
-        r.height = Math.max(22, Math.min(120, 14 + 14 * Math.max(1, fields.length)));
+        r.getCell(5).alignment = { vertical: "top", wrapText: true };
+        r.height = Math.max(58, Math.min(120, 14 + 14 * Math.max(1, fields.length)));
+        await addImageToCell(ws3, r.number, 1, pieceImageUrl(p));
       } else if (kind === "qty") {
-        const r = ws3.addRow([p.code ?? "", p.name, "Quantidade", `${baseQ} → ${adjQ} (${adjQ - baseQ >= 0 ? "+" : ""}${adjQ - baseQ})`, baseQ, adjQ]);
+        const r = ws3.addRow(["", p.code ?? "", p.name, "Quantidade", `${baseQ} → ${adjQ} (${adjQ - baseQ >= 0 ? "+" : ""}${adjQ - baseQ})`, baseQ, adjQ]);
         styleDataRow(r, "qty");
+        r.height = 58;
+        await addImageToCell(ws3, r.number, 1, pieceImageUrl(p));
       }
     }
   }
@@ -696,6 +770,7 @@ export async function buildAdjustmentProposalWorkbook(
   // ── Section 2: Kits & kit-pieces ─────────────────────────────────────
   writeSectionTitle("Kits (alterados, removidos e novos) — incluindo peças dentro dos kits");
   writeTableHeader([
+    "Imagem",
     "Cód. Kit",
     "Kit",
     "Cód. Peça",
@@ -706,8 +781,8 @@ export async function buildAdjustmentProposalWorkbook(
 
   const changedKits = params.kits.filter((k: any) => isKitChanged(k) !== "unchanged");
   if (changedKits.length === 0) {
-    const r = ws3.addRow(["—", "Nenhum kit com alteração.", "", "", "", ""]);
-    ws3.mergeCells(`B${r.number}:F${r.number}`);
+    const r = ws3.addRow(["—", "Nenhum kit com alteração.", "", "", "", "", ""]);
+    ws3.mergeCells(`B${r.number}:G${r.number}`);
     r.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
     r.getCell(2).font = { italic: true, color: { argb: GREY } };
     styleDataRow(r, "unchanged");
@@ -728,11 +803,13 @@ export async function buildAdjustmentProposalWorkbook(
         if (kp.length > 0) parts.push(`${kp.length} peça(s) do kit alteradas (ver linhas abaixo)`);
         kitDetail = parts.join("\n") || "Kit modificado.";
       }
-      const kr = ws3.addRow([kCode, k.name, "—", "—", kKind === "added" ? "Novo" : kKind === "removed" ? "Removido" : "Modificado", kitDetail]);
+      const kr = ws3.addRow(["", kCode, k.name, "—", "—", kKind === "added" ? "Novo" : kKind === "removed" ? "Removido" : "Modificado", kitDetail]);
       styleDataRow(kr, kKind);
-      kr.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
-      kr.getCell(6).alignment = { vertical: "top", wrapText: true };
+      kr.height = 58;
+      kr.getCell(2).alignment = { horizontal: "center", vertical: "middle" };
+      kr.getCell(7).alignment = { vertical: "top", wrapText: true };
       kr.eachCell({ includeEmpty: false }, (c: any) => { c.font = { ...(c.font || {}), bold: true }; });
+      await addImageToCell(ws3, kr.number, 1, kitImageUrl(k));
 
       // Kit-piece rows
       const kpChanges = kitPieceChangesByAdjKit.get(k.id) ?? [];
@@ -740,19 +817,24 @@ export async function buildAdjustmentProposalWorkbook(
         const detail =
           ch.change === "added"  ? `Peça adicionada ao kit (qtd por kit: ${ch.adjQty}).` :
           ch.change === "removed" ? `Peça removida do kit (era ${ch.origQty} por kit).` :
+          ch.change === "modified" ? (ch.detail || "Campos da peça alterados dentro do kit.") :
                                     `Quantidade por kit: ${ch.origQty} → ${ch.adjQty} (${ch.adjQty - ch.origQty >= 0 ? "+" : ""}${ch.adjQty - ch.origQty}).`;
         const label =
           ch.change === "added" ? "Peça nova no kit" :
           ch.change === "removed" ? "Peça removida do kit" :
+          ch.change === "modified" ? "Peça alterada no kit" :
           "Qtd por kit alterada";
-        const r = ws3.addRow(["", "↳ " + (k.name || ""), ch.pieceCode ?? "", ch.pieceName, label, detail]);
-        styleDataRow(r, ch.change === "added" ? "added" : ch.change === "removed" ? "removed" : "qty");
-        r.getCell(2).font = { italic: true, color: { argb: GREY } };
+        const r = ws3.addRow(["", "", "↳ " + (k.name || ""), ch.pieceCode ?? "", ch.pieceName, label, detail]);
+        styleDataRow(r, ch.change === "added" ? "added" : ch.change === "removed" ? "removed" : ch.change === "modified" ? "modified" : "qty");
+        r.height = 58;
+        r.getCell(3).font = { italic: true, color: { argb: GREY } };
+        await addImageToCell(ws3, r.number, 1, sourcePieceImageUrl(ch.sourcePieceId));
       }
     }
   }
 
   ws3.columns = [
+    { width: 14 },
     { width: 12 },
     { width: 36 },
     { width: 12 },

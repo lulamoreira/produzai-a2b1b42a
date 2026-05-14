@@ -284,9 +284,23 @@ export default function AdjustmentDetailSheet({
     return { rows, totalBase, totalAdj };
   }, [adjStorePieces, baseStorePieces, pieces]);
 
+  // Kit composition changes (pieces added/removed/quantity changed inside each kit).
+  // Compares original `campaign_kit_pieces` (per source_kit_id) against the
+  // adjustment's `campaign_adjustment_kit_pieces` (per adj kit), translating
+  // adjustment piece ids back to source piece ids via `pieces[].source_piece_id`.
+  const adjPieceIdToSrc = useMemo(() => {
+    const m = new Map<string, string | null>();
+    pieces.forEach((p: any) => m.set(p.id, p.source_piece_id ?? null));
+    return m;
+  }, [pieces]);
+  const sourcePiecesInAnyKit = useMemo(() => new Set((origKitPieces as any[]).map((kp) => kp.piece_id)), [origKitPieces]);
+  const adjPiecesInAnyKit = useMemo(() => new Set((adjKitPieces as any[]).map((kp) => kp.piece_id)), [adjKitPieces]);
+  const isPieceInsideKit = (p: any) => adjPiecesInAnyKit.has(p.id) || (!!p.source_piece_id && sourcePiecesInAnyKit.has(p.source_piece_id));
+
   const changedPieceRows = useMemo(() => {
     const out: { code: number | undefined; piece: string; field: string; orig: any; adj: any }[] = [];
     pieces.forEach((p: any) => {
+      if (isPieceInsideKit(p)) return;
       if (p.change_type !== "modified") return;
       const snap = p.original_snapshot || {};
       PIECE_FIELDS.forEach((f) => {
@@ -298,20 +312,10 @@ export default function AdjustmentDetailSheet({
       });
     });
     return out;
-  }, [pieces]);
-
-  // Kit composition changes (pieces added/removed/quantity changed inside each kit).
-  // Compares original `campaign_kit_pieces` (per source_kit_id) against the
-  // adjustment's `campaign_adjustment_kit_pieces` (per adj kit), translating
-  // adjustment piece ids back to source piece ids via `pieces[].source_piece_id`.
-  const adjPieceIdToSrc = useMemo(() => {
-    const m = new Map<string, string | null>();
-    pieces.forEach((p: any) => m.set(p.id, p.source_piece_id ?? null));
-    return m;
-  }, [pieces]);
+  }, [pieces, sourcePiecesInAnyKit, adjPiecesInAnyKit]);
 
   const changedKitPieceRows = useMemo(() => {
-    type Row = { kitCode: number | undefined; kitName: string; pieceCode: number | undefined; pieceName: string; change: "added" | "removed" | "qty"; origQty: number; adjQty: number };
+    type Row = { kitCode: number | undefined; kitName: string; pieceCode: number | undefined; pieceName: string; change: "added" | "removed" | "qty" | "modified"; origQty: number; adjQty: number };
     const out: Row[] = [];
     (kits as any[]).forEach((k: any) => {
       if (k.change_type === "added" || k.change_type === "removed" || k.is_deleted) return;
@@ -325,6 +329,8 @@ export default function AdjustmentDetailSheet({
       // Build adjustment composition mapped to source piece ids
       const adjMapKp = new Map<string, number>();
       (adjKitPieces as any[]).filter((kp) => kp.kit_id === k.id).forEach((kp) => {
+        const adjPiece = (pieces as any[]).find((p: any) => p.id === kp.piece_id);
+        if (adjPiece?.is_deleted || adjPiece?.change_type === "removed") return;
         const srcPid = adjPieceIdToSrc.get(kp.piece_id) ?? kp.piece_id;
         adjMapKp.set(srcPid as string, Number(kp.quantity || 0));
       });
@@ -333,14 +339,16 @@ export default function AdjustmentDetailSheet({
       allPids.forEach((pid) => {
         const o = origMap.get(pid) ?? 0;
         const a = adjMapKp.get(pid) ?? 0;
-        if (o === a) return;
+        const adjPiece = (pieces as any[]).find((p: any) => p.source_piece_id === pid);
+        const fieldsChanged = adjPiece?.change_type === "modified" && isPieceInsideKit(adjPiece);
+        if (o === a && !fieldsChanged) return;
         const meta = pieceMetaBySourceId.get(pid);
         const row: Row = {
           kitCode,
           kitName: k.name,
           pieceCode: meta?.code,
           pieceName: meta?.name ?? "—",
-          change: o === 0 ? "added" : a === 0 ? "removed" : "qty",
+          change: o === 0 ? "added" : a === 0 ? "removed" : fieldsChanged ? "modified" : "qty",
           origQty: o,
           adjQty: a,
         };
@@ -348,7 +356,7 @@ export default function AdjustmentDetailSheet({
       });
     });
     return out;
-  }, [kits, origKitPieces, adjKitPieces, adjPieceIdToSrc, kitCodeBySourceId, pieceMetaBySourceId]);
+  }, [kits, origKitPieces, adjKitPieces, adjPieceIdToSrc, kitCodeBySourceId, pieceMetaBySourceId, pieces, sourcePiecesInAnyKit, adjPiecesInAnyKit]);
 
   const handleExport = async () => {
     const tId = toast.loading("Gerando comparativo...");
