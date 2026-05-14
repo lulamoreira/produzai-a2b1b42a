@@ -169,6 +169,11 @@ export default function AdjustmentDetailSheet({
     },
   });
 
+  const storeChanges = useMemo(
+    () => computeAdjustmentStoreChanges(currentStores as any[], adjStoresSnapshot as any[], baseStorePieces as any[]),
+    [currentStores, adjStoresSnapshot, baseStorePieces],
+  );
+
   const updatePiece = useUpdateAdjustmentPiece();
   const addPiece = useAddAdjustmentPiece();
   const restorePiece = useRestoreAdjustmentPiece();
