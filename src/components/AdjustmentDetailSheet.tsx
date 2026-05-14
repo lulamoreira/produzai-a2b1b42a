@@ -668,11 +668,19 @@ export default function AdjustmentDetailSheet({
 
           {/* COMPARE TAB */}
           <TabsContent value="compare" className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               <div className="border rounded-md p-3"><p className="text-[11px] text-muted-foreground">Modificadas</p><p className="text-lg font-bold text-amber-600">{counts.modified}</p></div>
               <div className="border rounded-md p-3"><p className="text-[11px] text-muted-foreground">Novas</p><p className="text-lg font-bold text-emerald-600">{counts.added}</p></div>
               <div className="border rounded-md p-3"><p className="text-[11px] text-muted-foreground">Removidas</p><p className="text-lg font-bold text-destructive">{counts.removed}</p></div>
               <div className="border rounded-md p-3"><p className="text-[11px] text-muted-foreground">Kits alterados</p><p className="text-lg font-bold">{counts.kitsChanged}</p></div>
+              <div className="border rounded-md p-3">
+                <p className="text-[11px] text-muted-foreground">Lojas alteradas</p>
+                <p className="text-lg font-bold">
+                  <span className="text-emerald-600">+{storeChanges.added.length}</span>
+                  <span className="text-muted-foreground mx-1">/</span>
+                  <span className="text-destructive">-{storeChanges.removed.length}</span>
+                </p>
+              </div>
             </div>
 
             <div className="flex justify-end">
