@@ -550,7 +550,12 @@ export async function buildAdjustmentProposalWorkbook(
       itemLastRow = row.number;
     }
 
-    row.height = 22;
+    // Auto-fit row height: estimate lines from the description column (width 50)
+    // and the spec/size content. Keep a sensible minimum so single-line rows
+    // still breathe, and a ceiling so kit headers don't grow unbounded.
+    const descLen = desc.length;
+    const estimatedLines = Math.max(1, Math.ceil(descLen / 48));
+    row.height = Math.min(120, Math.max(22, 16 + estimatedLines * 14));
     row.eachCell({ includeEmpty: true }, (cell, col) => {
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
       cell.alignment = {
@@ -626,6 +631,10 @@ export async function buildAdjustmentProposalWorkbook(
     newTotal: number | { formula: string } | null = null,
   ) => {
     const r = ws1.addRow(["", "", "", "", "", label, value, null, null]);
+    // Apply vertical-center to every cell in the row (including empties)
+    r.eachCell({ includeEmpty: true }, (c) => {
+      c.alignment = { ...(c.alignment || {}), vertical: "middle" };
+    });
     r.getCell(6).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).numFmt = money;
@@ -656,6 +665,7 @@ export async function buildAdjustmentProposalWorkbook(
       np.font = { bold: true };
     }
     if (newTotal !== null) np.value = newTotal as any;
+    r.height = 22;
     return r;
   };
   const itemsRow = addTotalRow(
@@ -732,8 +742,25 @@ export async function buildAdjustmentProposalWorkbook(
   // SHEET 2 — Matriz Lojas x Peças (mesmo formato do Rateio)
   // ─────────────────────────────────────────────────────────
   const matrixQtyMap: Record<string, number> = {};
+  // 1) Adjustment rateio (overrides baseline for explicitly changed pieces).
   for (const sp of params.adjustmentStorePieces) {
     matrixQtyMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity || 0);
+  }
+  // 2) Fallback for kit-internal pieces that have NO entry in adjustmentStorePieces:
+  //    use the baseline qty (negotiation when present, otherwise original) mapped
+  //    from the source piece id to the adjustment piece id used by kit_pieces.
+  //    This prevents modified kits (metadata-only) from showing rateio = 0 in the
+  //    Matriz Lojas x Peças tab. The standard rule applies: if the user did not
+  //    manually change the kit's rateio, we keep the previous rateio as-is.
+  for (const kp of params.kitPieces) {
+    const adjP = adjPieceById.get(kp.piece_id);
+    if (!adjP || !adjP.source_piece_id) continue;
+    for (const sp of params.originalStorePieces) {
+      if (sp.piece_id !== adjP.source_piece_id) continue;
+      const key = `${sp.store_id}-${kp.piece_id}`;
+      if (matrixQtyMap[key] !== undefined) continue;
+      matrixQtyMap[key] = Number(sp.quantity || 0);
+    }
   }
   // Filter pieces to those displayed (non-kit_only, not deleted)
   const matrixPieces = params.pieces
