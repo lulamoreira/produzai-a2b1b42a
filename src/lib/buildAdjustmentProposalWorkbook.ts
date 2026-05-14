@@ -673,11 +673,10 @@ export async function buildAdjustmentProposalWorkbook(
     }
 
     // Auto-fit row height: estimate lines from the description column (width 50)
-    // and the spec/size content. Keep a sensible minimum so single-line rows
-    // still breathe, and a ceiling so kit headers don't grow unbounded.
+    // and the spec/size content. Min height bumped to fit photo (~54px).
     const descLen = desc.length;
     const estimatedLines = Math.max(1, Math.ceil(descLen / 48));
-    row.height = Math.min(120, Math.max(22, 16 + estimatedLines * 14));
+    row.height = Math.min(120, Math.max(58, 16 + estimatedLines * 14));
     row.eachCell({ includeEmpty: true }, (cell, col) => {
       cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bg } };
       cell.alignment = {
@@ -695,9 +694,12 @@ export async function buildAdjustmentProposalWorkbook(
       if (col === 6 || col === 7 || col === 8 || col === 9) cell.numFmt = money;
     });
 
-    // Photo placeholder cell styling
+    // Photo: try to embed actual image; if missing, leave camera placeholder
     const photoCell = row.getCell(1);
     photoCell.font = { name: "Arial", size: 14, color: { argb: GREY } };
+    if (r.imageUrl) {
+      await addImageToCell(ws1, row.number, 1, r.imageUrl);
+    }
 
     // Highlight the Tipo cell for changed rows + add a status word
     if (r.change !== "unchanged") {
