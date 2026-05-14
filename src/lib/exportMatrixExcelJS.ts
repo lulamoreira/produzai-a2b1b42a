@@ -367,6 +367,8 @@ export type AppendMatrixParams = {
   sortByCode?: boolean;
   /** Optional: highlight the columns (and their store-row cells) for these item ids in the main matrix. */
   changeMap?: Map<string, "added" | "removed" | "modified" | "qty">;
+  /** Optional: highlight entire store rows by store id (added=green, removed=red). */
+  storeChangeMap?: Map<string, "added" | "removed">;
 };
 
 /**
