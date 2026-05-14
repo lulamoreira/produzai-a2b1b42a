@@ -243,8 +243,8 @@ function writeLegend(ws: any, lastColLetter: string) {
     { bg: CHANGE_BG, font: CHANGE_FONT, label: "Modificada", desc: "Item ou quantidade alterada nesta solicitação." },
     { bg: ADDED_BG, font: ADDED_FONT, label: "Nova", desc: "Item incluído neste reorçamento." },
     { bg: REMOVED_BG, font: REMOVED_FONT, label: "Removida", desc: "Item removido neste reorçamento." },
-    { bg: "FFD1FAE5", font: "FF065F46", label: "Loja nova", desc: "Loja incluída após o orçamento original (linha verde na Matriz)." },
-    { bg: "FFFEE2E2", font: "FF991B1B", label: "Loja removida", desc: "Loja excluída após o orçamento original (linha vermelha riscada na Matriz)." },
+    { bg: "FFD1FAE5", font: "FF065F46", label: "Loja nova", desc: "Loja incluída após o orçamento original (destaque verde na Matriz)." },
+    { bg: "FFFEE2E2", font: "FF991B1B", label: "Loja removida", desc: "Loja excluída após o orçamento original (listada apenas na aba Comparação)." },
   ];
   const titleRow = ws.addRow(["Legenda de cores"]);
   ws.mergeCells(`A${titleRow.number}:${lastColLetter}${titleRow.number}`);
