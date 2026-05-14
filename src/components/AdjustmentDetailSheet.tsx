@@ -287,6 +287,7 @@ export default function AdjustmentDetailSheet({
   const changedPieceRows = useMemo(() => {
     const out: { code: number | undefined; piece: string; field: string; orig: any; adj: any }[] = [];
     pieces.forEach((p: any) => {
+      if (isPieceInsideKit(p)) return;
       if (p.change_type !== "modified") return;
       const snap = p.original_snapshot || {};
       PIECE_FIELDS.forEach((f) => {
@@ -298,7 +299,7 @@ export default function AdjustmentDetailSheet({
       });
     });
     return out;
-  }, [pieces]);
+  }, [pieces, sourcePiecesInAnyKit, adjPiecesInAnyKit]);
 
   // Kit composition changes (pieces added/removed/quantity changed inside each kit).
   // Compares original `campaign_kit_pieces` (per source_kit_id) against the
@@ -314,7 +315,7 @@ export default function AdjustmentDetailSheet({
   const isPieceInsideKit = (p: any) => adjPiecesInAnyKit.has(p.id) || (!!p.source_piece_id && sourcePiecesInAnyKit.has(p.source_piece_id));
 
   const changedKitPieceRows = useMemo(() => {
-    type Row = { kitCode: number | undefined; kitName: string; pieceCode: number | undefined; pieceName: string; change: "added" | "removed" | "qty"; origQty: number; adjQty: number };
+    type Row = { kitCode: number | undefined; kitName: string; pieceCode: number | undefined; pieceName: string; change: "added" | "removed" | "qty" | "modified"; origQty: number; adjQty: number };
     const out: Row[] = [];
     (kits as any[]).forEach((k: any) => {
       if (k.change_type === "added" || k.change_type === "removed" || k.is_deleted) return;
@@ -347,7 +348,7 @@ export default function AdjustmentDetailSheet({
           kitName: k.name,
           pieceCode: meta?.code,
           pieceName: meta?.name ?? "—",
-          change: o === 0 ? "added" : a === 0 ? "removed" : "qty",
+          change: o === 0 ? "added" : a === 0 ? "removed" : fieldsChanged ? "modified" : "qty",
           origQty: o,
           adjQty: a,
         };
@@ -355,7 +356,7 @@ export default function AdjustmentDetailSheet({
       });
     });
     return out;
-  }, [kits, origKitPieces, adjKitPieces, adjPieceIdToSrc, kitCodeBySourceId, pieceMetaBySourceId]);
+  }, [kits, origKitPieces, adjKitPieces, adjPieceIdToSrc, kitCodeBySourceId, pieceMetaBySourceId, pieces, sourcePiecesInAnyKit, adjPiecesInAnyKit]);
 
   const handleExport = async () => {
     const tId = toast.loading("Gerando comparativo...");
