@@ -70,6 +70,7 @@ export default function AdjustmentBudgetRequestDialog({
   const [sourceKits, setSourceKits] = useState<{ id: string; code: number; name: string }[]>([]);
   const [sourcePieces, setSourcePieces] = useState<{ id: string; code: number; name: string }[]>([]);
   const [originalKitPieces, setOriginalKitPieces] = useState<{ kit_id: string; piece_id: string; quantity: number }[]>([]);
+  const [adjustmentStoresSnapshot, setAdjustmentStoresSnapshot] = useState<any[]>([]);
 
   const { data: pieces = [] } = useAdjustmentPieces(adjustment.id);
   const { data: kits = [] } = useAdjustmentKits(adjustment.id);
