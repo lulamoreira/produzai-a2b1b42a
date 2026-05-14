@@ -118,6 +118,22 @@ export function useAdjustmentKitPieces(adjustmentId: string | undefined) {
   });
 }
 
+export function useAdjustmentStores(adjustmentId: string | undefined) {
+  return useQuery({
+    queryKey: ["adjustment_stores", adjustmentId],
+    enabled: !!adjustmentId,
+    queryFn: async () => {
+      return supabasePaginate<any>((from, to) =>
+        supabase
+          .from("campaign_adjustment_stores" as any)
+          .select("*")
+          .eq("adjustment_id", adjustmentId!)
+          .range(from, to) as any
+      );
+    },
+  });
+}
+
 export function useCreateAdjustment() {
   const qc = useQueryClient();
   return useMutation({
