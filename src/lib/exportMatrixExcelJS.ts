@@ -365,6 +365,8 @@ export type AppendMatrixParams = {
   skipKitTabs?: boolean;
   /** When true, order pieces and kits by their numeric Código instead of display_order. */
   sortByCode?: boolean;
+  /** Optional: highlight the columns (and their store-row cells) for these item ids in the main matrix. */
+  changeMap?: Map<string, "added" | "removed" | "modified" | "qty">;
 };
 
 /**
@@ -372,7 +374,7 @@ export type AppendMatrixParams = {
  * to an EXISTING workbook. Used by both the standalone Rateio export and the
  * Supplier Budget export (which appends these sheets after its own "Orçamento" tab).
  */
-export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMatrixParams) {
+export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMatrixParams): Promise<string> {
   const {
     stores,
     pieces,
@@ -391,6 +393,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
     skipDashboard,
     skipKitTabs,
     sortByCode,
+    changeMap,
   } = params;
 
   const effectiveStoreFields = storeFields && storeFields.length > 0 ? storeFields : DEFAULT_STORE_FIELDS;
@@ -484,9 +487,43 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
   const ws = wb.addWorksheet(mainSheetName);
   await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames, effectiveStoreFields);
 
+  // Apply change highlights to the main matrix columns (meta rows + store rows).
+  if (changeMap && changeMap.size > 0) {
+    const STORE_META_COLS = Math.max(effectiveStoreFields.length, 1);
+    const META_ROWS = META_LABELS.length;
+    const firstMetaRow = 2;
+    const lastMetaRow = firstMetaRow + META_ROWS - 1;
+    const firstStoreRow = lastMetaRow + 2; // skip stores header row
+    const lastStoreRow = firstStoreRow + stores.length - 1;
+    const palette: Record<string, { bg: string; font: string }> = {
+      added:    { bg: "FFE6F4EA", font: "FF2F855A" },
+      removed:  { bg: "FFFFF0F0", font: "FFC53030" },
+      modified: { bg: "FFFFF7CC", font: "FF8A6D00" },
+      qty:      { bg: "FFFFF7CC", font: "FF8A6D00" },
+    };
+    for (let i = 0; i < allColumns.length; i++) {
+      const item = allColumns[i];
+      const kind = changeMap.get(item.id);
+      if (!kind) continue;
+      const colNum = STORE_META_COLS + 1 + i;
+      const tone = palette[kind];
+      // Re-paint the meta-area cells (rows 2..lastMetaRow) for this column
+      for (let rowNum = firstMetaRow; rowNum <= lastMetaRow; rowNum++) {
+        const cell = ws.getCell(rowNum, colNum);
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: tone.bg } };
+        cell.font = { ...(cell.font || {}), color: { argb: tone.font }, bold: true };
+      }
+      // Lightly tint the store-row cells too (keep value visible)
+      for (let rowNum = firstStoreRow; rowNum <= lastStoreRow; rowNum++) {
+        const cell = ws.getCell(rowNum, colNum);
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: tone.bg } };
+      }
+    }
+  }
+
   // Kit tabs
   if (skipKitTabs) {
-    if (skipDashboard || !dashboardSheetName) return;
+    if (skipDashboard || !dashboardSheetName) return mainSheetName;
   }
   for (const kit of skipKitTabs ? [] : kits) {
     const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
@@ -520,7 +557,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
     await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`, colors, locData, undefined, effectiveStoreFields);
   }
 
-  if (skipDashboard || !dashboardSheetName) return;
+  if (skipDashboard || !dashboardSheetName) return mainSheetName;
 
   // Dashboard tab
   const { PRIMARY, SECONDARY, LIGHT, BORDER } = colors;
@@ -609,6 +646,8 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
   dash.getColumn(1).width = 12;
   dash.getColumn(2).width = 40;
   dash.getColumn(3).width = 20;
+
+  return mainSheetName;
 }
 
 // ─── Thin wrapper: standalone Rateio export (creates workbook + saves) ───

@@ -136,6 +136,45 @@ async function fetchWorkbookImage(url?: string | null): Promise<WorkbookImage | 
   }
 }
 
+/**
+ * Writes a small color legend (one row per change kind) to the given worksheet.
+ * Used at the bottom of every sheet so the supplier always knows what each
+ * color means without having to flip back to Sheet 1.
+ */
+function writeLegend(ws: any, lastColLetter: string) {
+  const items: { bg: string; font: string; label: string; desc: string }[] = [
+    { bg: "FFFFFFFF", font: "FF1C1916", label: "Sem alteração", desc: "Item mantido — preço/quantidade inalterados." },
+    { bg: CHANGE_BG, font: CHANGE_FONT, label: "Modificada", desc: "Item ou quantidade alterada nesta solicitação." },
+    { bg: ADDED_BG, font: ADDED_FONT, label: "Nova", desc: "Item incluído neste reorçamento." },
+    { bg: REMOVED_BG, font: REMOVED_FONT, label: "Removida", desc: "Item removido neste reorçamento." },
+  ];
+  const titleRow = ws.addRow(["Legenda de cores"]);
+  ws.mergeCells(`A${titleRow.number}:${lastColLetter}${titleRow.number}`);
+  const tc = titleRow.getCell(1);
+  tc.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+  tc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1C1916" } };
+  tc.alignment = { horizontal: "left", vertical: "middle", indent: 1 };
+  titleRow.height = 22;
+  for (const it of items) {
+    const r = ws.addRow([it.label, it.desc]);
+    ws.mergeCells(`B${r.number}:${lastColLetter}${r.number}`);
+    const c1 = r.getCell(1);
+    c1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: it.bg } };
+    c1.font = { bold: true, color: { argb: it.font } };
+    c1.alignment = { horizontal: "center", vertical: "middle" };
+    c1.border = {
+      top: { style: "thin", color: { argb: "FFE5E7EB" } },
+      bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
+      left: { style: "thin", color: { argb: "FFE5E7EB" } },
+      right: { style: "thin", color: { argb: "FFE5E7EB" } },
+    };
+    const c2 = r.getCell(2);
+    c2.font = { italic: true, color: { argb: "FF1C1916" }, size: 10 };
+    c2.alignment = { vertical: "middle", horizontal: "left", indent: 1, wrapText: true };
+    r.height = 20;
+  }
+}
+
 interface OrcamentoRow {
   kind: RowKind;
   code: number | undefined;
@@ -409,7 +448,10 @@ export async function buildAdjustmentProposalWorkbook(
   // ─────────────────────────────────────────────────────────
   const ws1 = wb.addWorksheet("Orçamento", { views: [{ showGridLines: false }] });
 
-  ws1.mergeCells("A1:H1");
+  const TOTAL_COLS = 9;
+  const lastColLetter = "I";
+
+  ws1.mergeCells(`A1:${lastColLetter}1`);
   const t1 = ws1.getCell("A1");
   t1.value = [params.agencyName, params.clientName].filter(Boolean).join(" | ") || "ProduzAI";
   t1.font = { name: "Arial", size: 10, color: { argb: WHITE } };
@@ -417,7 +459,7 @@ export async function buildAdjustmentProposalWorkbook(
   t1.alignment = { horizontal: "center", vertical: "middle" };
   ws1.getRow(1).height = 20;
 
-  ws1.mergeCells("A2:H2");
+  ws1.mergeCells(`A2:${lastColLetter}2`);
   const t2 = ws1.getCell("A2");
   t2.value = `${(params.campaignName || "").toUpperCase()} — REORÇAMENTO`;
   t2.font = { name: "Arial", size: 14, bold: true, color: { argb: WHITE } };
@@ -425,7 +467,7 @@ export async function buildAdjustmentProposalWorkbook(
   t2.alignment = { horizontal: "center", vertical: "middle" };
   ws1.getRow(2).height = 26;
 
-  ws1.mergeCells("A3:H3");
+  ws1.mergeCells(`A3:${lastColLetter}3`);
   const t3 = ws1.getCell("A3");
   t3.value = `Fornecedor: ${params.supplier.company_name} · Ajuste: ${params.adjustment.name}`;
   t3.font = { name: "Arial", size: 11, bold: true, color: { argb: DARK } };
@@ -445,7 +487,8 @@ export async function buildAdjustmentProposalWorkbook(
     "Qtd Total",
     "Preço Atual",
     "Total Atual",
-    "Novo Preço",
+    "Novo Preço Unit.",
+    "Novo Total",
   ];
   header.height = 24;
   header.eachCell((cell) => {
@@ -476,6 +519,13 @@ export async function buildAdjustmentProposalWorkbook(
     const codeCell = r.code != null ? r.code : "";
     const desc = [r.name, r.specification, r.size].filter(Boolean).join(" — ");
 
+    // Decide whether the "Novo Preço" cells are editable inputs (yellow)
+    // or just a repeat of the current price (normal background).
+    // Rule: only items that were actually changed get the yellow input.
+    // Unchanged items keep the same price, repeated with the row's normal bg.
+    const needsNewPriceInput = !isKitHeader && (r.change === "added" || r.change === "modified" || r.change === "qty");
+    const repeatCurrentPrice = !isKitHeader && r.change === "unchanged";
+
     const row = ws1.addRow([
       "📷",
       isKitHeader ? "Kit" : r.kind === "kit_piece" ? "Peça do Kit" : "Peça",
@@ -484,7 +534,8 @@ export async function buildAdjustmentProposalWorkbook(
       r.qty,
       isKitHeader ? null : r.unitPrice,
       isKitHeader ? null : r.lineTotal,
-      null, // Novo Preço — supplier fills
+      isKitHeader ? null : (repeatCurrentPrice ? r.unitPrice : null),
+      isKitHeader ? null : (repeatCurrentPrice ? r.lineTotal : null),
     ]);
 
     if (!isKitHeader) totalCurrent += r.lineTotal;
@@ -504,7 +555,7 @@ export async function buildAdjustmentProposalWorkbook(
         left: { style: "thin", color: { argb: BORDER } },
         right: { style: "thin", color: { argb: BORDER } },
       };
-      if (col === 6 || col === 7) cell.numFmt = money;
+      if (col === 6 || col === 7 || col === 8 || col === 9) cell.numFmt = money;
     });
 
     // Photo placeholder cell styling
@@ -534,37 +585,43 @@ export async function buildAdjustmentProposalWorkbook(
       }
     }
 
-    // Yellow editable "Novo Preço" cell only on real piece rows
-    if (!isKitHeader) {
-      const npCell = row.getCell(8);
-      npCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_INPUT } };
-      npCell.numFmt = money;
-      npCell.border = {
-        top: { style: "medium", color: { argb: BROWN } },
-        bottom: { style: "medium", color: { argb: BROWN } },
-        left: { style: "medium", color: { argb: BROWN } },
-        right: { style: "medium", color: { argb: BROWN } },
-      };
+    // Yellow editable cells only on rows that actually changed
+    if (needsNewPriceInput) {
+      const npUnit = row.getCell(8);
+      const npTotal = row.getCell(9);
+      // Total = Qty * Novo Preço Unit.  (col E = 5, col H = 8)
+      const formulaTotal = { formula: `IF(H${row.number}="","",E${row.number}*H${row.number})` } as any;
+      npTotal.value = formulaTotal;
+      for (const c of [npUnit, npTotal]) {
+        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_INPUT } };
+        c.numFmt = money;
+        c.border = {
+          top: { style: "medium", color: { argb: BROWN } },
+          bottom: { style: "medium", color: { argb: BROWN } },
+          left: { style: "medium", color: { argb: BROWN } },
+          right: { style: "medium", color: { argb: BROWN } },
+        };
+      }
     }
   }
 
   // Totals
   ws1.addRow([]);
   const addTotalRow = (label: string, value: number | null, emphasized = false, editable = false) => {
-    const r = ws1.addRow(["", "", "", "", "", label, value, null]);
+    const r = ws1.addRow(["", "", "", "", "", label, value, null, null]);
     r.getCell(6).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).numFmt = money;
     if (emphasized) {
-      r.getCell(6).font = { bold: true, color: { argb: WHITE } };
-      r.getCell(7).font = { bold: true, color: { argb: WHITE } };
-      r.getCell(6).fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
-      r.getCell(7).fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
+      for (const cn of [6, 7]) {
+        r.getCell(cn).font = { bold: true, color: { argb: WHITE } };
+        r.getCell(cn).fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
+      }
     } else {
       r.getCell(6).font = { bold: true };
     }
     if (editable) {
-      const np = r.getCell(8);
+      const np = r.getCell(9);
       np.fill = { type: "pattern", pattern: "solid", fgColor: { argb: YELLOW_INPUT } };
       np.numFmt = money;
       np.border = {
@@ -586,10 +643,14 @@ export async function buildAdjustmentProposalWorkbook(
   addTotalRow("TOTAL REORÇAMENTO", null, true, true);
 
   ws1.addRow([]);
+  // Legenda de cores (reutilizada nas três abas)
+  writeLegend(ws1, lastColLetter);
+
+  ws1.addRow([]);
   const noteRow = ws1.addRow([
-    "* Preencha as células destacadas em amarelo (coluna \"Novo Preço\") com os valores propostos e devolva o arquivo. Linhas destacadas indicam itens com alteração nesta solicitação.",
+    "* Preencha as células destacadas em amarelo (colunas \"Novo Preço Unit.\" e \"Novo Total\") nas linhas que tiveram alteração. Itens sem alteração já vêm com o preço atual repetido.",
   ]);
-  ws1.mergeCells(`A${noteRow.number}:H${noteRow.number}`);
+  ws1.mergeCells(`A${noteRow.number}:${lastColLetter}${noteRow.number}`);
   const nc = noteRow.getCell(1);
   nc.font = { italic: true, color: { argb: DARK }, size: 10 };
   nc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
@@ -599,12 +660,13 @@ export async function buildAdjustmentProposalWorkbook(
   ws1.columns = [
     { width: 8 },   // Foto
     { width: 14 },  // Tipo
-    { width: 18 },  // Código (wider to fit "(MODIFICADA)" suffix)
+    { width: 18 },  // Código
     { width: 50 },  // Item
     { width: 12 },  // Qtd
     { width: 16 },  // Preço Atual
     { width: 16 },  // Total Atual
-    { width: 16 },  // Novo Preço
+    { width: 16 },  // Novo Preço Unit.
+    { width: 16 },  // Novo Total
   ];
   ws1.views = [{ state: "frozen", ySplit: headerRowIdx }];
 
@@ -633,8 +695,21 @@ export async function buildAdjustmentProposalWorkbook(
       return { ...k, code: sk?.code ?? 0, image_url: kitImageUrl(k) };
     });
 
+  // Build a change map (item id -> change kind) so the matrix tab can
+  // visually highlight pieces/kits that were altered in this adjustment.
+  const matrixChangeMap = new Map<string, "added" | "removed" | "modified" | "qty">();
+  for (const p of matrixPieces) {
+    const k = isPieceChanged(p);
+    if (k !== "unchanged") matrixChangeMap.set(p.id, k as any);
+  }
+  for (const k of matrixKits) {
+    const ck = isKitChanged(k);
+    if (ck !== "unchanged") matrixChangeMap.set(k.id, ck as any);
+  }
+
+  let matrixSheetName: string | null = null;
   try {
-    await appendMatrixSheets(wb, {
+    matrixSheetName = await appendMatrixSheets(wb, {
       stores: params.stores as any,
       pieces: matrixPieces as any,
       qtyMap: matrixQtyMap,
@@ -650,9 +725,19 @@ export async function buildAdjustmentProposalWorkbook(
       skipDashboard: true,
       skipKitTabs: true,
       sortByCode: true,
-    });
+      changeMap: matrixChangeMap,
+    } as any) ?? null;
   } catch {
     // Fail-soft: matrix is decorative; never block the export.
+  }
+
+  // Append legend at the bottom of the matrix sheet too
+  if (matrixSheetName) {
+    const matrixWs = wb.getWorksheet(matrixSheetName);
+    if (matrixWs) {
+      matrixWs.addRow([]);
+      writeLegend(matrixWs, "F");
+    }
   }
 
   // ─────────────────────────────────────────────────────────
@@ -842,6 +927,10 @@ export async function buildAdjustmentProposalWorkbook(
     { width: 22 },
     { width: 60 },
   ];
+
+  // Legenda de cores na aba Modificações
+  ws3.addRow([]);
+  writeLegend(ws3, "G");
 
   // ── Build blob ────────────────────────────────────────────────────────
   const buffer = await wb.xlsx.writeBuffer();
