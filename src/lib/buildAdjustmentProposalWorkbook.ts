@@ -136,6 +136,45 @@ async function fetchWorkbookImage(url?: string | null): Promise<WorkbookImage | 
   }
 }
 
+/**
+ * Writes a small color legend (one row per change kind) to the given worksheet.
+ * Used at the bottom of every sheet so the supplier always knows what each
+ * color means without having to flip back to Sheet 1.
+ */
+function writeLegend(ws: any, lastColLetter: string) {
+  const items: { bg: string; font: string; label: string; desc: string }[] = [
+    { bg: "FFFFFFFF", font: "FF1C1916", label: "Sem alteração", desc: "Item mantido — preço/quantidade inalterados." },
+    { bg: CHANGE_BG, font: CHANGE_FONT, label: "Modificada", desc: "Item ou quantidade alterada nesta solicitação." },
+    { bg: ADDED_BG, font: ADDED_FONT, label: "Nova", desc: "Item incluído neste reorçamento." },
+    { bg: REMOVED_BG, font: REMOVED_FONT, label: "Removida", desc: "Item removido neste reorçamento." },
+  ];
+  const titleRow = ws.addRow(["Legenda de cores"]);
+  ws.mergeCells(`A${titleRow.number}:${lastColLetter}${titleRow.number}`);
+  const tc = titleRow.getCell(1);
+  tc.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+  tc.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1C1916" } };
+  tc.alignment = { horizontal: "left", vertical: "middle", indent: 1 };
+  titleRow.height = 22;
+  for (const it of items) {
+    const r = ws.addRow([it.label, it.desc]);
+    ws.mergeCells(`B${r.number}:${lastColLetter}${r.number}`);
+    const c1 = r.getCell(1);
+    c1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: it.bg } };
+    c1.font = { bold: true, color: { argb: it.font } };
+    c1.alignment = { horizontal: "center", vertical: "middle" };
+    c1.border = {
+      top: { style: "thin", color: { argb: "FFE5E7EB" } },
+      bottom: { style: "thin", color: { argb: "FFE5E7EB" } },
+      left: { style: "thin", color: { argb: "FFE5E7EB" } },
+      right: { style: "thin", color: { argb: "FFE5E7EB" } },
+    };
+    const c2 = r.getCell(2);
+    c2.font = { italic: true, color: { argb: "FF1C1916" }, size: 10 };
+    c2.alignment = { vertical: "middle", horizontal: "left", indent: 1, wrapText: true };
+    r.height = 20;
+  }
+}
+
 interface OrcamentoRow {
   kind: RowKind;
   code: number | undefined;
