@@ -321,11 +321,16 @@ export async function buildAdjustmentProposalWorkbook(
     params.originalStorePieces,
   );
 
-  // Final store list for the matrix: current + removed (so the supplier sees them).
-  const matrixStores: DisplayStore[] = [
-    ...params.stores,
-    ...removedStores,
-  ];
+  // Final store list for the matrix: ONLY current stores (removed stores
+  // appear only in the "Modificações / Comparação" sheet, not in the matrix).
+  const matrixStores: DisplayStore[] = [...params.stores];
+
+  // For the matrix highlight we only mark added stores (they are present in
+  // the matrix). Removed stores are not in the matrix, so they don't need highlighting there.
+  const matrixStoreChangeMap = new Map<string, "added">();
+  for (const [id, kind] of storeChangeMap) {
+    if (kind === "added") matrixStoreChangeMap.set(id, kind);
+  }
   const adjPieceById = new Map<string, any>();
   const adjBySourcePieceId = new Map<string, any>();
   for (const p of params.pieces) {
