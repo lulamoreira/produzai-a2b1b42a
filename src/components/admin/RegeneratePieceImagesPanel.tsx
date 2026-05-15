@@ -60,6 +60,7 @@ const RegeneratePieceImagesPanel = () => {
       const { data: c, error: cErr } = await supabase
         .from("campaign_pieces")
         .select("id, image_url")
+        .eq("is_deleted", false)
         .not("image_url", "is", null)
         .is("image_report_url", null);
       if (cErr) throw cErr;

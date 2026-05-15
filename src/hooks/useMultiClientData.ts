@@ -544,6 +544,7 @@ export function useCampaignPieces(campaignId: string | undefined) {
           .from("campaign_pieces")
           .select("*")
           .eq("campaign_id", campaignId)
+          .eq("is_deleted", false)
           .order("display_order")
           .range(from, to) as any
       );
@@ -665,15 +666,41 @@ export function useDeleteCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      // Check if any approved budget references this piece
+      const { data: approvedRef } = await supabase
+        .from("budget_prices")
+        .select("id, budget_suppliers!inner(negotiation_status)")
+        .eq("piece_id", id)
+        .eq("budget_suppliers.negotiation_status", "approved")
+        .limit(1);
+
+      const hasApproved = (approvedRef?.length ?? 0) > 0;
+
+      if (hasApproved) {
+        const { error } = await supabase
+          .from("campaign_pieces")
+          .update({ is_deleted: true, deleted_at: new Date().toISOString() } as never)
+          .eq("id", id);
+        if (error) throw error;
+        return { softDelete: true };
+      }
+
       const { error } = await supabase.from("campaign_pieces").delete().eq("id", id);
       if (error) throw error;
+      return { softDelete: false };
     },
     onMutate: async (id) => {
       qc.setQueriesData<CampaignPiece[]>({ queryKey: ["campaign_pieces"] }, (old) =>
         old ? old.filter((p) => p.id !== id) : old
       );
     },
-    onSuccess: () => toast.success("Peça removida!"),
+    onSuccess: (res) => {
+      if (res?.softDelete) {
+        toast.success("Peça arquivada (mantida no histórico de orçamento aprovado).");
+      } else {
+        toast.success("Peça removida!");
+      }
+    },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["campaign_pieces"] });
       qc.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
@@ -1368,6 +1395,7 @@ export function useCampaignKits(campaignId: string | undefined) {
         .from("campaign_kits")
         .select("*")
         .eq("campaign_id", campaignId)
+        .eq("is_deleted", false)
         .order("display_order");
       if (error) throw error;
       return data as CampaignKit[];
@@ -1407,6 +1435,23 @@ export function useDeleteCampaignKit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      // Soft delete kit if any approved budget references it
+      const { data: approvedRef } = await supabase
+        .from("budget_prices")
+        .select("id, budget_suppliers!inner(negotiation_status)")
+        .eq("kit_id", id)
+        .eq("budget_suppliers.negotiation_status", "approved")
+        .limit(1);
+
+      if ((approvedRef?.length ?? 0) > 0) {
+        const { error } = await supabase
+          .from("campaign_kits")
+          .update({ is_deleted: true, deleted_at: new Date().toISOString() } as never)
+          .eq("id", id);
+        if (error) throw error;
+        return;
+      }
+
       const { error } = await supabase.from("campaign_kits").delete().eq("id", id);
       if (error) throw error;
     },
@@ -1442,7 +1487,8 @@ export function useCampaignKitPieces(campaignId: string | undefined) {
       const { data: kits } = await supabase
         .from("campaign_kits")
         .select("id")
-        .eq("campaign_id", campaignId);
+        .eq("campaign_id", campaignId)
+        .eq("is_deleted", false);
       if (!kits || kits.length === 0) return [];
       const kitIds = kits.map(k => k.id);
       const { data, error } = await supabase

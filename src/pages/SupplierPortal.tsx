@@ -306,6 +306,7 @@ const SupplierPortal = () => {
             .from("campaign_pieces")
             .select("id, name, code, kit_only, image_url, specification, size, installation_instructions, display_order, category, store_category, sub_location")
             .eq("campaign_id", sup.campaign_id)
+            .eq("is_deleted", false)
             .order("display_order")
             .range(from, to) as any
         );
@@ -318,6 +319,7 @@ const SupplierPortal = () => {
           .from("campaign_kits")
           .select("id, name, code, image_url, display_order, category, sub_location")
           .eq("campaign_id", sup.campaign_id)
+          .eq("is_deleted", false)
           .order("display_order");
 
         const kts = (kitsRaw ?? []) as KitData[];

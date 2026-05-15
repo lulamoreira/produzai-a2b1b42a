@@ -45,6 +45,7 @@ export default function ImportSpecFromCampaign({ clientId, currentCampaignId, on
           .from("campaign_pieces")
           .select("id, name, code, size, specification, kit_only")
           .eq("campaign_id", selectedCampaign!.id)
+          .eq("is_deleted", false)
           .order("code")
           .range(from, to) as any
       );
@@ -59,6 +60,7 @@ export default function ImportSpecFromCampaign({ clientId, currentCampaignId, on
         .from("campaign_kits")
         .select("id, name, code")
         .eq("campaign_id", selectedCampaign!.id)
+        .eq("is_deleted", false)
         .order("code");
       return (data || []) as KitOption[];
     },

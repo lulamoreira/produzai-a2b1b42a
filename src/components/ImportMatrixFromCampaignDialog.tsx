@@ -77,6 +77,7 @@ const ImportMatrixFromCampaignDialog = ({
           .from("campaign_pieces")
           .select("*")
           .eq("campaign_id", selectedCampaignId)
+          .eq("is_deleted", false)
           .order("display_order")
           .range(from, to) as any
       );
@@ -91,6 +92,7 @@ const ImportMatrixFromCampaignDialog = ({
         .from("campaign_kits")
         .select("*")
         .eq("campaign_id", selectedCampaignId)
+        .eq("is_deleted", false)
         .order("display_order");
       return (data || []) as CampaignKit[];
     },

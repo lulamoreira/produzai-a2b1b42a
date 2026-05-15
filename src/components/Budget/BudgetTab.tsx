@@ -40,6 +40,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { COUNTRY_CONFIGS, formatCurrencyByCode } from "@/lib/countryConfig";
 
@@ -625,7 +626,14 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const winnerOriginalTotal = winnerSupplier
     ? ((winnerSupplier as any).winner_locked_total ?? supplierPartialTotals[(winnerSupplier as any).id]?.total ?? 0)
     : 0;
-  const winnerNegotiatedTotal = winnerSupplier ? (supplierNegotiationTotals[(winnerSupplier as any).id] ?? winnerOriginalTotal) : 0;
+  const winnerNegotiatedTotal = useMemo(() => {
+    if (!winnerSupplier) return 0;
+    const w: any = winnerSupplier;
+    if (w.negotiation_status === "approved" && w.negotiation_locked_total != null) {
+      return Number(w.negotiation_locked_total);
+    }
+    return supplierNegotiationTotals[w.id] ?? winnerOriginalTotal;
+  }, [winnerSupplier, supplierNegotiationTotals, winnerOriginalTotal]);
 
   const difference = (() => {
     if (budgetAmount == null) return null;
@@ -1049,6 +1057,18 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   </p>
                   <p className={`text-xl font-bold mt-0.5 ${winnerNegotiationStatus === "approved" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
                     {fmtCurrency(winnerNegotiatedTotal)}
+                    {(winnerSupplier as any)?.negotiation_status === "approved" && (winnerSupplier as any)?.negotiation_locked_total != null && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Lock className="w-3.5 h-3.5 text-muted-foreground inline ml-1 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs text-xs">
+                            Valor congelado no momento da aprovação da negociação. Não é afetado por ajustes de mockup ou exclusão de peças.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                   </p>
                   {currencyCode !== "BRL" && (
                     <p className="text-[11px] text-muted-foreground mt-0.5">{fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
@@ -1177,7 +1197,21 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             <div>
               {winnerSupplier && winnerInNegotiation ? (
                 <>
-                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(winnerNegotiatedTotal)}</p>
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {fmtCurrency(winnerNegotiatedTotal)}
+                    {(winnerSupplier as any)?.negotiation_status === "approved" && (winnerSupplier as any)?.negotiation_locked_total != null && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Lock className="w-4 h-4 text-muted-foreground inline ml-1.5 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs text-xs">
+                            Valor congelado no momento da aprovação da negociação. Não é afetado por ajustes de mockup ou exclusão de peças.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </p>
                   {currencyCode !== "BRL" && (
                     <p className="text-[11px] text-muted-foreground mt-0.5">{fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
                   )}
