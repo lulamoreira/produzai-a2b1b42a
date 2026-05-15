@@ -704,7 +704,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
 ${timelineEntries.map(e => `🔸 ${new Date(e.entry_date + 'T00:00:00').toLocaleDateString('pt-BR')}
    ${e.description}`).join('\n\n')}
 
-⚠️  ATENÇÃO: Ao preencher e enviar o orçamento, você confirma o aceite deste cronograma.
+⚠️  ATENÇÃO: Ao preencher e enviar a cotação, você confirma o aceite deste cronograma.
 `
       : '';
 
@@ -799,10 +799,10 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         qtyMap,
         stores,
       });
-      toast.success("Planilha de orçamento exportada.");
+      toast.success("Planilha de cotação exportada.");
     } catch (error) {
       console.error("Budget export error:", error);
-      toast.error("Erro ao exportar a planilha de orçamento.");
+      toast.error("Erro ao exportar a planilha de cotação.");
     } finally {
       setExportingBudget(false);
     }
@@ -1012,7 +1012,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       {activeAdjustment && (
         <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800 flex items-center gap-1.5">
           <Layers className="w-3 h-3" />
-          <span>Ajuste de mockup ativo: <strong>{activeAdjustment.name}</strong>. O orçamento vigente pode ser diferente do original.</span>
+          <span>Ajuste de mockup ativo: <strong>{activeAdjustment.name}</strong>. A cotação vigente pode ser diferente do original.</span>
         </div>
       )}
 
@@ -1127,7 +1127,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             <div className="mt-auto space-y-3">
               {/* Deadline */}
               <div className="space-y-1">
-                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Prazo p/ envio dos orçamentos</p>
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Prazo p/ envio das cotações</p>
                 <DateTimePicker
                   value={settings?.deadline ?? null}
                   onChange={(localIso) => {
@@ -2553,7 +2553,7 @@ Qualquer dúvida, estamos à disposição.
         defaultCcEmail={settingsAny?.winner_cc_email ?? ""}
       />
 
-      {/* Negociação pós-orçamento (Admin/Master) */}
+      {/* Negociação pós-cotação (Admin/Master) */}
       {negotiationSupplierId && (() => {
         const sup = suppliers.find((x) => x.id === negotiationSupplierId) as any;
         if (!sup) return null;
