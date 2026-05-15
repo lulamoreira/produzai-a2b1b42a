@@ -483,6 +483,7 @@ export type Database = {
           invited_at: string | null
           is_winner: boolean
           locked: boolean | null
+          negotiation_locked_total: number | null
           negotiation_status: string | null
           negotiation_submitted_at: string | null
           phone: string
@@ -502,6 +503,7 @@ export type Database = {
           invited_at?: string | null
           is_winner?: boolean
           locked?: boolean | null
+          negotiation_locked_total?: number | null
           negotiation_status?: string | null
           negotiation_submitted_at?: string | null
           phone: string
@@ -521,6 +523,7 @@ export type Database = {
           invited_at?: string | null
           is_winner?: boolean
           locked?: boolean | null
+          negotiation_locked_total?: number | null
           negotiation_status?: string | null
           negotiation_submitted_at?: string | null
           phone?: string
@@ -1115,9 +1118,11 @@ export type Database = {
           category: string | null
           code: number
           created_at: string
+          deleted_at: string | null
           display_order: number
           id: string
           image_url: string | null
+          is_deleted: boolean
           is_mockup: boolean
           is_new: boolean
           name: string
@@ -1128,9 +1133,11 @@ export type Database = {
           category?: string | null
           code: number
           created_at?: string
+          deleted_at?: string | null
           display_order?: number
           id?: string
           image_url?: string | null
+          is_deleted?: boolean
           is_mockup?: boolean
           is_new?: boolean
           name: string
@@ -1141,9 +1148,11 @@ export type Database = {
           category?: string | null
           code?: number
           created_at?: string
+          deleted_at?: string | null
           display_order?: number
           id?: string
           image_url?: string | null
+          is_deleted?: boolean
           is_mockup?: boolean
           is_new?: boolean
           name?: string
@@ -1424,6 +1433,7 @@ export type Database = {
           category: string
           code: number
           created_at: string
+          deleted_at: string | null
           display_order: number
           id: string
           image_full_url: string | null
@@ -1432,6 +1442,7 @@ export type Database = {
           image_thumb_url: string | null
           image_url: string | null
           installation_instructions: string
+          is_deleted: boolean
           is_mockup: boolean
           is_new: boolean
           kit_only: boolean
@@ -1446,6 +1457,7 @@ export type Database = {
           category: string
           code: number
           created_at?: string
+          deleted_at?: string | null
           display_order?: number
           id?: string
           image_full_url?: string | null
@@ -1454,6 +1466,7 @@ export type Database = {
           image_thumb_url?: string | null
           image_url?: string | null
           installation_instructions?: string
+          is_deleted?: boolean
           is_mockup?: boolean
           is_new?: boolean
           kit_only?: boolean
@@ -1468,6 +1481,7 @@ export type Database = {
           category?: string
           code?: number
           created_at?: string
+          deleted_at?: string | null
           display_order?: number
           id?: string
           image_full_url?: string | null
@@ -1476,6 +1490,7 @@ export type Database = {
           image_thumb_url?: string | null
           image_url?: string | null
           installation_instructions?: string
+          is_deleted?: boolean
           is_mockup?: boolean
           is_new?: boolean
           kit_only?: boolean
