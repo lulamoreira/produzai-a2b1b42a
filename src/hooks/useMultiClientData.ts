@@ -1435,6 +1435,23 @@ export function useDeleteCampaignKit() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      // Soft delete kit if any approved budget references it
+      const { data: approvedRef } = await supabase
+        .from("budget_prices")
+        .select("id, budget_suppliers!inner(negotiation_status)")
+        .eq("kit_id", id)
+        .eq("budget_suppliers.negotiation_status", "approved")
+        .limit(1);
+
+      if ((approvedRef?.length ?? 0) > 0) {
+        const { error } = await supabase
+          .from("campaign_kits")
+          .update({ is_deleted: true, deleted_at: new Date().toISOString() } as never)
+          .eq("id", id);
+        if (error) throw error;
+        return;
+      }
+
       const { error } = await supabase.from("campaign_kits").delete().eq("id", id);
       if (error) throw error;
     },
