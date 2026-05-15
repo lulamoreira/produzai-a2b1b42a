@@ -544,6 +544,7 @@ export function useCampaignPieces(campaignId: string | undefined) {
           .from("campaign_pieces")
           .select("*")
           .eq("campaign_id", campaignId)
+          .eq("is_deleted", false)
           .order("display_order")
           .range(from, to) as any
       );
