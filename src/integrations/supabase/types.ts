@@ -422,11 +422,13 @@ export type Database = {
           created_at: string | null
           currency_code: string
           currency_locked: boolean
+          current_phase: string
           deadline: string | null
           id: string
           negotiation_mode: string | null
           negotiation_target: number | null
           notify_user_ids: string[] | null
+          phase_locked_at: Json | null
           winner_book_url: string | null
           winner_cc_email: string | null
           winner_mockup_url: string | null
@@ -437,11 +439,13 @@ export type Database = {
           created_at?: string | null
           currency_code?: string
           currency_locked?: boolean
+          current_phase?: string
           deadline?: string | null
           id?: string
           negotiation_mode?: string | null
           negotiation_target?: number | null
           notify_user_ids?: string[] | null
+          phase_locked_at?: Json | null
           winner_book_url?: string | null
           winner_cc_email?: string | null
           winner_mockup_url?: string | null
@@ -452,11 +456,13 @@ export type Database = {
           created_at?: string | null
           currency_code?: string
           currency_locked?: boolean
+          current_phase?: string
           deadline?: string | null
           id?: string
           negotiation_mode?: string | null
           negotiation_target?: number | null
           notify_user_ids?: string[] | null
+          phase_locked_at?: Json | null
           winner_book_url?: string | null
           winner_cc_email?: string | null
           winner_mockup_url?: string | null
@@ -4760,6 +4766,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      advance_budget_phase: {
+        Args: {
+          p_campaign_id: string
+          p_force?: boolean
+          p_target_phase: string
+        }
+        Returns: Json
+      }
+      can_edit_prices: { Args: { p_campaign_id: string }; Returns: boolean }
+      can_edit_rateio: { Args: { p_campaign_id: string }; Returns: boolean }
       check_category_permission: {
         Args: {
           _action: string
@@ -4768,6 +4784,10 @@ export type Database = {
           _module_key: string
         }
         Returns: boolean
+      }
+      count_active_suppliers: {
+        Args: { p_campaign_id: string }
+        Returns: number
       }
       criar_notificacao: {
         Args: {
@@ -4868,6 +4888,10 @@ export type Database = {
       shift_display_orders: {
         Args: { p_after_order: number; p_campaign_id: string; p_slots: number }
         Returns: undefined
+      }
+      unlock_budget_phase: {
+        Args: { p_campaign_id: string; p_target_phase: string }
+        Returns: Json
       }
     }
     Enums: {
