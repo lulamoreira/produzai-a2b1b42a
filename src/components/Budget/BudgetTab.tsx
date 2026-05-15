@@ -625,7 +625,14 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const winnerOriginalTotal = winnerSupplier
     ? ((winnerSupplier as any).winner_locked_total ?? supplierPartialTotals[(winnerSupplier as any).id]?.total ?? 0)
     : 0;
-  const winnerNegotiatedTotal = winnerSupplier ? (supplierNegotiationTotals[(winnerSupplier as any).id] ?? winnerOriginalTotal) : 0;
+  const winnerNegotiatedTotal = useMemo(() => {
+    if (!winnerSupplier) return 0;
+    const w: any = winnerSupplier;
+    if (w.negotiation_status === "approved" && w.negotiation_locked_total != null) {
+      return Number(w.negotiation_locked_total);
+    }
+    return supplierNegotiationTotals[w.id] ?? winnerOriginalTotal;
+  }, [winnerSupplier, supplierNegotiationTotals, winnerOriginalTotal]);
 
   const difference = (() => {
     if (budgetAmount == null) return null;
