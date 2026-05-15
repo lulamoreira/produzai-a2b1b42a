@@ -95,6 +95,7 @@ const PublicOccurrence = () => {
           .from("campaign_pieces")
           .select("id, name, code, image_url, kit_only, category")
           .eq("campaign_id", campaignId!)
+          .eq("is_deleted", false)
           .order("code")
           .range(from, to) as any
       );
@@ -109,6 +110,7 @@ const PublicOccurrence = () => {
         .from("campaign_kits")
         .select("id, name, code, image_url")
         .eq("campaign_id", campaignId!)
+        .eq("is_deleted", false)
         .order("code");
       if (error) throw error;
       return data;
