@@ -1395,6 +1395,7 @@ export function useCampaignKits(campaignId: string | undefined) {
         .from("campaign_kits")
         .select("*")
         .eq("campaign_id", campaignId)
+        .eq("is_deleted", false)
         .order("display_order");
       if (error) throw error;
       return data as CampaignKit[];
