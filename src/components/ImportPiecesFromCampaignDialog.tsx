@@ -109,6 +109,7 @@ const ImportPiecesFromCampaignDialog = ({
           .from("campaign_pieces")
           .select("*")
           .eq("campaign_id", selectedCampaignId)
+          .eq("is_deleted", false)
           .order("code")
           .range(from, to) as any
       );
@@ -124,6 +125,7 @@ const ImportPiecesFromCampaignDialog = ({
         .from("campaign_kits")
         .select("*")
         .eq("campaign_id", selectedCampaignId)
+        .eq("is_deleted", false)
         .order("code");
       if (error) throw error;
       return data as RemoteKit[];
