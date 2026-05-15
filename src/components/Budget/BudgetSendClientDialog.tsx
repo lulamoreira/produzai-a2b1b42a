@@ -258,7 +258,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       };
     });
 
-    // Build merged list (pieces + kits) — same logic as the Orçamento tab,
+    // Build merged list (pieces + kits) — same logic as the Cotações tab,
     // so the comparative shows ALL pieces and kits from the campaign.
     type Merged =
       | { type: "piece"; data: typeof pieces[number] }
@@ -485,7 +485,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       return;
     }
     if (submittedSuppliers.length === 0) {
-      toast.error("Nenhum fornecedor enviou o orçamento ainda.");
+      toast.error("Nenhum fornecedor enviou a cotação ainda.");
       return;
     }
 
@@ -662,7 +662,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
             </Label>
             {submittedSuppliers.length === 0 ? (
               <p className="text-sm text-muted-foreground italic">
-                Nenhum fornecedor enviou o orçamento ainda.
+                Nenhum fornecedor enviou a cotação ainda.
               </p>
             ) : (
               <div className="flex flex-wrap gap-1.5">

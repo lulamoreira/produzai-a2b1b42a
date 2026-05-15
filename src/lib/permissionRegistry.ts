@@ -98,7 +98,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
   },
   {
     key: "budgets",
-    label: "Orçamentos",
+    label: "Cotações",
     icon: "DollarSign",
     category: "campaign",
     description: "Cotações com fornecedores e negociação",
