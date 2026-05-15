@@ -1487,7 +1487,8 @@ export function useCampaignKitPieces(campaignId: string | undefined) {
       const { data: kits } = await supabase
         .from("campaign_kits")
         .select("id")
-        .eq("campaign_id", campaignId);
+        .eq("campaign_id", campaignId)
+        .eq("is_deleted", false);
       if (!kits || kits.length === 0) return [];
       const kitIds = kits.map(k => k.id);
       const { data, error } = await supabase
