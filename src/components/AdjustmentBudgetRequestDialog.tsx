@@ -139,8 +139,8 @@ export default function AdjustmentBudgetRequestDialog({
                   .eq("campaign_id", campaignId)
                   .range(from, to) as any
               ),
-          supabase.from("campaign_kits").select("id, code, name, image_url").eq("campaign_id", campaignId),
-          supabase.from("campaign_pieces").select("id, code, name, image_url, image_thumb_url, image_report_url, image_full_url").eq("campaign_id", campaignId),
+          supabase.from("campaign_kits").select("id, code, name, image_url").eq("campaign_id", campaignId).eq("is_deleted", false),
+          supabase.from("campaign_pieces").select("id, code, name, image_url, image_thumb_url, image_report_url, image_full_url").eq("campaign_id", campaignId).eq("is_deleted", false),
           supabasePaginate<any>((from, to) =>
             supabase.from("campaign_kit_pieces" as any)
               .select("kit_id, piece_id, quantity")
