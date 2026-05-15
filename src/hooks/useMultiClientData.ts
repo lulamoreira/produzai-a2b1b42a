@@ -665,15 +665,41 @@ export function useDeleteCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      // Check if any approved budget references this piece
+      const { data: approvedRef } = await supabase
+        .from("budget_prices")
+        .select("id, budget_suppliers!inner(negotiation_status)")
+        .eq("piece_id", id)
+        .eq("budget_suppliers.negotiation_status", "approved")
+        .limit(1);
+
+      const hasApproved = (approvedRef?.length ?? 0) > 0;
+
+      if (hasApproved) {
+        const { error } = await supabase
+          .from("campaign_pieces")
+          .update({ is_deleted: true, deleted_at: new Date().toISOString() } as never)
+          .eq("id", id);
+        if (error) throw error;
+        return { softDelete: true };
+      }
+
       const { error } = await supabase.from("campaign_pieces").delete().eq("id", id);
       if (error) throw error;
+      return { softDelete: false };
     },
     onMutate: async (id) => {
       qc.setQueriesData<CampaignPiece[]>({ queryKey: ["campaign_pieces"] }, (old) =>
         old ? old.filter((p) => p.id !== id) : old
       );
     },
-    onSuccess: () => toast.success("Peça removida!"),
+    onSuccess: (res) => {
+      if (res?.softDelete) {
+        toast.success("Peça arquivada (mantida no histórico de orçamento aprovado).");
+      } else {
+        toast.success("Peça removida!");
+      }
+    },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["campaign_pieces"] });
       qc.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
