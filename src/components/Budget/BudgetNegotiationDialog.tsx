@@ -460,8 +460,9 @@ export default function BudgetNegotiationDialog({
       await snapshotSupplierBudget({
         supplierId: supplier.id, campaignId, reason: "negotiation_approved" as any,
       });
+      const lockedTotal = await computeNegotiationLockedTotal(supplier.id, campaignId);
       await supabase.from("budget_suppliers")
-        .update({ negotiation_status: "approved" } as never)
+        .update({ negotiation_status: "approved", negotiation_locked_total: lockedTotal } as never)
         .eq("id", supplier.id);
       refresh();
       toast.success("Proposta ajustada aprovada.");
