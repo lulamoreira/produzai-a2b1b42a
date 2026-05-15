@@ -1197,7 +1197,21 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             <div>
               {winnerSupplier && winnerInNegotiation ? (
                 <>
-                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(winnerNegotiatedTotal)}</p>
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {fmtCurrency(winnerNegotiatedTotal)}
+                    {(winnerSupplier as any)?.negotiation_status === "approved" && (winnerSupplier as any)?.negotiation_locked_total != null && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Lock className="w-4 h-4 text-muted-foreground inline ml-1.5 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs text-xs">
+                            Valor congelado no momento da aprovação da negociação. Não é afetado por ajustes de mockup ou exclusão de peças.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </p>
                   {currencyCode !== "BRL" && (
                     <p className="text-[11px] text-muted-foreground mt-0.5">{fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
                   )}
