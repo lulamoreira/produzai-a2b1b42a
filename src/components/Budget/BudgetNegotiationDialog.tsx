@@ -25,6 +25,47 @@ import {
 } from "@/hooks/useNegotiationStorePieces";
 import { computeSupplierTotal, type KitComponentRow } from "@/lib/computeSupplierTotal";
 
+async function computeNegotiationLockedTotal(supplierId: string, campaignId: string): Promise<number> {
+  const [{ data: prices }, { data: negPieces }, { data: extras }] = await Promise.all([
+    supabase
+      .from("budget_prices")
+      .select("piece_id, kit_id, unit_price, adjusted_unit_price")
+      .eq("supplier_id", supplierId),
+    supabase
+      .from("budget_negotiation_store_pieces")
+      .select("piece_id, quantity")
+      .eq("supplier_id", supplierId)
+      .eq("campaign_id", campaignId),
+    supabase
+      .from("budget_extra_costs")
+      .select("adjusted_installation_value, installation_value, adjusted_freight_value, freight_value")
+      .eq("supplier_id", supplierId)
+      .maybeSingle(),
+  ]);
+
+  const qtyByPiece = new Map<string, number>();
+  for (const np of negPieces || []) {
+    if (!np.piece_id) continue;
+    qtyByPiece.set(np.piece_id, (qtyByPiece.get(np.piece_id) ?? 0) + Number(np.quantity ?? 0));
+  }
+
+  let piecesTotal = 0;
+  for (const p of prices || []) {
+    if (!p.piece_id) continue;
+    const unit = Number((p as any).adjusted_unit_price ?? p.unit_price ?? 0);
+    const qty = qtyByPiece.get(p.piece_id) ?? 0;
+    piecesTotal += unit * qty;
+  }
+
+  const installation = Number(
+    extras?.adjusted_installation_value ?? extras?.installation_value ?? 0
+  );
+  const freight = Number(
+    extras?.adjusted_freight_value ?? extras?.freight_value ?? 0
+  );
+  return piecesTotal + installation + freight;
+}
+
 type Supplier = {
   id: string;
   campaign_id: string;
