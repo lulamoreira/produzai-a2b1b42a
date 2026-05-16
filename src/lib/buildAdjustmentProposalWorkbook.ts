@@ -1148,7 +1148,7 @@ export async function buildAdjustmentProposalWorkbook(
   writeSectionTitle("Lojas (adicionadas e removidas)");
   writeTableHeader(["—", "Loja", "Cidade/UF", "Código", "Vitrines", "Alteração", "Detalhe"]);
   if (addedStores.length === 0 && removedStores.length === 0) {
-    const r = ws3.addRow(["—", "Nenhuma loja adicionada ou removida desde o orçamento original.", "", "", "", "", ""]);
+    const r = ws3.addRow(["—", "Nenhuma loja adicionada ou removida desde a cotação original.", "", "", "", "", ""]);
     ws3.mergeCells(`B${r.number}:G${r.number}`);
     r.getCell(2).font = { italic: true, color: { argb: GREY } };
     styleDataRow(r, "unchanged");
