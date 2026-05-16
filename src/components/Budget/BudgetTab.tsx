@@ -645,13 +645,32 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     ? ((winnerSupplier as any).winner_locked_total ?? supplierPartialTotals[(winnerSupplier as any).id]?.total ?? 0)
     : 0;
   const winnerNegotiatedTotal = useMemo(() => {
+    if (currentTotal) return currentTotal.total;
     if (!winnerSupplier) return 0;
     const w: any = winnerSupplier;
     if (w.negotiation_status === "approved" && w.negotiation_locked_total != null) {
       return Number(w.negotiation_locked_total);
     }
     return supplierNegotiationTotals[w.id] ?? winnerOriginalTotal;
-  }, [winnerSupplier, supplierNegotiationTotals, winnerOriginalTotal]);
+  }, [currentTotal, winnerSupplier, supplierNegotiationTotals, winnerOriginalTotal]);
+
+  // SourceBadge component for showing where the displayed total comes from
+  const SourceBadge = () => {
+    if (!currentTotal) return null;
+    const labels: Record<string, { label: string; color: string }> = {
+      original: { label: "Cotação original", color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" },
+      negotiated: { label: "Negociado", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+      adjustment: { label: "Ajuste ativo", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+    };
+    const meta = labels[currentTotal.source];
+    if (!meta) return null;
+    return (
+      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.color}`}>
+        {meta.label}
+      </span>
+    );
+  };
+
 
   const difference = (() => {
     if (budgetAmount == null) return null;
