@@ -13,7 +13,12 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
-import { useAdjustmentPieces, useAdjustmentStorePieces } from "@/hooks/useAdjustments";
+import {
+  useAdjustmentPieces,
+  useAdjustmentStorePieces,
+  useAdjustmentKits,
+  useAdjustmentKitPieces,
+} from "@/hooks/useAdjustments";
 import {
   parseAdjustmentResponseWorkbook,
   type ParsedRequoteResult,
@@ -81,15 +86,32 @@ export default function AdjustmentRegisterResponseDialog({
 
   const { data: pieces = [] } = useAdjustmentPieces(adjustment.id);
   const { data: adjSp = [] } = useAdjustmentStorePieces(adjustment.id);
+  const { data: adjKits = [] } = useAdjustmentKits(adjustment.id);
+  const { data: adjKitPieces = [] } = useAdjustmentKitPieces(adjustment.id);
 
   const fmt = (v: number) => formatCurrencyByCode(v, currencyCode);
 
+  // Include both standalone and kit-only pieces (kit-only pieces also need
+  // price updates). Exclude deleted ones.
   const editablePieces = useMemo(
-    () => (pieces as any[]).filter((p) => !p.is_deleted && !p.kit_only),
+    () => (pieces as any[]).filter((p) => !p.is_deleted),
     [pieces]
   );
 
-  // qty per adjustment piece across stores
+  // Map piece_id -> { kitName, kitCode } for kit-only pieces (so the admin
+  // can see which kit a piece belongs to).
+  const kitByPiece = useMemo(() => {
+    const kitMap = new Map<string, any>();
+    for (const k of adjKits as any[]) kitMap.set(k.id, k);
+    const m: Record<string, { name: string }> = {};
+    for (const kp of adjKitPieces as any[]) {
+      const k = kitMap.get(kp.kit_id);
+      if (k) m[kp.piece_id] = { name: k.name };
+    }
+    return m;
+  }, [adjKits, adjKitPieces]);
+
+  // qty per adjustment piece across stores (only populated for standalone pieces)
   const qtyByPiece = useMemo(() => {
     const m: Record<string, number> = {};
     for (const r of adjSp as any[]) {
@@ -244,10 +266,19 @@ export default function AdjustmentRegisterResponseDialog({
     [lockedTotal, currentExtras]
   );
 
-  /** Delta only fires for pieces whose price was actually changed by the admin.
-   * Uses adjQty (the adjustment scope) — quantity differences between the
-   * adjustment scope and the full negotiation rateio must NOT bleed into
-   * the total when no price was edited. */
+  /** Effective qty for display & delta:
+   * - standalone pieces: adjustment-scope qty (qtyByPiece)
+   * - kit-only pieces: campaign rateio qty via source_piece_id (kit qty already
+   *   expanded into per-piece totals in budget_negotiation_store_pieces). */
+  const effectiveQty = (p: any): number => {
+    if (p.kit_only) {
+      const sid = sourceByAdjPiece[p.id];
+      return sid ? Number(campaignQtyBySource[sid] || 0) : 0;
+    }
+    return qtyByPiece[p.id] || 0;
+  };
+
+  /** Delta only fires for pieces whose price was actually changed by the admin. */
   const newProductionTotal = useMemo(() => {
     let delta = 0;
     for (const p of editablePieces) {
@@ -259,11 +290,13 @@ export default function AdjustmentRegisterResponseDialog({
         ? Number(raw)
         : negotiatedPrice;
       if (np === negotiatedPrice) continue;
-      const adjQ = qtyByPiece[p.id] || 0;
+      const adjQ = p.kit_only
+        ? Number(campaignQtyBySource[sid] || 0)
+        : (qtyByPiece[p.id] || 0);
       delta += (np - negotiatedPrice) * adjQ;
     }
     return currentProductionTotal + delta;
-  }, [editablePieces, sourceByAdjPiece, qtyByPiece, currentPrices, newPrices, currentProductionTotal]);
+  }, [editablePieces, sourceByAdjPiece, qtyByPiece, campaignQtyBySource, currentPrices, newPrices, currentProductionTotal]);
 
   const currentTotal = lockedTotal;
   const newTotal = newProductionTotal + Number(newInstallation || 0) + Number(newFreight || 0);
@@ -412,7 +445,7 @@ export default function AdjustmentRegisterResponseDialog({
                   </TableHeader>
                   <TableBody>
                     {editablePieces.map((p) => {
-                      const q = qtyByPiece[p.id] || 0;
+                      const q = effectiveQty(p);
                       const cur = p.source_piece_id ? Number(currentPrices[p.source_piece_id] || 0) : 0;
                       const np = Number(newPrices[p.id] || 0);
                       const lineCur = q * cur;
@@ -423,11 +456,17 @@ export default function AdjustmentRegisterResponseDialog({
                           : lineNew > lineCur
                           ? "text-red-700"
                           : "text-foreground";
+                      const kitInfo = kitByPiece[p.id];
                       return (
                         <TableRow key={p.id}>
                           <TableCell className="text-xs">{p.code}</TableCell>
                           <TableCell className="text-xs">
-                            {p.name}
+                            <div>{p.name}</div>
+                            {kitInfo && (
+                              <div className="text-[10px] text-muted-foreground mt-0.5">
+                                Kit: <span className="font-medium">{kitInfo.name}</span>
+                              </div>
+                            )}
                             {p.is_new && <span className="ml-1 text-emerald-600">(nova)</span>}
                           </TableCell>
                           <TableCell className="text-xs text-right">{q}</TableCell>
