@@ -72,6 +72,8 @@ export default function AdjustmentRegisterResponseDialog({
   const [currentExtras, setCurrentExtras] = useState({ installation_value: 0, freight_value: 0 });
   const [newInstallation, setNewInstallation] = useState<number>(0);
   const [newFreight, setNewFreight] = useState<number>(0);
+  /** Total qty per source piece across the whole campaign (rateio). */
+  const [campaignQtyBySource, setCampaignQtyBySource] = useState<Record<string, number>>({});
 
   const adminFileRef = useRef<HTMLInputElement>(null);
   const [adminParseResult, setAdminParseResult] = useState<ParsedRequoteResult | null>(null);
