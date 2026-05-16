@@ -112,7 +112,7 @@ export default function AdjustmentRegisterResponseDialog({
         setWinner(w);
         if (!w) { setLoading(false); return; }
 
-        const [pricesRes, extrasRes, reqRes] = await Promise.all([
+        const [pricesRes, extrasRes, reqRes, cspRes] = await Promise.all([
           supabase.from("budget_prices" as any)
             .select("piece_id, unit_price").eq("supplier_id", (w as any).id),
           supabase.from("budget_extra_costs" as any)
@@ -121,7 +121,18 @@ export default function AdjustmentRegisterResponseDialog({
           supabase.from("campaign_adjustment_budget_request" as any)
             .select("adjusted_prices_jsonb")
             .eq("adjustment_id", adjustment.id).maybeSingle(),
+          supabase.from("campaign_store_pieces" as any)
+            .select("piece_id, quantity")
+            .eq("campaign_id", campaignId),
         ]);
+
+        // Campaign-wide qty per source piece
+        const cqty: Record<string, number> = {};
+        for (const row of (cspRes.data as any[]) || []) {
+          if (!row.piece_id) continue;
+          cqty[row.piece_id] = (cqty[row.piece_id] || 0) + Number(row.quantity || 0);
+        }
+        setCampaignQtyBySource(cqty);
 
         // Map current prices keyed by SOURCE piece_id (campaign piece). Adjustment pieces store source_piece_id.
         const priceMap: Record<string, number> = {};
