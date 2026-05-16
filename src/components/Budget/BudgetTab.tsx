@@ -1760,15 +1760,28 @@ Qualquer dúvida, estamos à disposição.
                           <History className="w-3.5 h-3.5" />
                         </Button>
                       )}
-                      {isAdminOrMaster && sup.submitted_at && (
-                        <Button
-                          size="sm" variant="ghost" className="h-7 w-7 p-0"
-                          title="Declarar vencedor do certame"
-                          onClick={() => setWinnerSupplierId(sup.id)}
-                        >
-                          <Trophy className="w-3.5 h-3.5 text-amber-500" />
-                        </Button>
-                      )}
+                      {isAdminOrMaster && sup.submitted_at && (() => {
+                        const canDeclareWinner = currentPhase === "cotacoes" || isAdminOrMaster;
+                        const btn = (
+                          <Button
+                            size="sm" variant="ghost" className="h-7 w-7 p-0"
+                            title="Declarar vencedor do certame"
+                            onClick={() => setWinnerSupplierId(sup.id)}
+                            disabled={!canDeclareWinner}
+                          >
+                            <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                          </Button>
+                        );
+                        if (canDeclareWinner) return btn;
+                        return (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild><span>{btn}</span></TooltipTrigger>
+                              <TooltipContent>Disponível apenas na fase Cotações</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      })()}
                       <Button
                         size="sm" variant="ghost" className="h-7 w-7 p-0 ml-auto text-destructive hover:text-destructive"
                         title="Excluir fornecedor"
