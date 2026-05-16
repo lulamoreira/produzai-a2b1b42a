@@ -190,24 +190,38 @@ export default function AdjustmentRegisterResponseDialog({
     });
   }, [editablePieces, currentPrices, open]);
 
+  /** Map adjustment piece id -> source piece id (campaign piece). */
+  const sourceByAdjPiece = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of editablePieces) {
+      if (p.source_piece_id) m[p.id] = String(p.source_piece_id);
+    }
+    return m;
+  }, [editablePieces]);
+
+  /** Production total for the WHOLE campaign at current (pre-requote) prices. */
   const currentProductionTotal = useMemo(() => {
     let total = 0;
-    for (const p of editablePieces) {
-      const q = qtyByPiece[p.id] || 0;
-      const cur = p.source_piece_id ? Number(currentPrices[p.source_piece_id] || 0) : 0;
-      total += q * cur;
+    for (const [sourceId, price] of Object.entries(currentPrices)) {
+      const q = campaignQtyBySource[sourceId] || 0;
+      total += q * Number(price || 0);
     }
     return total;
-  }, [editablePieces, qtyByPiece, currentPrices]);
+  }, [currentPrices, campaignQtyBySource]);
 
+  /** Same total but replacing the price of each adjustment piece with the new typed price. */
   const newProductionTotal = useMemo(() => {
-    let total = 0;
+    let delta = 0;
     for (const p of editablePieces) {
-      const q = qtyByPiece[p.id] || 0;
-      total += q * Number(newPrices[p.id] || 0);
+      const sid = sourceByAdjPiece[p.id];
+      if (!sid) continue;
+      const q = campaignQtyBySource[sid] || 0;
+      const cur = Number(currentPrices[sid] || 0);
+      const np = Number(newPrices[p.id] || 0);
+      delta += q * (np - cur);
     }
-    return total;
-  }, [editablePieces, qtyByPiece, newPrices]);
+    return currentProductionTotal + delta;
+  }, [editablePieces, sourceByAdjPiece, campaignQtyBySource, currentPrices, newPrices, currentProductionTotal]);
 
   const currentTotal = currentProductionTotal + currentExtras.installation_value + currentExtras.freight_value;
   const newTotal = newProductionTotal + Number(newInstallation || 0) + Number(newFreight || 0);
