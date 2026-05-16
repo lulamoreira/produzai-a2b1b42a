@@ -2846,7 +2846,29 @@ Qualquer dúvida, estamos à disposição.
   );
 }
 
-function AdjustmentSummaryCard({ campaignId }: { campaignId: string }) {
+function computeRequoteTotal(requote: AdjustmentBudgetRequest): number {
+  const prices = requote.adjusted_prices_jsonb?.prices ?? [];
+  const kits = requote.adjusted_prices_jsonb?.kits ?? [];
+  const installation = Number(
+    requote.adjusted_extras_jsonb?.installation ?? requote.adjusted_prices_jsonb?.installation ?? 0
+  );
+  const freight = Number(
+    requote.adjusted_extras_jsonb?.freight ?? requote.adjusted_prices_jsonb?.freight ?? 0
+  );
+  const pricesSum = [...prices, ...kits].reduce(
+    (sum: number, p: any) => sum + Number(p.new_price ?? 0),
+    0
+  );
+  return pricesSum + installation + freight;
+}
+
+function AdjustmentSummaryCard({
+  campaignId,
+  onNavigateToSection,
+}: {
+  campaignId: string;
+  onNavigateToSection?: (section: string) => void;
+}) {
   const { data: adjustment } = useQuery({
     queryKey: ["active_adjustment_summary", campaignId],
     queryFn: async () => {
@@ -2859,6 +2881,7 @@ function AdjustmentSummaryCard({ campaignId }: { campaignId: string }) {
       return data as { id: string; name: string; status: string; approved_at: string | null; notes: string | null } | null;
     },
   });
+  const { data: requote } = useActiveAdjustmentRequest(campaignId);
 
   if (!adjustment) {
     return (
@@ -2882,6 +2905,61 @@ function AdjustmentSummaryCard({ campaignId }: { campaignId: string }) {
           Iniciado em {format(new Date(adjustment.approved_at), "dd/MM/yyyy", { locale: ptBR })}
         </p>
       )}
+
+      {requote && (
+        <div className="mt-3 pt-3 border-t space-y-2">
+          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Recotação do ajuste
+          </div>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span
+                className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                  REQUOTE_STATUS_META[requote.status]?.badgeClass ?? ""
+                }`}
+              >
+                {REQUOTE_STATUS_META[requote.status]?.label}
+              </span>
+              {requote.is_late_submission && (
+                <span className="text-xs text-red-600">Fora do prazo</span>
+              )}
+            </div>
+            {requote.token_expires_at && ["sent", "filling"].includes(requote.status) && (
+              <DeadlineCountdown expiresAt={requote.token_expires_at} />
+            )}
+          </div>
+
+          {["submitted", "approved"].includes(requote.status) && requote.adjusted_prices_jsonb && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Total da recotação</span>
+              <span className="font-semibold">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+                  computeRequoteTotal(requote)
+                )}
+              </span>
+            </div>
+          )}
+
+          {requote.status === "submitted" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onNavigateToSection?.("adjustments")}
+              className="w-full gap-2 text-purple-600 border-purple-300"
+            >
+              Revisar recotação →
+            </Button>
+          )}
+
+          {requote.status === "approved" && (
+            <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Recotação aprovada
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
