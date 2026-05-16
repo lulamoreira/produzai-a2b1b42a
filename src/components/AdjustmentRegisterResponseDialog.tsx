@@ -405,5 +405,12 @@ export default function AdjustmentRegisterResponseDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <ImportRequoteConfirmDialog
+      open={adminImportOpen}
+      onOpenChange={setAdminImportOpen}
+      result={adminParseResult}
+      onConfirmSelected={handleAdminImportConfirm}
+    />
+    </>
   );
 }
