@@ -72,6 +72,7 @@ export default function AdjustmentBudgetRequestDialog({
   const [pendingFlow, setPendingFlow] = useState<"email" | "whatsapp" | null>(null);
   const [existingRequest, setExistingRequest] = useState<any | null>(null);
   const generatePortalLink = useGeneratePortalLink();
+  const [portalPreviewOpen, setPortalPreviewOpen] = useState(false);
 
   const [winner, setWinner] = useState<any | null>(null);
   const [origSp, setOrigSp] = useState<any[]>([]);
