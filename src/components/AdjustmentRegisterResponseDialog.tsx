@@ -224,15 +224,25 @@ export default function AdjustmentRegisterResponseDialog({
     return m;
   }, [editablePieces]);
 
-  /** Production total for the WHOLE campaign at current (pre-requote) prices. */
-  const currentProductionTotal = useMemo(() => {
-    let total = 0;
-    for (const [sourceId, price] of Object.entries(currentPrices)) {
-      const q = campaignQtyBySource[sourceId] || 0;
-      total += q * Number(price || 0);
-    }
-    return total;
-  }, [currentPrices, campaignQtyBySource]);
+  /** Locked negotiated grand total (e.g. R$ 450.000,00). */
+  const lockedTotal = useMemo(
+    () =>
+      Number(
+        (winner as any)?.negotiation_locked_total ??
+          (winner as any)?.winner_locked_total ??
+          0
+      ),
+    [winner]
+  );
+
+  /** Production total = locked total − negotiated extras (avoids drift). */
+  const currentProductionTotal = useMemo(
+    () =>
+      lockedTotal -
+      Number(currentExtras.installation_value || 0) -
+      Number(currentExtras.freight_value || 0),
+    [lockedTotal, currentExtras]
+  );
 
   /** Same total but replacing modified pieces with new price × adjustment qty. */
   const newProductionTotal = useMemo(() => {
@@ -251,7 +261,7 @@ export default function AdjustmentRegisterResponseDialog({
     return currentProductionTotal + delta;
   }, [editablePieces, sourceByAdjPiece, campaignQtyBySource, qtyByPiece, currentPrices, newPrices, currentProductionTotal]);
 
-  const currentTotal = currentProductionTotal + currentExtras.installation_value + currentExtras.freight_value;
+  const currentTotal = lockedTotal;
   const newTotal = newProductionTotal + Number(newInstallation || 0) + Number(newFreight || 0);
 
   const expectedPieces: ExpectedPiece[] = useMemo(
