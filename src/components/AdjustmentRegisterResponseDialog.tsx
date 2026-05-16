@@ -167,6 +167,47 @@ export default function AdjustmentRegisterResponseDialog({
     return total + Number(newInstallation || 0) + Number(newFreight || 0);
   }, [editablePieces, qtyByPiece, newPrices, newInstallation, newFreight]);
 
+  const expectedPieces: ExpectedPiece[] = useMemo(
+    () =>
+      editablePieces.map((p) => ({
+        code: String(p.code),
+        name: p.name,
+        pieceId: p.id,
+        previousPrice: p.source_piece_id ? Number(currentPrices[p.source_piece_id] || 0) : 0,
+      })),
+    [editablePieces, currentPrices]
+  );
+
+  const handleAdminFileSelect = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const result = await parseAdjustmentResponseWorkbook(file, expectedPieces);
+      setAdminParseResult(result);
+      setAdminImportOpen(true);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao ler planilha");
+    } finally {
+      if (adminFileRef.current) adminFileRef.current.value = "";
+    }
+  };
+
+  const handleAdminImportConfirm = (
+    rows: ParsedRequoteRow[],
+    inst: number | null,
+    fr: number | null
+  ) => {
+    setNewPrices((prev) => {
+      const next = { ...prev };
+      for (const row of rows) {
+        if (row.pieceId && row.newPrice !== null) next[row.pieceId] = row.newPrice;
+      }
+      return next;
+    });
+    if (inst !== null) setNewInstallation(inst);
+    if (fr !== null) setNewFreight(fr);
+    toast.success(`${rows.length} preço(s) importado(s). Revise e aprove.`);
+  };
+
   const handleApprove = async () => {
     if (!winner) { toast.error("Fornecedor vencedor não encontrado."); return; }
     setSaving(true);
