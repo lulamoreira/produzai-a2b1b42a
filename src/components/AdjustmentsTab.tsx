@@ -206,6 +206,16 @@ export default function AdjustmentsTab({
 
   return (
     <div className="space-y-4">
+      {onBackToBudgets && (
+        <button
+          type="button"
+          onClick={onBackToBudgets}
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Ver em Cotações
+        </button>
+      )}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Layers className="w-5 h-5 text-primary" />
