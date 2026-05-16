@@ -284,7 +284,7 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
                             <span
                               className="text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded flex-shrink-0"
                               style={{ background: "var(--brand, #8C6F4E)", color: "#fff" }}
-                              title="Será disponibilizado ao fornecedor de orçamento"
+                              title="Será disponibilizado ao fornecedor de cotação"
                             >
                               Fornecedor
                             </span>
@@ -346,7 +346,7 @@ const SupportMaterialsSection = ({ campaignId, canEdit }: Props) => {
                       <button
                         onClick={() => toggleShare.mutate({ id: mat.id, share: !mat.share_with_supplier })}
                         className="p-1.5 rounded-md transition-colors hover:bg-accent"
-                        title={mat.share_with_supplier ? "Compartilhado com fornecedor (clique para remover)" : "Compartilhar com fornecedor de orçamento"}
+                        title={mat.share_with_supplier ? "Compartilhado com fornecedor (clique para remover)" : "Compartilhar com fornecedor de cotação"}
                         style={{ color: mat.share_with_supplier ? "var(--brand, #8C6F4E)" : "var(--text-muted)" }}
                       >
                         <Share2 className="w-3.5 h-3.5" />
