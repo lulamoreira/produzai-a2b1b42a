@@ -1580,6 +1580,28 @@ Qualquer dúvida, estamos à disposição.
         </Collapsible>
       </Card>
 
+      {isPhaseLocked("cotacoes") && (
+        <FrozenPhaseBanner
+          frozenPhase="cotacoes"
+          activePhase={currentPhase}
+          lockedAt={(phaseLockedAt as Record<string, string>)["cotacoes"]}
+          isAdminOrMaster={isAdminOrMaster}
+          onUnlock={() => setUnlockTarget("cotacoes")}
+          isUnlocking={isUnlocking}
+        />
+      )}
+
+      {isPhaseLocked("negociacao") && (
+        <FrozenPhaseBanner
+          frozenPhase="negociacao"
+          activePhase={currentPhase}
+          lockedAt={(phaseLockedAt as Record<string, string>)["negociacao"]}
+          isAdminOrMaster={isAdminOrMaster}
+          onUnlock={() => setUnlockTarget("negociacao")}
+          isUnlocking={isUnlocking}
+        />
+      )}
+
       {/* ═══ SUPPLIERS SECTION ═══ */}
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
