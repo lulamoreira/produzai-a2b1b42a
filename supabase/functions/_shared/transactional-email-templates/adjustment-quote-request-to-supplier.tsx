@@ -68,12 +68,29 @@ const AdjustmentQuoteRequestEmail = ({
             </Section>
           )}
 
+          {portalUrl && (
+            <>
+              <Heading as="h2" style={h2}>✏️ Preencher online</Heading>
+              <Section style={ctaSection}>
+                <Button style={ctaButton} href={portalUrl}>
+                  Preencher recotação online →
+                </Button>
+              </Section>
+              {deadlineDate && (
+                <Text style={smallNote}>Prazo para resposta: <strong>{deadlineDate}</strong></Text>
+              )}
+              <Text style={smallNote}>
+                Ou baixe a planilha, preencha e responda por e-mail.
+              </Text>
+            </>
+          )}
+
           {downloadUrls.length > 0 && (
             <>
-              <Heading as="h2" style={h2}>📎 Planilha de Reorçamento</Heading>
+              <Heading as="h2" style={h2}>📎 Planilha de Cotação</Heading>
               {downloadUrls.map((d, i) => (
                 <Section key={i} style={ctaSection}>
-                  <Button style={ctaButton} href={d.url}>
+                  <Button style={ctaButtonSecondary} href={d.url}>
                     📥 Baixar {d.name}
                   </Button>
                 </Section>
