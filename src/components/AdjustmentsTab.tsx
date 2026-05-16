@@ -123,6 +123,50 @@ export default function AdjustmentsTab({
   const [editingAdjustment, setEditingAdjustment] = useState<CampaignAdjustment | null>(null);
   const [requestDialogAdjustment, setRequestDialogAdjustment] = useState<CampaignAdjustment | null>(null);
   const [registerResponseAdjustment, setRegisterResponseAdjustment] = useState<CampaignAdjustment | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+
+  const { data: requote } = useActiveAdjustmentRequest(campaignId);
+  useRequoteRealtime(campaignId);
+
+  const { data: adjPieces } = useQuery({
+    queryKey: ["adj_pieces_for_review", activeAdjustment?.id],
+    enabled: !!activeAdjustment?.id && reviewOpen,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaign_adjustment_pieces")
+        .select("id, name, code, change_type")
+        .eq("adjustment_id", activeAdjustment!.id)
+        .eq("is_deleted", false)
+        .order("code");
+      return data ?? [];
+    },
+  });
+
+  const { data: adjKits } = useQuery({
+    queryKey: ["adj_kits_for_review", activeAdjustment?.id],
+    enabled: !!activeAdjustment?.id && reviewOpen,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaign_adjustment_kits")
+        .select("id, name, code")
+        .eq("adjustment_id", activeAdjustment!.id)
+        .eq("is_deleted", false)
+        .order("code");
+      return data ?? [];
+    },
+  });
+
+  const { data: baselinePrices } = useQuery({
+    queryKey: ["baseline_prices_review", requote?.supplier_id],
+    enabled: !!requote?.supplier_id && reviewOpen,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("budget_prices")
+        .select("piece_id, kit_id, adjusted_unit_price, unit_price")
+        .eq("supplier_id", requote!.supplier_id);
+      return data ?? [];
+    },
+  });
   const defaultName = useMemo(
     () => `Ajuste - ${format(new Date(), "dd/MM/yyyy")}`,
     [createOpen]
