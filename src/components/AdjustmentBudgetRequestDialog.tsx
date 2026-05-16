@@ -673,6 +673,13 @@ export default function AdjustmentBudgetRequestDialog({
         isLoading={generatePortalLink.isPending}
         defaultDays={existingRequest?.deadline_days ?? 7}
       />
+      <RequotePortalPreviewSheet
+        open={portalPreviewOpen}
+        onOpenChange={setPortalPreviewOpen}
+        adjustmentId={adjustment.id}
+        supplierId={winner?.id ?? null}
+        requestId={existingRequest?.id ?? null}
+      />
     </Dialog>
   );
 }
