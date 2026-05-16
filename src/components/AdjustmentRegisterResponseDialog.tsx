@@ -340,13 +340,13 @@ export default function AdjustmentRegisterResponseDialog({
 
   const expectedPieces: ExpectedPiece[] = useMemo(
     () =>
-      editablePieces.map((p) => ({
+      displayedPieces.map((p) => ({
         code: String(p.code),
         name: p.name,
         pieceId: p.id,
         previousPrice: p.source_piece_id ? Number(currentPrices[p.source_piece_id] || 0) : 0,
       })),
-    [editablePieces, currentPrices]
+    [displayedPieces, currentPrices]
   );
 
   const handleAdminFileSelect = async (file: File | undefined) => {
