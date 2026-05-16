@@ -177,24 +177,27 @@ export default function AdjustmentRegisterResponseDialog({
     });
   }, [editablePieces, currentPrices, open]);
 
-  const currentTotal = useMemo(() => {
+  const currentProductionTotal = useMemo(() => {
     let total = 0;
     for (const p of editablePieces) {
       const q = qtyByPiece[p.id] || 0;
       const cur = p.source_piece_id ? Number(currentPrices[p.source_piece_id] || 0) : 0;
       total += q * cur;
     }
-    return total + currentExtras.installation_value + currentExtras.freight_value;
-  }, [editablePieces, qtyByPiece, currentPrices, currentExtras]);
+    return total;
+  }, [editablePieces, qtyByPiece, currentPrices]);
 
-  const newTotal = useMemo(() => {
+  const newProductionTotal = useMemo(() => {
     let total = 0;
     for (const p of editablePieces) {
       const q = qtyByPiece[p.id] || 0;
       total += q * Number(newPrices[p.id] || 0);
     }
-    return total + Number(newInstallation || 0) + Number(newFreight || 0);
-  }, [editablePieces, qtyByPiece, newPrices, newInstallation, newFreight]);
+    return total;
+  }, [editablePieces, qtyByPiece, newPrices]);
+
+  const currentTotal = currentProductionTotal + currentExtras.installation_value + currentExtras.freight_value;
+  const newTotal = newProductionTotal + Number(newInstallation || 0) + Number(newFreight || 0);
 
   const expectedPieces: ExpectedPiece[] = useMemo(
     () =>
