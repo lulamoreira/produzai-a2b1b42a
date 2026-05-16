@@ -351,7 +351,7 @@ export default function AdjustmentRegisterResponseDialog({
 
   const expectedPieces: ExpectedPiece[] = useMemo(
     () =>
-      (pieces as any[]).filter((p) => !p.is_deleted).map((p) => ({
+      (pieces as any[]).map((p) => ({
         code: String(p.code),
         name: p.name,
         pieceId: p.id,
