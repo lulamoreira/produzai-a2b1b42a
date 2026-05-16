@@ -612,6 +612,17 @@ export default function AdjustmentBudgetRequestDialog({
           ) : (
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending || preparingPreview}>Cancelar</Button>
+              {winner && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPortalPreviewOpen(true)}
+                  className="gap-1 text-muted-foreground hover:text-foreground"
+                  title="Ver como o fornecedor vê"
+                >
+                  <Eye className="w-4 h-4" /> Prévia do portal
+                </Button>
+              )}
               {existingRequest?.access_token && (
                 <Button
                   variant="outline"
