@@ -91,15 +91,30 @@ export default function AdjustmentRegisterResponseDialog({
 
   const fmt = (v: number) => formatCurrencyByCode(v, currencyCode);
 
-  // Only pieces actually touched by the adjustment (modified or added).
-  // Unchanged pieces — including kit-only ones — are hidden.
-  const editablePieces = useMemo(
-    () =>
-      (pieces as any[]).filter(
-        (p) => !p.is_deleted && (p.change_type === "modified" || p.change_type === "added" || p.is_new)
-      ),
-    [pieces]
-  );
+  // Pieces touched by the adjustment: either modified/added at the piece level,
+  // OR whose distributed quantity differs from the original campaign rateio.
+  // Unchanged pieces are hidden.
+  const editablePieces = useMemo(() => {
+    const adjQtyBySource: Record<string, number> = {};
+    const pieceToSource: Record<string, string> = {};
+    for (const p of pieces as any[]) {
+      if (p.source_piece_id) pieceToSource[p.id] = String(p.source_piece_id);
+    }
+    for (const r of adjSp as any[]) {
+      const sid = pieceToSource[r.piece_id];
+      if (!sid) continue;
+      adjQtyBySource[sid] = (adjQtyBySource[sid] || 0) + Number(r.quantity || 0);
+    }
+    return (pieces as any[]).filter((p) => {
+      if (p.is_deleted) return false;
+      if (p.change_type === "modified" || p.change_type === "added" || p.is_new) return true;
+      const sid = p.source_piece_id ? String(p.source_piece_id) : null;
+      if (!sid) return false;
+      const adjQ = Number(adjQtyBySource[sid] || 0);
+      const campQ = Number(campaignQtyBySource[sid] || 0);
+      return adjQ !== campQ;
+    });
+  }, [pieces, adjSp, campaignQtyBySource]);
 
   // Map piece_id -> { kitName, kitCode } for kit-only pieces (so the admin
   // can see which kit a piece belongs to).
