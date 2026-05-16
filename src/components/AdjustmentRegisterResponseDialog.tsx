@@ -147,6 +147,7 @@ export default function AdjustmentRegisterResponseDialog({
   useEffect(() => {
     if (!open) return;
     setLoading(true);
+    setCampaignQtyReady(false);
     (async () => {
       try {
         const { data: w } = await supabase
@@ -194,6 +195,7 @@ export default function AdjustmentRegisterResponseDialog({
           }
         }
         setCampaignQtyBySource(cqty);
+        setCampaignQtyReady(true);
 
         // Negotiated prices keyed by piece_id (fallback to original unit_price)
         const priceMap: Record<string, number> = {};
