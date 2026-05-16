@@ -1077,7 +1077,10 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
               {/* Valor vencedor — sempre fixo (frozen no momento da declaração) */}
               <div className="mt-auto">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Valor vencedor</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Valor vencedor</p>
+                  <SourceBadge />
+                </div>
                 <p className="text-xl font-bold text-amber-700 dark:text-amber-400 mt-0.5">
                   {fmtCurrency(winnerOriginalTotal)}
                 </p>
