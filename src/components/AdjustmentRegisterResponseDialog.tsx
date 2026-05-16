@@ -244,22 +244,26 @@ export default function AdjustmentRegisterResponseDialog({
     [lockedTotal, currentExtras]
   );
 
-  /** Same total but replacing modified pieces with new price × adjustment qty. */
+  /** Delta only fires for pieces whose price was actually changed by the admin.
+   * Uses adjQty (the adjustment scope) — quantity differences between the
+   * adjustment scope and the full negotiation rateio must NOT bleed into
+   * the total when no price was edited. */
   const newProductionTotal = useMemo(() => {
     let delta = 0;
     for (const p of editablePieces) {
       const sid = sourceByAdjPiece[p.id];
       if (!sid) continue;
-      const campaignQ = campaignQtyBySource[sid] || 0;
+      const negotiatedPrice = Number(currentPrices[sid] || 0);
+      const raw = newPrices[p.id];
+      const np = raw != null && Number.isFinite(Number(raw))
+        ? Number(raw)
+        : negotiatedPrice;
+      if (np === negotiatedPrice) continue;
       const adjQ = qtyByPiece[p.id] || 0;
-      const cur = Number(currentPrices[sid] || 0);
-      const np = Number(newPrices[p.id] || 0);
-      // Remove this piece's contribution at negotiated price × campaign qty,
-      // add it back at new price × adjustment qty.
-      delta += (np * adjQ) - (cur * campaignQ);
+      delta += (np - negotiatedPrice) * adjQ;
     }
     return currentProductionTotal + delta;
-  }, [editablePieces, sourceByAdjPiece, campaignQtyBySource, qtyByPiece, currentPrices, newPrices, currentProductionTotal]);
+  }, [editablePieces, sourceByAdjPiece, qtyByPiece, currentPrices, newPrices, currentProductionTotal]);
 
   const currentTotal = lockedTotal;
   const newTotal = newProductionTotal + Number(newInstallation || 0) + Number(newFreight || 0);
