@@ -128,6 +128,11 @@ export default function AdjustmentsTab({
 
   const { data: requote } = useActiveAdjustmentRequest(campaignId);
   useRequoteRealtime(campaignId);
+  const { exportFinal, isExporting } = useExportRequoteFinal(
+    campaignId,
+    requote?.adjustment_id,
+    requote?.supplier_id,
+  );
 
   const { data: adjPieces } = useQuery({
     queryKey: ["adj_pieces_for_review", activeAdjustment?.id],
