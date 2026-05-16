@@ -97,6 +97,29 @@ import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 // Lazy: defers recharts (~80KB) until the user opens the pending dashboard
 const PendingOccurrencesDashboard = lazy(() => import("@/components/PendingOccurrencesDashboard"));
 import BudgetTab from "@/components/Budget/BudgetTab";
+import { useBudgetPhase, PHASE_LABELS, type BudgetPhase } from "@/hooks/useBudgetPhase";
+
+const PHASE_BADGE_STYLES: Record<BudgetPhase, string> = {
+  rateio: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+  cotacoes: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  negociacao: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  ajuste: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+};
+
+function BudgetSectionPhaseBadge({ campaignId }: { campaignId: string }) {
+  const { currentPhase } = useBudgetPhase(campaignId);
+  if (!currentPhase) return null;
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <h2 className="text-lg font-semibold text-foreground">Cotações</h2>
+      <span
+        className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${PHASE_BADGE_STYLES[currentPhase]}`}
+      >
+        {PHASE_LABELS[currentPhase]}
+      </span>
+    </div>
+  );
+}
 import {
   useNegotiationStorePieces,
   useUpdateNegotiationStorePiece,
