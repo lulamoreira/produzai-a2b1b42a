@@ -41,24 +41,24 @@ const AdjustmentQuoteRequestEmail = ({
   return (
     <Html lang="pt-BR" dir="ltr">
       <Head />
-      <Preview>Reorçamento pós-mockup — {campaignName}</Preview>
+      <Preview>Recotação pós-mockup — {campaignName}</Preview>
       <Body style={main}>
         <Section style={headerDark}>
           <Text style={headerDarkText}>{agencyName || SITE_NAME}</Text>
         </Section>
         <Section style={headerBrown}>
-          <Text style={headerBrownText}>REORÇAMENTO PÓS-MOCKUP</Text>
+          <Text style={headerBrownText}>RECOTAÇÃO PÓS-MOCKUP</Text>
         </Section>
 
         <Container style={container}>
-          <Heading style={h1}>📐 Solicitação de Reorçamento</Heading>
+          <Heading style={h1}>📐 Solicitação de Recotação</Heading>
 
           <Text style={text}>Prezado(a) <strong>{greeting}</strong>,</Text>
 
           <Text style={text}>
             Após a etapa de mockup da campanha <strong>{campaignName}</strong>, identificamos
             ajustes que impactam o escopo contratado. Segue em anexo a planilha de
-            reorçamento referente ao ajuste <strong>{adjustmentName}</strong>
+            recotação referente ao ajuste <strong>{adjustmentName}</strong>
             {changesDescription ? <> com as alterações detalhadas: <strong>{changesDescription}</strong></> : null}.
           </Text>
 
