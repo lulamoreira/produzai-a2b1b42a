@@ -150,6 +150,11 @@ export async function parseAdjustmentResponseWorkbook(
     const status = codeStr.match(/\(([^)]+)\)/)?.[1] ?? null;
     const normalizedCode = codeStr.replace(/\s*\(.+\)\s*$/, "").trim();
     const expected = expectedMap.get(normalizedCode.toLowerCase());
+    const quantity = qtyCol >= 0 ? parseDecimal(row[qtyCol]) ?? undefined : undefined;
+    const previousPrice = currentPriceCol >= 0
+      ? parseDecimal(row[currentPriceCol]) ?? expected.previousPrice
+      : expected.previousPrice;
+    const previousTotal = currentTotalCol >= 0 ? parseDecimal(row[currentTotalCol]) : null;
     const explicitNewPrice = parseDecimal(row[newPriceCol]);
     const newTotal = newTotalCol >= 0 ? parseDecimal(row[newTotalCol]) : null;
 
@@ -160,18 +165,24 @@ export async function parseAdjustmentResponseWorkbook(
     }
 
     matched++;
-    const qty = Number(expected.totalQty || 0);
+    const qty = Number(quantity ?? expected.totalQty ?? 0);
     const newPrice = explicitNewPrice ?? (newTotal !== null && qty > 0 ? newTotal / qty : null);
     const isValid = newPrice !== null && newPrice >= 0;
     parsedRows.push({
       code: expected.code,
       name: expected.name,
+      type,
+      status,
+      quantity: qty,
       pieceId: expected.pieceId ?? null,
       kitId: expected.kitId ?? null,
-      previousPrice: expected.previousPrice,
+      previousPrice,
+      previousTotal,
       newPrice: isValid ? newPrice : null,
+      newTotal,
       isValid,
       warning: !isValid ? "Preço inválido ou não preenchido" : undefined,
+      rowNumber: i + 1,
     });
   }
 
