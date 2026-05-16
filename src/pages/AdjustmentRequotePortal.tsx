@@ -341,10 +341,16 @@ export default function AdjustmentRequotePortal() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-5">
-        <Tabs defaultValue="itens" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList>
             <TabsTrigger value="itens">Itens</TabsTrigger>
             <TabsTrigger value="extras">Extras</TabsTrigger>
+            {!isReadOnly && (
+              <TabsTrigger value="anexar" className="gap-1.5">
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                Anexar planilha
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="itens" className="mt-4">
