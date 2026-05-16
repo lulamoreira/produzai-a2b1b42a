@@ -107,7 +107,11 @@ export default function AdjustmentRegisterResponseDialog({
     }
     return (pieces as any[]).filter((p) => {
       if (p.is_deleted) return false;
-      if (p.change_type === "modified" || p.change_type === "added" || p.is_new) return true;
+      // Newly added pieces always need a price.
+      if (p.is_new || p.change_type === "added") return true;
+      // Otherwise, only include pieces whose distributed quantity actually
+      // differs from the original campaign rateio. Cosmetic "modified"
+      // changes (name/spec) without a quantity delta don't require re-quoting.
       const sid = p.source_piece_id ? String(p.source_piece_id) : null;
       if (!sid) return false;
       const adjQ = Number(adjQtyBySource[sid] || 0);
