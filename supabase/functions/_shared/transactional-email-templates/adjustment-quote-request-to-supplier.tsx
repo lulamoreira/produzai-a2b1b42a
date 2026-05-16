@@ -121,8 +121,8 @@ const AdjustmentQuoteRequestEmail = ({
 export const template = {
   component: AdjustmentQuoteRequestEmail,
   subject: (data: Record<string, any>) =>
-    `📐 ${data.campaignName || 'Campanha'} — Reorçamento (${data.adjustmentName || 'Ajuste'})`,
-  displayName: 'Reorçamento pós-mockup ao fornecedor',
+    `📐 ${data.campaignName || 'Campanha'} — Recotação (${data.adjustmentName || 'Ajuste'})`,
+  displayName: 'Recotação pós-mockup ao fornecedor',
   previewData: {
     supplierName: 'Gráfica Express',
     contactName: 'João Silva',
@@ -131,7 +131,9 @@ export const template = {
     adjustmentName: 'Ajuste pós-mockup 01',
     changesDescription: '3 peças modificadas, 1 nova, 0 removidas',
     customMessage: 'Por gentileza priorizar essa cotação ainda esta semana.',
-    downloadUrls: [{ name: 'Reorcamento.xlsx', url: 'https://example.com/file.xlsx' }],
+    downloadUrls: [{ name: 'Recotacao.xlsx', url: 'https://example.com/file.xlsx' }],
+    portalUrl: 'https://app.produzai.com/recotacao/abc123',
+    deadlineDate: '23/05/2026 às 17:00',
   },
 } satisfies TemplateEntry
 
