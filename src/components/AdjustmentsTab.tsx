@@ -653,6 +653,8 @@ export default function AdjustmentsTab({
           campaignName={campaignName}
           currencyCode={currencyCode}
         />
+      )}
+
       {requote && (
         <ReviewRequoteDialog
           open={reviewOpen}
