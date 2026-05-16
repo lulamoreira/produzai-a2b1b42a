@@ -2799,6 +2799,49 @@ Qualquer dúvida, estamos à disposição.
           defaultCcEmail={settingsAny?.winner_cc_email ?? null}
         />
       )}
+
+      {(currentPhase === "ajuste" || currentPhase === "negociacao") && (
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground">
+                Fase 4 — Ajuste pós-mockup
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {currentPhase === "ajuste"
+                  ? "Fase ativa — ajustes sendo aplicados"
+                  : "Disponível após aprovação da negociação"}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onNavigateToSection?.("adjustments")}
+              className="gap-2 shrink-0"
+            >
+              <FileEdit className="w-3.5 h-3.5" />
+              Abrir Ajustes
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          {currentPhase === "ajuste" && (
+            <AdjustmentSummaryCard campaignId={campaignId} />
+          )}
+        </div>
+      )}
+
+      <UnlockPhaseDialog
+        open={unlockTarget !== null}
+        onOpenChange={(v) => !v && setUnlockTarget(null)}
+        phaseToUnlock={unlockTarget}
+        onConfirm={() => {
+          if (unlockTarget) {
+            unlockPhase(unlockTarget);
+            setUnlockTarget(null);
+          }
+        }}
+        isUnlocking={isUnlocking}
+      />
     </div>
   );
 }
