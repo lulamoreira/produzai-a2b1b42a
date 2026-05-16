@@ -1138,27 +1138,42 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           </div>
           <CardContent className="px-6 py-4 flex-1 flex flex-col gap-4">
             <div>
-              {editingBudget ? (
-                <div className="flex items-center gap-2">
-                  <Input
-                    autoFocus
-                    value={budgetDraft}
-                    onChange={(e) => setBudgetDraft(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSaveBudget()}
-                    placeholder="0,00"
-                    className="h-8 text-sm"
-                  />
-                  <Button size="sm" variant="ghost" onClick={handleSaveBudget}><Check className="w-4 h-4" /></Button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => { setBudgetDraft(budgetAmount?.toString() ?? ""); setEditingBudget(true); }}
-                  className="text-2xl font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2"
-                >
-                  {budgetAmount != null ? fmtCurrency(budgetAmount) : "Definir"}
-                  <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              )}
+              {(() => {
+                const canEditBudgetMeta =
+                  currentPhase === "rateio" || currentPhase === "cotacoes" || isAdminOrMaster;
+                if (editingBudget && canEditBudgetMeta) {
+                  return (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        autoFocus
+                        value={budgetDraft}
+                        onChange={(e) => setBudgetDraft(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSaveBudget()}
+                        placeholder="0,00"
+                        className="h-8 text-sm"
+                      />
+                      <Button size="sm" variant="ghost" onClick={handleSaveBudget}><Check className="w-4 h-4" /></Button>
+                    </div>
+                  );
+                }
+                if (canEditBudgetMeta) {
+                  return (
+                    <button
+                      onClick={() => { setBudgetDraft(budgetAmount?.toString() ?? ""); setEditingBudget(true); }}
+                      className="text-2xl font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2"
+                    >
+                      {budgetAmount != null ? fmtCurrency(budgetAmount) : "Definir"}
+                      <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  );
+                }
+                return (
+                  <span className="text-2xl font-bold text-foreground flex items-center gap-2">
+                    {budgetAmount != null ? fmtCurrency(budgetAmount) : "—"}
+                    <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                  </span>
+                );
+              })()}
               {budgetAmount != null && currencyCode !== "BRL" && (
                 <p className="text-[11px] text-muted-foreground mt-1">{fmtBRL(budgetAmount * exchangeRate)}</p>
               )}
