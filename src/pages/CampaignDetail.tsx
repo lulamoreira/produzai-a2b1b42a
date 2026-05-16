@@ -3993,6 +3993,7 @@ const CampaignDetail = () => {
                   setRateioView("planilha");
                   setActiveSection("matrix");
                 }}
+                onNavigateToSection={(section) => setActiveSection(section)}
               />
             </>
           )}
