@@ -543,6 +543,22 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     return (suppliers as any[]).find((s) => s.is_winner === true) || null;
   }, [suppliers]);
 
+  // ─── Phase awareness ──────────────────────────────────
+  const { currentPhase } = useBudgetPhase(campaignId);
+  const { data: currentTotal } = useCurrentTotal(
+    winnerSupplier?.id,
+    campaignId,
+    currentPhase,
+    winnerSupplier
+      ? {
+          negotiation_status: (winnerSupplier as any).negotiation_status,
+          negotiation_locked_total: (winnerSupplier as any).negotiation_locked_total,
+          winner_locked_total: (winnerSupplier as any).winner_locked_total,
+        }
+      : undefined
+  );
+
+
   // Totais por fornecedor:
   // - Se houver vencedor declarado, usa o valor congelado (winner_locked_total) de cada um.
   // - Caso contrário, usa o rateio atual (supplierPartialTotals) — refletindo edições recentes.
