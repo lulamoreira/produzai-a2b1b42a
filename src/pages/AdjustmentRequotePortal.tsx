@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, CheckCircle2, AlertTriangle, Package, Send, Clock } from "lucide-react";
+import { Loader2, CheckCircle2, AlertTriangle, Package, Send, Clock, Upload, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  parseAdjustmentResponseWorkbook,
+  type ParsedRequoteResult,
+  type ParsedRequoteRow,
+  type ExpectedPiece,
+} from "@/lib/parseAdjustmentResponseWorkbook";
+import { ImportRequoteConfirmDialog } from "@/components/Budget/ImportRequoteConfirmDialog";
 
 interface PortalData {
   request: {
