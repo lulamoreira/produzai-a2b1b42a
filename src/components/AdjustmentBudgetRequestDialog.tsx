@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Send, Loader2, MessageCircle, Eye } from "lucide-react";
+import { Send, Loader2, MessageCircle, Eye, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -24,6 +26,8 @@ import {
 } from "@/hooks/useAdjustments";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 import AdjustmentQuotePreviewDialog from "@/components/AdjustmentQuotePreviewDialog";
+import DeadlinePickerDialog from "@/components/Budget/DeadlinePickerDialog";
+import { useGeneratePortalLink } from "@/hooks/useAdjustmentBudgetRequest";
 
 interface Props {
   open: boolean;
