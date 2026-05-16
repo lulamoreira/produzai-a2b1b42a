@@ -233,19 +233,22 @@ export default function AdjustmentRegisterResponseDialog({
     return total;
   }, [currentPrices, campaignQtyBySource]);
 
-  /** Same total but replacing the price of each adjustment piece with the new typed price. */
+  /** Same total but replacing modified pieces with new price × adjustment qty. */
   const newProductionTotal = useMemo(() => {
     let delta = 0;
     for (const p of editablePieces) {
       const sid = sourceByAdjPiece[p.id];
       if (!sid) continue;
-      const q = campaignQtyBySource[sid] || 0;
+      const campaignQ = campaignQtyBySource[sid] || 0;
+      const adjQ = qtyByPiece[p.id] || 0;
       const cur = Number(currentPrices[sid] || 0);
       const np = Number(newPrices[p.id] || 0);
-      delta += q * (np - cur);
+      // Remove this piece's contribution at negotiated price × campaign qty,
+      // add it back at new price × adjustment qty.
+      delta += (np * adjQ) - (cur * campaignQ);
     }
     return currentProductionTotal + delta;
-  }, [editablePieces, sourceByAdjPiece, campaignQtyBySource, currentPrices, newPrices, currentProductionTotal]);
+  }, [editablePieces, sourceByAdjPiece, campaignQtyBySource, qtyByPiece, currentPrices, newPrices, currentProductionTotal]);
 
   const currentTotal = currentProductionTotal + currentExtras.installation_value + currentExtras.freight_value;
   const newTotal = newProductionTotal + Number(newInstallation || 0) + Number(newFreight || 0);
