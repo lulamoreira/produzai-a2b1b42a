@@ -334,15 +334,26 @@ export default function AdjustmentRegisterResponseDialog({
                     <TableRow>
                       <TableHead className="w-16">Código</TableHead>
                       <TableHead>Peça</TableHead>
-                      <TableHead className="text-right w-28">Qtd ajuste</TableHead>
-                      <TableHead className="text-right w-32">Preço atual</TableHead>
-                      <TableHead className="text-right w-36">Novo preço</TableHead>
+                      <TableHead className="text-right w-20">Qtd</TableHead>
+                      <TableHead className="text-right w-28">Preço atual</TableHead>
+                      <TableHead className="text-right w-32">Total atual</TableHead>
+                      <TableHead className="text-right w-32">Novo preço</TableHead>
+                      <TableHead className="text-right w-32">Novo total</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {editablePieces.map((p) => {
                       const q = qtyByPiece[p.id] || 0;
                       const cur = p.source_piece_id ? Number(currentPrices[p.source_piece_id] || 0) : 0;
+                      const np = Number(newPrices[p.id] || 0);
+                      const lineCur = q * cur;
+                      const lineNew = q * np;
+                      const lineColor =
+                        lineNew < lineCur
+                          ? "text-emerald-700"
+                          : lineNew > lineCur
+                          ? "text-red-700"
+                          : "text-foreground";
                       return (
                         <TableRow key={p.id}>
                           <TableCell className="text-xs">{p.code}</TableCell>
@@ -352,24 +363,25 @@ export default function AdjustmentRegisterResponseDialog({
                           </TableCell>
                           <TableCell className="text-xs text-right">{q}</TableCell>
                           <TableCell className="text-xs text-right">{fmt(cur)}</TableCell>
+                          <TableCell className="text-xs text-right">{fmt(lineCur)}</TableCell>
                           <TableCell className="text-right">
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
+                            <CurrencyInput
                               value={newPrices[p.id] ?? 0}
-                              onChange={(e) =>
-                                setNewPrices((prev) => ({ ...prev, [p.id]: Number(e.target.value) }))
+                              onChange={(n) =>
+                                setNewPrices((prev) => ({ ...prev, [p.id]: n }))
                               }
                               className="h-8 text-right text-xs"
                             />
+                          </TableCell>
+                          <TableCell className={`text-xs text-right font-medium ${lineColor}`}>
+                            {fmt(lineNew)}
                           </TableCell>
                         </TableRow>
                       );
                     })}
                     {editablePieces.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">
+                        <TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">
                           Nenhuma peça editável neste ajuste.
                         </TableCell>
                       </TableRow>
@@ -386,12 +398,9 @@ export default function AdjustmentRegisterResponseDialog({
                   <label className="text-xs text-muted-foreground">
                     Instalação atual: {fmt(currentExtras.installation_value)}
                   </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                  <CurrencyInput
                     value={newInstallation}
-                    onChange={(e) => setNewInstallation(Number(e.target.value))}
+                    onChange={setNewInstallation}
                     className="h-8"
                   />
                 </div>
@@ -399,24 +408,31 @@ export default function AdjustmentRegisterResponseDialog({
                   <label className="text-xs text-muted-foreground">
                     Frete atual: {fmt(currentExtras.freight_value)}
                   </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                  <CurrencyInput
                     value={newFreight}
-                    onChange={(e) => setNewFreight(Number(e.target.value))}
+                    onChange={setNewFreight}
                     className="h-8"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="rounded-md border bg-muted/30 p-3 flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">
-                Total atual: <strong>{fmt(currentTotal)}</strong>
+            <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">
+                  Total atual de Produção: <strong className="text-foreground">{fmt(currentProductionTotal)}</strong>
+                </span>
+                <span className={newProductionTotal < currentProductionTotal ? "text-emerald-700 font-semibold" : newProductionTotal > currentProductionTotal ? "text-red-700 font-semibold" : "font-semibold"}>
+                  Novo total de Produção: {fmt(newProductionTotal)}
+                </span>
               </div>
-              <div className={`text-base font-semibold ${totalColor}`}>
-                Novo total: {fmt(newTotal)}
+              <div className="flex items-center justify-between border-t pt-2">
+                <div className="text-xs text-muted-foreground">
+                  Total atual geral: <strong className="text-foreground">{fmt(currentTotal)}</strong>
+                </div>
+                <div className={`text-base font-semibold ${totalColor}`}>
+                  Novo total geral: {fmt(newTotal)}
+                </div>
               </div>
             </div>
           </div>
