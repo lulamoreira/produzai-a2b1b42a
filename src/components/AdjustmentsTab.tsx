@@ -39,6 +39,7 @@ interface AdjustmentsTabProps {
   winnerSupplierId?: string | null;
   hasNegotiationRateio?: boolean;
   negotiationRateioLoading?: boolean;
+  onBackToBudgets?: () => void;
 }
 
 function StatusBadge({ status }: { status: AdjustmentStatus }) {
