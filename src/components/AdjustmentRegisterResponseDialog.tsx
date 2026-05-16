@@ -266,10 +266,19 @@ export default function AdjustmentRegisterResponseDialog({
     [lockedTotal, currentExtras]
   );
 
-  /** Delta only fires for pieces whose price was actually changed by the admin.
-   * Uses adjQty (the adjustment scope) — quantity differences between the
-   * adjustment scope and the full negotiation rateio must NOT bleed into
-   * the total when no price was edited. */
+  /** Effective qty for display & delta:
+   * - standalone pieces: adjustment-scope qty (qtyByPiece)
+   * - kit-only pieces: campaign rateio qty via source_piece_id (kit qty already
+   *   expanded into per-piece totals in budget_negotiation_store_pieces). */
+  const effectiveQty = (p: any): number => {
+    if (p.kit_only) {
+      const sid = sourceByAdjPiece[p.id];
+      return sid ? Number(campaignQtyBySource[sid] || 0) : 0;
+    }
+    return qtyByPiece[p.id] || 0;
+  };
+
+  /** Delta only fires for pieces whose price was actually changed by the admin. */
   const newProductionTotal = useMemo(() => {
     let delta = 0;
     for (const p of editablePieces) {
@@ -281,11 +290,13 @@ export default function AdjustmentRegisterResponseDialog({
         ? Number(raw)
         : negotiatedPrice;
       if (np === negotiatedPrice) continue;
-      const adjQ = qtyByPiece[p.id] || 0;
+      const adjQ = p.kit_only
+        ? Number(campaignQtyBySource[sid] || 0)
+        : (qtyByPiece[p.id] || 0);
       delta += (np - negotiatedPrice) * adjQ;
     }
     return currentProductionTotal + delta;
-  }, [editablePieces, sourceByAdjPiece, qtyByPiece, currentPrices, newPrices, currentProductionTotal]);
+  }, [editablePieces, sourceByAdjPiece, qtyByPiece, campaignQtyBySource, currentPrices, newPrices, currentProductionTotal]);
 
   const currentTotal = lockedTotal;
   const newTotal = newProductionTotal + Number(newInstallation || 0) + Number(newFreight || 0);
