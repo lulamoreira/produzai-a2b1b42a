@@ -223,16 +223,64 @@ export default function AdjustmentBudgetRequestDialog({
 
   const persistRequest = async () => {
     if (!winner) return;
+    // Only insert a stub row if none exists. Token + deadline are set by
+    // ensureRequestAndToken via the generate_requote_token RPC, which also
+    // sets status to 'sent'. Avoid clobbering that.
     await supabase.from("campaign_adjustment_budget_request" as any).upsert({
       adjustment_id: adjustment.id,
       supplier_id: winner.id,
-      status: "submitted",
+      status: "sent",
       request_sent_at: new Date().toISOString(),
-    } as any, { onConflict: "adjustment_id,supplier_id" } as any);
+    } as any, { onConflict: "adjustment_id,supplier_id", ignoreDuplicates: true } as any);
     await qc.invalidateQueries({ queryKey: ['adjustment_budget_requests', campaignId] });
   };
 
-  const buildTemplateData = (link: { name: string; url: string }): Record<string, any> => ({
+  /**
+   * Ensure a campaign_adjustment_budget_request row exists for this
+   * (adjustment, supplier) pair, then mint a fresh portal token + deadline.
+   * Returns the full portal URL.
+   */
+  const ensureRequestAndToken = async (deadlineDays: number): Promise<{
+    portalUrl: string;
+    tokenExpiresAt: string | null;
+  }> => {
+    if (!winner) throw new Error("Sem fornecedor vencedor.");
+    let requestId: string | undefined = existingRequest?.id;
+    if (!requestId) {
+      const { data: newReq, error: upErr } = await supabase
+        .from("campaign_adjustment_budget_request" as any)
+        .upsert(
+          {
+            adjustment_id: adjustment.id,
+            supplier_id: winner.id,
+            status: "pending",
+          } as any,
+          { onConflict: "adjustment_id,supplier_id" } as any
+        )
+        .select("id")
+        .single();
+      if (upErr) throw upErr;
+      requestId = (newReq as any)?.id;
+    }
+    if (!requestId) throw new Error("Não foi possível criar a recotação.");
+    const token = await generatePortalLink.mutateAsync({ requestId, deadlineDays });
+    // Refetch to get token_expires_at
+    const { data: refreshed } = await supabase
+      .from("campaign_adjustment_budget_request" as any)
+      .select("id, access_token, token_expires_at, deadline_days, status")
+      .eq("id", requestId)
+      .maybeSingle();
+    setExistingRequest(refreshed || null);
+    return {
+      portalUrl: `${window.location.origin}/recotacao/${token}`,
+      tokenExpiresAt: (refreshed as any)?.token_expires_at || null,
+    };
+  };
+
+  const buildTemplateData = (
+    link: { name: string; url: string },
+    portalCtx?: { portalUrl?: string; tokenExpiresAt?: string | null }
+  ): Record<string, any> => ({
     supplierName: winner!.company_name,
     contactName: winner!.contact_name,
     agencyName, campaignName,
@@ -240,6 +288,10 @@ export default function AdjustmentBudgetRequestDialog({
     changesDescription,
     customMessage: customMessage.trim() || undefined,
     downloadUrls: [link],
+    portalUrl: portalCtx?.portalUrl,
+    deadlineDate: portalCtx?.tokenExpiresAt
+      ? format(new Date(portalCtx.tokenExpiresAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+      : undefined,
   });
 
   /**
