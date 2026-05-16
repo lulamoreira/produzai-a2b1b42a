@@ -481,6 +481,28 @@ export default function AdjustmentsTab({
                       );
                     })()}
 
+                    {requote.status === "approved" && (
+                      <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-emerald-900">
+                            Recotação aprovada — planilha final disponível
+                          </p>
+                          <p className="text-xs text-emerald-700 mt-0.5">
+                            Gere a planilha final com novos preços, rateio e comparativo.
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={exportFinal}
+                          disabled={isExporting}
+                          className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+                        >
+                          {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+                          {isExporting ? "Gerando..." : "Baixar planilha final"}
+                        </Button>
+                      </div>
+                    )}
+
                     {requote.status === "rejected" && requote.rejection_notes && (
                       <div className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-800">
                         <div className="font-medium mb-0.5">Motivo da recusa</div>
