@@ -52,7 +52,11 @@ import {
 import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppliers";
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import { useRealtimeBudget } from "@/hooks/useRealtimeBudget";
-import { useBudgetPhase, PHASE_LABELS } from "@/hooks/useBudgetPhase";
+import { useBudgetPhase, PHASE_LABELS, type BudgetPhase } from "@/hooks/useBudgetPhase";
+import { PhaseStepper } from "./PhaseStepper";
+import { FrozenPhaseBanner } from "./FrozenPhaseBanner";
+import { UnlockPhaseDialog } from "./UnlockPhaseDialog";
+import { ArrowRight, FileEdit } from "lucide-react";
 import { useCurrentTotal } from "@/hooks/useCurrentTotal";
 import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
