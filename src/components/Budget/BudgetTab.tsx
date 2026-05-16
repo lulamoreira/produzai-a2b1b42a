@@ -52,6 +52,8 @@ import {
 import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppliers";
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import { useRealtimeBudget } from "@/hooks/useRealtimeBudget";
+import { useBudgetPhase, PHASE_LABELS } from "@/hooks/useBudgetPhase";
+import { useCurrentTotal } from "@/hooks/useCurrentTotal";
 import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
 import { exportSupplierBudget, type SupplierExportRow } from "@/lib/exportSupplierBudget";
@@ -541,6 +543,22 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     return (suppliers as any[]).find((s) => s.is_winner === true) || null;
   }, [suppliers]);
 
+  // ─── Phase awareness ──────────────────────────────────
+  const { currentPhase } = useBudgetPhase(campaignId);
+  const { data: currentTotal } = useCurrentTotal(
+    winnerSupplier?.id,
+    campaignId,
+    currentPhase,
+    winnerSupplier
+      ? {
+          negotiation_status: (winnerSupplier as any).negotiation_status,
+          negotiation_locked_total: (winnerSupplier as any).negotiation_locked_total,
+          winner_locked_total: (winnerSupplier as any).winner_locked_total,
+        }
+      : undefined
+  );
+
+
   // Totais por fornecedor:
   // - Se houver vencedor declarado, usa o valor congelado (winner_locked_total) de cada um.
   // - Caso contrário, usa o rateio atual (supplierPartialTotals) — refletindo edições recentes.
@@ -627,13 +645,32 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     ? ((winnerSupplier as any).winner_locked_total ?? supplierPartialTotals[(winnerSupplier as any).id]?.total ?? 0)
     : 0;
   const winnerNegotiatedTotal = useMemo(() => {
+    if (currentTotal) return currentTotal.total;
     if (!winnerSupplier) return 0;
     const w: any = winnerSupplier;
     if (w.negotiation_status === "approved" && w.negotiation_locked_total != null) {
       return Number(w.negotiation_locked_total);
     }
     return supplierNegotiationTotals[w.id] ?? winnerOriginalTotal;
-  }, [winnerSupplier, supplierNegotiationTotals, winnerOriginalTotal]);
+  }, [currentTotal, winnerSupplier, supplierNegotiationTotals, winnerOriginalTotal]);
+
+  // SourceBadge component for showing where the displayed total comes from
+  const SourceBadge = () => {
+    if (!currentTotal) return null;
+    const labels: Record<string, { label: string; color: string }> = {
+      original: { label: "Cotação original", color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" },
+      negotiated: { label: "Negociado", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
+      adjustment: { label: "Ajuste ativo", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+    };
+    const meta = labels[currentTotal.source];
+    if (!meta) return null;
+    return (
+      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.color}`}>
+        {meta.label}
+      </span>
+    );
+  };
+
 
   const difference = (() => {
     if (budgetAmount == null) return null;
@@ -1040,7 +1077,10 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
               {/* Valor vencedor — sempre fixo (frozen no momento da declaração) */}
               <div className="mt-auto">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Valor vencedor</p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Valor vencedor</p>
+                  <SourceBadge />
+                </div>
                 <p className="text-xl font-bold text-amber-700 dark:text-amber-400 mt-0.5">
                   {fmtCurrency(winnerOriginalTotal)}
                 </p>
@@ -1098,27 +1138,42 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           </div>
           <CardContent className="px-6 py-4 flex-1 flex flex-col gap-4">
             <div>
-              {editingBudget ? (
-                <div className="flex items-center gap-2">
-                  <Input
-                    autoFocus
-                    value={budgetDraft}
-                    onChange={(e) => setBudgetDraft(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSaveBudget()}
-                    placeholder="0,00"
-                    className="h-8 text-sm"
-                  />
-                  <Button size="sm" variant="ghost" onClick={handleSaveBudget}><Check className="w-4 h-4" /></Button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => { setBudgetDraft(budgetAmount?.toString() ?? ""); setEditingBudget(true); }}
-                  className="text-2xl font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2"
-                >
-                  {budgetAmount != null ? fmtCurrency(budgetAmount) : "Definir"}
-                  <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
-                </button>
-              )}
+              {(() => {
+                const canEditBudgetMeta =
+                  currentPhase === "rateio" || currentPhase === "cotacoes" || isAdminOrMaster;
+                if (editingBudget && canEditBudgetMeta) {
+                  return (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        autoFocus
+                        value={budgetDraft}
+                        onChange={(e) => setBudgetDraft(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSaveBudget()}
+                        placeholder="0,00"
+                        className="h-8 text-sm"
+                      />
+                      <Button size="sm" variant="ghost" onClick={handleSaveBudget}><Check className="w-4 h-4" /></Button>
+                    </div>
+                  );
+                }
+                if (canEditBudgetMeta) {
+                  return (
+                    <button
+                      onClick={() => { setBudgetDraft(budgetAmount?.toString() ?? ""); setEditingBudget(true); }}
+                      className="text-2xl font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2"
+                    >
+                      {budgetAmount != null ? fmtCurrency(budgetAmount) : "Definir"}
+                      <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  );
+                }
+                return (
+                  <span className="text-2xl font-bold text-foreground flex items-center gap-2">
+                    {budgetAmount != null ? fmtCurrency(budgetAmount) : "—"}
+                    <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                  </span>
+                );
+              })()}
               {budgetAmount != null && currencyCode !== "BRL" && (
                 <p className="text-[11px] text-muted-foreground mt-1">{fmtBRL(budgetAmount * exchangeRate)}</p>
               )}
@@ -1508,18 +1563,44 @@ Qualquer dúvida, estamos à disposição.
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-foreground">Fornecedores</h3>
-          <ResponsiveToolbar
-            primaryActions={
-              <Button size="sm" className="gap-1 min-h-[44px] md:min-h-0" onClick={() => setAddOpen(true)}>
-                <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Adicionar Fornecedor</span><span className="sm:hidden">Adicionar</span>
-              </Button>
-            }
-            secondaryActions={
-              <Button size="sm" variant="outline" className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
-                <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
-              </Button>
-            }
-          />
+          {(() => {
+            const supplierCount = suppliers.length;
+            const phaseAllowsAdd = currentPhase === "cotacoes" || isAdminOrMaster;
+            const canAddSupplier = phaseAllowsAdd && supplierCount < 3;
+            return (
+              <ResponsiveToolbar
+                primaryActions={
+                  canAddSupplier ? (
+                    <Button size="sm" className="gap-1 min-h-[44px] md:min-h-0" onClick={() => setAddOpen(true)}>
+                      <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Adicionar Fornecedor</span><span className="sm:hidden">Adicionar</span>
+                    </Button>
+                  ) : supplierCount >= 3 ? (
+                    <span className="text-xs text-muted-foreground">Limite de 3 fornecedores atingido</span>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button size="sm" className="gap-1 min-h-[44px] md:min-h-0" disabled>
+                              <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Adicionar Fornecedor</span><span className="sm:hidden">Adicionar</span>
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Fase {PHASE_LABELS[currentPhase]} — apenas Admin ou Master podem adicionar fornecedores nesta fase
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )
+                }
+                secondaryActions={
+                  <Button size="sm" variant="outline" className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
+                    <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
+                  </Button>
+                }
+              />
+            );
+          })()}
         </div>
 
         {suppliers.length === 0 ? (
@@ -1694,15 +1775,28 @@ Qualquer dúvida, estamos à disposição.
                           <History className="w-3.5 h-3.5" />
                         </Button>
                       )}
-                      {isAdminOrMaster && sup.submitted_at && (
-                        <Button
-                          size="sm" variant="ghost" className="h-7 w-7 p-0"
-                          title="Declarar vencedor do certame"
-                          onClick={() => setWinnerSupplierId(sup.id)}
-                        >
-                          <Trophy className="w-3.5 h-3.5 text-amber-500" />
-                        </Button>
-                      )}
+                      {isAdminOrMaster && sup.submitted_at && (() => {
+                        const canDeclareWinner = currentPhase === "cotacoes" || isAdminOrMaster;
+                        const btn = (
+                          <Button
+                            size="sm" variant="ghost" className="h-7 w-7 p-0"
+                            title="Declarar vencedor do certame"
+                            onClick={() => setWinnerSupplierId(sup.id)}
+                            disabled={!canDeclareWinner}
+                          >
+                            <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                          </Button>
+                        );
+                        if (canDeclareWinner) return btn;
+                        return (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild><span>{btn}</span></TooltipTrigger>
+                              <TooltipContent>Disponível apenas na fase Cotações</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      })()}
                       <Button
                         size="sm" variant="ghost" className="h-7 w-7 p-0 ml-auto text-destructive hover:text-destructive"
                         title="Excluir fornecedor"
