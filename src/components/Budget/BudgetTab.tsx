@@ -1548,18 +1548,44 @@ Qualquer dúvida, estamos à disposição.
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-foreground">Fornecedores</h3>
-          <ResponsiveToolbar
-            primaryActions={
-              <Button size="sm" className="gap-1 min-h-[44px] md:min-h-0" onClick={() => setAddOpen(true)}>
-                <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Adicionar Fornecedor</span><span className="sm:hidden">Adicionar</span>
-              </Button>
-            }
-            secondaryActions={
-              <Button size="sm" variant="outline" className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
-                <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
-              </Button>
-            }
-          />
+          {(() => {
+            const supplierCount = suppliers.length;
+            const phaseAllowsAdd = currentPhase === "cotacoes" || isAdminOrMaster;
+            const canAddSupplier = phaseAllowsAdd && supplierCount < 3;
+            return (
+              <ResponsiveToolbar
+                primaryActions={
+                  canAddSupplier ? (
+                    <Button size="sm" className="gap-1 min-h-[44px] md:min-h-0" onClick={() => setAddOpen(true)}>
+                      <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Adicionar Fornecedor</span><span className="sm:hidden">Adicionar</span>
+                    </Button>
+                  ) : supplierCount >= 3 ? (
+                    <span className="text-xs text-muted-foreground">Limite de 3 fornecedores atingido</span>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Button size="sm" className="gap-1 min-h-[44px] md:min-h-0" disabled>
+                              <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Adicionar Fornecedor</span><span className="sm:hidden">Adicionar</span>
+                            </Button>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          Fase {PHASE_LABELS[currentPhase]} — apenas Admin ou Master podem adicionar fornecedores nesta fase
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )
+                }
+                secondaryActions={
+                  <Button size="sm" variant="outline" className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
+                    <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
+                  </Button>
+                }
+              />
+            );
+          })()}
         </div>
 
         {suppliers.length === 0 ? (
