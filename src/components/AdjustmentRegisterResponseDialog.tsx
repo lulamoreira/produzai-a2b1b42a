@@ -325,7 +325,7 @@ export default function AdjustmentRegisterResponseDialog({
     return sid ? Number(campaignQtyBySource[sid] || 0) : 0;
   };
 
-  /** Delta only fires for pieces whose price was actually changed by the admin. */
+  /** Delta accounts for BOTH price changes and quantity changes per piece. */
   const newProductionTotal = useMemo(() => {
     let delta = 0;
     for (const p of editablePieces) {
@@ -336,10 +336,10 @@ export default function AdjustmentRegisterResponseDialog({
       const np = raw != null && Number.isFinite(Number(raw))
         ? Number(raw)
         : negotiatedPrice;
-      if (np === negotiatedPrice) continue;
-      const adjQ = Number(qtyByPiece[p.id] || 0)
-        || Number(campaignQtyBySource[sid] || 0);
-      delta += (np - negotiatedPrice) * adjQ;
+      const oldQ = Number(campaignQtyBySource[sid] || 0);
+      const newQ = Number(qtyByPiece[p.id] || 0);
+      if (np === negotiatedPrice && newQ === oldQ) continue;
+      delta += (np * newQ) - (negotiatedPrice * oldQ);
     }
     return currentProductionTotal + delta;
   }, [editablePieces, sourceByAdjPiece, qtyByPiece, campaignQtyBySource, currentPrices, newPrices, currentProductionTotal]);
