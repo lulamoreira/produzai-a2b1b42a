@@ -22,6 +22,35 @@ import {
 } from "@/lib/parseAdjustmentResponseWorkbook";
 import { ImportRequoteConfirmDialog } from "@/components/Budget/ImportRequoteConfirmDialog";
 
+/** Currency input with pt-BR mask (always 2 decimals). Treats keystrokes as cents. */
+function CurrencyInput({
+  value,
+  onChange,
+  className,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  className?: string;
+}) {
+  const display = (Number.isFinite(value) ? value : 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  return (
+    <Input
+      type="text"
+      inputMode="numeric"
+      value={display}
+      onChange={(e) => {
+        const digits = e.target.value.replace(/\D/g, "");
+        const cents = digits ? parseInt(digits, 10) : 0;
+        onChange(cents / 100);
+      }}
+      className={className}
+    />
+  );
+}
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
