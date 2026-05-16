@@ -610,11 +610,25 @@ export default function AdjustmentBudgetRequestDialog({
           ) : (
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending || preparingPreview}>Cancelar</Button>
-              <Button variant="outline" onClick={handleSendWhatsApp}
+              {existingRequest?.access_token && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const url = `${window.location.origin}/recotacao/${existingRequest.access_token}`;
+                    navigator.clipboard.writeText(url);
+                    toast.success("Link do portal copiado!");
+                  }}
+                  className="gap-1"
+                >
+                  <Copy className="w-4 h-4" /> Copiar link do portal
+                </Button>
+              )}
+              <Button variant="outline" onClick={handleClickSendWhatsAppGated}
                 disabled={sending || preparingPreview || loading || !winner || !winner?.phone}>
                 <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
               </Button>
-              <Button onClick={handleOpenPreview} disabled={sending || preparingPreview || loading || !winner}>
+              <Button onClick={handleClickSendEmail} disabled={sending || preparingPreview || loading || !winner}>
                 {preparingPreview ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Eye className="w-4 h-4 mr-1" />}
                 Visualizar e enviar
               </Button>
@@ -634,6 +648,17 @@ export default function AdjustmentBudgetRequestDialog({
         sending={sending}
         onConfirm={handleConfirmSend}
         onSendTest={handleSendTest}
+      />
+
+      <DeadlinePickerDialog
+        open={deadlinePickerOpen}
+        onOpenChange={(o) => {
+          setDeadlinePickerOpen(o);
+          if (!o) setPendingFlow(null);
+        }}
+        onConfirm={handleDeadlineConfirmed}
+        isLoading={generatePortalLink.isPending}
+        defaultDays={existingRequest?.deadline_days ?? 7}
       />
     </Dialog>
   );
