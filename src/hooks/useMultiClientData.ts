@@ -696,7 +696,7 @@ export function useDeleteCampaignPiece() {
     },
     onSuccess: (res) => {
       if (res?.softDelete) {
-        toast.success("Peça arquivada (mantida no histórico de orçamento aprovado).");
+        toast.success("Peça arquivada (mantida no histórico de cotação aprovada).");
       } else {
         toast.success("Peça removida!");
       }

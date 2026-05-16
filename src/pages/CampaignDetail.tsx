@@ -3965,7 +3965,7 @@ const CampaignDetail = () => {
             />
           )}
 
-          {/* ─── SECTION: ORÇAMENTOS ─── */}
+          {/* ─── SECTION: COTAÇÕES ─── */}
           {activeSection === "budgets" && (
             <>
               {activeAdjustment && (
@@ -3973,7 +3973,7 @@ const CampaignDetail = () => {
                   <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
                   <p className="text-xs text-amber-900 dark:text-amber-200">
                     <strong>Atenção:</strong> Existe um ajuste de mockup ativo (<strong>{activeAdjustment.name}</strong>) para esta campanha.
-                    O orçamento vigente pode ser diferente do original.
+                    A cotação vigente pode ser diferente da original.
                   </p>
                 </div>
               )}

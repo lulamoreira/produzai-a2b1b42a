@@ -101,7 +101,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     label: "Cotações",
     icon: "DollarSign",
     category: "campaign",
-    description: "Cotações com fornecedores e negociação",
+    description: "Coleta de cotações com fornecedores, negociação e ajuste pós-mockup",
     actions: ["view", "edit", "delete"],
   },
   {
