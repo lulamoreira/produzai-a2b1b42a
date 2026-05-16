@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Send, Loader2, MessageCircle, Eye, Copy } from "lucide-react";
+import { Send, Loader2, MessageCircle, Eye, Copy, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
