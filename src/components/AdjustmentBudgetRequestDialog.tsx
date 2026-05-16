@@ -473,7 +473,7 @@ export default function AdjustmentBudgetRequestDialog({
     }
   };
 
-  const handleSendWhatsApp = async () => {
+  const handleSendWhatsApp = async (portalCtx?: { portalUrl?: string; tokenExpiresAt?: string | null }) => {
     const phone = (winner?.phone || "").replace(/\D/g, "");
     if (!phone) { toast.error("Fornecedor sem telefone."); return; }
     setSending(true);
@@ -497,7 +497,18 @@ export default function AdjustmentBudgetRequestDialog({
         const r = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(link.url)}`);
         if (r.ok) { const t = (await r.text()).trim(); if (/^https?:\/\//i.test(t)) shortUrl = t; }
       } catch { /* ignore */ }
+      let portalShort: string | null = null;
+      if (portalCtx?.portalUrl) {
+        portalShort = portalCtx.portalUrl;
+        try {
+          const r = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(portalCtx.portalUrl)}`);
+          if (r.ok) { const t = (await r.text()).trim(); if (/^https?:\/\//i.test(t)) portalShort = t; }
+        } catch { /* ignore */ }
+      }
       const greeting = winner!.contact_name || winner!.company_name;
+      const deadlineLine = portalCtx?.tokenExpiresAt
+        ? `🗓 Prazo: ${format(new Date(portalCtx.tokenExpiresAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n\n`
+        : "";
       const text =
         `📐 *Recotação Pós-Mockup*\n\n` +
         `Olá, *${greeting}*! 👋\n\n` +
@@ -505,7 +516,9 @@ export default function AdjustmentBudgetRequestDialog({
         `📊 *Alterações:* ${changesDescription}\n` +
         `🏷 Ajuste: *${adjustment.name}*\n\n` +
         (customMessage.trim() ? `💬 ${customMessage.trim()}\n\n` : "") +
+        (portalShort ? `🔗 Preencher online:\n${portalShort}\n\n` : "") +
         `📎 Planilha de recotação:\n${shortUrl}\n\n` +
+        deadlineLine +
         `Por favor, preencha os campos em amarelo e retorne com os novos valores. 🙌\n\n` +
         `— Equipe ${agencyName}`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
