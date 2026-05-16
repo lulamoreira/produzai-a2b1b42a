@@ -485,8 +485,66 @@ export default function AdjustmentRequotePortal() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {!isReadOnly && (
+            <TabsContent value="anexar" className="mt-4">
+              <Card>
+                <CardContent className="p-5 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold mb-1">Importar planilha preenchida</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Se preferir, baixe a planilha enviada pelo nosso time, preencha e faça o upload aqui.
+                      Os preços serão importados automaticamente.
+                    </p>
+                  </div>
+
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleFileDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                  >
+                    {parseLoading ? (
+                      <Loader2 className="w-8 h-8 mx-auto animate-spin text-primary" />
+                    ) : (
+                      <>
+                        <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                        <div className="text-sm font-medium">
+                          Arraste a planilha aqui ou clique para selecionar
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Apenas arquivos .xlsx
+                        </div>
+                      </>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx"
+                      className="hidden"
+                      onChange={(e) => handleFileSelect(e.target.files?.[0])}
+                    />
+                  </div>
+
+                  {parseResult && !importConfirmOpen && (
+                    <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-3">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <div className="text-xs flex-1">
+                        {parseResult.matched} peças identificadas
+                        {parseResult.unmatched > 0 && ` (${parseResult.unmatched} não encontradas)`}
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => setImportConfirmOpen(true)}>
+                        Revisar e aplicar
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </main>
+
 
       {/* Sticky footer */}
       {!isReadOnly && (
