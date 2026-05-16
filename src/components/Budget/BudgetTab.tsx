@@ -2958,10 +2958,11 @@ function AdjustmentSummaryCard({
           )}
 
           {requote.status === "approved" && (
-            <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Recotação aprovada
-            </div>
+            <RequoteApprovedExportRow
+              campaignId={campaignId}
+              adjustmentId={requote.adjustment_id}
+              supplierId={requote.supplier_id}
+            />
           )}
         </div>
       )}
