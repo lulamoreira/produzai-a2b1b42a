@@ -84,10 +84,11 @@ export default function AdjustmentRegisterResponseDialog({
   const [adminParseResult, setAdminParseResult] = useState<ParsedRequoteResult | null>(null);
   const [adminImportOpen, setAdminImportOpen] = useState(false);
 
-  const { data: pieces = [] } = useAdjustmentPieces(adjustment.id);
-  const { data: adjSp = [] } = useAdjustmentStorePieces(adjustment.id);
+  const { data: pieces = [], isLoading: piecesLoading } = useAdjustmentPieces(adjustment.id);
+  const { data: adjSp = [], isLoading: adjSpLoading } = useAdjustmentStorePieces(adjustment.id);
   const { data: adjKits = [] } = useAdjustmentKits(adjustment.id);
   const { data: adjKitPieces = [] } = useAdjustmentKitPieces(adjustment.id);
+  const [campaignQtyReady, setCampaignQtyReady] = useState(false);
 
   const fmt = (v: number) => formatCurrencyByCode(v, currencyCode);
 
@@ -95,6 +96,7 @@ export default function AdjustmentRegisterResponseDialog({
   // OR whose distributed quantity differs from the original campaign rateio.
   // Unchanged pieces are hidden.
   const editablePieces = useMemo(() => {
+    if (!campaignQtyReady) return [];
     const adjQtyBySource: Record<string, number> = {};
     const pieceToSource: Record<string, string> = {};
     for (const p of pieces as any[]) {
@@ -118,7 +120,7 @@ export default function AdjustmentRegisterResponseDialog({
       const campQ = Number(campaignQtyBySource[sid] || 0);
       return adjQ !== campQ;
     });
-  }, [pieces, adjSp, campaignQtyBySource]);
+  }, [pieces, adjSp, campaignQtyBySource, campaignQtyReady]);
 
   // Map piece_id -> { kitName, kitCode } for kit-only pieces (so the admin
   // can see which kit a piece belongs to).
@@ -145,6 +147,7 @@ export default function AdjustmentRegisterResponseDialog({
   useEffect(() => {
     if (!open) return;
     setLoading(true);
+    setCampaignQtyReady(false);
     (async () => {
       try {
         const { data: w } = await supabase
@@ -192,6 +195,7 @@ export default function AdjustmentRegisterResponseDialog({
           }
         }
         setCampaignQtyBySource(cqty);
+        setCampaignQtyReady(true);
 
         // Negotiated prices keyed by piece_id (fallback to original unit_price)
         const priceMap: Record<string, number> = {};
@@ -414,7 +418,7 @@ export default function AdjustmentRegisterResponseDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {loading ? (
+        {loading || piecesLoading || adjSpLoading || !campaignQtyReady ? (
           <div className="flex items-center justify-center py-12 text-muted-foreground">
             <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando...
           </div>
