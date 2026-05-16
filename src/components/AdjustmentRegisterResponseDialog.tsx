@@ -466,7 +466,16 @@ export default function AdjustmentRegisterResponseDialog({
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold mb-2">Novos preços propostos pelo fornecedor</h3>
+              <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="text-sm font-semibold">Novos preços propostos pelo fornecedor</h3>
+                <Input
+                  value={pieceCodeFilter}
+                  onChange={(e) => setPieceCodeFilter(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Filtrar código"
+                  inputMode="numeric"
+                  className="h-8 w-full sm:w-36 text-xs"
+                />
+              </div>
               <div className="border rounded-md overflow-hidden">
                 <Table>
                   <TableHeader>
@@ -481,7 +490,7 @@ export default function AdjustmentRegisterResponseDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {editablePieces.map((p) => {
+                    {displayedPieces.map((p) => {
                       const q = effectiveQty(p);
                       const cur = p.source_piece_id ? Number(currentPrices[p.source_piece_id] || 0) : 0;
                       const np = Number(newPrices[p.id] || 0);
@@ -524,10 +533,10 @@ export default function AdjustmentRegisterResponseDialog({
                         </TableRow>
                       );
                     })}
-                    {editablePieces.length === 0 && (
+                    {displayedPieces.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">
-                          Nenhuma peça editável neste ajuste.
+                          {editablePieces.length === 0 ? "Nenhuma peça editável neste ajuste." : "Nenhuma peça encontrada para este código."}
                         </TableCell>
                       </TableRow>
                     )}
