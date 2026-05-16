@@ -2845,3 +2845,43 @@ Qualquer dúvida, estamos à disposição.
     </div>
   );
 }
+
+function AdjustmentSummaryCard({ campaignId }: { campaignId: string }) {
+  const { data: adjustment } = useQuery({
+    queryKey: ["active_adjustment_summary", campaignId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaign_adjustments")
+        .select("id, name, status, approved_at, notes")
+        .eq("campaign_id", campaignId)
+        .eq("status", "active")
+        .maybeSingle();
+      return data as { id: string; name: string; status: string; approved_at: string | null; notes: string | null } | null;
+    },
+  });
+
+  if (!adjustment) {
+    return (
+      <p className="text-xs text-muted-foreground italic">
+        Nenhum ajuste ativo ainda.
+      </p>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm font-semibold text-foreground">{adjustment.name}</span>
+        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px]">Ativo</Badge>
+      </div>
+      {adjustment.notes && (
+        <p className="text-xs text-muted-foreground whitespace-pre-wrap">{adjustment.notes}</p>
+      )}
+      {adjustment.approved_at && (
+        <p className="text-[11px] text-muted-foreground">
+          Iniciado em {format(new Date(adjustment.approved_at), "dd/MM/yyyy", { locale: ptBR })}
+        </p>
+      )}
+    </div>
+  );
+}
