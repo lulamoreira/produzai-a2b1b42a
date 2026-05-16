@@ -91,10 +91,13 @@ export default function AdjustmentRegisterResponseDialog({
 
   const fmt = (v: number) => formatCurrencyByCode(v, currencyCode);
 
-  // Include both standalone and kit-only pieces (kit-only pieces also need
-  // price updates). Exclude deleted ones.
+  // Only pieces actually touched by the adjustment (modified or added).
+  // Unchanged pieces — including kit-only ones — are hidden.
   const editablePieces = useMemo(
-    () => (pieces as any[]).filter((p) => !p.is_deleted),
+    () =>
+      (pieces as any[]).filter(
+        (p) => !p.is_deleted && (p.change_type === "modified" || p.change_type === "added" || p.is_new)
+      ),
     [pieces]
   );
 
