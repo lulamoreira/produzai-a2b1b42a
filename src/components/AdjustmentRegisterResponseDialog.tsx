@@ -445,7 +445,7 @@ export default function AdjustmentRegisterResponseDialog({
                   </TableHeader>
                   <TableBody>
                     {editablePieces.map((p) => {
-                      const q = qtyByPiece[p.id] || 0;
+                      const q = effectiveQty(p);
                       const cur = p.source_piece_id ? Number(currentPrices[p.source_piece_id] || 0) : 0;
                       const np = Number(newPrices[p.id] || 0);
                       const lineCur = q * cur;
@@ -456,11 +456,17 @@ export default function AdjustmentRegisterResponseDialog({
                           : lineNew > lineCur
                           ? "text-red-700"
                           : "text-foreground";
+                      const kitInfo = kitByPiece[p.id];
                       return (
                         <TableRow key={p.id}>
                           <TableCell className="text-xs">{p.code}</TableCell>
                           <TableCell className="text-xs">
-                            {p.name}
+                            <div>{p.name}</div>
+                            {kitInfo && (
+                              <div className="text-[10px] text-muted-foreground mt-0.5">
+                                Kit: <span className="font-medium">{kitInfo.name}</span>
+                              </div>
+                            )}
                             {p.is_new && <span className="ml-1 text-emerald-600">(nova)</span>}
                           </TableCell>
                           <TableCell className="text-xs text-right">{q}</TableCell>
