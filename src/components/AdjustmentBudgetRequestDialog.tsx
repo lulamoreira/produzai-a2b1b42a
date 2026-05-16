@@ -366,7 +366,7 @@ export default function AdjustmentBudgetRequestDialog({
     const tId = toast.loading("Gerando planilha e pré-visualização...");
     try {
       const { link } = await buildAndUpload();
-      const templateData = buildTemplateData(link);
+      const templateData = buildTemplateData(link, portalCtx);
       const { data, error } = await supabase.functions.invoke("render-transactional-email", {
         body: {
           templateName: "adjustment-quote-request-to-supplier",
