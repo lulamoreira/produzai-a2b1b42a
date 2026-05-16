@@ -6,8 +6,9 @@ import { supabasePaginate } from "@/lib/supabasePaginate";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle,
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet,
 } from "lucide-react";
+import { useExportRequoteFinal } from "@/hooks/useExportRequoteFinal";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -2958,10 +2959,11 @@ function AdjustmentSummaryCard({
           )}
 
           {requote.status === "approved" && (
-            <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Recotação aprovada
-            </div>
+            <RequoteApprovedExportRow
+              campaignId={campaignId}
+              adjustmentId={requote.adjustment_id}
+              supplierId={requote.supplier_id}
+            />
           )}
         </div>
       )}
@@ -2969,3 +2971,32 @@ function AdjustmentSummaryCard({
   );
 }
 
+
+function RequoteApprovedExportRow({
+  campaignId,
+  adjustmentId,
+  supplierId,
+}: {
+  campaignId: string;
+  adjustmentId: string;
+  supplierId: string;
+}) {
+  const { exportFinal, isExporting } = useExportRequoteFinal(campaignId, adjustmentId, supplierId);
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium flex-1">
+        <CheckCircle2 className="w-3.5 h-3.5" />
+        Recotação aprovada
+      </div>
+      <Button
+        size="sm"
+        onClick={exportFinal}
+        disabled={isExporting}
+        className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white h-7 text-xs"
+      >
+        {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
+        Planilha final
+      </Button>
+    </div>
+  );
+}

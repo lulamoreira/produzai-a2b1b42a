@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Send, Loader2, MessageCircle, Eye, Copy } from "lucide-react";
+import { Send, Loader2, MessageCircle, Eye, Copy, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -635,6 +635,21 @@ export default function AdjustmentBudgetRequestDialog({
                   className="gap-1"
                 >
                   <Copy className="w-4 h-4" /> Copiar link do portal
+                </Button>
+              )}
+              {existingRequest && ["sent", "filling"].includes(existingRequest.status) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setPendingFlow("email");
+                    setDeadlinePickerOpen(true);
+                  }}
+                  className="gap-1"
+                  disabled={sending || preparingPreview || loading}
+                  title="Gera um novo prazo e reabre a pré-visualização para reenvio"
+                >
+                  <RefreshCw className="w-4 h-4" /> Reenviar com novo prazo
                 </Button>
               )}
               <Button variant="outline" onClick={handleClickSendWhatsAppGated}
