@@ -44,6 +44,10 @@ export default function AdjustmentRegisterResponseDialog({
   const [newInstallation, setNewInstallation] = useState<number>(0);
   const [newFreight, setNewFreight] = useState<number>(0);
 
+  const adminFileRef = useRef<HTMLInputElement>(null);
+  const [adminParseResult, setAdminParseResult] = useState<ParsedRequoteResult | null>(null);
+  const [adminImportOpen, setAdminImportOpen] = useState(false);
+
   const { data: pieces = [] } = useAdjustmentPieces(adjustment.id);
   const { data: adjSp = [] } = useAdjustmentStorePieces(adjustment.id);
 
