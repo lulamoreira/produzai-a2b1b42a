@@ -29,6 +29,7 @@ export interface ExpectedPiece {
   pieceId?: string;
   kitId?: string;
   previousPrice: number;
+  totalQty?: number;
 }
 
 function parseDecimal(raw: unknown): number | null {
@@ -90,6 +91,7 @@ export async function parseAdjustmentResponseWorkbook(
 
   const codeCol = findCol(["código", "codigo", "code"]);
   const newPriceCol = findCol(["novo preço", "novo preco", "novo", "new price", "preencher"]);
+  const newTotalCol = findCol(["novo total", "total novo", "total reorçamento", "total reorcamento", "new total"]);
 
   if (codeCol === -1 || newPriceCol === -1) {
     throw new Error(
@@ -141,7 +143,8 @@ export async function parseAdjustmentResponseWorkbook(
     // strip those before matching.
     const normalizedCode = codeStr.replace(/\s*\(.+\)\s*$/, "").trim();
     const expected = expectedMap.get(normalizedCode.toLowerCase());
-    const newPrice = parseDecimal(row[newPriceCol]);
+    const explicitNewPrice = parseDecimal(row[newPriceCol]);
+    const newTotal = newTotalCol >= 0 ? parseDecimal(row[newTotalCol]) : null;
 
     if (!expected) {
       unmatched++;
@@ -150,6 +153,8 @@ export async function parseAdjustmentResponseWorkbook(
     }
 
     matched++;
+    const qty = Number(expected.totalQty || 0);
+    const newPrice = explicitNewPrice ?? (newTotal !== null && qty > 0 ? newTotal / qty : null);
     const isValid = newPrice !== null && newPrice >= 0;
     parsedRows.push({
       code: expected.code,

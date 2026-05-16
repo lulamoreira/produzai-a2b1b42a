@@ -354,8 +354,9 @@ export default function AdjustmentRegisterResponseDialog({
         name: p.name,
         pieceId: p.id,
         previousPrice: p.source_piece_id ? Number(currentPrices[p.source_piece_id] || 0) : 0,
+        totalQty: effectiveQty(p),
       })),
-    [editablePieces, currentPrices]
+    [editablePieces, currentPrices, qtyByPiece, sourceByAdjPiece, campaignQtyBySource]
   );
 
   const handleAdminFileSelect = async (file: File | undefined) => {
