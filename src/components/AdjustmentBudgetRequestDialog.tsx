@@ -276,15 +276,15 @@ export default function AdjustmentBudgetRequestDialog({
     if (!winner || !preparedTemplateData) return;
     const merged = mergeRecipients(email, cc);
     const confirmMsg =
-      `Confirma o envio do reorçamento ao fornecedor?\n\n` +
+      `Confirma o envio da recotação ao fornecedor?\n\n` +
       `Destinatário(s): ${merged.valid.join(", ")}\n\n` +
-      `Esta ação marcará o reorçamento como SOLICITADO no sistema.`;
+      `Esta ação marcará a recotação como SOLICITADA no sistema.`;
     if (!window.confirm(confirmMsg)) return;
     setSending(true);
     setSummaryItems([]);
     const items: SendSummaryItem[] = [];
     const push = (it: SendSummaryItem) => { items.push(it); setSummaryItems([...items]); };
-    const tId = toast.loading("Enviando reorçamento...");
+    const tId = toast.loading("Enviando recotação...");
     try {
       let anySent = false;
       const toEmails = parseRecipients(email);
@@ -310,7 +310,7 @@ export default function AdjustmentBudgetRequestDialog({
       if (!anySent) throw new Error("Nenhum e-mail foi enviado.");
       await persistRequest();
       setPreviewOpen(false);
-      toast.success(`Reorçamento enviado para ${merged.valid.length} destinatário(s).`, { id: tId });
+      toast.success(`Recotação enviada para ${merged.valid.length} destinatário(s).`, { id: tId });
     } catch (e: any) {
       toast.error(e?.message || "Falha ao enviar.", { id: tId });
     } finally {
@@ -368,7 +368,7 @@ export default function AdjustmentBudgetRequestDialog({
         link = res.link;
         push({ kind: "file", label: res.fileName, stage: "signed" });
       } catch (err: any) {
-        push({ kind: "file", label: "Planilha de reorçamento", stage: "failed", error: err?.message || "Erro" });
+        push({ kind: "file", label: "Planilha de recotação", stage: "failed", error: err?.message || "Erro" });
         throw err;
       }
       let shortUrl = link.url;
@@ -378,13 +378,13 @@ export default function AdjustmentBudgetRequestDialog({
       } catch { /* ignore */ }
       const greeting = winner!.contact_name || winner!.company_name;
       const text =
-        `📐 *Reorçamento Pós-Mockup*\n\n` +
+        `📐 *Recotação Pós-Mockup*\n\n` +
         `Olá, *${greeting}*! 👋\n\n` +
         `Após o mockup da campanha *${campaignName}*, identificamos ajustes no escopo.\n\n` +
         `📊 *Alterações:* ${changesDescription}\n` +
         `🏷 Ajuste: *${adjustment.name}*\n\n` +
         (customMessage.trim() ? `💬 ${customMessage.trim()}\n\n` : "") +
-        `📎 Planilha de reorçamento:\n${shortUrl}\n\n` +
+        `📎 Planilha de recotação:\n${shortUrl}\n\n` +
         `Por favor, preencha os campos em amarelo e retorne com os novos valores. 🙌\n\n` +
         `— Equipe ${agencyName}`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
@@ -401,7 +401,7 @@ export default function AdjustmentBudgetRequestDialog({
       <DialogContent className="max-w-xl">
         <DialogHeader className="space-y-1.5">
           <DialogTitle className="flex items-center gap-2 text-base">
-            <Send className="w-4 h-4 text-primary" /> Solicitar Reorçamento
+            <Send className="w-4 h-4 text-primary" /> Solicitar Recotação
           </DialogTitle>
           <DialogDescription className="text-xs">
             {adjustment.name} · {useNegotiationBaseline ? "comparando com a Negociação vigente" : "comparando com o Original"}.
@@ -445,7 +445,7 @@ export default function AdjustmentBudgetRequestDialog({
               <div className="rounded-md border bg-muted/30 p-2.5 text-xs space-y-1">
                 <div className="font-medium text-foreground">Será enviado em anexo:</div>
                 <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
-                  <li>Planilha completa de reorçamento — todas as peças e kits em ordem crescente de código, com destaque visual nas linhas alteradas.</li>
+                  <li>Planilha completa de recotação — todas as peças e kits em ordem crescente de código, com destaque visual nas linhas alteradas.</li>
                   <li>Aba <strong>Modificações</strong> — detalhamento de peças alteradas/removidas/novas e kits modificados (incluindo peças adicionadas/removidas dentro dos kits).</li>
                   <li>Aba <strong>Matriz Lojas × Peças</strong> — rateio do ajuste por loja.</li>
                   <li>Base de comparação: {useNegotiationBaseline ? "Negociação vigente" : "Rateio Original"}.</li>

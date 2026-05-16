@@ -179,7 +179,7 @@ export default function AdjustmentRegisterResponseDialog({
         } as any, { onConflict: "adjustment_id,supplier_id" } as any);
       if (error) throw error;
       qc.invalidateQueries({ queryKey: ["adjustment_budget_requests", campaignId] });
-      toast.success("Reorçamento aprovado e registrado");
+      toast.success("Recotação aprovada e registrada");
       onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Erro ao registrar resposta");
@@ -200,7 +200,7 @@ export default function AdjustmentRegisterResponseDialog({
             Registrar Resposta — {adjustment.name}
           </DialogTitle>
           <DialogDescription>
-            Informe os novos preços propostos pelo fornecedor para o reorçamento.
+            Informe os novos preços propostos pelo fornecedor para a recotação.
           </DialogDescription>
         </DialogHeader>
 
@@ -324,7 +324,7 @@ export default function AdjustmentRegisterResponseDialog({
             className="bg-emerald-600 hover:bg-emerald-700 gap-1.5"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            Aprovar reorçamento
+            Aprovar recotação
           </Button>
         </DialogFooter>
       </DialogContent>

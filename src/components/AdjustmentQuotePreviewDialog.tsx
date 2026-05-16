@@ -50,11 +50,11 @@ export default function AdjustmentQuotePreviewDialog({
     <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Pré-visualização do reorçamento</DialogTitle>
+          <DialogTitle>Pré-visualização da recotação</DialogTitle>
           <DialogDescription>
             Confira exatamente como o e-mail chegará ao fornecedor antes de enviar.
             Você pode disparar uma cópia de teste para um e-mail seu — testes não
-            marcam o reorçamento como solicitado.
+            marcam a recotação como solicitada.
           </DialogDescription>
         </DialogHeader>
 
@@ -87,7 +87,7 @@ export default function AdjustmentQuotePreviewDialog({
 
         <div className="flex-1 min-h-0 border rounded-md overflow-hidden bg-white">
           <iframe
-            title="Pré-visualização do reorçamento"
+            title="Pré-visualização da recotação"
             srcDoc={html}
             sandbox=""
             className="w-full h-[440px] border-0"
@@ -116,7 +116,7 @@ export default function AdjustmentQuotePreviewDialog({
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            O teste não notifica o fornecedor e não marca o reorçamento como solicitado.
+            O teste não notifica o fornecedor e não marca a recotação como solicitada.
           </p>
         </div>
 

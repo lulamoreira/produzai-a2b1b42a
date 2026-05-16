@@ -84,7 +84,7 @@ export async function buildSupplierBudgetWorkbook(
   wb.created = new Date();
 
   const money = moneyFormat(params.currencyCode);
-  const ws = wb.addWorksheet("Orçamento", { views: [{ showGridLines: false }] });
+  const ws = wb.addWorksheet("Cotação", { views: [{ showGridLines: false }] });
 
   // Title block (cols A:G now → 7 columns: Foto, Tipo, Código, Item, Qtd, Unit, Total)
   ws.mergeCells("A1:G1");
@@ -253,7 +253,7 @@ export async function buildSupplierBudgetWorkbook(
       allPieces: params.rateio.pieces,
       agencyName: params.agencyName,
       clientName: params.clientName,
-      reservedSheetNames: new Set(["orçamento"]),
+      reservedSheetNames: new Set(["cotação"]),
       skipDashboard: true,
       skipKitTabs: true,
     });
@@ -271,7 +271,7 @@ export async function buildSupplierBudgetWorkbook(
     .replace(/\//g, "-");
 
   const nameParts = [
-    "Orcamento",
+    "Cotacao",
     sanitizeCamp(params.campaignName),
     firstName(params.clientName),
     firstName(params.supplierName),

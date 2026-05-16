@@ -263,7 +263,7 @@ const SupplierPortal = () => {
         setSupplier(sup as Supplier);
 
         if (sup.status === "prazo_encerrado" && !sup.locked) {
-          setError("O prazo para envio do orçamento foi encerrado.");
+          setError("O prazo para envio da cotação foi encerrado.");
           setLoading(false);
           return;
         }
@@ -434,7 +434,7 @@ const SupplierPortal = () => {
       } catch (e: unknown) {
         console.error("[SupplierPortal] Erro crítico ao carregar:", e);
         const msg = e instanceof Error ? e.message : String(e);
-        setError(`Não foi possível carregar o orçamento. ${msg ? `Detalhe: ${msg}. ` : ""}Recarregue a página ou tente novamente mais tarde.`);
+        setError(`Não foi possível carregar a cotação. ${msg ? `Detalhe: ${msg}. ` : ""}Recarregue a página ou tente novamente mais tarde.`);
       } finally {
         setLoading(false);
       }
@@ -744,10 +744,10 @@ const SupplierPortal = () => {
           _campaign_id: supplier.campaign_id,
           _client_id: clientId,
           _type: "orcamento_enviado",
-          _title: isNeg ? "Proposta ajustada recebida" : "Orçamento recebido",
+          _title: isNeg ? "Proposta ajustada recebida" : "Cotação recebida",
           _body: isNeg
             ? `${supplier.company_name} enviou a proposta ajustada para a campanha ${campaignName}.`
-            : `${supplier.company_name} enviou o orçamento para a campanha ${campaignName}.`,
+            : `${supplier.company_name} enviou a cotação para a campanha ${campaignName}.`,
           _action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${supplier.campaign_id}?section=budgets`,
         });
       }
@@ -764,7 +764,7 @@ const SupplierPortal = () => {
       if (isNeg) toast.success("Proposta ajustada enviada com sucesso!");
     } catch (e) {
       console.error(e);
-      const msg = e instanceof Error ? e.message : "Erro ao enviar orçamento.";
+      const msg = e instanceof Error ? e.message : "Erro ao enviar cotação.";
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -833,11 +833,11 @@ const SupplierPortal = () => {
             <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-10 h-10 text-success" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-3">Orçamento Enviado!</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-3">Cotação Enviada!</h1>
             <p className="text-muted-foreground mb-6">
-              Obrigado, {supplier.contact_name}! O orçamento de{" "}
+              Obrigado, {supplier.contact_name}! A cotação de{" "}
               <strong>{supplier.company_name}</strong> para a campanha{" "}
-              <strong>{campaignName}</strong> foi recebido com sucesso.
+              <strong>{campaignName}</strong> foi recebida com sucesso.
             </p>
             <Card className="text-left">
               <CardContent className="p-4 space-y-2">
@@ -942,7 +942,7 @@ const SupplierPortal = () => {
           <div className="max-w-4xl mx-auto flex items-center gap-2 text-warning text-sm">
             <Lock className="w-4 h-4 shrink-0" />
             <span>
-              Orçamento enviado em{" "}
+              Cotação enviada em{" "}
               {supplier.submitted_at ? new Date(supplier.submitted_at).toLocaleDateString("pt-BR") : "—"}.
               Os valores estão bloqueados.
             </span>
@@ -1018,7 +1018,7 @@ const SupplierPortal = () => {
               <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5">
                 <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                 <p className="text-sm text-warning leading-relaxed">
-                  <strong>Atenção:</strong> Ao enviar este orçamento, você confirma o aceite do cronograma acima.
+                  <strong>Atenção:</strong> Ao enviar esta cotação, você confirma o aceite do cronograma acima.
                 </p>
               </div>
             </CardContent>
@@ -1373,7 +1373,7 @@ const SupplierPortal = () => {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Geral do Orçamento</p>
+                <p className="text-sm text-muted-foreground">Total Geral da Cotação</p>
                 <p className="text-xs text-muted-foreground mt-0.5">(Itens + Instalação + Frete)</p>
               </div>
               <span className="text-2xl font-bold text-primary">{fmt(grandTotal)}</span>

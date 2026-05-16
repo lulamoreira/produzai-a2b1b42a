@@ -77,7 +77,7 @@ export default function AdjustmentsTab({
   const qc = useQueryClient();
 
   const handleCancelResend = async (adjustmentId: string) => {
-    if (!window.confirm("Anular este reenvio? O reorçamento deixará de constar como solicitado e o fornecedor não será notificado dessa ação. (O e-mail já enviado não pode ser recolhido.)")) return;
+    if (!window.confirm("Anular este reenvio? A recotação deixará de constar como solicitada e o fornecedor não será notificado dessa ação. (O e-mail já enviado não pode ser recolhido.)")) return;
     const tId = toast.loading("Anulando reenvio...");
     try {
       const { error } = await supabase
@@ -241,7 +241,7 @@ export default function AdjustmentsTab({
           <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
           <p className="text-xs text-amber-900 dark:text-amber-200">
             Existe um ajuste ativo (<strong>{activeAdjustment.name}</strong>) para esta campanha.
-            O orçamento vigente é o do ajuste — veja abaixo.
+            A cotação vigente é a do ajuste — veja abaixo.
           </p>
         </div>
       )}
@@ -255,7 +255,7 @@ export default function AdjustmentsTab({
           <Layers className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
             Nenhum ajuste criado. Crie um ajuste após a etapa de mockup para registrar
-            alterações nas peças sem perder o orçamento original.
+            alterações nas peças sem perder a cotação original.
           </p>
         </div>
       ) : (
@@ -306,7 +306,7 @@ export default function AdjustmentsTab({
                     {req.status === "submitted" && (
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="outline" className="border-amber-400 text-amber-700">
-                          📤 Reorçamento solicitado em{" "}
+                          📤 Recotação solicitada em{" "}
                           {format(new Date(req.request_sent_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                         </Badge>
                         <Button
@@ -322,7 +322,7 @@ export default function AdjustmentsTab({
                           variant="outline"
                           onClick={() => handleCancelResend(a.id)}
                           className="h-7 text-xs gap-1.5 border-red-300 text-red-700 hover:bg-red-50"
-                          title="Anula a marcação de reorçamento solicitado no sistema (não recolhe o e-mail já enviado)"
+                          title="Anula a marcação de recotação solicitada no sistema (não recolhe o e-mail já enviado)"
                         >
                           <XCircle className="w-3.5 h-3.5" /> Anular Reenvio
                         </Button>
@@ -333,7 +333,7 @@ export default function AdjustmentsTab({
                       const items = (j.prices || []).length;
                       return (
                         <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm">
-                          <div className="font-medium text-green-800">✅ Reorçamento aprovado</div>
+                          <div className="font-medium text-green-800">✅ Recotação aprovada</div>
                           <div className="text-green-700 text-xs mt-1">
                             {items} item(ns) com novo preço · Instalação {formatCurrencyByCode(Number(j.installation || 0), currencyCode)} · Frete {formatCurrencyByCode(Number(j.freight || 0), currencyCode)}
                             {req.response_received_at && (
@@ -392,7 +392,7 @@ export default function AdjustmentsTab({
                       className="h-7 text-xs gap-1"
                       onClick={() => setRequestDialogAdjustment(a)}
                     >
-                      <Send className="w-3.5 h-3.5" /> Solicitar Reorçamento
+                      <Send className="w-3.5 h-3.5" /> Solicitar Recotação
                     </Button>
                     <Button
                       size="sm"

@@ -241,10 +241,10 @@ function writeLegend(ws: any, lastColLetter: string) {
   const items: { bg: string; font: string; label: string; desc: string }[] = [
     { bg: "FFFFFFFF", font: "FF1C1916", label: "Sem alteração", desc: "Item mantido — preço/quantidade inalterados." },
     { bg: CHANGE_BG, font: CHANGE_FONT, label: "Modificada", desc: "Item ou quantidade alterada nesta solicitação." },
-    { bg: ADDED_BG, font: ADDED_FONT, label: "Nova", desc: "Item incluído neste reorçamento." },
-    { bg: REMOVED_BG, font: REMOVED_FONT, label: "Removida", desc: "Item removido neste reorçamento." },
-    { bg: "FFD1FAE5", font: "FF065F46", label: "Loja nova", desc: "Loja incluída após o orçamento original (destaque verde na Matriz)." },
-    { bg: "FFFEE2E2", font: "FF991B1B", label: "Loja removida", desc: "Loja excluída após o orçamento original (listada apenas na aba Comparação)." },
+    { bg: ADDED_BG, font: ADDED_FONT, label: "Nova", desc: "Item incluído nesta recotação." },
+    { bg: REMOVED_BG, font: REMOVED_FONT, label: "Removida", desc: "Item removido nesta recotação." },
+    { bg: "FFD1FAE5", font: "FF065F46", label: "Loja nova", desc: "Loja incluída após a cotação original (destaque verde na Matriz)." },
+    { bg: "FFFEE2E2", font: "FF991B1B", label: "Loja removida", desc: "Loja excluída após a cotação original (listada apenas na aba Comparação)." },
   ];
   const titleRow = ws.addRow(["Legenda de cores"]);
   ws.mergeCells(`A${titleRow.number}:${lastColLetter}${titleRow.number}`);
@@ -568,7 +568,7 @@ export async function buildAdjustmentProposalWorkbook(
   // ─────────────────────────────────────────────────────────
   // SHEET 1 — Orçamento
   // ─────────────────────────────────────────────────────────
-  const ws1 = wb.addWorksheet("Orçamento", { views: [{ showGridLines: false }] });
+  const ws1 = wb.addWorksheet("Cotação", { views: [{ showGridLines: false }] });
 
   const TOTAL_COLS = 9;
   const lastColLetter = "I";
@@ -942,7 +942,7 @@ export async function buildAdjustmentProposalWorkbook(
       allPieces: matrixPieces as any,
       agencyName: params.agencyName,
       clientName: params.clientName,
-      reservedSheetNames: new Set(["orçamento", "modificações"]),
+      reservedSheetNames: new Set(["cotação", "modificações"]),
       skipDashboard: true,
       skipKitTabs: true,
       sortByCode: true,
@@ -1148,18 +1148,18 @@ export async function buildAdjustmentProposalWorkbook(
   writeSectionTitle("Lojas (adicionadas e removidas)");
   writeTableHeader(["—", "Loja", "Cidade/UF", "Código", "Vitrines", "Alteração", "Detalhe"]);
   if (addedStores.length === 0 && removedStores.length === 0) {
-    const r = ws3.addRow(["—", "Nenhuma loja adicionada ou removida desde o orçamento original.", "", "", "", "", ""]);
+    const r = ws3.addRow(["—", "Nenhuma loja adicionada ou removida desde a cotação original.", "", "", "", "", ""]);
     ws3.mergeCells(`B${r.number}:G${r.number}`);
     r.getCell(2).font = { italic: true, color: { argb: GREY } };
     styleDataRow(r, "unchanged");
   } else {
     for (const s of addedStores) {
-      const r = ws3.addRow(["", s.name, [s.city, s.state].filter(Boolean).join("/"), s.store_code || "", Number(s.showcase_count || 0), "Nova", "Loja incluída após o orçamento original."]);
+      const r = ws3.addRow(["", s.name, [s.city, s.state].filter(Boolean).join("/"), s.store_code || "", Number(s.showcase_count || 0), "Nova", "Loja incluída após a cotação original."]);
       styleDataRow(r, "added");
       r.height = 28;
     }
     for (const s of removedStores) {
-      const r = ws3.addRow(["", s.name, [s.city, s.state].filter(Boolean).join("/"), s.store_code || "", Number(s.showcase_count || 0), "Removida", "Loja excluída após o orçamento original."]);
+      const r = ws3.addRow(["", s.name, [s.city, s.state].filter(Boolean).join("/"), s.store_code || "", Number(s.showcase_count || 0), "Removida", "Loja excluída após a cotação original."]);
       styleDataRow(r, "removed");
       r.height = 28;
     }
@@ -1186,7 +1186,7 @@ export async function buildAdjustmentProposalWorkbook(
   const sanitize = (s?: string) =>
     (s || "").trim().replace(/[^a-zA-Z0-9À-ÿ\s_-]/g, "").replace(/\s+/g, "_").slice(0, 40);
   const today = new Date().toLocaleDateString("pt-BR").replace(/\//g, "-");
-  const fileName = `Reorcamento_${sanitize(params.campaignName)}_${sanitize(params.adjustment.name)}_${sanitize(params.supplier.company_name)}_${today}.xlsx`;
+  const fileName = `Recotacao_${sanitize(params.campaignName)}_${sanitize(params.adjustment.name)}_${sanitize(params.supplier.company_name)}_${today}.xlsx`;
 
   return { blob, fileName };
 }

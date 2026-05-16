@@ -180,7 +180,7 @@ export async function exportBudgetComparison(params: ExportBudgetComparisonParam
   });
 
   const summary = wb.addWorksheet("Resumo");
-  summary.addRow([`Orçamento — ${params.campaignName}`]);
+  summary.addRow([`Cotação — ${params.campaignName}`]);
   summary.mergeCells(1, 1, 1, 9);
   const title = summary.getCell(1, 1);
   title.font = { bold: true, size: 16, color: { argb: "FFFFFFFF" } };
@@ -268,7 +268,7 @@ export async function exportBudgetComparison(params: ExportBudgetComparisonParam
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  const fileName = buildExportFileName(`Orcamento_${params.campaignName}`, {
+  const fileName = buildExportFileName(`Cotacao_${params.campaignName}`, {
     agencyName: params.agencyName,
     clientName: params.clientName,
   });

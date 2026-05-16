@@ -97,6 +97,29 @@ import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 // Lazy: defers recharts (~80KB) until the user opens the pending dashboard
 const PendingOccurrencesDashboard = lazy(() => import("@/components/PendingOccurrencesDashboard"));
 import BudgetTab from "@/components/Budget/BudgetTab";
+import { useBudgetPhase, PHASE_LABELS, type BudgetPhase } from "@/hooks/useBudgetPhase";
+
+const PHASE_BADGE_STYLES: Record<BudgetPhase, string> = {
+  rateio: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+  cotacoes: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  negociacao: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  ajuste: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+};
+
+function BudgetSectionPhaseBadge({ campaignId }: { campaignId: string }) {
+  const { currentPhase } = useBudgetPhase(campaignId);
+  if (!currentPhase) return null;
+  return (
+    <div className="mb-3 flex items-center gap-2">
+      <h2 className="text-lg font-semibold text-foreground">Cotações</h2>
+      <span
+        className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${PHASE_BADGE_STYLES[currentPhase]}`}
+      >
+        {PHASE_LABELS[currentPhase]}
+      </span>
+    </div>
+  );
+}
 import {
   useNegotiationStorePieces,
   useUpdateNegotiationStorePiece,
@@ -3965,15 +3988,16 @@ const CampaignDetail = () => {
             />
           )}
 
-          {/* ─── SECTION: ORÇAMENTOS ─── */}
+          {/* ─── SECTION: COTAÇÕES ─── */}
           {activeSection === "budgets" && (
             <>
+              <BudgetSectionPhaseBadge campaignId={campaignId!} />
               {activeAdjustment && (
                 <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 flex items-start gap-2 mb-3">
                   <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
                   <p className="text-xs text-amber-900 dark:text-amber-200">
                     <strong>Atenção:</strong> Existe um ajuste de mockup ativo (<strong>{activeAdjustment.name}</strong>) para esta campanha.
-                    O orçamento vigente pode ser diferente do original.
+                    A cotação vigente pode ser diferente da original.
                   </p>
                 </div>
               )}

@@ -184,9 +184,9 @@ export async function buildNegotiatedProposalWorkbook(
   const priceMap = new Map(params.prices.map((p) => [p.piece_id, p]));
 
   // ─────────────────────────────────────────────────────────
-  // SHEET 1: Orçamento Negociado
+  // SHEET 1: Cotação Negociada
   // ─────────────────────────────────────────────────────────
-  const ws1 = wb.addWorksheet("Orçamento Negociado", { views: [{ showGridLines: false }] });
+  const ws1 = wb.addWorksheet("Cotação Negociada", { views: [{ showGridLines: false }] });
 
   ws1.mergeCells("A1:F1");
   const t1 = ws1.getCell("A1");
@@ -358,7 +358,7 @@ export async function buildNegotiatedProposalWorkbook(
     subLocations: params.subLocations || [],
     agencyName: params.agencyName,
     clientName: params.clientName,
-    reservedSheetNames: new Set(["orçamento negociado", "comparativo"]),
+    reservedSheetNames: new Set(["cotação negociada", "comparativo"]),
     skipDashboard: true,
     skipKitTabs: true,
   });
