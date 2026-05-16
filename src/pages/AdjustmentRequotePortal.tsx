@@ -160,6 +160,55 @@ export default function AdjustmentRequotePortal() {
     return t + parseNum(installation) + parseNum(freight);
   }, [data, prices, installation, freight]);
 
+  const expectedPieces: ExpectedPiece[] = useMemo(() => {
+    if (!data) return [];
+    return data.pieces.map((p) => ({
+      code: String(p.code),
+      name: p.name,
+      pieceId: p.id,
+      previousPrice: data.baseline_prices[p.id] ?? 0,
+    }));
+  }, [data]);
+
+  const handleFileSelect = async (file: File | undefined) => {
+    if (!file) return;
+    setParseLoading(true);
+    try {
+      const result = await parseAdjustmentResponseWorkbook(file, expectedPieces);
+      setParseResult(result);
+      setImportConfirmOpen(true);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao ler planilha");
+    } finally {
+      setParseLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file?.name.toLowerCase().endsWith(".xlsx")) handleFileSelect(file);
+    else toast.error("Apenas arquivos .xlsx são aceitos");
+  };
+
+  const handleImportConfirm = (
+    rows: ParsedRequoteRow[],
+    inst: number | null,
+    fr: number | null
+  ) => {
+    const newPrices = { ...prices };
+    for (const row of rows) {
+      const key = row.pieceId ?? row.kitId ?? row.code;
+      if (row.newPrice !== null) newPrices[key] = String(row.newPrice);
+    }
+    setPrices(newPrices);
+    if (inst !== null) setInstallation(String(inst));
+    if (fr !== null) setFreight(String(fr));
+    setActiveTab("itens");
+    toast.success(`${rows.length} preço(s) importados. Revise e envie a recotação.`);
+  };
+
   const handleSubmit = async () => {
     if (!data || !token) return;
     const missing = data.pieces.filter((p) => !prices[p.id] || parseNum(prices[p.id]) <= 0);
