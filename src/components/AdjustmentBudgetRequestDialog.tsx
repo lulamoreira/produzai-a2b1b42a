@@ -174,15 +174,23 @@ export default function AdjustmentBudgetRequestDialog({
         })));
         setSourceKits(((srcKitsRes.data as any[]) || []) as any);
         setSourcePieces(((srcPiecesRes.data as any[]) || []) as any);
-        // Filter origKpRows to only kits that belong to this campaign (the
-        // unfiltered table is keyed by kit_id; ensure scope by intersecting
-        // with the campaign's source kits).
         const validKitIds = new Set(((srcKitsRes.data as any[]) || []).map((k: any) => k.id));
         setOriginalKitPieces(
           ((origKpRows as any[]) || []).filter((r) => validKitIds.has(r.kit_id))
             .map((r: any) => ({ kit_id: r.kit_id, piece_id: r.piece_id, quantity: Number(r.quantity || 0) }))
         );
         setAdjustmentStoresSnapshot(((snapStoreRows as any[]) || []));
+
+        // Load existing requote row (for token / deadline reuse)
+        if (w) {
+          const { data: reqRow } = await supabase
+            .from("campaign_adjustment_budget_request" as any)
+            .select("id, access_token, token_expires_at, deadline_days, status")
+            .eq("adjustment_id", adjustment.id)
+            .eq("supplier_id", (w as any).id)
+            .maybeSingle();
+          setExistingRequest(reqRow || null);
+        }
       } catch (e: any) {
         toast.error(e?.message || "Falha ao carregar dados.");
       } finally {
