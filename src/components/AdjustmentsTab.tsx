@@ -653,6 +653,16 @@ export default function AdjustmentsTab({
           campaignName={campaignName}
           currencyCode={currencyCode}
         />
+      {requote && (
+        <ReviewRequoteDialog
+          open={reviewOpen}
+          onOpenChange={setReviewOpen}
+          requote={requote}
+          pieces={adjPieces ?? []}
+          kits={adjKits ?? []}
+          baselinePrices={baselinePrices ?? []}
+          campaignId={campaignId}
+        />
       )}
     </div>
   );
