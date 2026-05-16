@@ -190,7 +190,7 @@ function AdminInlineNumberInput({
 }
 
 // ─── Main Component ──────────────────────────────────────
-export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, activeAdjustment }: BudgetTabProps) {
+export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, onNavigateToSection, activeAdjustment }: BudgetTabProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
