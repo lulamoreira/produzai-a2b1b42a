@@ -353,21 +353,81 @@ export default function AdjustmentsTab({
                 {a.notes && (
                   <p className="text-xs text-muted-foreground whitespace-pre-wrap">{a.notes}</p>
                 )}
-                {req && a.status === "active" && (
+                {a.status === "active" && requote && (
                   <div className="mt-2 space-y-2">
-                    {req.status === "submitted" && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                          REQUOTE_STATUS_META[requote.status]?.badgeClass ?? ""
+                        }`}
+                      >
+                        {REQUOTE_STATUS_META[requote.status]?.label ?? requote.status}
+                      </span>
+                      {requote.is_late_submission && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">
+                          Fora do prazo
+                        </span>
+                      )}
+                      {["sent", "filling"].includes(requote.status) && requote.token_expires_at && (
+                        <DeadlineCountdown expiresAt={requote.token_expires_at} />
+                      )}
+                      {requote.status === "submitted" && requote.submitted_at && (
+                        <span className="text-xs text-muted-foreground">
+                          Recebido{" "}
+                          {formatDistanceToNow(new Date(requote.submitted_at), {
+                            locale: ptBR,
+                            addSuffix: true,
+                          })}
+                        </span>
+                      )}
+                    </div>
+
+                    {requote.status === "submitted" && (
+                      <div className="rounded-md border border-purple-300 bg-purple-50 dark:bg-purple-950/30 p-3 flex items-start justify-between gap-3 flex-wrap">
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-purple-900 dark:text-purple-200">
+                            Recotação recebida — aguardando sua revisão
+                          </div>
+                          <div className="text-xs text-purple-700 dark:text-purple-300 mt-0.5">
+                            {requote.is_late_submission && "⚠️ Enviado fora do prazo · "}
+                            {requote.submitted_at && (
+                              <>
+                                Recebido{" "}
+                                {format(new Date(requote.submitted_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <Button
+                            size="sm"
+                            onClick={() => setReviewOpen(true)}
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                          >
+                            Revisar resposta
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setRegisterResponseAdjustment(a)}
+                            className="gap-1.5"
+                            title="Registrar resposta manualmente"
+                          >
+                            <FileInput className="w-3.5 h-3.5" /> Manual
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {["sent", "filling"].includes(requote.status) && (
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant="outline" className="border-amber-400 text-amber-700">
-                          📤 Recotação solicitada em{" "}
-                          {format(new Date(req.request_sent_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                        </Badge>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => setRegisterResponseAdjustment(a)}
-                          className="h-7 text-xs gap-1.5 border-amber-400 text-amber-700 hover:bg-amber-50"
+                          className="h-7 text-xs gap-1.5"
                         >
-                          <FileInput className="w-3.5 h-3.5" /> Registrar Resposta
+                          <FileInput className="w-3.5 h-3.5" /> Registrar resposta manual
                         </Button>
                         <Button
                           size="sm"
@@ -380,21 +440,47 @@ export default function AdjustmentsTab({
                         </Button>
                       </div>
                     )}
-                    {req.status === "approved" && (() => {
-                      const j = (req.adjusted_prices_jsonb || {}) as { prices?: { piece_id: string; new_price: number }[]; installation?: number; freight?: number };
+
+                    {requote.status === "approved" && (() => {
+                      const j = (requote.adjusted_prices_jsonb || {}) as {
+                        prices?: { piece_id: string; new_price: number }[];
+                        installation?: number;
+                        freight?: number;
+                      };
+                      const extras = (requote.adjusted_extras_jsonb || {}) as {
+                        installation?: number;
+                        freight?: number;
+                      };
                       const items = (j.prices || []).length;
+                      const inst = Number(extras.installation ?? j.installation ?? 0);
+                      const frt = Number(extras.freight ?? j.freight ?? 0);
                       return (
                         <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm">
                           <div className="font-medium text-green-800">✅ Recotação aprovada</div>
                           <div className="text-green-700 text-xs mt-1">
-                            {items} item(ns) com novo preço · Instalação {formatCurrencyByCode(Number(j.installation || 0), currencyCode)} · Frete {formatCurrencyByCode(Number(j.freight || 0), currencyCode)}
-                            {req.response_received_at && (
-                              <> · Registrado em {format(new Date(req.response_received_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
+                            {items} item(ns) com novo preço · Instalação{" "}
+                            {formatCurrencyByCode(inst, currencyCode)} · Frete{" "}
+                            {formatCurrencyByCode(frt, currencyCode)}
+                            {requote.response_received_at && (
+                              <>
+                                {" "}
+                                · Registrado em{" "}
+                                {format(new Date(requote.response_received_at), "dd/MM/yyyy 'às' HH:mm", {
+                                  locale: ptBR,
+                                })}
+                              </>
                             )}
                           </div>
                         </div>
                       );
                     })()}
+
+                    {requote.status === "rejected" && requote.rejection_notes && (
+                      <div className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-800">
+                        <div className="font-medium mb-0.5">Motivo da recusa</div>
+                        <p className="whitespace-pre-wrap">{requote.rejection_notes}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
