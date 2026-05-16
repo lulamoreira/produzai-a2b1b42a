@@ -299,7 +299,58 @@ export default function AdjustmentBudgetRequestDialog({
    * the email HTML server-side. Then open the preview dialog. Nothing is
    * persisted and no email goes out yet.
    */
-  const handleOpenPreview = async () => {
+  /**
+   * Gate for the email flow: validate recipients first, then open the deadline
+   * picker. If a token already exists, skip the picker.
+   */
+  const handleClickSendEmail = () => {
+    const merged = mergeRecipients(email, cc);
+    if (merged.invalid.length) {
+      toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
+      return;
+    }
+    if (merged.valid.length === 0) {
+      toast.error("Informe pelo menos um e-mail válido.");
+      return;
+    }
+    if (existingRequest?.access_token && existingRequest?.token_expires_at) {
+      // Reuse existing token; skip picker.
+      handleOpenPreview({
+        portalUrl: `${window.location.origin}/recotacao/${existingRequest.access_token}`,
+        tokenExpiresAt: existingRequest.token_expires_at,
+      });
+      return;
+    }
+    setPendingFlow("email");
+    setDeadlinePickerOpen(true);
+  };
+
+  const handleClickSendWhatsAppGated = () => {
+    if (existingRequest?.access_token && existingRequest?.token_expires_at) {
+      handleSendWhatsApp({
+        portalUrl: `${window.location.origin}/recotacao/${existingRequest.access_token}`,
+        tokenExpiresAt: existingRequest.token_expires_at,
+      });
+      return;
+    }
+    setPendingFlow("whatsapp");
+    setDeadlinePickerOpen(true);
+  };
+
+  const handleDeadlineConfirmed = async (deadlineDays: number) => {
+    const flow = pendingFlow;
+    setDeadlinePickerOpen(false);
+    setPendingFlow(null);
+    try {
+      const ctx = await ensureRequestAndToken(deadlineDays);
+      if (flow === "email") await handleOpenPreview(ctx);
+      else if (flow === "whatsapp") await handleSendWhatsApp(ctx);
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao gerar link do portal.");
+    }
+  };
+
+  const handleOpenPreview = async (portalCtx?: { portalUrl?: string; tokenExpiresAt?: string | null }) => {
     const merged = mergeRecipients(email, cc);
     if (merged.invalid.length) {
       toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
