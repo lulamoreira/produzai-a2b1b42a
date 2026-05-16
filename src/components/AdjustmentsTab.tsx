@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput, RotateCcw, XCircle } from "lucide-react";
+import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput, RotateCcw, XCircle, ArrowLeft } from "lucide-react";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import AdjustmentRegisterResponseDialog from "./AdjustmentRegisterResponseDialog";
 import { Button } from "@/components/ui/button";
