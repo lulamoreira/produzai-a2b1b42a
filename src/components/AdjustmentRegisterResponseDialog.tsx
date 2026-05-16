@@ -105,14 +105,14 @@ export default function AdjustmentRegisterResponseDialog({
       try {
         const { data: w } = await supabase
           .from("budget_suppliers")
-          .select("id, company_name")
+          .select("id, company_name, negotiation_locked_total, winner_locked_total")
           .eq("campaign_id", campaignId)
           .eq("is_winner", true)
           .maybeSingle();
         setWinner(w);
         if (!w) { setLoading(false); return; }
 
-        const [pricesRes, extrasRes, reqRes, cspRes, kitsRes] = await Promise.all([
+        const [pricesRes, extrasRes, reqRes, negSpRes] = await Promise.all([
           supabase.from("budget_prices" as any)
             .select("piece_id, kit_id, unit_price, adjusted_unit_price")
             .eq("supplier_id", (w as any).id),
@@ -122,56 +122,29 @@ export default function AdjustmentRegisterResponseDialog({
           supabase.from("campaign_adjustment_budget_request" as any)
             .select("adjusted_prices_jsonb")
             .eq("adjustment_id", adjustment.id).maybeSingle(),
-          supabase.from("campaign_store_pieces" as any)
+          supabase.from("budget_negotiation_store_pieces" as any)
             .select("piece_id, quantity")
-            .eq("campaign_id", campaignId),
-          supabase.from("campaign_kits" as any)
-            .select("id")
+            .eq("supplier_id", (w as any).id)
             .eq("campaign_id", campaignId),
         ]);
 
-        // Fetch kit composition for this campaign's kits
-        const kitIds = ((kitsRes.data as any[]) || []).map((k) => k.id);
-        const kitCompositionRes = kitIds.length > 0
-          ? await supabase.from("campaign_kit_pieces" as any)
-              .select("kit_id, piece_id, quantity")
-              .in("kit_id", kitIds)
-          : { data: [] as any[] };
+        // Quantity source: budget_negotiation_store_pieces (the snapshot that
+        // produced negotiation_locked_total). Falls back to campaign_store_pieces
+        // for campaigns that never went through negotiation.
+        let qtyRows = (negSpRes.data as any[]) || [];
+        if (qtyRows.length === 0) {
+          const { data: cspFallback } = await supabase
+            .from("campaign_store_pieces" as any)
+            .select("piece_id, quantity")
+            .eq("campaign_id", campaignId);
+          qtyRows = (cspFallback as any[]) || [];
+        }
 
-        // Standalone piece qty (sum across stores)
-        const standaloneQty: Record<string, number> = {};
-        for (const row of (cspRes.data as any[]) || []) {
+        // Flat per-piece quantities — no kit expansion needed.
+        const cqty: Record<string, number> = {};
+        for (const row of qtyRows) {
           if (row.piece_id) {
-            standaloneQty[row.piece_id] =
-              (standaloneQty[row.piece_id] || 0) + Number(row.quantity || 0);
-          }
-        }
-
-        // Start campaignQtyMap as a copy of standaloneQty
-        const cqty: Record<string, number> = { ...standaloneQty };
-
-        // Group kit composition by kit
-        const kitPiecesMap: Record<string, { piece_id: string; quantity: number }[]> = {};
-        for (const kp of (kitCompositionRes.data as any[]) || []) {
-          if (!kitPiecesMap[kp.kit_id]) kitPiecesMap[kp.kit_id] = [];
-          kitPiecesMap[kp.kit_id].push({
-            piece_id: kp.piece_id,
-            quantity: Number(kp.quantity ?? 1),
-          });
-        }
-
-        // For each kit, derive kitQty = min over components of floor(standaloneQty / kp.quantity)
-        // and expand into component pieces (mirrors BudgetTab logic).
-        for (const components of Object.values(kitPiecesMap)) {
-          if (components.length === 0) continue;
-          const kitQty = components.reduce((minQty, kp) => {
-            const available = standaloneQty[kp.piece_id] ?? 0;
-            const possible = Math.floor(available / (kp.quantity || 1));
-            return Math.min(minQty, possible);
-          }, Infinity);
-          if (!isFinite(kitQty) || kitQty <= 0) continue;
-          for (const kp of components) {
-            cqty[kp.piece_id] = (cqty[kp.piece_id] || 0) + kitQty * kp.quantity;
+            cqty[row.piece_id] = (cqty[row.piece_id] || 0) + Number(row.quantity || 0);
           }
         }
         setCampaignQtyBySource(cqty);
