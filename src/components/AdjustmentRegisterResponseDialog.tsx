@@ -72,6 +72,8 @@ export default function AdjustmentRegisterResponseDialog({
   const [currentExtras, setCurrentExtras] = useState({ installation_value: 0, freight_value: 0 });
   const [newInstallation, setNewInstallation] = useState<number>(0);
   const [newFreight, setNewFreight] = useState<number>(0);
+  /** Total qty per source piece across the whole campaign (rateio). */
+  const [campaignQtyBySource, setCampaignQtyBySource] = useState<Record<string, number>>({});
 
   const adminFileRef = useRef<HTMLInputElement>(null);
   const [adminParseResult, setAdminParseResult] = useState<ParsedRequoteResult | null>(null);
@@ -110,7 +112,7 @@ export default function AdjustmentRegisterResponseDialog({
         setWinner(w);
         if (!w) { setLoading(false); return; }
 
-        const [pricesRes, extrasRes, reqRes] = await Promise.all([
+        const [pricesRes, extrasRes, reqRes, cspRes] = await Promise.all([
           supabase.from("budget_prices" as any)
             .select("piece_id, unit_price").eq("supplier_id", (w as any).id),
           supabase.from("budget_extra_costs" as any)
@@ -119,7 +121,18 @@ export default function AdjustmentRegisterResponseDialog({
           supabase.from("campaign_adjustment_budget_request" as any)
             .select("adjusted_prices_jsonb")
             .eq("adjustment_id", adjustment.id).maybeSingle(),
+          supabase.from("campaign_store_pieces" as any)
+            .select("piece_id, quantity")
+            .eq("campaign_id", campaignId),
         ]);
+
+        // Campaign-wide qty per source piece
+        const cqty: Record<string, number> = {};
+        for (const row of (cspRes.data as any[]) || []) {
+          if (!row.piece_id) continue;
+          cqty[row.piece_id] = (cqty[row.piece_id] || 0) + Number(row.quantity || 0);
+        }
+        setCampaignQtyBySource(cqty);
 
         // Map current prices keyed by SOURCE piece_id (campaign piece). Adjustment pieces store source_piece_id.
         const priceMap: Record<string, number> = {};
@@ -177,24 +190,38 @@ export default function AdjustmentRegisterResponseDialog({
     });
   }, [editablePieces, currentPrices, open]);
 
+  /** Map adjustment piece id -> source piece id (campaign piece). */
+  const sourceByAdjPiece = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const p of editablePieces) {
+      if (p.source_piece_id) m[p.id] = String(p.source_piece_id);
+    }
+    return m;
+  }, [editablePieces]);
+
+  /** Production total for the WHOLE campaign at current (pre-requote) prices. */
   const currentProductionTotal = useMemo(() => {
     let total = 0;
-    for (const p of editablePieces) {
-      const q = qtyByPiece[p.id] || 0;
-      const cur = p.source_piece_id ? Number(currentPrices[p.source_piece_id] || 0) : 0;
-      total += q * cur;
+    for (const [sourceId, price] of Object.entries(currentPrices)) {
+      const q = campaignQtyBySource[sourceId] || 0;
+      total += q * Number(price || 0);
     }
     return total;
-  }, [editablePieces, qtyByPiece, currentPrices]);
+  }, [currentPrices, campaignQtyBySource]);
 
+  /** Same total but replacing the price of each adjustment piece with the new typed price. */
   const newProductionTotal = useMemo(() => {
-    let total = 0;
+    let delta = 0;
     for (const p of editablePieces) {
-      const q = qtyByPiece[p.id] || 0;
-      total += q * Number(newPrices[p.id] || 0);
+      const sid = sourceByAdjPiece[p.id];
+      if (!sid) continue;
+      const q = campaignQtyBySource[sid] || 0;
+      const cur = Number(currentPrices[sid] || 0);
+      const np = Number(newPrices[p.id] || 0);
+      delta += q * (np - cur);
     }
-    return total;
-  }, [editablePieces, qtyByPiece, newPrices]);
+    return currentProductionTotal + delta;
+  }, [editablePieces, sourceByAdjPiece, campaignQtyBySource, currentPrices, newPrices, currentProductionTotal]);
 
   const currentTotal = currentProductionTotal + currentExtras.installation_value + currentExtras.freight_value;
   const newTotal = newProductionTotal + Number(newInstallation || 0) + Number(newFreight || 0);
