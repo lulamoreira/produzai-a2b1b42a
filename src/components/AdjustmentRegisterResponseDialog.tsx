@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -83,6 +84,7 @@ export default function AdjustmentRegisterResponseDialog({
   const adminFileRef = useRef<HTMLInputElement>(null);
   const [adminParseResult, setAdminParseResult] = useState<ParsedRequoteResult | null>(null);
   const [adminImportOpen, setAdminImportOpen] = useState(false);
+  const [pieceCodeFilter, setPieceCodeFilter] = useState("");
 
   const { data: pieces = [], isLoading: piecesLoading } = useAdjustmentPieces(adjustment.id);
   const { data: adjSp = [], isLoading: adjSpLoading } = useAdjustmentStorePieces(adjustment.id);
@@ -121,6 +123,12 @@ export default function AdjustmentRegisterResponseDialog({
       return adjQ !== campQ;
     });
   }, [pieces, adjSp, campaignQtyBySource, campaignQtyReady]);
+
+  const displayedPieces = useMemo(() => {
+    const term = pieceCodeFilter.trim();
+    if (!term) return editablePieces;
+    return editablePieces.filter((p: any) => String(p.code ?? "").includes(term));
+  }, [editablePieces, pieceCodeFilter]);
 
   // Map piece_id -> { kitName, kitCode } for kit-only pieces (so the admin
   // can see which kit a piece belongs to).
