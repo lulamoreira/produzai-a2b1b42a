@@ -27,6 +27,7 @@ import {
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 import AdjustmentQuotePreviewDialog from "@/components/AdjustmentQuotePreviewDialog";
 import DeadlinePickerDialog from "@/components/Budget/DeadlinePickerDialog";
+import { RequotePortalPreviewSheet } from "@/components/Budget/RequotePortalPreviewSheet";
 import { useGeneratePortalLink } from "@/hooks/useAdjustmentBudgetRequest";
 
 interface Props {
@@ -71,6 +72,7 @@ export default function AdjustmentBudgetRequestDialog({
   const [pendingFlow, setPendingFlow] = useState<"email" | "whatsapp" | null>(null);
   const [existingRequest, setExistingRequest] = useState<any | null>(null);
   const generatePortalLink = useGeneratePortalLink();
+  const [portalPreviewOpen, setPortalPreviewOpen] = useState(false);
 
   const [winner, setWinner] = useState<any | null>(null);
   const [origSp, setOrigSp] = useState<any[]>([]);
@@ -610,6 +612,17 @@ export default function AdjustmentBudgetRequestDialog({
           ) : (
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending || preparingPreview}>Cancelar</Button>
+              {winner && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPortalPreviewOpen(true)}
+                  className="gap-1 text-muted-foreground hover:text-foreground"
+                  title="Ver como o fornecedor vê"
+                >
+                  <Eye className="w-4 h-4" /> Prévia do portal
+                </Button>
+              )}
               {existingRequest?.access_token && (
                 <Button
                   variant="outline"
@@ -659,6 +672,13 @@ export default function AdjustmentBudgetRequestDialog({
         onConfirm={handleDeadlineConfirmed}
         isLoading={generatePortalLink.isPending}
         defaultDays={existingRequest?.deadline_days ?? 7}
+      />
+      <RequotePortalPreviewSheet
+        open={portalPreviewOpen}
+        onOpenChange={setPortalPreviewOpen}
+        adjustmentId={adjustment.id}
+        supplierId={winner?.id ?? null}
+        requestId={existingRequest?.id ?? null}
       />
     </Dialog>
   );
