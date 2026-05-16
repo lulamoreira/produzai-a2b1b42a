@@ -110,9 +110,13 @@ export function ImportRequoteConfirmDialog({
                     />
                   </TableHead>
                   <TableHead className="w-20">Código</TableHead>
+                  <TableHead className="w-24">Tipo</TableHead>
                   <TableHead>Peça / Kit</TableHead>
+                  <TableHead className="text-right w-20">Qtd</TableHead>
                   <TableHead className="text-right w-28">Anterior</TableHead>
+                  <TableHead className="text-right w-32">Total anterior</TableHead>
                   <TableHead className="text-right w-32">Novo preço</TableHead>
+                  <TableHead className="text-right w-32">Novo total</TableHead>
                   <TableHead className="w-10"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -136,9 +140,14 @@ export function ImportRequoteConfirmDialog({
                         />
                       </TableCell>
                       <TableCell className="font-mono text-xs">{row.code}</TableCell>
+                      <TableCell className="text-xs">{row.type || "Peça"}</TableCell>
                       <TableCell className="text-xs">{row.name}</TableCell>
+                      <TableCell className="text-right text-xs tabular-nums">{row.quantity ?? "—"}</TableCell>
                       <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
                         {formatCurrency(row.previousPrice)}
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground tabular-nums">
+                        {row.previousTotal != null ? formatCurrency(row.previousTotal) : "—"}
                       </TableCell>
                       <TableCell
                         className={`text-right text-xs tabular-nums ${
@@ -146,6 +155,9 @@ export function ImportRequoteConfirmDialog({
                         }`}
                       >
                         {row.newPrice !== null ? formatCurrency(row.newPrice) : "—"}
+                      </TableCell>
+                      <TableCell className={`text-right text-xs tabular-nums ${changed ? "text-blue-700 dark:text-blue-300 font-semibold" : ""}`}>
+                        {row.newTotal != null ? formatCurrency(row.newTotal) : row.newPrice !== null && row.quantity ? formatCurrency(row.newPrice * row.quantity) : "—"}
                       </TableCell>
                       <TableCell>
                         {row.isValid ? (

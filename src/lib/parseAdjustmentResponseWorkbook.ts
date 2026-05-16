@@ -5,12 +5,18 @@
 export interface ParsedRequoteRow {
   code: string;
   name: string;
+  type?: string;
+  status?: string | null;
+  quantity?: number;
   pieceId: string | null;
   kitId: string | null;
   previousPrice: number;
+  previousTotal?: number | null;
   newPrice: number | null;
+  newTotal?: number | null;
   isValid: boolean;
   warning?: string;
+  rowNumber?: number;
 }
 
 export interface ParsedRequoteResult {
@@ -89,7 +95,11 @@ export async function parseAdjustmentResponseWorkbook(
     return -1;
   };
 
+  const typeCol = findCol(["tipo", "type"]);
   const codeCol = findCol(["código", "codigo", "code"]);
+  const qtyCol = findCol(["qtd", "quantidade", "quantity"]);
+  const currentPriceCol = findCol(["preço atual", "preco atual", "current price"]);
+  const currentTotalCol = findCol(["total atual", "current total"]);
   const newPriceCol = findCol(["novo preço", "novo preco", "novo", "new price", "preencher"]);
   const newTotalCol = findCol(["novo total", "total novo", "total reorçamento", "total reorcamento", "new total"]);
 
@@ -117,54 +127,62 @@ export async function parseAdjustmentResponseWorkbook(
     const row = rows[i];
     if (!row || row.every((cell) => cell === null || cell === "")) continue;
 
+    const rowText = row.map((cell) => String(cell ?? "").toLowerCase()).join(" ");
+    const specialValue = parseDecimal(row[newTotalCol]) ?? parseDecimal(row[newPriceCol]);
+    if (rowText.includes("instalação") || rowText.includes("instalacao") || rowText.includes("montagem")) {
+      if (specialValue !== null) installation = specialValue;
+      continue;
+    }
+    if (rowText.includes("frete") || rowText.includes("freight") || rowText.includes("despacho")) {
+      if (specialValue !== null) freight = specialValue;
+      continue;
+    }
+
+    const type = typeCol >= 0 ? String(row[typeCol] ?? "").trim() : "";
+    if (type.toLowerCase() === "kit") continue;
+
     const rawCode = row[codeCol];
     const codeStr = String(rawCode ?? "").trim();
     if (!codeStr) continue;
 
-    const codeLower = codeStr.toLowerCase();
-
-    // Special rows for installation / freight
-    if (
-      codeLower.includes("instalação") ||
-      codeLower.includes("instalacao") ||
-      codeLower.includes("montagem")
-    ) {
-      const val = parseDecimal(row[newPriceCol]);
-      if (val !== null) installation = val;
-      continue;
-    }
-    if (codeLower.includes("frete") || codeLower.includes("freight")) {
-      const val = parseDecimal(row[newPriceCol]);
-      if (val !== null) freight = val;
-      continue;
-    }
-
     // Some exported rows include trailing status markers like "123 (MODIFICADA)" —
     // strip those before matching.
+    const status = codeStr.match(/\(([^)]+)\)/)?.[1] ?? null;
     const normalizedCode = codeStr.replace(/\s*\(.+\)\s*$/, "").trim();
     const expected = expectedMap.get(normalizedCode.toLowerCase());
-    const explicitNewPrice = parseDecimal(row[newPriceCol]);
-    const newTotal = newTotalCol >= 0 ? parseDecimal(row[newTotalCol]) : null;
-
     if (!expected) {
       unmatched++;
       warnings.push(`Código "${codeStr}" não encontrado na lista do ajuste`);
       continue;
     }
 
+    const quantity = qtyCol >= 0 ? parseDecimal(row[qtyCol]) ?? undefined : undefined;
+    const previousPrice = currentPriceCol >= 0
+      ? parseDecimal(row[currentPriceCol]) ?? expected.previousPrice
+      : expected.previousPrice;
+    const previousTotal = currentTotalCol >= 0 ? parseDecimal(row[currentTotalCol]) : null;
+    const explicitNewPrice = parseDecimal(row[newPriceCol]);
+    const newTotal = newTotalCol >= 0 ? parseDecimal(row[newTotalCol]) : null;
+
     matched++;
-    const qty = Number(expected.totalQty || 0);
+    const qty = Number(quantity ?? expected.totalQty ?? 0);
     const newPrice = explicitNewPrice ?? (newTotal !== null && qty > 0 ? newTotal / qty : null);
     const isValid = newPrice !== null && newPrice >= 0;
     parsedRows.push({
       code: expected.code,
       name: expected.name,
+      type,
+      status,
+      quantity: qty,
       pieceId: expected.pieceId ?? null,
       kitId: expected.kitId ?? null,
-      previousPrice: expected.previousPrice,
+      previousPrice,
+      previousTotal,
       newPrice: isValid ? newPrice : null,
+      newTotal,
       isValid,
       warning: !isValid ? "Preço inválido ou não preenchido" : undefined,
+      rowNumber: i + 1,
     });
   }
 

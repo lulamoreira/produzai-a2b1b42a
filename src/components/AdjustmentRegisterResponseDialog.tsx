@@ -121,17 +121,19 @@ export default function AdjustmentRegisterResponseDialog({
       if (p.is_deleted) return false;
       // Newly added pieces always need a price.
       if (p.is_new || p.change_type === "added") return true;
+      const sid = p.source_piece_id ? String(p.source_piece_id) : null;
+      const importedPrice = newPrices[p.id];
+      if (sid && importedPrice != null && Number(importedPrice) !== Number(currentPrices[sid] || 0)) return true;
       if (p.change_type === "modified" && hasRealPieceFieldChange(p)) return true;
       // Otherwise, only include pieces whose distributed quantity actually
       // differs from the original campaign rateio. Cosmetic "modified"
       // changes (name/spec) without a quantity delta don't require re-quoting.
-      const sid = p.source_piece_id ? String(p.source_piece_id) : null;
       if (!sid) return false;
       const adjQ = Number(adjQtyBySource[sid] || 0);
       const campQ = Number(campaignQtyBySource[sid] || 0);
       return adjQ !== campQ;
     });
-  }, [pieces, adjSp, campaignQtyBySource, campaignQtyReady]);
+  }, [pieces, adjSp, campaignQtyBySource, campaignQtyReady, newPrices, currentPrices]);
 
   const displayedPieces = useMemo(() => {
     const term = pieceCodeFilter.trim();
@@ -349,14 +351,14 @@ export default function AdjustmentRegisterResponseDialog({
 
   const expectedPieces: ExpectedPiece[] = useMemo(
     () =>
-      editablePieces.map((p) => ({
+      (pieces as any[]).map((p) => ({
         code: String(p.code),
         name: p.name,
         pieceId: p.id,
         previousPrice: p.source_piece_id ? Number(currentPrices[p.source_piece_id] || 0) : 0,
         totalQty: effectiveQty(p),
       })),
-    [editablePieces, currentPrices, qtyByPiece, sourceByAdjPiece, campaignQtyBySource]
+    [pieces, currentPrices, qtyByPiece, sourceByAdjPiece, campaignQtyBySource]
   );
 
   const handleAdminFileSelect = async (file: File | undefined) => {
