@@ -112,7 +112,7 @@ export default function AdjustmentRegisterResponseDialog({
         setWinner(w);
         if (!w) { setLoading(false); return; }
 
-        const [pricesRes, extrasRes, reqRes, cspRes, kitPiecesRes] = await Promise.all([
+        const [pricesRes, extrasRes, reqRes, cspRes, kitsRes] = await Promise.all([
           supabase.from("budget_prices" as any)
             .select("piece_id, kit_id, unit_price, adjusted_unit_price")
             .eq("supplier_id", (w as any).id),
@@ -123,28 +123,56 @@ export default function AdjustmentRegisterResponseDialog({
             .select("adjusted_prices_jsonb")
             .eq("adjustment_id", adjustment.id).maybeSingle(),
           supabase.from("campaign_store_pieces" as any)
-            .select("piece_id, kit_id, quantity")
+            .select("piece_id, quantity")
             .eq("campaign_id", campaignId),
-          supabase.from("campaign_kit_pieces" as any)
-            .select("kit_id, piece_id, quantity, campaign_kits!inner(campaign_id)")
-            .eq("campaign_kits.campaign_id", campaignId),
+          supabase.from("campaign_kits" as any)
+            .select("id")
+            .eq("campaign_id", campaignId),
         ]);
 
-        // Campaign-wide qty per piece (standalone + kit-expanded)
-        const cqty: Record<string, number> = {};
-        const kitQty: Record<string, number> = {};
+        // Fetch kit composition for this campaign's kits
+        const kitIds = ((kitsRes.data as any[]) || []).map((k) => k.id);
+        const kitCompositionRes = kitIds.length > 0
+          ? await supabase.from("campaign_kit_pieces" as any)
+              .select("kit_id, piece_id, quantity")
+              .in("kit_id", kitIds)
+          : { data: [] as any[] };
+
+        // Standalone piece qty (sum across stores)
+        const standaloneQty: Record<string, number> = {};
         for (const row of (cspRes.data as any[]) || []) {
           if (row.piece_id) {
-            cqty[row.piece_id] = (cqty[row.piece_id] || 0) + Number(row.quantity || 0);
-          } else if (row.kit_id) {
-            kitQty[row.kit_id] = (kitQty[row.kit_id] || 0) + Number(row.quantity || 0);
+            standaloneQty[row.piece_id] =
+              (standaloneQty[row.piece_id] || 0) + Number(row.quantity || 0);
           }
         }
-        // Expand kit qty into component pieces
-        for (const kp of (kitPiecesRes.data as any[]) || []) {
-          const kq = kitQty[kp.kit_id] || 0;
-          if (!kq || !kp.piece_id) continue;
-          cqty[kp.piece_id] = (cqty[kp.piece_id] || 0) + kq * Number(kp.quantity || 1);
+
+        // Start campaignQtyMap as a copy of standaloneQty
+        const cqty: Record<string, number> = { ...standaloneQty };
+
+        // Group kit composition by kit
+        const kitPiecesMap: Record<string, { piece_id: string; quantity: number }[]> = {};
+        for (const kp of (kitCompositionRes.data as any[]) || []) {
+          if (!kitPiecesMap[kp.kit_id]) kitPiecesMap[kp.kit_id] = [];
+          kitPiecesMap[kp.kit_id].push({
+            piece_id: kp.piece_id,
+            quantity: Number(kp.quantity ?? 1),
+          });
+        }
+
+        // For each kit, derive kitQty = min over components of floor(standaloneQty / kp.quantity)
+        // and expand into component pieces (mirrors BudgetTab logic).
+        for (const components of Object.values(kitPiecesMap)) {
+          if (components.length === 0) continue;
+          const kitQty = components.reduce((minQty, kp) => {
+            const available = standaloneQty[kp.piece_id] ?? 0;
+            const possible = Math.floor(available / (kp.quantity || 1));
+            return Math.min(minQty, possible);
+          }, Infinity);
+          if (!isFinite(kitQty) || kitQty <= 0) continue;
+          for (const kp of components) {
+            cqty[kp.piece_id] = (cqty[kp.piece_id] || 0) + kitQty * kp.quantity;
+          }
         }
         setCampaignQtyBySource(cqty);
 
