@@ -244,6 +244,8 @@ export default function AdjustmentRegisterResponseDialog({
     newTotal < currentTotal ? "text-emerald-700" : newTotal > currentTotal ? "text-red-700" : "text-foreground";
 
   return (
+    <>
+
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
         <DialogHeader>
