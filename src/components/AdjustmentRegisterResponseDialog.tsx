@@ -13,7 +13,12 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
-import { useAdjustmentPieces, useAdjustmentStorePieces } from "@/hooks/useAdjustments";
+import {
+  useAdjustmentPieces,
+  useAdjustmentStorePieces,
+  useAdjustmentKits,
+  useAdjustmentKitPieces,
+} from "@/hooks/useAdjustments";
 import {
   parseAdjustmentResponseWorkbook,
   type ParsedRequoteResult,
