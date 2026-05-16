@@ -52,6 +52,8 @@ import {
 import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppliers";
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import { useRealtimeBudget } from "@/hooks/useRealtimeBudget";
+import { useBudgetPhase, PHASE_LABELS, type BudgetPhase } from "@/hooks/useBudgetPhase";
+import { useCurrentTotal } from "@/hooks/useCurrentTotal";
 import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
 import { exportSupplierBudget, type SupplierExportRow } from "@/lib/exportSupplierBudget";
