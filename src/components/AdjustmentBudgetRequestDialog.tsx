@@ -637,6 +637,21 @@ export default function AdjustmentBudgetRequestDialog({
                   <Copy className="w-4 h-4" /> Copiar link do portal
                 </Button>
               )}
+              {existingRequest && ["sent", "filling"].includes(existingRequest.status) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setPendingFlow("email");
+                    setDeadlinePickerOpen(true);
+                  }}
+                  className="gap-1"
+                  disabled={sending || preparingPreview || loading}
+                  title="Gera um novo prazo e reabre a pré-visualização para reenvio"
+                >
+                  <RefreshCw className="w-4 h-4" /> Reenviar com novo prazo
+                </Button>
+              )}
               <Button variant="outline" onClick={handleClickSendWhatsAppGated}
                 disabled={sending || preparingPreview || loading || !winner || !winner?.phone}>
                 <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
