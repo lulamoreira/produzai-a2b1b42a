@@ -573,33 +573,40 @@ export async function buildAdjustmentProposalWorkbook(
   const TOTAL_COLS = 9;
   const lastColLetter = "I";
 
-  ws1.mergeCells(`A1:${lastColLetter}1`);
-  const t1 = ws1.getCell("A1");
+  // Hidden schema marker (used by the response parser to detect compatible files).
+  const markerRow = ws1.getRow(1);
+  markerRow.getCell(1).value = "__schema:recotacao_v1";
+  markerRow.getCell(1).font = { color: { argb: WHITE }, size: 1 };
+  markerRow.height = 3;
+  markerRow.hidden = true;
+
+  ws1.mergeCells(`A2:${lastColLetter}2`);
+  const t1 = ws1.getCell("A2");
   t1.value = [params.agencyName, params.clientName].filter(Boolean).join(" | ") || "ProduzAI";
   t1.font = { name: "Arial", size: 10, color: { argb: WHITE } };
   t1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
   t1.alignment = { horizontal: "center", vertical: "middle" };
-  ws1.getRow(1).height = 20;
+  ws1.getRow(2).height = 20;
 
-  ws1.mergeCells(`A2:${lastColLetter}2`);
-  const t2 = ws1.getCell("A2");
+  ws1.mergeCells(`A3:${lastColLetter}3`);
+  const t2 = ws1.getCell("A3");
   t2.value = `${(params.campaignName || "").toUpperCase()} — REORÇAMENTO`;
   t2.font = { name: "Arial", size: 14, bold: true, color: { argb: WHITE } };
   t2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
   t2.alignment = { horizontal: "center", vertical: "middle" };
-  ws1.getRow(2).height = 26;
+  ws1.getRow(3).height = 26;
 
-  ws1.mergeCells(`A3:${lastColLetter}3`);
-  const t3 = ws1.getCell("A3");
+  ws1.mergeCells(`A4:${lastColLetter}4`);
+  const t3 = ws1.getCell("A4");
   t3.value = `Fornecedor: ${params.supplier.company_name} · Ajuste: ${params.adjustment.name}`;
   t3.font = { name: "Arial", size: 11, bold: true, color: { argb: DARK } };
   t3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
   t3.alignment = { horizontal: "center", vertical: "middle" };
-  ws1.getRow(3).height = 22;
+  ws1.getRow(4).height = 22;
 
-  ws1.getRow(4).height = 6;
+  ws1.getRow(5).height = 6;
 
-  const headerRowIdx = 5;
+  const headerRowIdx = 6;
   const header = ws1.getRow(headerRowIdx);
   header.values = [
     "Foto",
@@ -609,7 +616,7 @@ export async function buildAdjustmentProposalWorkbook(
     "Qtd Total",
     "Preço Atual",
     "Total Atual",
-    "Novo Preço Unit.",
+    "Novo preço ✏️",
     "Novo Total",
   ];
   header.height = 24;

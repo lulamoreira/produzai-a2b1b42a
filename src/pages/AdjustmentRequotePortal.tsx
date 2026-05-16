@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Loader2, CheckCircle2, AlertTriangle, Package, Send, Clock } from "lucide-react";
+import { Loader2, CheckCircle2, AlertTriangle, Package, Send, Clock, Upload, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  parseAdjustmentResponseWorkbook,
+  type ParsedRequoteResult,
+  type ParsedRequoteRow,
+  type ExpectedPiece,
+} from "@/lib/parseAdjustmentResponseWorkbook";
+import { ImportRequoteConfirmDialog } from "@/components/Budget/ImportRequoteConfirmDialog";
 
 interface PortalData {
   request: {
@@ -69,6 +76,12 @@ export default function AdjustmentRequotePortal() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [justSubmitted, setJustSubmitted] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("itens");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [parseResult, setParseResult] = useState<ParsedRequoteResult | null>(null);
+  const [parseLoading, setParseLoading] = useState(false);
+  const [importConfirmOpen, setImportConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -146,6 +159,55 @@ export default function AdjustmentRequotePortal() {
     }
     return t + parseNum(installation) + parseNum(freight);
   }, [data, prices, installation, freight]);
+
+  const expectedPieces: ExpectedPiece[] = useMemo(() => {
+    if (!data) return [];
+    return data.pieces.map((p) => ({
+      code: String(p.code),
+      name: p.name,
+      pieceId: p.id,
+      previousPrice: data.baseline_prices[p.id] ?? 0,
+    }));
+  }, [data]);
+
+  const handleFileSelect = async (file: File | undefined) => {
+    if (!file) return;
+    setParseLoading(true);
+    try {
+      const result = await parseAdjustmentResponseWorkbook(file, expectedPieces);
+      setParseResult(result);
+      setImportConfirmOpen(true);
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao ler planilha");
+    } finally {
+      setParseLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file?.name.toLowerCase().endsWith(".xlsx")) handleFileSelect(file);
+    else toast.error("Apenas arquivos .xlsx são aceitos");
+  };
+
+  const handleImportConfirm = (
+    rows: ParsedRequoteRow[],
+    inst: number | null,
+    fr: number | null
+  ) => {
+    const newPrices = { ...prices };
+    for (const row of rows) {
+      const key = row.pieceId ?? row.kitId ?? row.code;
+      if (row.newPrice !== null) newPrices[key] = String(row.newPrice);
+    }
+    setPrices(newPrices);
+    if (inst !== null) setInstallation(String(inst));
+    if (fr !== null) setFreight(String(fr));
+    setActiveTab("itens");
+    toast.success(`${rows.length} preço(s) importados. Revise e envie a recotação.`);
+  };
 
   const handleSubmit = async () => {
     if (!data || !token) return;
@@ -279,10 +341,16 @@ export default function AdjustmentRequotePortal() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-5">
-        <Tabs defaultValue="itens" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList>
             <TabsTrigger value="itens">Itens</TabsTrigger>
             <TabsTrigger value="extras">Extras</TabsTrigger>
+            {!isReadOnly && (
+              <TabsTrigger value="anexar" className="gap-1.5">
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                Anexar planilha
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <TabsContent value="itens" className="mt-4">
@@ -417,8 +485,66 @@ export default function AdjustmentRequotePortal() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {!isReadOnly && (
+            <TabsContent value="anexar" className="mt-4">
+              <Card>
+                <CardContent className="p-5 space-y-4">
+                  <div>
+                    <h3 className="text-sm font-semibold mb-1">Importar planilha preenchida</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Se preferir, baixe a planilha enviada pelo nosso time, preencha e faça o upload aqui.
+                      Os preços serão importados automaticamente.
+                    </p>
+                  </div>
+
+                  <div
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleFileDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
+                  >
+                    {parseLoading ? (
+                      <Loader2 className="w-8 h-8 mx-auto animate-spin text-primary" />
+                    ) : (
+                      <>
+                        <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                        <div className="text-sm font-medium">
+                          Arraste a planilha aqui ou clique para selecionar
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Apenas arquivos .xlsx
+                        </div>
+                      </>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx"
+                      className="hidden"
+                      onChange={(e) => handleFileSelect(e.target.files?.[0])}
+                    />
+                  </div>
+
+                  {parseResult && !importConfirmOpen && (
+                    <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-3">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <div className="text-xs flex-1">
+                        {parseResult.matched} peças identificadas
+                        {parseResult.unmatched > 0 && ` (${parseResult.unmatched} não encontradas)`}
+                      </div>
+                      <Button size="sm" variant="outline" onClick={() => setImportConfirmOpen(true)}>
+                        Revisar e aplicar
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </main>
+
 
       {/* Sticky footer */}
       {!isReadOnly && (
@@ -465,6 +591,13 @@ export default function AdjustmentRequotePortal() {
           </div>
         </div>
       )}
+
+      <ImportRequoteConfirmDialog
+        open={importConfirmOpen}
+        onOpenChange={setImportConfirmOpen}
+        result={parseResult}
+        onConfirmSelected={handleImportConfirm}
+      />
     </div>
   );
 }
