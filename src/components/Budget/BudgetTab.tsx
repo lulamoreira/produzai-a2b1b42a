@@ -1065,6 +1065,15 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         </div>
       )}
 
+      <PhaseStepper
+        currentPhase={currentPhase}
+        phaseLockedAt={phaseLockedAt as Record<string, string>}
+        isAdminOrMaster={isAdminOrMaster}
+        onUnlock={(phase) => setUnlockTarget(phase)}
+        isUnlocking={isUnlocking}
+        campaignId={campaignId}
+      />
+
       {/* ═══ KPI CARDS ═══ */}
       <div className={cn("grid grid-cols-1 gap-4 items-stretch", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
         {/* Reusable header with fixed height for visual alignment across all KPI cards */}
