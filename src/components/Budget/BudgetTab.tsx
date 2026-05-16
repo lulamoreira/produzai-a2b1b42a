@@ -2970,3 +2970,32 @@ function AdjustmentSummaryCard({
   );
 }
 
+
+function RequoteApprovedExportRow({
+  campaignId,
+  adjustmentId,
+  supplierId,
+}: {
+  campaignId: string;
+  adjustmentId: string;
+  supplierId: string;
+}) {
+  const { exportFinal, isExporting } = useExportRequoteFinal(campaignId, adjustmentId, supplierId);
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium flex-1">
+        <CheckCircle2 className="w-3.5 h-3.5" />
+        Recotação aprovada
+      </div>
+      <Button
+        size="sm"
+        onClick={exportFinal}
+        disabled={isExporting}
+        className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white h-7 text-xs"
+      >
+        {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
+        Planilha final
+      </Button>
+    </div>
+  );
+}
