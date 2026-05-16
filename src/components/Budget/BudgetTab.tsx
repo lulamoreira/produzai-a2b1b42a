@@ -2831,7 +2831,7 @@ Qualquer dúvida, estamos à disposição.
             </Button>
           </div>
           {currentPhase === "ajuste" && (
-            <AdjustmentSummaryCard campaignId={campaignId} />
+            <AdjustmentSummaryCard campaignId={campaignId} onNavigateToSection={onNavigateToSection} />
           )}
         </div>
       )}
