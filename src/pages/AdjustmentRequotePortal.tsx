@@ -591,6 +591,13 @@ export default function AdjustmentRequotePortal() {
           </div>
         </div>
       )}
+
+      <ImportRequoteConfirmDialog
+        open={importConfirmOpen}
+        onOpenChange={setImportConfirmOpen}
+        result={parseResult}
+        onConfirmSelected={handleImportConfirm}
+      />
     </div>
   );
 }
