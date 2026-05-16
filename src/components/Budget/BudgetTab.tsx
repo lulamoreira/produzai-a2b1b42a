@@ -549,7 +549,14 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   }, [suppliers]);
 
   // ─── Phase awareness ──────────────────────────────────
-  const { currentPhase } = useBudgetPhase(campaignId);
+  const {
+    currentPhase,
+    phaseLockedAt,
+    isPhaseLocked,
+    unlockPhase,
+    isUnlocking,
+  } = useBudgetPhase(campaignId);
+  const [unlockTarget, setUnlockTarget] = useState<BudgetPhase | null>(null);
   const { data: currentTotal } = useCurrentTotal(
     winnerSupplier?.id,
     campaignId,
