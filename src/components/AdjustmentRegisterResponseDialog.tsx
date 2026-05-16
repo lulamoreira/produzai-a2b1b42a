@@ -270,6 +270,28 @@ export default function AdjustmentRegisterResponseDialog({
               Fornecedor: <strong>{winner.company_name}</strong>
             </div>
 
+            <div className="flex items-center gap-2 rounded-md border border-dashed bg-muted/30 p-2.5">
+              <input
+                ref={adminFileRef}
+                type="file"
+                accept=".xlsx"
+                className="hidden"
+                onChange={(e) => handleAdminFileSelect(e.target.files?.[0])}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => adminFileRef.current?.click()}
+                className="gap-1.5"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Importar planilha do fornecedor
+              </Button>
+              <span className="text-[11px] text-muted-foreground">
+                Preenche os campos automaticamente
+              </span>
+            </div>
+
             <div>
               <h3 className="text-sm font-semibold mb-2">Novos preços propostos pelo fornecedor</h3>
               <div className="border rounded-md overflow-hidden">
