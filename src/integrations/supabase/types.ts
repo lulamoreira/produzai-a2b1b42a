@@ -624,40 +624,61 @@ export type Database = {
       }
       campaign_adjustment_budget_request: {
         Row: {
+          access_token: string
           adjusted_extras_jsonb: Json | null
           adjusted_prices_jsonb: Json | null
           adjustment_id: string
           created_at: string | null
+          deadline_days: number | null
           id: string
+          is_late_submission: boolean | null
           notes: string | null
+          rejection_notes: string | null
           request_sent_at: string | null
           response_received_at: string | null
           status: string
+          submitted_at: string | null
           supplier_id: string
+          token_expires_at: string | null
+          updated_at: string | null
         }
         Insert: {
+          access_token: string
           adjusted_extras_jsonb?: Json | null
           adjusted_prices_jsonb?: Json | null
           adjustment_id: string
           created_at?: string | null
+          deadline_days?: number | null
           id?: string
+          is_late_submission?: boolean | null
           notes?: string | null
+          rejection_notes?: string | null
           request_sent_at?: string | null
           response_received_at?: string | null
           status?: string
+          submitted_at?: string | null
           supplier_id: string
+          token_expires_at?: string | null
+          updated_at?: string | null
         }
         Update: {
+          access_token?: string
           adjusted_extras_jsonb?: Json | null
           adjusted_prices_jsonb?: Json | null
           adjustment_id?: string
           created_at?: string | null
+          deadline_days?: number | null
           id?: string
+          is_late_submission?: boolean | null
           notes?: string | null
+          rejection_notes?: string | null
           request_sent_at?: string | null
           response_received_at?: string | null
           status?: string
+          submitted_at?: string | null
           supplier_id?: string
+          token_expires_at?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -4724,6 +4745,11 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      generate_requote_token: {
+        Args: { p_deadline_days?: number; p_request_id: string }
+        Returns: string
+      }
+      get_adjustment_requote: { Args: { p_token: string }; Returns: Json }
       get_supplier_support_materials: {
         Args: { p_token: string }
         Returns: {
@@ -4782,6 +4808,7 @@ export type Database = {
         Args: { p_supplier_id: string }
         Returns: boolean
       }
+      mark_requote_filling: { Args: { p_token: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -4802,6 +4829,15 @@ export type Database = {
       shift_display_orders: {
         Args: { p_after_order: number; p_campaign_id: string; p_slots: number }
         Returns: undefined
+      }
+      submit_adjustment_requote: {
+        Args: {
+          p_extras_jsonb: Json
+          p_notes?: string
+          p_prices_jsonb: Json
+          p_token: string
+        }
+        Returns: Json
       }
       unlock_budget_phase: {
         Args: { p_campaign_id: string; p_target_phase: string }
