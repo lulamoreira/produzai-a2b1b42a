@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Send, Loader2, MessageCircle, Eye } from "lucide-react";
+import { Send, Loader2, MessageCircle, Eye, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -24,6 +26,8 @@ import {
 } from "@/hooks/useAdjustments";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 import AdjustmentQuotePreviewDialog from "@/components/AdjustmentQuotePreviewDialog";
+import DeadlinePickerDialog from "@/components/Budget/DeadlinePickerDialog";
+import { useGeneratePortalLink } from "@/hooks/useAdjustmentBudgetRequest";
 
 interface Props {
   open: boolean;
@@ -61,6 +65,12 @@ export default function AdjustmentBudgetRequestDialog({
   const [previewSubject, setPreviewSubject] = useState("");
   const [preparedLink, setPreparedLink] = useState<{ name: string; url: string } | null>(null);
   const [preparedTemplateData, setPreparedTemplateData] = useState<Record<string, any> | null>(null);
+
+  // Deadline picker + portal link state
+  const [deadlinePickerOpen, setDeadlinePickerOpen] = useState(false);
+  const [pendingFlow, setPendingFlow] = useState<"email" | "whatsapp" | null>(null);
+  const [existingRequest, setExistingRequest] = useState<any | null>(null);
+  const generatePortalLink = useGeneratePortalLink();
 
   const [winner, setWinner] = useState<any | null>(null);
   const [origSp, setOrigSp] = useState<any[]>([]);
@@ -164,15 +174,23 @@ export default function AdjustmentBudgetRequestDialog({
         })));
         setSourceKits(((srcKitsRes.data as any[]) || []) as any);
         setSourcePieces(((srcPiecesRes.data as any[]) || []) as any);
-        // Filter origKpRows to only kits that belong to this campaign (the
-        // unfiltered table is keyed by kit_id; ensure scope by intersecting
-        // with the campaign's source kits).
         const validKitIds = new Set(((srcKitsRes.data as any[]) || []).map((k: any) => k.id));
         setOriginalKitPieces(
           ((origKpRows as any[]) || []).filter((r) => validKitIds.has(r.kit_id))
             .map((r: any) => ({ kit_id: r.kit_id, piece_id: r.piece_id, quantity: Number(r.quantity || 0) }))
         );
         setAdjustmentStoresSnapshot(((snapStoreRows as any[]) || []));
+
+        // Load existing requote row (for token / deadline reuse)
+        if (w) {
+          const { data: reqRow } = await supabase
+            .from("campaign_adjustment_budget_request" as any)
+            .select("id, access_token, token_expires_at, deadline_days, status")
+            .eq("adjustment_id", adjustment.id)
+            .eq("supplier_id", (w as any).id)
+            .maybeSingle();
+          setExistingRequest(reqRow || null);
+        }
       } catch (e: any) {
         toast.error(e?.message || "Falha ao carregar dados.");
       } finally {
@@ -205,16 +223,64 @@ export default function AdjustmentBudgetRequestDialog({
 
   const persistRequest = async () => {
     if (!winner) return;
+    // Only insert a stub row if none exists. Token + deadline are set by
+    // ensureRequestAndToken via the generate_requote_token RPC, which also
+    // sets status to 'sent'. Avoid clobbering that.
     await supabase.from("campaign_adjustment_budget_request" as any).upsert({
       adjustment_id: adjustment.id,
       supplier_id: winner.id,
-      status: "submitted",
+      status: "sent",
       request_sent_at: new Date().toISOString(),
-    } as any, { onConflict: "adjustment_id,supplier_id" } as any);
+    } as any, { onConflict: "adjustment_id,supplier_id", ignoreDuplicates: true } as any);
     await qc.invalidateQueries({ queryKey: ['adjustment_budget_requests', campaignId] });
   };
 
-  const buildTemplateData = (link: { name: string; url: string }): Record<string, any> => ({
+  /**
+   * Ensure a campaign_adjustment_budget_request row exists for this
+   * (adjustment, supplier) pair, then mint a fresh portal token + deadline.
+   * Returns the full portal URL.
+   */
+  const ensureRequestAndToken = async (deadlineDays: number): Promise<{
+    portalUrl: string;
+    tokenExpiresAt: string | null;
+  }> => {
+    if (!winner) throw new Error("Sem fornecedor vencedor.");
+    let requestId: string | undefined = existingRequest?.id;
+    if (!requestId) {
+      const { data: newReq, error: upErr } = await supabase
+        .from("campaign_adjustment_budget_request" as any)
+        .upsert(
+          {
+            adjustment_id: adjustment.id,
+            supplier_id: winner.id,
+            status: "pending",
+          } as any,
+          { onConflict: "adjustment_id,supplier_id" } as any
+        )
+        .select("id")
+        .single();
+      if (upErr) throw upErr;
+      requestId = (newReq as any)?.id;
+    }
+    if (!requestId) throw new Error("Não foi possível criar a recotação.");
+    const token = await generatePortalLink.mutateAsync({ requestId, deadlineDays });
+    // Refetch to get token_expires_at
+    const { data: refreshed } = await supabase
+      .from("campaign_adjustment_budget_request" as any)
+      .select("id, access_token, token_expires_at, deadline_days, status")
+      .eq("id", requestId)
+      .maybeSingle();
+    setExistingRequest(refreshed || null);
+    return {
+      portalUrl: `${window.location.origin}/recotacao/${token}`,
+      tokenExpiresAt: (refreshed as any)?.token_expires_at || null,
+    };
+  };
+
+  const buildTemplateData = (
+    link: { name: string; url: string },
+    portalCtx?: { portalUrl?: string; tokenExpiresAt?: string | null }
+  ): Record<string, any> => ({
     supplierName: winner!.company_name,
     contactName: winner!.contact_name,
     agencyName, campaignName,
@@ -222,6 +288,10 @@ export default function AdjustmentBudgetRequestDialog({
     changesDescription,
     customMessage: customMessage.trim() || undefined,
     downloadUrls: [link],
+    portalUrl: portalCtx?.portalUrl,
+    deadlineDate: portalCtx?.tokenExpiresAt
+      ? format(new Date(portalCtx.tokenExpiresAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+      : undefined,
   });
 
   /**
@@ -229,7 +299,58 @@ export default function AdjustmentBudgetRequestDialog({
    * the email HTML server-side. Then open the preview dialog. Nothing is
    * persisted and no email goes out yet.
    */
-  const handleOpenPreview = async () => {
+  /**
+   * Gate for the email flow: validate recipients first, then open the deadline
+   * picker. If a token already exists, skip the picker.
+   */
+  const handleClickSendEmail = () => {
+    const merged = mergeRecipients(email, cc);
+    if (merged.invalid.length) {
+      toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
+      return;
+    }
+    if (merged.valid.length === 0) {
+      toast.error("Informe pelo menos um e-mail válido.");
+      return;
+    }
+    if (existingRequest?.access_token && existingRequest?.token_expires_at) {
+      // Reuse existing token; skip picker.
+      handleOpenPreview({
+        portalUrl: `${window.location.origin}/recotacao/${existingRequest.access_token}`,
+        tokenExpiresAt: existingRequest.token_expires_at,
+      });
+      return;
+    }
+    setPendingFlow("email");
+    setDeadlinePickerOpen(true);
+  };
+
+  const handleClickSendWhatsAppGated = () => {
+    if (existingRequest?.access_token && existingRequest?.token_expires_at) {
+      handleSendWhatsApp({
+        portalUrl: `${window.location.origin}/recotacao/${existingRequest.access_token}`,
+        tokenExpiresAt: existingRequest.token_expires_at,
+      });
+      return;
+    }
+    setPendingFlow("whatsapp");
+    setDeadlinePickerOpen(true);
+  };
+
+  const handleDeadlineConfirmed = async (deadlineDays: number) => {
+    const flow = pendingFlow;
+    setDeadlinePickerOpen(false);
+    setPendingFlow(null);
+    try {
+      const ctx = await ensureRequestAndToken(deadlineDays);
+      if (flow === "email") await handleOpenPreview(ctx);
+      else if (flow === "whatsapp") await handleSendWhatsApp(ctx);
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao gerar link do portal.");
+    }
+  };
+
+  const handleOpenPreview = async (portalCtx?: { portalUrl?: string; tokenExpiresAt?: string | null }) => {
     const merged = mergeRecipients(email, cc);
     if (merged.invalid.length) {
       toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
@@ -245,7 +366,7 @@ export default function AdjustmentBudgetRequestDialog({
     const tId = toast.loading("Gerando planilha e pré-visualização...");
     try {
       const { link } = await buildAndUpload();
-      const templateData = buildTemplateData(link);
+      const templateData = buildTemplateData(link, portalCtx);
       const { data, error } = await supabase.functions.invoke("render-transactional-email", {
         body: {
           templateName: "adjustment-quote-request-to-supplier",
@@ -352,7 +473,7 @@ export default function AdjustmentBudgetRequestDialog({
     }
   };
 
-  const handleSendWhatsApp = async () => {
+  const handleSendWhatsApp = async (portalCtx?: { portalUrl?: string; tokenExpiresAt?: string | null }) => {
     const phone = (winner?.phone || "").replace(/\D/g, "");
     if (!phone) { toast.error("Fornecedor sem telefone."); return; }
     setSending(true);
@@ -376,7 +497,18 @@ export default function AdjustmentBudgetRequestDialog({
         const r = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(link.url)}`);
         if (r.ok) { const t = (await r.text()).trim(); if (/^https?:\/\//i.test(t)) shortUrl = t; }
       } catch { /* ignore */ }
+      let portalShort: string | null = null;
+      if (portalCtx?.portalUrl) {
+        portalShort = portalCtx.portalUrl;
+        try {
+          const r = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(portalCtx.portalUrl)}`);
+          if (r.ok) { const t = (await r.text()).trim(); if (/^https?:\/\//i.test(t)) portalShort = t; }
+        } catch { /* ignore */ }
+      }
       const greeting = winner!.contact_name || winner!.company_name;
+      const deadlineLine = portalCtx?.tokenExpiresAt
+        ? `🗓 Prazo: ${format(new Date(portalCtx.tokenExpiresAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}\n\n`
+        : "";
       const text =
         `📐 *Recotação Pós-Mockup*\n\n` +
         `Olá, *${greeting}*! 👋\n\n` +
@@ -384,7 +516,9 @@ export default function AdjustmentBudgetRequestDialog({
         `📊 *Alterações:* ${changesDescription}\n` +
         `🏷 Ajuste: *${adjustment.name}*\n\n` +
         (customMessage.trim() ? `💬 ${customMessage.trim()}\n\n` : "") +
+        (portalShort ? `🔗 Preencher online:\n${portalShort}\n\n` : "") +
         `📎 Planilha de recotação:\n${shortUrl}\n\n` +
+        deadlineLine +
         `Por favor, preencha os campos em amarelo e retorne com os novos valores. 🙌\n\n` +
         `— Equipe ${agencyName}`;
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
@@ -476,11 +610,25 @@ export default function AdjustmentBudgetRequestDialog({
           ) : (
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending || preparingPreview}>Cancelar</Button>
-              <Button variant="outline" onClick={handleSendWhatsApp}
+              {existingRequest?.access_token && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const url = `${window.location.origin}/recotacao/${existingRequest.access_token}`;
+                    navigator.clipboard.writeText(url);
+                    toast.success("Link do portal copiado!");
+                  }}
+                  className="gap-1"
+                >
+                  <Copy className="w-4 h-4" /> Copiar link do portal
+                </Button>
+              )}
+              <Button variant="outline" onClick={handleClickSendWhatsAppGated}
                 disabled={sending || preparingPreview || loading || !winner || !winner?.phone}>
                 <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
               </Button>
-              <Button onClick={handleOpenPreview} disabled={sending || preparingPreview || loading || !winner}>
+              <Button onClick={handleClickSendEmail} disabled={sending || preparingPreview || loading || !winner}>
                 {preparingPreview ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Eye className="w-4 h-4 mr-1" />}
                 Visualizar e enviar
               </Button>
@@ -500,6 +648,17 @@ export default function AdjustmentBudgetRequestDialog({
         sending={sending}
         onConfirm={handleConfirmSend}
         onSendTest={handleSendTest}
+      />
+
+      <DeadlinePickerDialog
+        open={deadlinePickerOpen}
+        onOpenChange={(o) => {
+          setDeadlinePickerOpen(o);
+          if (!o) setPendingFlow(null);
+        }}
+        onConfirm={handleDeadlineConfirmed}
+        isLoading={generatePortalLink.isPending}
+        defaultDays={existingRequest?.deadline_days ?? 7}
       />
     </Dialog>
   );

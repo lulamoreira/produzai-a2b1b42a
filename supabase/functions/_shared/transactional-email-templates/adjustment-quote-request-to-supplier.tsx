@@ -21,6 +21,8 @@ interface AdjustmentQuoteRequestProps {
   changesDescription?: string
   customMessage?: string
   downloadUrls?: DownloadLink[]
+  portalUrl?: string
+  deadlineDate?: string
 }
 
 const AdjustmentQuoteRequestEmail = ({
@@ -32,29 +34,31 @@ const AdjustmentQuoteRequestEmail = ({
   changesDescription = '',
   customMessage,
   downloadUrls = [],
+  portalUrl,
+  deadlineDate,
 }: AdjustmentQuoteRequestProps) => {
   const greeting = contactName || supplierName
   return (
     <Html lang="pt-BR" dir="ltr">
       <Head />
-      <Preview>Reorçamento pós-mockup — {campaignName}</Preview>
+      <Preview>Recotação pós-mockup — {campaignName}</Preview>
       <Body style={main}>
         <Section style={headerDark}>
           <Text style={headerDarkText}>{agencyName || SITE_NAME}</Text>
         </Section>
         <Section style={headerBrown}>
-          <Text style={headerBrownText}>REORÇAMENTO PÓS-MOCKUP</Text>
+          <Text style={headerBrownText}>RECOTAÇÃO PÓS-MOCKUP</Text>
         </Section>
 
         <Container style={container}>
-          <Heading style={h1}>📐 Solicitação de Reorçamento</Heading>
+          <Heading style={h1}>📐 Solicitação de Recotação</Heading>
 
           <Text style={text}>Prezado(a) <strong>{greeting}</strong>,</Text>
 
           <Text style={text}>
             Após a etapa de mockup da campanha <strong>{campaignName}</strong>, identificamos
             ajustes que impactam o escopo contratado. Segue em anexo a planilha de
-            reorçamento referente ao ajuste <strong>{adjustmentName}</strong>
+            recotação referente ao ajuste <strong>{adjustmentName}</strong>
             {changesDescription ? <> com as alterações detalhadas: <strong>{changesDescription}</strong></> : null}.
           </Text>
 
@@ -64,12 +68,29 @@ const AdjustmentQuoteRequestEmail = ({
             </Section>
           )}
 
+          {portalUrl && (
+            <>
+              <Heading as="h2" style={h2}>✏️ Preencher online</Heading>
+              <Section style={ctaSection}>
+                <Button style={ctaButton} href={portalUrl}>
+                  Preencher recotação online →
+                </Button>
+              </Section>
+              {deadlineDate && (
+                <Text style={smallNote}>Prazo para resposta: <strong>{deadlineDate}</strong></Text>
+              )}
+              <Text style={smallNote}>
+                Ou baixe a planilha, preencha e responda por e-mail.
+              </Text>
+            </>
+          )}
+
           {downloadUrls.length > 0 && (
             <>
-              <Heading as="h2" style={h2}>📎 Planilha de Reorçamento</Heading>
+              <Heading as="h2" style={h2}>📎 Planilha de Cotação</Heading>
               {downloadUrls.map((d, i) => (
                 <Section key={i} style={ctaSection}>
-                  <Button style={ctaButton} href={d.url}>
+                  <Button style={ctaButtonSecondary} href={d.url}>
                     📥 Baixar {d.name}
                   </Button>
                 </Section>
@@ -100,8 +121,8 @@ const AdjustmentQuoteRequestEmail = ({
 export const template = {
   component: AdjustmentQuoteRequestEmail,
   subject: (data: Record<string, any>) =>
-    `📐 ${data.campaignName || 'Campanha'} — Reorçamento (${data.adjustmentName || 'Ajuste'})`,
-  displayName: 'Reorçamento pós-mockup ao fornecedor',
+    `📐 ${data.campaignName || 'Campanha'} — Recotação (${data.adjustmentName || 'Ajuste'})`,
+  displayName: 'Recotação pós-mockup ao fornecedor',
   previewData: {
     supplierName: 'Gráfica Express',
     contactName: 'João Silva',
@@ -110,7 +131,9 @@ export const template = {
     adjustmentName: 'Ajuste pós-mockup 01',
     changesDescription: '3 peças modificadas, 1 nova, 0 removidas',
     customMessage: 'Por gentileza priorizar essa cotação ainda esta semana.',
-    downloadUrls: [{ name: 'Reorcamento.xlsx', url: 'https://example.com/file.xlsx' }],
+    downloadUrls: [{ name: 'Recotacao.xlsx', url: 'https://example.com/file.xlsx' }],
+    portalUrl: 'https://app.produzai.com/recotacao/abc123',
+    deadlineDate: '23/05/2026 às 17:00',
   },
 } satisfies TemplateEntry
 
@@ -127,6 +150,7 @@ const msgBox = { backgroundColor: '#f3f3f3', borderLeft: `4px solid ${GOLD}`, pa
 const msgText = { fontSize: '13px', color: '#444444', margin: '0', fontStyle: 'italic' as const, whiteSpace: 'pre-wrap' as const }
 const ctaSection = { textAlign: 'center' as const, margin: '4px 0 12px' }
 const ctaButton = { backgroundColor: BRAND, color: '#ffffff', padding: '12px 24px', fontSize: '14px', fontWeight: 'bold' as const, textDecoration: 'none', borderRadius: '6px', display: 'inline-block' }
+const ctaButtonSecondary = { backgroundColor: '#ffffff', color: BRAND, padding: '10px 22px', fontSize: '13px', fontWeight: 'bold' as const, textDecoration: 'none', borderRadius: '6px', display: 'inline-block', border: `2px solid ${BRAND}` }
 const smallNote = { fontSize: '12px', color: '#888888', textAlign: 'center' as const, margin: '8px 0 0', fontStyle: 'italic' as const }
 const instructionsBox = { backgroundColor: '#fffdf7', border: `2px solid ${GOLD}`, borderRadius: '6px', padding: '12px 16px', margin: '20px 0 8px' }
 const instructionsText = { fontSize: '13px', color: DARK, margin: '0', lineHeight: '1.5' }
