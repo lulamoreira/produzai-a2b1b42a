@@ -3993,6 +3993,7 @@ const CampaignDetail = () => {
                   setRateioView("planilha");
                   setActiveSection("matrix");
                 }}
+                onNavigateToSection={(section) => setActiveSection(section)}
               />
             </>
           )}
@@ -4021,6 +4022,7 @@ const CampaignDetail = () => {
               winnerSupplierId={winnerSupplierId}
               hasNegotiationRateio={hasNegotiationRateio}
               negotiationRateioLoading={hasNegotiationRateio && negotiationStorePiecesFetching && negotiationStorePieces.length === 0}
+              onBackToBudgets={() => setActiveSection("budgets")}
             />
           )}
 

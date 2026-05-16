@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput, RotateCcw, XCircle } from "lucide-react";
+import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput, RotateCcw, XCircle, ArrowLeft } from "lucide-react";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import AdjustmentRegisterResponseDialog from "./AdjustmentRegisterResponseDialog";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ interface AdjustmentsTabProps {
   winnerSupplierId?: string | null;
   hasNegotiationRateio?: boolean;
   negotiationRateioLoading?: boolean;
+  onBackToBudgets?: () => void;
 }
 
 function StatusBadge({ status }: { status: AdjustmentStatus }) {
@@ -66,6 +67,7 @@ export default function AdjustmentsTab({
   winnerSupplierId,
   hasNegotiationRateio,
   negotiationRateioLoading,
+  onBackToBudgets,
 }: AdjustmentsTabProps) {
   const { data: adjustments = [], isLoading } = useCampaignAdjustments(campaignId);
   const { data: activeAdjustment } = useActiveAdjustment(campaignId);
@@ -204,6 +206,16 @@ export default function AdjustmentsTab({
 
   return (
     <div className="space-y-4">
+      {onBackToBudgets && (
+        <button
+          type="button"
+          onClick={onBackToBudgets}
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Ver em Cotações
+        </button>
+      )}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Layers className="w-5 h-5 text-primary" />

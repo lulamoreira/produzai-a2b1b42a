@@ -52,7 +52,11 @@ import {
 import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppliers";
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import { useRealtimeBudget } from "@/hooks/useRealtimeBudget";
-import { useBudgetPhase, PHASE_LABELS } from "@/hooks/useBudgetPhase";
+import { useBudgetPhase, PHASE_LABELS, type BudgetPhase } from "@/hooks/useBudgetPhase";
+import { PhaseStepper } from "./PhaseStepper";
+import { FrozenPhaseBanner } from "./FrozenPhaseBanner";
+import { UnlockPhaseDialog } from "./UnlockPhaseDialog";
+import { ArrowRight, FileEdit } from "lucide-react";
 import { useCurrentTotal } from "@/hooks/useCurrentTotal";
 import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
@@ -75,6 +79,7 @@ interface BudgetTabProps {
   qtyMap: Record<string, number>;
   stores: { id: string; name: string }[];
   onNavigateToRateio?: () => void;
+  onNavigateToSection?: (section: string) => void;
   activeAdjustment?: { id: string; name: string } | null;
 }
 
@@ -185,7 +190,7 @@ function AdminInlineNumberInput({
 }
 
 // ─── Main Component ──────────────────────────────────────
-export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, activeAdjustment }: BudgetTabProps) {
+export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, onNavigateToSection, activeAdjustment }: BudgetTabProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -544,7 +549,14 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   }, [suppliers]);
 
   // ─── Phase awareness ──────────────────────────────────
-  const { currentPhase } = useBudgetPhase(campaignId);
+  const {
+    currentPhase,
+    phaseLockedAt,
+    isPhaseLocked,
+    unlockPhase,
+    isUnlocking,
+  } = useBudgetPhase(campaignId);
+  const [unlockTarget, setUnlockTarget] = useState<BudgetPhase | null>(null);
   const { data: currentTotal } = useCurrentTotal(
     winnerSupplier?.id,
     campaignId,
@@ -1053,6 +1065,15 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         </div>
       )}
 
+      <PhaseStepper
+        currentPhase={currentPhase}
+        phaseLockedAt={phaseLockedAt as Record<string, string>}
+        isAdminOrMaster={isAdminOrMaster}
+        onUnlock={(phase) => setUnlockTarget(phase)}
+        isUnlocking={isUnlocking}
+        campaignId={campaignId}
+      />
+
       {/* ═══ KPI CARDS ═══ */}
       <div className={cn("grid grid-cols-1 gap-4 items-stretch", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
         {/* Reusable header with fixed height for visual alignment across all KPI cards */}
@@ -1558,6 +1579,28 @@ Qualquer dúvida, estamos à disposição.
           </CollapsibleContent>
         </Collapsible>
       </Card>
+
+      {isPhaseLocked("cotacoes") && (
+        <FrozenPhaseBanner
+          frozenPhase="cotacoes"
+          activePhase={currentPhase}
+          lockedAt={(phaseLockedAt as Record<string, string>)["cotacoes"]}
+          isAdminOrMaster={isAdminOrMaster}
+          onUnlock={() => setUnlockTarget("cotacoes")}
+          isUnlocking={isUnlocking}
+        />
+      )}
+
+      {isPhaseLocked("negociacao") && (
+        <FrozenPhaseBanner
+          frozenPhase="negociacao"
+          activePhase={currentPhase}
+          lockedAt={(phaseLockedAt as Record<string, string>)["negociacao"]}
+          isAdminOrMaster={isAdminOrMaster}
+          onUnlock={() => setUnlockTarget("negociacao")}
+          isUnlocking={isUnlocking}
+        />
+      )}
 
       {/* ═══ SUPPLIERS SECTION ═══ */}
       <div className="space-y-3">
@@ -2755,6 +2798,89 @@ Qualquer dúvida, estamos à disposição.
           stores={stores as any}
           defaultCcEmail={settingsAny?.winner_cc_email ?? null}
         />
+      )}
+
+      {(currentPhase === "ajuste" || currentPhase === "negociacao") && (
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground">
+                Fase 4 — Ajuste pós-mockup
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {currentPhase === "ajuste"
+                  ? "Fase ativa — ajustes sendo aplicados"
+                  : "Disponível após aprovação da negociação"}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => onNavigateToSection?.("adjustments")}
+              className="gap-2 shrink-0"
+            >
+              <FileEdit className="w-3.5 h-3.5" />
+              Abrir Ajustes
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          {currentPhase === "ajuste" && (
+            <AdjustmentSummaryCard campaignId={campaignId} />
+          )}
+        </div>
+      )}
+
+      <UnlockPhaseDialog
+        open={unlockTarget !== null}
+        onOpenChange={(v) => !v && setUnlockTarget(null)}
+        phaseToUnlock={unlockTarget}
+        onConfirm={() => {
+          if (unlockTarget) {
+            unlockPhase(unlockTarget);
+            setUnlockTarget(null);
+          }
+        }}
+        isUnlocking={isUnlocking}
+      />
+    </div>
+  );
+}
+
+function AdjustmentSummaryCard({ campaignId }: { campaignId: string }) {
+  const { data: adjustment } = useQuery({
+    queryKey: ["active_adjustment_summary", campaignId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaign_adjustments")
+        .select("id, name, status, approved_at, notes")
+        .eq("campaign_id", campaignId)
+        .eq("status", "active")
+        .maybeSingle();
+      return data as { id: string; name: string; status: string; approved_at: string | null; notes: string | null } | null;
+    },
+  });
+
+  if (!adjustment) {
+    return (
+      <p className="text-xs text-muted-foreground italic">
+        Nenhum ajuste ativo ainda.
+      </p>
+    );
+  }
+
+  return (
+    <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-sm font-semibold text-foreground">{adjustment.name}</span>
+        <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px]">Ativo</Badge>
+      </div>
+      {adjustment.notes && (
+        <p className="text-xs text-muted-foreground whitespace-pre-wrap">{adjustment.notes}</p>
+      )}
+      {adjustment.approved_at && (
+        <p className="text-[11px] text-muted-foreground">
+          Iniciado em {format(new Date(adjustment.approved_at), "dd/MM/yyyy", { locale: ptBR })}
+        </p>
       )}
     </div>
   );
