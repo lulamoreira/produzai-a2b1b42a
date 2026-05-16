@@ -99,6 +99,14 @@ export default function AdjustmentRegisterResponseDialog({
   // Unchanged pieces are hidden.
   const editablePieces = useMemo(() => {
     if (!campaignQtyReady) return [];
+    const changedText = (current: unknown, original: unknown) =>
+      String(current ?? "").trim() !== String(original ?? "").trim();
+    const hasRealPieceFieldChange = (p: any) => {
+      const original = p.original_snapshot || {};
+      return ["name", "specification", "size", "category", "sub_location"].some((field) =>
+        changedText(p[field], original[field])
+      );
+    };
     const adjQtyBySource: Record<string, number> = {};
     const pieceToSource: Record<string, string> = {};
     for (const p of pieces as any[]) {
@@ -113,6 +121,7 @@ export default function AdjustmentRegisterResponseDialog({
       if (p.is_deleted) return false;
       // Newly added pieces always need a price.
       if (p.is_new || p.change_type === "added") return true;
+      if (p.change_type === "modified" && hasRealPieceFieldChange(p)) return true;
       // Otherwise, only include pieces whose distributed quantity actually
       // differs from the original campaign rateio. Cosmetic "modified"
       // changes (name/spec) without a quantity delta don't require re-quoting.
