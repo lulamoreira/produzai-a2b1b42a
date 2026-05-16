@@ -21,6 +21,8 @@ interface AdjustmentQuoteRequestProps {
   changesDescription?: string
   customMessage?: string
   downloadUrls?: DownloadLink[]
+  portalUrl?: string
+  deadlineDate?: string
 }
 
 const AdjustmentQuoteRequestEmail = ({
@@ -32,6 +34,8 @@ const AdjustmentQuoteRequestEmail = ({
   changesDescription = '',
   customMessage,
   downloadUrls = [],
+  portalUrl,
+  deadlineDate,
 }: AdjustmentQuoteRequestProps) => {
   const greeting = contactName || supplierName
   return (
