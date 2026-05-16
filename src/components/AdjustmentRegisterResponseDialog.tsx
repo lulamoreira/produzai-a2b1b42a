@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -83,6 +84,7 @@ export default function AdjustmentRegisterResponseDialog({
   const adminFileRef = useRef<HTMLInputElement>(null);
   const [adminParseResult, setAdminParseResult] = useState<ParsedRequoteResult | null>(null);
   const [adminImportOpen, setAdminImportOpen] = useState(false);
+  const [pieceCodeFilter, setPieceCodeFilter] = useState("");
 
   const { data: pieces = [], isLoading: piecesLoading } = useAdjustmentPieces(adjustment.id);
   const { data: adjSp = [], isLoading: adjSpLoading } = useAdjustmentStorePieces(adjustment.id);
@@ -122,6 +124,12 @@ export default function AdjustmentRegisterResponseDialog({
     });
   }, [pieces, adjSp, campaignQtyBySource, campaignQtyReady]);
 
+  const displayedPieces = useMemo(() => {
+    const term = pieceCodeFilter.trim();
+    if (!term) return editablePieces;
+    return editablePieces.filter((p: any) => String(p.code ?? "").includes(term));
+  }, [editablePieces, pieceCodeFilter]);
+
   // Map piece_id -> { kitName, kitCode } for kit-only pieces (so the admin
   // can see which kit a piece belongs to).
   const kitByPiece = useMemo(() => {
@@ -159,7 +167,7 @@ export default function AdjustmentRegisterResponseDialog({
         setWinner(w);
         if (!w) { setLoading(false); return; }
 
-        const [pricesRes, extrasRes, reqRes, negSpRes] = await Promise.all([
+        const [pricesRes, extrasRes, reqRes] = await Promise.all([
           supabase.from("budget_prices" as any)
             .select("piece_id, kit_id, unit_price, adjusted_unit_price")
             .eq("supplier_id", (w as any).id),
@@ -169,22 +177,25 @@ export default function AdjustmentRegisterResponseDialog({
           supabase.from("campaign_adjustment_budget_request" as any)
             .select("adjusted_prices_jsonb")
             .eq("adjustment_id", adjustment.id).maybeSingle(),
-          supabase.from("budget_negotiation_store_pieces" as any)
-            .select("piece_id, quantity")
-            .eq("supplier_id", (w as any).id)
-            .eq("campaign_id", campaignId),
         ]);
 
         // Quantity source: budget_negotiation_store_pieces (the snapshot that
         // produced negotiation_locked_total). Falls back to campaign_store_pieces
         // for campaigns that never went through negotiation.
-        let qtyRows = (negSpRes.data as any[]) || [];
-        if (qtyRows.length === 0) {
-          const { data: cspFallback } = await supabase
-            .from("campaign_store_pieces" as any)
+        let qtyRows = await supabasePaginate<any>((from, to) =>
+          supabase.from("budget_negotiation_store_pieces" as any)
             .select("piece_id, quantity")
-            .eq("campaign_id", campaignId);
-          qtyRows = (cspFallback as any[]) || [];
+            .eq("supplier_id", (w as any).id)
+            .eq("campaign_id", campaignId)
+            .range(from, to) as any
+        );
+        if (qtyRows.length === 0) {
+          qtyRows = await supabasePaginate<any>((from, to) =>
+            supabase.from("campaign_store_pieces" as any)
+              .select("piece_id, quantity")
+              .eq("campaign_id", campaignId)
+              .range(from, to) as any
+          );
         }
 
         // Flat per-piece quantities — no kit expansion needed.
@@ -455,7 +466,16 @@ export default function AdjustmentRegisterResponseDialog({
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold mb-2">Novos preços propostos pelo fornecedor</h3>
+              <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="text-sm font-semibold">Novos preços propostos pelo fornecedor</h3>
+                <Input
+                  value={pieceCodeFilter}
+                  onChange={(e) => setPieceCodeFilter(e.target.value.replace(/\D/g, ""))}
+                  placeholder="Filtrar código"
+                  inputMode="numeric"
+                  className="h-8 w-full sm:w-36 text-xs"
+                />
+              </div>
               <div className="border rounded-md overflow-hidden">
                 <Table>
                   <TableHeader>
@@ -470,7 +490,7 @@ export default function AdjustmentRegisterResponseDialog({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {editablePieces.map((p) => {
+                    {displayedPieces.map((p) => {
                       const q = effectiveQty(p);
                       const cur = p.source_piece_id ? Number(currentPrices[p.source_piece_id] || 0) : 0;
                       const np = Number(newPrices[p.id] || 0);
@@ -513,10 +533,10 @@ export default function AdjustmentRegisterResponseDialog({
                         </TableRow>
                       );
                     })}
-                    {editablePieces.length === 0 && (
+                    {displayedPieces.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center text-xs text-muted-foreground py-6">
-                          Nenhuma peça editável neste ajuste.
+                          {editablePieces.length === 0 ? "Nenhuma peça editável neste ajuste." : "Nenhuma peça encontrada para este código."}
                         </TableCell>
                       </TableRow>
                     )}
