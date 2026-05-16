@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Loader2, CheckCircle2, FileInput } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, CheckCircle2, FileInput, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -14,6 +14,13 @@ import {
 } from "@/components/ui/table";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import { useAdjustmentPieces, useAdjustmentStorePieces } from "@/hooks/useAdjustments";
+import {
+  parseAdjustmentResponseWorkbook,
+  type ParsedRequoteResult,
+  type ParsedRequoteRow,
+  type ExpectedPiece,
+} from "@/lib/parseAdjustmentResponseWorkbook";
+import { ImportRequoteConfirmDialog } from "@/components/Budget/ImportRequoteConfirmDialog";
 
 interface Props {
   open: boolean;
