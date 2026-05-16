@@ -76,6 +76,12 @@ export default function AdjustmentRequotePortal() {
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [justSubmitted, setJustSubmitted] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("itens");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [parseResult, setParseResult] = useState<ParsedRequoteResult | null>(null);
+  const [parseLoading, setParseLoading] = useState(false);
+  const [importConfirmOpen, setImportConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!token) return;
