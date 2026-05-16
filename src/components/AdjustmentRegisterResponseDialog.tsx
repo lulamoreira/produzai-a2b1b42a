@@ -86,15 +86,32 @@ export default function AdjustmentRegisterResponseDialog({
 
   const { data: pieces = [] } = useAdjustmentPieces(adjustment.id);
   const { data: adjSp = [] } = useAdjustmentStorePieces(adjustment.id);
+  const { data: adjKits = [] } = useAdjustmentKits(adjustment.id);
+  const { data: adjKitPieces = [] } = useAdjustmentKitPieces(adjustment.id);
 
   const fmt = (v: number) => formatCurrencyByCode(v, currencyCode);
 
+  // Include both standalone and kit-only pieces (kit-only pieces also need
+  // price updates). Exclude deleted ones.
   const editablePieces = useMemo(
-    () => (pieces as any[]).filter((p) => !p.is_deleted && !p.kit_only),
+    () => (pieces as any[]).filter((p) => !p.is_deleted),
     [pieces]
   );
 
-  // qty per adjustment piece across stores
+  // Map piece_id -> { kitName, kitCode } for kit-only pieces (so the admin
+  // can see which kit a piece belongs to).
+  const kitByPiece = useMemo(() => {
+    const kitMap = new Map<string, any>();
+    for (const k of adjKits as any[]) kitMap.set(k.id, k);
+    const m: Record<string, { name: string }> = {};
+    for (const kp of adjKitPieces as any[]) {
+      const k = kitMap.get(kp.kit_id);
+      if (k) m[kp.piece_id] = { name: k.name };
+    }
+    return m;
+  }, [adjKits, adjKitPieces]);
+
+  // qty per adjustment piece across stores (only populated for standalone pieces)
   const qtyByPiece = useMemo(() => {
     const m: Record<string, number> = {};
     for (const r of adjSp as any[]) {
