@@ -40,6 +40,7 @@ const PhotoCheckin = lazy(() => import("./pages/PhotoCheckin"));
 const InstallerPortal = lazy(() => import("./pages/InstallerPortal"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const SupplierPortal = lazy(() => import("./pages/SupplierPortal"));
+const AdjustmentRequotePortal = lazy(() => import("./pages/AdjustmentRequotePortal"));
 const StorePortal = lazy(() => import("./pages/StorePortal"));
 const OccurrencesPortal = lazy(() => import("./pages/OccurrencesPortal"));
 
