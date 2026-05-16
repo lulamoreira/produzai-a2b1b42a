@@ -616,7 +616,7 @@ export async function buildAdjustmentProposalWorkbook(
     "Qtd Total",
     "Preço Atual",
     "Total Atual",
-    "Novo Preço Unit.",
+    "Novo preço ✏️",
     "Novo Total",
   ];
   header.height = 24;
