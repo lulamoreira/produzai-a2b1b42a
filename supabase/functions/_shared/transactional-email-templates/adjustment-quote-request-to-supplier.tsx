@@ -148,6 +148,7 @@ const msgBox = { backgroundColor: '#f3f3f3', borderLeft: `4px solid ${GOLD}`, pa
 const msgText = { fontSize: '13px', color: '#444444', margin: '0', fontStyle: 'italic' as const, whiteSpace: 'pre-wrap' as const }
 const ctaSection = { textAlign: 'center' as const, margin: '4px 0 12px' }
 const ctaButton = { backgroundColor: BRAND, color: '#ffffff', padding: '12px 24px', fontSize: '14px', fontWeight: 'bold' as const, textDecoration: 'none', borderRadius: '6px', display: 'inline-block' }
+const ctaButtonSecondary = { backgroundColor: '#ffffff', color: BRAND, padding: '10px 22px', fontSize: '13px', fontWeight: 'bold' as const, textDecoration: 'none', borderRadius: '6px', display: 'inline-block', border: `2px solid ${BRAND}` }
 const smallNote = { fontSize: '12px', color: '#888888', textAlign: 'center' as const, margin: '8px 0 0', fontStyle: 'italic' as const }
 const instructionsBox = { backgroundColor: '#fffdf7', border: `2px solid ${GOLD}`, borderRadius: '6px', padding: '12px 16px', margin: '20px 0 8px' }
 const instructionsText = { fontSize: '13px', color: DARK, margin: '0', lineHeight: '1.5' }
