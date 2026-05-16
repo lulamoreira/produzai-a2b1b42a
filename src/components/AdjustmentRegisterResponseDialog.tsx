@@ -167,7 +167,7 @@ export default function AdjustmentRegisterResponseDialog({
         setWinner(w);
         if (!w) { setLoading(false); return; }
 
-        const [pricesRes, extrasRes, reqRes, negSpRes] = await Promise.all([
+        const [pricesRes, extrasRes, reqRes] = await Promise.all([
           supabase.from("budget_prices" as any)
             .select("piece_id, kit_id, unit_price, adjusted_unit_price")
             .eq("supplier_id", (w as any).id),
@@ -177,22 +177,25 @@ export default function AdjustmentRegisterResponseDialog({
           supabase.from("campaign_adjustment_budget_request" as any)
             .select("adjusted_prices_jsonb")
             .eq("adjustment_id", adjustment.id).maybeSingle(),
-          supabase.from("budget_negotiation_store_pieces" as any)
-            .select("piece_id, quantity")
-            .eq("supplier_id", (w as any).id)
-            .eq("campaign_id", campaignId),
         ]);
 
         // Quantity source: budget_negotiation_store_pieces (the snapshot that
         // produced negotiation_locked_total). Falls back to campaign_store_pieces
         // for campaigns that never went through negotiation.
-        let qtyRows = (negSpRes.data as any[]) || [];
-        if (qtyRows.length === 0) {
-          const { data: cspFallback } = await supabase
-            .from("campaign_store_pieces" as any)
+        let qtyRows = await supabasePaginate<any>((from, to) =>
+          supabase.from("budget_negotiation_store_pieces" as any)
             .select("piece_id, quantity")
-            .eq("campaign_id", campaignId);
-          qtyRows = (cspFallback as any[]) || [];
+            .eq("supplier_id", (w as any).id)
+            .eq("campaign_id", campaignId)
+            .range(from, to) as any
+        );
+        if (qtyRows.length === 0) {
+          qtyRows = await supabasePaginate<any>((from, to) =>
+            supabase.from("campaign_store_pieces" as any)
+              .select("piece_id, quantity")
+              .eq("campaign_id", campaignId)
+              .range(from, to) as any
+          );
         }
 
         // Flat per-piece quantities — no kit expansion needed.
