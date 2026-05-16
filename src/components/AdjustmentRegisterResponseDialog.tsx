@@ -112,37 +112,61 @@ export default function AdjustmentRegisterResponseDialog({
         setWinner(w);
         if (!w) { setLoading(false); return; }
 
-        const [pricesRes, extrasRes, reqRes, cspRes] = await Promise.all([
+        const [pricesRes, extrasRes, reqRes, cspRes, kitPiecesRes] = await Promise.all([
           supabase.from("budget_prices" as any)
-            .select("piece_id, unit_price").eq("supplier_id", (w as any).id),
+            .select("piece_id, kit_id, unit_price, adjusted_unit_price")
+            .eq("supplier_id", (w as any).id),
           supabase.from("budget_extra_costs" as any)
-            .select("installation_value, freight_value")
+            .select("installation_value, adjusted_installation_value, freight_value, adjusted_freight_value")
             .eq("supplier_id", (w as any).id).maybeSingle(),
           supabase.from("campaign_adjustment_budget_request" as any)
             .select("adjusted_prices_jsonb")
             .eq("adjustment_id", adjustment.id).maybeSingle(),
           supabase.from("campaign_store_pieces" as any)
-            .select("piece_id, quantity")
+            .select("piece_id, kit_id, quantity")
             .eq("campaign_id", campaignId),
+          supabase.from("campaign_kit_pieces" as any)
+            .select("kit_id, piece_id, quantity, campaign_kits!inner(campaign_id)")
+            .eq("campaign_kits.campaign_id", campaignId),
         ]);
 
-        // Campaign-wide qty per source piece
+        // Campaign-wide qty per piece (standalone + kit-expanded)
         const cqty: Record<string, number> = {};
+        const kitQty: Record<string, number> = {};
         for (const row of (cspRes.data as any[]) || []) {
-          if (!row.piece_id) continue;
-          cqty[row.piece_id] = (cqty[row.piece_id] || 0) + Number(row.quantity || 0);
+          if (row.piece_id) {
+            cqty[row.piece_id] = (cqty[row.piece_id] || 0) + Number(row.quantity || 0);
+          } else if (row.kit_id) {
+            kitQty[row.kit_id] = (kitQty[row.kit_id] || 0) + Number(row.quantity || 0);
+          }
+        }
+        // Expand kit qty into component pieces
+        for (const kp of (kitPiecesRes.data as any[]) || []) {
+          const kq = kitQty[kp.kit_id] || 0;
+          if (!kq || !kp.piece_id) continue;
+          cqty[kp.piece_id] = (cqty[kp.piece_id] || 0) + kq * Number(kp.quantity || 1);
         }
         setCampaignQtyBySource(cqty);
 
-        // Map current prices keyed by SOURCE piece_id (campaign piece). Adjustment pieces store source_piece_id.
+        // Negotiated prices keyed by piece_id (fallback to original unit_price)
         const priceMap: Record<string, number> = {};
         for (const row of (pricesRes.data as any[]) || []) {
-          if (row.piece_id) priceMap[row.piece_id] = Number(row.unit_price || 0);
+          const key = row.piece_id || row.kit_id;
+          if (!key) continue;
+          priceMap[key] = Number(row.adjusted_unit_price ?? row.unit_price ?? 0);
         }
         setCurrentPrices(priceMap);
 
-        const inst = Number((extrasRes.data as any)?.installation_value || 0);
-        const fr = Number((extrasRes.data as any)?.freight_value || 0);
+        const inst = Number(
+          (extrasRes.data as any)?.adjusted_installation_value
+            ?? (extrasRes.data as any)?.installation_value
+            ?? 0
+        );
+        const fr = Number(
+          (extrasRes.data as any)?.adjusted_freight_value
+            ?? (extrasRes.data as any)?.freight_value
+            ?? 0
+        );
         setCurrentExtras({ installation_value: inst, freight_value: fr });
 
         // Pre-fill newPrices: from saved jsonb if present, otherwise current price for source
