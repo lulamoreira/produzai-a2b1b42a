@@ -66,6 +66,12 @@ export default function AdjustmentBudgetRequestDialog({
   const [preparedLink, setPreparedLink] = useState<{ name: string; url: string } | null>(null);
   const [preparedTemplateData, setPreparedTemplateData] = useState<Record<string, any> | null>(null);
 
+  // Deadline picker + portal link state
+  const [deadlinePickerOpen, setDeadlinePickerOpen] = useState(false);
+  const [pendingFlow, setPendingFlow] = useState<"email" | "whatsapp" | null>(null);
+  const [existingRequest, setExistingRequest] = useState<any | null>(null);
+  const generatePortalLink = useGeneratePortalLink();
+
   const [winner, setWinner] = useState<any | null>(null);
   const [origSp, setOrigSp] = useState<any[]>([]);
   const [prices, setPrices] = useState<any[]>([]);
