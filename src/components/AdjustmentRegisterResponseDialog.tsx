@@ -288,16 +288,17 @@ export default function AdjustmentRegisterResponseDialog({
     [lockedTotal, currentExtras]
   );
 
-  /** Effective qty for display & delta:
-   * - standalone pieces: adjustment-scope qty (qtyByPiece)
-   * - kit-only pieces: campaign rateio qty via source_piece_id (kit qty already
-   *   expanded into per-piece totals in budget_negotiation_store_pieces). */
+  /** Effective qty = the actual quantity carried by THIS adjustment
+   * (sum across all stores in campaign_adjustment_store_pieces). That table
+   * already contains rows for BOTH standalone and kit-only pieces, so we
+   * never need to fall back to the old negotiation snapshot. Using the
+   * negotiation qty would show stale numbers (e.g. 58 instead of the
+   * user's new 59). */
   const effectiveQty = (p: any): number => {
-    if (p.kit_only) {
-      const sid = sourceByAdjPiece[p.id];
-      return sid ? Number(campaignQtyBySource[sid] || 0) : 0;
-    }
-    return qtyByPiece[p.id] || 0;
+    const adj = Number(qtyByPiece[p.id] || 0);
+    if (adj > 0) return adj;
+    const sid = sourceByAdjPiece[p.id];
+    return sid ? Number(campaignQtyBySource[sid] || 0) : 0;
   };
 
   /** Delta only fires for pieces whose price was actually changed by the admin. */
@@ -312,9 +313,8 @@ export default function AdjustmentRegisterResponseDialog({
         ? Number(raw)
         : negotiatedPrice;
       if (np === negotiatedPrice) continue;
-      const adjQ = p.kit_only
-        ? Number(campaignQtyBySource[sid] || 0)
-        : (qtyByPiece[p.id] || 0);
+      const adjQ = Number(qtyByPiece[p.id] || 0)
+        || Number(campaignQtyBySource[sid] || 0);
       delta += (np - negotiatedPrice) * adjQ;
     }
     return currentProductionTotal + delta;
