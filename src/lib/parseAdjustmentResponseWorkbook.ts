@@ -150,6 +150,12 @@ export async function parseAdjustmentResponseWorkbook(
     const status = codeStr.match(/\(([^)]+)\)/)?.[1] ?? null;
     const normalizedCode = codeStr.replace(/\s*\(.+\)\s*$/, "").trim();
     const expected = expectedMap.get(normalizedCode.toLowerCase());
+    if (!expected) {
+      unmatched++;
+      warnings.push(`Código "${codeStr}" não encontrado na lista do ajuste`);
+      continue;
+    }
+
     const quantity = qtyCol >= 0 ? parseDecimal(row[qtyCol]) ?? undefined : undefined;
     const previousPrice = currentPriceCol >= 0
       ? parseDecimal(row[currentPriceCol]) ?? expected.previousPrice
@@ -157,12 +163,6 @@ export async function parseAdjustmentResponseWorkbook(
     const previousTotal = currentTotalCol >= 0 ? parseDecimal(row[currentTotalCol]) : null;
     const explicitNewPrice = parseDecimal(row[newPriceCol]);
     const newTotal = newTotalCol >= 0 ? parseDecimal(row[newTotalCol]) : null;
-
-    if (!expected) {
-      unmatched++;
-      warnings.push(`Código "${codeStr}" não encontrado na lista do ajuste`);
-      continue;
-    }
 
     matched++;
     const qty = Number(quantity ?? expected.totalQty ?? 0);
