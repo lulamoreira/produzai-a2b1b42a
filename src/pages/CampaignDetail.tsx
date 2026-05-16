@@ -3968,6 +3968,7 @@ const CampaignDetail = () => {
           {/* ─── SECTION: COTAÇÕES ─── */}
           {activeSection === "budgets" && (
             <>
+              <BudgetSectionPhaseBadge campaignId={campaignId!} />
               {activeAdjustment && (
                 <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 flex items-start gap-2 mb-3">
                   <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
