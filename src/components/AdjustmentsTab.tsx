@@ -224,34 +224,6 @@ export default function AdjustmentsTab({
     },
   });
 
-  const { data: approvedKits } = useQuery({
-    queryKey: ["approved_kits", requote?.adjustment_id],
-    enabled: approvedEnabled,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("campaign_adjustment_kits")
-        .select("id")
-        .eq("adjustment_id", requote!.adjustment_id)
-        .eq("is_deleted", false);
-      return data ?? [];
-    },
-  });
-
-  const { data: approvedKitPieces } = useQuery({
-    queryKey: ["approved_kit_pieces", requote?.adjustment_id, (approvedKits || []).length],
-    enabled: approvedEnabled && !!approvedKits && approvedKits.length > 0,
-    queryFn: async () => {
-      const ids = (approvedKits || []).map((k: any) => k.id);
-      if (ids.length === 0) return [];
-      const { data } = await supabase
-        .from("campaign_adjustment_kit_pieces")
-        .select("kit_id, piece_id, quantity")
-        .in("kit_id", ids);
-      return (data ?? []) as { kit_id: string; piece_id: string; quantity: number }[];
-    },
-  });
-
-
   const { data: baselinePrices } = useQuery({
     queryKey: ["baseline_prices_review", requote?.supplier_id],
     enabled: !!requote?.supplier_id && reviewOpen,
@@ -564,53 +536,14 @@ export default function AdjustmentsTab({
                           Number(r.adjusted_unit_price ?? r.unit_price ?? 0),
                         );
                       }
-                      // Map: adj_piece_id -> qty total (somente standalone, por loja somada)
+                      // Map: adj_piece_id -> qty total por peça em todas as lojas.
+                      // Esta tabela já contém a quantidade final de cada peça, incluindo
+                      // peças standalone e peças que compõem kits.
                       const qtyByAdj = new Map<string, number>();
-                      // Map: store-piece -> qty (para calcular kit qty por loja)
-                      const qtyByStorePiece = new Map<string, number>();
                       for (const sp of approvedStoreQty || []) {
                         const pid = String(sp.piece_id);
                         const q = Number(sp.quantity || 0);
                         qtyByAdj.set(pid, (qtyByAdj.get(pid) || 0) + q);
-                        qtyByStorePiece.set(`${sp.store_id}-${pid}`, q);
-                      }
-
-                      // Agrupa kit_pieces por kit
-                      const kpByKit = new Map<
-                        string,
-                        { piece_id: string; quantity: number }[]
-                      >();
-                      for (const kp of approvedKitPieces || []) {
-                        const arr = kpByKit.get(String(kp.kit_id)) || [];
-                        arr.push({ piece_id: String(kp.piece_id), quantity: Number(kp.quantity || 0) });
-                        kpByKit.set(String(kp.kit_id), arr);
-                      }
-
-                      // Lojas únicas presentes em approvedStoreQty
-                      const storeIds = new Set<string>();
-                      for (const sp of approvedStoreQty || []) storeIds.add(String(sp.store_id));
-
-                      // qty consumida por cada peça via kits (somada em todas as lojas)
-                      const kitConsumedByPiece = new Map<string, number>();
-                      for (const kit of approvedKits || []) {
-                        const comps = (kpByKit.get(String(kit.id)) || []).filter(
-                          (c) => c.quantity > 0,
-                        );
-                        if (comps.length === 0) continue;
-                        for (const sid of storeIds) {
-                          const perStore = Math.min(
-                            ...comps.map((c) =>
-                              Math.floor((qtyByStorePiece.get(`${sid}-${c.piece_id}`) || 0) / c.quantity),
-                            ),
-                          );
-                          if (perStore <= 0) continue;
-                          for (const c of comps) {
-                            kitConsumedByPiece.set(
-                              c.piece_id,
-                              (kitConsumedByPiece.get(c.piece_id) || 0) + perStore * c.quantity,
-                            );
-                          }
-                        }
                       }
 
                       let changedCount = 0;
