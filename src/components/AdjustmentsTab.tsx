@@ -179,6 +179,47 @@ export default function AdjustmentsTab({
     },
   });
 
+  // Baseline prices + quantities para o card "Recotação aprovada"
+  const approvedEnabled =
+    !!requote?.supplier_id && !!requote?.adjustment_id && requote?.status === "approved";
+
+  const { data: approvedBaselinePrices } = useQuery({
+    queryKey: ["approved_baseline_prices", requote?.supplier_id],
+    enabled: approvedEnabled,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("budget_prices")
+        .select("piece_id, adjusted_unit_price, unit_price")
+        .eq("supplier_id", requote!.supplier_id);
+      return data ?? [];
+    },
+  });
+
+  const { data: approvedAdjPieces } = useQuery({
+    queryKey: ["approved_adj_pieces", requote?.adjustment_id],
+    enabled: approvedEnabled,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaign_adjustment_pieces")
+        .select("id, source_piece_id")
+        .eq("adjustment_id", requote!.adjustment_id);
+      return data ?? [];
+    },
+  });
+
+  const { data: approvedStoreQty } = useQuery({
+    queryKey: ["approved_store_qty", requote?.adjustment_id],
+    enabled: approvedEnabled,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaign_adjustment_store_pieces" as any)
+        .select("piece_id, quantity")
+        .eq("adjustment_id", requote!.adjustment_id);
+      return (data ?? []) as { piece_id: string; quantity: number }[];
+    },
+  });
+
+
   const { data: baselinePrices } = useQuery({
     queryKey: ["baseline_prices_review", requote?.supplier_id],
     enabled: !!requote?.supplier_id && reviewOpen,
