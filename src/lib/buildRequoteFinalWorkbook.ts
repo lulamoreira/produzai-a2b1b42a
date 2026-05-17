@@ -302,16 +302,40 @@ export async function buildRequoteFinalWorkbook(
   });
   headerRow.height = 26;
 
-  // Body — pieces ordered by código asc, then kits at end.
+  // Body — kits and pieces interleaved by code asc; on ties, kit comes BEFORE
+  // its component pieces. Kit rows show qty only (no price/total) because the
+  // kit cost is already accounted for in the component pieces below it.
   let rowIdx = 6;
   let runningNewTotal = 0;
   let runningPrevTotal = 0;
 
-  const orderedPieces = [...livePieces].sort(
-    (a, b) =>
-      (Number(a.code) || 0) - (Number(b.code) || 0) ||
-      (a.name || "").localeCompare(b.name || "", "pt-BR"),
-  );
+  type BodyEntry =
+    | { kind: "piece"; code: number; name: string; piece: RequoteFinalAdjPiece }
+    | { kind: "kit"; code: number; name: string; kit: RequoteFinalAdjKit; qty: number };
+
+  const entries: BodyEntry[] = [];
+  for (const p of livePieces) {
+    if (!p.code || Number(p.code) === 0) continue;
+    const qty = qtyByAdjPiece[p.id] || 0;
+    if (qty === 0 && !p.is_new) continue;
+    entries.push({ kind: "piece", code: Number(p.code) || 0, name: p.name, piece: p });
+  }
+  for (const k of liveKits) {
+    const kQty = qtyByKit.get(k.id) || 0;
+    if (kQty === 0) continue;
+    entries.push({
+      kind: "kit",
+      code: kitCode(k.source_kit_id),
+      name: k.name,
+      kit: k,
+      qty: kQty,
+    });
+  }
+  entries.sort((a, b) => {
+    if (a.code !== b.code) return a.code - b.code;
+    if (a.kind !== b.kind) return a.kind === "kit" ? -1 : 1; // Kit BEFORE piece
+    return (a.name || "").localeCompare(b.name || "", "pt-BR");
+  });
 
   const writeBodyRow = (
     type: "Peça" | "Kit",
@@ -321,30 +345,40 @@ export async function buildRequoteFinalWorkbook(
     prev: number,
     next: number,
     isNew = false,
+    contributeToTotal = true,
   ) => {
     const r = ws.getRow(rowIdx++);
     const lineNewTotal = qty * next;
     const linePrevTotal = qty * prev;
-    runningNewTotal += lineNewTotal;
-    runningPrevTotal += linePrevTotal;
+    if (contributeToTotal) {
+      runningNewTotal += lineNewTotal;
+      runningPrevTotal += linePrevTotal;
+    }
     r.getCell(1).value = type;
     r.getCell(2).value = code;
     r.getCell(3).value = name + (isNew ? " (nova)" : "");
     r.getCell(4).value = qty;
-    r.getCell(5).value = prev;
-    r.getCell(6).value = next;
-    r.getCell(7).value = lineNewTotal;
-    r.getCell(8).value = fmtPct(prev, next);
-    r.getCell(5).numFmt = money;
-    r.getCell(6).numFmt = money;
-    r.getCell(7).numFmt = money;
+    if (contributeToTotal) {
+      r.getCell(5).value = prev;
+      r.getCell(6).value = next;
+      r.getCell(7).value = lineNewTotal;
+      r.getCell(8).value = fmtPct(prev, next);
+      r.getCell(5).numFmt = money;
+      r.getCell(6).numFmt = money;
+      r.getCell(7).numFmt = money;
+    } else {
+      r.getCell(5).value = "";
+      r.getCell(6).value = "";
+      r.getCell(7).value = "";
+      r.getCell(8).value = "";
+    }
     r.eachCell((c, col) => {
       c.alignment = {
         horizontal: col === 3 ? "left" : "center",
         vertical: "middle",
         wrapText: col === 3,
       };
-      c.font = { color: { argb: DARK }, size: 10 };
+      c.font = { color: { argb: DARK }, size: 10, bold: type === "Kit" };
       c.border = {
         top: { style: "hair", color: { argb: BORDER } },
         bottom: { style: "hair", color: { argb: BORDER } },
@@ -355,35 +389,37 @@ export async function buildRequoteFinalWorkbook(
         c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: KIT_BG } };
       }
     });
-    const changed = next !== prev;
-    if (changed) {
-      r.getCell(6).fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: HIGHLIGHT },
-      };
-      const color = next > prev ? INCREASE : DECREASE;
-      r.getCell(6).font = { color: { argb: color }, bold: true, size: 10 };
-      r.getCell(8).font = { color: { argb: color }, bold: true, size: 10 };
+    if (contributeToTotal) {
+      const changed = next !== prev;
+      if (changed) {
+        r.getCell(6).fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: HIGHLIGHT },
+        };
+        const color = next > prev ? INCREASE : DECREASE;
+        r.getCell(6).font = { color: { argb: color }, bold: true, size: 10 };
+        r.getCell(8).font = { color: { argb: color }, bold: true, size: 10 };
+      }
     }
   };
 
-  // NOTE: We list ONLY pieces here. Kits would duplicate the cost because
-  // each kit's component pieces already appear (with their full qty including
-  // kit usage) in qtyByAdjPiece.
-  for (const p of orderedPieces) {
-    const qty = qtyByAdjPiece[p.id] || 0;
-    if (qty === 0 && !p.is_new) continue; // skip pieces with no rateio
-    if (!p.code || Number(p.code) === 0) continue; // skip deleted/code-0 ghosts
-    writeBodyRow(
-      "Peça",
-      p.code,
-      p.name,
-      qty,
-      previousPriceFor(p),
-      newPriceFor(p),
-      !!p.is_new,
-    );
+  for (const e of entries) {
+    if (e.kind === "piece") {
+      const qty = qtyByAdjPiece[e.piece.id] || 0;
+      writeBodyRow(
+        "Peça",
+        e.piece.code,
+        e.piece.name,
+        qty,
+        previousPriceFor(e.piece),
+        newPriceFor(e.piece),
+        !!e.piece.is_new,
+        true,
+      );
+    } else {
+      writeBodyRow("Kit", e.code, e.name, e.qty, 0, 0, false, false);
+    }
   }
 
   // Spacer + extras
