@@ -36,6 +36,7 @@ export function useExportRequoteFinal(
         srcKitsRes,
         adjKitPiecesRows,
         adjStorePiecesRows,
+        adjStoresRows,
         baselineRows,
         extrasRes,
       ] = await Promise.all([
@@ -75,6 +76,13 @@ export function useExportRequoteFinal(
           supabase
             .from("campaign_adjustment_store_pieces" as any)
             .select("store_id, piece_id, quantity")
+            .eq("adjustment_id", adjustmentId)
+            .range(from, to) as any,
+        ),
+        supabasePaginate<any>((from, to) =>
+          supabase
+            .from("campaign_adjustment_stores" as any)
+            .select("source_store_id, name, nickname, city, state, store_code, showcase_count")
             .eq("adjustment_id", adjustmentId)
             .range(from, to) as any,
         ),
@@ -132,9 +140,26 @@ export function useExportRequoteFinal(
       const storeIdsInRateio = new Set(
         (adjStorePiecesRows as any[]).map((r) => String(r.store_id)),
       );
-      const usedStores = ((storeRows as any[]) || []).filter((s) =>
-        storeIdsInRateio.has(String(s.id)),
+      const currentStoreById = new Map(((storeRows as any[]) || []).map((s) => [String(s.id), s]));
+      const snapshotStoreById = new Map(
+        ((adjStoresRows as any[]) || [])
+          .filter((s) => s.source_store_id)
+          .map((s) => [String(s.source_store_id), s]),
       );
+      const usedStores = Array.from(storeIdsInRateio).map((id) => {
+        const current = currentStoreById.get(id);
+        if (current) return current;
+        const snap = snapshotStoreById.get(id) as any;
+        return {
+          id,
+          name: snap?.name || "Loja removida",
+          nickname: snap?.nickname || null,
+          city: snap?.city || null,
+          state: snap?.state || null,
+          store_code: snap?.store_code || null,
+          showcase_count: Number(snap?.showcase_count || 0),
+        };
+      });
 
       const { blob, fileName } = await buildRequoteFinalWorkbook({
         campaignName: (campaignRes.data as any)?.name ?? "",
