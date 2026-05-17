@@ -224,34 +224,6 @@ export default function AdjustmentsTab({
     },
   });
 
-  const { data: approvedKits } = useQuery({
-    queryKey: ["approved_kits", requote?.adjustment_id],
-    enabled: approvedEnabled,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("campaign_adjustment_kits")
-        .select("id")
-        .eq("adjustment_id", requote!.adjustment_id)
-        .eq("is_deleted", false);
-      return data ?? [];
-    },
-  });
-
-  const { data: approvedKitPieces } = useQuery({
-    queryKey: ["approved_kit_pieces", requote?.adjustment_id, (approvedKits || []).length],
-    enabled: approvedEnabled && !!approvedKits && approvedKits.length > 0,
-    queryFn: async () => {
-      const ids = (approvedKits || []).map((k: any) => k.id);
-      if (ids.length === 0) return [];
-      const { data } = await supabase
-        .from("campaign_adjustment_kit_pieces")
-        .select("kit_id, piece_id, quantity")
-        .in("kit_id", ids);
-      return (data ?? []) as { kit_id: string; piece_id: string; quantity: number }[];
-    },
-  });
-
-
   const { data: baselinePrices } = useQuery({
     queryKey: ["baseline_prices_review", requote?.supplier_id],
     enabled: !!requote?.supplier_id && reviewOpen,
