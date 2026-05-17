@@ -368,9 +368,13 @@ export async function buildRequoteFinalWorkbook(
     }
   };
 
+  // NOTE: We list ONLY pieces here. Kits would duplicate the cost because
+  // each kit's component pieces already appear (with their full qty including
+  // kit usage) in qtyByAdjPiece.
   for (const p of orderedPieces) {
     const qty = qtyByAdjPiece[p.id] || 0;
     if (qty === 0 && !p.is_new) continue; // skip pieces with no rateio
+    if (!p.code || Number(p.code) === 0) continue; // skip deleted/code-0 ghosts
     writeBodyRow(
       "Peça",
       p.code,
@@ -380,25 +384,6 @@ export async function buildRequoteFinalWorkbook(
       newPriceFor(p),
       !!p.is_new,
     );
-  }
-
-  // Kits (cost computed from member pieces × qty in kit × kit qty)
-  const orderedKits = [...liveKits].sort((a, b) => {
-    return kitCode(a.source_kit_id) - kitCode(b.source_kit_id);
-  });
-  for (const k of orderedKits) {
-    const kQty = qtyByKit.get(k.id) || 0;
-    if (kQty === 0) continue;
-    const kps = kitPiecesByKit.get(k.id) || [];
-    let prevUnit = 0;
-    let nextUnit = 0;
-    for (const kp of kps) {
-      const adjP = params.adjPieces.find((p) => p.id === kp.piece_id);
-      if (!adjP) continue;
-      prevUnit += previousPriceFor(adjP) * (kp.quantity || 0);
-      nextUnit += newPriceFor(adjP) * (kp.quantity || 0);
-    }
-    writeBodyRow("Kit", kitCode(k.source_kit_id), k.name, kQty, prevUnit, nextUnit);
   }
 
   // Spacer + extras
