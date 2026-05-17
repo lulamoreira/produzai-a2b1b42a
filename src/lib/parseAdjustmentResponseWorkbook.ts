@@ -43,8 +43,21 @@ function parseDecimal(raw: unknown): number | null {
   if (typeof raw === "number") return Number.isFinite(raw) ? raw : null;
   const str = String(raw).trim();
   if (!str) return null;
-  // Strip currency symbols and spaces, normalize comma → dot.
-  const cleaned = str.replace(/[^\d,.-]/g, "").replace(/\.(?=\d{3}(\D|$))/g, "").replace(",", ".");
+  // Strip currency symbols and support both BR (2.788,34) and US (2,788.34)
+  // formatted currency strings, in addition to raw numeric cells.
+  const numeric = str.replace(/[^\d,.-]/g, "");
+  const lastComma = numeric.lastIndexOf(",");
+  const lastDot = numeric.lastIndexOf(".");
+  let cleaned = numeric;
+  if (lastComma >= 0 && lastDot >= 0) {
+    cleaned = lastComma > lastDot
+      ? numeric.replace(/\./g, "").replace(",", ".")
+      : numeric.replace(/,/g, "");
+  } else if (lastComma >= 0) {
+    cleaned = numeric.replace(/\./g, "").replace(",", ".");
+  } else if (/^-?\d{1,3}(\.\d{3})+$/.test(numeric)) {
+    cleaned = numeric.replace(/\./g, "");
+  }
   const n = parseFloat(cleaned);
   return Number.isFinite(n) ? n : null;
 }
@@ -100,7 +113,7 @@ export async function parseAdjustmentResponseWorkbook(
   const qtyCol = findCol(["qtd", "quantidade", "quantity"]);
   const currentPriceCol = findCol(["preço atual", "preco atual", "current price"]);
   const currentTotalCol = findCol(["total atual", "current total"]);
-  const newPriceCol = findCol(["novo preço", "novo preco", "novo", "new price", "preencher"]);
+  const newPriceCol = findCol(["novo preço", "novo preco", "novo preço unit", "novo preco unit", "new price", "preencher"]);
   const newTotalCol = findCol(["novo total", "total novo", "total reorçamento", "total reorcamento", "new total"]);
 
   if (codeCol === -1 || newPriceCol === -1) {
