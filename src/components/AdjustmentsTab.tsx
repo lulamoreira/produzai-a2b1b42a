@@ -515,14 +515,52 @@ export default function AdjustmentsTab({
                         installation?: number;
                         freight?: number;
                       };
-                      const items = (j.prices || []).length;
                       const inst = Number(extras.installation ?? j.installation ?? 0);
                       const frt = Number(extras.freight ?? j.freight ?? 0);
+
+                      // Map: adj_piece_id -> source_piece_id (para casar com budget_prices)
+                      const sourceByAdj = new Map<string, string | null>();
+                      for (const p of approvedAdjPieces || []) {
+                        sourceByAdj.set(String(p.id), p.source_piece_id ? String(p.source_piece_id) : null);
+                      }
+                      // Map: source_piece_id -> preço anterior
+                      const prevBySource = new Map<string, number>();
+                      for (const r of approvedBaselinePrices || []) {
+                        if (!r.piece_id) continue;
+                        prevBySource.set(
+                          String(r.piece_id),
+                          Number(r.adjusted_unit_price ?? r.unit_price ?? 0),
+                        );
+                      }
+                      // Map: adj_piece_id -> qty total
+                      const qtyByAdj = new Map<string, number>();
+                      for (const sp of approvedStoreQty || []) {
+                        qtyByAdj.set(
+                          String(sp.piece_id),
+                          (qtyByAdj.get(String(sp.piece_id)) || 0) + Number(sp.quantity || 0),
+                        );
+                      }
+
+                      let changedCount = 0;
+                      let productionTotal = 0;
+                      for (const row of j.prices || []) {
+                        const adjId = String(row.piece_id);
+                        const newPrice = Number(row.new_price) || 0;
+                        const srcId = sourceByAdj.get(adjId);
+                        const prevPrice = srcId ? (prevBySource.get(srcId) || 0) : 0;
+                        if (Math.abs(newPrice - prevPrice) > 0.005) changedCount++;
+                        const qty = qtyByAdj.get(adjId) || 0;
+                        productionTotal += newPrice * qty;
+                      }
+                      const grandTotal = productionTotal + inst + frt;
+                      const ready =
+                        !!approvedAdjPieces && !!approvedBaselinePrices && !!approvedStoreQty;
+
                       return (
                         <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm">
                           <div className="font-medium text-green-800">✅ Recotação aprovada</div>
                           <div className="text-green-700 text-xs mt-1">
-                            {items} item(ns) com novo preço · Instalação{" "}
+                            {ready ? changedCount : "…"} item(ns) com novo preço · Instalação{" "}
                             {formatCurrencyByCode(inst, currencyCode)} · Frete{" "}
                             {formatCurrencyByCode(frt, currencyCode)}
                             {requote.response_received_at && (
@@ -535,6 +573,18 @@ export default function AdjustmentsTab({
                               </>
                             )}
                           </div>
+                          {ready && (
+                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-green-800">
+                              <span>
+                                Valor de produção:{" "}
+                                <strong>{formatCurrencyByCode(productionTotal, currencyCode)}</strong>
+                              </span>
+                              <span>
+                                Valor total (com frete e instalação):{" "}
+                                <strong>{formatCurrencyByCode(grandTotal, currencyCode)}</strong>
+                              </span>
+                            </div>
+                          )}
                         </div>
                       );
                     })()}
