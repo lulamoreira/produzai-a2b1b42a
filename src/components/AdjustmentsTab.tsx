@@ -563,13 +563,53 @@ export default function AdjustmentsTab({
                           Number(r.adjusted_unit_price ?? r.unit_price ?? 0),
                         );
                       }
-                      // Map: adj_piece_id -> qty total
+                      // Map: adj_piece_id -> qty total (somente standalone, por loja somada)
                       const qtyByAdj = new Map<string, number>();
+                      // Map: store-piece -> qty (para calcular kit qty por loja)
+                      const qtyByStorePiece = new Map<string, number>();
                       for (const sp of approvedStoreQty || []) {
-                        qtyByAdj.set(
-                          String(sp.piece_id),
-                          (qtyByAdj.get(String(sp.piece_id)) || 0) + Number(sp.quantity || 0),
+                        const pid = String(sp.piece_id);
+                        const q = Number(sp.quantity || 0);
+                        qtyByAdj.set(pid, (qtyByAdj.get(pid) || 0) + q);
+                        qtyByStorePiece.set(`${sp.store_id}-${pid}`, q);
+                      }
+
+                      // Agrupa kit_pieces por kit
+                      const kpByKit = new Map<
+                        string,
+                        { piece_id: string; quantity: number }[]
+                      >();
+                      for (const kp of approvedKitPieces || []) {
+                        const arr = kpByKit.get(String(kp.kit_id)) || [];
+                        arr.push({ piece_id: String(kp.piece_id), quantity: Number(kp.quantity || 0) });
+                        kpByKit.set(String(kp.kit_id), arr);
+                      }
+
+                      // Lojas únicas presentes em approvedStoreQty
+                      const storeIds = new Set<string>();
+                      for (const sp of approvedStoreQty || []) storeIds.add(String(sp.store_id));
+
+                      // qty consumida por cada peça via kits (somada em todas as lojas)
+                      const kitConsumedByPiece = new Map<string, number>();
+                      for (const kit of approvedKits || []) {
+                        const comps = (kpByKit.get(String(kit.id)) || []).filter(
+                          (c) => c.quantity > 0,
                         );
+                        if (comps.length === 0) continue;
+                        for (const sid of storeIds) {
+                          const perStore = Math.min(
+                            ...comps.map((c) =>
+                              Math.floor((qtyByStorePiece.get(`${sid}-${c.piece_id}`) || 0) / c.quantity),
+                            ),
+                          );
+                          if (perStore <= 0) continue;
+                          for (const c of comps) {
+                            kitConsumedByPiece.set(
+                              c.piece_id,
+                              (kitConsumedByPiece.get(c.piece_id) || 0) + perStore * c.quantity,
+                            );
+                          }
+                        }
                       }
 
                       let changedCount = 0;
@@ -580,12 +620,17 @@ export default function AdjustmentsTab({
                         const srcId = sourceByAdj.get(adjId);
                         const prevPrice = srcId ? (prevBySource.get(srcId) || 0) : 0;
                         if (Math.abs(newPrice - prevPrice) > 0.005) changedCount++;
-                        const qty = qtyByAdj.get(adjId) || 0;
+                        const qty =
+                          (qtyByAdj.get(adjId) || 0) + (kitConsumedByPiece.get(adjId) || 0);
                         productionTotal += newPrice * qty;
                       }
                       const grandTotal = productionTotal + inst + frt;
                       const ready =
-                        !!approvedAdjPieces && !!approvedBaselinePrices && !!approvedStoreQty;
+                        !!approvedAdjPieces &&
+                        !!approvedBaselinePrices &&
+                        !!approvedStoreQty &&
+                        !!approvedKits &&
+                        !!approvedKitPieces;
 
                       return (
                         <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm">
