@@ -186,7 +186,7 @@ export default function AdjustmentRegisterResponseDialog({
             .select("installation_value, adjusted_installation_value, freight_value, adjusted_freight_value")
             .eq("supplier_id", (w as any).id).maybeSingle(),
           supabase.from("campaign_adjustment_budget_request" as any)
-            .select("adjusted_prices_jsonb")
+            .select("adjusted_prices_jsonb, adjusted_extras_jsonb")
             .eq("adjustment_id", adjustment.id).maybeSingle(),
         ]);
 
@@ -246,13 +246,18 @@ export default function AdjustmentRegisterResponseDialog({
         if (saved?.prices) {
           for (const row of saved.prices) savedPriceMap[row.piece_id] = Number(row.new_price || 0);
         }
-        setNewInstallation(saved?.installation != null ? Number(saved.installation) : inst);
-        setNewFreight(saved?.freight != null ? Number(saved.freight) : fr);
+        const savedExtras = (reqRes.data as any)?.adjusted_extras_jsonb || null;
+        setNewInstallation(savedExtras?.installation != null ? Number(savedExtras.installation) : saved?.installation != null ? Number(saved.installation) : inst);
+        setNewFreight(savedExtras?.freight != null ? Number(savedExtras.freight) : saved?.freight != null ? Number(saved.freight) : fr);
 
-        // Note: pieces list will be available — we set initial later via effect on pieces
+        // Always hydrate saved imported prices first. Do not limit this to the
+        // current editable list, because that list itself depends on newPrices.
         setNewPrices((prev) => {
           const next: Record<string, number> = { ...prev };
-          for (const p of editablePieces) {
+          for (const [pieceId, price] of Object.entries(savedPriceMap)) {
+            next[pieceId] = price;
+          }
+          for (const p of pieces as any[]) {
             if (savedPriceMap[p.id] != null) next[p.id] = savedPriceMap[p.id];
             else if (p.source_piece_id && priceMap[p.source_piece_id] != null) {
               next[p.id] = priceMap[p.source_piece_id];
