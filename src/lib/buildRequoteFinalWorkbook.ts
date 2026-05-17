@@ -843,10 +843,7 @@ export async function buildRequoteFinalWorkbook(
       gLabel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
       matrixWs.mergeCells(grandRowNum, STORE_META_COLS + 1, grandRowNum, colCount);
       const gVal = matrixWs.getCell(grandRowNum, STORE_META_COLS + 1);
-      const colLetterFirst = getColLetter(STORE_META_COLS + 1);
-      gVal.value = {
-        formula: `${colLetterFirst}${prodRowNum}+${colLetterFirst}${freightRowNum}+${colLetterFirst}${instRowNum}`,
-      } as any;
+      gVal.value = matrizProductionTotal + Number(params.newFreight || 0) + Number(params.newInstallation || 0);
       gVal.numFmt = money;
       gVal.font = { bold: true, color: { argb: WHITE }, size: 14 };
       gVal.alignment = { horizontal: "center", vertical: "middle" };
