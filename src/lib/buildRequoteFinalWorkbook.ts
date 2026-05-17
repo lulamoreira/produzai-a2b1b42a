@@ -808,72 +808,71 @@ export async function buildRequoteFinalWorkbook(
       }
       totalLineRow.height = 22;
 
-      // Row 3 (after spacer): TOTAL DA PRODUÇÃO
+      const lastColLetter = getColLetter(colCount);
+      const totalRowLetterStart = getColLetter(STORE_META_COLS + 1);
+      const VALUE_COL_START = STORE_META_COLS + 1; // col 5 — ao lado do rótulo
+      const VALUE_COL_END = STORE_META_COLS + 2;   // col 6 — só 2 células
+      const valCol = getColLetter(VALUE_COL_START);
+
+      const styleValue = (cell: any, opts: { bold?: boolean; bgArgb?: string; fgArgb?: string; size?: number } = {}) => {
+        cell.numFmt = money;
+        cell.font = {
+          bold: !!opts.bold,
+          color: { argb: opts.fgArgb || DARK },
+          size: opts.size || 11,
+        };
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: opts.bgArgb || BEIGE },
+        };
+      };
+
+      // TOTAL DA PRODUÇÃO (após linha em branco do PREÇO TOTAL)
       const prodRowNum = baseRow + 3;
       const prodRow = matrixWs.getRow(prodRowNum);
       matrixWs.mergeCells(prodRowNum, 1, prodRowNum, STORE_META_COLS);
       const prodLabel = matrixWs.getCell(prodRowNum, 1);
       prodLabel.value = "TOTAL DA PRODUÇÃO";
       styleLabel(prodLabel);
-      matrixWs.mergeCells(prodRowNum, STORE_META_COLS + 1, prodRowNum, colCount);
-      const prodValCell = matrixWs.getCell(prodRowNum, STORE_META_COLS + 1);
-      // Compute production total directly from columns (unit × total qty)
-      // to guarantee a numeric value (Excel formula sometimes shows empty
-      // until first open). Matches the Preços (Recotação) total.
-      let matrizProductionTotal = 0;
-      for (const col of colItems) {
-        let totalQty = 0;
-        if (col.type === "piece") {
-          const adjP = pieceById.get(col.id);
-          totalQty = adjP?.kit_only
-            ? (residualQtyByAdjPiece[col.id] || 0)
-            : (qtyByAdjPiece[col.id] || 0);
-        } else {
-          totalQty = qtyByKit.get(col.id) || 0;
-        }
-        matrizProductionTotal += (col.unitPrice || 0) * totalQty;
-      }
-      prodValCell.value = matrizProductionTotal;
-      prodValCell.numFmt = money;
-      prodValCell.font = { bold: true, color: { argb: DARK }, size: 11 };
-      prodValCell.alignment = { horizontal: "center", vertical: "middle" };
-      prodValCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+      matrixWs.mergeCells(prodRowNum, VALUE_COL_START, prodRowNum, VALUE_COL_END);
+      const prodValCell = matrixWs.getCell(prodRowNum, VALUE_COL_START);
+      // Fórmula real: soma da linha PREÇO TOTAL (todos os itens)
+      prodValCell.value = {
+        formula: `SUM(${totalRowLetterStart}${baseRow + 1}:${lastColLetter}${baseRow + 1})`,
+      } as any;
+      styleValue(prodValCell, { bold: true });
       prodRow.height = 24;
 
-      // FRETE
-      const freightRowNum = prodRowNum + 1;
+      // Linha branca separadora + FRETE
+      const freightRowNum = prodRowNum + 2;
       const freightRow = matrixWs.getRow(freightRowNum);
       matrixWs.mergeCells(freightRowNum, 1, freightRowNum, STORE_META_COLS);
       const fLabel = matrixWs.getCell(freightRowNum, 1);
       fLabel.value = "FRETE";
       styleLabel(fLabel);
-      matrixWs.mergeCells(freightRowNum, STORE_META_COLS + 1, freightRowNum, colCount);
-      const fVal = matrixWs.getCell(freightRowNum, STORE_META_COLS + 1);
+      matrixWs.mergeCells(freightRowNum, VALUE_COL_START, freightRowNum, VALUE_COL_END);
+      const fVal = matrixWs.getCell(freightRowNum, VALUE_COL_START);
       fVal.value = Number(params.newFreight || 0);
-      fVal.numFmt = money;
-      fVal.font = { color: { argb: DARK }, size: 11 };
-      fVal.alignment = { horizontal: "center", vertical: "middle" };
-      fVal.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+      styleValue(fVal);
       freightRow.height = 22;
 
-      // INSTALAÇÃO
-      const instRowNum = freightRowNum + 1;
+      // Linha branca separadora + INSTALAÇÃO
+      const instRowNum = freightRowNum + 2;
       const instRow = matrixWs.getRow(instRowNum);
       matrixWs.mergeCells(instRowNum, 1, instRowNum, STORE_META_COLS);
       const iLabel = matrixWs.getCell(instRowNum, 1);
       iLabel.value = "INSTALAÇÃO";
       styleLabel(iLabel);
-      matrixWs.mergeCells(instRowNum, STORE_META_COLS + 1, instRowNum, colCount);
-      const iVal = matrixWs.getCell(instRowNum, STORE_META_COLS + 1);
+      matrixWs.mergeCells(instRowNum, VALUE_COL_START, instRowNum, VALUE_COL_END);
+      const iVal = matrixWs.getCell(instRowNum, VALUE_COL_START);
       iVal.value = Number(params.newInstallation || 0);
-      iVal.numFmt = money;
-      iVal.font = { color: { argb: DARK }, size: 11 };
-      iVal.alignment = { horizontal: "center", vertical: "middle" };
-      iVal.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+      styleValue(iVal);
       instRow.height = 22;
 
-      // VALOR TOTAL GERAL (destaque)
-      const grandRowNum = instRowNum + 1;
+      // Linha branca separadora + VALOR TOTAL GERAL (destaque, fórmula real)
+      const grandRowNum = instRowNum + 2;
       const grandRow = matrixWs.getRow(grandRowNum);
       matrixWs.mergeCells(grandRowNum, 1, grandRowNum, STORE_META_COLS);
       const gLabel = matrixWs.getCell(grandRowNum, 1);
@@ -881,14 +880,17 @@ export async function buildRequoteFinalWorkbook(
       gLabel.font = { bold: true, color: { argb: WHITE }, size: 13 };
       gLabel.alignment = { horizontal: "right", vertical: "middle" };
       gLabel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
-      matrixWs.mergeCells(grandRowNum, STORE_META_COLS + 1, grandRowNum, colCount);
-      const gVal = matrixWs.getCell(grandRowNum, STORE_META_COLS + 1);
-      gVal.value = matrizProductionTotal + Number(params.newFreight || 0) + Number(params.newInstallation || 0);
+      matrixWs.mergeCells(grandRowNum, VALUE_COL_START, grandRowNum, VALUE_COL_END);
+      const gVal = matrixWs.getCell(grandRowNum, VALUE_COL_START);
+      gVal.value = {
+        formula: `${valCol}${prodRowNum}+${valCol}${freightRowNum}+${valCol}${instRowNum}`,
+      } as any;
       gVal.numFmt = money;
       gVal.font = { bold: true, color: { argb: WHITE }, size: 14 };
       gVal.alignment = { horizontal: "center", vertical: "middle" };
       gVal.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
       grandRow.height = 32;
+
     }
   }
 
