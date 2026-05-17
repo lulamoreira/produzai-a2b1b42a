@@ -750,7 +750,7 @@ export async function buildRequoteFinalWorkbook(
       styleLabel(prodLabel);
       matrixWs.mergeCells(prodRowNum, STORE_META_COLS + 1, prodRowNum, colCount);
       const prodValCell = matrixWs.getCell(prodRowNum, STORE_META_COLS + 1);
-      prodValCell.value = { formula: `SUM(${colLetterFirst}${baseRow + 1}:${getColLetter(colCount)}${baseRow + 1})` } as any;
+      prodValCell.value = { formula: `SUM(${getColLetter(STORE_META_COLS + 1)}${baseRow + 1}:${getColLetter(colCount)}${baseRow + 1})` } as any;
       prodValCell.numFmt = money;
       prodValCell.font = { bold: true, color: { argb: DARK }, size: 11 };
       prodValCell.alignment = { horizontal: "center", vertical: "middle" };
