@@ -249,10 +249,14 @@ export default function AdjustmentRegisterResponseDialog({
         setNewInstallation(saved?.installation != null ? Number(saved.installation) : inst);
         setNewFreight(saved?.freight != null ? Number(saved.freight) : fr);
 
-        // Note: pieces list will be available — we set initial later via effect on pieces
+        // Always hydrate saved imported prices first. Do not limit this to the
+        // current editable list, because that list itself depends on newPrices.
         setNewPrices((prev) => {
           const next: Record<string, number> = { ...prev };
-          for (const p of editablePieces) {
+          for (const [pieceId, price] of Object.entries(savedPriceMap)) {
+            next[pieceId] = price;
+          }
+          for (const p of pieces as any[]) {
             if (savedPriceMap[p.id] != null) next[p.id] = savedPriceMap[p.id];
             else if (p.source_piece_id && priceMap[p.source_piece_id] != null) {
               next[p.id] = priceMap[p.source_piece_id];
