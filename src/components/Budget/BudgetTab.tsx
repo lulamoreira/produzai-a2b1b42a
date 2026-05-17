@@ -2937,14 +2937,7 @@ function AdjustmentSummaryCard({
           </div>
 
           {["submitted", "approved"].includes(requote.status) && requote.adjusted_prices_jsonb && (
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Total da recotação</span>
-              <span className="font-semibold">
-                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-                  computeRequoteTotal(requote)
-                )}
-              </span>
-            </div>
+            <RequoteTotalsBreakdown requote={requote} />
           )}
 
           {requote.status === "submitted" && (
