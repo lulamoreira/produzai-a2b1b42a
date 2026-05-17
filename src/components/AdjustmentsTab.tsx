@@ -212,15 +212,28 @@ export default function AdjustmentsTab({
     queryKey: ["approved_store_qty", requote?.adjustment_id],
     enabled: approvedEnabled,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("campaign_adjustment_store_pieces" as any)
-        .select("store_id, piece_id, quantity")
-        .eq("adjustment_id", requote!.adjustment_id);
-      return (data ?? []) as unknown as {
-        store_id: string;
-        piece_id: string;
-        quantity: number;
-      }[];
+      // Paginar — Supabase tem limite default de 1000 linhas por query.
+      const pageSize = 1000;
+      let from = 0;
+      const all: { store_id: string; piece_id: string; quantity: number }[] = [];
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabase
+          .from("campaign_adjustment_store_pieces" as any)
+          .select("store_id, piece_id, quantity")
+          .eq("adjustment_id", requote!.adjustment_id)
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const rows = (data ?? []) as unknown as {
+          store_id: string;
+          piece_id: string;
+          quantity: number;
+        }[];
+        all.push(...rows);
+        if (rows.length < pageSize) break;
+        from += pageSize;
+      }
+      return all;
     },
   });
 
