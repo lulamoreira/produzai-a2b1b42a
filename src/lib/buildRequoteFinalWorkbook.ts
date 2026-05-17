@@ -361,6 +361,7 @@ export async function buildRequoteFinalWorkbook(
     next: number,
     isNew = false,
     contributeToTotal = true,
+    kitPiece = false,
   ) => {
     const r = ws.getRow(rowIdx++);
     const lineNewTotal = qty * next;
@@ -371,7 +372,7 @@ export async function buildRequoteFinalWorkbook(
     }
     r.getCell(1).value = type;
     r.getCell(2).value = code;
-    r.getCell(3).value = name + (isNew ? " (nova)" : "");
+    r.getCell(3).value = (kitPiece ? "    ↳ " : "") + name + (isNew ? " (nova)" : "");
     r.getCell(4).value = qty;
     if (contributeToTotal) {
       r.getCell(5).value = prev;
@@ -402,6 +403,8 @@ export async function buildRequoteFinalWorkbook(
       };
       if (type === "Kit") {
         c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: KIT_BG } };
+      } else if (kitPiece) {
+        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: KIT_PIECE_BG } };
       }
     });
     if (contributeToTotal) {
@@ -419,80 +422,96 @@ export async function buildRequoteFinalWorkbook(
     }
   };
 
-  // 1) Kits, each followed by its component pieces
-  const sortedKits = [...liveKits]
-    .map((k) => ({ k, code: kitCode(k.source_kit_id), qty: qtyByKit.get(k.id) || 0 }))
-    .filter((x) => x.qty > 0)
-    .sort((a, b) => a.code - b.code || (a.k.name || "").localeCompare(b.k.name || "", "pt-BR"));
+  // Renderização intercalada: kits e peças standalone ordenados pelo MESMO
+  // código crescente. Cada kit é seguido imediatamente pelas suas peças-
+  // componentes, que herdam o "slot" do kit na ordenação e recebem fundo
+  // diferenciado para distinguir de peças standalone.
+  type Entry = { kind: "kit" | "piece"; code: number; name: string; render: () => void };
+  const entries: Entry[] = [];
 
-  for (const { k, code, qty } of sortedKits) {
-    writeBodyRow("Kit", code, k.name, qty, 0, 0, false, false);
-    const kitTotalQty = qtyByKit.get(k.id) || 0;
-    const seenPieceIds = new Set<string>();
-    const comps = (kitPiecesByKit.get(k.id) || [])
-      .map((kp) => ({ kp, piece: pieceById.get(kp.piece_id) }))
-      .filter((x) => !!x.piece && !x.piece.is_deleted && !!x.piece.code && Number(x.piece.code) !== 0)
-      .filter((x) => Number(x.kp.quantity || 0) > 0)
-      // dedupe linhas duplicadas no DB (mesma peça referenciada N vezes)
-      .filter((x) => {
-        if (seenPieceIds.has(x.piece!.id)) return false;
-        seenPieceIds.add(x.piece!.id);
-        return true;
-      })
-      .sort(
-        (a, b) =>
-          (Number(a.piece!.code) || 0) - (Number(b.piece!.code) || 0) ||
-          (a.piece!.name || "").localeCompare(b.piece!.name || "", "pt-BR"),
-      );
-    for (const { kp, piece } of comps) {
-      // qty real consumida por ESTE kit (não a qty total da peça)
-      const pQty = kitTotalQty * Number(kp.quantity || 1);
-      writeBodyRow(
-        "Peça",
-        piece!.code,
-        piece!.name,
-        pQty,
-        previousPriceFor(piece!),
-        newPriceFor(piece!),
-        !!piece!.is_new,
-        true,
-      );
-    }
+  for (const k of liveKits) {
+    const qty = qtyByKit.get(k.id) || 0;
+    if (qty <= 0) continue;
+    const code = kitCode(k.source_kit_id);
+    entries.push({
+      kind: "kit",
+      code,
+      name: k.name || "",
+      render: () => {
+        writeBodyRow("Kit", code, k.name, qty, 0, 0, false, false);
+        const seenPieceIds = new Set<string>();
+        const comps = (kitPiecesByKit.get(k.id) || [])
+          .map((kp) => ({ kp, piece: pieceById.get(kp.piece_id) }))
+          .filter((x) => !!x.piece && !x.piece.is_deleted && !!x.piece.code && Number(x.piece.code) !== 0)
+          .filter((x) => Number(x.kp.quantity || 0) > 0)
+          .filter((x) => {
+            if (seenPieceIds.has(x.piece!.id)) return false;
+            seenPieceIds.add(x.piece!.id);
+            return true;
+          })
+          .sort(
+            (a, b) =>
+              (Number(a.piece!.code) || 0) - (Number(b.piece!.code) || 0) ||
+              (a.piece!.name || "").localeCompare(b.piece!.name || "", "pt-BR"),
+          );
+        for (const { kp, piece } of comps) {
+          const pQty = qty * Number(kp.quantity || 1);
+          writeBodyRow(
+            "Peça",
+            piece!.code,
+            piece!.name,
+            pQty,
+            previousPriceFor(piece!),
+            newPriceFor(piece!),
+            !!piece!.is_new,
+            true,
+            true, // kitPiece — fundo diferenciado
+          );
+        }
+      },
+    });
   }
 
-  // 2) Peças standalone — não referenciadas por kit, OU referenciadas por kit
-  //    mas com qty residual (sobra) não consumida pelos kits.
-  const standalonePieces = livePieces
-    .filter((p) => p.code && Number(p.code) !== 0)
-    .filter((p) => {
-      const isKitComponent = kitPieceIdSet.has(p.id);
-      if (!isKitComponent) {
-        return (qtyByAdjPiece[p.id] || 0) > 0 || !!p.is_new;
-      }
-      // Componente de kit: só aparece aqui se tem residual standalone > 0
-      return (residualQtyByAdjPiece[p.id] || 0) > 0;
-    })
-    .sort(
-      (a, b) =>
-        (Number(a.code) || 0) - (Number(b.code) || 0) ||
-        (a.name || "").localeCompare(b.name || "", "pt-BR"),
-    );
-  for (const p of standalonePieces) {
+  for (const p of livePieces) {
+    if (!p.code || Number(p.code) === 0) continue;
     const isKitComponent = kitPieceIdSet.has(p.id);
-    const qty = isKitComponent
-      ? (residualQtyByAdjPiece[p.id] || 0)
-      : (qtyByAdjPiece[p.id] || 0);
-    writeBodyRow(
-      "Peça",
-      p.code,
-      p.name,
-      qty,
-      previousPriceFor(p),
-      newPriceFor(p),
-      !!p.is_new,
-      true,
-    );
+    let qty = 0;
+    if (!isKitComponent) {
+      qty = qtyByAdjPiece[p.id] || 0;
+      if (qty <= 0 && !p.is_new) continue;
+    } else {
+      qty = residualQtyByAdjPiece[p.id] || 0;
+      if (qty <= 0) continue;
+    }
+    const code = Number(p.code) || 0;
+    entries.push({
+      kind: "piece",
+      code,
+      name: p.name || "",
+      render: () => {
+        writeBodyRow(
+          "Peça",
+          p.code,
+          p.name,
+          qty,
+          previousPriceFor(p),
+          newPriceFor(p),
+          !!p.is_new,
+          true,
+          false,
+        );
+      },
+    });
   }
+
+  entries.sort(
+    (a, b) =>
+      a.code - b.code ||
+      a.name.localeCompare(b.name, "pt-BR") ||
+      (a.kind === b.kind ? 0 : a.kind === "kit" ? -1 : 1),
+  );
+
+  for (const e of entries) e.render();
 
   // Spacer + extras
   rowIdx++;
