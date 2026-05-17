@@ -166,7 +166,13 @@ export async function parseAdjustmentResponseWorkbook(
 
     matched++;
     const qty = Number(quantity ?? expected.totalQty ?? 0);
-    const newPrice = explicitNewPrice ?? (newTotal !== null && qty > 0 ? newTotal / qty : null);
+    // "Novo Total" is the source of truth when present — the supplier (or admin)
+    // may have edited only the total, leaving the prefilled "Novo Preço" untouched.
+    // Fall back to the explicit unit price only when no total was provided.
+    const newPrice =
+      newTotal !== null && qty > 0
+        ? newTotal / qty
+        : explicitNewPrice;
     const isValid = newPrice !== null && newPrice >= 0;
     parsedRows.push({
       code: expected.code,
