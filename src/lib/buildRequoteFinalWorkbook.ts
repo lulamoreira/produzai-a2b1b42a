@@ -333,40 +333,23 @@ export async function buildRequoteFinalWorkbook(
   });
   headerRow.height = 26;
 
-  // Body — kits and pieces interleaved by code asc; on ties, kit comes BEFORE
-  // its component pieces. Kit rows show qty only (no price/total) because the
-  // kit cost is already accounted for in the component pieces below it.
+  // Body — grouped rendering:
+  //   1) Each kit (sorted by code): kit header row, then ONLY its component
+  //      pieces (sorted by piece code). Kit header is informational only
+  //      (contributeToTotal=false); component pieces carry the real qty × price.
+  //   2) Standalone pieces (not referenced by any kit), sorted by code.
+  // This avoids the previous bug where pieces with codes between two kit codes
+  // visually appeared as if they belonged to the previous kit.
   let rowIdx = 6;
   let runningNewTotal = 0;
   let runningPrevTotal = 0;
 
-  type BodyEntry =
-    | { kind: "piece"; code: number; name: string; piece: RequoteFinalAdjPiece }
-    | { kind: "kit"; code: number; name: string; kit: RequoteFinalAdjKit; qty: number };
-
-  const entries: BodyEntry[] = [];
-  for (const p of livePieces) {
-    if (!p.code || Number(p.code) === 0) continue;
-    const qty = qtyByAdjPiece[p.id] || 0;
-    if (qty === 0 && !p.is_new) continue;
-    entries.push({ kind: "piece", code: Number(p.code) || 0, name: p.name, piece: p });
+  // Set of piece ids referenced by ANY kit composition
+  const kitPieceIdSet = new Set<string>();
+  for (const [, comps] of kitPiecesByKit) {
+    for (const kp of comps) kitPieceIdSet.add(kp.piece_id);
   }
-  for (const k of liveKits) {
-    const kQty = qtyByKit.get(k.id) || 0;
-    if (kQty === 0) continue;
-    entries.push({
-      kind: "kit",
-      code: kitCode(k.source_kit_id),
-      name: k.name,
-      kit: k,
-      qty: kQty,
-    });
-  }
-  entries.sort((a, b) => {
-    if (a.code !== b.code) return a.code - b.code;
-    if (a.kind !== b.kind) return a.kind === "kit" ? -1 : 1; // Kit BEFORE piece
-    return (a.name || "").localeCompare(b.name || "", "pt-BR");
-  });
+  const pieceById = new Map(livePieces.map((p) => [p.id, p]));
 
   const writeBodyRow = (
     type: "Peça" | "Kit",
@@ -435,22 +418,59 @@ export async function buildRequoteFinalWorkbook(
     }
   };
 
-  for (const e of entries) {
-    if (e.kind === "piece") {
-      const qty = qtyByAdjPiece[e.piece.id] || 0;
+  // 1) Kits, each followed by its component pieces
+  const sortedKits = [...liveKits]
+    .map((k) => ({ k, code: kitCode(k.source_kit_id), qty: qtyByKit.get(k.id) || 0 }))
+    .filter((x) => x.qty > 0)
+    .sort((a, b) => a.code - b.code || (a.k.name || "").localeCompare(b.k.name || "", "pt-BR"));
+
+  for (const { k, code, qty } of sortedKits) {
+    writeBodyRow("Kit", code, k.name, qty, 0, 0, false, false);
+    const comps = (kitPiecesByKit.get(k.id) || [])
+      .map((kp) => ({ kp, piece: pieceById.get(kp.piece_id) }))
+      .filter((x) => !!x.piece && !!x.piece.code && Number(x.piece.code) !== 0)
+      .sort(
+        (a, b) =>
+          (Number(a.piece!.code) || 0) - (Number(b.piece!.code) || 0) ||
+          (a.piece!.name || "").localeCompare(b.piece!.name || "", "pt-BR"),
+      );
+    for (const { piece } of comps) {
+      const pQty = qtyByAdjPiece[piece!.id] || 0;
       writeBodyRow(
         "Peça",
-        e.piece.code,
-        e.piece.name,
-        qty,
-        previousPriceFor(e.piece),
-        newPriceFor(e.piece),
-        !!e.piece.is_new,
+        piece!.code,
+        piece!.name,
+        pQty,
+        previousPriceFor(piece!),
+        newPriceFor(piece!),
+        !!piece!.is_new,
         true,
       );
-    } else {
-      writeBodyRow("Kit", e.code, e.name, e.qty, 0, 0, false, false);
     }
+  }
+
+  // 2) Standalone pieces — not referenced by any kit
+  const standalonePieces = livePieces
+    .filter((p) => p.code && Number(p.code) !== 0)
+    .filter((p) => !kitPieceIdSet.has(p.id))
+    .filter((p) => (qtyByAdjPiece[p.id] || 0) > 0 || !!p.is_new)
+    .sort(
+      (a, b) =>
+        (Number(a.code) || 0) - (Number(b.code) || 0) ||
+        (a.name || "").localeCompare(b.name || "", "pt-BR"),
+    );
+  for (const p of standalonePieces) {
+    const qty = qtyByAdjPiece[p.id] || 0;
+    writeBodyRow(
+      "Peça",
+      p.code,
+      p.name,
+      qty,
+      previousPriceFor(p),
+      newPriceFor(p),
+      !!p.is_new,
+      true,
+    );
   }
 
   // Spacer + extras
@@ -757,7 +777,23 @@ export async function buildRequoteFinalWorkbook(
       styleLabel(prodLabel);
       matrixWs.mergeCells(prodRowNum, STORE_META_COLS + 1, prodRowNum, colCount);
       const prodValCell = matrixWs.getCell(prodRowNum, STORE_META_COLS + 1);
-      prodValCell.value = { formula: `SUM(${getColLetter(STORE_META_COLS + 1)}${baseRow + 1}:${getColLetter(colCount)}${baseRow + 1})` } as any;
+      // Compute production total directly from columns (unit × total qty)
+      // to guarantee a numeric value (Excel formula sometimes shows empty
+      // until first open). Matches the Preços (Recotação) total.
+      let matrizProductionTotal = 0;
+      for (const col of colItems) {
+        let totalQty = 0;
+        if (col.type === "piece") {
+          const adjP = pieceById.get(col.id);
+          totalQty = adjP?.kit_only
+            ? (residualQtyByAdjPiece[col.id] || 0)
+            : (qtyByAdjPiece[col.id] || 0);
+        } else {
+          totalQty = qtyByKit.get(col.id) || 0;
+        }
+        matrizProductionTotal += (col.unitPrice || 0) * totalQty;
+      }
+      prodValCell.value = matrizProductionTotal;
       prodValCell.numFmt = money;
       prodValCell.font = { bold: true, color: { argb: DARK }, size: 11 };
       prodValCell.alignment = { horizontal: "center", vertical: "middle" };
@@ -807,10 +843,7 @@ export async function buildRequoteFinalWorkbook(
       gLabel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
       matrixWs.mergeCells(grandRowNum, STORE_META_COLS + 1, grandRowNum, colCount);
       const gVal = matrixWs.getCell(grandRowNum, STORE_META_COLS + 1);
-      const colLetterFirst = getColLetter(STORE_META_COLS + 1);
-      gVal.value = {
-        formula: `${colLetterFirst}${prodRowNum}+${colLetterFirst}${freightRowNum}+${colLetterFirst}${instRowNum}`,
-      } as any;
+      gVal.value = matrizProductionTotal + Number(params.newFreight || 0) + Number(params.newInstallation || 0);
       gVal.numFmt = money;
       gVal.font = { bold: true, color: { argb: WHITE }, size: 14 };
       gVal.alignment = { horizontal: "center", vertical: "middle" };
