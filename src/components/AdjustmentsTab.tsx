@@ -216,7 +216,6 @@ export default function AdjustmentsTab({
       const pageSize = 1000;
       let from = 0;
       const all: { store_id: string; piece_id: string; quantity: number }[] = [];
-      // eslint-disable-next-line no-constant-condition
       while (true) {
         const { data, error } = await supabase
           .from("campaign_adjustment_store_pieces" as any)
