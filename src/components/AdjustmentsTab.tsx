@@ -201,8 +201,9 @@ export default function AdjustmentsTab({
     queryFn: async () => {
       const { data } = await supabase
         .from("campaign_adjustment_pieces")
-        .select("id, source_piece_id")
-        .eq("adjustment_id", requote!.adjustment_id);
+        .select("id, source_piece_id, is_deleted")
+        .eq("adjustment_id", requote!.adjustment_id)
+        .eq("is_deleted", false);
       return data ?? [];
     },
   });
@@ -612,25 +613,31 @@ export default function AdjustmentsTab({
                         }
                       }
 
-                      let changedCount = 0;
-                      let productionTotal = 0;
+                      const newPriceByAdj = new Map<string, number>();
                       for (const row of j.prices || []) {
                         const adjId = String(row.piece_id);
                         const newPrice = Number(row.new_price) || 0;
+                        newPriceByAdj.set(adjId, newPrice);
                         const srcId = sourceByAdj.get(adjId);
                         const prevPrice = srcId ? (prevBySource.get(srcId) || 0) : 0;
                         if (Math.abs(newPrice - prevPrice) > 0.005) changedCount++;
-                        const qty =
-                          (qtyByAdj.get(adjId) || 0) + (kitConsumedByPiece.get(adjId) || 0);
-                        productionTotal += newPrice * qty;
+                      }
+
+                      let productionTotal = 0;
+                      for (const p of approvedAdjPieces || []) {
+                        const adjId = String(p.id);
+                        const srcId = sourceByAdj.get(adjId);
+                        const prevPrice = srcId ? (prevBySource.get(srcId) || 0) : 0;
+                        const price = newPriceByAdj.has(adjId)
+                          ? newPriceByAdj.get(adjId) || 0
+                          : prevPrice;
+                        productionTotal += price * (qtyByAdj.get(adjId) || 0);
                       }
                       const grandTotal = productionTotal + inst + frt;
                       const ready =
                         !!approvedAdjPieces &&
                         !!approvedBaselinePrices &&
-                        !!approvedStoreQty &&
-                        !!approvedKits &&
-                        !!approvedKitPieces;
+                        !!approvedStoreQty;
 
                       return (
                         <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm">
