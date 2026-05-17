@@ -85,6 +85,23 @@ export default function AdjustmentsTab({
   const deleteMut = useDeleteAdjustment();
   const qc = useQueryClient();
 
+  const handleRevertApproval = async (adjustmentId: string) => {
+    if (!window.confirm("Reverter a aprovação desta recotação? Os preços salvos serão mantidos e o status voltará para 'aguardando resposta' para que você possa editar os valores manualmente novamente.")) return;
+    const tId = toast.loading("Revertendo aprovação...");
+    try {
+      const { error } = await supabase
+        .from('campaign_adjustment_budget_request' as any)
+        .update({ status: 'sent', response_received_at: null })
+        .eq('adjustment_id', adjustmentId);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ['adjustment_budget_requests', campaignId] });
+      await qc.invalidateQueries({ queryKey: ['active_adjustment_request', campaignId] });
+      toast.success("Aprovação revertida. Clique em 'Registrar resposta manual' para editar os valores.", { id: tId });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao reverter aprovação.", { id: tId });
+    }
+  };
+
   const handleCancelResend = async (adjustmentId: string) => {
     if (!window.confirm("Anular este reenvio? A recotação deixará de constar como solicitada e o fornecedor não será notificado dessa ação. (O e-mail já enviado não pode ser recolhido.)")) return;
     const tId = toast.loading("Anulando reenvio...");
