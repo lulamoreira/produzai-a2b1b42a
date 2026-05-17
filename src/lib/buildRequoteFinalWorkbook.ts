@@ -231,6 +231,37 @@ export async function buildRequoteFinalWorkbook(
     qtyByKit.set(kit.id, total);
   }
 
+  // Quantities from kit-only components that are NOT covered by a complete
+  // kit must still appear in the matrix as real piece quantity. Example: if a
+  // kit needs 2 of piece A and the store has 5, the matrix should show 2 kits
+  // + 1 residual piece A. Otherwise the visible matrix sum becomes lower than
+  // the real piece-by-piece total from "Preços (Recotação)".
+  const kitConsumedQtyByStorePiece = new Map<string, number>();
+  for (const kit of liveKits) {
+    const kps = kitPiecesByKit.get(kit.id) || [];
+    for (const s of params.stores) {
+      const kitQty = qtyByStoreKit.get(`${s.id}-${kit.id}`) || 0;
+      if (kitQty <= 0) continue;
+      for (const kp of kps) {
+        const key = `${s.id}-${kp.piece_id}`;
+        kitConsumedQtyByStorePiece.set(
+          key,
+          (kitConsumedQtyByStorePiece.get(key) || 0) + kitQty * (kp.quantity || 1),
+        );
+      }
+    }
+  }
+  const residualQtyByStorePiece = new Map<string, number>();
+  const residualQtyByAdjPiece: Record<string, number> = {};
+  for (const sp of params.adjStorePieces) {
+    const actual = Number(sp.quantity || 0);
+    const consumed = kitConsumedQtyByStorePiece.get(`${sp.store_id}-${sp.piece_id}`) || 0;
+    const residual = Math.max(actual - consumed, 0);
+    if (residual <= 0) continue;
+    residualQtyByStorePiece.set(`${sp.store_id}-${sp.piece_id}`, residual);
+    residualQtyByAdjPiece[sp.piece_id] = (residualQtyByAdjPiece[sp.piece_id] || 0) + residual;
+  }
+
   // Resolve previous/new price for an adjustment piece
   const previousPriceFor = (adjP: RequoteFinalAdjPiece): number => {
     if (!adjP.source_piece_id) return 0;
@@ -487,14 +518,18 @@ export async function buildRequoteFinalWorkbook(
 
   // ─── Sheet 2+: Matriz Lojas x Peças (delegated) ─────────
   const matrixQtyMap: Record<string, number> = {};
+  const matrixDisplayQtyMap: Record<string, number> = {};
   for (const sp of params.adjStorePieces) {
-    matrixQtyMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity || 0);
+    const key = `${sp.store_id}-${sp.piece_id}`;
+    matrixQtyMap[key] = Number(sp.quantity || 0);
+    const adjPiece = livePieces.find((p) => p.id === sp.piece_id);
+    if (adjPiece?.kit_only) matrixDisplayQtyMap[key] = residualQtyByStorePiece.get(key) || 0;
   }
 
   // Filter ghost/deleted pieces (code 0 or zero total qty across all stores).
   const piecesForMatrix = livePieces.filter((p) => {
     if (!p.code || Number(p.code) === 0) return false;
-    const totalQty = qtyByAdjPiece[p.id] || 0;
+    const totalQty = p.kit_only ? (residualQtyByAdjPiece[p.id] || 0) : (qtyByAdjPiece[p.id] || 0);
     if (totalQty === 0 && !p.is_new) return false;
     return true;
   });
@@ -502,7 +537,6 @@ export async function buildRequoteFinalWorkbook(
   // appendMatrixSheets expects CampaignPiece / CampaignKit shapes. Build
   // those by merging adjustment metadata with source-piece images.
   const matrixPieces = piecesForMatrix
-    .filter((p) => !p.kit_only)
     .map((p) => {
       const src = sourcePieceMeta(p.source_piece_id);
       return {
@@ -520,7 +554,7 @@ export async function buildRequoteFinalWorkbook(
         image_full_url: src?.image_full_url || null,
         specification: p.specification || src?.specification || "",
         installation_instructions: src?.installation_instructions || "",
-        kit_only: false,
+        kit_only: !!p.kit_only,
         is_mockup: false,
         display_order: 0,
         created_at: "",
@@ -611,6 +645,7 @@ export async function buildRequoteFinalWorkbook(
       stores: matrixStores,
       pieces: matrixPieces,
       qtyMap: matrixQtyMap,
+      displayQtyMap: matrixDisplayQtyMap,
       campaignName: params.campaignName,
       kits: matrixKits,
       kitPieces: matrixKitPieces,
@@ -708,20 +743,6 @@ export async function buildRequoteFinalWorkbook(
       totalLineRow.height = 22;
 
       // Row 3 (after spacer): TOTAL DA PRODUÇÃO
-      // IMPORTANT: must match the Preços (Recotação) sheet exactly. We
-      // intentionally do NOT sum the PREÇO TOTAL row, because that row only
-      // covers columns visible in the matrix (standalone pieces + kits) and
-      // ignores kit_only pieces' "extra" qty that doesn't fit the floor/min
-      // kit aggregation. The authoritative figure is the sum across ALL
-      // live pieces of qty × new unit price — identical to Preços.
-      let productionTotal = 0;
-      for (const p of livePieces) {
-        if (!p.code || Number(p.code) === 0) continue;
-        const qty = qtyByAdjPiece[p.id] || 0;
-        if (qty === 0) continue;
-        productionTotal += qty * newPriceFor(p);
-      }
-
       const prodRowNum = baseRow + 3;
       const prodRow = matrixWs.getRow(prodRowNum);
       matrixWs.mergeCells(prodRowNum, 1, prodRowNum, STORE_META_COLS);
@@ -730,7 +751,7 @@ export async function buildRequoteFinalWorkbook(
       styleLabel(prodLabel);
       matrixWs.mergeCells(prodRowNum, STORE_META_COLS + 1, prodRowNum, colCount);
       const prodValCell = matrixWs.getCell(prodRowNum, STORE_META_COLS + 1);
-      prodValCell.value = productionTotal;
+      prodValCell.value = { formula: `SUM(${getColLetter(STORE_META_COLS + 1)}${baseRow + 1}:${getColLetter(colCount)}${baseRow + 1})` } as any;
       prodValCell.numFmt = money;
       prodValCell.font = { bold: true, color: { argb: DARK }, size: 11 };
       prodValCell.alignment = { horizontal: "center", vertical: "middle" };

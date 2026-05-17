@@ -347,6 +347,8 @@ export type AppendMatrixParams = {
   stores: ClientStore[];
   pieces: CampaignPiece[];
   qtyMap: Record<string, number>;
+  /** Optional display override for main matrix cells. Kit columns are still computed from qtyMap. */
+  displayQtyMap?: Record<string, number>;
   campaignName: string;
   kits?: CampaignKit[];
   kitPieces?: CampaignKitPiece[];
@@ -381,6 +383,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
     stores,
     pieces,
     qtyMap,
+    displayQtyMap,
     campaignName,
     kits = [],
     kitPieces = [],
@@ -485,6 +488,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
       mainQtyMap[`${s.id}-${kit.id}`] = kitQty;
     }
   }
+  if (displayQtyMap) Object.assign(mainQtyMap, displayQtyMap);
 
   // ABA 1 – Main matrix
   const ws = wb.addWorksheet(mainSheetName);
