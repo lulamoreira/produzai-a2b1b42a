@@ -209,7 +209,7 @@ export default function AdjustmentsTab({
   });
 
   const { data: approvedStoreQty } = useQuery({
-    queryKey: ["approved_store_qty", requote?.adjustment_id],
+    queryKey: ["approved_store_qty_all_rows_v2", requote?.adjustment_id, requote?.response_received_at],
     enabled: approvedEnabled,
     queryFn: async () => {
       // Paginar — Supabase tem limite default de 1000 linhas por query.
@@ -222,6 +222,7 @@ export default function AdjustmentsTab({
           .from("campaign_adjustment_store_pieces" as any)
           .select("store_id, piece_id, quantity")
           .eq("adjustment_id", requote!.adjustment_id)
+          .order("id", { ascending: true })
           .range(from, from + pageSize - 1);
         if (error) throw error;
         const rows = (data ?? []) as unknown as {
