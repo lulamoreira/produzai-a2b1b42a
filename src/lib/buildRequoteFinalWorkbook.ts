@@ -32,6 +32,7 @@ const BEIGE = "FFF7F3EC";
 const WHITE = "FFFFFFFF";
 const BORDER = "FFE5E7EB";
 const KIT_BG = "FFEDE3D4";
+const KIT_PIECE_BG = "FFF7EFE0";
 
 const HIGHLIGHT = "FFFFF7CC";
 const INCREASE = "FFB91C1C";
