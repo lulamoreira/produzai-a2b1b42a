@@ -708,19 +708,29 @@ export async function buildRequoteFinalWorkbook(
       totalLineRow.height = 22;
 
       // Row 3 (after spacer): TOTAL DA PRODUÇÃO
+      // IMPORTANT: must match the Preços (Recotação) sheet exactly. We
+      // intentionally do NOT sum the PREÇO TOTAL row, because that row only
+      // covers columns visible in the matrix (standalone pieces + kits) and
+      // ignores kit_only pieces' "extra" qty that doesn't fit the floor/min
+      // kit aggregation. The authoritative figure is the sum across ALL
+      // live pieces of qty × new unit price — identical to Preços.
+      let productionTotal = 0;
+      for (const p of livePieces) {
+        if (!p.code || Number(p.code) === 0) continue;
+        const qty = qtyByAdjPiece[p.id] || 0;
+        if (qty === 0) continue;
+        productionTotal += qty * newPriceFor(p);
+      }
+
       const prodRowNum = baseRow + 3;
       const prodRow = matrixWs.getRow(prodRowNum);
       matrixWs.mergeCells(prodRowNum, 1, prodRowNum, STORE_META_COLS);
       const prodLabel = matrixWs.getCell(prodRowNum, 1);
       prodLabel.value = "TOTAL DA PRODUÇÃO";
       styleLabel(prodLabel);
-      const firstItemLetter = getColLetter(STORE_META_COLS + 1);
-      const lastItemLetter = getColLetter(colCount);
       matrixWs.mergeCells(prodRowNum, STORE_META_COLS + 1, prodRowNum, colCount);
       const prodValCell = matrixWs.getCell(prodRowNum, STORE_META_COLS + 1);
-      prodValCell.value = {
-        formula: `SUM(${firstItemLetter}${baseRow + 1}:${lastItemLetter}${baseRow + 1})`,
-      } as any;
+      prodValCell.value = productionTotal;
       prodValCell.numFmt = money;
       prodValCell.font = { bold: true, color: { argb: DARK }, size: 11 };
       prodValCell.alignment = { horizontal: "center", vertical: "middle" };
