@@ -426,16 +426,26 @@ export async function buildRequoteFinalWorkbook(
 
   for (const { k, code, qty } of sortedKits) {
     writeBodyRow("Kit", code, k.name, qty, 0, 0, false, false);
+    const kitTotalQty = qtyByKit.get(k.id) || 0;
+    const seenPieceIds = new Set<string>();
     const comps = (kitPiecesByKit.get(k.id) || [])
       .map((kp) => ({ kp, piece: pieceById.get(kp.piece_id) }))
-      .filter((x) => !!x.piece && !!x.piece.code && Number(x.piece.code) !== 0)
+      .filter((x) => !!x.piece && !x.piece.is_deleted && !!x.piece.code && Number(x.piece.code) !== 0)
+      .filter((x) => Number(x.kp.quantity || 0) > 0)
+      // dedupe linhas duplicadas no DB (mesma peça referenciada N vezes)
+      .filter((x) => {
+        if (seenPieceIds.has(x.piece!.id)) return false;
+        seenPieceIds.add(x.piece!.id);
+        return true;
+      })
       .sort(
         (a, b) =>
           (Number(a.piece!.code) || 0) - (Number(b.piece!.code) || 0) ||
           (a.piece!.name || "").localeCompare(b.piece!.name || "", "pt-BR"),
       );
-    for (const { piece } of comps) {
-      const pQty = qtyByAdjPiece[piece!.id] || 0;
+    for (const { kp, piece } of comps) {
+      // qty real consumida por ESTE kit (não a qty total da peça)
+      const pQty = kitTotalQty * Number(kp.quantity || 1);
       writeBodyRow(
         "Peça",
         piece!.code,
@@ -449,18 +459,28 @@ export async function buildRequoteFinalWorkbook(
     }
   }
 
-  // 2) Standalone pieces — not referenced by any kit
+  // 2) Peças standalone — não referenciadas por kit, OU referenciadas por kit
+  //    mas com qty residual (sobra) não consumida pelos kits.
   const standalonePieces = livePieces
     .filter((p) => p.code && Number(p.code) !== 0)
-    .filter((p) => !kitPieceIdSet.has(p.id))
-    .filter((p) => (qtyByAdjPiece[p.id] || 0) > 0 || !!p.is_new)
+    .filter((p) => {
+      const isKitComponent = kitPieceIdSet.has(p.id);
+      if (!isKitComponent) {
+        return (qtyByAdjPiece[p.id] || 0) > 0 || !!p.is_new;
+      }
+      // Componente de kit: só aparece aqui se tem residual standalone > 0
+      return (residualQtyByAdjPiece[p.id] || 0) > 0;
+    })
     .sort(
       (a, b) =>
         (Number(a.code) || 0) - (Number(b.code) || 0) ||
         (a.name || "").localeCompare(b.name || "", "pt-BR"),
     );
   for (const p of standalonePieces) {
-    const qty = qtyByAdjPiece[p.id] || 0;
+    const isKitComponent = kitPieceIdSet.has(p.id);
+    const qty = isKitComponent
+      ? (residualQtyByAdjPiece[p.id] || 0)
+      : (qtyByAdjPiece[p.id] || 0);
     writeBodyRow(
       "Peça",
       p.code,
