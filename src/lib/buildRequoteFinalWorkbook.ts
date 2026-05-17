@@ -519,13 +519,17 @@ export async function buildRequoteFinalWorkbook(
   // ─── Sheet 2+: Matriz Lojas x Peças (delegated) ─────────
   const matrixQtyMap: Record<string, number> = {};
   for (const sp of params.adjStorePieces) {
-    matrixQtyMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity || 0);
+    const adjPiece = livePieces.find((p) => p.id === sp.piece_id);
+    const qty = adjPiece?.kit_only
+      ? residualQtyByStorePiece.get(`${sp.store_id}-${sp.piece_id}`) || 0
+      : Number(sp.quantity || 0);
+    matrixQtyMap[`${sp.store_id}-${sp.piece_id}`] = qty;
   }
 
   // Filter ghost/deleted pieces (code 0 or zero total qty across all stores).
   const piecesForMatrix = livePieces.filter((p) => {
     if (!p.code || Number(p.code) === 0) return false;
-    const totalQty = qtyByAdjPiece[p.id] || 0;
+    const totalQty = p.kit_only ? (residualQtyByAdjPiece[p.id] || 0) : (qtyByAdjPiece[p.id] || 0);
     if (totalQty === 0 && !p.is_new) return false;
     return true;
   });
@@ -533,7 +537,6 @@ export async function buildRequoteFinalWorkbook(
   // appendMatrixSheets expects CampaignPiece / CampaignKit shapes. Build
   // those by merging adjustment metadata with source-piece images.
   const matrixPieces = piecesForMatrix
-    .filter((p) => !p.kit_only)
     .map((p) => {
       const src = sourcePieceMeta(p.source_piece_id);
       return {
@@ -551,7 +554,7 @@ export async function buildRequoteFinalWorkbook(
         image_full_url: src?.image_full_url || null,
         specification: p.specification || src?.specification || "",
         installation_instructions: src?.installation_instructions || "",
-        kit_only: false,
+        kit_only: !!p.kit_only,
         is_mockup: false,
         display_order: 0,
         created_at: "",
