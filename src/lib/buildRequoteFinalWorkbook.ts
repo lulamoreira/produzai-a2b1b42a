@@ -518,12 +518,12 @@ export async function buildRequoteFinalWorkbook(
 
   // ─── Sheet 2+: Matriz Lojas x Peças (delegated) ─────────
   const matrixQtyMap: Record<string, number> = {};
+  const matrixDisplayQtyMap: Record<string, number> = {};
   for (const sp of params.adjStorePieces) {
+    const key = `${sp.store_id}-${sp.piece_id}`;
+    matrixQtyMap[key] = Number(sp.quantity || 0);
     const adjPiece = livePieces.find((p) => p.id === sp.piece_id);
-    const qty = adjPiece?.kit_only
-      ? residualQtyByStorePiece.get(`${sp.store_id}-${sp.piece_id}`) || 0
-      : Number(sp.quantity || 0);
-    matrixQtyMap[`${sp.store_id}-${sp.piece_id}`] = qty;
+    if (adjPiece?.kit_only) matrixDisplayQtyMap[key] = residualQtyByStorePiece.get(key) || 0;
   }
 
   // Filter ghost/deleted pieces (code 0 or zero total qty across all stores).
@@ -645,6 +645,7 @@ export async function buildRequoteFinalWorkbook(
       stores: matrixStores,
       pieces: matrixPieces,
       qtyMap: matrixQtyMap,
+      displayQtyMap: matrixDisplayQtyMap,
       campaignName: params.campaignName,
       kits: matrixKits,
       kitPieces: matrixKitPieces,
