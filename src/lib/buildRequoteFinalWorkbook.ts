@@ -455,9 +455,17 @@ export async function buildRequoteFinalWorkbook(
     matrixQtyMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity || 0);
   }
 
+  // Filter ghost/deleted pieces (code 0 or zero total qty across all stores).
+  const piecesForMatrix = livePieces.filter((p) => {
+    if (!p.code || Number(p.code) === 0) return false;
+    const totalQty = qtyByAdjPiece[p.id] || 0;
+    if (totalQty === 0 && !p.is_new) return false;
+    return true;
+  });
+
   // appendMatrixSheets expects CampaignPiece / CampaignKit shapes. Build
   // those by merging adjustment metadata with source-piece images.
-  const matrixPieces = livePieces
+  const matrixPieces = piecesForMatrix
     .filter((p) => !p.kit_only)
     .map((p) => {
       const src = sourcePieceMeta(p.source_piece_id);
@@ -484,7 +492,7 @@ export async function buildRequoteFinalWorkbook(
       } as any;
     });
 
-  const matrixAllPieces = livePieces.map((p) => {
+  const matrixAllPieces = piecesForMatrix.map((p) => {
     const src = sourcePieceMeta(p.source_piece_id);
     return {
       id: p.id,
@@ -509,20 +517,19 @@ export async function buildRequoteFinalWorkbook(
     } as any;
   });
 
-  const matrixKits = liveKits
-    .filter((k) => (qtyByKit.get(k.id) || 0) > 0 || (kitPiecesByKit.get(k.id)?.length || 0) > 0)
-    .map((k) => ({
-      id: k.id,
-      campaign_id: "",
-      name: k.name,
-      code: kitCode(k.source_kit_id),
-      display_order: 0,
-      image_url: kitImage(k.source_kit_id),
-      is_mockup: false,
-      category: null,
-      sub_location: null,
-      created_at: "",
-    } as any));
+  const kitsForMatrix = liveKits.filter((k) => (qtyByKit.get(k.id) || 0) > 0);
+  const matrixKits = kitsForMatrix.map((k) => ({
+    id: k.id,
+    campaign_id: "",
+    name: k.name,
+    code: kitCode(k.source_kit_id),
+    display_order: 0,
+    image_url: kitImage(k.source_kit_id),
+    is_mockup: false,
+    category: null,
+    sub_location: null,
+    created_at: "",
+  } as any));
 
   const matrixKitPieces = params.adjKitPieces.map((kp) => ({
     id: kp.id,
@@ -533,7 +540,15 @@ export async function buildRequoteFinalWorkbook(
     created_at: "",
   } as any));
 
-  const matrixStores = params.stores.map((s) => ({
+  // Sort stores by UF (state), then by name.
+  const sortedStores = [...params.stores].sort((a, b) => {
+    const ua = (a.state || "ZZ").toUpperCase();
+    const ub = (b.state || "ZZ").toUpperCase();
+    if (ua !== ub) return ua.localeCompare(ub, "pt-BR");
+    return (a.name || "").localeCompare(b.name || "", "pt-BR");
+  });
+
+  const matrixStores = sortedStores.map((s) => ({
     id: s.id,
     client_id: "",
     name: s.name,
@@ -554,8 +569,9 @@ export async function buildRequoteFinalWorkbook(
     showcase_count: s.showcase_count || 0,
   } as any));
 
+  let matrixSheetName: string | null = null;
   try {
-    await appendMatrixSheets(wb, {
+    matrixSheetName = await appendMatrixSheets(wb, {
       stores: matrixStores,
       pieces: matrixPieces,
       qtyMap: matrixQtyMap,
@@ -573,6 +589,161 @@ export async function buildRequoteFinalWorkbook(
     } as any);
   } catch (e) {
     console.warn("[buildRequoteFinalWorkbook] matrix append failed", e);
+  }
+
+  // ─── Append price/freight/installation/grand-total rows to matrix sheet ──
+  // Column order MUST match appendMatrixSheets sortByCode (code asc,
+  // piece-before-kit on ties, id asc).
+  if (matrixSheetName) {
+    const matrixWs = wb.getWorksheet(matrixSheetName);
+    if (matrixWs) {
+      type ColEntry = { id: string; type: "piece" | "kit"; code: number; unitPrice: number };
+      const colItems: ColEntry[] = [
+        ...matrixPieces.map((p) => {
+          const adjP = piecesForMatrix.find((x) => x.id === p.id)!;
+          return { id: p.id, type: "piece" as const, code: Number(p.code) || 0, unitPrice: newPriceFor(adjP) };
+        }),
+        ...matrixKits.map((k) => {
+          const kps = kitPiecesByKit.get(k.id) || [];
+          let unit = 0;
+          for (const kp of kps) {
+            const adjP = params.adjPieces.find((p) => p.id === kp.piece_id);
+            if (adjP) unit += newPriceFor(adjP) * (kp.quantity || 0);
+          }
+          return { id: k.id, type: "kit" as const, code: Number(k.code) || 0, unitPrice: unit };
+        }),
+      ].sort((a, b) => {
+        return (a.code - b.code)
+          || (a.type === b.type ? 0 : a.type === "piece" ? -1 : 1)
+          || (a.id < b.id ? -1 : 1);
+      });
+
+      const STORE_META_COLS = 4; // DEFAULT_STORE_FIELDS
+      const colCount = STORE_META_COLS + colItems.length;
+      // Matrix layout: row 1 title, rows 2-9 meta (8), row 10 stores header,
+      // rows 11..(10+N) stores, row (11+N) TOTAL.
+      const totalRowNum = 10 + matrixStores.length + 1;
+      const baseRow = totalRowNum + 1;
+
+      const getColLetter = (n: number): string => {
+        let s = ""; let c = n;
+        while (c > 0) { const m = (c - 1) % 26; s = String.fromCharCode(65 + m) + s; c = Math.floor((c - 1) / 26); }
+        return s;
+      };
+
+      const styleLabel = (cell: any) => {
+        cell.font = { bold: true, color: { argb: WHITE }, size: 11 };
+        cell.alignment = { horizontal: "right", vertical: "middle" };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
+      };
+
+      // Row 1: PREÇO UNITÁRIO
+      const unitRow = matrixWs.getRow(baseRow);
+      matrixWs.mergeCells(baseRow, 1, baseRow, STORE_META_COLS);
+      const unitLabel = matrixWs.getCell(baseRow, 1);
+      unitLabel.value = "PREÇO UNITÁRIO";
+      styleLabel(unitLabel);
+      for (let i = 0; i < colItems.length; i++) {
+        const c = unitRow.getCell(STORE_META_COLS + 1 + i);
+        c.value = colItems[i].unitPrice;
+        c.numFmt = money;
+        c.font = { color: { argb: DARK }, size: 10 };
+        c.alignment = { horizontal: "center", vertical: "middle" };
+        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+      }
+      unitRow.height = 22;
+
+      // Row 2: PREÇO TOTAL = unit × total qty (formula)
+      const totalLineRow = matrixWs.getRow(baseRow + 1);
+      matrixWs.mergeCells(baseRow + 1, 1, baseRow + 1, STORE_META_COLS);
+      const totLabel = matrixWs.getCell(baseRow + 1, 1);
+      totLabel.value = "PREÇO TOTAL";
+      styleLabel(totLabel);
+      for (let i = 0; i < colItems.length; i++) {
+        const colN = STORE_META_COLS + 1 + i;
+        const letter = getColLetter(colN);
+        const c = totalLineRow.getCell(colN);
+        c.value = { formula: `${letter}${baseRow}*${letter}${totalRowNum}` } as any;
+        c.numFmt = money;
+        c.font = { bold: true, color: { argb: DARK }, size: 10 };
+        c.alignment = { horizontal: "center", vertical: "middle" };
+        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFE7D8" } };
+      }
+      totalLineRow.height = 22;
+
+      // Row 3 (after spacer): TOTAL DA PRODUÇÃO
+      const prodRowNum = baseRow + 3;
+      const prodRow = matrixWs.getRow(prodRowNum);
+      matrixWs.mergeCells(prodRowNum, 1, prodRowNum, STORE_META_COLS);
+      const prodLabel = matrixWs.getCell(prodRowNum, 1);
+      prodLabel.value = "TOTAL DA PRODUÇÃO";
+      styleLabel(prodLabel);
+      const firstItemLetter = getColLetter(STORE_META_COLS + 1);
+      const lastItemLetter = getColLetter(colCount);
+      matrixWs.mergeCells(prodRowNum, STORE_META_COLS + 1, prodRowNum, colCount);
+      const prodValCell = matrixWs.getCell(prodRowNum, STORE_META_COLS + 1);
+      prodValCell.value = {
+        formula: `SUM(${firstItemLetter}${baseRow + 1}:${lastItemLetter}${baseRow + 1})`,
+      } as any;
+      prodValCell.numFmt = money;
+      prodValCell.font = { bold: true, color: { argb: DARK }, size: 11 };
+      prodValCell.alignment = { horizontal: "center", vertical: "middle" };
+      prodValCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+      prodRow.height = 24;
+
+      // FRETE
+      const freightRowNum = prodRowNum + 1;
+      const freightRow = matrixWs.getRow(freightRowNum);
+      matrixWs.mergeCells(freightRowNum, 1, freightRowNum, STORE_META_COLS);
+      const fLabel = matrixWs.getCell(freightRowNum, 1);
+      fLabel.value = "FRETE";
+      styleLabel(fLabel);
+      matrixWs.mergeCells(freightRowNum, STORE_META_COLS + 1, freightRowNum, colCount);
+      const fVal = matrixWs.getCell(freightRowNum, STORE_META_COLS + 1);
+      fVal.value = Number(params.newFreight || 0);
+      fVal.numFmt = money;
+      fVal.font = { color: { argb: DARK }, size: 11 };
+      fVal.alignment = { horizontal: "center", vertical: "middle" };
+      fVal.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+      freightRow.height = 22;
+
+      // INSTALAÇÃO
+      const instRowNum = freightRowNum + 1;
+      const instRow = matrixWs.getRow(instRowNum);
+      matrixWs.mergeCells(instRowNum, 1, instRowNum, STORE_META_COLS);
+      const iLabel = matrixWs.getCell(instRowNum, 1);
+      iLabel.value = "INSTALAÇÃO";
+      styleLabel(iLabel);
+      matrixWs.mergeCells(instRowNum, STORE_META_COLS + 1, instRowNum, colCount);
+      const iVal = matrixWs.getCell(instRowNum, STORE_META_COLS + 1);
+      iVal.value = Number(params.newInstallation || 0);
+      iVal.numFmt = money;
+      iVal.font = { color: { argb: DARK }, size: 11 };
+      iVal.alignment = { horizontal: "center", vertical: "middle" };
+      iVal.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+      instRow.height = 22;
+
+      // VALOR TOTAL GERAL (destaque)
+      const grandRowNum = instRowNum + 1;
+      const grandRow = matrixWs.getRow(grandRowNum);
+      matrixWs.mergeCells(grandRowNum, 1, grandRowNum, STORE_META_COLS);
+      const gLabel = matrixWs.getCell(grandRowNum, 1);
+      gLabel.value = "VALOR TOTAL GERAL";
+      gLabel.font = { bold: true, color: { argb: WHITE }, size: 13 };
+      gLabel.alignment = { horizontal: "right", vertical: "middle" };
+      gLabel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
+      matrixWs.mergeCells(grandRowNum, STORE_META_COLS + 1, grandRowNum, colCount);
+      const gVal = matrixWs.getCell(grandRowNum, STORE_META_COLS + 1);
+      const colLetterFirst = getColLetter(STORE_META_COLS + 1);
+      gVal.value = {
+        formula: `${colLetterFirst}${prodRowNum}+${colLetterFirst}${freightRowNum}+${colLetterFirst}${instRowNum}`,
+      } as any;
+      gVal.numFmt = money;
+      gVal.font = { bold: true, color: { argb: WHITE }, size: 14 };
+      gVal.alignment = { horizontal: "center", vertical: "middle" };
+      gVal.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
+      grandRow.height = 32;
+    }
   }
 
   const buffer = await wb.xlsx.writeBuffer();
