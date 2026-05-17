@@ -255,8 +255,16 @@ export async function buildRequoteFinalWorkbook(
   // ────────────────────────────────────────────────────────────────────
   // SHEET 3 — One sheet per Kit
   // ────────────────────────────────────────────────────────────────────
+  const usedSheetNames = new Set<string>(wb.worksheets.map((w) => w.name.toLowerCase()));
   for (const kit of params.kits) {
-    const safeName = `Kit ${kit.name}`.slice(0, 31).replace(/[\\/?*[\]:]/g, "-");
+    const base = `Kit ${kit.name}`.replace(/[\\/?*[\]:]/g, "-");
+    let safeName = base.slice(0, 31);
+    let suffix = 2;
+    while (usedSheetNames.has(safeName.toLowerCase())) {
+      const tag = ` (${suffix++})`;
+      safeName = `${base.slice(0, 31 - tag.length)}${tag}`;
+    }
+    usedSheetNames.add(safeName.toLowerCase());
     const ks = wb.addWorksheet(safeName, { pageSetup: { paperSize: 9, orientation: "landscape" } });
     ks.columns = [{ width: 12 }, { width: 32 }, { width: 14 }, { width: 16 }, { width: 16 }, { width: 14 }];
 
