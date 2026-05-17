@@ -613,6 +613,7 @@ export default function AdjustmentsTab({
                         }
                       }
 
+                      let changedCount = 0;
                       const newPriceByAdj = new Map<string, number>();
                       for (const row of j.prices || []) {
                         const adjId = String(row.piece_id);
