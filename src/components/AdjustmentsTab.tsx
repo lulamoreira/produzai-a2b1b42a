@@ -85,6 +85,23 @@ export default function AdjustmentsTab({
   const deleteMut = useDeleteAdjustment();
   const qc = useQueryClient();
 
+  const handleRevertApproval = async (adjustmentId: string) => {
+    if (!window.confirm("Reverter a aprovação desta recotação? Os preços salvos serão mantidos e o status voltará para 'aguardando resposta' para que você possa editar os valores manualmente novamente.")) return;
+    const tId = toast.loading("Revertendo aprovação...");
+    try {
+      const { error } = await supabase
+        .from('campaign_adjustment_budget_request' as any)
+        .update({ status: 'sent', response_received_at: null })
+        .eq('adjustment_id', adjustmentId);
+      if (error) throw error;
+      await qc.invalidateQueries({ queryKey: ['adjustment_budget_requests', campaignId] });
+      await qc.invalidateQueries({ queryKey: ['active_adjustment_request', campaignId] });
+      toast.success("Aprovação revertida. Clique em 'Registrar resposta manual' para editar os valores.", { id: tId });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao reverter aprovação.", { id: tId });
+    }
+  };
+
   const handleCancelResend = async (adjustmentId: string) => {
     if (!window.confirm("Anular este reenvio? A recotação deixará de constar como solicitada e o fornecedor não será notificado dessa ação. (O e-mail já enviado não pode ser recolhido.)")) return;
     const tId = toast.loading("Anulando reenvio...");
@@ -482,8 +499,8 @@ export default function AdjustmentsTab({
                     })()}
 
                     {requote.status === "approved" && (
-                      <div className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                        <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                        <div className="flex-1 min-w-[220px]">
                           <p className="text-sm font-medium text-emerald-900">
                             Recotação aprovada — planilha final disponível
                           </p>
@@ -499,6 +516,16 @@ export default function AdjustmentsTab({
                         >
                           {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
                           {isExporting ? "Gerando..." : "Baixar planilha final"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleRevertApproval(a.id)}
+                          className="shrink-0 gap-1.5 border-amber-300 text-amber-800 hover:bg-amber-50"
+                          title="Reverter aprovação para editar os valores novamente"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          Reverter aprovação
                         </Button>
                       </div>
                     )}
