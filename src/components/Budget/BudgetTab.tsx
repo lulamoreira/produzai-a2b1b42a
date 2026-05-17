@@ -2993,3 +2993,128 @@ function RequoteApprovedExportRow({
     </div>
   );
 }
+
+function RequoteTotalsBreakdown({ requote }: { requote: AdjustmentBudgetRequest }) {
+  const fmt = (n: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n);
+
+  const j = (requote.adjusted_prices_jsonb || {}) as {
+    prices?: { piece_id: string; new_price: number }[];
+    installation?: number;
+    freight?: number;
+  };
+  const extras = (requote.adjusted_extras_jsonb || {}) as {
+    installation?: number;
+    freight?: number;
+  };
+  const installation = Number(extras.installation ?? j.installation ?? 0);
+  const freight = Number(extras.freight ?? j.freight ?? 0);
+
+  const enabled = !!requote.adjustment_id && !!requote.supplier_id;
+
+  const { data: adjPieces } = useQuery({
+    queryKey: ["requote_breakdown_pieces", requote.adjustment_id],
+    enabled,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaign_adjustment_pieces")
+        .select("id, source_piece_id, is_deleted")
+        .eq("adjustment_id", requote.adjustment_id)
+        .eq("is_deleted", false);
+      return data ?? [];
+    },
+  });
+
+  const { data: baselinePrices } = useQuery({
+    queryKey: ["requote_breakdown_baseline", requote.supplier_id],
+    enabled,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("budget_prices")
+        .select("piece_id, adjusted_unit_price, unit_price")
+        .eq("supplier_id", requote.supplier_id);
+      return data ?? [];
+    },
+  });
+
+  const { data: storeQty } = useQuery({
+    queryKey: ["requote_breakdown_qty_all", requote.adjustment_id, requote.response_received_at],
+    enabled,
+    queryFn: async () => {
+      const pageSize = 1000;
+      let from = 0;
+      const all: { piece_id: string; quantity: number }[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("campaign_adjustment_store_pieces" as any)
+          .select("piece_id, quantity")
+          .eq("adjustment_id", requote.adjustment_id)
+          .order("id", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const rows = (data ?? []) as unknown as { piece_id: string; quantity: number }[];
+        all.push(...rows);
+        if (rows.length < pageSize) break;
+        from += pageSize;
+      }
+      return all;
+    },
+  });
+
+  const ready = !!adjPieces && !!baselinePrices && !!storeQty;
+
+  let production = 0;
+  if (ready) {
+    const sourceByAdj = new Map<string, string | null>();
+    for (const p of adjPieces!) {
+      sourceByAdj.set(String(p.id), p.source_piece_id ? String(p.source_piece_id) : null);
+    }
+    const prevBySource = new Map<string, number>();
+    for (const r of baselinePrices!) {
+      if (!r.piece_id) continue;
+      prevBySource.set(
+        String(r.piece_id),
+        Number(r.adjusted_unit_price ?? r.unit_price ?? 0),
+      );
+    }
+    const qtyByAdj = new Map<string, number>();
+    for (const sp of storeQty!) {
+      const pid = String(sp.piece_id);
+      qtyByAdj.set(pid, (qtyByAdj.get(pid) || 0) + Number(sp.quantity || 0));
+    }
+    const newPriceByAdj = new Map<string, number>();
+    for (const row of j.prices || []) {
+      newPriceByAdj.set(String(row.piece_id), Number(row.new_price) || 0);
+    }
+    for (const p of adjPieces!) {
+      const adjId = String(p.id);
+      const srcId = sourceByAdj.get(adjId);
+      const prevPrice = srcId ? (prevBySource.get(srcId) || 0) : 0;
+      const price = newPriceByAdj.has(adjId) ? (newPriceByAdj.get(adjId) || 0) : prevPrice;
+      production += price * (qtyByAdj.get(adjId) || 0);
+    }
+  }
+
+  const grand = production + installation + freight;
+
+  return (
+    <div className="space-y-1 text-sm">
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground">Valor de produção</span>
+        <span className="font-medium">{ready ? fmt(production) : "…"}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground">Instalação</span>
+        <span className="font-medium">{fmt(installation)}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground">Frete</span>
+        <span className="font-medium">{fmt(freight)}</span>
+      </div>
+      <div className="flex items-center justify-between pt-1 border-t">
+        <span className="text-foreground font-semibold">Total geral</span>
+        <span className="font-semibold">{ready ? fmt(grand) : "…"}</span>
+      </div>
+    </div>
+  );
+}
