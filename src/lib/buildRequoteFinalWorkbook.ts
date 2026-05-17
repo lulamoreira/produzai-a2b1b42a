@@ -777,7 +777,23 @@ export async function buildRequoteFinalWorkbook(
       styleLabel(prodLabel);
       matrixWs.mergeCells(prodRowNum, STORE_META_COLS + 1, prodRowNum, colCount);
       const prodValCell = matrixWs.getCell(prodRowNum, STORE_META_COLS + 1);
-      prodValCell.value = { formula: `SUM(${getColLetter(STORE_META_COLS + 1)}${baseRow + 1}:${getColLetter(colCount)}${baseRow + 1})` } as any;
+      // Compute production total directly from columns (unit × total qty)
+      // to guarantee a numeric value (Excel formula sometimes shows empty
+      // until first open). Matches the Preços (Recotação) total.
+      let matrizProductionTotal = 0;
+      for (const col of colItems) {
+        let totalQty = 0;
+        if (col.type === "piece") {
+          const adjP = pieceById.get(col.id);
+          totalQty = adjP?.kit_only
+            ? (residualQtyByAdjPiece[col.id] || 0)
+            : (qtyByAdjPiece[col.id] || 0);
+        } else {
+          totalQty = qtyByKit.get(col.id) || 0;
+        }
+        matrizProductionTotal += (col.unitPrice || 0) * totalQty;
+      }
+      prodValCell.value = matrizProductionTotal;
       prodValCell.numFmt = money;
       prodValCell.font = { bold: true, color: { argb: DARK }, size: 11 };
       prodValCell.alignment = { horizontal: "center", vertical: "middle" };
