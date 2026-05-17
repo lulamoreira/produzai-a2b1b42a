@@ -231,6 +231,37 @@ export async function buildRequoteFinalWorkbook(
     qtyByKit.set(kit.id, total);
   }
 
+  // Quantities from kit-only components that are NOT covered by a complete
+  // kit must still appear in the matrix as real piece quantity. Example: if a
+  // kit needs 2 of piece A and the store has 5, the matrix should show 2 kits
+  // + 1 residual piece A. Otherwise the visible matrix sum becomes lower than
+  // the real piece-by-piece total from "Preços (Recotação)".
+  const kitConsumedQtyByStorePiece = new Map<string, number>();
+  for (const kit of liveKits) {
+    const kps = kitPiecesByKit.get(kit.id) || [];
+    for (const s of params.stores) {
+      const kitQty = qtyByStoreKit.get(`${s.id}-${kit.id}`) || 0;
+      if (kitQty <= 0) continue;
+      for (const kp of kps) {
+        const key = `${s.id}-${kp.piece_id}`;
+        kitConsumedQtyByStorePiece.set(
+          key,
+          (kitConsumedQtyByStorePiece.get(key) || 0) + kitQty * (kp.quantity || 1),
+        );
+      }
+    }
+  }
+  const residualQtyByStorePiece = new Map<string, number>();
+  const residualQtyByAdjPiece: Record<string, number> = {};
+  for (const sp of params.adjStorePieces) {
+    const actual = Number(sp.quantity || 0);
+    const consumed = kitConsumedQtyByStorePiece.get(`${sp.store_id}-${sp.piece_id}`) || 0;
+    const residual = Math.max(actual - consumed, 0);
+    if (residual <= 0) continue;
+    residualQtyByStorePiece.set(`${sp.store_id}-${sp.piece_id}`, residual);
+    residualQtyByAdjPiece[sp.piece_id] = (residualQtyByAdjPiece[sp.piece_id] || 0) + residual;
+  }
+
   // Resolve previous/new price for an adjustment piece
   const previousPriceFor = (adjP: RequoteFinalAdjPiece): number => {
     if (!adjP.source_piece_id) return 0;
