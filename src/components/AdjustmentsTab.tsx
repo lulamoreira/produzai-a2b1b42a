@@ -215,7 +215,7 @@ export default function AdjustmentsTab({
         .from("campaign_adjustment_store_pieces" as any)
         .select("piece_id, quantity")
         .eq("adjustment_id", requote!.adjustment_id);
-      return (data ?? []) as { piece_id: string; quantity: number }[];
+      return (data ?? []) as unknown as { piece_id: string; quantity: number }[];
     },
   });
 
