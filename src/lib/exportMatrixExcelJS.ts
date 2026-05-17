@@ -581,8 +581,18 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
 
     const kitQtyMap: Record<string, number> = {};
     for (const s of stores) {
+      // Quantos kits completos esta loja recebe
+      // = min sobre os componentes de floor(qtdComponente / qtdPorKit)
+      const kitsAtStore = kpList.length > 0
+        ? Math.min(
+            ...kpList.map((kp) =>
+              Math.floor((qtyMap[`${s.id}-${kp.piece_id}`] || 0) / (kp.quantity || 1)),
+            ),
+          )
+        : 0;
+      const safeKits = Number.isFinite(kitsAtStore) ? kitsAtStore : 0;
       for (const kp of kpList) {
-        kitQtyMap[`${s.id}-${kp.id}`] = kp.quantity;
+        kitQtyMap[`${s.id}-${kp.id}`] = safeKits * (kp.quantity || 1);
       }
     }
 

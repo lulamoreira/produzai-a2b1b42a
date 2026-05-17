@@ -562,7 +562,13 @@ export async function buildRequoteFinalWorkbook(
       } as any;
     });
 
-  const matrixAllPieces = piecesForMatrix.map((p) => {
+  // allPieces — TODAS as peças vivas com code válido (sem filtro de qty).
+  // Necessário para que componentes kit_only com residual zero ainda sejam
+  // resolvíveis nas sub-abas de Kit (código, nome, spec, imagem, local).
+  const allLivePiecesForLookup = livePieces.filter(
+    (p) => p.code && Number(p.code) !== 0,
+  );
+  const matrixAllPieces = allLivePiecesForLookup.map((p) => {
     const src = sourcePieceMeta(p.source_piece_id);
     return {
       id: p.id,
