@@ -15,6 +15,7 @@ import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import BudgetWinnerPreviewDialog from "./BudgetWinnerPreviewDialog";
 import { Textarea } from "@/components/ui/textarea";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
+import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 
 const URL_REGEX = /^https?:\/\/.+/i;
 
