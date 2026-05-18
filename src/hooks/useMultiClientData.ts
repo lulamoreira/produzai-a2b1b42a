@@ -759,16 +759,24 @@ export function useCampaignStorePieces(campaignId: string | undefined) {
 
   useEffect(() => {
     if (!campaignId) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const schedule = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        qc.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
+      }, 150);
+    };
     const channel = supabase
       .channel(`campaign-store-pieces-rt-${campaignId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "campaign_store_pieces", filter: `campaign_id=eq.${campaignId}` },
-        () => qc.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] })
+        schedule
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { if (timer) clearTimeout(timer); supabase.removeChannel(channel); };
   }, [campaignId, qc]);
+
 
   return query;
 }
