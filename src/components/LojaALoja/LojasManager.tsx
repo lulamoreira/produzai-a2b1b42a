@@ -374,6 +374,16 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
         )}
       </div>
 
+      {/* Unclassified stores warning */}
+      {unclassifiedCount > 0 && (
+        <div className="flex items-center gap-2 rounded-md border border-amber-300/60 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 mx-1">
+          <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+          <p className="text-xs text-amber-900 dark:text-amber-200">
+            <strong>{unclassifiedCount}</strong> {unclassifiedCount === 1 ? "loja sem classificação" : "lojas sem classificação"} (destacadas na tabela abaixo).
+          </p>
+        </div>
+      )}
+
       {/* Table container */}
       <div className="border border-border rounded-lg overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
