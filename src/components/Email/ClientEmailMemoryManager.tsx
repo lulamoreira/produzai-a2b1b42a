@@ -19,11 +19,12 @@ interface Props {
 }
 
 export default function ClientEmailMemoryManager({ clientId, canEdit }: Props) {
-  const { entries, isLoading, removeEmail, updateEmail } = useClientEmailMemory({ clientId });
+  const { entries, isLoading, removeEmail, updateEmail, record } = useClientEmailMemory({ clientId });
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [addValue, setAddValue] = useState("");
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
