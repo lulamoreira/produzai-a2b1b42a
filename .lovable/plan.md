@@ -1,22 +1,54 @@
 ## Diagnóstico
 
-A loja **Quiosque Vitória** já foi excluída da lista mestre de lojas do cliente (`client_stores`), por isso não aparece mais na campanha base. Porém, ela continua presente **dentro do Ajuste** "Ajuste - 12/05/2026" da campanha **Inverno** porque o ajuste mantém um snapshot próprio das lojas e do rateio (independente do mestre):
+A campanha Outlet tem **5 lojas × 12 peças (22 registros em `campaign_store_pieces`)** — volume mínimo. As queries no banco são instantâneas (índice composto `(campaign_id, store_id, piece_id)` está OK, EXPLAIN ANALYZE = 0,04 ms). **A lentidão não está no banco**, está no caminho cliente ⇄ rede ⇄ React Query.
 
-- 1 linha em `campaign_adjustment_stores` (snapshot da loja, `is_deleted = false`) — por isso ela aparece na listagem do ajuste.
-- 9 linhas em `campaign_adjustment_store_pieces` com quantidades (1, 1, 1, 1, 2, 1, 1, 2, 2) — por isso entra no rateio e soma no valor de produção do ajuste.
+### Gargalos identificados em `src/hooks/useMultiClientData.ts`
 
-A loja original (`client_stores.id = 135028c8…`) não existe mais, então essas linhas estão órfãs.
+1. **Dois round-trips por célula editada** (linhas 800–823 e 915–935 em `useUpdateCampaignStorePiece` / `useBulkUpdateCampaignStorePieces`):
+   - 1ª chamada: `SELECT id` em `campaign_store_pieces`
+   - 2ª chamada: `UPDATE` ou `INSERT`
+   - Já existe um índice único em `(campaign_id, store_id, piece_id)`, então um único `UPSERT` resolveria.
+   - **Cada edição custa ~2× a latência da rede** (em conexão de ~250 ms vira ~500 ms perceptíveis antes do toast/animação).
 
-## Correção (apenas dados, sem mudança de código)
+2. **Refetch duplicado a cada commit** (linhas 766–767 + 862–872 + 978–986):
+   - O canal realtime de `campaign_store_pieces` chama `invalidateQueries` assim que o evento chega.
+   - Em paralelo, o `onSettled` da mutação agenda outro `invalidateQueries` 500 ms depois.
+   - Resultado: o componente refaz o `SELECT * FROM campaign_store_pieces WHERE campaign_id=…` **duas vezes** por célula, sobrescrevendo o estado otimista no meio do caminho.
 
-Limpeza pontual nas tabelas do ajuste, escopo restrito a essa loja nesse ajuste:
+3. **Re-render do grid inteiro** a cada refetch — a query retorna nova referência de array, e o `StoresMatrixTable` não memoiza linhas/colunas, então todas as células re-renderizam (afeta a sensação de "digitação travada").
 
-1. `DELETE FROM campaign_adjustment_store_pieces` onde `adjustment_id = 172023cc-18e7-4b94-a1e5-119a8289b866` e `store_id = 135028c8-bd2d-49d4-882f-7929018ab6a6` → remove as 9 quantidades do rateio.
-2. `DELETE FROM campaign_adjustment_stores` onde `id = 92957062-ad3c-4a11-bb68-18d95ed7cd9b` → remove a loja da listagem do ajuste.
+4. **Cascata de subscriptions** adicionadas recentemente (`campaign_pieces`, `campaign_kits`, `campaign_kit_pieces`, `campaign_store_status` no hook + `campaigns/clients/agencies` no sidebar) — cada uma dispara `invalidateQueries` em `*` (insert/update/delete). Pouco custo isolado, mas multiplica os refetches durante edições em lote.
 
-Resultado: a loja some da listagem do ajuste, sai do rateio e deixa de contar no valor de produção. Nada mais é alterado (outras lojas, outras campanhas, outros ajustes e todo o restante permanecem intactos).
+## Plano de correção
 
-## Fora do escopo
+### 1. Trocar SELECT+INSERT/UPDATE por UPSERT (corta latência pela metade)
+Em `src/hooks/useMultiClientData.ts`:
+- `useUpdateCampaignStorePiece` (linhas 785–823): substituir o bloco `select().maybeSingle()` + branch `update/insert` por:
+  ```ts
+  supabase.from("campaign_store_pieces")
+    .upsert({ campaign_id, store_id, piece_id, quantity },
+            { onConflict: "campaign_id,store_id,piece_id" })
+  ```
+- `useBulkUpdateCampaignStorePieces` (linhas 891–937): mesma troca, e enviar **todos os updates em um único `.upsert([...])`** em vez de `Promise.all` de N chamadas. Deletes (qty=0) continuam num único `.delete().in("piece_id", […])`.
 
-- Não vou alterar nenhum código nem lógica de exclusão de lojas (você pediu para só corrigir esse problema).
-- Se quiser, depois posso investigar por que a exclusão da loja mestre não propagou automaticamente para os ajustes — mas isso só se você confirmar.
+### 2. Eliminar invalidação dupla (realtime + onSettled)
+- Manter apenas a invalidação do **realtime** (que é a fonte de verdade autoritativa do servidor).
+- Remover o `setTimeout(invalidateQueries, 500)` do `onSettled` das duas mutações.
+- Manter o `lastMutationRef` guard só para o caso de o realtime não disparar (fallback opcional de 2 s).
+
+### 3. Realtime channel único e debounced
+- Consolidar os 5 canais (`campaign_pieces`, `campaign_kits`, `campaign_kit_pieces`, `campaign_store_status`, `campaign_store_pieces`) em **um único `.channel("campaign-"+campaignId)`** com vários `.on(...)`. Hoje cada hook cria seu próprio canal/WebSocket.
+- Adicionar debounce de ~150 ms na invalidação do `campaign_store_pieces` para coalescer rajadas de edição em lote.
+
+### 4. Memoização do grid (ganho de UX)
+- Em `StoresMatrixTable.tsx`: envolver a linha/celula da matriz em `React.memo` comparando por `(storeId, pieceId, quantity)`. Sem isto, mesmo após reduzir refetches, cada commit re-renderiza 60 células.
+
+### 5. Verificação
+- Antes/depois: rodar `bulkUpdateStorePieces.test.tsx` (já existe) e validar que continua passando.
+- Medir clicks→toast no preview com `browser--performance_profile` em uma campanha real.
+
+## Arquivos afetados
+- `src/hooks/useMultiClientData.ts` (mutations + subscriptions)
+- `src/components/StoresMatrixTable.tsx` (memoização)
+
+Nenhuma migração de banco é necessária — o índice único já existe.
