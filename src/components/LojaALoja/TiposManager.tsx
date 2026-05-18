@@ -40,6 +40,7 @@ import { Plus, Pencil, Trash2, Image, ImagePlus, ChevronRight, X, Upload, Check,
 import { DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   DndContext,
