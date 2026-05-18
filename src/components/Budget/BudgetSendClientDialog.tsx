@@ -24,6 +24,7 @@ import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
 import { SendSummaryPanel, type SendSummaryItem, type SummaryItemKind, type SummaryItemStage } from "@/components/Budget/SendSummaryPanel";
 import { Textarea } from "@/components/ui/textarea";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
+import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
