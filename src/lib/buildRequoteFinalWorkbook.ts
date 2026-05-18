@@ -702,7 +702,7 @@ export async function buildRequoteFinalWorkbook(
     state: s.state || null,
     cnpj: null, state_registration: null, zip_code: null, street: null,
     number: null, complement: null, neighborhood: null, phone: null,
-    manager_name: null, store_model: null, country: null,
+    manager_name: null, store_model: s.store_model || null, country: null,
     store_code: s.store_code || null, email: null,
     custom_field_1: null, custom_field_2: null, custom_field_3: null,
     custom_field_4: null, custom_field_5: null, custom_field_6: null,
