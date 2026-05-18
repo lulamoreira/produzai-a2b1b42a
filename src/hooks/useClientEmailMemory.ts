@@ -40,7 +40,7 @@ export function useClientEmailMemory(opts: {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_email_memory" as any)
-        .select("email, last_used_at, usage_count")
+        .select("email, last_used_at, usage_count, contact_name")
         .eq("client_id", clientId!)
         .order("last_used_at", { ascending: false })
         .limit(500);
@@ -49,6 +49,7 @@ export function useClientEmailMemory(opts: {
         email: string;
         last_used_at: string;
         usage_count: number;
+        contact_name: string | null;
       }>;
     },
   });
