@@ -354,7 +354,7 @@ export async function exportRateioGridPDF(
   // Track each store's start page (filled while rendering)
   const storeStartPage: number[] = new Array(buckets.length).fill(0);
 
-  let firstStore = true;
+  
 
   for (let i = 0; i < buckets.length; i++) {
     const bucket = buckets[i];
