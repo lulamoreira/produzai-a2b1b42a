@@ -45,7 +45,7 @@ export function useClientEmailMemory(opts: {
         .order("last_used_at", { ascending: false })
         .limit(500);
       if (error) throw error;
-      return (data ?? []) as Array<{
+      return (data ?? []) as unknown as Array<{
         email: string;
         last_used_at: string;
         usage_count: number;
