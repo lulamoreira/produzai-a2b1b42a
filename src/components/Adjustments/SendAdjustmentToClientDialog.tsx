@@ -54,6 +54,7 @@ export default function SendAdjustmentToClientDialog({
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const [phone, setPhone] = useState("");
+  const [replyTo, setReplyTo] = useState("");
   const [generating, setGenerating] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const attachmentsRef = useRef<Attachments | null>(null);
@@ -65,6 +66,7 @@ export default function SendAdjustmentToClientDialog({
     setEmail(defaultClientEmail || "");
     setCc(defaultCcEmail || "");
     setPhone("");
+    setReplyTo("");
     setUploadStatus(null);
     setPreviewOpen(false);
     attachmentsRef.current = null;
