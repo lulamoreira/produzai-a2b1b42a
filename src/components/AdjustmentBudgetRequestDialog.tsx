@@ -598,6 +598,7 @@ export default function AdjustmentBudgetRequestDialog({
                 <Label htmlFor="adj-cc" className="text-xs">CC (opcional)</Label>
                 <Textarea id="adj-cc" rows={1} value={cc} onChange={(e) => setCc(e.target.value)} disabled={sending} placeholder="copia@empresa.com" className="text-sm" />
               </div>
+              <ReplyToField value={replyTo} onChange={setReplyTo} disabled={sending} />
               <div className="space-y-1.5">
                 <Label htmlFor="adj-msg" className="text-xs">Mensagem (opcional)</Label>
                 <Textarea id="adj-msg" rows={2} value={customMessage} onChange={(e) => setCustomMessage(e.target.value)} disabled={sending} placeholder="Mensagem personalizada incluída no e-mail/WhatsApp." className="text-sm" />
