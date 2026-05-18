@@ -432,6 +432,7 @@ export default function BudgetSendNegotiatedDialog({
                 <Label htmlFor="neg-cc">CC (opcional)</Label>
                 <Textarea id="neg-cc" rows={2} value={cc} onChange={(e) => setCc(e.target.value)} disabled={sending} placeholder="copia1@empresa.com, copia2@empresa.com" />
               </div>
+              <ReplyToField value={replyTo} onChange={setReplyTo} disabled={sending} />
             </>
           )}
           {sending && <UploadProgressPanel status={uploadStatus} />}
