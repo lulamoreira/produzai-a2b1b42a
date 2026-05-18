@@ -90,6 +90,10 @@ export default function BudgetWinnerDialog({
       toast.error("Informe pelo menos um e-mail válido para o fornecedor.");
       return;
     }
+    if (!isReplyToValid(replyTo)) {
+      toast.error("E-mail de 'Responder para' inválido.");
+      return;
+    }
     const mockup = mockupUrl.trim();
     if (!URL_REGEX.test(mockup)) {
       toast.error("Informe um link válido (começando com http:// ou https://).");
