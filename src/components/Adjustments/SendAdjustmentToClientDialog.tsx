@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from "react";
 import { Send, Loader2, MessageCircle, X, Mail } from "lucide-react";
 import { toast } from "sonner";
 
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
-import { mergeRecipients } from "@/lib/emailRecipients";
+import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 import { uploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
 import {
@@ -16,6 +17,7 @@ import {
   type AdjustmentClientPackage,
 } from "@/lib/buildAdjustmentClientPackage";
 import AdjustmentEmailPreviewDialog from "./AdjustmentEmailPreviewDialog";
+import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 
 interface Props {
   open: boolean;
