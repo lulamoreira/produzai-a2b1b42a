@@ -264,6 +264,8 @@ export default function BudgetSendNegotiatedDialog({
                 differenceDirection: diffDirection,
                 downloadUrls: [link],
               },
+              fromName: agencyName,
+              ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
             },
           });
           if (error) throw new Error(error.message || "Erro ao enviar e-mail");
