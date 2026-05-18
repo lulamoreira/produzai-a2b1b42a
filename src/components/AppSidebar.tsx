@@ -486,11 +486,21 @@ export default function AppSidebar() {
             <button
               onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}`)}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
-              style={itemStyle(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
-              {...hoverHandlers(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !isInsideCampaign)}
+              style={itemStyle(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !location.search.includes("tab=emails") && !isInsideCampaign)}
+              {...hoverHandlers(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !location.search.includes("tab=emails") && !isInsideCampaign)}
             >
               <AquaIcon icon={Megaphone} size="xs" color="#8C6F4E" />
               <span className="truncate">{t("sidebar.campaigns")}</span>
+            </button>
+            <button
+              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=emails`)}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
+              style={itemStyle(location.search.includes("tab=emails") && !isInsideCampaign)}
+              {...hoverHandlers(location.search.includes("tab=emails") && !isInsideCampaign)}
+              title="Memória de e-mails"
+            >
+              <AquaIcon icon={Mail} size="xs" color="#5B7B8C" />
+              <span className="truncate">E-mails</span>
             </button>
             <div className="ml-6 space-y-0.5 mt-0.5">
               {clientCampaigns.map((camp) => {
