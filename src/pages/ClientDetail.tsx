@@ -53,6 +53,7 @@ import DeleteStoreDialog from "@/components/DeleteStoreDialog";
 import DeleteAllStoresDialog from "@/components/DeleteAllStoresDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import StoreContactsSection from "@/components/StoreContactsSection";
+import ClientEmailMemoryManager from "@/components/Email/ClientEmailMemoryManager";
 import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
 import { useLanguage } from "@/hooks/useLanguage";
 
