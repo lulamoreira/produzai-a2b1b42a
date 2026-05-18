@@ -844,7 +844,7 @@ const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) 
         supabase.from("loja_a_loja_subdivisoes").select("*"),
         supabase.from("loja_a_loja_pecas").select("*").eq("campaign_id", selectedImportCampaignId),
         supabase.from("loja_a_loja_lojas").select("*").eq("campaign_id", selectedImportCampaignId),
-        supabase.from("stores").select("id, name, store_code").eq("client_id", clientId!),
+        supabase.from("client_stores").select("id, name, store_code").eq("client_id", clientId!),
         supabase.from("loja_a_loja_lojas").select("store_id").eq("campaign_id", selectedImportCampaignId),
       ]);
       if (srcTiposRes.error) throw srcTiposRes.error;
