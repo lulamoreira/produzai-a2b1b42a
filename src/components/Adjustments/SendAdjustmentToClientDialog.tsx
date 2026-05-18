@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -161,7 +160,7 @@ export default function SendAdjustmentToClientDialog({
     }
   };
 
-  const busy = sending || generating;
+  const busy = generating;
 
   return (
     <>
@@ -197,34 +196,19 @@ export default function SendAdjustmentToClientDialog({
             {generating && <UploadProgressPanel status={uploadStatus} />}
           </div>
 
-          <DialogFooter className="grid grid-cols-2 sm:grid-cols-4 pt-2">
+          <DialogFooter className="grid grid-cols-1 sm:grid-cols-3 pt-2">
             <Button className="w-full" variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={busy}>
               <X className="w-4 h-4 mr-1" /> Cancelar
             </Button>
             <Button className="w-full" variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={busy || !phone}>
               <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
             </Button>
-            <Button className="w-full" variant="outline" size="sm" onClick={handleSendMailto} disabled={busy}>
+            <Button className="w-full" size="sm" onClick={handleSendMailto} disabled={busy}>
               {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><AtSign className="w-4 h-4 mr-1" /> Meu e-mail</>}
-            </Button>
-            <Button className="w-full" size="sm" onClick={handleOpenPreview} disabled={busy}>
-              {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Eye className="w-4 h-4 mr-1" /> Visualizar</>}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <BudgetWinnerPreviewDialog
-        open={previewOpen}
-        onOpenChange={(o) => !sending && setPreviewOpen(o)}
-        to={email.trim()}
-        cc={cc.trim()}
-        subject={previewSubject}
-        html={previewHtml}
-        sending={sending}
-        onConfirm={handleConfirmSend}
-        onEditRecipients={() => setPreviewOpen(false)}
-      />
     </>
   );
 }
