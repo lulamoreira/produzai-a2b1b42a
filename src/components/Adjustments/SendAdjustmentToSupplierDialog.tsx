@@ -69,6 +69,8 @@ export default function SendAdjustmentToSupplierDialog({
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const attachmentsRef = useRef<Attachments | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const { suggestions: emailSuggestions, record: recordEmails } = useClientEmailMemory({ campaignId });
+
 
   useEffect(() => {
     if (!open) return;
