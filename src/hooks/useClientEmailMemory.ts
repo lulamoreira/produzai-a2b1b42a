@@ -147,6 +147,25 @@ export function useClientEmailMemory(opts: {
     },
   });
 
+  const updateContactNameMutation = useMutation({
+    mutationFn: async ({ email, contactName }: { email: string; contactName: string | null }) => {
+      if (!clientId) return;
+      const norm = (email || "").trim().toLowerCase();
+      const trimmed = (contactName ?? "").trim();
+      const { error } = await supabase
+        .from("client_email_memory" as any)
+        .update({ contact_name: trimmed === "" ? null : trimmed })
+        .eq("client_id", clientId)
+        .eq("email", norm);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      if (clientId) {
+        queryClient.invalidateQueries({ queryKey: ["client_email_memory", clientId] });
+      }
+    },
+  });
+
   return {
     clientId,
     suggestions,
@@ -160,5 +179,6 @@ export function useClientEmailMemory(opts: {
     },
     removeEmail: removeMutation.mutateAsync,
     updateEmail: updateMutation.mutateAsync,
+    updateContactName: updateContactNameMutation.mutateAsync,
   };
 }
