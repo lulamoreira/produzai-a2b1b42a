@@ -808,6 +808,212 @@ const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) 
     });
   };
 
+  // ── Import from another campaign ──
+  const handleOpenImport = async () => {
+    if (!clientId) {
+      toast.error("Cliente não identificado.");
+      return;
+    }
+    setShowImportDialog(true);
+    setSelectedImportCampaignId(null);
+    setImportReport(null);
+    setLoadingImportCampaigns(true);
+    try {
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("id, name, created_at")
+        .eq("client_id", clientId)
+        .neq("id", campaignId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setImportCampaigns(data ?? []);
+    } catch (err: any) {
+      toast.error("Erro ao carregar campanhas: " + err.message);
+    } finally {
+      setLoadingImportCampaigns(false);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!selectedImportCampaignId) return;
+    setImporting(true);
+    try {
+      // 1) Fetch source structure
+      const [srcTiposRes, srcSubsRes, srcPecasRes, srcAssignRes, destStoresRes, srcStoresRes] = await Promise.all([
+        supabase.from("loja_a_loja_tipos").select("*").eq("campaign_id", selectedImportCampaignId),
+        supabase.from("loja_a_loja_subdivisoes").select("*"),
+        supabase.from("loja_a_loja_pecas").select("*").eq("campaign_id", selectedImportCampaignId),
+        supabase.from("loja_a_loja_lojas").select("*").eq("campaign_id", selectedImportCampaignId),
+        supabase.from("stores").select("id, name, store_code").eq("client_id", clientId!),
+        supabase.from("loja_a_loja_lojas").select("store_id").eq("campaign_id", selectedImportCampaignId),
+      ]);
+      if (srcTiposRes.error) throw srcTiposRes.error;
+      if (srcSubsRes.error) throw srcSubsRes.error;
+      if (srcPecasRes.error) throw srcPecasRes.error;
+      if (srcAssignRes.error) throw srcAssignRes.error;
+      if (destStoresRes.error) throw destStoresRes.error;
+
+      const srcTipos = srcTiposRes.data ?? [];
+      const srcSubs = (srcSubsRes.data ?? []).filter((s: any) => srcTipos.some((t) => t.id === s.tipo_id));
+      const srcPecas = srcPecasRes.data ?? [];
+      const srcAssignments = srcAssignRes.data ?? [];
+      const destStores = destStoresRes.data ?? [];
+
+      // 2) Reconcile tipos by letra — insert missing
+      const existingByLetra = new Map((tipos ?? []).map((t) => [t.letra, t]));
+      let createdTipos = 0;
+      const tipoIdMap = new Map<string, string>(); // src tipo id -> dest tipo id
+      for (const st of srcTipos) {
+        const existing = existingByLetra.get(st.letra);
+        if (existing) {
+          tipoIdMap.set(st.id, existing.id);
+        } else {
+          const { data: ins, error } = await supabase.from("loja_a_loja_tipos").insert({
+            campaign_id: campaignId,
+            letra: st.letra,
+            nome: st.nome,
+            tem_subdivisao: st.tem_subdivisao,
+            display_order: st.display_order,
+          }).select().single();
+          if (error) throw error;
+          tipoIdMap.set(st.id, ins.id);
+          createdTipos++;
+        }
+      }
+
+      // 3) Reconcile subdivisões by (tipo letra, sub nome)
+      // Refetch dest tipos with subs for accurate map
+      const { data: destTiposFull, error: destTiposErr } = await supabase
+        .from("loja_a_loja_tipos")
+        .select("id, letra")
+        .eq("campaign_id", campaignId);
+      if (destTiposErr) throw destTiposErr;
+      const { data: destSubsFull, error: destSubsErr } = await supabase
+        .from("loja_a_loja_subdivisoes")
+        .select("id, tipo_id, nome")
+        .in("tipo_id", (destTiposFull ?? []).map((t) => t.id));
+      if (destSubsErr) throw destSubsErr;
+
+      const subKey = (tipoId: string, nome: string) => `${tipoId}::${nome.toLowerCase()}`;
+      const existingSubMap = new Map((destSubsFull ?? []).map((s) => [subKey(s.tipo_id, s.nome), s.id]));
+      let createdSubs = 0;
+      const subIdMap = new Map<string, string>();
+      for (const ss of srcSubs) {
+        const destTipoId = tipoIdMap.get(ss.tipo_id);
+        if (!destTipoId) continue;
+        const key = subKey(destTipoId, ss.nome);
+        const existingId = existingSubMap.get(key);
+        if (existingId) {
+          subIdMap.set(ss.id, existingId);
+        } else {
+          const { data: ins, error } = await supabase.from("loja_a_loja_subdivisoes").insert({
+            tipo_id: destTipoId,
+            nome: ss.nome,
+            display_order: ss.display_order,
+          }).select().single();
+          if (error) throw error;
+          subIdMap.set(ss.id, ins.id);
+          existingSubMap.set(key, ins.id);
+          createdSubs++;
+        }
+      }
+
+      // 4) Reconcile peças by (dest tipo/sub + nome)
+      const { data: destPecasFull, error: destPecasErr } = await supabase
+        .from("loja_a_loja_pecas")
+        .select("id, tipo_id, subdivisao_id, nome")
+        .eq("campaign_id", campaignId);
+      if (destPecasErr) throw destPecasErr;
+      const pecaKey = (tipoId: string | null, subId: string | null, nome: string) => `${tipoId ?? ""}::${subId ?? ""}::${nome.toLowerCase()}`;
+      const existingPecas = new Set((destPecasFull ?? []).map((p) => pecaKey(p.tipo_id, p.subdivisao_id, p.nome)));
+      let createdPecas = 0;
+      const pecasToInsert: any[] = [];
+      for (const sp of srcPecas) {
+        const destTipoId = sp.tipo_id ? tipoIdMap.get(sp.tipo_id) ?? null : null;
+        const destSubId = sp.subdivisao_id ? subIdMap.get(sp.subdivisao_id) ?? null : null;
+        if (!destTipoId && !destSubId) continue;
+        const key = pecaKey(destTipoId, destSubId, sp.nome);
+        if (existingPecas.has(key)) continue;
+        existingPecas.add(key);
+        pecasToInsert.push({
+          campaign_id: campaignId,
+          tipo_id: destTipoId,
+          subdivisao_id: destSubId,
+          nome: sp.nome,
+          image_url: sp.image_url,
+          display_order: sp.display_order,
+        });
+        createdPecas++;
+      }
+      if (pecasToInsert.length > 0) {
+        const { error } = await supabase.from("loja_a_loja_pecas").insert(pecasToInsert);
+        if (error) throw error;
+      }
+
+      // 5) Import classification assignments
+      const destStoreIds = new Set(destStores.map((s) => s.id));
+      const assignmentRows: any[] = [];
+      for (const a of srcAssignments) {
+        if (!destStoreIds.has(a.store_id) || !a.tipo_id) continue;
+        const destTipoId = tipoIdMap.get(a.tipo_id);
+        if (!destTipoId) continue;
+        const destSubId = a.subdivisao_id ? (subIdMap.get(a.subdivisao_id) ?? null) : null;
+        if (a.subdivisao_id && !destSubId) continue;
+        assignmentRows.push({
+          campaign_id: campaignId,
+          store_id: a.store_id,
+          tipo_id: destTipoId,
+          subdivisao_id: destSubId,
+          ativo: a.ativo ?? false,
+        });
+      }
+      if (assignmentRows.length > 0) {
+        const { error } = await supabase
+          .from("loja_a_loja_lojas")
+          .upsert(assignmentRows, { onConflict: "campaign_id,store_id,tipo_id,subdivisao_id", ignoreDuplicates: false });
+        if (error) throw error;
+      }
+
+      // 6) Build store discrepancy report
+      const srcStoreIds = new Set((srcStoresRes.data ?? []).map((r: any) => r.store_id));
+      const destClassifiedStoreIds = new Set(assignmentRows.map((r) => r.store_id));
+      const missingStores = destStores
+        .filter((s) => srcStoreIds.has(s.id) === false && false) // placeholder
+        .map((s) => s.name);
+      // Stores que estavam na origem mas não existem mais aqui
+      const srcOnlyStoreIds = [...srcStoreIds].filter((id) => !destStoreIds.has(id));
+      // Need names for src-only — fetch from source client (same client so should exist as inactive? skip for simplicity — show count by id)
+      // Stores novas (existem aqui mas não estavam classificadas na origem)
+      const newStores = destStores
+        .filter((s) => !srcStoreIds.has(s.id))
+        .map((s) => s.name || s.store_code || s.id);
+
+      setImportReport({
+        tipos: createdTipos,
+        subs: createdSubs,
+        pecas: createdPecas,
+        assignments: assignmentRows.length,
+        missingStores: srcOnlyStoreIds.map((id) => id.slice(0, 8) + "…"),
+        newStores,
+      });
+
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-tipos", campaignId] });
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-pecas-all", campaignId] });
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-pecas"] });
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
+
+      toast.success(
+        `Importado: ${createdTipos} tipos, ${createdSubs} subdivisões, ${createdPecas} peças, ${assignmentRows.length} classificações.`
+      );
+    } catch (err: any) {
+      toast.error("Erro ao importar: " + err.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+
+
   // ── Render add tipo form ──
   const renderAddTipoForm = (section: "vitrines" | "internos") => {
     if (showAddTipoSection !== section) {
