@@ -111,6 +111,7 @@ export interface RequoteFinalStoreRow {
   city?: string | null;
   state?: string | null;
   store_code?: string | null;
+  store_model?: string | null;
   showcase_count?: number | null;
 }
 
@@ -515,7 +516,7 @@ export async function buildRequoteFinalWorkbook(
 
   // Spacer + extras
   rowIdx++;
-  const writeExtra = (label: string, prev: number, next: number) => {
+  const writeExtraRow = (label: string, prev: number, next: number, addToTotals: boolean) => {
     const r = ws.getRow(rowIdx++);
     r.getCell(3).value = label;
     r.getCell(5).value = prev;
@@ -533,14 +534,22 @@ export async function buildRequoteFinalWorkbook(
       c.font = { color: { argb: DARK }, size: 10, italic: true };
       c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
     });
-    runningNewTotal += next;
-    runningPrevTotal += prev;
+    if (addToTotals) {
+      runningNewTotal += next;
+      runningPrevTotal += prev;
+    }
     if (next !== prev) {
       const color = next > prev ? INCREASE : DECREASE;
       r.getCell(6).font = { color: { argb: color }, bold: true, size: 10 };
       r.getCell(8).font = { color: { argb: color }, bold: true, size: 10 };
     }
   };
+  const writeExtra = (label: string, prev: number, next: number) =>
+    writeExtraRow(label, prev, next, true);
+  // Capture production subtotals (sum of all pieces/kits BEFORE extras).
+  const productionPrev = runningPrevTotal;
+  const productionNew = runningNewTotal;
+  writeExtraRow("Produção", productionPrev, productionNew, false);
   writeExtra("Instalação", params.previousInstallation, params.newInstallation);
   writeExtra("Frete", params.previousFreight, params.newFreight);
 
@@ -693,7 +702,7 @@ export async function buildRequoteFinalWorkbook(
     state: s.state || null,
     cnpj: null, state_registration: null, zip_code: null, street: null,
     number: null, complement: null, neighborhood: null, phone: null,
-    manager_name: null, store_model: null, country: null,
+    manager_name: null, store_model: s.store_model || null, country: null,
     store_code: s.store_code || null, email: null,
     custom_field_1: null, custom_field_2: null, custom_field_3: null,
     custom_field_4: null, custom_field_5: null, custom_field_6: null,
@@ -723,6 +732,13 @@ export async function buildRequoteFinalWorkbook(
       reservedSheetNames: new Set(["preços (recotação)"]),
       skipDashboard: true,
       sortByCode: true,
+      storeFields: [
+        { key: "name", label: "NOME DA LOJA" },
+        { key: "city", label: "CIDADE" },
+        { key: "state", label: "UF" },
+        { key: "store_model", label: "MODELO" },
+        { key: "showcase_count", label: "VITRINES" },
+      ],
     } as any);
   } catch (e) {
     console.warn("[buildRequoteFinalWorkbook] matrix append failed", e);

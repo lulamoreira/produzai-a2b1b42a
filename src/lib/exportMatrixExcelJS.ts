@@ -314,6 +314,12 @@ async function buildTransposedSheet(
     cell.border = allWhiteBorders;
   });
 
+  // Enable AutoFilter on the stores header row, spanning all columns.
+  ws.autoFilter = {
+    from: { row: storesHeaderRowNum, column: 1 },
+    to: { row: storesHeaderRowNum, column: colCount },
+  };
+
   // Column widths
   for (let i = 1; i <= STORE_META_COLS; i++) {
     const f = storeFields[i - 1];

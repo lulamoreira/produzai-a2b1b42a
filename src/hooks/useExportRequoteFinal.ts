@@ -92,7 +92,7 @@ export async function buildRequoteFinalPackage(params: {
   const { data: storeRows } = clientId
     ? await supabase
         .from("client_stores")
-        .select("id, name, nickname, city, state, store_code, showcase_count")
+        .select("id, name, nickname, city, state, store_code, store_model, showcase_count")
         .eq("client_id", clientId)
     : { data: [] as any[] };
 
