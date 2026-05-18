@@ -283,6 +283,8 @@ export default function SendAdjustmentToClientDialog({
         to={email}
         cc={cc}
         subject={`${campaignName} — Planilha final + Guia Visual de Lojas${adjustmentName ? ` (${adjustmentName})` : ""}`}
+        onSendViaSystem={handleSendViaSystem}
+        replyTo={replyTo}
       />
     </>
   );
