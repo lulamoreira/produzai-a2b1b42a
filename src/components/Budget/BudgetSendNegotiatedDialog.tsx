@@ -25,6 +25,7 @@ import { validateNegotiationRateio, type RateioValidationResult } from "@/lib/va
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
+import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 
 interface Props {
   open: boolean;
@@ -59,6 +60,7 @@ export default function BudgetSendNegotiatedDialog({
 }: Props) {
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
+  const [replyTo, setReplyTo] = useState("");
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
@@ -221,6 +223,10 @@ export default function BudgetSendNegotiatedDialog({
       toast.error("Informe pelo menos um e-mail válido.");
       return;
     }
+    if (!isReplyToValid(replyTo)) {
+      toast.error("E-mail de 'Responder para' inválido.");
+      return;
+    }
     setSending(true);
     setUploadStatus(null);
     setSummaryItems([]);
@@ -264,6 +270,8 @@ export default function BudgetSendNegotiatedDialog({
                 differenceDirection: diffDirection,
                 downloadUrls: [link],
               },
+              fromName: agencyName,
+              ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
             },
           });
           if (error) throw new Error(error.message || "Erro ao enviar e-mail");
@@ -428,6 +436,7 @@ export default function BudgetSendNegotiatedDialog({
                 <Label htmlFor="neg-cc">CC (opcional)</Label>
                 <Textarea id="neg-cc" rows={2} value={cc} onChange={(e) => setCc(e.target.value)} disabled={sending} placeholder="copia1@empresa.com, copia2@empresa.com" />
               </div>
+              <ReplyToField value={replyTo} onChange={setReplyTo} disabled={sending} />
             </>
           )}
           {sending && <UploadProgressPanel status={uploadStatus} />}

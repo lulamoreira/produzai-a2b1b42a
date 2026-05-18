@@ -32,7 +32,7 @@ serve(async (req) => {
     const isGeral = record.location_in_store === "GERAL - NA LOJA TODA";
 
     const [campaignRes, storeRes, pieceRes, motiveRes, emailsRes, statusRes, sysMessagesRes] = await Promise.all([
-      supabase.from("campaigns").select("name, client_id, clients(name)").eq("id", campaignId).single(),
+      supabase.from("campaigns").select("name, client_id, clients(name, agencies(name))").eq("id", campaignId).single(),
       supabase.from("client_stores").select("name, nickname").eq("id", record.store_id).single(),
       !isGeral && record.piece_id
         ? supabase.from("campaign_pieces").select("name").eq("id", record.piece_id).single()
@@ -67,6 +67,7 @@ serve(async (req) => {
     const motive = motiveRes.data;
     const statusData = statusRes.data;
     const clientName = (campaign as any)?.clients?.name || "—";
+    const agencyName = (campaign as any)?.clients?.agencies?.name || null;
     const storeName = store?.nickname || store?.name || "—";
     const campaignName = campaign?.name || "—";
     const pieceName = isGeral ? "GERAL - NA LOJA TODA" : (piece?.name || "—");
@@ -144,6 +145,7 @@ serve(async (req) => {
             templateName: "occurrence-notification",
             recipientEmail: email,
             idempotencyKey,
+            ...(agencyName ? { fromName: agencyName } : {}),
             templateData: {
               eventType,
               date,

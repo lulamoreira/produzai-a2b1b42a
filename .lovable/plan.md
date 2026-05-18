@@ -1,27 +1,58 @@
-## Finalizar integração dos envios do Ajuste
+## Objetivo
 
-Toda a base já está criada (dialogs, package builder, templates de email). Falta apenas plugar na UI e publicar os templates.
+Ao invés do remetente fixo `ProduzAI <noreply@produzai.app>`, os e-mails transacionais passam a sair como:
+- **From:** `Nome da Agência <noreply@produzai.app>` (endereço técnico continua o mesmo, apenas o nome muda)
+- **Reply-To:** e-mail definido pelo usuário no próprio diálogo de envio (default = e-mail do usuário logado)
 
-### 1. `src/components/AdjustmentsTab.tsx`
-- Importar `SendAdjustmentToClientDialog` e `SendAdjustmentToSupplierDialog`, e os ícones `Send` / `Truck` (lucide).
-- Adicionar prop opcional `clientEmail?: string | null` em `AdjustmentsTabProps`.
-- Adicionar estados `sendClientOpen` e `sendSupplierOpen`.
-- Dentro do bloco verde "Recotação aprovada — planilha final disponível" (linha ~622), logo após o botão "Baixar planilha final", adicionar dois novos botões `size="sm"` no mesmo container:
-  - "Enviar ao cliente" → abre `SendAdjustmentToClientDialog`
-  - "Avisar fornecedor" → abre `SendAdjustmentToSupplierDialog`
-- Renderizar as duas dialogs no final do componente, passando: `campaignId`, `adjustmentId = requote.adjustment_id`, `adjustmentName = activeAdjustment?.name`, `supplierId = requote.supplier_id`, `campaignName`, `agencyName`, `clientName`, `defaultClientEmail = clientEmail`, `defaultCcEmail` (email do usuário atual via `supabase.auth.getUser`).
-- O botão "Baixar planilha final" e "Reverter aprovação" continuam intactos.
+Quando o destinatário clicar em "Responder", a resposta vai direto para o e-mail escolhido — sem precisar configurar inbox no sistema.
 
-### 2. `src/pages/CampaignDetail.tsx`
-- Passar `clientEmail={client?.email}` ao renderizar `<AdjustmentsTab />`.
+## Mudanças
 
-### 3. Deploy dos edge functions
-- Rodar `supabase--deploy_edge_functions` para `send-transactional-email` (registry com os 2 novos templates `adjustment-final-to-client` e `adjustment-final-to-supplier`).
+### 1. Infra de envio (edge functions)
 
-### Validações
-- Build limpo.
-- Botão original de "Baixar planilha final" continua funcionando sem alteração.
-- Botão "Exportar rateio por Loja (AJUSTE)" também segue intacto (já refatorado para reusar `buildRateioGridPDF`).
-- Novos botões só aparecem com `requote.status === "approved"`.
+**`supabase/functions/send-transactional-email/index.ts`**
+- Aceitar dois novos campos opcionais no body: `fromName` (string) e `replyTo` (string).
+- Validar `replyTo` como e-mail válido (se enviado).
+- Compor o `from` final: ``${fromName || SITE_NAME} <noreply@${FROM_DOMAIN}>``.
+- Encaminhar `reply_to` no payload enfileirado em `enqueue_email`.
 
-Sem mudanças de lógica de negócio: os arquivos gerados (planilha final + PDF Guia Visual) são idênticos aos dos botões existentes.
+**`supabase/functions/process-email-queue/index.ts`**
+- Repassar `payload.reply_to` para `sendLovableEmail` (lib já suporta `reply_to`).
+
+Redeploy de ambas após a edição.
+
+### 2. Componente compartilhado de "Reply-To"
+
+Novo `src/components/Email/ReplyToField.tsx`:
+- Input controlado com label "Responder para".
+- Default = `auth.user.email` do usuário logado.
+- Valida formato; expõe `value` + `isValid` para o pai habilitar/desabilitar o botão de envio.
+
+### 3. Diálogos de envio (UI)
+
+Adicionar o campo `ReplyToField` e passar `fromName = agencyName` + `replyTo` na chamada `supabase.functions.invoke("send-transactional-email", ...)` em:
+
+- `src/components/Budget/BudgetSendClientDialog.tsx`
+- `src/components/Budget/BudgetSendNegotiatedDialog.tsx`
+- `src/components/Budget/BudgetWinnerDialog.tsx`
+- `src/components/AdjustmentBudgetRequestDialog.tsx` (2 chamadas)
+
+Cada diálogo já recebe (ou consegue carregar) o nome da agência via props/contexto — não há mudança de schema necessária.
+
+### 4. Envios automáticos (sem diálogo)
+
+Onde não há UI para editar (envio automático), usar defaults:
+- **`supabase/functions/notify-occurrence/index.ts`**: `fromName = nome da agência` (já disponível no payload da ocorrência), `replyTo` omitido.
+- **`src/pages/PublicOccurrenceDetail.tsx`**: idem, sem reply-to editável.
+
+## Detalhes técnicos
+
+- O endereço técnico (`noreply@produzai.app`) **não muda** — só o "display name" no header `From`. Isso preserva SPF/DKIM/reputação do domínio.
+- `reply_to` já é suportado pela lib `@lovable.dev/email-js` v0.0.4 (campo na interface `EmailSendRequest`). Hoje o `process-email-queue` simplesmente não está repassando — é uma adição de uma linha.
+- Idempotency keys e fluxo de fila/retry permanecem intactos.
+- Não há mudança de banco de dados.
+
+## Fora de escopo
+
+- Configurar inbox/caixa de entrada no sistema para receber respostas (não é necessário — as respostas vão direto ao Reply-To no e-mail do usuário).
+- Permitir alterar o endereço do remetente (`noreply@...`) — manter como está para não afetar deliverability.

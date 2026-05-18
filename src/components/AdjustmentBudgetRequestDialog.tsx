@@ -25,6 +25,7 @@ import {
   useAdjustmentPieces, useAdjustmentKits, useAdjustmentKitPieces, useAdjustmentStorePieces,
 } from "@/hooks/useAdjustments";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
+import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 import AdjustmentQuotePreviewDialog from "@/components/AdjustmentQuotePreviewDialog";
 import DeadlinePickerDialog from "@/components/Budget/DeadlinePickerDialog";
 import { RequotePortalPreviewSheet } from "@/components/Budget/RequotePortalPreviewSheet";
@@ -56,6 +57,7 @@ export default function AdjustmentBudgetRequestDialog({
   const [summaryItems, setSummaryItems] = useState<SendSummaryItem[]>([]);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
+  const [replyTo, setReplyTo] = useState("");
   const [customMessage, setCustomMessage] = useState("");
 
   // Preview state — populated after the workbook is uploaded and the email
@@ -315,6 +317,10 @@ export default function AdjustmentBudgetRequestDialog({
       toast.error("Informe pelo menos um e-mail válido.");
       return;
     }
+    if (!isReplyToValid(replyTo)) {
+      toast.error("E-mail de 'Responder para' inválido.");
+      return;
+    }
     if (existingRequest?.access_token && existingRequest?.token_expires_at) {
       // Reuse existing token; skip picker.
       handleOpenPreview({
@@ -421,6 +427,8 @@ export default function AdjustmentBudgetRequestDialog({
               recipientEmail: recipient,
               idempotencyKey: `adj-quote-${adjustment.id}-${winner.id}-${recipient}-${Date.now()}`,
               templateData: preparedTemplateData,
+              fromName: agencyName,
+              ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
             },
           });
           if (error) throw new Error(error.message || "Erro ao enviar");
@@ -466,6 +474,8 @@ export default function AdjustmentBudgetRequestDialog({
           // Unique idempotency key so multiple tests are not deduped.
           idempotencyKey: `adj-quote-TEST-${adjustment.id}-${testEmail}-${Date.now()}`,
           templateData: testTemplateData,
+          fromName: agencyName,
+          ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
         },
       });
       if (error) throw new Error(error.message || "Erro ao enviar teste");
@@ -596,6 +606,7 @@ export default function AdjustmentBudgetRequestDialog({
                 <Label htmlFor="adj-cc" className="text-xs">CC (opcional)</Label>
                 <Textarea id="adj-cc" rows={1} value={cc} onChange={(e) => setCc(e.target.value)} disabled={sending} placeholder="copia@empresa.com" className="text-sm" />
               </div>
+              <ReplyToField value={replyTo} onChange={setReplyTo} disabled={sending} />
               <div className="space-y-1.5">
                 <Label htmlFor="adj-msg" className="text-xs">Mensagem (opcional)</Label>
                 <Textarea id="adj-msg" rows={2} value={customMessage} onChange={(e) => setCustomMessage(e.target.value)} disabled={sending} placeholder="Mensagem personalizada incluída no e-mail/WhatsApp." className="text-sm" />

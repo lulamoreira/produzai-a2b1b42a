@@ -24,6 +24,7 @@ import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
 import { SendSummaryPanel, type SendSummaryItem, type SummaryItemKind, type SummaryItemStage } from "@/components/Budget/SendSummaryPanel";
 import { Textarea } from "@/components/ui/textarea";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
+import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -73,6 +74,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
 
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
+  const [replyTo, setReplyTo] = useState("");
   const [includeComparative, setIncludeComparative] = useState(true);
   const [sending, setSending] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
@@ -83,6 +85,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     if (open) {
       setEmail(clientEmail || "");
       setCc("");
+      setReplyTo("");
       setIncludeComparative(true);
       setSummary([]);
     }
@@ -469,6 +472,8 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         recipientEmail: recipient,
         idempotencyKey: `budget-results-${campaignId}-${recipient}-${Date.now()}`,
         templateData,
+        fromName: agencyName,
+        ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
       },
     });
     if (error) throw new Error(error.message || "Erro ao enviar e-mail");
@@ -482,6 +487,10 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     }
     if (merged.valid.length === 0) {
       toast.error("Informe pelo menos um e-mail válido.");
+      return;
+    }
+    if (!isReplyToValid(replyTo)) {
+      toast.error("E-mail de 'Responder para' inválido.");
       return;
     }
     if (submittedSuppliers.length === 0) {
@@ -643,6 +652,8 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
               disabled={sending}
             />
           </div>
+
+          <ReplyToField value={replyTo} onChange={setReplyTo} disabled={sending} />
 
           <div className="flex items-center gap-2">
             <Checkbox

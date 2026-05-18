@@ -15,6 +15,7 @@ import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import BudgetWinnerPreviewDialog from "./BudgetWinnerPreviewDialog";
 import { Textarea } from "@/components/ui/textarea";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
+import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 
 const URL_REGEX = /^https?:\/\/.+/i;
 
@@ -42,6 +43,7 @@ export default function BudgetWinnerDialog({
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
+  const [replyTo, setReplyTo] = useState("");
   const [mockupUrl, setMockupUrl] = useState("");
   const [bookUrl, setBookUrl] = useState("");
   const [sending, setSending] = useState(false);
@@ -70,6 +72,8 @@ export default function BudgetWinnerDialog({
         recipientEmail: recipient,
         idempotencyKey: `supplier-winner-${campaignId}-${supplier?.id}-${recipient}-${Date.now()}`,
         templateData,
+        fromName: agencyName,
+        ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
       },
     });
     if (error) throw new Error(error.message || "Erro ao enviar e-mail");
@@ -84,6 +88,10 @@ export default function BudgetWinnerDialog({
     }
     if (merged.valid.length === 0) {
       toast.error("Informe pelo menos um e-mail válido para o fornecedor.");
+      return;
+    }
+    if (!isReplyToValid(replyTo)) {
+      toast.error("E-mail de 'Responder para' inválido.");
       return;
     }
     const mockup = mockupUrl.trim();
@@ -232,6 +240,8 @@ export default function BudgetWinnerDialog({
                 disabled={busy}
               />
             </div>
+
+            <ReplyToField value={replyTo} onChange={setReplyTo} disabled={busy} />
 
             <div className="space-y-1.5">
               <Label htmlFor="winner-mockup">Link das peças fechadas do mockup *</Label>

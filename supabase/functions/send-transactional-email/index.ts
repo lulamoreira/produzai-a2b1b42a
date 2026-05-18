@@ -60,6 +60,8 @@ Deno.serve(async (req) => {
   let idempotencyKey: string
   let messageId: string
   let templateData: Record<string, any> = {}
+  let fromName: string | null = null
+  let replyTo: string | null = null
   try {
     const body = await req.json()
     templateName = body.templateName || body.template_name
@@ -68,6 +70,21 @@ Deno.serve(async (req) => {
     idempotencyKey = body.idempotencyKey || body.idempotency_key || messageId
     if (body.templateData && typeof body.templateData === 'object') {
       templateData = body.templateData
+    }
+    if (typeof body.fromName === 'string' && body.fromName.trim()) {
+      // Sanitize: strip characters that could break the From header
+      fromName = body.fromName.trim().replace(/["<>\r\n]/g, '').slice(0, 80) || null
+    }
+    if (typeof body.replyTo === 'string' && body.replyTo.trim()) {
+      const candidate = body.replyTo.trim()
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) {
+        replyTo = candidate
+      } else {
+        return new Response(
+          JSON.stringify({ error: 'Invalid replyTo email address' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
     }
   } catch {
     return new Response(
@@ -308,12 +325,13 @@ Deno.serve(async (req) => {
     status: 'pending',
   })
 
+  const displayName = (fromName || SITE_NAME).replace(/"/g, '')
   const { error: enqueueError } = await supabase.rpc('enqueue_email', {
     queue_name: 'transactional_emails',
     payload: {
       message_id: messageId,
       to: effectiveRecipient,
-      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+      from: `"${displayName}" <noreply@${FROM_DOMAIN}>`,
       sender_domain: SENDER_DOMAIN,
       subject: resolvedSubject,
       html,
@@ -321,6 +339,7 @@ Deno.serve(async (req) => {
       purpose: 'transactional',
       label: templateName,
       idempotency_key: idempotencyKey,
+      ...(replyTo ? { reply_to: replyTo } : {}),
       unsubscribe_token: unsubscribeToken,
       queued_at: new Date().toISOString(),
     },
