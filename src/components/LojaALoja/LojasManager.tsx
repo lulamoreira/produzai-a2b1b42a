@@ -481,7 +481,8 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
                   </td>
                 )}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
