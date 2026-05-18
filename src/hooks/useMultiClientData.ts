@@ -381,8 +381,20 @@ export function useUpdateCampaign() {
       qc.setQueriesData<Campaign[]>({ queryKey: ["campaigns"] }, (old) =>
         old ? old.map((c) => c.id === id ? { ...c, ...data } : c) : old
       );
+      qc.setQueryData<Campaign | undefined>(["campaign", id], (old) =>
+        old ? { ...old, ...data } : old
+      );
+      qc.setQueriesData<any[]>({ queryKey: ["sidebar-client-campaigns"] }, (old) =>
+        old ? old.map((c: any) => c.id === id ? { ...c, ...data } : c) : old
+      );
     },
-    onSettled: () => { qc.invalidateQueries({ queryKey: ["campaigns"] }); },
+    onSettled: (_, __, vars) => {
+      qc.invalidateQueries({ queryKey: ["campaigns"] });
+      qc.invalidateQueries({ queryKey: ["campaign", vars.id] });
+      qc.invalidateQueries({ queryKey: ["sidebar-client-campaigns"] });
+      qc.invalidateQueries({ queryKey: ["campaign-favorites"] });
+      qc.invalidateQueries({ queryKey: ["my-campaigns"] });
+    },
     onError: (e) => { toast.error("Erro: " + e.message); qc.invalidateQueries({ queryKey: ["campaigns"] }); },
   });
 }
