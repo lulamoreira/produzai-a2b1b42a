@@ -72,7 +72,11 @@ export default function SendAdjustmentToSupplierDialog({
     if (!open) return;
     setUploadStatus(null);
     setPreviewOpen(false);
-    setReplyTo("");
+    try {
+      setReplyTo(localStorage.getItem("adjustment:lastReplyTo") || "");
+    } catch {
+      setReplyTo("");
+    }
     attachmentsRef.current = null;
     setLoadingSupplier(true);
     (async () => {
@@ -95,6 +99,13 @@ export default function SendAdjustmentToSupplierDialog({
       }
     })();
   }, [open, supplierId, defaultCcEmail]);
+
+  useEffect(() => {
+    if (!open) return;
+    const v = replyTo.trim();
+    if (!v) return;
+    try { localStorage.setItem("adjustment:lastReplyTo", v); } catch {}
+  }, [replyTo, open]);
 
   async function ensureAttachments(): Promise<Attachments> {
     if (attachmentsRef.current) return attachmentsRef.current;
