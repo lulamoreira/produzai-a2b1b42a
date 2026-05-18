@@ -233,6 +233,7 @@ export async function exportRateioGridPDF(
   agencyName: string,
   mode: RateioGridExportMode = "pieces_and_kits",
   onProgress?: RateioGridProgress,
+  sourceLabel?: string,
 ) {
   const buckets = buildRateioGridBuckets(pieces, kits, kitPieces, stores, qtyMap, mode);
   if (buckets.length === 0) {
