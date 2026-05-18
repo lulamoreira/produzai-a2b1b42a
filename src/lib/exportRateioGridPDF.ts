@@ -264,22 +264,27 @@ export async function exportRateioGridPDF(
 
   let firstStore = true;
 
+  const CARDS_PER_PAGE = CARDS_PER_ROW * ROWS_PER_PAGE;
+
   for (let i = 0; i < buckets.length; i++) {
     const bucket = buckets[i];
     const { store, items, totalQuantity } = bucket;
-    const headerInfo: StoreHeaderInfo = {
+    const pageTotal = Math.max(1, Math.ceil(items.length / CARDS_PER_PAGE));
+    const baseHeader: StoreHeaderInfo = {
       agencyName,
       clientName,
       campaignName,
       storeName: store.name || "Loja",
       storeCode: store.store_code || "—",
       cityState: [store.city, store.state].filter(Boolean).join(", "),
+      pageTotal,
     };
 
     if (!firstStore) doc.addPage();
     firstStore = false;
 
-    drawStoreHeader(doc, headerInfo);
+    let currentPage = 1;
+    drawStoreHeader(doc, { ...baseHeader, pageCurrent: currentPage });
 
     let y = usableTop;
     let gridRowIdx = 0;
@@ -287,14 +292,13 @@ export async function exportRateioGridPDF(
     for (let idx = 0; idx < items.length; idx++) {
       const colInRow = idx % CARDS_PER_ROW;
 
-      // Page break check before starting a new row
-      if (colInRow === 0) {
-        const reserve = items.length - idx <= CARDS_PER_ROW ? rowStride + TOTAL_BAR_HEIGHT + 4 : rowStride;
-        if (y + reserve > usableBottom) {
-          doc.addPage();
-          drawStoreHeader(doc, headerInfo);
-          y = usableTop;
-        }
+      // Force page break after ROWS_PER_PAGE rows
+      if (idx > 0 && idx % CARDS_PER_PAGE === 0) {
+        doc.addPage();
+        currentPage += 1;
+        drawStoreHeader(doc, { ...baseHeader, pageCurrent: currentPage });
+        y = usableTop;
+        gridRowIdx = 0;
       }
 
       const x = PAGE_MARGIN_X + colInRow * (cardWidth + CARD_GAP);
@@ -326,10 +330,11 @@ export async function exportRateioGridPDF(
       }
     }
 
-    // Total bar (always fits because we reserved space above; otherwise add page)
+    // Total bar (fits on the last cards page in landscape A4)
     if (y + TOTAL_BAR_HEIGHT > usableBottom) {
       doc.addPage();
-      drawStoreHeader(doc, headerInfo);
+      currentPage += 1;
+      drawStoreHeader(doc, { ...baseHeader, pageCurrent: currentPage, pageTotal: Math.max(pageTotal, currentPage) });
       y = usableTop;
     }
     doc.setFillColor(...BROWN);
