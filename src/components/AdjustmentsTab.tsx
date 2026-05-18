@@ -866,6 +866,34 @@ export default function AdjustmentsTab({
           campaignId={campaignId}
         />
       )}
+
+      {requote?.adjustment_id && requote?.supplier_id && (
+        <>
+          <SendAdjustmentToClientDialog
+            open={sendClientOpen}
+            onOpenChange={setSendClientOpen}
+            campaignId={campaignId}
+            adjustmentId={requote.adjustment_id}
+            adjustmentName={activeAdjustment?.name ?? ""}
+            supplierId={requote.supplier_id}
+            campaignName={campaignName}
+            agencyName={agencyName}
+            clientName={clientName}
+            defaultClientEmail={clientEmail ?? null}
+          />
+          <SendAdjustmentToSupplierDialog
+            open={sendSupplierOpen}
+            onOpenChange={setSendSupplierOpen}
+            campaignId={campaignId}
+            adjustmentId={requote.adjustment_id}
+            adjustmentName={activeAdjustment?.name ?? ""}
+            supplierId={requote.supplier_id}
+            campaignName={campaignName}
+            agencyName={agencyName}
+            clientName={clientName}
+          />
+        </>
+      )}
     </div>
   );
 }
