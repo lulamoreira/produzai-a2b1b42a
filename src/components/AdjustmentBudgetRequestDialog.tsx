@@ -427,6 +427,8 @@ export default function AdjustmentBudgetRequestDialog({
               recipientEmail: recipient,
               idempotencyKey: `adj-quote-${adjustment.id}-${winner.id}-${recipient}-${Date.now()}`,
               templateData: preparedTemplateData,
+              fromName: agencyName,
+              ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
             },
           });
           if (error) throw new Error(error.message || "Erro ao enviar");
