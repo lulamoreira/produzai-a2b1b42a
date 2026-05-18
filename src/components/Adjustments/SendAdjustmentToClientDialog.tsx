@@ -190,14 +190,14 @@ export default function SendAdjustmentToClientDialog({
             {generating && <UploadProgressPanel status={uploadStatus} />}
           </div>
 
-          <DialogFooter className="grid grid-cols-1 sm:grid-cols-3 pt-2">
-            <Button className="w-full" variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={busy}>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 sm:justify-end">
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={busy}>
               <X className="w-4 h-4 mr-1" /> Cancelar
             </Button>
-            <Button className="w-full" variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={busy || !phone}>
+            <Button variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={busy || !phone}>
               <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
             </Button>
-            <Button className="w-full" size="sm" onClick={handleOpenPreview} disabled={busy}>
+            <Button size="sm" onClick={handleOpenPreview} disabled={busy}>
               {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Mail className="w-4 h-4 mr-1" /> Pré-visualizar e-mail</>}
             </Button>
           </DialogFooter>
