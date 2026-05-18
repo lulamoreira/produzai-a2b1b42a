@@ -2960,13 +2960,47 @@ const CampaignDetail = () => {
                     >
                       <LayoutGrid className="w-4 h-4" />
                       <span className="hidden sm:inline">Exportar rateio por Loja</span>
+                      <Badge
+                        variant="outline"
+                        className={
+                          exportSourceLabel === "Ajuste"
+                            ? "ml-1 border-amber-300 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30"
+                            : exportSourceLabel === "Negociação"
+                              ? "ml-1 border-blue-300 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30"
+                              : "ml-1 border-slate-300 text-slate-700 dark:text-slate-300"
+                        }
+                      >
+                        {exportSourceLabel}
+                      </Badge>
                     </Button>
 
                     <AlertDialog open={rateioGridExportOpen} onOpenChange={setRateioGridExportOpen}>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Exportar Rateio por Loja</AlertDialogTitle>
-                          <AlertDialogDescription>Selecione o formato de exportação:</AlertDialogDescription>
+                          <AlertDialogTitle>
+                            Exportar Rateio por Loja — fonte:{" "}
+                            <span
+                              className={
+                                exportSourceLabel === "Ajuste"
+                                  ? "text-amber-700 dark:text-amber-300"
+                                  : exportSourceLabel === "Negociação"
+                                    ? "text-blue-700 dark:text-blue-300"
+                                    : "text-slate-700 dark:text-slate-300"
+                              }
+                            >
+                              {exportSourceLabel}
+                              {exportSourceLabel === "Ajuste" && activeAdjustment?.name
+                                ? ` (${activeAdjustment.name})`
+                                : ""}
+                            </span>
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            As quantidades exportadas refletem a versão <strong>{exportSourceLabel}</strong>.
+                            {exportSourceLabel !== "Ajuste" && activeAdjustment && (
+                              <> Para exportar a versão do ajuste, troque o seletor de Rateio antes.</>
+                            )}
+                            {" "}Selecione o formato de exportação:
+                          </AlertDialogDescription>
                         </AlertDialogHeader>
                         {(() => {
                           const runExport = async (
@@ -2978,11 +3012,11 @@ const CampaignDetail = () => {
                             toast.loading("Iniciando exportação...", { id: "rateio-grid" });
                             try {
                               await fn(
-                                pieces,
-                                kits,
-                                kitPieces,
+                                exportPieces,
+                                exportKits,
+                                exportKitPieces,
                                 activeFilteredStores,
-                                qtyMap,
+                                exportQtyMap,
                                 campaign?.name || "Campanha",
                                 client?.name || "",
                                 agency?.name || "",
@@ -2993,6 +3027,8 @@ const CampaignDetail = () => {
                                     { id: "rateio-grid" },
                                   );
                                 },
+                                exportSourceLabel,
+                              );
                               );
                               toast.success(`${kind} exportado com sucesso!`, { id: "rateio-grid" });
                             } catch (err) {
