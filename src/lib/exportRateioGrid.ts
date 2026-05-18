@@ -26,6 +26,7 @@ export async function exportRateioGrid(
   agencyName: string,
   mode: RateioGridExportMode = "pieces_and_kits",
   onProgress?: RateioGridProgress,
+  sourceLabel?: string,
 ) {
   const buckets = buildRateioGridBuckets(pieces, kits, kitPieces, stores, qtyMap, mode);
   if (buckets.length === 0) {
@@ -53,7 +54,8 @@ export async function exportRateioGrid(
   }
 
   const suffix = rateioGridFileSuffix(mode);
-  const filename = `${campaignName} — Rateio por Loja (${suffix}).xlsx`;
+  const sourceSuffix = sourceLabel ? ` — ${sourceLabel}` : "";
+  const filename = `${campaignName} — Rateio por Loja (${suffix})${sourceSuffix}.xlsx`;
 
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: XLSX_MIME });

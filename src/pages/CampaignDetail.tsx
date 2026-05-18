@@ -52,7 +52,7 @@ import {
 import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle, Database, Layers, Palette } from "lucide-react";
 import AdjustmentsTab from "@/components/AdjustmentsTab";
 import MockupTab from "@/components/MockupTab";
-import { useActiveAdjustment, useAdjustmentStorePieces, useUpdateAdjustmentStorePiece, useAdjustmentPieces, useAdjustmentKits, useCampaignAdjustments } from "@/hooks/useAdjustments";
+import { useActiveAdjustment, useAdjustmentStorePieces, useUpdateAdjustmentStorePiece, useAdjustmentPieces, useAdjustmentKits, useAdjustmentKitPieces, useCampaignAdjustments } from "@/hooks/useAdjustments";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 
 import PieceThumbnail from "@/components/PieceThumbnail";
@@ -410,6 +410,9 @@ const CampaignDetail = () => {
     isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
   );
   const { data: adjustmentKitsMeta = [] } = useAdjustmentKits(
+    isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
+  );
+  const { data: adjustmentKitPiecesMeta = [] } = useAdjustmentKitPieces(
     isAdjustmentView ? (activeAdjustmentId ?? undefined) : undefined
   );
   const updateAdjustmentStorePiece = useUpdateAdjustmentStorePiece();
@@ -852,7 +855,81 @@ const CampaignDetail = () => {
     [activeFilteredStores, isAdjustmentView, newStoreIds]
   );
 
-  // ─── Filtered pieces: exclude kit_only from normal views ─
+  // ─── Export sources for "Exportar Rateio por Loja" ────
+  // No modo Ajuste, usamos peças/kits do próprio ajuste (incluindo peças novas
+  // criadas no ajuste e edições de nome/categoria/imagem). Para Original e
+  // Negociação, as peças/kits são sempre as originais da campanha.
+  const exportSourceLabel: "Original" | "Negociação" | "Ajuste" =
+    isAdjustmentView ? "Ajuste" : isNegotiationView ? "Negociação" : "Original";
+
+  const exportPieces = useMemo(() => {
+    if (!isAdjustmentView) return pieces;
+    return (adjustmentPiecesMeta as any[])
+      .filter((p) => !p.is_deleted)
+      .map((p) => ({
+        id: p.id,
+        campaign_id: p.campaign_id ?? "",
+        code: p.code ?? 0,
+        category: p.category ?? "",
+        name: p.name ?? "",
+        size: p.size ?? "",
+        store_category: p.store_category ?? null,
+        sub_location: p.sub_location ?? null,
+        image_url: p.image_url ?? null,
+        image_thumb_url: p.image_thumb_url ?? null,
+        image_report_url: p.image_report_url ?? null,
+        image_full_url: p.image_full_url ?? null,
+        image_hash: p.image_hash ?? null,
+        specification: p.specification ?? "",
+        installation_instructions: p.installation_instructions ?? "",
+        kit_only: !!p.kit_only,
+        is_mockup: !!p.is_mockup,
+        display_order: p.display_order ?? 0,
+        created_at: p.created_at ?? "",
+      })) as typeof pieces;
+  }, [isAdjustmentView, pieces, adjustmentPiecesMeta]);
+
+  const exportKits = useMemo(() => {
+    if (!isAdjustmentView) return kits;
+    return (adjustmentKitsMeta as any[])
+      .filter((k) => !k.is_deleted)
+      .map((k) => ({
+        id: k.id,
+        campaign_id: k.campaign_id ?? "",
+        name: k.name ?? "",
+        code: k.code ?? 0,
+        display_order: k.display_order ?? 0,
+        image_url: k.image_url ?? null,
+        is_mockup: !!k.is_mockup,
+        category: k.category ?? null,
+        sub_location: k.sub_location ?? null,
+        created_at: k.created_at ?? "",
+      })) as typeof kits;
+  }, [isAdjustmentView, kits, adjustmentKitsMeta]);
+
+  const exportKitPieces = useMemo(() => {
+    if (!isAdjustmentView) return kitPieces;
+    return (adjustmentKitPiecesMeta as any[])
+      .filter((kp) => !kp.is_deleted)
+      .map((kp) => ({
+        id: kp.id,
+        kit_id: kp.kit_id,
+        piece_id: kp.piece_id,
+        quantity: Number(kp.quantity) || 0,
+        display_order: kp.display_order ?? 0,
+        created_at: kp.created_at ?? "",
+      })) as typeof kitPieces;
+  }, [isAdjustmentView, kitPieces, adjustmentKitPiecesMeta]);
+
+  const exportQtyMap = useMemo(() => {
+    if (!isAdjustmentView) return qtyMap;
+    const map: Record<string, number> = {};
+    (adjustmentStorePieces as any[]).forEach((sp) => {
+      map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0;
+    });
+    return map;
+  }, [isAdjustmentView, qtyMap, adjustmentStorePieces]);
+
   const visiblePieces = useMemo(() => pieces.filter(p => !p.kit_only), [pieces]);
   const kitOnlyPieces = useMemo(() => pieces.filter(p => p.kit_only), [pieces]);
 
@@ -2883,13 +2960,47 @@ const CampaignDetail = () => {
                     >
                       <LayoutGrid className="w-4 h-4" />
                       <span className="hidden sm:inline">Exportar rateio por Loja</span>
+                      <Badge
+                        variant="outline"
+                        className={
+                          exportSourceLabel === "Ajuste"
+                            ? "ml-1 border-amber-300 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30"
+                            : exportSourceLabel === "Negociação"
+                              ? "ml-1 border-blue-300 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30"
+                              : "ml-1 border-slate-300 text-slate-700 dark:text-slate-300"
+                        }
+                      >
+                        {exportSourceLabel}
+                      </Badge>
                     </Button>
 
                     <AlertDialog open={rateioGridExportOpen} onOpenChange={setRateioGridExportOpen}>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Exportar Rateio por Loja</AlertDialogTitle>
-                          <AlertDialogDescription>Selecione o formato de exportação:</AlertDialogDescription>
+                          <AlertDialogTitle>
+                            Exportar Rateio por Loja — fonte:{" "}
+                            <span
+                              className={
+                                exportSourceLabel === "Ajuste"
+                                  ? "text-amber-700 dark:text-amber-300"
+                                  : exportSourceLabel === "Negociação"
+                                    ? "text-blue-700 dark:text-blue-300"
+                                    : "text-slate-700 dark:text-slate-300"
+                              }
+                            >
+                              {exportSourceLabel}
+                              {exportSourceLabel === "Ajuste" && activeAdjustment?.name
+                                ? ` (${activeAdjustment.name})`
+                                : ""}
+                            </span>
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            As quantidades exportadas refletem a versão <strong>{exportSourceLabel}</strong>.
+                            {exportSourceLabel !== "Ajuste" && activeAdjustment && (
+                              <> Para exportar a versão do ajuste, troque o seletor de Rateio antes.</>
+                            )}
+                            {" "}Selecione o formato de exportação:
+                          </AlertDialogDescription>
                         </AlertDialogHeader>
                         {(() => {
                           const runExport = async (
@@ -2901,11 +3012,11 @@ const CampaignDetail = () => {
                             toast.loading("Iniciando exportação...", { id: "rateio-grid" });
                             try {
                               await fn(
-                                pieces,
-                                kits,
-                                kitPieces,
+                                exportPieces,
+                                exportKits,
+                                exportKitPieces,
                                 activeFilteredStores,
-                                qtyMap,
+                                exportQtyMap,
                                 campaign?.name || "Campanha",
                                 client?.name || "",
                                 agency?.name || "",
@@ -2916,6 +3027,7 @@ const CampaignDetail = () => {
                                     { id: "rateio-grid" },
                                   );
                                 },
+                                exportSourceLabel,
                               );
                               toast.success(`${kind} exportado com sucesso!`, { id: "rateio-grid" });
                             } catch (err) {

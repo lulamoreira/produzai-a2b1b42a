@@ -233,6 +233,7 @@ export async function exportRateioGridPDF(
   agencyName: string,
   mode: RateioGridExportMode = "pieces_and_kits",
   onProgress?: RateioGridProgress,
+  sourceLabel?: string,
 ) {
   const buckets = buildRateioGridBuckets(pieces, kits, kitPieces, stores, qtyMap, mode);
   if (buckets.length === 0) {
@@ -344,7 +345,8 @@ export async function exportRateioGridPDF(
   }
 
   const suffix = rateioGridFileSuffix(mode);
-  const filename = `${campaignName} — Rateio por Loja (${suffix}).pdf`;
+  const sourceSuffix = sourceLabel ? ` — ${sourceLabel}` : "";
+  const filename = `${campaignName} — Rateio por Loja (${suffix})${sourceSuffix}.pdf`;
 
   const blob = doc.output("blob");
   await saveBlobAs(blob, filename, {
