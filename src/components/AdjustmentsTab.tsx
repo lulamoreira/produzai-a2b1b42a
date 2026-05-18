@@ -662,6 +662,11 @@ export default function AdjustmentsTab({
                       }
 
                       let productionTotal = 0;
+                      let baselineProductionTotal = 0;
+                      let totalQty = 0;
+                      let pieceCount = 0;
+                      let maxIncreasePct = 0;
+                      let maxIncreaseLabel = "";
                       for (const p of approvedAdjPieces || []) {
                         const adjId = String(p.id);
                         const srcId = sourceByAdj.get(adjId);
@@ -669,44 +674,131 @@ export default function AdjustmentsTab({
                         const price = newPriceByAdj.has(adjId)
                           ? newPriceByAdj.get(adjId) || 0
                           : prevPrice;
-                        productionTotal += price * (qtyByAdj.get(adjId) || 0);
+                        const qty = qtyByAdj.get(adjId) || 0;
+                        productionTotal += price * qty;
+                        baselineProductionTotal += prevPrice * qty;
+                        totalQty += qty;
+                        if (qty > 0) pieceCount++;
+                        if (prevPrice > 0 && qty > 0) {
+                          const pct = ((price - prevPrice) / prevPrice) * 100;
+                          if (pct > maxIncreasePct) {
+                            maxIncreasePct = pct;
+                            maxIncreaseLabel = (p as any).name || (p as any).code?.toString() || "";
+                          }
+                        }
                       }
                       const grandTotal = productionTotal + inst + frt;
+                      const deltaAbs = productionTotal - baselineProductionTotal;
+                      const deltaPct =
+                        baselineProductionTotal > 0
+                          ? (deltaAbs / baselineProductionTotal) * 100
+                          : 0;
+                      const storeCount = new Set(
+                        (approvedStoreQty || [])
+                          .filter((sp: any) => Number(sp.quantity || 0) > 0)
+                          .map((sp: any) => String(sp.store_id)),
+                      ).size;
                       const ready =
                         !!approvedAdjPieces &&
                         !!approvedBaselinePrices &&
                         !!approvedStoreQty;
 
+                      const deltaColor =
+                        deltaAbs > 0
+                          ? "text-red-700"
+                          : deltaAbs < 0
+                            ? "text-emerald-700"
+                            : "text-slate-700";
+                      const deltaSign = deltaAbs > 0 ? "+" : "";
+
                       return (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          {/* Card 1: Resumo da recotação aprovada */}
-                          <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm flex flex-col">
-                            <div className="font-medium text-green-800">✅ Recotação aprovada</div>
-                            <div className="text-green-700 text-xs mt-1">
-                              {ready ? changedCount : "…"} item(ns) com novo preço · Instalação{" "}
-                              {formatCurrencyByCode(inst, currencyCode)} · Frete{" "}
-                              {formatCurrencyByCode(frt, currencyCode)}
-                              {requote.response_received_at && (
-                                <>
-                                  {" "}
-                                  · Registrado em{" "}
-                                  {format(new Date(requote.response_received_at), "dd/MM/yyyy 'às' HH:mm", {
-                                    locale: ptBR,
-                                  })}
-                                </>
-                              )}
+                          {/* Card 1: Resumo + KPIs da recotação aprovada */}
+                          <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm flex flex-col gap-2">
+                            <div>
+                              <div className="font-medium text-green-800">✅ Recotação aprovada</div>
+                              <div className="text-green-700 text-[11px] mt-0.5">
+                                {ready ? changedCount : "…"} item(ns) com novo preço
+                                {requote.response_received_at && (
+                                  <>
+                                    {" "}· Registrado em{" "}
+                                    {format(new Date(requote.response_received_at), "dd/MM/yyyy", {
+                                      locale: ptBR,
+                                    })}
+                                  </>
+                                )}
+                              </div>
                             </div>
+
                             {ready && (
-                              <div className="mt-auto pt-2 flex flex-col gap-1 text-xs text-green-800">
-                                <span>
-                                  Valor de produção:{" "}
-                                  <strong>{formatCurrencyByCode(productionTotal, currencyCode)}</strong>
-                                </span>
-                                <span>
+                              <>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                  <div className="rounded bg-white/70 border border-green-200 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-green-700/80">Produção</div>
+                                    <div className="text-sm font-semibold text-green-900 leading-tight">
+                                      {formatCurrencyByCode(productionTotal, currencyCode)}
+                                    </div>
+                                  </div>
+                                  <div className="rounded bg-white/70 border border-green-200 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-green-700/80">
+                                      Variação vs. base
+                                    </div>
+                                    <div className={`text-sm font-semibold leading-tight ${deltaColor}`}>
+                                      {deltaSign}
+                                      {formatCurrencyByCode(deltaAbs, currencyCode)}
+                                      <span className="text-[11px] font-normal ml-1">
+                                        ({deltaSign}
+                                        {deltaPct.toFixed(1)}%)
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="rounded bg-white/70 border border-green-200 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-green-700/80">
+                                      Instalação
+                                    </div>
+                                    <div className="text-sm font-semibold text-green-900 leading-tight">
+                                      {formatCurrencyByCode(inst, currencyCode)}
+                                    </div>
+                                  </div>
+                                  <div className="rounded bg-white/70 border border-green-200 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-green-700/80">Frete</div>
+                                    <div className="text-sm font-semibold text-green-900 leading-tight">
+                                      {formatCurrencyByCode(frt, currencyCode)}
+                                    </div>
+                                  </div>
+                                  <div className="rounded bg-white/70 border border-green-200 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-green-700/80">
+                                      Peças × Lojas
+                                    </div>
+                                    <div className="text-sm font-semibold text-green-900 leading-tight">
+                                      {pieceCount} × {storeCount}
+                                    </div>
+                                    <div className="text-[10px] text-green-700/80">
+                                      {totalQty.toLocaleString("pt-BR")} unidades
+                                    </div>
+                                  </div>
+                                  <div className="rounded bg-white/70 border border-green-200 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-green-700/80">
+                                      Maior aumento
+                                    </div>
+                                    <div className="text-sm font-semibold text-red-700 leading-tight">
+                                      {maxIncreasePct > 0 ? `+${maxIncreasePct.toFixed(1)}%` : "—"}
+                                    </div>
+                                    {maxIncreaseLabel && (
+                                      <div
+                                        className="text-[10px] text-green-700/80 truncate"
+                                        title={maxIncreaseLabel}
+                                      >
+                                        {maxIncreaseLabel}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="mt-auto pt-1.5 border-t border-green-200 text-xs text-green-900">
                                   Valor total (com frete e instalação):{" "}
                                   <strong>{formatCurrencyByCode(grandTotal, currencyCode)}</strong>
-                                </span>
-                              </div>
+                                </div>
+                              </>
                             )}
                           </div>
 
