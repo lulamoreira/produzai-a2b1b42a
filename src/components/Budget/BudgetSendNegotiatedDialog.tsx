@@ -25,6 +25,7 @@ import { validateNegotiationRateio, type RateioValidationResult } from "@/lib/va
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
+import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 
 interface Props {
   open: boolean;
