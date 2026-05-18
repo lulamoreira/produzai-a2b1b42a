@@ -32,7 +32,7 @@ serve(async (req) => {
     const isGeral = record.location_in_store === "GERAL - NA LOJA TODA";
 
     const [campaignRes, storeRes, pieceRes, motiveRes, emailsRes, statusRes, sysMessagesRes] = await Promise.all([
-      supabase.from("campaigns").select("name, client_id, clients(name)").eq("id", campaignId).single(),
+      supabase.from("campaigns").select("name, client_id, clients(name, agencies(name))").eq("id", campaignId).single(),
       supabase.from("client_stores").select("name, nickname").eq("id", record.store_id).single(),
       !isGeral && record.piece_id
         ? supabase.from("campaign_pieces").select("name").eq("id", record.piece_id).single()
