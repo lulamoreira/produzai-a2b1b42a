@@ -26,6 +26,8 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
+import EmailRecipientsInput from "@/components/Email/EmailRecipientsInput";
+import { useClientEmailMemory } from "@/hooks/useClientEmailMemory";
 
 interface Props {
   open: boolean;
@@ -282,6 +284,7 @@ export default function BudgetSendNegotiatedDialog({
         }
       }
       if (!anySent) throw new Error("Nenhum e-mail foi enviado.");
+      recordEmails(merged.valid);
       toast.success(`E-mail enviado para ${merged.valid.length} destinatário(s).`, { id: tId });
     } catch (e: any) {
       toast.error(e?.message || "Falha ao enviar.", { id: tId });
@@ -429,12 +432,12 @@ export default function BudgetSendNegotiatedDialog({
 
               <div className="space-y-1.5">
                 <Label htmlFor="neg-email">E-mail(s) do destinatário</Label>
-                <Textarea id="neg-email" rows={2} value={email} onChange={(e) => setEmail(e.target.value)} disabled={sending} placeholder="email1@empresa.com, email2@empresa.com" />
+                <EmailRecipientsInput id="neg-email" value={email} onChange={setEmail} suggestions={emailSuggestions} disabled={sending} placeholder="email1@empresa.com, email2@empresa.com" />
                 <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="neg-cc">CC (opcional)</Label>
-                <Textarea id="neg-cc" rows={2} value={cc} onChange={(e) => setCc(e.target.value)} disabled={sending} placeholder="copia1@empresa.com, copia2@empresa.com" />
+                <EmailRecipientsInput id="neg-cc" value={cc} onChange={setCc} suggestions={emailSuggestions} disabled={sending} placeholder="copia1@empresa.com, copia2@empresa.com" />
               </div>
               <ReplyToField value={replyTo} onChange={setReplyTo} disabled={sending} />
             </>

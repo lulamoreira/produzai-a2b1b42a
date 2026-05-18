@@ -25,6 +25,8 @@ import { SendSummaryPanel, type SendSummaryItem, type SummaryItemKind, type Summ
 import { Textarea } from "@/components/ui/textarea";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
+import EmailRecipientsInput from "@/components/Email/EmailRecipientsInput";
+import { useClientEmailMemory } from "@/hooks/useClientEmailMemory";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -605,6 +607,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       if (!anySent) throw new Error("Nenhum e-mail foi enviado.");
 
       toast.dismiss(toastId);
+      recordEmails(merged.valid);
       toast.success("Relatório enviado com sucesso!");
     } catch (e: any) {
       console.error("Send budget results error:", e);
@@ -630,12 +633,12 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
             <Label htmlFor="recipient-email">E-mail(s) do destinatário *</Label>
-            <Textarea
+            <EmailRecipientsInput
               id="recipient-email"
-              rows={2}
               placeholder="cliente1@empresa.com, cliente2@empresa.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={setEmail}
+              suggestions={emailSuggestions}
               disabled={sending}
             />
             <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
@@ -643,12 +646,12 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
 
           <div className="space-y-1.5">
             <Label htmlFor="cc-email">CC (opcional)</Label>
-            <Textarea
+            <EmailRecipientsInput
               id="cc-email"
-              rows={2}
               placeholder="copia1@empresa.com, copia2@empresa.com"
               value={cc}
-              onChange={(e) => setCc(e.target.value)}
+              onChange={setCc}
+              suggestions={emailSuggestions}
               disabled={sending}
             />
           </div>

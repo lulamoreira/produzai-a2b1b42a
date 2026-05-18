@@ -26,6 +26,8 @@ import {
 } from "@/hooks/useAdjustments";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
+import EmailRecipientsInput from "@/components/Email/EmailRecipientsInput";
+import { useClientEmailMemory } from "@/hooks/useClientEmailMemory";
 import AdjustmentQuotePreviewDialog from "@/components/AdjustmentQuotePreviewDialog";
 import DeadlinePickerDialog from "@/components/Budget/DeadlinePickerDialog";
 import { RequotePortalPreviewSheet } from "@/components/Budget/RequotePortalPreviewSheet";
@@ -440,6 +442,7 @@ export default function AdjustmentBudgetRequestDialog({
       }
       if (!anySent) throw new Error("Nenhum e-mail foi enviado.");
       await persistRequest();
+      recordEmails(merged.valid);
       setPreviewOpen(false);
       toast.success(`Recotação enviada para ${merged.valid.length} destinatário(s).`, { id: tId });
     } catch (e: any) {
@@ -600,11 +603,11 @@ export default function AdjustmentBudgetRequestDialog({
 
               <div className="space-y-1.5">
                 <Label htmlFor="adj-email" className="text-xs">E-mail(s) do destinatário</Label>
-                <Textarea id="adj-email" rows={2} value={email} onChange={(e) => setEmail(e.target.value)} disabled={sending} placeholder="email1@empresa.com, email2@empresa.com" className="text-sm" />
+                <EmailRecipientsInput id="adj-email" value={email} onChange={setEmail} suggestions={emailSuggestions} disabled={sending} placeholder="email1@empresa.com, email2@empresa.com" className="text-sm" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="adj-cc" className="text-xs">CC (opcional)</Label>
-                <Textarea id="adj-cc" rows={1} value={cc} onChange={(e) => setCc(e.target.value)} disabled={sending} placeholder="copia@empresa.com" className="text-sm" />
+                <EmailRecipientsInput id="adj-cc" value={cc} onChange={setCc} suggestions={emailSuggestions} disabled={sending} placeholder="copia@empresa.com" className="text-sm" />
               </div>
               <ReplyToField value={replyTo} onChange={setReplyTo} disabled={sending} />
               <div className="space-y-1.5">
