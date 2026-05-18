@@ -1512,6 +1512,11 @@ const ClientDetail = () => {
             )}
           </>
         )}
+
+        {/* ─── Email Memory View ─── */}
+        {new URLSearchParams(location.search).get("tab") === "emails" && (
+          <ClientEmailMemoryManager clientId={clientId!} canEdit={canEditClients} />
+        )}
       </div>
 
       {/* ─── Supplier Add/Edit Dialog ─── */}
