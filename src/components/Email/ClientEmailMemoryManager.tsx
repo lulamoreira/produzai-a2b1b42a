@@ -19,18 +19,37 @@ interface Props {
 }
 
 export default function ClientEmailMemoryManager({ clientId, canEdit }: Props) {
-  const { entries, isLoading, removeEmail, updateEmail, record } = useClientEmailMemory({ clientId });
+  const { entries, isLoading, removeEmail, updateEmail, updateContactName, record } = useClientEmailMemory({ clientId });
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [addValue, setAddValue] = useState("");
+  const [editingName, setEditingName] = useState<string | null>(null);
+  const [nameValue, setNameValue] = useState("");
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return entries;
-    return entries.filter((e) => e.email.toLowerCase().includes(q));
+    return entries.filter((e) =>
+      e.email.toLowerCase().includes(q) ||
+      (e.contact_name ?? "").toLowerCase().includes(q),
+    );
   }, [entries, search]);
+
+  const startNameEdit = (email: string, current: string | null) => {
+    setEditingName(email);
+    setNameValue(current ?? "");
+  };
+  const cancelNameEdit = () => { setEditingName(null); setNameValue(""); };
+  const saveNameEdit = async (email: string) => {
+    try {
+      await updateContactName({ email, contactName: nameValue });
+      cancelNameEdit();
+    } catch (e: any) {
+      toast.error(e?.message || "Não foi possível salvar o nome.");
+    }
+  };
 
   const startEdit = (email: string) => {
     setEditing(email);
