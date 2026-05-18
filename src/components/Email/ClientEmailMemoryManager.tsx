@@ -197,6 +197,52 @@ export default function ClientEmailMemoryManager({ clientId, canEdit }: Props) {
                         entry.email
                       )}
                     </TableCell>
+                    <TableCell className="text-sm">
+                      {editingName === entry.email ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            autoFocus
+                            value={nameValue}
+                            onChange={(e) => setNameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") saveNameEdit(entry.email);
+                              if (e.key === "Escape") cancelNameEdit();
+                            }}
+                            placeholder="Nome do contato"
+                            className="h-7 text-xs"
+                          />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 text-green-600 shrink-0"
+                            onClick={() => saveNameEdit(entry.email)}
+                            title="Salvar"
+                          >
+                            <Check className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 shrink-0"
+                            onClick={cancelNameEdit}
+                            title="Cancelar"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ) : canEdit ? (
+                        <button
+                          type="button"
+                          onClick={() => startNameEdit(entry.email, entry.contact_name)}
+                          className="text-left hover:underline text-foreground/90 disabled:cursor-not-allowed"
+                          title="Editar nome do contato"
+                        >
+                          {entry.contact_name || <span className="text-muted-foreground italic">adicionar</span>}
+                        </button>
+                      ) : (
+                        entry.contact_name || <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell className="text-sm">{entry.usage_count}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {entry.last_used_at
