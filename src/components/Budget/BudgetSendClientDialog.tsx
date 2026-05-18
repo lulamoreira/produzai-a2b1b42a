@@ -488,6 +488,10 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       toast.error("Informe pelo menos um e-mail válido.");
       return;
     }
+    if (!isReplyToValid(replyTo)) {
+      toast.error("E-mail de 'Responder para' inválido.");
+      return;
+    }
     if (submittedSuppliers.length === 0) {
       toast.error("Nenhum fornecedor enviou a cotação ainda.");
       return;
