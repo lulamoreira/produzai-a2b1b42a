@@ -385,6 +385,8 @@ export async function exportRateioGridPDF(
       cityState: [store.city, store.state].filter(Boolean).join(", "),
       totalQuantity,
       pageTotal,
+      coverPage: 1,
+      indexPage: 2,
     };
 
     // Always add a page for each store (cover + index already exist before first store)
