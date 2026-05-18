@@ -141,17 +141,17 @@ describe("useBulkUpdateCampaignStorePieces", () => {
     const supa = await import("@/integrations/supabase/client");
     const originalFrom = (supa.supabase as any).from;
     (supa.supabase as any).from = () => ({
-      delete: () => ({ eq: () => ({ eq: () => ({ eq: () => Promise.resolve({ error: null }) }) }) }),
-      select: () => ({
+      delete: () => ({
         eq: () => ({
           eq: () => ({
-            eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
+            in: () => Promise.resolve({ error: null }),
+            eq: () => Promise.resolve({ error: null }),
           }),
         }),
       }),
-      update: () => ({ eq: () => Promise.resolve({ error: null }) }),
-      insert: () => Promise.resolve({ error: { message: "boom" } }),
+      upsert: () => Promise.resolve({ error: { message: "boom" } }),
     });
+
 
     const { result } = renderHook(() => useBulkUpdateCampaignStorePieces(), {
       wrapper: wrapper(qc),
