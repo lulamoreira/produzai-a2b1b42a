@@ -62,6 +62,7 @@ export default function SendAdjustmentToSupplierDialog({
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const [phone, setPhone] = useState("");
+  const [replyTo, setReplyTo] = useState("");
   const [generating, setGenerating] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const attachmentsRef = useRef<Attachments | null>(null);
@@ -71,6 +72,7 @@ export default function SendAdjustmentToSupplierDialog({
     if (!open) return;
     setUploadStatus(null);
     setPreviewOpen(false);
+    setReplyTo("");
     attachmentsRef.current = null;
     setLoadingSupplier(true);
     (async () => {
