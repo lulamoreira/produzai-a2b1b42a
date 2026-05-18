@@ -19,18 +19,37 @@ interface Props {
 }
 
 export default function ClientEmailMemoryManager({ clientId, canEdit }: Props) {
-  const { entries, isLoading, removeEmail, updateEmail, record } = useClientEmailMemory({ clientId });
+  const { entries, isLoading, removeEmail, updateEmail, updateContactName, record } = useClientEmailMemory({ clientId });
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [addValue, setAddValue] = useState("");
+  const [editingName, setEditingName] = useState<string | null>(null);
+  const [nameValue, setNameValue] = useState("");
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return entries;
-    return entries.filter((e) => e.email.toLowerCase().includes(q));
+    return entries.filter((e) =>
+      e.email.toLowerCase().includes(q) ||
+      (e.contact_name ?? "").toLowerCase().includes(q),
+    );
   }, [entries, search]);
+
+  const startNameEdit = (email: string, current: string | null) => {
+    setEditingName(email);
+    setNameValue(current ?? "");
+  };
+  const cancelNameEdit = () => { setEditingName(null); setNameValue(""); };
+  const saveNameEdit = async (email: string) => {
+    try {
+      await updateContactName({ email, contactName: nameValue });
+      cancelNameEdit();
+    } catch (e: any) {
+      toast.error(e?.message || "Não foi possível salvar o nome.");
+    }
+  };
 
   const startEdit = (email: string) => {
     setEditing(email);
@@ -150,6 +169,7 @@ export default function ClientEmailMemoryManager({ clientId, canEdit }: Props) {
             <TableHeader>
               <TableRow>
                 <TableHead className="text-xs">E-mail</TableHead>
+                <TableHead className="text-xs">Contato</TableHead>
                 <TableHead className="text-xs">Usos</TableHead>
                 <TableHead className="text-xs">Último uso</TableHead>
                 {canEdit && <TableHead className="text-xs text-right">Ações</TableHead>}
@@ -175,6 +195,52 @@ export default function ClientEmailMemoryManager({ clientId, canEdit }: Props) {
                         />
                       ) : (
                         entry.email
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {editingName === entry.email ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            autoFocus
+                            value={nameValue}
+                            onChange={(e) => setNameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") saveNameEdit(entry.email);
+                              if (e.key === "Escape") cancelNameEdit();
+                            }}
+                            placeholder="Nome do contato"
+                            className="h-7 text-xs"
+                          />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 text-green-600 shrink-0"
+                            onClick={() => saveNameEdit(entry.email)}
+                            title="Salvar"
+                          >
+                            <Check className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 shrink-0"
+                            onClick={cancelNameEdit}
+                            title="Cancelar"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      ) : canEdit ? (
+                        <button
+                          type="button"
+                          onClick={() => startNameEdit(entry.email, entry.contact_name)}
+                          className="text-left hover:underline text-foreground/90 disabled:cursor-not-allowed"
+                          title="Editar nome do contato"
+                        >
+                          {entry.contact_name || <span className="text-muted-foreground italic">adicionar</span>}
+                        </button>
+                      ) : (
+                        entry.contact_name || <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
                     <TableCell className="text-sm">{entry.usage_count}</TableCell>
