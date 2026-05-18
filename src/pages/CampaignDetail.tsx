@@ -9,7 +9,7 @@ import { getStateColor } from "@/lib/stateColors";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   useCampaign, useClient, useClientStores, useCampaignPieces, useCampaignStorePieces,
-  useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece,
+  useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece, useUpdateCampaign,
   useCampaignPieceLocations, useAddCampaignPieceLocation, useDeleteCampaignPieceLocation,
   useCampaignPieceSubLocations,
   useUpdateClientStore,
