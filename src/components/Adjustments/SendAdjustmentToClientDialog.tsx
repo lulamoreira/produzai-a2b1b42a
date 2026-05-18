@@ -148,6 +148,10 @@ export default function SendAdjustmentToClientDialog({
       toast.error("Informe pelo menos um e-mail válido.");
       return;
     }
+    if (!isReplyToValid(replyTo)) {
+      toast.error("E-mail de 'Responder para' inválido.");
+      return;
+    }
     const tId = toast.loading("Gerando arquivos...");
     try {
       await ensureAttachments();
@@ -155,6 +159,63 @@ export default function SendAdjustmentToClientDialog({
       setPreviewOpen(true);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao gerar arquivos.", { id: tId });
+    }
+  };
+
+  const handleSendViaSystem = async () => {
+    const merged = mergeRecipients(email, cc);
+    if (merged.valid.length === 0) {
+      toast.error("Informe pelo menos um e-mail válido.");
+      return;
+    }
+    if (!isReplyToValid(replyTo)) {
+      toast.error("E-mail de 'Responder para' inválido.");
+      return;
+    }
+    const att = attachmentsRef.current;
+    if (!att) {
+      toast.error("Arquivos ainda não foram gerados.");
+      return;
+    }
+    const toEmails = parseRecipients(email);
+    const templateData = {
+      clientName: clientName || "Cliente",
+      agencyName,
+      campaignName,
+      adjustmentName,
+      downloadUrls: [att.workbookLink, att.pdfLink],
+    };
+    const tId = toast.loading(`Enviando para ${merged.valid.length} destinatário(s)...`);
+    let sent = 0;
+    const failures: string[] = [];
+    for (const recipient of merged.valid) {
+      const isCc = !toEmails.includes(recipient);
+      try {
+        const { error } = await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "adjustment-final-to-client",
+            recipientEmail: recipient,
+            idempotencyKey: `adj-client-${adjustmentId}-${recipient}-${Date.now()}`,
+            templateData,
+            fromName: agencyName,
+            ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
+          },
+        });
+        if (error) throw new Error(error.message || "Erro ao enviar");
+        sent++;
+      } catch (e: any) {
+        failures.push(`${isCc ? "CC " : ""}${recipient}: ${e?.message || "erro"}`);
+      }
+    }
+    toast.dismiss(tId);
+    if (sent > 0 && failures.length === 0) {
+      toast.success(`E-mail enviado para ${sent} destinatário(s).`);
+      setPreviewOpen(false);
+      onOpenChange(false);
+    } else if (sent > 0) {
+      toast.warning(`Enviado para ${sent}. Falhas: ${failures.join("; ")}`);
+    } else {
+      toast.error(`Falha ao enviar: ${failures.join("; ")}`);
     }
   };
 
