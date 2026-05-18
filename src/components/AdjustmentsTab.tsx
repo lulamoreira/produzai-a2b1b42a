@@ -146,6 +146,8 @@ export default function AdjustmentsTab({
   const [requestDialogAdjustment, setRequestDialogAdjustment] = useState<CampaignAdjustment | null>(null);
   const [registerResponseAdjustment, setRegisterResponseAdjustment] = useState<CampaignAdjustment | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [sendClientOpen, setSendClientOpen] = useState(false);
+  const [sendSupplierOpen, setSendSupplierOpen] = useState(false);
 
   const { data: requote } = useActiveAdjustmentRequest(campaignId);
   useRequoteRealtime(campaignId);
