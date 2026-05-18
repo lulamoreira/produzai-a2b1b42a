@@ -1072,13 +1072,13 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         </div>
       )}
 
-      <PhaseStepper
+      <PhaseStepperWithApproval
+        campaignId={campaignId}
         currentPhase={currentPhase}
         phaseLockedAt={phaseLockedAt as Record<string, string>}
         isAdminOrMaster={isAdminOrMaster}
         onUnlock={(phase) => setUnlockTarget(phase)}
         isUnlocking={isUnlocking}
-        campaignId={campaignId}
       />
 
       {/* ═══ KPI CARDS ═══ */}
