@@ -223,6 +223,10 @@ export default function BudgetSendNegotiatedDialog({
       toast.error("Informe pelo menos um e-mail válido.");
       return;
     }
+    if (!isReplyToValid(replyTo)) {
+      toast.error("E-mail de 'Responder para' inválido.");
+      return;
+    }
     setSending(true);
     setUploadStatus(null);
     setSummaryItems([]);
