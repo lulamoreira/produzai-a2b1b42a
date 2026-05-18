@@ -241,6 +241,8 @@ export default function BudgetWinnerDialog({
               />
             </div>
 
+            <ReplyToField value={replyTo} onChange={setReplyTo} disabled={busy} />
+
             <div className="space-y-1.5">
               <Label htmlFor="winner-mockup">Link das peças fechadas do mockup *</Label>
               <Input
