@@ -100,6 +100,13 @@ export default function SendAdjustmentToSupplierDialog({
     })();
   }, [open, supplierId, defaultCcEmail]);
 
+  useEffect(() => {
+    if (!open) return;
+    const v = replyTo.trim();
+    if (!v) return;
+    try { localStorage.setItem("adjustment:lastReplyTo", v); } catch {}
+  }, [replyTo, open]);
+
   async function ensureAttachments(): Promise<Attachments> {
     if (attachmentsRef.current) return attachmentsRef.current;
     setGenerating(true);
