@@ -3029,7 +3029,6 @@ const CampaignDetail = () => {
                                 },
                                 exportSourceLabel,
                               );
-                              );
                               toast.success(`${kind} exportado com sucesso!`, { id: "rateio-grid" });
                             } catch (err) {
                               console.error(err);
