@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
-import { mergeRecipients } from "@/lib/emailRecipients";
+import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 import { uploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
 import {
@@ -17,6 +17,7 @@ import {
   type AdjustmentClientPackage,
 } from "@/lib/buildAdjustmentClientPackage";
 import AdjustmentEmailPreviewDialog from "./AdjustmentEmailPreviewDialog";
+import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 
 interface Props {
   open: boolean;
@@ -61,6 +62,7 @@ export default function SendAdjustmentToSupplierDialog({
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const [phone, setPhone] = useState("");
+  const [replyTo, setReplyTo] = useState("");
   const [generating, setGenerating] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const attachmentsRef = useRef<Attachments | null>(null);
@@ -70,6 +72,7 @@ export default function SendAdjustmentToSupplierDialog({
     if (!open) return;
     setUploadStatus(null);
     setPreviewOpen(false);
+    setReplyTo("");
     attachmentsRef.current = null;
     setLoadingSupplier(true);
     (async () => {
@@ -164,6 +167,10 @@ export default function SendAdjustmentToSupplierDialog({
       toast.error("Informe pelo menos um e-mail válido.");
       return;
     }
+    if (!isReplyToValid(replyTo)) {
+      toast.error("E-mail de 'Responder para' inválido.");
+      return;
+    }
     const tId = toast.loading("Gerando arquivos...");
     try {
       await ensureAttachments();
@@ -171,6 +178,65 @@ export default function SendAdjustmentToSupplierDialog({
       setPreviewOpen(true);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao gerar arquivos.", { id: tId });
+    }
+  };
+
+  const handleSendViaSystem = async () => {
+    const merged = mergeRecipients(email, cc);
+    if (merged.valid.length === 0) {
+      toast.error("Informe pelo menos um e-mail válido.");
+      return;
+    }
+    if (!isReplyToValid(replyTo)) {
+      toast.error("E-mail de 'Responder para' inválido.");
+      return;
+    }
+    const att = attachmentsRef.current;
+    if (!att) {
+      toast.error("Arquivos ainda não foram gerados.");
+      return;
+    }
+    const toEmails = parseRecipients(email);
+    const templateData = {
+      supplierName: supplier?.company_name || "Fornecedor",
+      contactName: supplier?.contact_name || undefined,
+      agencyName,
+      clientName,
+      campaignName,
+      adjustmentName,
+      downloadUrls: [att.workbookLink, att.pdfLink],
+    };
+    const tId = toast.loading(`Enviando para ${merged.valid.length} destinatário(s)...`);
+    let sent = 0;
+    const failures: string[] = [];
+    for (const recipient of merged.valid) {
+      const isCc = !toEmails.includes(recipient);
+      try {
+        const { error } = await supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "adjustment-final-to-supplier",
+            recipientEmail: recipient,
+            idempotencyKey: `adj-supplier-${adjustmentId}-${supplierId}-${recipient}-${Date.now()}`,
+            templateData,
+            fromName: agencyName,
+            ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
+          },
+        });
+        if (error) throw new Error(error.message || "Erro ao enviar");
+        sent++;
+      } catch (e: any) {
+        failures.push(`${isCc ? "CC " : ""}${recipient}: ${e?.message || "erro"}`);
+      }
+    }
+    toast.dismiss(tId);
+    if (sent > 0 && failures.length === 0) {
+      toast.success(`E-mail enviado para ${sent} destinatário(s).`);
+      setPreviewOpen(false);
+      onOpenChange(false);
+    } else if (sent > 0) {
+      toast.warning(`Enviado para ${sent}. Falhas: ${failures.join("; ")}`);
+    } else {
+      toast.error(`Falha ao enviar: ${failures.join("; ")}`);
     }
   };
 
@@ -214,6 +280,7 @@ export default function SendAdjustmentToSupplierDialog({
                 </div>
               </>
             )}
+            <ReplyToField value={replyTo} onChange={setReplyTo} disabled={busy} />
             {generating && <UploadProgressPanel status={uploadStatus} />}
           </div>
 
@@ -243,6 +310,8 @@ export default function SendAdjustmentToSupplierDialog({
         to={email}
         cc={cc}
         subject={`${campaignName} — Liberação para produção${adjustmentName ? ` (${adjustmentName})` : ""}`}
+        onSendViaSystem={handleSendViaSystem}
+        replyTo={replyTo}
       />
     </>
   );
