@@ -56,12 +56,15 @@ export default function SendAdjustmentToClientDialog({
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const attachmentsRef = useRef<Attachments | null>(null);
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   useEffect(() => {
     if (!open) return;
     setEmail(defaultClientEmail || "");
     setCc(defaultCcEmail || "");
     setPhone("");
     setUploadStatus(null);
+    setPreviewOpen(false);
     attachmentsRef.current = null;
   }, [open, defaultClientEmail, defaultCcEmail]);
 
