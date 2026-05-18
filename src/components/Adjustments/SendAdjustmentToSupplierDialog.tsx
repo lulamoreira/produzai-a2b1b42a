@@ -280,6 +280,7 @@ export default function SendAdjustmentToSupplierDialog({
                 </div>
               </>
             )}
+            <ReplyToField value={replyTo} onChange={setReplyTo} disabled={busy} />
             {generating && <UploadProgressPanel status={uploadStatus} />}
           </div>
 
