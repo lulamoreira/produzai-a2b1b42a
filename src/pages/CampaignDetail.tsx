@@ -293,6 +293,9 @@ const CampaignDetail = () => {
 
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [rateioBackupOpen, setRateioBackupOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameDraft, setRenameDraft] = useState("");
+  const updateCampaignMut = useUpdateCampaign();
 
   // ─── Negotiation rateio (isolated distribution for the winning supplier) ───
   const [rateioSource, setRateioSource] = useState<"original" | "negotiation" | "adjustment">("original");
