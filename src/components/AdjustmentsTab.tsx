@@ -647,6 +647,23 @@ export default function AdjustmentsTab({
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => setSendClientOpen(true)}
+                          className="shrink-0 gap-1.5 border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          Enviar ao cliente
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSendSupplierOpen(true)}
+                          className="shrink-0 gap-1.5 border-blue-500 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                        >
+                          <Truck className="w-3.5 h-3.5" />
+                          Avisar fornecedor
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => handleRevertApproval(a.id)}
                           className="shrink-0 gap-1.5 border-amber-300 text-amber-800 hover:bg-amber-50"
                           title="Reverter aprovação para editar os valores novamente"
