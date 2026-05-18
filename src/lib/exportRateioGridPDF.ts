@@ -68,6 +68,8 @@ type StoreHeaderInfo = {
   storeName: string;
   storeCode: string;
   cityState: string;
+  pageCurrent?: number;
+  pageTotal?: number;
 };
 
 function drawStoreHeader(doc: any, info: StoreHeaderInfo) {
