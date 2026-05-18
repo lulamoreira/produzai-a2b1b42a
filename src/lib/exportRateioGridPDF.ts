@@ -70,13 +70,15 @@ type StoreHeaderInfo = {
   totalQuantity: number;
   pageCurrent?: number;
   pageTotal?: number;
+  coverPage?: number;
+  indexPage?: number;
 };
 
 function drawStoreHeader(doc: any, info: StoreHeaderInfo) {
   const pw = doc.internal.pageSize.getWidth();
   let y = PAGE_MARGIN_TOP;
 
-  // Bar 1 — agency | client | campaign (dark, white, single compact line)
+  // Bar 1 — agency | client (dark, white). Clickable → cover. Hint at right.
   const bar1H = 6;
   doc.setFillColor(...DARK);
   doc.rect(0, y, pw, bar1H, "F");
@@ -85,9 +87,16 @@ function drawStoreHeader(doc: any, info: StoreHeaderInfo) {
   doc.setFontSize(8.5);
   doc.setTextColor(...WHITE);
   doc.text(top || "—", pw / 2, y + bar1H / 2 + 1.3, { align: "center" });
+  if (info.coverPage) {
+    doc.setFontSize(6.5);
+    doc.setTextColor(...BEIGE);
+    doc.text("voltar para capa ›", pw - 3, y + bar1H / 2 + 1.1, { align: "right" });
+    // invisible clickable overlay across the whole bar
+    (doc as any).link(0, y, pw, bar1H, { pageNumber: info.coverPage });
+  }
   y += bar1H;
 
-  // Bar 2 — campaign (brown, bold)
+  // Bar 2 — campaign (brown, bold). Clickable → index. Hint at left.
   const bar2H = 8;
   doc.setFillColor(...BROWN);
   doc.rect(0, y, pw, bar2H, "F");
@@ -95,6 +104,13 @@ function drawStoreHeader(doc: any, info: StoreHeaderInfo) {
   doc.setFontSize(12);
   doc.setTextColor(...WHITE);
   doc.text((info.campaignName || "").toUpperCase(), pw / 2, y + bar2H / 2 + 1.7, { align: "center" });
+  if (info.indexPage) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.setTextColor(...BEIGE);
+    doc.text("‹ índice", 3, y + bar2H / 2 + 1.5);
+    (doc as any).link(0, y, pw, bar2H, { pageNumber: info.indexPage });
+  }
   y += bar2H;
 
   // Bar 3 — store name + total qty (beige bg). Qty appears on the same line.
@@ -369,6 +385,8 @@ export async function exportRateioGridPDF(
       cityState: [store.city, store.state].filter(Boolean).join(", "),
       totalQuantity,
       pageTotal,
+      coverPage: 1,
+      indexPage: 2,
     };
 
     // Always add a page for each store (cover + index already exist before first store)
