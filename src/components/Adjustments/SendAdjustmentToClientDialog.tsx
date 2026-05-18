@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Send, Loader2, MessageCircle, X, AtSign } from "lucide-react";
+import { Send, Loader2, MessageCircle, X, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   buildAdjustmentClientPackage,
   type AdjustmentClientPackage,
 } from "@/lib/buildAdjustmentClientPackage";
+import AdjustmentEmailPreviewDialog from "./AdjustmentEmailPreviewDialog";
 
 interface Props {
   open: boolean;
@@ -55,12 +56,15 @@ export default function SendAdjustmentToClientDialog({
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const attachmentsRef = useRef<Attachments | null>(null);
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   useEffect(() => {
     if (!open) return;
     setEmail(defaultClientEmail || "");
     setCc(defaultCcEmail || "");
     setPhone("");
     setUploadStatus(null);
+    setPreviewOpen(false);
     attachmentsRef.current = null;
   }, [open, defaultClientEmail, defaultCcEmail]);
 
@@ -130,7 +134,7 @@ export default function SendAdjustmentToClientDialog({
     }
   };
 
-  const handleSendMailto = async () => {
+  const handleOpenPreview = async () => {
     const merged = mergeRecipients(email, cc);
     if (merged.invalid.length) {
       toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
@@ -142,19 +146,9 @@ export default function SendAdjustmentToClientDialog({
     }
     const tId = toast.loading("Gerando arquivos...");
     try {
-      const att = await ensureAttachments();
-      const subject = `${campaignName} — Planilha final + Guia Visual de Lojas${adjustmentName ? ` (${adjustmentName})` : ""}`;
-      const body =
-        `Olá, ${clientName || "cliente"}!\n\n` +
-        `Segue a planilha final e o guia visual de lojas referentes ao ajuste ${adjustmentName}.\n\n` +
-        `Planilha final:\n${att.workbookLink.url}\n\n` +
-        `Guia visual de lojas:\n${att.pdfLink.url}\n\n` +
-        `Qualquer dúvida, estamos à disposição.\n— Equipe ${agencyName}`;
-      const toList = encodeURIComponent(email.replace(/[;,\s]+/g, ","));
-      const ccList = cc.trim() ? `&cc=${encodeURIComponent(cc.replace(/[;,\s]+/g, ","))}` : "";
-      const url = `mailto:${toList}?subject=${encodeURIComponent(subject)}${ccList}&body=${encodeURIComponent(body)}`;
-      window.location.href = url;
-      toast.success("Abrindo seu app de e-mail...", { id: tId });
+      await ensureAttachments();
+      toast.dismiss(tId);
+      setPreviewOpen(true);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao gerar arquivos.", { id: tId });
     }
@@ -203,12 +197,26 @@ export default function SendAdjustmentToClientDialog({
             <Button className="w-full" variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={busy || !phone}>
               <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
             </Button>
-            <Button className="w-full" size="sm" onClick={handleSendMailto} disabled={busy}>
-              {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><AtSign className="w-4 h-4 mr-1" /> Meu e-mail</>}
+            <Button className="w-full" size="sm" onClick={handleOpenPreview} disabled={busy}>
+              {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Mail className="w-4 h-4 mr-1" /> Pré-visualizar e-mail</>}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AdjustmentEmailPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        variant="client"
+        recipientName={clientName || "cliente"}
+        agencyName={agencyName}
+        campaignName={campaignName}
+        adjustmentName={adjustmentName}
+        downloads={attachmentsRef.current ? [attachmentsRef.current.workbookLink, attachmentsRef.current.pdfLink] : []}
+        to={email}
+        cc={cc}
+        subject={`${campaignName} — Planilha final + Guia Visual de Lojas${adjustmentName ? ` (${adjustmentName})` : ""}`}
+      />
     </>
   );
 }
