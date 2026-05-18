@@ -65,9 +65,9 @@ export async function uploadAndSign(
 
   emit({ phase: "preparing", message: `Preparando ${fileName} (${sizeMb.toFixed(1)} MB)...`, progress: 5, attempt: 0 });
 
-  if (sizeMb > 50) {
+  if (sizeMb > 500) {
     throw new Error(
-      `O arquivo ${fileName} tem ${sizeMb.toFixed(1)} MB e excede o limite de 50 MB para upload. Reduza o tamanho e tente novamente.`,
+      `O arquivo ${fileName} tem ${sizeMb.toFixed(1)} MB e excede o limite de 500 MB para upload. Reduza o tamanho e tente novamente.`,
     );
   }
 
