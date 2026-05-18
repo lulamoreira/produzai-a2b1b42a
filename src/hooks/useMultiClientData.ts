@@ -759,16 +759,24 @@ export function useCampaignStorePieces(campaignId: string | undefined) {
 
   useEffect(() => {
     if (!campaignId) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const schedule = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        qc.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
+      }, 150);
+    };
     const channel = supabase
       .channel(`campaign-store-pieces-rt-${campaignId}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "campaign_store_pieces", filter: `campaign_id=eq.${campaignId}` },
-        () => qc.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] })
+        schedule
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => { if (timer) clearTimeout(timer); supabase.removeChannel(channel); };
   }, [campaignId, qc]);
+
 
   return query;
 }
@@ -792,35 +800,17 @@ export function useUpdateCampaignStorePiece() {
           .eq("campaign_id", campaignId)
           .eq("store_id", storeId)
           .eq("piece_id", pieceId);
-
         if (error) throw error;
         return;
       }
 
-      const { data: existing, error: existingError } = await supabase
+      const { error } = await supabase
         .from("campaign_store_pieces")
-        .select("id")
-        .eq("campaign_id", campaignId)
-        .eq("store_id", storeId)
-        .eq("piece_id", pieceId)
-        .maybeSingle();
-
-      if (existingError) throw existingError;
-
-      if (existing) {
-        const { error: updateError } = await supabase
-          .from("campaign_store_pieces")
-          .update({ quantity: normalizedQty })
-          .eq("id", existing.id);
-
-        if (updateError) throw updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from("campaign_store_pieces")
-          .insert({ campaign_id: campaignId, store_id: storeId, piece_id: pieceId, quantity: normalizedQty });
-
-        if (insertError) throw insertError;
-      }
+        .upsert(
+          { campaign_id: campaignId, store_id: storeId, piece_id: pieceId, quantity: normalizedQty },
+          { onConflict: "campaign_id,store_id,piece_id" }
+        );
+      if (error) throw error;
     },
     onMutate: async ({ campaignId, storeId, pieceId, quantity }) => {
       // Stamp this mutation; onSettled will compare against this snapshot.
@@ -859,19 +849,20 @@ export function useUpdateCampaignStorePiece() {
       }
       toast.error("Erro: " + e.message);
     },
+    // Realtime subscription (debounced 150 ms) handles refetch authoritatively.
+    // Fallback only fires after 2 s if no newer mutation has run since — covers
+    // the rare case where realtime drops a message.
     onSettled: (_data, _error, vars, context) => {
-      // Delay invalidation 500ms so the database commit has time to land,
-      // and skip entirely if a newer mutation has started since — its own
-      // onSettled will perform the final refetch with the freshest data.
       const mutationTime = context?.mutationTime ?? 0;
       setTimeout(() => {
         if (lastMutationRef.current === mutationTime) {
           qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
         }
-      }, 500);
+      }, 2000);
     },
   });
 }
+
 
 // Bulk update for a single (storeId, [pieceId, quantity]) batch — used by kit
 // cells where editing one cell maps to N component-piece writes. Performs ONE
@@ -898,43 +889,34 @@ export function useBulkUpdateCampaignStorePieces() {
       storeId: string;
       updates: Array<{ pieceId: string; quantity: number }>;
     }) => {
-      await Promise.all(
-        updates.map(async ({ pieceId, quantity }) => {
-          const normalizedQty = Math.max(0, quantity);
-          if (normalizedQty === 0) {
-            const { error } = await supabase
+      const deletes: string[] = [];
+      const upserts: Array<{ campaign_id: string; store_id: string; piece_id: string; quantity: number }> = [];
+      for (const { pieceId, quantity } of updates) {
+        const normalizedQty = Math.max(0, quantity);
+        if (normalizedQty === 0) {
+          deletes.push(pieceId);
+        } else {
+          upserts.push({ campaign_id: campaignId, store_id: storeId, piece_id: pieceId, quantity: normalizedQty });
+        }
+      }
+
+      await Promise.all([
+        deletes.length > 0
+          ? supabase
               .from("campaign_store_pieces")
               .delete()
               .eq("campaign_id", campaignId)
               .eq("store_id", storeId)
-              .eq("piece_id", pieceId);
-            if (error) throw error;
-            return;
-          }
-
-          const { data: existing, error: existingError } = await supabase
-            .from("campaign_store_pieces")
-            .select("id")
-            .eq("campaign_id", campaignId)
-            .eq("store_id", storeId)
-            .eq("piece_id", pieceId)
-            .maybeSingle();
-          if (existingError) throw existingError;
-
-          if (existing) {
-            const { error } = await supabase
+              .in("piece_id", deletes)
+              .then(({ error }) => { if (error) throw error; })
+          : Promise.resolve(),
+        upserts.length > 0
+          ? supabase
               .from("campaign_store_pieces")
-              .update({ quantity: normalizedQty })
-              .eq("id", existing.id);
-            if (error) throw error;
-          } else {
-            const { error } = await supabase
-              .from("campaign_store_pieces")
-              .insert({ campaign_id: campaignId, store_id: storeId, piece_id: pieceId, quantity: normalizedQty });
-            if (error) throw error;
-          }
-        })
-      );
+              .upsert(upserts, { onConflict: "campaign_id,store_id,piece_id" })
+              .then(({ error }) => { if (error) throw error; })
+          : Promise.resolve(),
+      ]);
     },
     onMutate: async ({ campaignId, storeId, updates }) => {
       lastMutationRef.current = Date.now();
@@ -973,18 +955,19 @@ export function useBulkUpdateCampaignStorePieces() {
       }
       toast.error("Erro: " + (e as Error).message);
     },
-    // Delayed + race-guarded invalidation: 500ms gives the DB time to commit,
-    // and the timestamp check ensures only the latest batch triggers a refetch.
+    // Realtime (debounced) handles refetch authoritatively. The 2 s timer is
+    // only a fallback for the rare case where a realtime event is dropped.
     onSettled: (_data, _error, vars, context) => {
       const mutationTime = context?.mutationTime ?? 0;
       setTimeout(() => {
         if (lastMutationRef.current === mutationTime) {
           qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
         }
-      }, 500);
+      }, 2000);
     },
   });
 }
+
 
 
 // ─── User Client Access ──────────────────────────────────

@@ -25,18 +25,15 @@ vi.mock("@/integrations/supabase/client", () => {
   const calls: any[] = [];
   const builder = (table: string) => ({
     delete: () => ({
-      eq: () => ({ eq: () => ({ eq: () => Promise.resolve({ error: null }) }) }),
-    }),
-    select: () => ({
       eq: () => ({
         eq: () => ({
-          eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
+          in: () => Promise.resolve({ error: null }),
+          eq: () => Promise.resolve({ error: null }),
         }),
       }),
     }),
-    update: () => ({ eq: () => Promise.resolve({ error: null }) }),
-    insert: (payload: any) => {
-      calls.push({ table, payload });
+    upsert: (payload: any) => {
+      calls.push({ table, op: "upsert", payload });
       return Promise.resolve({ error: null });
     },
   });
@@ -47,6 +44,7 @@ vi.mock("@/integrations/supabase/client", () => {
     },
   };
 });
+
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
@@ -115,15 +113,17 @@ describe("useBulkUpdateCampaignStorePieces", () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
     // Critical: exactly ONE invalidation for the whole batch — never per row.
-    // The hook intentionally delays invalidation by 500ms to avoid refetching
-    // before the database has committed every component-piece write.
+    // The hook intentionally delays the fallback invalidation by ~2s so the
+    // realtime channel (which is the authoritative refetch path) has a chance
+    // to fire first; this test verifies the fallback path still runs.
     await waitFor(() => {
       const matchingCalls = invalidateSpy.mock.calls.filter((c) => {
         const k = (c[0] as any)?.queryKey;
         return Array.isArray(k) && k[0] === "campaign_store_pieces" && k[1] === "campaign-2";
       });
       expect(matchingCalls).toHaveLength(1);
-    });
+    }, { timeout: 3000 });
+
   });
 
   it("rolls back to the previous snapshot if the batch errors", async () => {
@@ -143,17 +143,17 @@ describe("useBulkUpdateCampaignStorePieces", () => {
     const supa = await import("@/integrations/supabase/client");
     const originalFrom = (supa.supabase as any).from;
     (supa.supabase as any).from = () => ({
-      delete: () => ({ eq: () => ({ eq: () => ({ eq: () => Promise.resolve({ error: null }) }) }) }),
-      select: () => ({
+      delete: () => ({
         eq: () => ({
           eq: () => ({
-            eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
+            in: () => Promise.resolve({ error: null }),
+            eq: () => Promise.resolve({ error: null }),
           }),
         }),
       }),
-      update: () => ({ eq: () => Promise.resolve({ error: null }) }),
-      insert: () => Promise.resolve({ error: { message: "boom" } }),
+      upsert: () => Promise.resolve({ error: { message: "boom" } }),
     });
+
 
     const { result } = renderHook(() => useBulkUpdateCampaignStorePieces(), {
       wrapper: wrapper(qc),
