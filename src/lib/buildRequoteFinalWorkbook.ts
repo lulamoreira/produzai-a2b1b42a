@@ -111,6 +111,7 @@ export interface RequoteFinalStoreRow {
   city?: string | null;
   state?: string | null;
   store_code?: string | null;
+  store_model?: string | null;
   showcase_count?: number | null;
 }
 
