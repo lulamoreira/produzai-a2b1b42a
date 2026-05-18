@@ -68,6 +68,7 @@ interface SubAreaPermission {
 
 interface TiposManagerProps {
   campaignId: string;
+  clientId?: string;
   permissions: SubAreaPermission;
 }
 
