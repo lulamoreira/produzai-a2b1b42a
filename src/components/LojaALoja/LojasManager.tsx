@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Store, Copy, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Store, Copy, Search, ArrowUp, ArrowDown, ArrowUpDown, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTableSort } from "@/hooks/useTableSort";
