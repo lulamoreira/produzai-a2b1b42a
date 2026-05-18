@@ -12,24 +12,24 @@ import {
 const PDF_MIME = "application/pdf";
 
 // Brand palette (RGB tuples for jspdf)
-const DARK: [number, number, number] = [28, 25, 22]; // #1C1916
-const BROWN: [number, number, number] = [140, 111, 78]; // #8C6F4E
-const BEIGE: [number, number, number] = [247, 246, 243]; // #F7F6F3
-const ROW_ALT: [number, number, number] = [245, 240, 235]; // #F5F0EB
-const BORDER: [number, number, number] = [224, 213, 200]; // #E0D5C8
-const GREY: [number, number, number] = [102, 102, 102]; // #666666
+const DARK: [number, number, number] = [28, 25, 22];
+const BROWN: [number, number, number] = [140, 111, 78];
+const BEIGE: [number, number, number] = [247, 246, 243];
+const ROW_ALT: [number, number, number] = [245, 240, 235];
+const BORDER: [number, number, number] = [224, 213, 200];
+const GREY: [number, number, number] = [102, 102, 102];
 const WHITE: [number, number, number] = [255, 255, 255];
 
-// Layout constants (mm)
-const PAGE_MARGIN_X = 10;
-const PAGE_MARGIN_TOP = 0; // header is full-width to top
-const PAGE_MARGIN_BOTTOM = 12; // footer reserved
-const HEADER_TOTAL_HEIGHT = 38; // 4 stacked bars
-const CARD_GAP = 3;
+// Layout constants (mm) — A4 landscape: 297 × 210
+const PAGE_MARGIN_X = 8;
+const PAGE_MARGIN_TOP = 0;
+const PAGE_MARGIN_BOTTOM = 7; // footer
+const HEADER_TOTAL_HEIGHT = 26; // compact 3-bar header
+const CARD_GAP = 2.5;
 const CARDS_PER_ROW = 7;
 const ROWS_PER_PAGE = 4;
-const CARD_HEIGHT = 42; // mm — compact card, 4 rows per page in landscape A4
-const PHOTO_SIZE = 16; // mm
+const CARD_HEIGHT = 41; // fits 4 rows in landscape A4
+const PHOTO_SIZE = 16;
 
 type ImageCacheEntry = { dataUrl: string; format: "PNG" | "JPEG" | "GIF" } | null;
 
@@ -40,7 +40,6 @@ function bufferToBase64(buffer: ArrayBuffer): string {
   for (let i = 0; i < bytes.length; i += chunk) {
     binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)) as any);
   }
-  // btoa is available in browsers
   return typeof btoa !== "undefined" ? btoa(binary) : Buffer.from(binary, "binary").toString("base64");
 }
 
@@ -68,6 +67,7 @@ type StoreHeaderInfo = {
   storeName: string;
   storeCode: string;
   cityState: string;
+  totalQuantity: number;
   pageCurrent?: number;
   pageTotal?: number;
 };
@@ -76,52 +76,52 @@ function drawStoreHeader(doc: any, info: StoreHeaderInfo) {
   const pw = doc.internal.pageSize.getWidth();
   let y = PAGE_MARGIN_TOP;
 
-  // Bar 1 — agency | client (dark, white text, small)
-  const bar1H = 7;
+  // Bar 1 — agency | client | campaign (dark, white, single compact line)
+  const bar1H = 6;
   doc.setFillColor(...DARK);
   doc.rect(0, y, pw, bar1H, "F");
-  const agencyClient = [info.agencyName, info.clientName].filter(Boolean).join(" | ");
+  const top = [info.agencyName, info.clientName].filter(Boolean).join(" | ");
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(...WHITE);
-  doc.text(agencyClient || "—", pw / 2, y + bar1H / 2 + 1.5, { align: "center" });
+  doc.text(top || "—", pw / 2, y + bar1H / 2 + 1.3, { align: "center" });
   y += bar1H;
 
-  // Bar 2 — campaign UPPER (brown, white bold, larger)
-  const bar2H = 10;
+  // Bar 2 — campaign (brown, bold)
+  const bar2H = 8;
   doc.setFillColor(...BROWN);
   doc.rect(0, y, pw, bar2H, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
+  doc.setFontSize(12);
   doc.setTextColor(...WHITE);
-  doc.text((info.campaignName || "").toUpperCase(), pw / 2, y + bar2H / 2 + 2, { align: "center" });
+  doc.text((info.campaignName || "").toUpperCase(), pw / 2, y + bar2H / 2 + 1.7, { align: "center" });
   y += bar2H;
 
-  // Bar 3 — store name (beige bg, dark bold, large)
-  const bar3H = 12;
+  // Bar 3 — store name + total qty (beige bg). Qty appears on the same line.
+  const bar3H = 7.5;
   doc.setFillColor(...BEIGE);
   doc.rect(0, y, pw, bar3H, "F");
+  const pageSuffix = info.pageTotal && info.pageTotal > 1
+    ? `  —  PÁGINA ${info.pageCurrent}/${info.pageTotal}`
+    : "";
+  const qtySuffix = `  •  ${info.totalQuantity} peças`;
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
+  doc.setFontSize(13);
   doc.setTextColor(...DARK);
-  const storeTitle = info.pageTotal && info.pageTotal > 1
-    ? `${info.storeName || "—"} — PÁGINA ${info.pageCurrent}/${info.pageTotal}`
-    : (info.storeName || "—");
-  doc.text(storeTitle, pw / 2, y + bar3H / 2 + 2.5, { align: "center" });
+  doc.text(`${info.storeName || "—"}${qtySuffix}${pageSuffix}`, pw / 2, y + bar3H / 2 + 1.9, { align: "center" });
   y += bar3H;
 
   // Bar 4 — code | city, state (beige bg, brown small)
-  const bar4H = 9;
+  const bar4H = 4.5;
   doc.setFillColor(...BEIGE);
   doc.rect(0, y, pw, bar4H, "F");
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(7.5);
   doc.setTextColor(...BROWN);
-  const meta = `Codigo: ${info.storeCode || "—"} | ${info.cityState || "—"}`;
-  doc.text(meta, pw / 2, y + bar4H / 2 + 1.5, { align: "center" });
+  const meta = `Codigo: ${info.storeCode || "—"}  |  ${info.cityState || "—"}`;
+  doc.text(meta, pw / 2, y + bar4H / 2 + 1.2, { align: "center" });
   y += bar4H;
 
-  // reset text color
   doc.setTextColor(0, 0, 0);
 }
 
@@ -129,10 +129,10 @@ function drawFooter(doc: any, campaignName: string, pageNum: number, pageCount: 
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setTextColor(...GREY);
-  doc.text(`ProduzAI — ${campaignName}`, pw / 2, ph - 5, { align: "center" });
-  doc.text(`Pagina ${pageNum} de ${pageCount}`, pw - PAGE_MARGIN_X, ph - 5, { align: "right" });
+  doc.text(`ProduzAI — ${campaignName}`, pw / 2, ph - 2.5, { align: "center" });
+  doc.text(`Pagina ${pageNum} de ${pageCount}`, pw - PAGE_MARGIN_X, ph - 2.5, { align: "right" });
   doc.setTextColor(0, 0, 0);
 }
 
@@ -156,21 +156,15 @@ async function drawCard(
   altBg: boolean,
   imageCache: Map<string, ImageCacheEntry>,
 ) {
-  // Background
-  if (altBg) {
-    doc.setFillColor(...ROW_ALT);
-    doc.roundedRect(x, y, w, h, 1.5, 1.5, "F");
-  } else {
-    doc.setFillColor(...WHITE);
-    doc.roundedRect(x, y, w, h, 1.5, 1.5, "F");
-  }
-  // Border
+  // Background + border
+  doc.setFillColor(...(altBg ? ROW_ALT : WHITE));
+  doc.roundedRect(x, y, w, h, 1.5, 1.5, "F");
   doc.setDrawColor(...BORDER);
   doc.setLineWidth(0.2);
   doc.roundedRect(x, y, w, h, 1.5, 1.5, "S");
 
-  // Photo area (top-centered)
-  const photoY = y + 2.5;
+  // Photo (top-centered)
+  const photoY = y + 2;
   const photoX = x + (w - PHOTO_SIZE) / 2;
   let imageDrawn = false;
   if (card.image_url) {
@@ -195,35 +189,34 @@ async function drawCard(
     doc.setTextColor(0, 0, 0);
   }
 
-  // Text block (below photo)
-  let textY = photoY + PHOTO_SIZE + 3.5;
+  // Text block — three tight lines, no overlap
   const textX = x + 2;
   const textW = w - 4;
+  let textY = photoY + PHOTO_SIZE + 3.2;
 
-  // Line 1: Local: category (small brown bold)
+  // Line 1: Local (brown bold, tiny) — single line, truncated to width
   doc.setFont("helvetica", "bold");
   doc.setFontSize(6.5);
   doc.setTextColor(...BROWN);
-  const catLine = `Local: ${card.category}`;
-  doc.text(doc.splitTextToSize(catLine, textW)[0] || catLine, textX, textY);
-  textY += 3.2;
+  const catLine = doc.splitTextToSize(`Local: ${card.category || "—"}`, textW)[0] || "—";
+  doc.text(catLine, textX, textY);
+  textY += 3.4;
 
-  // Line 2: name — bold dark, single line truncated
+  // Line 2: name (bold dark) — single line, truncated
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
+  doc.setFontSize(7.3);
   doc.setTextColor(...(card.is_mockup ? BROWN : DARK));
   const mockupPrefix = card.is_mockup ? "[MOCKUP] " : "";
   const nameRaw = `${mockupPrefix}${card.is_new ? "[N] " : ""}${card.name || "—"}`;
-  const nameLines = doc.splitTextToSize(nameRaw, textW);
-  doc.text(nameLines.slice(0, 1), textX, textY);
-  textY += 3.5;
+  const nameLine = doc.splitTextToSize(nameRaw, textW)[0] || "—";
+  doc.text(nameLine, textX, textY);
+  textY += 3.6;
 
-  // Line 3: Cód | Qtd
+  // Line 3: Cod | Qtd
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
   doc.setTextColor(...DARK);
-  const summary = `Cod: ${card.code || "—"}  |  Qtd: ${card.quantity}`;
-  doc.text(summary, textX, textY);
+  doc.text(`Cod: ${card.code || "—"}  |  Qtd: ${card.quantity}`, textX, textY);
 
   doc.setTextColor(0, 0, 0);
 }
@@ -254,17 +247,15 @@ export async function exportRateioGridPDF(
   const imageCache = new Map<string, ImageCacheEntry>();
   const totalStores = buckets.length;
 
-  const usableTop = HEADER_TOTAL_HEIGHT + 4;
+  const usableTop = HEADER_TOTAL_HEIGHT + 2.5;
   const usableBottom = ph - PAGE_MARGIN_BOTTOM;
   const usableWidth = pw - PAGE_MARGIN_X * 2;
   const cardWidth = (usableWidth - CARD_GAP * (CARDS_PER_ROW - 1)) / CARDS_PER_ROW;
   const rowStride = CARD_HEIGHT + CARD_GAP;
 
-  const TOTAL_BAR_HEIGHT = 12;
+  const CARDS_PER_PAGE = CARDS_PER_ROW * ROWS_PER_PAGE;
 
   let firstStore = true;
-
-  const CARDS_PER_PAGE = CARDS_PER_ROW * ROWS_PER_PAGE;
 
   for (let i = 0; i < buckets.length; i++) {
     const bucket = buckets[i];
@@ -277,6 +268,7 @@ export async function exportRateioGridPDF(
       storeName: store.name || "Loja",
       storeCode: store.store_code || "—",
       cityState: [store.city, store.state].filter(Boolean).join(", "),
+      totalQuantity,
       pageTotal,
     };
 
@@ -292,7 +284,6 @@ export async function exportRateioGridPDF(
     for (let idx = 0; idx < items.length; idx++) {
       const colInRow = idx % CARDS_PER_ROW;
 
-      // Force page break after ROWS_PER_PAGE rows
       if (idx > 0 && idx % CARDS_PER_PAGE === 0) {
         doc.addPage();
         currentPage += 1;
@@ -323,32 +314,15 @@ export async function exportRateioGridPDF(
         imageCache,
       );
 
-      // After last column in row, advance Y
       if (colInRow === CARDS_PER_ROW - 1 || idx === items.length - 1) {
         y += rowStride;
         gridRowIdx += 1;
       }
     }
 
-    // Total bar (fits on the last cards page in landscape A4)
-    if (y + TOTAL_BAR_HEIGHT > usableBottom) {
-      doc.addPage();
-      currentPage += 1;
-      drawStoreHeader(doc, { ...baseHeader, pageCurrent: currentPage, pageTotal: Math.max(pageTotal, currentPage) });
-      y = usableTop;
-    }
-    doc.setFillColor(...BROWN);
-    doc.rect(PAGE_MARGIN_X, y, usableWidth, TOTAL_BAR_HEIGHT, "F");
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.setTextColor(...WHITE);
-    doc.text(`Total de pecas: ${totalQuantity}`, pw / 2, y + TOTAL_BAR_HEIGHT / 2 + 2.5, { align: "center" });
-    doc.setTextColor(0, 0, 0);
-
     safeProgress(onProgress, i + 1, totalStores, store.name || "Loja");
   }
 
-  // Footers on every page
   const totalPages = (doc as any).internal.getNumberOfPages();
   for (let p = 1; p <= totalPages; p++) {
     doc.setPage(p);
