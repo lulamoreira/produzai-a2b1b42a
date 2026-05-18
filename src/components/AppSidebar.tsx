@@ -21,7 +21,7 @@ import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import {
   Building2, Shield, Users, Star, Home,
   Menu, ChevronDown, ChevronRight,
-  Briefcase, Megaphone, Store, Database, Settings,
+  Briefcase, Megaphone, Store, Database, Settings, Mail,
 } from "lucide-react";
 
 // Legacy shape kept so the existing render code below works unchanged.
