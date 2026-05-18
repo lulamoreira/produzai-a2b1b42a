@@ -1,5 +1,5 @@
-import React, { useMemo, useRef } from "react";
-import { Copy, Link as LinkIcon, AtSign, X } from "lucide-react";
+import React, { useMemo, useRef, useState } from "react";
+import { Copy, Link as LinkIcon, AtSign, X, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
