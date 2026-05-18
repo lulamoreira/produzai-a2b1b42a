@@ -26,6 +26,8 @@ interface Props {
   to: string;
   cc?: string;
   subject: string;
+  onSendViaSystem?: () => Promise<void> | void;
+  replyTo?: string;
 }
 
 function buildHtml(p: Props): string {
