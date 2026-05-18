@@ -652,6 +652,8 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
             />
           </div>
 
+          <ReplyToField value={replyTo} onChange={setReplyTo} disabled={sending} />
+
           <div className="flex items-center gap-2">
             <Checkbox
               id="include-comparative"
