@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Send, Loader2, MessageCircle, Mail, Eye, X, AtSign } from "lucide-react";
+import { Send, Loader2, MessageCircle, X, AtSign } from "lucide-react";
 import { toast } from "sonner";
 
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -13,7 +12,6 @@ import {
 import { mergeRecipients } from "@/lib/emailRecipients";
 import { uploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
-import BudgetWinnerPreviewDialog from "@/components/Budget/BudgetWinnerPreviewDialog";
 import {
   buildAdjustmentClientPackage,
   type AdjustmentClientPackage,
@@ -54,15 +52,9 @@ export default function SendAdjustmentToClientDialog({
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const [phone, setPhone] = useState("");
-  const [sending, setSending] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const attachmentsRef = useRef<Attachments | null>(null);
-
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewHtml, setPreviewHtml] = useState("");
-  const [previewSubject, setPreviewSubject] = useState("");
-  const [previewTemplateData, setPreviewTemplateData] = useState<any>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -71,8 +63,6 @@ export default function SendAdjustmentToClientDialog({
     setPhone("");
     setUploadStatus(null);
     attachmentsRef.current = null;
-    setPreviewOpen(false);
-    setPreviewHtml("");
   }, [open, defaultClientEmail, defaultCcEmail]);
 
   async function ensureAttachments(): Promise<Attachments> {
@@ -103,80 +93,6 @@ export default function SendAdjustmentToClientDialog({
       setUploadStatus(null);
     }
   }
-
-  const buildTemplateData = (att: Attachments) => ({
-    clientName: clientName || "Cliente",
-    agencyName,
-    campaignName,
-    adjustmentName,
-    downloadUrls: [att.workbookLink, att.pdfLink],
-  });
-
-  const handleOpenPreview = async () => {
-    const merged = mergeRecipients(email, cc);
-    if (merged.invalid.length) {
-      toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
-      return;
-    }
-    if (merged.valid.length === 0) {
-      toast.error("Informe pelo menos um e-mail válido.");
-      return;
-    }
-    const tId = toast.loading("Gerando arquivos e pré-visualização...");
-    try {
-      const att = await ensureAttachments();
-      const templateData = buildTemplateData(att);
-      const { data, error } = await supabase.functions.invoke("render-transactional-email", {
-        body: { templateName: "adjustment-final-to-client", templateData },
-      });
-      if (error) throw new Error(error.message || "Erro ao gerar pré-visualização");
-      if (!data?.html) throw new Error("Pré-visualização vazia");
-      setPreviewHtml(data.html);
-      setPreviewSubject(data.subject || "");
-      setPreviewTemplateData(templateData);
-      setPreviewOpen(true);
-      toast.dismiss(tId);
-    } catch (e: any) {
-      toast.dismiss(tId);
-      toast.error(e?.message || "Erro ao gerar pré-visualização.");
-    }
-  };
-
-  const handleConfirmSend = async () => {
-    const merged = mergeRecipients(email, cc);
-    if (merged.valid.length === 0 || !previewTemplateData) return;
-    setSending(true);
-    const tId = toast.loading(`Enviando para ${merged.valid.length} destinatário(s)...`);
-    const failures: string[] = [];
-    let sent = 0;
-    for (const recipient of merged.valid) {
-      try {
-        const { error } = await supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "adjustment-final-to-client",
-            recipientEmail: recipient,
-            idempotencyKey: `adjustment-client-${adjustmentId}-${recipient}-${Date.now()}`,
-            templateData: previewTemplateData,
-          },
-        });
-        if (error) throw new Error(error.message || "Erro");
-        sent++;
-      } catch (e: any) {
-        failures.push(`${recipient}: ${e?.message || "erro"}`);
-      }
-    }
-    setSending(false);
-    toast.dismiss(tId);
-    if (sent > 0 && failures.length === 0) {
-      toast.success(`E-mail enviado para ${sent} destinatário(s).`);
-      setPreviewOpen(false);
-      onOpenChange(false);
-    } else if (sent > 0) {
-      toast.warning(`Enviado para ${sent}; falhas: ${failures.join("; ")}`);
-    } else {
-      toast.error(`Falha ao enviar: ${failures.join("; ")}`);
-    }
-  };
 
   const handleSendWhatsApp = async () => {
     const digits = phone.replace(/\D/g, "");
