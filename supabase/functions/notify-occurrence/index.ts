@@ -67,6 +67,7 @@ serve(async (req) => {
     const motive = motiveRes.data;
     const statusData = statusRes.data;
     const clientName = (campaign as any)?.clients?.name || "—";
+    const agencyName = (campaign as any)?.clients?.agencies?.name || null;
     const storeName = store?.nickname || store?.name || "—";
     const campaignName = campaign?.name || "—";
     const pieceName = isGeral ? "GERAL - NA LOJA TODA" : (piece?.name || "—");
