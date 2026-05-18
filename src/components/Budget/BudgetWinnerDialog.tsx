@@ -16,6 +16,8 @@ import BudgetWinnerPreviewDialog from "./BudgetWinnerPreviewDialog";
 import { Textarea } from "@/components/ui/textarea";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
+import EmailRecipientsInput from "@/components/Email/EmailRecipientsInput";
+import { useClientEmailMemory } from "@/hooks/useClientEmailMemory";
 
 const URL_REGEX = /^https?:\/\/.+/i;
 
@@ -43,6 +45,7 @@ export default function BudgetWinnerDialog({
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
+  const { suggestions: emailSuggestions, record: recordEmails } = useClientEmailMemory({ campaignId });
   const [replyTo, setReplyTo] = useState("");
   const [mockupUrl, setMockupUrl] = useState("");
   const [bookUrl, setBookUrl] = useState("");
@@ -175,6 +178,7 @@ export default function BudgetWinnerDialog({
       setPreviewOpen(false);
       onOpenChange(false);
     } else {
+      recordEmails(merged.valid);
       toast.success("Comunicado enviado com sucesso!");
       setPreviewOpen(false);
       onOpenChange(false);
@@ -217,13 +221,12 @@ export default function BudgetWinnerDialog({
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label htmlFor="winner-email">E-mail(s) do fornecedor *</Label>
-              <Textarea
+              <EmailRecipientsInput
                 id="winner-email"
-                ref={emailInputRef}
-                rows={2}
                 placeholder="fornecedor1@empresa.com, fornecedor2@empresa.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={setEmail}
+                suggestions={emailSuggestions}
                 disabled={busy}
               />
               <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
@@ -231,12 +234,12 @@ export default function BudgetWinnerDialog({
 
             <div className="space-y-1.5">
               <Label htmlFor="winner-cc">CC (opcional)</Label>
-              <Textarea
+              <EmailRecipientsInput
                 id="winner-cc"
-                rows={2}
                 placeholder="copia1@empresa.com, copia2@empresa.com"
                 value={cc}
-                onChange={(e) => setCc(e.target.value)}
+                onChange={setCc}
+                suggestions={emailSuggestions}
                 disabled={busy}
               />
             </div>

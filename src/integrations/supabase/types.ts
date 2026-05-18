@@ -1975,6 +1975,41 @@ export type Database = {
           },
         ]
       }
+      client_email_memory: {
+        Row: {
+          client_id: string
+          created_at: string
+          email: string
+          id: string
+          last_used_at: string
+          usage_count: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          email: string
+          id?: string
+          last_used_at?: string
+          usage_count?: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          last_used_at?: string
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_email_memory_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_store_models: {
         Row: {
           client_id: string
@@ -4825,6 +4860,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      record_client_emails: {
+        Args: { _client_id: string; _emails: string[] }
+        Returns: undefined
       }
       shift_display_orders: {
         Args: { p_after_order: number; p_campaign_id: string; p_slots: number }
