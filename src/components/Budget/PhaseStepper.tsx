@@ -12,6 +12,7 @@ interface PhaseStepperProps {
   onUnlock: (phase: BudgetPhase) => void;
   isUnlocking: boolean;
   campaignId: string;
+  isAdjustmentApproved?: boolean;
 }
 
 export function PhaseStepper({
@@ -21,6 +22,7 @@ export function PhaseStepper({
   onUnlock,
   isUnlocking,
   campaignId,
+  isAdjustmentApproved = false,
 }: PhaseStepperProps) {
   const currentIndex = PHASE_ORDER.indexOf(currentPhase);
 
