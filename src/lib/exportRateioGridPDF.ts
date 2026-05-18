@@ -371,8 +371,10 @@ export async function exportRateioGridPDF(
       pageTotal,
     };
 
-    if (!firstStore) doc.addPage();
+    // Always add a page for each store (cover + index already exist before first store)
+    doc.addPage();
     firstStore = false;
+    storeStartPage[i] = (doc as any).internal.getNumberOfPages();
 
     let currentPage = 1;
     drawStoreHeader(doc, { ...baseHeader, pageCurrent: currentPage });
