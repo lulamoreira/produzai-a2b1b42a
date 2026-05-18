@@ -317,6 +317,10 @@ export default function AdjustmentBudgetRequestDialog({
       toast.error("Informe pelo menos um e-mail válido.");
       return;
     }
+    if (!isReplyToValid(replyTo)) {
+      toast.error("E-mail de 'Responder para' inválido.");
+      return;
+    }
     if (existingRequest?.access_token && existingRequest?.token_expires_at) {
       // Reuse existing token; skip picker.
       handleOpenPreview({
