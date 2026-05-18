@@ -9,7 +9,7 @@ import { getStateColor } from "@/lib/stateColors";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   useCampaign, useClient, useClientStores, useCampaignPieces, useCampaignStorePieces,
-  useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece,
+  useAddCampaignPiece, useDeleteCampaignPiece, useUpdateCampaignPiece, useUpdateCampaignStorePiece, useUpdateCampaign,
   useCampaignPieceLocations, useAddCampaignPieceLocation, useDeleteCampaignPieceLocation,
   useCampaignPieceSubLocations,
   useUpdateClientStore,
@@ -293,6 +293,9 @@ const CampaignDetail = () => {
 
   const [backupDialogOpen, setBackupDialogOpen] = useState(false);
   const [rateioBackupOpen, setRateioBackupOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameDraft, setRenameDraft] = useState("");
+  const updateCampaignMut = useUpdateCampaign();
 
   // ─── Negotiation rateio (isolated distribution for the winning supplier) ───
   const [rateioSource, setRateioSource] = useState<"original" | "negotiation" | "adjustment">("original");
@@ -2050,6 +2053,18 @@ const CampaignDetail = () => {
 
   return (
     <AppLayout
+      headerRight={isAdminOrMaster && campaign ? (
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-1.5 h-8"
+          onClick={() => { setRenameDraft(campaign.name || ""); setRenameOpen(true); }}
+          title="Renomear campanha"
+        >
+          <Edit3 className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Renomear</span>
+        </Button>
+      ) : undefined}
       breadcrumbs={(() => {
         const SECTION_LABELS: Record<string, string> = {
           stores: t("modules.stores"), matrix: t("modules.matrix"), pieces: t("modules.pieces"),
@@ -2068,6 +2083,47 @@ const CampaignDetail = () => {
         return crumbs;
       })()}
     >
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Renomear campanha</DialogTitle>
+            <DialogDescription>Atualize o nome desta campanha. Visível para Admin e Master.</DialogDescription>
+          </DialogHeader>
+          <Input
+            value={renameDraft}
+            onChange={(e) => setRenameDraft(e.target.value)}
+            placeholder="Nome da campanha"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const v = renameDraft.trim();
+                if (!v || !campaignId) return;
+                updateCampaignMut.mutate({ id: campaignId, name: v } as any, {
+                  onSuccess: () => { toast.success("Nome atualizado"); setRenameOpen(false); },
+                  onError: (err: any) => toast.error(err?.message || "Falha ao atualizar"),
+                });
+              }
+            }}
+          />
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" size="sm" onClick={() => setRenameOpen(false)}>Cancelar</Button>
+            <Button
+              size="sm"
+              disabled={!renameDraft.trim() || updateCampaignMut.isPending}
+              onClick={() => {
+                const v = renameDraft.trim();
+                if (!v || !campaignId) return;
+                updateCampaignMut.mutate({ id: campaignId, name: v } as any, {
+                  onSuccess: () => { toast.success("Nome atualizado"); setRenameOpen(false); },
+                  onError: (err: any) => toast.error(err?.message || "Falha ao atualizar"),
+                });
+              }}
+            >Salvar</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
         {/* ─── HOME VIEW: Material de Apoio + Nav Buttons ─── */}
         {!activeSection && !isLimitedMode && (
           <>
