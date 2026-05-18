@@ -57,6 +57,7 @@ export default function AdjustmentBudgetRequestDialog({
   const [summaryItems, setSummaryItems] = useState<SendSummaryItem[]>([]);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
+  const [replyTo, setReplyTo] = useState("");
   const [customMessage, setCustomMessage] = useState("");
 
   // Preview state — populated after the workbook is uploaded and the email
