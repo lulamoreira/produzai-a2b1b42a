@@ -549,7 +549,7 @@ export async function buildRequoteFinalWorkbook(
   // Capture production subtotals (sum of all pieces/kits BEFORE extras).
   const productionPrev = runningPrevTotal;
   const productionNew = runningNewTotal;
-  writeExtra("Produção", productionPrev, productionNew);
+  writeExtraRow("Produção", productionPrev, productionNew, false);
   writeExtra("Instalação", params.previousInstallation, params.newInstallation);
   writeExtra("Frete", params.previousFreight, params.newFreight);
 
