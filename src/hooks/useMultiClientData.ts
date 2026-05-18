@@ -1160,19 +1160,39 @@ export type CampaignStoreStatus = {
 };
 
 export function useCampaignStoreStatus(campaignId: string | undefined) {
-  return useQuery({
+  const qc = useQueryClient();
+  const query = useQuery({
     queryKey: ["campaign_store_status", campaignId],
     queryFn: async () => {
       if (!campaignId) return [];
-      const { data, error } = await supabase
-        .from("campaign_store_status")
-        .select("*")
-        .eq("campaign_id", campaignId);
-      if (error) throw error;
-      return data as CampaignStoreStatus[];
+      return await supabasePaginate<CampaignStoreStatus>((from, to) =>
+        supabase
+          .from("campaign_store_status")
+          .select("*")
+          .eq("campaign_id", campaignId)
+          .range(from, to) as any
+      );
     },
     enabled: !!campaignId,
   });
+
+  // Realtime: refresh when status changes from any tab/user
+  useEffect(() => {
+    if (!campaignId) return;
+    const channel = supabase
+      .channel(`campaign-store-status-rt-${campaignId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "campaign_store_status", filter: `campaign_id=eq.${campaignId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["campaign_store_status", campaignId] });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [campaignId, qc]);
+
+  return query;
 }
 
 export function useUpsertCampaignStoreStatus() {
