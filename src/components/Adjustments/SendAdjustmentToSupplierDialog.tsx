@@ -18,6 +18,8 @@ import {
 } from "@/lib/buildAdjustmentClientPackage";
 import AdjustmentEmailPreviewDialog from "./AdjustmentEmailPreviewDialog";
 import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
+import EmailRecipientsInput from "@/components/Email/EmailRecipientsInput";
+import { useClientEmailMemory } from "@/hooks/useClientEmailMemory";
 
 interface Props {
   open: boolean;
@@ -240,6 +242,7 @@ export default function SendAdjustmentToSupplierDialog({
       }
     }
     toast.dismiss(tId);
+    if (sent > 0) recordEmails(merged.valid);
     if (sent > 0 && failures.length === 0) {
       toast.success(`E-mail enviado para ${sent} destinatário(s).`);
       setPreviewOpen(false);
@@ -277,11 +280,11 @@ export default function SendAdjustmentToSupplierDialog({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label htmlFor="sup-email" className="text-xs">E-mail(s) do fornecedor</Label>
-                    <Input id="sup-email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={busy} placeholder="fornecedor@empresa.com" />
+                    <EmailRecipientsInput id="sup-email" value={email} onChange={setEmail} suggestions={emailSuggestions} disabled={busy} placeholder="fornecedor@empresa.com" />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="sup-cc" className="text-xs">CC (opcional)</Label>
-                    <Input id="sup-cc" value={cc} onChange={(e) => setCc(e.target.value)} disabled={busy} placeholder="copia@empresa.com" />
+                    <EmailRecipientsInput id="sup-cc" value={cc} onChange={setCc} suggestions={emailSuggestions} disabled={busy} placeholder="copia@empresa.com" />
                   </div>
                 </div>
                 <p className="text-[11px] text-muted-foreground -mt-1">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
