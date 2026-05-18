@@ -255,6 +255,105 @@ export async function exportRateioGridPDF(
 
   const CARDS_PER_PAGE = CARDS_PER_ROW * ROWS_PER_PAGE;
 
+  // ===== Build index entries grouped by state =====
+  type IndexEntry = { bucketIdx: number; storeName: string; storeCode: string; city: string; state: string };
+  const indexEntries: IndexEntry[] = buckets.map((b, idx) => ({
+    bucketIdx: idx,
+    storeName: b.store.name || "Loja",
+    storeCode: b.store.store_code || "—",
+    city: b.store.city || "",
+    state: b.store.state || "—",
+  }));
+  const byState = new Map<string, IndexEntry[]>();
+  for (const e of indexEntries) {
+    if (!byState.has(e.state)) byState.set(e.state, []);
+    byState.get(e.state)!.push(e);
+  }
+  const sortedStates = Array.from(byState.keys()).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  for (const st of sortedStates) {
+    byState.get(st)!.sort((a, b) => a.storeName.localeCompare(b.storeName, "pt-BR"));
+  }
+
+  // ===== Index layout planning (3 columns) =====
+  const INDEX_COLS = 3;
+  const INDEX_LINE_H = 5;
+  const INDEX_STATE_H = 7;
+  const INDEX_GROUP_GAP = 2;
+  const INDEX_TOP = 28; // below page title bar
+  const INDEX_BOTTOM = ph - 12;
+  const INDEX_COL_GAP = 6;
+  const INDEX_COL_W = (pw - PAGE_MARGIN_X * 2 - INDEX_COL_GAP * (INDEX_COLS - 1)) / INDEX_COLS;
+
+  // Pre-compute units (heights) per group
+  type IndexUnit = { type: "state" | "entry" | "gap"; state?: string; entry?: IndexEntry; h: number };
+  const units: IndexUnit[] = [];
+  for (const st of sortedStates) {
+    units.push({ type: "state", state: st, h: INDEX_STATE_H });
+    for (const e of byState.get(st)!) units.push({ type: "entry", entry: e, h: INDEX_LINE_H });
+    units.push({ type: "gap", h: INDEX_GROUP_GAP });
+  }
+
+  // Assign each unit to (column, page) — flow columns then pages
+  const colHeight = INDEX_BOTTOM - INDEX_TOP;
+  type PlacedUnit = IndexUnit & { page: number; col: number; y: number };
+  const placed: PlacedUnit[] = [];
+  let curPage = 0, curCol = 0, curY = 0;
+  for (const u of units) {
+    if (curY + u.h > colHeight) {
+      curCol += 1;
+      curY = 0;
+      if (curCol >= INDEX_COLS) {
+        curCol = 0;
+        curPage += 1;
+      }
+    }
+    // Skip state header at bottom if entries won't follow on same column — handled implicitly by widow check
+    placed.push({ ...u, page: curPage, col: curCol, y: curY });
+    curY += u.h;
+  }
+  const indexPagesCount = curPage + 1;
+
+  // First store page = cover(1) + indexPagesCount + 1
+  const FIRST_STORE_PAGE = 1 + indexPagesCount + 1;
+
+  // ===== COVER PAGE =====
+  doc.setFillColor(...DARK);
+  doc.rect(0, 0, pw, ph, "F");
+  doc.setFillColor(...BROWN);
+  doc.rect(0, ph / 2 - 30, pw, 60, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(28);
+  doc.setTextColor(...WHITE);
+  doc.text((campaignName || "").toUpperCase(), pw / 2, ph / 2 - 4, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(14);
+  doc.text("Rateio por Loja", pw / 2, ph / 2 + 8, { align: "center" });
+  if (sourceLabel) {
+    doc.setFontSize(11);
+    doc.text(sourceLabel, pw / 2, ph / 2 + 18, { align: "center" });
+  }
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(...BEIGE);
+  doc.text([agencyName, clientName].filter(Boolean).join("   |   "), pw / 2, ph / 2 + 42, { align: "center" });
+  doc.setTextColor(0, 0, 0);
+
+  // ===== INDEX PAGES (placeholders — we fill clickable links after store pages are rendered) =====
+  for (let p = 0; p < indexPagesCount; p++) {
+    doc.addPage();
+    // top bar
+    doc.setFillColor(...BROWN);
+    doc.rect(0, 0, pw, 16, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(...WHITE);
+    doc.text(`ÍNDICE DE LOJAS${indexPagesCount > 1 ? ` — ${p + 1}/${indexPagesCount}` : ""}`, pw / 2, 10.5, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+  }
+
+  // Track each store's start page (filled while rendering)
+  const storeStartPage: number[] = new Array(buckets.length).fill(0);
+
   let firstStore = true;
 
   for (let i = 0; i < buckets.length; i++) {
