@@ -168,6 +168,28 @@ export default function AppSidebar() {
     staleTime: 2 * 60 * 1000,
   });
 
+  // Realtime: update sidebar immediately when agencies/clients/campaigns change
+  useEffect(() => {
+    const channel = supabase
+      .channel("sidebar-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "campaigns" }, (payload) => {
+        const row: any = (payload as any).new ?? (payload as any).old ?? {};
+        qc.invalidateQueries({ queryKey: ["sidebar-campaign", row.id] });
+        qc.invalidateQueries({ queryKey: ["sidebar-client-campaigns", row.client_id] });
+        qc.invalidateQueries({ queryKey: ["sidebar-client-campaigns"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, (payload) => {
+        const row: any = (payload as any).new ?? (payload as any).old ?? {};
+        qc.invalidateQueries({ queryKey: ["sidebar-client", row.id] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "agencies" }, (payload) => {
+        const row: any = (payload as any).new ?? (payload as any).old ?? {};
+        qc.invalidateQueries({ queryKey: ["sidebar-agency", row.id] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
+
   // Auto-expand the active campaign and collapse all others.
   // Manual toggles via toggleCampaignExpanded still override this until campaignId changes again.
   useEffect(() => {
