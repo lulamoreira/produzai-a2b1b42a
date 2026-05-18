@@ -424,8 +424,59 @@ export async function exportRateioGridPDF(
     safeProgress(onProgress, i + 1, totalStores, store.name || "Loja");
   }
 
+  // ===== Render index entries with clickable links =====
+  const bucketToStartPage = new Map<number, number>();
+  buckets.forEach((_, i) => bucketToStartPage.set(i, storeStartPage[i]));
+
+  for (const u of placed) {
+    const pageNum = 2 + u.page; // cover=1, index starts at page 2
+    doc.setPage(pageNum);
+    const x = PAGE_MARGIN_X + u.col * (INDEX_COL_W + INDEX_COL_GAP);
+    const yTop = INDEX_TOP + u.y;
+
+    if (u.type === "state") {
+      doc.setFillColor(...BEIGE);
+      doc.rect(x, yTop, INDEX_COL_W, INDEX_STATE_H - 1, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...BROWN);
+      doc.text(u.state || "—", x + 2, yTop + INDEX_STATE_H - 2.2);
+    } else if (u.type === "entry" && u.entry) {
+      const targetPage = bucketToStartPage.get(u.entry.bucketIdx) || FIRST_STORE_PAGE;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...DARK);
+      const label = u.entry.storeName;
+      const pageLabel = String(targetPage);
+      const pageLabelW = doc.getTextWidth(pageLabel);
+      const maxLabelW = INDEX_COL_W - pageLabelW - 4;
+      const labelTruncated = doc.splitTextToSize(label, maxLabelW)[0] || label;
+      const labelY = yTop + INDEX_LINE_H - 1.5;
+      doc.textWithLink(labelTruncated, x + 2, labelY, { pageNumber: targetPage });
+      // dotted leader
+      doc.setTextColor(...GREY);
+      doc.setFontSize(7);
+      const labelW = doc.getTextWidth(labelTruncated);
+      const dotStart = x + 2 + labelW + 1;
+      const dotEnd = x + INDEX_COL_W - pageLabelW - 1;
+      if (dotEnd > dotStart) {
+        const dotsW = dotEnd - dotStart;
+        const dotChar = ".";
+        const oneDot = doc.getTextWidth(dotChar);
+        const dotCount = Math.max(0, Math.floor(dotsW / oneDot));
+        if (dotCount > 0) doc.text(dotChar.repeat(dotCount), dotStart, labelY);
+      }
+      // page number (also linked)
+      doc.setTextColor(...DARK);
+      doc.setFontSize(8.5);
+      doc.textWithLink(pageLabel, x + INDEX_COL_W - pageLabelW - 1, labelY, { pageNumber: targetPage });
+    }
+  }
+  doc.setTextColor(0, 0, 0);
+
+  // ===== Footer on every page except the cover =====
   const totalPages = (doc as any).internal.getNumberOfPages();
-  for (let p = 1; p <= totalPages; p++) {
+  for (let p = 2; p <= totalPages; p++) {
     doc.setPage(p);
     drawFooter(doc, campaignName, p, totalPages);
   }
