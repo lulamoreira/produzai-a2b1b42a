@@ -91,9 +91,10 @@ function buildPlainLinks(downloads: DownloadLink[]): string {
 }
 
 export default function AdjustmentEmailPreviewDialog(props: Props) {
-  const { open, onOpenChange, downloads, to, cc, subject } = props;
+  const { open, onOpenChange, downloads, to, cc, subject, onSendViaSystem, replyTo } = props;
   const html = useMemo(() => buildHtml(props), [props]);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [sending, setSending] = useState(false);
 
   const copyHtml = async () => {
     try {
@@ -131,13 +132,26 @@ export default function AdjustmentEmailPreviewDialog(props: Props) {
     window.location.href = url;
   };
 
+  const handleSendSystem = async () => {
+    if (!onSendViaSystem) return;
+    setSending(true);
+    try {
+      await onSendViaSystem();
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(o) => !sending && onOpenChange(o)}>
       <DialogContent className="max-w-3xl p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-base">Pré-visualização do e-mail</DialogTitle>
           <DialogDescription className="text-xs">
-            Copie o conteúdo formatado e cole no corpo do seu app de e-mail (Apple Mail, Outlook e Gmail preservam o layout).
+            {onSendViaSystem
+              ? <>Envie diretamente pelo sistema {replyTo ? <>(respostas vão para <strong>{replyTo}</strong>)</> : null} ou copie o conteúdo para colar no seu app de e-mail.</>
+              : <>Copie o conteúdo formatado e cole no corpo do seu app de e-mail (Apple Mail, Outlook e Gmail preservam o layout).</>
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -152,19 +166,26 @@ export default function AdjustmentEmailPreviewDialog(props: Props) {
           />
         </div>
 
-        <DialogFooter className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 sm:justify-end">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={sending}>
             <X className="w-4 h-4 mr-1" /> Fechar
           </Button>
-          <Button variant="outline" size="sm" onClick={copyLinks}>
+          <Button variant="outline" size="sm" onClick={copyLinks} disabled={sending}>
             <LinkIcon className="w-4 h-4 mr-1" /> Copiar links
           </Button>
-          <Button variant="outline" size="sm" onClick={openMail}>
+          <Button variant="outline" size="sm" onClick={openMail} disabled={sending}>
             <AtSign className="w-4 h-4 mr-1" /> Abrir e-mail
           </Button>
-          <Button size="sm" onClick={copyHtml}>
+          <Button variant="outline" size="sm" onClick={copyHtml} disabled={sending}>
             <Copy className="w-4 h-4 mr-1" /> Copiar e-mail
           </Button>
+          {onSendViaSystem && (
+            <Button size="sm" onClick={handleSendSystem} disabled={sending}>
+              {sending
+                ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Enviando...</>
+                : <><Send className="w-4 h-4 mr-1" /> Enviar pelo sistema</>}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
