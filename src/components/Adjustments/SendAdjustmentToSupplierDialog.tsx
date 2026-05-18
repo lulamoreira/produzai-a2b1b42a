@@ -154,7 +154,7 @@ export default function SendAdjustmentToSupplierDialog({
     }
   };
 
-  const handleSendMailto = async () => {
+  const handleOpenPreview = async () => {
     const merged = mergeRecipients(email, cc);
     if (merged.invalid.length) {
       toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
@@ -166,20 +166,9 @@ export default function SendAdjustmentToSupplierDialog({
     }
     const tId = toast.loading("Gerando arquivos...");
     try {
-      const att = await ensureAttachments();
-      const greeting = supplier?.contact_name || supplier?.company_name || "fornecedor";
-      const subject = `${campaignName} — Liberação para produção${adjustmentName ? ` (${adjustmentName})` : ""}`;
-      const body =
-        `Olá, ${greeting}!\n\n` +
-        `A planilha final e o Guia Visual de Rateio estão liberados para produção (ajuste ${adjustmentName}).\n\n` +
-        `Planilha final:\n${att.workbookLink.url}\n\n` +
-        `Guia Visual de Rateio:\n${att.pdfLink.url}\n\n` +
-        `Qualquer dúvida, estamos à disposição. Obrigado pela parceria!\n— Equipe ${agencyName}`;
-      const toList = encodeURIComponent(email.replace(/[;,\s]+/g, ","));
-      const ccList = cc.trim() ? `&cc=${encodeURIComponent(cc.replace(/[;,\s]+/g, ","))}` : "";
-      const url = `mailto:${toList}?subject=${encodeURIComponent(subject)}${ccList}&body=${encodeURIComponent(body)}`;
-      window.location.href = url;
-      toast.success("Abrindo seu app de e-mail...", { id: tId });
+      await ensureAttachments();
+      toast.dismiss(tId);
+      setPreviewOpen(true);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao gerar arquivos.", { id: tId });
     }
