@@ -85,6 +85,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     if (open) {
       setEmail(clientEmail || "");
       setCc("");
+      setReplyTo("");
       setIncludeComparative(true);
       setSummary([]);
     }
