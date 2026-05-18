@@ -800,35 +800,17 @@ export function useUpdateCampaignStorePiece() {
           .eq("campaign_id", campaignId)
           .eq("store_id", storeId)
           .eq("piece_id", pieceId);
-
         if (error) throw error;
         return;
       }
 
-      const { data: existing, error: existingError } = await supabase
+      const { error } = await supabase
         .from("campaign_store_pieces")
-        .select("id")
-        .eq("campaign_id", campaignId)
-        .eq("store_id", storeId)
-        .eq("piece_id", pieceId)
-        .maybeSingle();
-
-      if (existingError) throw existingError;
-
-      if (existing) {
-        const { error: updateError } = await supabase
-          .from("campaign_store_pieces")
-          .update({ quantity: normalizedQty })
-          .eq("id", existing.id);
-
-        if (updateError) throw updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from("campaign_store_pieces")
-          .insert({ campaign_id: campaignId, store_id: storeId, piece_id: pieceId, quantity: normalizedQty });
-
-        if (insertError) throw insertError;
-      }
+        .upsert(
+          { campaign_id: campaignId, store_id: storeId, piece_id: pieceId, quantity: normalizedQty },
+          { onConflict: "campaign_id,store_id,piece_id" }
+        );
+      if (error) throw error;
     },
     onMutate: async ({ campaignId, storeId, pieceId, quantity }) => {
       // Stamp this mutation; onSettled will compare against this snapshot.
@@ -867,19 +849,20 @@ export function useUpdateCampaignStorePiece() {
       }
       toast.error("Erro: " + e.message);
     },
+    // Realtime subscription (debounced 150 ms) handles refetch authoritatively.
+    // Fallback only fires after 2 s if no newer mutation has run since — covers
+    // the rare case where realtime drops a message.
     onSettled: (_data, _error, vars, context) => {
-      // Delay invalidation 500ms so the database commit has time to land,
-      // and skip entirely if a newer mutation has started since — its own
-      // onSettled will perform the final refetch with the freshest data.
       const mutationTime = context?.mutationTime ?? 0;
       setTimeout(() => {
         if (lastMutationRef.current === mutationTime) {
           qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
         }
-      }, 500);
+      }, 2000);
     },
   });
 }
+
 
 // Bulk update for a single (storeId, [pieceId, quantity]) batch — used by kit
 // cells where editing one cell maps to N component-piece writes. Performs ONE
