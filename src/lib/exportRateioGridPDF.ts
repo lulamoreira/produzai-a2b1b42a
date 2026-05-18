@@ -26,8 +26,9 @@ const PAGE_MARGIN_TOP = 0; // header is full-width to top
 const PAGE_MARGIN_BOTTOM = 12; // footer reserved
 const HEADER_TOTAL_HEIGHT = 38; // 4 stacked bars
 const CARD_GAP = 3;
-const CARDS_PER_ROW = 6;
-const CARD_HEIGHT = 42; // mm — compact card, ~4 rows per page in landscape A4
+const CARDS_PER_ROW = 7;
+const ROWS_PER_PAGE = 4;
+const CARD_HEIGHT = 42; // mm — compact card, 4 rows per page in landscape A4
 const PHOTO_SIZE = 16; // mm
 
 type ImageCacheEntry = { dataUrl: string; format: "PNG" | "JPEG" | "GIF" } | null;
@@ -67,6 +68,8 @@ type StoreHeaderInfo = {
   storeName: string;
   storeCode: string;
   cityState: string;
+  pageCurrent?: number;
+  pageTotal?: number;
 };
 
 function drawStoreHeader(doc: any, info: StoreHeaderInfo) {
@@ -101,7 +104,10 @@ function drawStoreHeader(doc: any, info: StoreHeaderInfo) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor(...DARK);
-  doc.text(info.storeName || "—", pw / 2, y + bar3H / 2 + 2.5, { align: "center" });
+  const storeTitle = info.pageTotal && info.pageTotal > 1
+    ? `${info.storeName || "—"} — PÁGINA ${info.pageCurrent}/${info.pageTotal}`
+    : (info.storeName || "—");
+  doc.text(storeTitle, pw / 2, y + bar3H / 2 + 2.5, { align: "center" });
   y += bar3H;
 
   // Bar 4 — code | city, state (beige bg, brown small)
@@ -258,22 +264,27 @@ export async function exportRateioGridPDF(
 
   let firstStore = true;
 
+  const CARDS_PER_PAGE = CARDS_PER_ROW * ROWS_PER_PAGE;
+
   for (let i = 0; i < buckets.length; i++) {
     const bucket = buckets[i];
     const { store, items, totalQuantity } = bucket;
-    const headerInfo: StoreHeaderInfo = {
+    const pageTotal = Math.max(1, Math.ceil(items.length / CARDS_PER_PAGE));
+    const baseHeader: StoreHeaderInfo = {
       agencyName,
       clientName,
       campaignName,
       storeName: store.name || "Loja",
       storeCode: store.store_code || "—",
       cityState: [store.city, store.state].filter(Boolean).join(", "),
+      pageTotal,
     };
 
     if (!firstStore) doc.addPage();
     firstStore = false;
 
-    drawStoreHeader(doc, headerInfo);
+    let currentPage = 1;
+    drawStoreHeader(doc, { ...baseHeader, pageCurrent: currentPage });
 
     let y = usableTop;
     let gridRowIdx = 0;
@@ -281,14 +292,13 @@ export async function exportRateioGridPDF(
     for (let idx = 0; idx < items.length; idx++) {
       const colInRow = idx % CARDS_PER_ROW;
 
-      // Page break check before starting a new row
-      if (colInRow === 0) {
-        const reserve = items.length - idx <= CARDS_PER_ROW ? rowStride + TOTAL_BAR_HEIGHT + 4 : rowStride;
-        if (y + reserve > usableBottom) {
-          doc.addPage();
-          drawStoreHeader(doc, headerInfo);
-          y = usableTop;
-        }
+      // Force page break after ROWS_PER_PAGE rows
+      if (idx > 0 && idx % CARDS_PER_PAGE === 0) {
+        doc.addPage();
+        currentPage += 1;
+        drawStoreHeader(doc, { ...baseHeader, pageCurrent: currentPage });
+        y = usableTop;
+        gridRowIdx = 0;
       }
 
       const x = PAGE_MARGIN_X + colInRow * (cardWidth + CARD_GAP);
@@ -320,10 +330,11 @@ export async function exportRateioGridPDF(
       }
     }
 
-    // Total bar (always fits because we reserved space above; otherwise add page)
+    // Total bar (fits on the last cards page in landscape A4)
     if (y + TOTAL_BAR_HEIGHT > usableBottom) {
       doc.addPage();
-      drawStoreHeader(doc, headerInfo);
+      currentPage += 1;
+      drawStoreHeader(doc, { ...baseHeader, pageCurrent: currentPage, pageTotal: Math.max(pageTotal, currentPage) });
       y = usableTop;
     }
     doc.setFillColor(...BROWN);
