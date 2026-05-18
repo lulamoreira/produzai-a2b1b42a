@@ -345,7 +345,8 @@ export async function exportRateioGridPDF(
   }
 
   const suffix = rateioGridFileSuffix(mode);
-  const filename = `${campaignName} — Rateio por Loja (${suffix}).pdf`;
+  const sourceSuffix = sourceLabel ? ` — ${sourceLabel}` : "";
+  const filename = `${campaignName} — Rateio por Loja (${suffix})${sourceSuffix}.pdf`;
 
   const blob = doc.output("blob");
   await saveBlobAs(blob, filename, {
