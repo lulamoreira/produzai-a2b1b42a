@@ -69,6 +69,7 @@ export default function SendAdjustmentToSupplierDialog({
   useEffect(() => {
     if (!open) return;
     setUploadStatus(null);
+    setPreviewOpen(false);
     attachmentsRef.current = null;
     setLoadingSupplier(true);
     (async () => {
