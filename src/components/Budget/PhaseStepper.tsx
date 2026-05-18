@@ -31,8 +31,9 @@ export function PhaseStepper({
       <div className="relative">
         <div className="flex items-start gap-2 overflow-x-auto pb-1 pr-6 md:pr-0 scrollbar-thin">
           {PHASE_ORDER.map((phase, index) => {
-            const isCompleted = index < currentIndex;
-            const isActive = index === currentIndex;
+            const ajusteApprovedHere = phase === "ajuste" && isAdjustmentApproved && index === currentIndex;
+            const isCompleted = index < currentIndex || ajusteApprovedHere;
+            const isActive = index === currentIndex && !ajusteApprovedHere;
             const isLocked = index < currentIndex;
             const lockedAt = phaseLockedAt[phase];
 
@@ -68,6 +69,12 @@ export function PhaseStepper({
                   {isCompleted && lockedAt && (
                     <span className="text-[10px] text-muted-foreground mt-0.5">
                       {format(new Date(lockedAt), "dd MMM", { locale: ptBR })}
+                    </span>
+                  )}
+
+                  {ajusteApprovedHere && (
+                    <span className="text-[10px] text-emerald-600 mt-0.5 font-medium">
+                      Aprovado
                     </span>
                   )}
 
