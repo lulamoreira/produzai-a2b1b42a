@@ -1,19 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Send, Loader2, MessageCircle, Eye, X, AtSign } from "lucide-react";
+import { Send, Loader2, MessageCircle, X, AtSign } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { mergeRecipients } from "@/lib/emailRecipients";
 import { uploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
-import BudgetWinnerPreviewDialog from "@/components/Budget/BudgetWinnerPreviewDialog";
 import {
   buildAdjustmentClientPackage,
   type AdjustmentClientPackage,
@@ -62,22 +60,14 @@ export default function SendAdjustmentToSupplierDialog({
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const [phone, setPhone] = useState("");
-  const [sending, setSending] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const attachmentsRef = useRef<Attachments | null>(null);
-
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewHtml, setPreviewHtml] = useState("");
-  const [previewSubject, setPreviewSubject] = useState("");
-  const [previewTemplateData, setPreviewTemplateData] = useState<any>(null);
 
   useEffect(() => {
     if (!open) return;
     setUploadStatus(null);
     attachmentsRef.current = null;
-    setPreviewOpen(false);
-    setPreviewHtml("");
     setLoadingSupplier(true);
     (async () => {
       try {
@@ -122,82 +112,6 @@ export default function SendAdjustmentToSupplierDialog({
       setUploadStatus(null);
     }
   }
-
-  const buildTemplateData = (att: Attachments) => ({
-    supplierName: supplier?.company_name || "Fornecedor",
-    contactName: supplier?.contact_name || undefined,
-    agencyName,
-    clientName,
-    campaignName,
-    adjustmentName,
-    downloadUrls: [att.workbookLink, att.pdfLink],
-  });
-
-  const handleOpenPreview = async () => {
-    const merged = mergeRecipients(email, cc);
-    if (merged.invalid.length) {
-      toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
-      return;
-    }
-    if (merged.valid.length === 0) {
-      toast.error("Informe pelo menos um e-mail válido.");
-      return;
-    }
-    const tId = toast.loading("Gerando arquivos e pré-visualização...");
-    try {
-      const att = await ensureAttachments();
-      const templateData = buildTemplateData(att);
-      const { data, error } = await supabase.functions.invoke("render-transactional-email", {
-        body: { templateName: "adjustment-final-to-supplier", templateData },
-      });
-      if (error) throw new Error(error.message || "Erro ao gerar pré-visualização");
-      if (!data?.html) throw new Error("Pré-visualização vazia");
-      setPreviewHtml(data.html);
-      setPreviewSubject(data.subject || "");
-      setPreviewTemplateData(templateData);
-      setPreviewOpen(true);
-      toast.dismiss(tId);
-    } catch (e: any) {
-      toast.dismiss(tId);
-      toast.error(e?.message || "Erro ao gerar pré-visualização.");
-    }
-  };
-
-  const handleConfirmSend = async () => {
-    const merged = mergeRecipients(email, cc);
-    if (merged.valid.length === 0 || !previewTemplateData) return;
-    setSending(true);
-    const tId = toast.loading(`Enviando para ${merged.valid.length} destinatário(s)...`);
-    const failures: string[] = [];
-    let sent = 0;
-    for (const recipient of merged.valid) {
-      try {
-        const { error } = await supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "adjustment-final-to-supplier",
-            recipientEmail: recipient,
-            idempotencyKey: `adjustment-supplier-${adjustmentId}-${recipient}-${Date.now()}`,
-            templateData: previewTemplateData,
-          },
-        });
-        if (error) throw new Error(error.message || "Erro");
-        sent++;
-      } catch (e: any) {
-        failures.push(`${recipient}: ${e?.message || "erro"}`);
-      }
-    }
-    setSending(false);
-    toast.dismiss(tId);
-    if (sent > 0 && failures.length === 0) {
-      toast.success(`E-mail enviado para ${sent} destinatário(s).`);
-      setPreviewOpen(false);
-      onOpenChange(false);
-    } else if (sent > 0) {
-      toast.warning(`Enviado para ${sent}; falhas: ${failures.join("; ")}`);
-    } else {
-      toast.error(`Falha ao enviar: ${failures.join("; ")}`);
-    }
-  };
 
   const handleSendWhatsApp = async () => {
     const digits = phone.replace(/\D/g, "");
@@ -268,12 +182,12 @@ export default function SendAdjustmentToSupplierDialog({
     }
   };
 
-  const busy = sending || generating || loadingSupplier;
+  const busy = generating || loadingSupplier;
 
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-xl p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <Send className="w-4 h-4" /> Avisar Fornecedor
@@ -311,34 +225,19 @@ export default function SendAdjustmentToSupplierDialog({
             {generating && <UploadProgressPanel status={uploadStatus} />}
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={busy}>
+          <DialogFooter className="grid grid-cols-1 sm:grid-cols-3 pt-2">
+            <Button className="w-full" variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={busy}>
               <X className="w-4 h-4 mr-1" /> Cancelar
             </Button>
-            <Button variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={busy || !phone}>
+            <Button className="w-full" variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={busy || !phone}>
               <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
             </Button>
-            <Button variant="outline" size="sm" onClick={handleSendMailto} disabled={busy}>
+            <Button className="w-full" size="sm" onClick={handleSendMailto} disabled={busy}>
               {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><AtSign className="w-4 h-4 mr-1" /> Meu e-mail</>}
-            </Button>
-            <Button size="sm" onClick={handleOpenPreview} disabled={busy}>
-              {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Eye className="w-4 h-4 mr-1" /> Visualizar e enviar</>}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <BudgetWinnerPreviewDialog
-        open={previewOpen}
-        onOpenChange={(o) => !sending && setPreviewOpen(o)}
-        to={email.trim()}
-        cc={cc.trim()}
-        subject={previewSubject}
-        html={previewHtml}
-        sending={sending}
-        onConfirm={handleConfirmSend}
-        onEditRecipients={() => setPreviewOpen(false)}
-      />
     </>
   );
 }
