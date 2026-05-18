@@ -862,50 +862,70 @@ const CampaignDetail = () => {
   const exportSourceLabel: "Original" | "Negociação" | "Ajuste" =
     isAdjustmentView ? "Ajuste" : isNegotiationView ? "Negociação" : "Original";
 
+  // Adjustment tables (campaign_adjustment_pieces/kits) do not store image columns.
+  // Image data lives only on the original campaign_pieces/kits — resolve via source_*_id.
+  const originalPiecesById = useMemo(() => {
+    const map = new Map<string, any>();
+    (pieces as any[]).forEach((p) => map.set(p.id, p));
+    return map;
+  }, [pieces]);
+  const originalKitsById = useMemo(() => {
+    const map = new Map<string, any>();
+    (kits as any[]).forEach((k) => map.set(k.id, k));
+    return map;
+  }, [kits]);
+
   const exportPieces = useMemo(() => {
     if (!isAdjustmentView) return pieces;
     return (adjustmentPiecesMeta as any[])
       .filter((p) => !p.is_deleted)
-      .map((p) => ({
-        id: p.id,
-        campaign_id: p.campaign_id ?? "",
-        code: p.code ?? 0,
-        category: p.category ?? "",
-        name: p.name ?? "",
-        size: p.size ?? "",
-        store_category: p.store_category ?? null,
-        sub_location: p.sub_location ?? null,
-        image_url: p.image_url ?? null,
-        image_thumb_url: p.image_thumb_url ?? null,
-        image_report_url: p.image_report_url ?? null,
-        image_full_url: p.image_full_url ?? null,
-        image_hash: p.image_hash ?? null,
-        specification: p.specification ?? "",
-        installation_instructions: p.installation_instructions ?? "",
-        kit_only: !!p.kit_only,
-        is_mockup: !!p.is_mockup,
-        display_order: p.display_order ?? 0,
-        created_at: p.created_at ?? "",
-      })) as typeof pieces;
-  }, [isAdjustmentView, pieces, adjustmentPiecesMeta]);
+      .map((p) => {
+        const orig = p.source_piece_id ? originalPiecesById.get(p.source_piece_id) : null;
+        return {
+          id: p.id,
+          campaign_id: p.campaign_id ?? "",
+          code: p.code ?? 0,
+          category: p.category ?? "",
+          name: p.name ?? "",
+          size: p.size ?? "",
+          store_category: p.store_category ?? null,
+          sub_location: p.sub_location ?? null,
+          image_url: p.image_url ?? orig?.image_url ?? null,
+          image_thumb_url: p.image_thumb_url ?? orig?.image_thumb_url ?? null,
+          image_report_url: p.image_report_url ?? orig?.image_report_url ?? null,
+          image_full_url: p.image_full_url ?? orig?.image_full_url ?? null,
+          image_hash: p.image_hash ?? orig?.image_hash ?? null,
+          specification: p.specification ?? "",
+          installation_instructions: p.installation_instructions ?? "",
+          kit_only: !!p.kit_only,
+          is_mockup: !!p.is_mockup,
+          display_order: p.display_order ?? 0,
+          created_at: p.created_at ?? "",
+        };
+      }) as typeof pieces;
+  }, [isAdjustmentView, pieces, adjustmentPiecesMeta, originalPiecesById]);
 
   const exportKits = useMemo(() => {
     if (!isAdjustmentView) return kits;
     return (adjustmentKitsMeta as any[])
       .filter((k) => !k.is_deleted)
-      .map((k) => ({
-        id: k.id,
-        campaign_id: k.campaign_id ?? "",
-        name: k.name ?? "",
-        code: k.code ?? 0,
-        display_order: k.display_order ?? 0,
-        image_url: k.image_url ?? null,
-        is_mockup: !!k.is_mockup,
-        category: k.category ?? null,
-        sub_location: k.sub_location ?? null,
-        created_at: k.created_at ?? "",
-      })) as typeof kits;
-  }, [isAdjustmentView, kits, adjustmentKitsMeta]);
+      .map((k) => {
+        const orig = k.source_kit_id ? originalKitsById.get(k.source_kit_id) : null;
+        return {
+          id: k.id,
+          campaign_id: k.campaign_id ?? "",
+          name: k.name ?? "",
+          code: k.code ?? 0,
+          display_order: k.display_order ?? 0,
+          image_url: k.image_url ?? orig?.image_url ?? null,
+          image_report_url: (k as any).image_report_url ?? orig?.image_report_url ?? null,
+          is_mockup: !!k.is_mockup,
+          category: k.category ?? orig?.category ?? null,
+          sub_location: k.sub_location ?? orig?.sub_location ?? null,
+          created_at: k.created_at ?? "",
+        };
+      }) as typeof kits;
+  }, [isAdjustmentView, kits, adjustmentKitsMeta, originalKitsById]);
 
   const exportKitPieces = useMemo(() => {
     if (!isAdjustmentView) return kitPieces;
