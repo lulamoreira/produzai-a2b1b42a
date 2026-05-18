@@ -134,7 +134,7 @@ export default function SendAdjustmentToClientDialog({
     }
   };
 
-  const handleSendMailto = async () => {
+  const handleOpenPreview = async () => {
     const merged = mergeRecipients(email, cc);
     if (merged.invalid.length) {
       toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
@@ -146,19 +146,9 @@ export default function SendAdjustmentToClientDialog({
     }
     const tId = toast.loading("Gerando arquivos...");
     try {
-      const att = await ensureAttachments();
-      const subject = `${campaignName} — Planilha final + Guia Visual de Lojas${adjustmentName ? ` (${adjustmentName})` : ""}`;
-      const body =
-        `Olá, ${clientName || "cliente"}!\n\n` +
-        `Segue a planilha final e o guia visual de lojas referentes ao ajuste ${adjustmentName}.\n\n` +
-        `Planilha final:\n${att.workbookLink.url}\n\n` +
-        `Guia visual de lojas:\n${att.pdfLink.url}\n\n` +
-        `Qualquer dúvida, estamos à disposição.\n— Equipe ${agencyName}`;
-      const toList = encodeURIComponent(email.replace(/[;,\s]+/g, ","));
-      const ccList = cc.trim() ? `&cc=${encodeURIComponent(cc.replace(/[;,\s]+/g, ","))}` : "";
-      const url = `mailto:${toList}?subject=${encodeURIComponent(subject)}${ccList}&body=${encodeURIComponent(body)}`;
-      window.location.href = url;
-      toast.success("Abrindo seu app de e-mail...", { id: tId });
+      await ensureAttachments();
+      toast.dismiss(tId);
+      setPreviewOpen(true);
     } catch (e: any) {
       toast.error(e?.message || "Falha ao gerar arquivos.", { id: tId });
     }
