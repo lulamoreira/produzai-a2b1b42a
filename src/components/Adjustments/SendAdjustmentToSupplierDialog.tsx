@@ -72,7 +72,11 @@ export default function SendAdjustmentToSupplierDialog({
     if (!open) return;
     setUploadStatus(null);
     setPreviewOpen(false);
-    setReplyTo("");
+    try {
+      setReplyTo(localStorage.getItem("adjustment:lastReplyTo") || "");
+    } catch {
+      setReplyTo("");
+    }
     attachmentsRef.current = null;
     setLoadingSupplier(true);
     (async () => {
