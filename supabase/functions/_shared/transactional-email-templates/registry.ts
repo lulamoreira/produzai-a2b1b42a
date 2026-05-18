@@ -16,6 +16,8 @@ import { template as budgetResultsToClient } from './budget-results-to-client.ts
 import { template as supplierWinnerNotification } from './supplier-winner-notification.tsx'
 import { template as negotiationProposalToSupplier } from './negotiation-proposal-to-supplier.tsx'
 import { template as adjustmentQuoteRequestToSupplier } from './adjustment-quote-request-to-supplier.tsx'
+import { template as adjustmentFinalToClient } from './adjustment-final-to-client.tsx'
+import { template as adjustmentFinalToSupplier } from './adjustment-final-to-supplier.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'occurrence-notification': occurrenceNotification,
@@ -25,4 +27,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'supplier-winner-notification': supplierWinnerNotification,
   'negotiation-proposal-to-supplier': negotiationProposalToSupplier,
   'adjustment-quote-request-to-supplier': adjustmentQuoteRequestToSupplier,
+  'adjustment-final-to-client': adjustmentFinalToClient,
+  'adjustment-final-to-supplier': adjustmentFinalToSupplier,
 }
