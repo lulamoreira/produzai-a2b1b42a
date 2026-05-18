@@ -51,6 +51,7 @@ interface AdjustmentsTabProps {
   hasNegotiationRateio?: boolean;
   negotiationRateioLoading?: boolean;
   onBackToBudgets?: () => void;
+  clientEmail?: string | null;
 }
 
 function StatusBadge({ status }: { status: AdjustmentStatus }) {
