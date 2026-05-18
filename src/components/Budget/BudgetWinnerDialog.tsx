@@ -72,6 +72,8 @@ export default function BudgetWinnerDialog({
         recipientEmail: recipient,
         idempotencyKey: `supplier-winner-${campaignId}-${supplier?.id}-${recipient}-${Date.now()}`,
         templateData,
+        fromName: agencyName,
+        ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
       },
     });
     if (error) throw new Error(error.message || "Erro ao enviar e-mail");
