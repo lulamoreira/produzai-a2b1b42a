@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Send, Loader2, MessageCircle, Eye, X } from "lucide-react";
+import { Send, Loader2, MessageCircle, Eye, X, AtSign } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -237,6 +237,37 @@ export default function SendAdjustmentToSupplierDialog({
     }
   };
 
+  const handleSendMailto = async () => {
+    const merged = mergeRecipients(email, cc);
+    if (merged.invalid.length) {
+      toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
+      return;
+    }
+    if (merged.valid.length === 0) {
+      toast.error("Informe pelo menos um e-mail válido.");
+      return;
+    }
+    const tId = toast.loading("Gerando arquivos...");
+    try {
+      const att = await ensureAttachments();
+      const greeting = supplier?.contact_name || supplier?.company_name || "fornecedor";
+      const subject = `${campaignName} — Liberação para produção${adjustmentName ? ` (${adjustmentName})` : ""}`;
+      const body =
+        `Olá, ${greeting}!\n\n` +
+        `A planilha final e o Guia Visual de Rateio estão liberados para produção (ajuste ${adjustmentName}).\n\n` +
+        `Planilha final:\n${att.workbookLink.url}\n\n` +
+        `Guia Visual de Rateio:\n${att.pdfLink.url}\n\n` +
+        `Qualquer dúvida, estamos à disposição. Obrigado pela parceria!\n— Equipe ${agencyName}`;
+      const toList = encodeURIComponent(email.replace(/[;,\s]+/g, ","));
+      const ccList = cc.trim() ? `&cc=${encodeURIComponent(cc.replace(/[;,\s]+/g, ","))}` : "";
+      const url = `mailto:${toList}?subject=${encodeURIComponent(subject)}${ccList}&body=${encodeURIComponent(body)}`;
+      window.location.href = url;
+      toast.success("Abrindo seu app de e-mail...", { id: tId });
+    } catch (e: any) {
+      toast.error(e?.message || "Falha ao gerar arquivos.", { id: tId });
+    }
+  };
+
   const busy = sending || generating || loadingSupplier;
 
   return (
@@ -286,6 +317,9 @@ export default function SendAdjustmentToSupplierDialog({
             </Button>
             <Button variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={busy || !phone}>
               <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleSendMailto} disabled={busy}>
+              {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><AtSign className="w-4 h-4 mr-1" /> Meu e-mail</>}
             </Button>
             <Button size="sm" onClick={handleOpenPreview} disabled={busy}>
               {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Eye className="w-4 h-4 mr-1" /> Visualizar e enviar</>}
