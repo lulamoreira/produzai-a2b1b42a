@@ -9,8 +9,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Mail, Pencil, Trash2, Check, X } from "lucide-react";
+import { Mail, Pencil, Trash2, Check, X, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { parseRecipients, EMAIL_REGEX } from "@/lib/emailRecipients";
 
 interface Props {
   clientId: string;
@@ -18,11 +19,12 @@ interface Props {
 }
 
 export default function ClientEmailMemoryManager({ clientId, canEdit }: Props) {
-  const { entries, isLoading, removeEmail, updateEmail } = useClientEmailMemory({ clientId });
+  const { entries, isLoading, removeEmail, updateEmail, record } = useClientEmailMemory({ clientId });
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [addValue, setAddValue] = useState("");
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -60,8 +62,57 @@ export default function ClientEmailMemoryManager({ clientId, canEdit }: Props) {
     }
   };
 
+  const handleAdd = () => {
+    const parsed = parseRecipients(addValue);
+    const valid = parsed.filter((e) => EMAIL_REGEX.test(e));
+    const invalid = parsed.filter((e) => !EMAIL_REGEX.test(e));
+    if (invalid.length) {
+      toast.error(`E-mail inválido: ${invalid.join(", ")}`);
+      return;
+    }
+    if (!valid.length) {
+      toast.error("Informe ao menos um e-mail.");
+      return;
+    }
+    const existing = new Set(entries.map((e) => e.email.toLowerCase()));
+    const newOnes = valid.filter((e) => !existing.has(e));
+    record(valid);
+    setAddValue("");
+    if (newOnes.length === 0) {
+      toast.info("Esses e-mails já estavam na memória.");
+    } else {
+      toast.success(`${newOnes.length} e-mail(s) adicionado(s) à memória.`);
+    }
+  };
+
   return (
     <>
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <Input
+          type="text"
+          placeholder="Adicionar e-mail(s) — separe por vírgula"
+          value={addValue}
+          onChange={(e) => setAddValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              if (canEdit) handleAdd();
+            }
+          }}
+          disabled={!canEdit}
+          className="h-9 text-sm flex-1 min-w-[220px]"
+        />
+        <Button
+          size="sm"
+          onClick={handleAdd}
+          disabled={!canEdit || !addValue.trim()}
+          className="h-9 gap-1.5"
+        >
+          <Plus className="w-4 h-4" />
+          Adicionar
+        </Button>
+      </div>
+
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         <span className="text-sm font-semibold text-foreground">
           {entries.length} e-mail(s) salvo(s)
