@@ -661,6 +661,7 @@ export default function AdjustmentsTab({
                         >
                           <Truck className="w-3.5 h-3.5" />
                           Avisar fornecedor
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
