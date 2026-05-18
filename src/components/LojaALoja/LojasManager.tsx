@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Store, Copy, Search, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Store, Copy, Search, ArrowUp, ArrowDown, ArrowUpDown, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useTableSort } from "@/hooks/useTableSort";
@@ -105,6 +105,18 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
     }
     return map;
   }, [lojas]);
+
+  // Stores that have NO row in loja_a_loja_lojas (never classified — new stores)
+  const storesWithAnyAssignment = useMemo(() => {
+    const s = new Set<string>();
+    for (const l of lojas) s.add(l.store_id);
+    return s;
+  }, [lojas]);
+  const isUnclassified = (storeId: string) => !storesWithAnyAssignment.has(storeId);
+  const unclassifiedCount = useMemo(
+    () => stores.filter((s) => isUnclassified(s.id)).length,
+    [stores, storesWithAnyAssignment]
+  );
 
   // For INTERNO tipos (tem_subdivisao), default is TRUE when no row exists
   const isActive = (storeId: string, tipoId: string, subId: string | null, isInterno: boolean) => {
@@ -362,6 +374,16 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
         )}
       </div>
 
+      {/* Unclassified stores warning */}
+      {unclassifiedCount > 0 && (
+        <div className="flex items-center gap-2 rounded-md border border-amber-300/60 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 mx-1">
+          <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+          <p className="text-xs text-amber-900 dark:text-amber-200">
+            <strong>{unclassifiedCount}</strong> {unclassifiedCount === 1 ? "loja sem classificação" : "lojas sem classificação"} (destacadas na tabela abaixo).
+          </p>
+        </div>
+      )}
+
       {/* Table container */}
       <div className="border border-border rounded-lg overflow-auto max-h-[70vh]">
         <table className="w-full text-sm">
@@ -404,11 +426,24 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
             </tr>
           </thead>
           <tbody>
-            {sortedFilteredStores.map((store, idx) => (
-              <tr key={store.id} className={cn("border-b border-border transition-colors hover:bg-muted/30", idx % 2 === 0 && "bg-muted/10")}>
+            {sortedFilteredStores.map((store, idx) => {
+              const unclassified = isUnclassified(store.id);
+              return (
+              <tr key={store.id} className={cn(
+                "border-b border-border transition-colors hover:bg-muted/30",
+                idx % 2 === 0 && "bg-muted/10",
+                unclassified && "!bg-amber-50/60 dark:!bg-amber-950/20 hover:!bg-amber-100/60 dark:hover:!bg-amber-950/30"
+              )}>
                 <td className="px-3 py-1.5 text-xs font-mono font-semibold text-primary whitespace-nowrap">{store.store_code || "—"}</td>
                 <td className="px-3 py-1.5">
-                  <div className="text-sm font-medium truncate max-w-[260px] text-foreground">{store.name}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium truncate max-w-[240px] text-foreground">{store.name}</span>
+                    {unclassified && (
+                      <span title="Sem classificação" className="inline-flex items-center gap-1 rounded-full bg-amber-200/70 dark:bg-amber-900/40 px-1.5 py-0.5 text-[9px] font-semibold text-amber-900 dark:text-amber-200 shrink-0">
+                        <AlertTriangle className="h-2.5 w-2.5" /> Nova
+                      </span>
+                    )}
+                  </div>
                   {(store.street || store.neighborhood) && (
                     <div className="text-[10px] text-muted-foreground truncate max-w-[260px]">
                       {[store.street, store.number, store.neighborhood].filter(Boolean).join(", ")}
@@ -446,7 +481,8 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
                   </td>
                 )}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

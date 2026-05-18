@@ -36,9 +36,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Plus, Pencil, Trash2, Image, ImagePlus, ChevronRight, X, Upload, Check, Loader2, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Image, ImagePlus, ChevronRight, X, Upload, Check, Loader2, GripVertical, Download, AlertTriangle } from "lucide-react";
+import { DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
   DndContext,
@@ -67,6 +69,7 @@ interface SubAreaPermission {
 
 interface TiposManagerProps {
   campaignId: string;
+  clientId?: string;
   permissions: SubAreaPermission;
 }
 
@@ -447,9 +450,10 @@ function SortablePieceCard({
   );
 }
 
-const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
+const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) => {
   const canEdit = permissions.canEdit;
   const canDelete = permissions.canDelete;
+  const qc = useQueryClient();
   const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: allPecas } = useAllLojaALojaPecas(campaignId);
 
@@ -508,6 +512,22 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
   // Inline edit peca name
   const [editingPecaId, setEditingPecaId] = useState<string | null>(null);
   const [editingPecaNome, setEditingPecaNome] = useState("");
+
+  // Import from another campaign
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importCampaigns, setImportCampaigns] = useState<{ id: string; name: string; created_at: string }[]>([]);
+  const [loadingImportCampaigns, setLoadingImportCampaigns] = useState(false);
+  const [selectedImportCampaignId, setSelectedImportCampaignId] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importReport, setImportReport] = useState<{
+    tipos: number;
+    subs: number;
+    pecas: number;
+    assignments: number;
+    missingStores: string[];
+    newStores: string[];
+  } | null>(null);
+
 
   // Mutations
   const addTipo = useAddTipo();
@@ -788,6 +808,212 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
     });
   };
 
+  // ── Import from another campaign ──
+  const handleOpenImport = async () => {
+    if (!clientId) {
+      toast.error("Cliente não identificado.");
+      return;
+    }
+    setShowImportDialog(true);
+    setSelectedImportCampaignId(null);
+    setImportReport(null);
+    setLoadingImportCampaigns(true);
+    try {
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("id, name, created_at")
+        .eq("client_id", clientId)
+        .neq("id", campaignId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setImportCampaigns(data ?? []);
+    } catch (err: any) {
+      toast.error("Erro ao carregar campanhas: " + err.message);
+    } finally {
+      setLoadingImportCampaigns(false);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!selectedImportCampaignId) return;
+    setImporting(true);
+    try {
+      // 1) Fetch source structure
+      const [srcTiposRes, srcSubsRes, srcPecasRes, srcAssignRes, destStoresRes, srcStoresRes] = await Promise.all([
+        supabase.from("loja_a_loja_tipos").select("*").eq("campaign_id", selectedImportCampaignId),
+        supabase.from("loja_a_loja_subdivisoes").select("*"),
+        supabase.from("loja_a_loja_pecas").select("*").eq("campaign_id", selectedImportCampaignId),
+        supabase.from("loja_a_loja_lojas").select("*").eq("campaign_id", selectedImportCampaignId),
+        supabase.from("client_stores").select("id, name, store_code").eq("client_id", clientId!),
+        supabase.from("loja_a_loja_lojas").select("store_id").eq("campaign_id", selectedImportCampaignId),
+      ]);
+      if (srcTiposRes.error) throw srcTiposRes.error;
+      if (srcSubsRes.error) throw srcSubsRes.error;
+      if (srcPecasRes.error) throw srcPecasRes.error;
+      if (srcAssignRes.error) throw srcAssignRes.error;
+      if (destStoresRes.error) throw destStoresRes.error;
+
+      const srcTipos = srcTiposRes.data ?? [];
+      const srcSubs = (srcSubsRes.data ?? []).filter((s: any) => srcTipos.some((t) => t.id === s.tipo_id));
+      const srcPecas = srcPecasRes.data ?? [];
+      const srcAssignments = srcAssignRes.data ?? [];
+      const destStores = destStoresRes.data ?? [];
+
+      // 2) Reconcile tipos by letra — insert missing
+      const existingByLetra = new Map((tipos ?? []).map((t) => [t.letra, t]));
+      let createdTipos = 0;
+      const tipoIdMap = new Map<string, string>(); // src tipo id -> dest tipo id
+      for (const st of srcTipos) {
+        const existing = existingByLetra.get(st.letra);
+        if (existing) {
+          tipoIdMap.set(st.id, existing.id);
+        } else {
+          const { data: ins, error } = await supabase.from("loja_a_loja_tipos").insert({
+            campaign_id: campaignId,
+            letra: st.letra,
+            nome: st.nome,
+            tem_subdivisao: st.tem_subdivisao,
+            display_order: st.display_order,
+          }).select().single();
+          if (error) throw error;
+          tipoIdMap.set(st.id, ins.id);
+          createdTipos++;
+        }
+      }
+
+      // 3) Reconcile subdivisões by (tipo letra, sub nome)
+      // Refetch dest tipos with subs for accurate map
+      const { data: destTiposFull, error: destTiposErr } = await supabase
+        .from("loja_a_loja_tipos")
+        .select("id, letra")
+        .eq("campaign_id", campaignId);
+      if (destTiposErr) throw destTiposErr;
+      const { data: destSubsFull, error: destSubsErr } = await supabase
+        .from("loja_a_loja_subdivisoes")
+        .select("id, tipo_id, nome")
+        .in("tipo_id", (destTiposFull ?? []).map((t) => t.id));
+      if (destSubsErr) throw destSubsErr;
+
+      const subKey = (tipoId: string, nome: string) => `${tipoId}::${nome.toLowerCase()}`;
+      const existingSubMap = new Map((destSubsFull ?? []).map((s) => [subKey(s.tipo_id, s.nome), s.id]));
+      let createdSubs = 0;
+      const subIdMap = new Map<string, string>();
+      for (const ss of srcSubs) {
+        const destTipoId = tipoIdMap.get(ss.tipo_id);
+        if (!destTipoId) continue;
+        const key = subKey(destTipoId, ss.nome);
+        const existingId = existingSubMap.get(key);
+        if (existingId) {
+          subIdMap.set(ss.id, existingId);
+        } else {
+          const { data: ins, error } = await supabase.from("loja_a_loja_subdivisoes").insert({
+            tipo_id: destTipoId,
+            nome: ss.nome,
+            display_order: ss.display_order,
+          }).select().single();
+          if (error) throw error;
+          subIdMap.set(ss.id, ins.id);
+          existingSubMap.set(key, ins.id);
+          createdSubs++;
+        }
+      }
+
+      // 4) Reconcile peças by (dest tipo/sub + nome)
+      const { data: destPecasFull, error: destPecasErr } = await supabase
+        .from("loja_a_loja_pecas")
+        .select("id, tipo_id, subdivisao_id, nome")
+        .eq("campaign_id", campaignId);
+      if (destPecasErr) throw destPecasErr;
+      const pecaKey = (tipoId: string | null, subId: string | null, nome: string) => `${tipoId ?? ""}::${subId ?? ""}::${nome.toLowerCase()}`;
+      const existingPecas = new Set((destPecasFull ?? []).map((p) => pecaKey(p.tipo_id, p.subdivisao_id, p.nome)));
+      let createdPecas = 0;
+      const pecasToInsert: any[] = [];
+      for (const sp of srcPecas) {
+        const destTipoId = sp.tipo_id ? tipoIdMap.get(sp.tipo_id) ?? null : null;
+        const destSubId = sp.subdivisao_id ? subIdMap.get(sp.subdivisao_id) ?? null : null;
+        if (!destTipoId && !destSubId) continue;
+        const key = pecaKey(destTipoId, destSubId, sp.nome);
+        if (existingPecas.has(key)) continue;
+        existingPecas.add(key);
+        pecasToInsert.push({
+          campaign_id: campaignId,
+          tipo_id: destTipoId,
+          subdivisao_id: destSubId,
+          nome: sp.nome,
+          image_url: sp.image_url,
+          display_order: sp.display_order,
+        });
+        createdPecas++;
+      }
+      if (pecasToInsert.length > 0) {
+        const { error } = await supabase.from("loja_a_loja_pecas").insert(pecasToInsert);
+        if (error) throw error;
+      }
+
+      // 5) Import classification assignments
+      const destStoreIds = new Set(destStores.map((s) => s.id));
+      const assignmentRows: any[] = [];
+      for (const a of srcAssignments) {
+        if (!destStoreIds.has(a.store_id) || !a.tipo_id) continue;
+        const destTipoId = tipoIdMap.get(a.tipo_id);
+        if (!destTipoId) continue;
+        const destSubId = a.subdivisao_id ? (subIdMap.get(a.subdivisao_id) ?? null) : null;
+        if (a.subdivisao_id && !destSubId) continue;
+        assignmentRows.push({
+          campaign_id: campaignId,
+          store_id: a.store_id,
+          tipo_id: destTipoId,
+          subdivisao_id: destSubId,
+          ativo: a.ativo ?? false,
+        });
+      }
+      if (assignmentRows.length > 0) {
+        const { error } = await supabase
+          .from("loja_a_loja_lojas")
+          .upsert(assignmentRows, { onConflict: "campaign_id,store_id,tipo_id,subdivisao_id", ignoreDuplicates: false });
+        if (error) throw error;
+      }
+
+      // 6) Build store discrepancy report
+      const srcStoreIds = new Set((srcStoresRes.data ?? []).map((r: any) => r.store_id));
+      const destClassifiedStoreIds = new Set(assignmentRows.map((r) => r.store_id));
+      const missingStores = destStores
+        .filter((s) => srcStoreIds.has(s.id) === false && false) // placeholder
+        .map((s) => s.name);
+      // Stores que estavam na origem mas não existem mais aqui
+      const srcOnlyStoreIds = [...srcStoreIds].filter((id) => !destStoreIds.has(id));
+      // Need names for src-only — fetch from source client (same client so should exist as inactive? skip for simplicity — show count by id)
+      // Stores novas (existem aqui mas não estavam classificadas na origem)
+      const newStores = destStores
+        .filter((s) => !srcStoreIds.has(s.id))
+        .map((s) => s.name || s.store_code || s.id);
+
+      setImportReport({
+        tipos: createdTipos,
+        subs: createdSubs,
+        pecas: createdPecas,
+        assignments: assignmentRows.length,
+        missingStores: srcOnlyStoreIds.map((id) => id.slice(0, 8) + "…"),
+        newStores,
+      });
+
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-tipos", campaignId] });
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-pecas-all", campaignId] });
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-pecas"] });
+      qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
+
+      toast.success(
+        `Importado: ${createdTipos} tipos, ${createdSubs} subdivisões, ${createdPecas} peças, ${assignmentRows.length} classificações.`
+      );
+    } catch (err: any) {
+      toast.error("Erro ao importar: " + err.message);
+    } finally {
+      setImporting(false);
+    }
+  };
+
+
+
   // ── Render add tipo form ──
   const renderAddTipoForm = (section: "vitrines" | "internos") => {
     if (showAddTipoSection !== section) {
@@ -843,6 +1069,17 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
     <div className="flex flex-col md:flex-row gap-4 min-h-[400px]">
       {/* ── Left column: Tipos list ── */}
       <div className="w-full md:w-72 shrink-0 border border-border rounded-lg bg-card p-3 space-y-1 overflow-y-auto max-h-[70vh]">
+        {canEdit && clientId && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 w-full text-xs gap-1.5 mb-2"
+            onClick={handleOpenImport}
+          >
+            <Download className="h-3 w-3" />
+            Importar de outra campanha
+          </Button>
+        )}
         {loadingTipos ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-9 w-full rounded-md" />
@@ -1189,6 +1426,93 @@ const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Import from another campaign Dialog ── */}
+      <Dialog open={showImportDialog} onOpenChange={(o) => { setShowImportDialog(o); if (!o) setImportReport(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Importar Loja a Loja + Classificação</DialogTitle>
+          </DialogHeader>
+
+          {importReport ? (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
+                <p className="font-medium text-foreground">Importação concluída</p>
+                <p className="text-xs text-muted-foreground">
+                  {importReport.tipos} tipos · {importReport.subs} subdivisões · {importReport.pecas} peças · {importReport.assignments} classificações
+                </p>
+              </div>
+
+              {importReport.newStores.length > 0 && (
+                <div className="rounded-md border border-amber-300/60 bg-amber-50 dark:bg-amber-950/20 p-3 space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                      {importReport.newStores.length} lojas novas precisam ser classificadas
+                    </p>
+                  </div>
+                  <ul className="text-xs text-amber-900/80 dark:text-amber-200/80 max-h-32 overflow-y-auto list-disc pl-5">
+                    {importReport.newStores.map((n, i) => <li key={i}>{n}</li>)}
+                  </ul>
+                  <p className="text-[11px] text-muted-foreground pt-1">Vá em "Classificação" para classificá-las.</p>
+                </div>
+              )}
+
+              {importReport.missingStores.length > 0 && (
+                <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
+                  <p className="text-xs font-medium">
+                    {importReport.missingStores.length} lojas da campanha de origem não existem mais aqui (ignoradas)
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                A estrutura (tipos, subdivisões, peças) e a classificação serão importadas. Tipos com a mesma letra não serão duplicados.
+              </p>
+              {loadingImportCampaigns ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                </div>
+              ) : importCampaigns.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma outra campanha encontrada para este cliente.</p>
+              ) : (
+                <div className="space-y-1 max-h-60 overflow-y-auto">
+                  {importCampaigns.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => setSelectedImportCampaignId(c.id)}
+                      className={cn(
+                        "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+                        selectedImportCampaignId === c.id ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/60"
+                      )}
+                    >
+                      {c.name}
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {new Date(c.created_at).toLocaleDateString("pt-BR")}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          <DialogFooter>
+            {importReport ? (
+              <Button onClick={() => { setShowImportDialog(false); setImportReport(null); }}>Fechar</Button>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => setShowImportDialog(false)} disabled={importing}>Cancelar</Button>
+                <Button onClick={handleConfirmImport} disabled={!selectedImportCampaignId || importing}>
+                  {importing ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />Importando...</> : "Importar"}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

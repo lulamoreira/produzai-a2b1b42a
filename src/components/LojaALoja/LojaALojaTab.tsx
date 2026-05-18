@@ -201,7 +201,7 @@ export default function LojaALojaTab({ campaignId, clientId, permissions, initia
       )}
       {visibleTabs.includes("tipos") && (
         <TabsContent value="tipos">
-          <TiposManager campaignId={campaignId} permissions={permissions.estrutura} />
+          <TiposManager campaignId={campaignId} clientId={clientId} permissions={permissions.estrutura} />
         </TabsContent>
       )}
       {visibleTabs.includes("lojas") && (
