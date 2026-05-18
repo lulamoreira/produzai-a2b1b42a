@@ -502,8 +502,28 @@ export async function buildRateioGridPDF(
   const sourceSuffix = sourceLabel ? ` — ${sourceLabel}` : "";
   const filename = `${campaignName} — Rateio por Loja (${suffix})${sourceSuffix}.pdf`;
 
-  const blob = doc.output("blob");
-  await saveBlobAs(blob, filename, {
+  const blob = doc.output("blob") as Blob;
+  return { blob, fileName: filename };
+}
+
+export async function exportRateioGridPDF(
+  pieces: CampaignPiece[],
+  kits: CampaignKit[],
+  kitPieces: CampaignKitPiece[],
+  stores: ClientStore[],
+  qtyMap: Record<string, number>,
+  campaignName: string,
+  clientName: string,
+  agencyName: string,
+  mode: RateioGridExportMode = "pieces_and_kits",
+  onProgress?: RateioGridProgress,
+  sourceLabel?: string,
+) {
+  const { blob, fileName } = await buildRateioGridPDF(
+    pieces, kits, kitPieces, stores, qtyMap,
+    campaignName, clientName, agencyName, mode, onProgress, sourceLabel,
+  );
+  await saveBlobAs(blob, fileName, {
     mimeType: PDF_MIME,
     description: "Documento PDF (.pdf)",
     extension: ".pdf",
