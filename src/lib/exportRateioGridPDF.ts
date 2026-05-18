@@ -102,7 +102,10 @@ function drawStoreHeader(doc: any, info: StoreHeaderInfo) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor(...DARK);
-  doc.text(info.storeName || "—", pw / 2, y + bar3H / 2 + 2.5, { align: "center" });
+  const storeTitle = info.pageTotal && info.pageTotal > 1
+    ? `${info.storeName || "—"} — PÁGINA ${info.pageCurrent}/${info.pageTotal}`
+    : (info.storeName || "—");
+  doc.text(storeTitle, pw / 2, y + bar3H / 2 + 2.5, { align: "center" });
   y += bar3H;
 
   // Bar 4 — code | city, state (beige bg, brown small)
