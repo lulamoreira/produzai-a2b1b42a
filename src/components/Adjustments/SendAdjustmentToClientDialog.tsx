@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Send, Loader2, MessageCircle, X, AtSign } from "lucide-react";
+import { Send, Loader2, MessageCircle, X, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   buildAdjustmentClientPackage,
   type AdjustmentClientPackage,
 } from "@/lib/buildAdjustmentClientPackage";
+import AdjustmentEmailPreviewDialog from "./AdjustmentEmailPreviewDialog";
 
 interface Props {
   open: boolean;
