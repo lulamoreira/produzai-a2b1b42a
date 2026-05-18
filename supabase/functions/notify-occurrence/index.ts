@@ -145,6 +145,7 @@ serve(async (req) => {
             templateName: "occurrence-notification",
             recipientEmail: email,
             idempotencyKey,
+            ...(agencyName ? { fromName: agencyName } : {}),
             templateData: {
               eventType,
               date,
