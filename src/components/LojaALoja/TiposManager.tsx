@@ -513,6 +513,22 @@ const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) 
   const [editingPecaId, setEditingPecaId] = useState<string | null>(null);
   const [editingPecaNome, setEditingPecaNome] = useState("");
 
+  // Import from another campaign
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importCampaigns, setImportCampaigns] = useState<{ id: string; name: string; created_at: string }[]>([]);
+  const [loadingImportCampaigns, setLoadingImportCampaigns] = useState(false);
+  const [selectedImportCampaignId, setSelectedImportCampaignId] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importReport, setImportReport] = useState<{
+    tipos: number;
+    subs: number;
+    pecas: number;
+    assignments: number;
+    missingStores: string[];
+    newStores: string[];
+  } | null>(null);
+
+
   // Mutations
   const addTipo = useAddTipo();
   const updateTipo = useUpdateTipo();
