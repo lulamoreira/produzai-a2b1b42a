@@ -250,7 +250,7 @@ export default function SendAdjustmentToClientDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-xl p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <Send className="w-4 h-4" /> Enviar para o Cliente
@@ -281,18 +281,18 @@ export default function SendAdjustmentToClientDialog({
             {generating && <UploadProgressPanel status={uploadStatus} />}
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={busy}>
+          <DialogFooter className="grid grid-cols-2 sm:grid-cols-4 pt-2">
+            <Button className="w-full" variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={busy}>
               <X className="w-4 h-4 mr-1" /> Cancelar
             </Button>
-            <Button variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={busy || !phone}>
+            <Button className="w-full" variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={busy || !phone}>
               <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
             </Button>
-            <Button variant="outline" size="sm" onClick={handleSendMailto} disabled={busy}>
+            <Button className="w-full" variant="outline" size="sm" onClick={handleSendMailto} disabled={busy}>
               {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><AtSign className="w-4 h-4 mr-1" /> Meu e-mail</>}
             </Button>
-            <Button size="sm" onClick={handleOpenPreview} disabled={busy}>
-              {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Eye className="w-4 h-4 mr-1" /> Visualizar e enviar</>}
+            <Button className="w-full" size="sm" onClick={handleOpenPreview} disabled={busy}>
+              {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Eye className="w-4 h-4 mr-1" /> Visualizar</>}
             </Button>
           </DialogFooter>
         </DialogContent>
