@@ -449,8 +449,10 @@ function SortablePieceCard({
   );
 }
 
-const TiposManager = ({ campaignId, permissions }: TiposManagerProps) => {
+const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) => {
   const canEdit = permissions.canEdit;
+  const canDelete = permissions.canDelete;
+  const qc = useQueryClient();
   const canDelete = permissions.canDelete;
   const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: allPecas } = useAllLojaALojaPecas(campaignId);
