@@ -889,43 +889,34 @@ export function useBulkUpdateCampaignStorePieces() {
       storeId: string;
       updates: Array<{ pieceId: string; quantity: number }>;
     }) => {
-      await Promise.all(
-        updates.map(async ({ pieceId, quantity }) => {
-          const normalizedQty = Math.max(0, quantity);
-          if (normalizedQty === 0) {
-            const { error } = await supabase
+      const deletes: string[] = [];
+      const upserts: Array<{ campaign_id: string; store_id: string; piece_id: string; quantity: number }> = [];
+      for (const { pieceId, quantity } of updates) {
+        const normalizedQty = Math.max(0, quantity);
+        if (normalizedQty === 0) {
+          deletes.push(pieceId);
+        } else {
+          upserts.push({ campaign_id: campaignId, store_id: storeId, piece_id: pieceId, quantity: normalizedQty });
+        }
+      }
+
+      await Promise.all([
+        deletes.length > 0
+          ? supabase
               .from("campaign_store_pieces")
               .delete()
               .eq("campaign_id", campaignId)
               .eq("store_id", storeId)
-              .eq("piece_id", pieceId);
-            if (error) throw error;
-            return;
-          }
-
-          const { data: existing, error: existingError } = await supabase
-            .from("campaign_store_pieces")
-            .select("id")
-            .eq("campaign_id", campaignId)
-            .eq("store_id", storeId)
-            .eq("piece_id", pieceId)
-            .maybeSingle();
-          if (existingError) throw existingError;
-
-          if (existing) {
-            const { error } = await supabase
+              .in("piece_id", deletes)
+              .then(({ error }) => { if (error) throw error; })
+          : Promise.resolve(),
+        upserts.length > 0
+          ? supabase
               .from("campaign_store_pieces")
-              .update({ quantity: normalizedQty })
-              .eq("id", existing.id);
-            if (error) throw error;
-          } else {
-            const { error } = await supabase
-              .from("campaign_store_pieces")
-              .insert({ campaign_id: campaignId, store_id: storeId, piece_id: pieceId, quantity: normalizedQty });
-            if (error) throw error;
-          }
-        })
-      );
+              .upsert(upserts, { onConflict: "campaign_id,store_id,piece_id" })
+              .then(({ error }) => { if (error) throw error; })
+          : Promise.resolve(),
+      ]);
     },
     onMutate: async ({ campaignId, storeId, updates }) => {
       lastMutationRef.current = Date.now();
@@ -964,18 +955,19 @@ export function useBulkUpdateCampaignStorePieces() {
       }
       toast.error("Erro: " + (e as Error).message);
     },
-    // Delayed + race-guarded invalidation: 500ms gives the DB time to commit,
-    // and the timestamp check ensures only the latest batch triggers a refetch.
+    // Realtime (debounced) handles refetch authoritatively. The 2 s timer is
+    // only a fallback for the rare case where a realtime event is dropped.
     onSettled: (_data, _error, vars, context) => {
       const mutationTime = context?.mutationTime ?? 0;
       setTimeout(() => {
         if (lastMutationRef.current === mutationTime) {
           qc.invalidateQueries({ queryKey: ["campaign_store_pieces", vars.campaignId] });
         }
-      }, 500);
+      }, 2000);
     },
   });
 }
+
 
 
 // ─── User Client Access ──────────────────────────────────
