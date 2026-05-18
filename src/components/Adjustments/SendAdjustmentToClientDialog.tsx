@@ -252,6 +252,8 @@ export default function SendAdjustmentToClientDialog({
               <Input id="cli-phone" value={phone} onChange={(e) => setPhone(e.target.value)} disabled={busy} placeholder="ex: 5511999998888" />
             </div>
 
+            <ReplyToField value={replyTo} onChange={setReplyTo} disabled={busy} />
+
             {generating && <UploadProgressPanel status={uploadStatus} />}
           </div>
 
