@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -47,6 +47,7 @@ const setStoredBool = (key: string, val: boolean) => {
 export default function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const qc = useQueryClient();
   const { signOut } = useAuth();
   const { isAdminOrMaster, isAdmin, isMaster } = useUserRole();
   const { isLimited, campaigns: limitedCampaigns } = useUserDirectAccess();
@@ -166,6 +167,28 @@ export default function AppSidebar() {
     enabled: !!clientId,
     staleTime: 2 * 60 * 1000,
   });
+
+  // Realtime: update sidebar immediately when agencies/clients/campaigns change
+  useEffect(() => {
+    const channel = supabase
+      .channel("sidebar-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "campaigns" }, (payload) => {
+        const row: any = (payload as any).new ?? (payload as any).old ?? {};
+        qc.invalidateQueries({ queryKey: ["sidebar-campaign", row.id] });
+        qc.invalidateQueries({ queryKey: ["sidebar-client-campaigns", row.client_id] });
+        qc.invalidateQueries({ queryKey: ["sidebar-client-campaigns"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "clients" }, (payload) => {
+        const row: any = (payload as any).new ?? (payload as any).old ?? {};
+        qc.invalidateQueries({ queryKey: ["sidebar-client", row.id] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "agencies" }, (payload) => {
+        const row: any = (payload as any).new ?? (payload as any).old ?? {};
+        qc.invalidateQueries({ queryKey: ["sidebar-agency", row.id] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
 
   // Auto-expand the active campaign and collapse all others.
   // Manual toggles via toggleCampaignExpanded still override this until campaignId changes again.
