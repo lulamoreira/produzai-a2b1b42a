@@ -1978,6 +1978,7 @@ export type Database = {
       client_email_memory: {
         Row: {
           client_id: string
+          contact_name: string | null
           created_at: string
           email: string
           id: string
@@ -1986,6 +1987,7 @@ export type Database = {
         }
         Insert: {
           client_id: string
+          contact_name?: string | null
           created_at?: string
           email: string
           id?: string
@@ -1994,6 +1996,7 @@ export type Database = {
         }
         Update: {
           client_id?: string
+          contact_name?: string | null
           created_at?: string
           email?: string
           id?: string
