@@ -74,6 +74,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
 
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
+  const [replyTo, setReplyTo] = useState("");
   const [includeComparative, setIncludeComparative] = useState(true);
   const [sending, setSending] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
