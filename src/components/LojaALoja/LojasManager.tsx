@@ -426,11 +426,24 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
             </tr>
           </thead>
           <tbody>
-            {sortedFilteredStores.map((store, idx) => (
-              <tr key={store.id} className={cn("border-b border-border transition-colors hover:bg-muted/30", idx % 2 === 0 && "bg-muted/10")}>
+            {sortedFilteredStores.map((store, idx) => {
+              const unclassified = isUnclassified(store.id);
+              return (
+              <tr key={store.id} className={cn(
+                "border-b border-border transition-colors hover:bg-muted/30",
+                idx % 2 === 0 && "bg-muted/10",
+                unclassified && "!bg-amber-50/60 dark:!bg-amber-950/20 hover:!bg-amber-100/60 dark:hover:!bg-amber-950/30"
+              )}>
                 <td className="px-3 py-1.5 text-xs font-mono font-semibold text-primary whitespace-nowrap">{store.store_code || "—"}</td>
                 <td className="px-3 py-1.5">
-                  <div className="text-sm font-medium truncate max-w-[260px] text-foreground">{store.name}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium truncate max-w-[240px] text-foreground">{store.name}</span>
+                    {unclassified && (
+                      <span title="Sem classificação" className="inline-flex items-center gap-1 rounded-full bg-amber-200/70 dark:bg-amber-900/40 px-1.5 py-0.5 text-[9px] font-semibold text-amber-900 dark:text-amber-200 shrink-0">
+                        <AlertTriangle className="h-2.5 w-2.5" /> Nova
+                      </span>
+                    )}
+                  </div>
                   {(store.street || store.neighborhood) && (
                     <div className="text-[10px] text-muted-foreground truncate max-w-[260px]">
                       {[store.street, store.number, store.neighborhood].filter(Boolean).join(", ")}
