@@ -197,12 +197,26 @@ export default function SendAdjustmentToClientDialog({
             <Button className="w-full" variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={busy || !phone}>
               <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
             </Button>
-            <Button className="w-full" size="sm" onClick={handleSendMailto} disabled={busy}>
-              {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><AtSign className="w-4 h-4 mr-1" /> Meu e-mail</>}
+            <Button className="w-full" size="sm" onClick={handleOpenPreview} disabled={busy}>
+              {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Mail className="w-4 h-4 mr-1" /> Pré-visualizar e-mail</>}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AdjustmentEmailPreviewDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        variant="client"
+        recipientName={clientName || "cliente"}
+        agencyName={agencyName}
+        campaignName={campaignName}
+        adjustmentName={adjustmentName}
+        downloads={attachmentsRef.current ? [attachmentsRef.current.workbookLink, attachmentsRef.current.pdfLink] : []}
+        to={email}
+        cc={cc}
+        subject={`${campaignName} — Planilha final + Guia Visual de Lojas${adjustmentName ? ` (${adjustmentName})` : ""}`}
+      />
     </>
   );
 }
