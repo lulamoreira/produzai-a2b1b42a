@@ -9,8 +9,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Mail, Pencil, Trash2, Check, X } from "lucide-react";
+import { Mail, Pencil, Trash2, Check, X, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { parseRecipients, EMAIL_REGEX } from "@/lib/emailRecipients";
 
 interface Props {
   clientId: string;
