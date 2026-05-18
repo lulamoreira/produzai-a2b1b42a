@@ -64,6 +64,7 @@ export default function SendAdjustmentToSupplierDialog({
   const [generating, setGenerating] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const attachmentsRef = useRef<Attachments | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
