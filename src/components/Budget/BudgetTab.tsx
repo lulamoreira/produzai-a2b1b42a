@@ -3118,3 +3118,16 @@ function RequoteTotalsBreakdown({ requote }: { requote: AdjustmentBudgetRequest 
     </div>
   );
 }
+
+function PhaseStepperWithApproval(props: {
+  campaignId: string;
+  currentPhase: BudgetPhase;
+  phaseLockedAt: Record<string, string>;
+  isAdminOrMaster: boolean;
+  onUnlock: (phase: BudgetPhase) => void;
+  isUnlocking: boolean;
+}) {
+  const { data: requote } = useActiveAdjustmentRequest(props.campaignId);
+  const isAdjustmentApproved = requote?.status === "approved";
+  return <PhaseStepper {...props} isAdjustmentApproved={isAdjustmentApproved} />;
+}
