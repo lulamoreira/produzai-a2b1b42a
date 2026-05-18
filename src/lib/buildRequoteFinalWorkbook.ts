@@ -771,7 +771,7 @@ export async function buildRequoteFinalWorkbook(
           || (a.id < b.id ? -1 : 1);
       });
 
-      const STORE_META_COLS = 4; // DEFAULT_STORE_FIELDS
+      const STORE_META_COLS = 5; // name, city, state, store_model, showcase_count
       const colCount = STORE_META_COLS + colItems.length;
       // Matrix layout: row 1 title, rows 2-9 meta (8), row 10 stores header,
       // rows 11..(10+N) stores, row (11+N) TOTAL.
