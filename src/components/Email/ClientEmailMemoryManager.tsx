@@ -169,6 +169,7 @@ export default function ClientEmailMemoryManager({ clientId, canEdit }: Props) {
             <TableHeader>
               <TableRow>
                 <TableHead className="text-xs">E-mail</TableHead>
+                <TableHead className="text-xs">Contato</TableHead>
                 <TableHead className="text-xs">Usos</TableHead>
                 <TableHead className="text-xs">Último uso</TableHead>
                 {canEdit && <TableHead className="text-xs text-right">Ações</TableHead>}
