@@ -242,35 +242,37 @@ export default function SendAdjustmentToSupplierDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Send className="w-5 h-5" /> Avisar Fornecedor
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Send className="w-4 h-4" /> Avisar Fornecedor
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-xs">
               Liberação para produção — <strong>{supplier?.company_name || "Fornecedor"}</strong>
               {adjustmentName ? <> · <em>{adjustmentName}</em></> : null}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="space-y-3 py-1">
             {loadingSupplier ? (
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <Loader2 className="w-4 h-4 animate-spin" /> Carregando fornecedor...
               </div>
             ) : (
               <>
-                <div className="space-y-1.5">
-                  <Label htmlFor="sup-email">E-mail(s) do fornecedor</Label>
-                  <Textarea id="sup-email" rows={2} value={email} onChange={(e) => setEmail(e.target.value)} disabled={busy} placeholder="fornecedor@empresa.com" />
-                  <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="sup-email" className="text-xs">E-mail(s) do fornecedor</Label>
+                    <Input id="sup-email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={busy} placeholder="fornecedor@empresa.com" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="sup-cc" className="text-xs">CC (opcional)</Label>
+                    <Input id="sup-cc" value={cc} onChange={(e) => setCc(e.target.value)} disabled={busy} placeholder="copia@empresa.com" />
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="sup-cc">CC (opcional)</Label>
-                  <Textarea id="sup-cc" rows={2} value={cc} onChange={(e) => setCc(e.target.value)} disabled={busy} placeholder="copia@empresa.com" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="sup-phone">WhatsApp do fornecedor</Label>
+                <p className="text-[11px] text-muted-foreground -mt-1">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
+                <div className="space-y-1">
+                  <Label htmlFor="sup-phone" className="text-xs">WhatsApp do fornecedor</Label>
                   <Input id="sup-phone" value={phone} onChange={(e) => setPhone(e.target.value)} disabled={busy} placeholder="ex: 5511999998888" />
                 </div>
               </>
@@ -278,14 +280,14 @@ export default function SendAdjustmentToSupplierDialog({
             {generating && <UploadProgressPanel status={uploadStatus} />}
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
+          <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} disabled={busy}>
               <X className="w-4 h-4 mr-1" /> Cancelar
             </Button>
-            <Button variant="outline" onClick={handleSendWhatsApp} disabled={busy || !phone}>
+            <Button variant="outline" size="sm" onClick={handleSendWhatsApp} disabled={busy || !phone}>
               <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
             </Button>
-            <Button onClick={handleOpenPreview} disabled={busy}>
+            <Button size="sm" onClick={handleOpenPreview} disabled={busy}>
               {generating ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...</> : <><Eye className="w-4 h-4 mr-1" /> Visualizar e enviar</>}
             </Button>
           </DialogFooter>
