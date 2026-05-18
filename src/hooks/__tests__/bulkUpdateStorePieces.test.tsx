@@ -25,18 +25,15 @@ vi.mock("@/integrations/supabase/client", () => {
   const calls: any[] = [];
   const builder = (table: string) => ({
     delete: () => ({
-      eq: () => ({ eq: () => ({ eq: () => Promise.resolve({ error: null }) }) }),
-    }),
-    select: () => ({
       eq: () => ({
         eq: () => ({
-          eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }),
+          in: () => Promise.resolve({ error: null }),
+          eq: () => Promise.resolve({ error: null }),
         }),
       }),
     }),
-    update: () => ({ eq: () => Promise.resolve({ error: null }) }),
-    insert: (payload: any) => {
-      calls.push({ table, payload });
+    upsert: (payload: any) => {
+      calls.push({ table, op: "upsert", payload });
       return Promise.resolve({ error: null });
     },
   });
@@ -47,6 +44,7 @@ vi.mock("@/integrations/supabase/client", () => {
     },
   };
 });
+
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 
