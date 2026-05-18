@@ -80,6 +80,7 @@ export default function AdjustmentsTab({
   hasNegotiationRateio,
   negotiationRateioLoading,
   onBackToBudgets,
+  clientEmail,
 }: AdjustmentsTabProps) {
   const { data: adjustments = [], isLoading } = useCampaignAdjustments(campaignId);
   const { data: activeAdjustment } = useActiveAdjustment(campaignId);
