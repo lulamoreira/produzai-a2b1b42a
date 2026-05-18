@@ -1426,6 +1426,93 @@ const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* ── Import from another campaign Dialog ── */}
+      <Dialog open={showImportDialog} onOpenChange={(o) => { setShowImportDialog(o); if (!o) setImportReport(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Importar Loja a Loja + Classificação</DialogTitle>
+          </DialogHeader>
+
+          {importReport ? (
+            <div className="space-y-3 text-sm">
+              <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
+                <p className="font-medium text-foreground">Importação concluída</p>
+                <p className="text-xs text-muted-foreground">
+                  {importReport.tipos} tipos · {importReport.subs} subdivisões · {importReport.pecas} peças · {importReport.assignments} classificações
+                </p>
+              </div>
+
+              {importReport.newStores.length > 0 && (
+                <div className="rounded-md border border-amber-300/60 bg-amber-50 dark:bg-amber-950/20 p-3 space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
+                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+                      {importReport.newStores.length} lojas novas precisam ser classificadas
+                    </p>
+                  </div>
+                  <ul className="text-xs text-amber-900/80 dark:text-amber-200/80 max-h-32 overflow-y-auto list-disc pl-5">
+                    {importReport.newStores.map((n, i) => <li key={i}>{n}</li>)}
+                  </ul>
+                  <p className="text-[11px] text-muted-foreground pt-1">Vá em "Classificação" para classificá-las.</p>
+                </div>
+              )}
+
+              {importReport.missingStores.length > 0 && (
+                <div className="rounded-md border border-border bg-muted/30 p-3 space-y-1">
+                  <p className="text-xs font-medium">
+                    {importReport.missingStores.length} lojas da campanha de origem não existem mais aqui (ignoradas)
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                A estrutura (tipos, subdivisões, peças) e a classificação serão importadas. Tipos com a mesma letra não serão duplicados.
+              </p>
+              {loadingImportCampaigns ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                </div>
+              ) : importCampaigns.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma outra campanha encontrada para este cliente.</p>
+              ) : (
+                <div className="space-y-1 max-h-60 overflow-y-auto">
+                  {importCampaigns.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => setSelectedImportCampaignId(c.id)}
+                      className={cn(
+                        "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+                        selectedImportCampaignId === c.id ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted/60"
+                      )}
+                    >
+                      {c.name}
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {new Date(c.created_at).toLocaleDateString("pt-BR")}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          <DialogFooter>
+            {importReport ? (
+              <Button onClick={() => { setShowImportDialog(false); setImportReport(null); }}>Fechar</Button>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={() => setShowImportDialog(false)} disabled={importing}>Cancelar</Button>
+                <Button onClick={handleConfirmImport} disabled={!selectedImportCampaignId || importing}>
+                  {importing ? <><Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />Importando...</> : "Importar"}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
