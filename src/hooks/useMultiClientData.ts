@@ -547,7 +547,8 @@ export function useDeleteClientStore() {
 // ─── Campaign Pieces ─────────────────────────────────────
 
 export function useCampaignPieces(campaignId: string | undefined) {
-  return useQuery({
+  const qc = useQueryClient();
+  const query = useQuery({
     queryKey: ["campaign_pieces", campaignId],
     queryFn: async () => {
       if (!campaignId) return [];
@@ -563,6 +564,21 @@ export function useCampaignPieces(campaignId: string | undefined) {
     },
     enabled: !!campaignId,
   });
+
+  useEffect(() => {
+    if (!campaignId) return;
+    const channel = supabase
+      .channel(`campaign-pieces-rt-${campaignId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "campaign_pieces", filter: `campaign_id=eq.${campaignId}` },
+        () => qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] })
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [campaignId, qc]);
+
+  return query;
 }
 
 export function useAddCampaignPiece() {
@@ -724,7 +740,8 @@ export function useDeleteCampaignPiece() {
 // ─── Campaign Store Pieces ───────────────────────────────
 
 export function useCampaignStorePieces(campaignId: string | undefined) {
-  return useQuery({
+  const qc = useQueryClient();
+  const query = useQuery({
     queryKey: ["campaign_store_pieces", campaignId],
     queryFn: async () => {
       if (!campaignId) return [] as CampaignStorePiece[];
@@ -739,6 +756,21 @@ export function useCampaignStorePieces(campaignId: string | undefined) {
     },
     enabled: !!campaignId,
   });
+
+  useEffect(() => {
+    if (!campaignId) return;
+    const channel = supabase
+      .channel(`campaign-store-pieces-rt-${campaignId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "campaign_store_pieces", filter: `campaign_id=eq.${campaignId}` },
+        () => qc.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] })
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [campaignId, qc]);
+
+  return query;
 }
 
 export function useUpdateCampaignStorePiece() {
