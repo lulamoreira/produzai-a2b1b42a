@@ -105,9 +105,51 @@ export function useClientEmailMemory(opts: {
     },
   });
 
+  const removeMutation = useMutation({
+    mutationFn: async (email: string) => {
+      if (!clientId) return;
+      const norm = (email || "").trim().toLowerCase();
+      const { error } = await supabase
+        .from("client_email_memory" as any)
+        .delete()
+        .eq("client_id", clientId)
+        .eq("email", norm);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      if (clientId) {
+        queryClient.invalidateQueries({ queryKey: ["client_email_memory", clientId] });
+      }
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ oldEmail, newEmail }: { oldEmail: string; newEmail: string }) => {
+      if (!clientId) return;
+      const oldNorm = (oldEmail || "").trim().toLowerCase();
+      const newNorm = (newEmail || "").trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newNorm)) {
+        throw new Error("E-mail inválido");
+      }
+      if (oldNorm === newNorm) return;
+      const { error } = await supabase
+        .from("client_email_memory" as any)
+        .update({ email: newNorm })
+        .eq("client_id", clientId)
+        .eq("email", oldNorm);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      if (clientId) {
+        queryClient.invalidateQueries({ queryKey: ["client_email_memory", clientId] });
+      }
+    },
+  });
+
   return {
     clientId,
     suggestions,
+    entries: listQuery.data ?? [],
     isLoading: listQuery.isLoading || clientIdQuery.isLoading,
     record: (emails: string[]) => {
       // fire-and-forget; falhas não devem bloquear envios
@@ -115,5 +157,7 @@ export function useClientEmailMemory(opts: {
         onError: (e) => console.warn("[email-memory] record failed", e),
       });
     },
+    removeEmail: removeMutation.mutateAsync,
+    updateEmail: updateMutation.mutateAsync,
   };
 }
