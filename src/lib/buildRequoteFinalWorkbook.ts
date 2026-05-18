@@ -542,6 +542,10 @@ export async function buildRequoteFinalWorkbook(
       r.getCell(8).font = { color: { argb: color }, bold: true, size: 10 };
     }
   };
+  // Capture production subtotals (sum of all pieces/kits BEFORE extras).
+  const productionPrev = runningPrevTotal;
+  const productionNew = runningNewTotal;
+  writeExtra("Produção", productionPrev, productionNew);
   writeExtra("Instalação", params.previousInstallation, params.newInstallation);
   writeExtra("Frete", params.previousFreight, params.newFreight);
 
