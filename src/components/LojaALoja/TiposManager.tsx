@@ -1069,6 +1069,17 @@ const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) 
     <div className="flex flex-col md:flex-row gap-4 min-h-[400px]">
       {/* ── Left column: Tipos list ── */}
       <div className="w-full md:w-72 shrink-0 border border-border rounded-lg bg-card p-3 space-y-1 overflow-y-auto max-h-[70vh]">
+        {canEdit && clientId && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 w-full text-xs gap-1.5 mb-2"
+            onClick={handleOpenImport}
+          >
+            <Download className="h-3 w-3" />
+            Importar de outra campanha
+          </Button>
+        )}
         {loadingTipos ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-9 w-full rounded-md" />
