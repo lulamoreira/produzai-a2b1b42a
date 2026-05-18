@@ -310,6 +310,8 @@ export default function SendAdjustmentToSupplierDialog({
         to={email}
         cc={cc}
         subject={`${campaignName} — Liberação para produção${adjustmentName ? ` (${adjustmentName})` : ""}`}
+        onSendViaSystem={handleSendViaSystem}
+        replyTo={replyTo}
       />
     </>
   );
