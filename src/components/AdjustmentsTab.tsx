@@ -440,6 +440,91 @@ export default function AdjustmentsTab({
                 {a.notes && (
                   <p className="text-xs text-muted-foreground whitespace-pre-wrap">{a.notes}</p>
                 )}
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {a.status === "draft" && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => setEditingAdjustment(a)}
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Editar
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => handleActivate(a)}
+                      disabled={statusMut.isPending}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Ativar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs text-destructive hover:text-destructive gap-1"
+                      onClick={() => handleDelete(a)}
+                      disabled={deleteMut.isPending}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Excluir
+                    </Button>
+                  </>
+                )}
+                {a.status === "active" && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => setEditingAdjustment(a)}
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Ver detalhes
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => setRequestDialogAdjustment(a)}
+                    >
+                      <Send className="w-3.5 h-3.5" /> Solicitar Recotação
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => handleSupersede(a)}
+                      disabled={statusMut.isPending}
+                    >
+                      <Copy className="w-3.5 h-3.5" /> Substituir
+                    </Button>
+                  </>
+                )}
+                {a.status === "superseded" && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => setEditingAdjustment(a)}
+                    >
+                      <Eye className="w-3.5 h-3.5" /> Ver detalhes
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1 border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                      onClick={() => handleReactivate(a)}
+                      disabled={statusMut.isPending}
+                      title="Volta a ser o ajuste vigente. O ativo atual (se houver) é movido para Substituído."
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Reativar
+                    </Button>
+                  </>
+                )}
+              </div>
+              {/* Full-width row: requote status + cards */}
+              <div className="basis-full w-full order-last">
                 {a.status === "active" && requote && (
                   <div className="mt-2 space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -577,6 +662,11 @@ export default function AdjustmentsTab({
                       }
 
                       let productionTotal = 0;
+                      let baselineProductionTotal = 0;
+                      let totalQty = 0;
+                      let pieceCount = 0;
+                      let maxIncreasePct = 0;
+                      let maxIncreaseLabel = "";
                       for (const p of approvedAdjPieces || []) {
                         const adjId = String(p.id);
                         const srcId = sourceByAdj.get(adjId);
@@ -584,44 +674,131 @@ export default function AdjustmentsTab({
                         const price = newPriceByAdj.has(adjId)
                           ? newPriceByAdj.get(adjId) || 0
                           : prevPrice;
-                        productionTotal += price * (qtyByAdj.get(adjId) || 0);
+                        const qty = qtyByAdj.get(adjId) || 0;
+                        productionTotal += price * qty;
+                        baselineProductionTotal += prevPrice * qty;
+                        totalQty += qty;
+                        if (qty > 0) pieceCount++;
+                        if (prevPrice > 0 && qty > 0) {
+                          const pct = ((price - prevPrice) / prevPrice) * 100;
+                          if (pct > maxIncreasePct) {
+                            maxIncreasePct = pct;
+                            maxIncreaseLabel = (p as any).name || (p as any).code?.toString() || "";
+                          }
+                        }
                       }
                       const grandTotal = productionTotal + inst + frt;
+                      const deltaAbs = productionTotal - baselineProductionTotal;
+                      const deltaPct =
+                        baselineProductionTotal > 0
+                          ? (deltaAbs / baselineProductionTotal) * 100
+                          : 0;
+                      const storeCount = new Set(
+                        (approvedStoreQty || [])
+                          .filter((sp: any) => Number(sp.quantity || 0) > 0)
+                          .map((sp: any) => String(sp.store_id)),
+                      ).size;
                       const ready =
                         !!approvedAdjPieces &&
                         !!approvedBaselinePrices &&
                         !!approvedStoreQty;
 
+                      const deltaColor =
+                        deltaAbs > 0
+                          ? "text-red-700"
+                          : deltaAbs < 0
+                            ? "text-emerald-700"
+                            : "text-slate-700";
+                      const deltaSign = deltaAbs > 0 ? "+" : "";
+
                       return (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                          {/* Card 1: Resumo da recotação aprovada */}
-                          <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm flex flex-col">
-                            <div className="font-medium text-green-800">✅ Recotação aprovada</div>
-                            <div className="text-green-700 text-xs mt-1">
-                              {ready ? changedCount : "…"} item(ns) com novo preço · Instalação{" "}
-                              {formatCurrencyByCode(inst, currencyCode)} · Frete{" "}
-                              {formatCurrencyByCode(frt, currencyCode)}
-                              {requote.response_received_at && (
-                                <>
-                                  {" "}
-                                  · Registrado em{" "}
-                                  {format(new Date(requote.response_received_at), "dd/MM/yyyy 'às' HH:mm", {
-                                    locale: ptBR,
-                                  })}
-                                </>
-                              )}
+                          {/* Card 1: Resumo + KPIs da recotação aprovada */}
+                          <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm flex flex-col gap-2">
+                            <div>
+                              <div className="font-medium text-green-800">✅ Recotação aprovada</div>
+                              <div className="text-green-700 text-[11px] mt-0.5">
+                                {ready ? changedCount : "…"} item(ns) com novo preço
+                                {requote.response_received_at && (
+                                  <>
+                                    {" "}· Registrado em{" "}
+                                    {format(new Date(requote.response_received_at), "dd/MM/yyyy", {
+                                      locale: ptBR,
+                                    })}
+                                  </>
+                                )}
+                              </div>
                             </div>
+
                             {ready && (
-                              <div className="mt-auto pt-2 flex flex-col gap-1 text-xs text-green-800">
-                                <span>
-                                  Valor de produção:{" "}
-                                  <strong>{formatCurrencyByCode(productionTotal, currencyCode)}</strong>
-                                </span>
-                                <span>
+                              <>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                  <div className="rounded bg-white/70 border border-green-200 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-green-700/80">Produção</div>
+                                    <div className="text-sm font-semibold text-green-900 leading-tight">
+                                      {formatCurrencyByCode(productionTotal, currencyCode)}
+                                    </div>
+                                  </div>
+                                  <div className="rounded bg-white/70 border border-green-200 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-green-700/80">
+                                      Variação vs. base
+                                    </div>
+                                    <div className={`text-sm font-semibold leading-tight ${deltaColor}`}>
+                                      {deltaSign}
+                                      {formatCurrencyByCode(deltaAbs, currencyCode)}
+                                      <span className="text-[11px] font-normal ml-1">
+                                        ({deltaSign}
+                                        {deltaPct.toFixed(1)}%)
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="rounded bg-white/70 border border-green-200 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-green-700/80">
+                                      Instalação
+                                    </div>
+                                    <div className="text-sm font-semibold text-green-900 leading-tight">
+                                      {formatCurrencyByCode(inst, currencyCode)}
+                                    </div>
+                                  </div>
+                                  <div className="rounded bg-white/70 border border-green-200 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-green-700/80">Frete</div>
+                                    <div className="text-sm font-semibold text-green-900 leading-tight">
+                                      {formatCurrencyByCode(frt, currencyCode)}
+                                    </div>
+                                  </div>
+                                  <div className="rounded bg-white/70 border border-green-200 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-green-700/80">
+                                      Peças × Lojas
+                                    </div>
+                                    <div className="text-sm font-semibold text-green-900 leading-tight">
+                                      {pieceCount} × {storeCount}
+                                    </div>
+                                    <div className="text-[10px] text-green-700/80">
+                                      {totalQty.toLocaleString("pt-BR")} unidades
+                                    </div>
+                                  </div>
+                                  <div className="rounded bg-white/70 border border-green-200 px-2 py-1.5">
+                                    <div className="text-[10px] uppercase tracking-wide text-green-700/80">
+                                      Maior aumento
+                                    </div>
+                                    <div className="text-sm font-semibold text-red-700 leading-tight">
+                                      {maxIncreasePct > 0 ? `+${maxIncreasePct.toFixed(1)}%` : "—"}
+                                    </div>
+                                    {maxIncreaseLabel && (
+                                      <div
+                                        className="text-[10px] text-green-700/80 truncate"
+                                        title={maxIncreaseLabel}
+                                      >
+                                        {maxIncreaseLabel}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="mt-auto pt-1.5 border-t border-green-200 text-xs text-green-900">
                                   Valor total (com frete e instalação):{" "}
                                   <strong>{formatCurrencyByCode(grandTotal, currencyCode)}</strong>
-                                </span>
-                              </div>
+                                </div>
+                              </>
                             )}
                           </div>
 
@@ -700,88 +877,6 @@ export default function AdjustmentsTab({
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {a.status === "draft" && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => setEditingAdjustment(a)}
-                    >
-                      <Eye className="w-3.5 h-3.5" /> Editar
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="h-7 text-xs gap-1 bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => handleActivate(a)}
-                      disabled={statusMut.isPending}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Ativar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs text-destructive hover:text-destructive gap-1"
-                      onClick={() => handleDelete(a)}
-                      disabled={deleteMut.isPending}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" /> Excluir
-                    </Button>
-                  </>
-                )}
-                {a.status === "active" && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => setEditingAdjustment(a)}
-                    >
-                      <Eye className="w-3.5 h-3.5" /> Ver detalhes
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="default"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => setRequestDialogAdjustment(a)}
-                    >
-                      <Send className="w-3.5 h-3.5" /> Solicitar Recotação
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => handleSupersede(a)}
-                      disabled={statusMut.isPending}
-                    >
-                      <Copy className="w-3.5 h-3.5" /> Substituir
-                    </Button>
-                  </>
-                )}
-                {a.status === "superseded" && (
-                  <>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => setEditingAdjustment(a)}
-                    >
-                      <Eye className="w-3.5 h-3.5" /> Ver detalhes
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs gap-1 border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                      onClick={() => handleReactivate(a)}
-                      disabled={statusMut.isPending}
-                      title="Volta a ser o ajuste vigente. O ativo atual (se houver) é movido para Substituído."
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" /> Reativar
-                    </Button>
-                  </>
                 )}
               </div>
             </div>
