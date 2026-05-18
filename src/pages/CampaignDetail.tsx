@@ -855,7 +855,81 @@ const CampaignDetail = () => {
     [activeFilteredStores, isAdjustmentView, newStoreIds]
   );
 
-  // ─── Filtered pieces: exclude kit_only from normal views ─
+  // ─── Export sources for "Exportar Rateio por Loja" ────
+  // No modo Ajuste, usamos peças/kits do próprio ajuste (incluindo peças novas
+  // criadas no ajuste e edições de nome/categoria/imagem). Para Original e
+  // Negociação, as peças/kits são sempre as originais da campanha.
+  const exportSourceLabel: "Original" | "Negociação" | "Ajuste" =
+    isAdjustmentView ? "Ajuste" : isNegotiationView ? "Negociação" : "Original";
+
+  const exportPieces = useMemo(() => {
+    if (!isAdjustmentView) return pieces;
+    return (adjustmentPiecesMeta as any[])
+      .filter((p) => !p.is_deleted)
+      .map((p) => ({
+        id: p.id,
+        campaign_id: p.campaign_id ?? "",
+        code: p.code ?? 0,
+        category: p.category ?? "",
+        name: p.name ?? "",
+        size: p.size ?? "",
+        store_category: p.store_category ?? null,
+        sub_location: p.sub_location ?? null,
+        image_url: p.image_url ?? null,
+        image_thumb_url: p.image_thumb_url ?? null,
+        image_report_url: p.image_report_url ?? null,
+        image_full_url: p.image_full_url ?? null,
+        image_hash: p.image_hash ?? null,
+        specification: p.specification ?? "",
+        installation_instructions: p.installation_instructions ?? "",
+        kit_only: !!p.kit_only,
+        is_mockup: !!p.is_mockup,
+        display_order: p.display_order ?? 0,
+        created_at: p.created_at ?? "",
+      })) as typeof pieces;
+  }, [isAdjustmentView, pieces, adjustmentPiecesMeta]);
+
+  const exportKits = useMemo(() => {
+    if (!isAdjustmentView) return kits;
+    return (adjustmentKitsMeta as any[])
+      .filter((k) => !k.is_deleted)
+      .map((k) => ({
+        id: k.id,
+        campaign_id: k.campaign_id ?? "",
+        name: k.name ?? "",
+        code: k.code ?? 0,
+        display_order: k.display_order ?? 0,
+        image_url: k.image_url ?? null,
+        is_mockup: !!k.is_mockup,
+        category: k.category ?? null,
+        sub_location: k.sub_location ?? null,
+        created_at: k.created_at ?? "",
+      })) as typeof kits;
+  }, [isAdjustmentView, kits, adjustmentKitsMeta]);
+
+  const exportKitPieces = useMemo(() => {
+    if (!isAdjustmentView) return kitPieces;
+    return (adjustmentKitPiecesMeta as any[])
+      .filter((kp) => !kp.is_deleted)
+      .map((kp) => ({
+        id: kp.id,
+        kit_id: kp.kit_id,
+        piece_id: kp.piece_id,
+        quantity: Number(kp.quantity) || 0,
+        display_order: kp.display_order ?? 0,
+        created_at: kp.created_at ?? "",
+      })) as typeof kitPieces;
+  }, [isAdjustmentView, kitPieces, adjustmentKitPiecesMeta]);
+
+  const exportQtyMap = useMemo(() => {
+    if (!isAdjustmentView) return qtyMap;
+    const map: Record<string, number> = {};
+    (adjustmentStorePieces as any[]).forEach((sp) => {
+      map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0;
+    });
+    return map;
+  }, [isAdjustmentView, qtyMap, adjustmentStorePieces]);
+
   const visiblePieces = useMemo(() => pieces.filter(p => !p.kit_only), [pieces]);
   const kitOnlyPieces = useMemo(() => pieces.filter(p => p.kit_only), [pieces]);
 
