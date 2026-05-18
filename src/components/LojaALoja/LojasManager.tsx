@@ -106,6 +106,18 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
     return map;
   }, [lojas]);
 
+  // Stores that have NO row in loja_a_loja_lojas (never classified — new stores)
+  const storesWithAnyAssignment = useMemo(() => {
+    const s = new Set<string>();
+    for (const l of lojas) s.add(l.store_id);
+    return s;
+  }, [lojas]);
+  const isUnclassified = (storeId: string) => !storesWithAnyAssignment.has(storeId);
+  const unclassifiedCount = useMemo(
+    () => stores.filter((s) => isUnclassified(s.id)).length,
+    [stores, storesWithAnyAssignment]
+  );
+
   // For INTERNO tipos (tem_subdivisao), default is TRUE when no row exists
   const isActive = (storeId: string, tipoId: string, subId: string | null, isInterno: boolean) => {
     const key = `${storeId}-${tipoId}-${subId ?? ""}`;
