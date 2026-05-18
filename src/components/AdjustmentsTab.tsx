@@ -593,87 +593,105 @@ export default function AdjustmentsTab({
                         !!approvedStoreQty;
 
                       return (
-                        <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm">
-                          <div className="font-medium text-green-800">✅ Recotação aprovada</div>
-                          <div className="text-green-700 text-xs mt-1">
-                            {ready ? changedCount : "…"} item(ns) com novo preço · Instalação{" "}
-                            {formatCurrencyByCode(inst, currencyCode)} · Frete{" "}
-                            {formatCurrencyByCode(frt, currencyCode)}
-                            {requote.response_received_at && (
-                              <>
-                                {" "}
-                                · Registrado em{" "}
-                                {format(new Date(requote.response_received_at), "dd/MM/yyyy 'às' HH:mm", {
-                                  locale: ptBR,
-                                })}
-                              </>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {/* Card 1: Resumo da recotação aprovada */}
+                          <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm flex flex-col">
+                            <div className="font-medium text-green-800">✅ Recotação aprovada</div>
+                            <div className="text-green-700 text-xs mt-1">
+                              {ready ? changedCount : "…"} item(ns) com novo preço · Instalação{" "}
+                              {formatCurrencyByCode(inst, currencyCode)} · Frete{" "}
+                              {formatCurrencyByCode(frt, currencyCode)}
+                              {requote.response_received_at && (
+                                <>
+                                  {" "}
+                                  · Registrado em{" "}
+                                  {format(new Date(requote.response_received_at), "dd/MM/yyyy 'às' HH:mm", {
+                                    locale: ptBR,
+                                  })}
+                                </>
+                              )}
+                            </div>
+                            {ready && (
+                              <div className="mt-auto pt-2 flex flex-col gap-1 text-xs text-green-800">
+                                <span>
+                                  Valor de produção:{" "}
+                                  <strong>{formatCurrencyByCode(productionTotal, currencyCode)}</strong>
+                                </span>
+                                <span>
+                                  Valor total (com frete e instalação):{" "}
+                                  <strong>{formatCurrencyByCode(grandTotal, currencyCode)}</strong>
+                                </span>
+                              </div>
                             )}
                           </div>
-                          {ready && (
-                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-green-800">
-                              <span>
-                                Valor de produção:{" "}
-                                <strong>{formatCurrencyByCode(productionTotal, currencyCode)}</strong>
-                              </span>
-                              <span>
-                                Valor total (com frete e instalação):{" "}
-                                <strong>{formatCurrencyByCode(grandTotal, currencyCode)}</strong>
-                              </span>
+
+                          {/* Card 2: Planilha final + reverter */}
+                          {requote.status === "approved" && (
+                            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm flex flex-col">
+                              <p className="text-sm font-medium text-emerald-900">
+                                Planilha final disponível
+                              </p>
+                              <p className="text-xs text-emerald-700 mt-0.5">
+                                Gere a planilha final com novos preços, rateio e comparativo.
+                              </p>
+                              <div className="mt-auto pt-3 flex flex-col gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={exportFinal}
+                                  disabled={isExporting}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 w-full"
+                                >
+                                  {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+                                  {isExporting ? "Gerando..." : "Baixar planilha final"}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleRevertApproval(a.id)}
+                                  className="gap-1.5 border-amber-300 text-amber-800 hover:bg-amber-50 w-full"
+                                  title="Reverter aprovação para editar os valores novamente"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  Reverter aprovação
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Card 3: Envios */}
+                          {requote.status === "approved" && (
+                            <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm flex flex-col">
+                              <p className="text-sm font-medium text-blue-900">
+                                Compartilhar pacote
+                              </p>
+                              <p className="text-xs text-blue-700 mt-0.5">
+                                Envie a planilha final e o Guia Visual ao cliente ou libere para o fornecedor.
+                              </p>
+                              <div className="mt-auto pt-3 flex flex-col gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSendClientOpen(true)}
+                                  className="gap-1.5 border-emerald-500 text-emerald-700 hover:bg-emerald-100 bg-white w-full"
+                                >
+                                  <Mail className="w-3.5 h-3.5" />
+                                  Enviar ao cliente
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSendSupplierOpen(true)}
+                                  className="gap-1.5 border-blue-500 text-blue-700 hover:bg-blue-100 bg-white w-full"
+                                >
+                                  <Truck className="w-3.5 h-3.5" />
+                                  Avisar fornecedor
+                                </Button>
+                              </div>
                             </div>
                           )}
                         </div>
                       );
                     })()}
-
-                    {requote.status === "approved" && (
-                      <div className="flex flex-wrap items-center gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-                        <div className="flex-1 min-w-[220px]">
-                          <p className="text-sm font-medium text-emerald-900">
-                            Recotação aprovada — planilha final disponível
-                          </p>
-                          <p className="text-xs text-emerald-700 mt-0.5">
-                            Gere a planilha final com novos preços, rateio e comparativo.
-                          </p>
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={exportFinal}
-                          disabled={isExporting}
-                          className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
-                        >
-                          {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
-                          {isExporting ? "Gerando..." : "Baixar planilha final"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSendClientOpen(true)}
-                          className="shrink-0 gap-1.5 border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                        >
-                          <Mail className="w-3.5 h-3.5" />
-                          Enviar ao cliente
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setSendSupplierOpen(true)}
-                          className="shrink-0 gap-1.5 border-blue-500 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-                        >
-                          <Truck className="w-3.5 h-3.5" />
-                          Avisar fornecedor
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleRevertApproval(a.id)}
-                          className="shrink-0 gap-1.5 border-amber-300 text-amber-800 hover:bg-amber-50"
-                          title="Reverter aprovação para editar os valores novamente"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          Reverter aprovação
-                        </Button>
-                      </div>
-                    )}
 
                     {requote.status === "rejected" && requote.rejection_notes && (
                       <div className="rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-800">
