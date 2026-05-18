@@ -237,7 +237,7 @@ async function drawCard(
   doc.setTextColor(0, 0, 0);
 }
 
-export async function exportRateioGridPDF(
+export async function buildRateioGridPDF(
   pieces: CampaignPiece[],
   kits: CampaignKit[],
   kitPieces: CampaignKitPiece[],
@@ -249,7 +249,7 @@ export async function exportRateioGridPDF(
   mode: RateioGridExportMode = "pieces_and_kits",
   onProgress?: RateioGridProgress,
   sourceLabel?: string,
-) {
+): Promise<{ blob: Blob; fileName: string }> {
   const buckets = buildRateioGridBuckets(pieces, kits, kitPieces, stores, qtyMap, mode);
   if (buckets.length === 0) {
     throw new Error("Nenhuma loja com quantidades preenchidas para exportar.");
