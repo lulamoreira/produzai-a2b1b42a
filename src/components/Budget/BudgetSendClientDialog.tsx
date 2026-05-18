@@ -68,7 +68,7 @@ interface BudgetSendClientDialogProps {
 
 export default function BudgetSendClientDialog(props: BudgetSendClientDialogProps) {
   const {
-    open, onOpenChange, campaignId, campaignName, agencyName, clientName, clientEmail,
+    open, onOpenChange, campaignId, campaignName, agencyName, clientId, clientName, clientEmail,
     suppliers, supplierPartialTotals, bestSupplier, budgetAmount,
     pieces, kits, kitPieces, qtyMap, stores, pieceTotals, prices, extraCosts,
     currencyCode, deadline,
