@@ -732,6 +732,13 @@ export async function buildRequoteFinalWorkbook(
       reservedSheetNames: new Set(["preços (recotação)"]),
       skipDashboard: true,
       sortByCode: true,
+      storeFields: [
+        { key: "name", label: "NOME DA LOJA" },
+        { key: "city", label: "CIDADE" },
+        { key: "state", label: "UF" },
+        { key: "store_model", label: "MODELO" },
+        { key: "showcase_count", label: "VITRINES" },
+      ],
     } as any);
   } catch (e) {
     console.warn("[buildRequoteFinalWorkbook] matrix append failed", e);
