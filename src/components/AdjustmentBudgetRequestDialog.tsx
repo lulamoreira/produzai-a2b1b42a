@@ -474,6 +474,8 @@ export default function AdjustmentBudgetRequestDialog({
           // Unique idempotency key so multiple tests are not deduped.
           idempotencyKey: `adj-quote-TEST-${adjustment.id}-${testEmail}-${Date.now()}`,
           templateData: testTemplateData,
+          fromName: agencyName,
+          ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
         },
       });
       if (error) throw new Error(error.message || "Erro ao enviar teste");
