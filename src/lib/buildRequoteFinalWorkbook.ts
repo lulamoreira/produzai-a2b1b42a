@@ -516,7 +516,7 @@ export async function buildRequoteFinalWorkbook(
 
   // Spacer + extras
   rowIdx++;
-  const writeExtra = (label: string, prev: number, next: number) => {
+  const writeExtraRow = (label: string, prev: number, next: number, addToTotals: boolean) => {
     const r = ws.getRow(rowIdx++);
     r.getCell(3).value = label;
     r.getCell(5).value = prev;
@@ -534,14 +534,18 @@ export async function buildRequoteFinalWorkbook(
       c.font = { color: { argb: DARK }, size: 10, italic: true };
       c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
     });
-    runningNewTotal += next;
-    runningPrevTotal += prev;
+    if (addToTotals) {
+      runningNewTotal += next;
+      runningPrevTotal += prev;
+    }
     if (next !== prev) {
       const color = next > prev ? INCREASE : DECREASE;
       r.getCell(6).font = { color: { argb: color }, bold: true, size: 10 };
       r.getCell(8).font = { color: { argb: color }, bold: true, size: 10 };
     }
   };
+  const writeExtra = (label: string, prev: number, next: number) =>
+    writeExtraRow(label, prev, next, true);
   // Capture production subtotals (sum of all pieces/kits BEFORE extras).
   const productionPrev = runningPrevTotal;
   const productionNew = runningNewTotal;
