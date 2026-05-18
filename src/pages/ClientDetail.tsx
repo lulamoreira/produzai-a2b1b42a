@@ -994,6 +994,15 @@ const ClientDetail = () => {
                   <p className="text-[11px] text-muted-foreground">Fornecedores</p>
                 </div>
               </div>
+              <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=emails`)}>
+                <div className="w-10 h-10 rounded-lg bg-primary/50 flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <p className="text-xl sm:text-2xl font-bold text-foreground">∞</p>
+                  <p className="text-[11px] text-muted-foreground">Memória de e-mails</p>
+                </div>
+              </div>
               {canEditCampaigns && (
                 <div className="card-kpi p-3 sm:p-4 col-span-2 sm:col-span-2 md:col-span-1 flex items-center justify-center">
                   <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
