@@ -59,6 +59,7 @@ export default function AdjustmentBudgetRequestDialog({
   const [summaryItems, setSummaryItems] = useState<SendSummaryItem[]>([]);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
+  const { suggestions: emailSuggestions, record: recordEmails } = useClientEmailMemory({ campaignId });
   const [replyTo, setReplyTo] = useState("");
   const [customMessage, setCustomMessage] = useState("");
 

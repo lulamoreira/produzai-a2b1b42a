@@ -45,6 +45,7 @@ export default function BudgetWinnerDialog({
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
+  const { suggestions: emailSuggestions, record: recordEmails } = useClientEmailMemory({ campaignId });
   const [replyTo, setReplyTo] = useState("");
   const [mockupUrl, setMockupUrl] = useState("");
   const [bookUrl, setBookUrl] = useState("");
