@@ -910,6 +910,21 @@ export async function buildRequoteFinalWorkbook(
     }
   }
 
+  // ─── Reordenar abas: Matriz sempre primeiro, depois Preços, depois Kits ──
+  if (matrixSheetName) {
+    const order = [matrixSheetName, "Preços (Recotação)"];
+    wb.worksheets.forEach((ws) => {
+      const idx = order.indexOf(ws.name);
+      (ws as any).orderNo = idx >= 0 ? idx : 100 + ((ws as any).id || 0);
+    });
+    const matrixWs = wb.getWorksheet(matrixSheetName);
+    if (matrixWs) {
+      wb.views = [{ activeTab: 0 } as any];
+      // ensure matrix is the active/first tab visually
+      (matrixWs as any).state = "visible";
+    }
+  }
+
   const buffer = await wb.xlsx.writeBuffer();
   const blob = new Blob([buffer], { type: XLSX_MIME });
   const dateStr = params.generatedAt
