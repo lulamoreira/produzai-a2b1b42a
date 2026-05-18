@@ -854,8 +854,8 @@ const CampaignDetail = () => {
   // Stores rendered in the rateio matrix: hide "new stores" (added after baseline) when
   // we're not viewing the adjustment, since they were not part of the original/negotiation rateio.
   const matrixStores = useMemo(
-    () => isAdjustmentView ? activeFilteredStores : activeFilteredStores.filter(s => !newStoreIds.has(s.id)),
-    [activeFilteredStores, isAdjustmentView, newStoreIds]
+    () => activeFilteredStores,
+    [activeFilteredStores]
   );
 
   // ─── Export sources for "Exportar Rateio por Loja" ────
