@@ -471,6 +471,8 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         recipientEmail: recipient,
         idempotencyKey: `budget-results-${campaignId}-${recipient}-${Date.now()}`,
         templateData,
+        fromName: agencyName,
+        ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
       },
     });
     if (error) throw new Error(error.message || "Erro ao enviar e-mail");
