@@ -4179,6 +4179,7 @@ const CampaignDetail = () => {
               hasNegotiationRateio={hasNegotiationRateio}
               negotiationRateioLoading={hasNegotiationRateio && negotiationStorePiecesFetching && negotiationStorePieces.length === 0}
               onBackToBudgets={() => setActiveSection("budgets")}
+              clientEmail={(client as any)?.email ?? null}
             />
           )}
 
