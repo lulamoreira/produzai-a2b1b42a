@@ -3,10 +3,12 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput, RotateCcw, XCircle, ArrowLeft, FileSpreadsheet } from "lucide-react";
+import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput, RotateCcw, XCircle, ArrowLeft, FileSpreadsheet, Mail, Truck } from "lucide-react";
 import { useExportRequoteFinal } from "@/hooks/useExportRequoteFinal";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import AdjustmentRegisterResponseDialog from "./AdjustmentRegisterResponseDialog";
+import SendAdjustmentToClientDialog from "./Adjustments/SendAdjustmentToClientDialog";
+import SendAdjustmentToSupplierDialog from "./Adjustments/SendAdjustmentToSupplierDialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -49,6 +51,7 @@ interface AdjustmentsTabProps {
   hasNegotiationRateio?: boolean;
   negotiationRateioLoading?: boolean;
   onBackToBudgets?: () => void;
+  clientEmail?: string | null;
 }
 
 function StatusBadge({ status }: { status: AdjustmentStatus }) {
@@ -77,6 +80,7 @@ export default function AdjustmentsTab({
   hasNegotiationRateio,
   negotiationRateioLoading,
   onBackToBudgets,
+  clientEmail,
 }: AdjustmentsTabProps) {
   const { data: adjustments = [], isLoading } = useCampaignAdjustments(campaignId);
   const { data: activeAdjustment } = useActiveAdjustment(campaignId);
@@ -142,6 +146,8 @@ export default function AdjustmentsTab({
   const [requestDialogAdjustment, setRequestDialogAdjustment] = useState<CampaignAdjustment | null>(null);
   const [registerResponseAdjustment, setRegisterResponseAdjustment] = useState<CampaignAdjustment | null>(null);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [sendClientOpen, setSendClientOpen] = useState(false);
+  const [sendSupplierOpen, setSendSupplierOpen] = useState(false);
 
   const { data: requote } = useActiveAdjustmentRequest(campaignId);
   useRequoteRealtime(campaignId);
@@ -641,6 +647,24 @@ export default function AdjustmentsTab({
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => setSendClientOpen(true)}
+                          className="shrink-0 gap-1.5 border-emerald-500 text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          Enviar ao cliente
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSendSupplierOpen(true)}
+                          className="shrink-0 gap-1.5 border-blue-500 text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                        >
+                          <Truck className="w-3.5 h-3.5" />
+                          Avisar fornecedor
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => handleRevertApproval(a.id)}
                           className="shrink-0 gap-1.5 border-amber-300 text-amber-800 hover:bg-amber-50"
                           title="Reverter aprovação para editar os valores novamente"
@@ -841,6 +865,34 @@ export default function AdjustmentsTab({
           baselinePrices={baselinePrices ?? []}
           campaignId={campaignId}
         />
+      )}
+
+      {requote?.adjustment_id && requote?.supplier_id && (
+        <>
+          <SendAdjustmentToClientDialog
+            open={sendClientOpen}
+            onOpenChange={setSendClientOpen}
+            campaignId={campaignId}
+            adjustmentId={requote.adjustment_id}
+            adjustmentName={activeAdjustment?.name ?? ""}
+            supplierId={requote.supplier_id}
+            campaignName={campaignName}
+            agencyName={agencyName}
+            clientName={clientName}
+            defaultClientEmail={clientEmail ?? null}
+          />
+          <SendAdjustmentToSupplierDialog
+            open={sendSupplierOpen}
+            onOpenChange={setSendSupplierOpen}
+            campaignId={campaignId}
+            adjustmentId={requote.adjustment_id}
+            adjustmentName={activeAdjustment?.name ?? ""}
+            supplierId={requote.supplier_id}
+            campaignName={campaignName}
+            agencyName={agencyName}
+            clientName={clientName}
+          />
+        </>
       )}
     </div>
   );
