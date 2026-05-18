@@ -66,11 +66,22 @@ export default function SendAdjustmentToClientDialog({
     setEmail(defaultClientEmail || "");
     setCc(defaultCcEmail || "");
     setPhone("");
-    setReplyTo("");
+    try {
+      setReplyTo(localStorage.getItem("adjustment:lastReplyTo") || "");
+    } catch {
+      setReplyTo("");
+    }
     setUploadStatus(null);
     setPreviewOpen(false);
     attachmentsRef.current = null;
   }, [open, defaultClientEmail, defaultCcEmail]);
+
+  useEffect(() => {
+    if (!open) return;
+    const v = replyTo.trim();
+    if (!v) return;
+    try { localStorage.setItem("adjustment:lastReplyTo", v); } catch {}
+  }, [replyTo, open]);
 
   async function ensureAttachments(): Promise<Attachments> {
     if (attachmentsRef.current) return attachmentsRef.current;
