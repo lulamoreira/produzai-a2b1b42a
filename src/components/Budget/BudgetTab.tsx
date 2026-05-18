@@ -1072,13 +1072,13 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         </div>
       )}
 
-      <PhaseStepper
+      <PhaseStepperWithApproval
+        campaignId={campaignId}
         currentPhase={currentPhase}
         phaseLockedAt={phaseLockedAt as Record<string, string>}
         isAdminOrMaster={isAdminOrMaster}
         onUnlock={(phase) => setUnlockTarget(phase)}
         isUnlocking={isUnlocking}
-        campaignId={campaignId}
       />
 
       {/* ═══ KPI CARDS ═══ */}
@@ -3117,4 +3117,17 @@ function RequoteTotalsBreakdown({ requote }: { requote: AdjustmentBudgetRequest 
       </div>
     </div>
   );
+}
+
+function PhaseStepperWithApproval(props: {
+  campaignId: string;
+  currentPhase: BudgetPhase;
+  phaseLockedAt: Record<string, string>;
+  isAdminOrMaster: boolean;
+  onUnlock: (phase: BudgetPhase) => void;
+  isUnlocking: boolean;
+}) {
+  const { data: requote } = useActiveAdjustmentRequest(props.campaignId);
+  const isAdjustmentApproved = requote?.status === "approved";
+  return <PhaseStepper {...props} isAdjustmentApproved={isAdjustmentApproved} />;
 }
