@@ -43,6 +43,7 @@ export default function BudgetWinnerDialog({
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
+  const [replyTo, setReplyTo] = useState("");
   const [mockupUrl, setMockupUrl] = useState("");
   const [bookUrl, setBookUrl] = useState("");
   const [sending, setSending] = useState(false);
