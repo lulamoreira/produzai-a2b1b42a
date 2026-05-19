@@ -1694,7 +1694,7 @@ Qualquer dúvida, estamos à disposição.
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {suppliers.map((sup) => {
-              const st = getDisplayStatus(sup);
+              const st = getDisplayStatus(sup, deadlineDate);
               const partial = supplierPartialTotals[sup.id];
               const isFrozen = !!winnerSupplier && (sup as any).winner_locked_total != null;
               const displayTotal = isFrozen
@@ -1998,7 +1998,7 @@ Qualquer dúvida, estamos à disposição.
                   </TableHeader>
                   <TableBody>
                     {suppliers.map((sup) => {
-                      const st = getDisplayStatus(sup);
+                      const st = getDisplayStatus(sup, deadlineDate);
                       const p = supplierPartialTotals[sup.id];
                       if (!p) return null;
                       const piecesTotal = p.total - p.installation - p.freight;
