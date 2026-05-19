@@ -1228,7 +1228,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           .update({ status: "aguardando" })
                           .eq("campaign_id", campaignId)
                           .eq("status", "prazo_encerrado");
-                        qc.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] });
+                        queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] });
                         toast.success("Prazo estendido. Fornecedores reabertos.");
                       } catch (e) {
                         console.error("Failed to reopen suppliers", e);
