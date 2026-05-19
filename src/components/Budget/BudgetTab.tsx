@@ -1213,17 +1213,32 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Prazo p/ envio das cotações</p>
                 <DateTimePicker
                   value={settings?.deadline ?? null}
-                  onChange={(localIso) => {
+                  onChange={async (localIso) => {
                     const finalIso = localIso ? new Date(localIso).toISOString() : null;
                     saveSettings.mutate({
                       campaign_id: campaignId,
                       budget_amount: budgetAmount,
                       deadline: finalIso,
                     });
+                    // Reactivate suppliers that were locked by previous deadline
+                    if (finalIso && new Date(finalIso) > new Date()) {
+                      try {
+                        await supabase
+                          .from("budget_suppliers")
+                          .update({ status: "aguardando" })
+                          .eq("campaign_id", campaignId)
+                          .eq("status", "prazo_encerrado");
+                        queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] });
+                        toast.success("Prazo estendido. Fornecedores reabertos.");
+                      } catch (e) {
+                        console.error("Failed to reopen suppliers", e);
+                      }
+                    }
                   }}
                   placeholder="Definir prazo"
                   buttonClassName="h-7 text-xs"
                 />
+
               </div>
 
               {/* Currency */}
