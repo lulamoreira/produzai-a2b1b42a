@@ -926,6 +926,7 @@ const SupplierPortal = () => {
                 {supplier.status === "aguardando" && "Aguardando"}
                 {supplier.status === "preenchendo" && "Preenchendo"}
                 {supplier.status === "enviado" && "Enviado"}
+                {supplier.status === "prazo_estendido" && "Prazo estendido"}
                 {supplier.status === "prazo_encerrado" && "Prazo encerrado"}
               </Badge>
               {deadline && (
