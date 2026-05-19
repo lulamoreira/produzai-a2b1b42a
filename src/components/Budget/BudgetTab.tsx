@@ -251,6 +251,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   // Local state
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetDraft, setBudgetDraft] = useState("");
+  const [deadlineDraft, setDeadlineDraft] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detailSupplier, setDetailSupplier] = useState<string | null>(null);
