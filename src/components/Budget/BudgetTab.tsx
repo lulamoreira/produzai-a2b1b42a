@@ -95,6 +95,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   aguardando: { label: "Aguardando", color: "bg-muted text-muted-foreground" },
   preenchendo: { label: "Preenchendo", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
   enviado: { label: "Enviado", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  prazo_estendido: { label: "Prazo estendido", color: "bg-warning/10 text-warning border-warning/30" },
   prazo_encerrado: { label: "Prazo encerrado", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 };
 
@@ -714,6 +715,44 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
       deadline: settings?.deadline ?? null,
     });
     setEditingBudget(false);
+  };
+
+  const handleDeadlineChange = async (localIso: string) => {
+    const finalIso = localIso ? new Date(localIso).toISOString() : null;
+    const isFutureDeadline = !!finalIso && new Date(finalIso) > new Date();
+
+    try {
+      await saveSettings.mutateAsync({
+        campaign_id: campaignId,
+        budget_amount: budgetAmount,
+        deadline: finalIso,
+      });
+
+      if (!isFutureDeadline) return;
+
+      queryClient.setQueryData(["budget_suppliers", campaignId], (old: typeof suppliers | undefined) =>
+        old?.map((sup) =>
+          sup.status === "prazo_encerrado"
+            ? { ...sup, status: "prazo_estendido", locked: false }
+            : sup,
+        ) ?? old,
+      );
+
+      const { error } = await supabase
+        .from("budget_suppliers")
+        .update({ status: "prazo_estendido", locked: false })
+        .eq("campaign_id", campaignId)
+        .eq("status", "prazo_encerrado");
+
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] });
+      toast.success("Prazo estendido. Fornecedores reabertos.");
+    } catch (e) {
+      console.error("Failed to update deadline", e);
+      toast.error("Não foi possível atualizar o prazo. Tente novamente.");
+      queryClient.invalidateQueries({ queryKey: ["budget_settings", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] });
+    }
   };
 
   const handleAddSupplier = () => {
