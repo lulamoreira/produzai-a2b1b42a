@@ -251,6 +251,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   // Local state
   const [editingBudget, setEditingBudget] = useState(false);
   const [budgetDraft, setBudgetDraft] = useState("");
+  const [deadlineDraft, setDeadlineDraft] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [detailSupplier, setDetailSupplier] = useState<string | null>(null);
@@ -1253,14 +1254,50 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               {/* Deadline */}
               <div className="space-y-1">
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Prazo p/ envio das cotações</p>
-                <DateTimePicker
-                  value={settings?.deadline ?? null}
-                  onChange={handleDeadlineChange}
-                  placeholder="Definir prazo"
-                  buttonClassName="h-7 text-xs"
-                />
-
+                {(() => {
+                  const currentVal = settings?.deadline ?? null;
+                  const draftVal = deadlineDraft ?? currentVal;
+                  const hasChange = (draftVal ?? "") !== (currentVal ?? "");
+                  return (
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex-1 min-w-0">
+                        <DateTimePicker
+                          value={draftVal}
+                          onChange={(v) => setDeadlineDraft(v)}
+                          placeholder="Definir prazo"
+                          buttonClassName="h-7 text-xs"
+                        />
+                      </div>
+                      {hasChange && (
+                        <>
+                          <Button
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
+                            disabled={saveSettings.isPending}
+                            onClick={async () => {
+                              await handleDeadlineChange(draftVal ?? "");
+                              setDeadlineDraft(null);
+                            }}
+                            title="Confirmar prazo"
+                          >
+                            {saveSettings.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="h-7 w-7 shrink-0"
+                            onClick={() => setDeadlineDraft(null)}
+                            title="Cancelar"
+                          >
+                            <span className="text-xs">×</span>
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
+
 
               {/* Currency */}
               <div className="space-y-1">
