@@ -95,11 +95,15 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   aguardando: { label: "Aguardando", color: "bg-muted text-muted-foreground" },
   preenchendo: { label: "Preenchendo", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
   enviado: { label: "Enviado", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
+  prazo_estendido: { label: "Prazo estendido", color: "bg-warning/10 text-warning border-warning/30" },
   prazo_encerrado: { label: "Prazo encerrado", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
 };
 
-// Returns visual status considering revision state (sup unlocked but had submitted before)
-function getDisplayStatus(sup: { status: string; locked: boolean | null; submitted_at: string | null }) {
+// Returns visual status considering revision/deadline state.
+function getDisplayStatus(sup: { status: string; locked: boolean | null; submitted_at: string | null }, deadline?: Date) {
+  if (sup.status === "prazo_encerrado" && deadline && deadline > new Date()) {
+    return STATUS_MAP.prazo_estendido;
+  }
   if (sup.status !== "enviado" && sup.submitted_at && !sup.locked) {
     return { label: "Em revisão", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" };
   }
@@ -716,6 +720,44 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     setEditingBudget(false);
   };
 
+  const handleDeadlineChange = async (localIso: string) => {
+    const finalIso = localIso ? new Date(localIso).toISOString() : null;
+    const isFutureDeadline = !!finalIso && new Date(finalIso) > new Date();
+
+    try {
+      await saveSettings.mutateAsync({
+        campaign_id: campaignId,
+        budget_amount: budgetAmount,
+        deadline: finalIso,
+      });
+
+      if (!isFutureDeadline) return;
+
+      queryClient.setQueryData(["budget_suppliers", campaignId], (old: typeof suppliers | undefined) =>
+        old?.map((sup) =>
+          sup.status === "prazo_encerrado"
+            ? { ...sup, status: "prazo_estendido", locked: false }
+            : sup,
+        ) ?? old,
+      );
+
+      const { error } = await supabase
+        .from("budget_suppliers")
+        .update({ status: "prazo_estendido", locked: false })
+        .eq("campaign_id", campaignId)
+        .eq("status", "prazo_encerrado");
+
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] });
+      toast.success("Prazo estendido. Fornecedores reabertos.");
+    } catch (e) {
+      console.error("Failed to update deadline", e);
+      toast.error("Não foi possível atualizar o prazo. Tente novamente.");
+      queryClient.invalidateQueries({ queryKey: ["budget_settings", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] });
+    }
+  };
+
   const handleAddSupplier = () => {
     if (!newSupplier.company_name || !newSupplier.email) {
       toast.error("Preencha empresa e email.");
@@ -1213,28 +1255,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                 <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Prazo p/ envio das cotações</p>
                 <DateTimePicker
                   value={settings?.deadline ?? null}
-                  onChange={async (localIso) => {
-                    const finalIso = localIso ? new Date(localIso).toISOString() : null;
-                    saveSettings.mutate({
-                      campaign_id: campaignId,
-                      budget_amount: budgetAmount,
-                      deadline: finalIso,
-                    });
-                    // Reactivate suppliers that were locked by previous deadline
-                    if (finalIso && new Date(finalIso) > new Date()) {
-                      try {
-                        await supabase
-                          .from("budget_suppliers")
-                          .update({ status: "aguardando" })
-                          .eq("campaign_id", campaignId)
-                          .eq("status", "prazo_encerrado");
-                        queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] });
-                        toast.success("Prazo estendido. Fornecedores reabertos.");
-                      } catch (e) {
-                        console.error("Failed to reopen suppliers", e);
-                      }
-                    }
-                  }}
+                  onChange={handleDeadlineChange}
                   placeholder="Definir prazo"
                   buttonClassName="h-7 text-xs"
                 />
@@ -1673,7 +1694,7 @@ Qualquer dúvida, estamos à disposição.
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {suppliers.map((sup) => {
-              const st = getDisplayStatus(sup);
+              const st = getDisplayStatus(sup, deadlineDate);
               const partial = supplierPartialTotals[sup.id];
               const isFrozen = !!winnerSupplier && (sup as any).winner_locked_total != null;
               const displayTotal = isFrozen
@@ -1977,7 +1998,7 @@ Qualquer dúvida, estamos à disposição.
                   </TableHeader>
                   <TableBody>
                     {suppliers.map((sup) => {
-                      const st = getDisplayStatus(sup);
+                      const st = getDisplayStatus(sup, deadlineDate);
                       const p = supplierPartialTotals[sup.id];
                       if (!p) return null;
                       const piecesTotal = p.total - p.installation - p.freight;
