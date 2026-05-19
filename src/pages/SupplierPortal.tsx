@@ -255,14 +255,21 @@ const SupplierPortal = () => {
         );
         setSupportMaterials((materialsData as any[] | null) ?? []);
 
-        if (dl && new Date(dl) < new Date() && sup.status !== "enviado") {
+        const deadlineDate = dl ? new Date(dl) : null;
+        const deadlineExpired = !!deadlineDate && !Number.isNaN(deadlineDate.getTime()) && deadlineDate < new Date();
+
+        if (deadlineExpired && sup.status !== "enviado") {
           await supabase.from("budget_suppliers").update({ status: "prazo_encerrado" }).eq("id", sup.id);
           sup.status = "prazo_encerrado";
+        } else if (!deadlineExpired && sup.status === "prazo_encerrado" && !sup.locked) {
+          await supabase.from("budget_suppliers").update({ status: "prazo_estendido", locked: false }).eq("id", sup.id);
+          sup.status = "prazo_estendido";
+          sup.locked = false;
         }
 
         setSupplier(sup as Supplier);
 
-        if (sup.status === "prazo_encerrado" && !sup.locked) {
+        if (deadlineExpired && sup.status === "prazo_encerrado" && !sup.locked) {
           setError("O prazo para envio da cotação foi encerrado.");
           setLoading(false);
           return;
@@ -522,7 +529,7 @@ const SupplierPortal = () => {
 
   // ─── Mark as preenchendo on first interaction ──────────
   const markFilling = useCallback(async () => {
-    if (!supplier || supplier.status !== "aguardando") return;
+    if (!supplier || !["aguardando", "prazo_estendido"].includes(supplier.status)) return;
     await supabase.from("budget_suppliers").update({ status: "preenchendo" }).eq("id", supplier.id);
     setSupplier((s) => s ? { ...s, status: "preenchendo" } : s);
   }, [supplier]);
