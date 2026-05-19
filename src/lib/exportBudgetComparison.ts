@@ -57,6 +57,7 @@ const STATUS_LABELS: Record<string, string> = {
   aguardando: "Aguardando",
   preenchendo: "Preenchendo",
   enviado: "Enviado",
+  prazo_estendido: "Prazo estendido",
   prazo_encerrado: "Prazo encerrado",
 };
 
