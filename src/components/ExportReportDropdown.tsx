@@ -31,6 +31,9 @@ interface Props {
   pieces?: any[];
   kits?: any[];
   agencyName?: string;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
 }
 
 async function fetchReportData(campaignId: string, clientId: string, campaignName: string, clientName: string): Promise<ReportData> {
@@ -106,7 +109,18 @@ async function fetchReportData(campaignId: string, clientId: string, campaignNam
   };
 }
 
-export default function ExportReportDropdown({ campaignId, clientId, campaignName, clientName, pieces = [], kits = [], agencyName = "" }: Props) {
+export default function ExportReportDropdown({ 
+  campaignId, 
+  clientId, 
+  campaignName, 
+  clientName, 
+  pieces = [], 
+  kits = [], 
+  agencyName = "",
+  isOpen,
+  onOpenChange,
+  trigger
+}: Props) {
   const [loading, setLoading] = useState(false);
   const [pptDialogOpen, setPptDialogOpen] = useState(false);
   const { t } = useTranslation();
@@ -203,15 +217,19 @@ export default function ExportReportDropdown({ campaignId, clientId, campaignNam
     }
   };
 
+  const dropdownTrigger = trigger || (
+    <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" disabled={loading}>
+      <FileSpreadsheet className="w-3.5 h-3.5" />
+      {t("Exportar Relatório")}
+      <ChevronDown className="w-3 h-3 opacity-60" />
+    </Button>
+  );
+
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" disabled={loading}>
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            {t("Exportar Relatório")}
-            <ChevronDown className="w-3 h-3 opacity-60" />
-          </Button>
+          {dropdownTrigger}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => handleExport("excel")} className="gap-2 cursor-pointer">
