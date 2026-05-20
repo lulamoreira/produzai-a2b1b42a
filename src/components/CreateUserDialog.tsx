@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function CreateUserDialog() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,11 +30,11 @@ export function CreateUserDialog() {
     setLoading(false);
 
     if (error || data?.error) {
-      toast.error(data?.error || error?.message || "Erro ao criar usuário");
+      toast.error(data?.error || error?.message || t("common.error"));
       return;
     }
 
-    toast.success("Usuário criado com sucesso!");
+    toast.success(t("common.success"));
     qc.invalidateQueries({ queryKey: ["admin_users"] });
     qc.invalidateQueries({ queryKey: ["all_users_approval"] });
     setEmail("");
@@ -45,25 +47,25 @@ export function CreateUserDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1.5">
-          <UserPlus className="w-4 h-4" /> Cadastrar Usuário
+          <UserPlus className="w-4 h-4" /> {t("admin_users.registerUser", { defaultValue: "Cadastrar Usuário" })}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Cadastrar Novo Usuário</DialogTitle>
+          <DialogTitle>{t("admin_users.registerNewUser", { defaultValue: "Cadastrar Novo Usuário" })}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-1.5">
-            <Label>Nome</Label>
+            <Label>{t("common.name")}</Label>
             <Input
-              placeholder="Como quer ser chamado"
+              placeholder={t("auth.namePlaceholder")}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               required
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Email</Label>
+            <Label>{t("common.email")}</Label>
             <Input
               type="email"
               placeholder="email@exemplo.com"
@@ -73,7 +75,7 @@ export function CreateUserDialog() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Senha</Label>
+            <Label>{t("auth.password")}</Label>
             <div className="relative">
               <Input
                 type={showPassword ? "text" : "password"}
@@ -97,7 +99,7 @@ export function CreateUserDialog() {
             O usuário será criado já aprovado. Você poderá configurar permissões e acessos depois.
           </p>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Criando..." : "Criar Usuário"}
+            {loading ? t("common.loading") : t("admin_users.createUser", { defaultValue: "Criar Usuário" })}
           </Button>
         </form>
       </DialogContent>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, CheckCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useFormatters } from "@/lib/formatters";
 
 export default function NotificationBell() {
+  const { t } = useTranslation();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const fmt = useFormatters();
   const navigate = useNavigate();
@@ -47,7 +49,7 @@ export default function NotificationBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between px-3 py-2 border-b">
-          <span className="text-sm font-semibold">Notificações</span>
+          <span className="text-sm font-semibold">{t("notifications.title", { defaultValue: "Notificações" })}</span>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
@@ -59,7 +61,7 @@ export default function NotificationBell() {
               }}
             >
               <CheckCheck className="w-3 h-3" />
-              Marcar todas
+              {t("notifications.markAllAsRead", { defaultValue: "Marcar todas" })}
             </Button>
           )}
         </div>
@@ -67,7 +69,7 @@ export default function NotificationBell() {
         <ScrollArea className="max-h-[360px]">
           {notifications.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-              Nenhuma notificação
+              {t("notifications.noNotifications", { defaultValue: "Nenhuma notificação" })}
             </div>
           ) : (
             notifications.slice(0, 20).map((notif) => (
