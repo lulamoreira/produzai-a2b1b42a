@@ -31,6 +31,9 @@ interface Props {
   pieces?: any[];
   kits?: any[];
   agencyName?: string;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  trigger?: React.ReactNode;
 }
 
 async function fetchReportData(campaignId: string, clientId: string, campaignName: string, clientName: string): Promise<ReportData> {
