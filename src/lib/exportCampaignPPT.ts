@@ -6,6 +6,7 @@ interface ExportPPTParams {
     client_name?: string; 
     agency_name?: string; 
     status?: string; 
+    cover_image_url?: string;
   };
   pieces: Array<{ 
     id: string; 
