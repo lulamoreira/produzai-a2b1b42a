@@ -134,6 +134,7 @@ async function buildTransposedSheet(
   locData: LocationData,
   kitSheetNames?: Map<string, string>, // id -> sheet name, for hyperlinks
   storeFields: StoreFieldDef[] = DEFAULT_STORE_FIELDS,
+  extraHiddenStoreFields: StoreFieldDef[] = [],
 ) {
   const { PRIMARY, SECONDARY, LIGHT, BORDER } = colors;
   const whiteFont: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: true };
@@ -345,6 +346,39 @@ async function buildTransposedSheet(
     const nameLen = item?.name?.length || 10;
     ws.getColumn(i).width = Math.min(Math.max(nameLen + 4, 18), 30);
   }
+
+  // ─── Extra HIDDEN store info columns (appended to the right) ─────────
+  // These hold additional per-store info chosen by the user. They are
+  // populated only on the store rows + header row, and the columns are
+  // hidden by default so the visible layout matches the standard export.
+  if (extraHiddenStoreFields.length > 0) {
+    const extraStart = colCount + 1;
+    for (let i = 0; i < extraHiddenStoreFields.length; i++) {
+      const colNum = extraStart + i;
+      const f = extraHiddenStoreFields[i];
+      // Header row
+      const headerCell = ws.getCell(storesHeaderRowNum, colNum);
+      headerCell.value = f.label.toUpperCase();
+      headerCell.font = { ...whiteFont, size: 11 };
+      headerCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+      headerCell.fill = gradientFill(SECONDARY, PRIMARY);
+      headerCell.border = allWhiteBorders;
+      // Store rows
+      for (let si = 0; si < stores.length; si++) {
+        const rowNum = firstStoreRowNum + si;
+        const isEven = si % 2 === 0;
+        const cell = ws.getCell(rowNum, colNum);
+        cell.value = getStoreFieldValue(stores[si], f.key);
+        cell.font = { ...darkFont, size: 10 };
+        cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+        cell.fill = isEven ? solidFill(LIGHT) : solidFill("FFFFFF");
+        cell.border = allBorders;
+      }
+      const col = ws.getColumn(colNum);
+      col.width = 20;
+      col.hidden = true;
+    }
+  }
 }
 
 // ─── Main export ─────────────────────────────────────────
@@ -365,6 +399,8 @@ export type AppendMatrixParams = {
   agencyName?: string;
   clientName?: string;
   storeFields?: StoreFieldDef[];
+  /** Extra store info columns appended to the right of every transposed sheet and hidden by default. */
+  extraHiddenStoreFields?: StoreFieldDef[];
   /** When provided, sheet names already used in the workbook (lowercased) — to avoid collisions. */
   reservedSheetNames?: Set<string>;
   /** When true, skip the Dashboard tab. Useful when appending to another workbook. */
@@ -400,6 +436,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
     agencyName,
     clientName,
     storeFields,
+    extraHiddenStoreFields,
     reservedSheetNames,
     skipDashboard,
     skipKitTabs,
@@ -498,7 +535,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
 
   // ABA 1 – Main matrix
   const ws = wb.addWorksheet(mainSheetName);
-  await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames, effectiveStoreFields);
+  await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames, effectiveStoreFields, extraHiddenStoreFields || []);
 
   // Apply change highlights to the main matrix columns (meta rows + store rows).
   if (changeMap && changeMap.size > 0) {
@@ -604,7 +641,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
 
     const sheetName = kitSheetNames.get(kit.id)!;
     const kitWs = wb.addWorksheet(sheetName);
-    await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`, colors, locData, undefined, effectiveStoreFields);
+    await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`, colors, locData, undefined, effectiveStoreFields, extraHiddenStoreFields || []);
   }
 
   if (skipDashboard || !dashboardSheetName) return mainSheetName;

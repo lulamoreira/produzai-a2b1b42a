@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput, RotateCcw, XCircle, ArrowLeft, FileSpreadsheet, Mail, Truck } from "lucide-react";
 import { useExportRequoteFinal } from "@/hooks/useExportRequoteFinal";
+import RequoteFinalExportDialog from "./RequoteFinalExportDialog";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import AdjustmentRegisterResponseDialog from "./AdjustmentRegisterResponseDialog";
 import SendAdjustmentToClientDialog from "./Adjustments/SendAdjustmentToClientDialog";
@@ -151,6 +152,7 @@ export default function AdjustmentsTab({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [sendClientOpen, setSendClientOpen] = useState(false);
   const [sendSupplierOpen, setSendSupplierOpen] = useState(false);
+  const [finalExportOpen, setFinalExportOpen] = useState(false);
 
   const { data: requote } = useActiveAdjustmentRequest(campaignId);
   useRequoteRealtime(campaignId);
@@ -811,7 +813,7 @@ export default function AdjustmentsTab({
                               <div className="mt-auto pt-3 flex flex-col gap-2">
                                 <Button
                                   size="sm"
-                                  onClick={exportFinal}
+                                  onClick={() => setFinalExportOpen(true)}
                                   disabled={isExporting}
                                   className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 w-full"
                                 >
@@ -1004,6 +1006,11 @@ export default function AdjustmentsTab({
           />
         </>
       )}
+      <RequoteFinalExportDialog
+        open={finalExportOpen}
+        onOpenChange={setFinalExportOpen}
+        onExport={(extraFields) => exportFinal(extraFields)}
+      />
     </div>
   );
 }

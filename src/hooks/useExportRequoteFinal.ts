@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildRequoteFinalWorkbook } from "@/lib/buildRequoteFinalWorkbook";
+import type { StoreFieldDef } from "@/components/RateioExportColorDialog";
 
 /**
  * Pure data fetch + workbook build for the post-approval requote.
@@ -14,8 +15,9 @@ export async function buildRequoteFinalPackage(params: {
   campaignId: string;
   adjustmentId: string;
   supplierId: string;
+  extraHiddenStoreFields?: StoreFieldDef[];
 }): Promise<{ blob: Blob; fileName: string }> {
-  const { campaignId, adjustmentId, supplierId } = params;
+  const { campaignId, adjustmentId, supplierId, extraHiddenStoreFields } = params;
   const [
     campaignRes,
     adjustmentRes,
@@ -171,6 +173,7 @@ export async function buildRequoteFinalPackage(params: {
     newInstallation,
     newFreight,
     generatedAt: new Date(),
+    extraHiddenStoreFields,
   });
 }
 
@@ -187,7 +190,7 @@ export function useExportRequoteFinal(
 ) {
   const [isExporting, setIsExporting] = useState(false);
 
-  const exportFinal = async () => {
+  const exportFinal = async (extraHiddenStoreFields?: StoreFieldDef[]) => {
     if (!campaignId || !adjustmentId || !supplierId) {
       toast.error("Faltam dados para gerar a planilha.");
       return;
@@ -198,6 +201,7 @@ export function useExportRequoteFinal(
         campaignId,
         adjustmentId,
         supplierId,
+        extraHiddenStoreFields,
       });
       saveBlobAs(blob, fileName);
       toast.success("Planilha final gerada com sucesso!");
