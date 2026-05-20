@@ -14,10 +14,18 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-        display: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+        sans: ["Geist Sans", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["Geist Mono", "ui-monospace", "monospace"],
       },
       colors: {
+        brand: {
+          50: "#FDF8F6",
+          100: "#F5EDE8",
+          200: "#E8D5CA",
+          400: "#C2714F",
+          500: "#A85C3C",
+          600: "#8B4A2F",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

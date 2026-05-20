@@ -8,6 +8,8 @@ import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { useCampaignUnreadCount } from "@/hooks/useCampaignChat";
 import { Button } from "@/components/ui/button";
+import { useUIVersion } from "@/hooks/useUIVersion";
+import { AppShellV2 } from "@/components/v2/layout/AppShellV2";
 
 export interface BreadcrumbItem {
   label: string;
@@ -31,6 +33,11 @@ export default function AppLayout({ children, breadcrumbs, title, headerRight }:
   const [chatOpen, setChatOpen] = useState(false);
   const [snapshotsOpen, setSnapshotsOpen] = useState(false);
   const { data: unreadCount = 0 } = useCampaignUnreadCount(campaignId);
+  const { version } = useUIVersion();
+
+  if (version === "v2") {
+    return <AppShellV2>{children}</AppShellV2>;
+  }
 
   // Derive campaign name from last breadcrumb if available
   const campaignName = breadcrumbs && breadcrumbs.length > 0
