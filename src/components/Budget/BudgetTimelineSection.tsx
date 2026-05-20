@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { CalendarIcon, GripVertical, Plus, Trash2 } from "lucide-react";
 import {
   DndContext,
@@ -167,6 +167,7 @@ function TimelineRow({ entry, campaignId, onDelete }: RowProps) {
 
 // ─── Section ─────────────────────────────────────────────
 export default function BudgetTimelineSection({ campaignId, hideHeader = false, bare = false }: BudgetTimelineSectionProps) {
+  const { t } = useTranslation();
   const { data: entries = [] } = useBudgetTimeline(campaignId);
   const addEntry = useAddTimelineEntry();
   const deleteEntry = useDeleteTimelineEntry();

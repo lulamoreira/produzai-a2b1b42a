@@ -1,6 +1,6 @@
 import { Check, Lock, ChevronRight, ArrowRight, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { BudgetPhase, PHASE_LABELS, PHASE_ORDER, useBudgetPhase } from "@/hooks/useBudgetPhase";
@@ -24,6 +24,7 @@ export function PhaseStepper({
   campaignId,
   isAdjustmentApproved = false,
 }: PhaseStepperProps) {
+  const { t } = useTranslation();
   const currentIndex = PHASE_ORDER.indexOf(currentPhase);
 
   return (
@@ -68,13 +69,13 @@ export function PhaseStepper({
 
                   {isCompleted && lockedAt && (
                     <span className="text-[10px] text-muted-foreground mt-0.5">
-                      {format(new Date(lockedAt), "dd MMM", { locale: ptBR })}
+                      {format(new Date(lockedAt), "dd MMM")}
                     </span>
                   )}
 
                   {ajusteApprovedHere && (
                     <span className="text-[10px] text-emerald-600 mt-0.5 font-medium">
-                      Aprovado
+                      {t("budgets.approved")}
                     </span>
                   )}
 

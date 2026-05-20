@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 import { CalendarClock, Loader2, Minus, Plus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ export default function DeadlinePickerDialog({
   isLoading,
   defaultDays = 7,
 }: Props) {
+  const { t } = useTranslation();
   const [days, setDays] = useState(defaultDays);
 
   useEffect(() => {
@@ -111,7 +112,7 @@ export default function DeadlinePickerDialog({
               Prazo de resposta
             </div>
             <div className="text-sm font-medium text-foreground">
-              {format(deadlineDate, "EEEE, dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR })}
+              {format(deadlineDate, "EEEE, dd 'de' MMMM 'de' yyyy 'às' HH:mm")}
             </div>
             <p className="text-[11px] text-muted-foreground">
               Respostas após o prazo continuam sendo aceitas, mas ficam marcadas como atrasadas.
@@ -121,7 +122,7 @@ export default function DeadlinePickerDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-            Cancelar
+            {t("budgets.cancel")}
           </Button>
           <Button onClick={() => onConfirm(days)} disabled={isLoading}>
             {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-1.5" />}

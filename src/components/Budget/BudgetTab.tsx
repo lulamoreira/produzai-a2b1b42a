@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import {
   DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet,
 } from "lucide-react";
@@ -1141,7 +1140,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                 </p>
                 {(winnerSupplier as any).winner_declared_at && (
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    Declarada em {format(new Date((winnerSupplier as any).winner_declared_at), "dd/MM/yyyy", { locale: ptBR })}
+                    Declarada em {format(new Date((winnerSupplier as any).winner_declared_at), "dd/MM/yyyy")}
                   </p>
                 )}
               </div>
@@ -1287,7 +1286,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                             variant="outline"
                             className="h-7 w-7 shrink-0"
                             onClick={() => setDeadlineDraft(null)}
-                            title="Cancelar"
+                            title={t("budgets.cancel")}
                           >
                             <span className="text-xs">×</span>
                           </Button>
@@ -1431,7 +1430,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   })()}
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground">Sem propostas</p>
+                <p className="text-sm text-muted-foreground">{t("budgets.empty")}</p>
               )}
             </div>
             {suppliers.some((s) => s.status === "enviado") && (
@@ -1812,7 +1811,7 @@ Qualquer dúvida, estamos à disposição.
                         </div>
                         <div className="flex items-center justify-between text-[11px] pt-0.5">
                           <span className="text-muted-foreground">
-                            {sup.status === "enviado" ? "Total" : inProgress ? "Parcial" : "Sem valores"}
+                            {sup.status === "enviado" ? t("budgets.total") : inProgress ? "Parcial" : "Sem valores"}
                           </span>
                           <span className={cn(
                             "font-bold",
@@ -2982,7 +2981,7 @@ function AdjustmentSummaryCard({
       )}
       {adjustment.approved_at && (
         <p className="text-[11px] text-muted-foreground">
-          Iniciado em {format(new Date(adjustment.approved_at), "dd/MM/yyyy", { locale: ptBR })}
+          Iniciado em {format(new Date(adjustment.approved_at), "dd/MM/yyyy")}
         </p>
       )}
 
