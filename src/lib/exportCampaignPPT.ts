@@ -94,7 +94,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     x: 0, y: 0, w: 0.15, h: 7.5, fill: { color: COLORS.accent } 
   });
   
-  slideCapa.addText(campaign.agency_name || "Agência", {
+  slideCapa.addText(campaign.agency_name || "VIMER RETAIL EXPERIENCE", {
     x: 1.0, y: 0.35, color: COLORS.grayMuted, fontSize: 11, fontFace: "Calibri"
   });
   
