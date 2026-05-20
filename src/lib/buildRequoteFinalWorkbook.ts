@@ -746,6 +746,7 @@ export async function buildRequoteFinalWorkbook(
         { key: "store_model", label: "MODELO" },
         { key: "showcase_count", label: "VITRINES" },
       ],
+      extraHiddenStoreFields: params.extraHiddenStoreFields || [],
     } as any);
   } catch (e) {
     console.warn("[buildRequoteFinalWorkbook] matrix append failed", e);
