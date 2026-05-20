@@ -22,8 +22,8 @@ import { useLanguage } from "@/hooks/useLanguage";
 
 // Custom hook to mimic useFormatters() if not available or for better control
 const useFormatters = () => {
-  const { language } = useLanguage();
-  const locale = language === "pt-BR" ? ptBR : language === "es" ? es : enUS;
+  const { currentLanguage } = useLanguage();
+  const locale = currentLanguage === "pt-BR" ? ptBR : currentLanguage === "es" ? es : enUS;
 
   return {
     custom: (date: Date, pattern: string) => format(date, pattern, { locale }),
@@ -60,22 +60,22 @@ export function HomeV2() {
     queryKey: ["v2-dashboard-kpis"],
     queryFn: async () => {
       const [
-        { count: activeCampaigns },
-        { count: storesCount },
-        { count: piecesCount },
-        { count: pendingInstallations }
+        activeCampaignsRes,
+        storesCountRes,
+        piecesCountRes,
+        pendingInstallationsRes
       ] = await Promise.all([
-        supabase.from("campaigns").select("*", { count: "exact", head: true }).eq("status", "active"),
-        supabase.from("stores").select("*", { count: "exact", head: true }),
-        supabase.from("pieces").select("*", { count: "exact", head: true }),
-        supabase.from("installations").select("*", { count: "exact", head: true }).eq("status", "pending")
+        supabase.from("campaigns").select("id", { count: "exact", head: true }),
+        supabase.from("stores").select("id", { count: "exact", head: true }),
+        supabase.from("pieces").select("id", { count: "exact", head: true }),
+        supabase.from("campaign_schedules").select("id", { count: "exact", head: true }).is("completed_at", null)
       ]);
 
       return {
-        activeCampaigns: activeCampaigns || 0,
-        storesCount: storesCount || 0,
-        piecesCount: piecesCount || 0,
-        pendingInstallations: pendingInstallations || 0
+        activeCampaigns: activeCampaignsRes.count || 0,
+        storesCount: storesCountRes.count || 0,
+        piecesCount: piecesCountRes.count || 0,
+        pendingInstallations: pendingInstallationsRes.count || 0
       };
     }
   });
@@ -83,19 +83,23 @@ export function HomeV2() {
   const { data: recentCampaigns, isLoading: loadingCampaigns } = useQuery({
     queryKey: ["v2-recent-campaigns"],
     queryFn: async () => {
-      const { data } = await supabase
+      // Use maybeSingle or select with limit but avoid complex typing issues
+      const { data, error } = await supabase
         .from("campaigns")
         .select(`
           id, 
           name, 
-          status, 
           created_at,
-          clients (name),
-          campaign_pieces (count),
-          campaign_stores (count)
+          clients (name)
         `)
         .order("created_at", { ascending: false })
         .limit(6);
+      
+      if (error) {
+        console.error("Error fetching recent campaigns:", error);
+        return [];
+      }
+      
       return data || [];
     }
   });
@@ -103,11 +107,10 @@ export function HomeV2() {
   const { data: recentActivity, isLoading: loadingActivity } = useQuery({
     queryKey: ["v2-recent-activity"],
     queryFn: async () => {
-      // Combining results from different tables to simulate an activity feed
-      const [campaigns, installations, occurrences] = await Promise.all([
-        supabase.from("campaigns").select("id, name, updated_at").order("updated_at", { ascending: false }).limit(4),
-        supabase.from("installations").select("id, status, updated_at, stores(name)").order("updated_at", { ascending: false }).limit(4),
-        supabase.from("occurrences").select("id, title, updated_at").order("updated_at", { ascending: false }).limit(4)
+      const [campaigns, schedules, occurrences] = await Promise.all([
+        supabase.from("campaigns").select("id, name, created_at").order("created_at", { ascending: false }).limit(4),
+        supabase.from("campaign_schedules").select("id, created_at, stores(name)").order("created_at", { ascending: false }).limit(4),
+        supabase.from("occurrences").select("id, description, created_at").order("created_at", { ascending: false }).limit(4)
       ]);
 
       const activities = [
@@ -115,24 +118,24 @@ export function HomeV2() {
           id: `camp-${item.id}`,
           type: "campaign",
           title: item.name,
-          description: "Campanha atualizada",
-          time: new Date(item.updated_at),
+          description: "Nova campanha",
+          time: new Date(item.created_at),
           icon: Megaphone
         })),
-        ...(installations.data || []).map(item => ({
+        ...(schedules.data || []).map(item => ({
           id: `inst-${item.id}`,
           type: "installation",
           title: (item as any).stores?.name || "Instalação",
-          description: `Instalação ${item.status}`,
-          time: new Date(item.updated_at),
+          description: `Agendada`,
+          time: new Date(item.created_at),
           icon: Wrench
         })),
         ...(occurrences.data || []).map(item => ({
           id: `occ-${item.id}`,
           type: "occurrence",
-          title: item.title,
-          description: "Nova ocorrência registrada",
-          time: new Date(item.updated_at),
+          title: item.description || "Ocorrência",
+          description: "Registrada",
+          time: new Date(item.created_at || new Date()),
           icon: Package
         }))
       ];
@@ -213,7 +216,7 @@ export function HomeV2() {
                 >
                   <div className="flex justify-between items-center mb-2">
                     <Badge variant="outline" className="text-[10px] font-semibold uppercase">
-                      {camp.status}
+                      Ativa
                     </Badge>
                     <span className="text-[10px] text-stone-400">
                       {formatters.dateShort(new Date(camp.created_at))}
@@ -226,15 +229,7 @@ export function HomeV2() {
                     {(camp as any).clients?.name || "Cliente"}
                   </p>
                   <div className="border-t border-stone-100 dark:border-stone-800 mt-3 pt-3 flex justify-between items-center text-[10px] text-stone-500">
-                    <div className="flex items-center gap-3">
-                      <span className="flex items-center gap-1">
-                        <Package className="w-3 h-3" /> {(camp as any).campaign_pieces?.[0]?.count || 0}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Store className="w-3 h-3" /> {(camp as any).campaign_stores?.[0]?.count || 0}
-                      </span>
-                    </div>
-                    <ChevronRight className="w-3 h-3 text-stone-300" />
+                    <ChevronRight className="w-3 h-3 text-stone-300 ml-auto" />
                   </div>
                 </Card>
               ))

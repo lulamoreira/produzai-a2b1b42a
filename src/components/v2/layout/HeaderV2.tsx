@@ -12,7 +12,7 @@ export function HeaderV2() {
   const { t } = useTranslation();
   const location = useLocation();
   const { user } = useAuth();
-  const { language, setLanguage } = useLanguage();
+  const { currentLanguage, changeLanguage } = useLanguage();
 
   const getPageTitle = () => {
     const path = location.pathname;
@@ -40,10 +40,10 @@ export function HeaderV2() {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Language Selector - re-using existing logic */}
+        {/* Language Selector */}
         <select 
-          value={language} 
-          onChange={(e) => setLanguage(e.target.value as any)}
+          value={currentLanguage} 
+          onChange={(e) => changeLanguage(e.target.value as any)}
           className="text-xs bg-transparent border-none focus:ring-0 cursor-pointer text-stone-600 dark:text-stone-400"
         >
           <option value="pt-BR">PT</option>
