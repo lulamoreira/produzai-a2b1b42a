@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useFormatters } from "@/lib/formatters";
 import { RefreshCw, Pencil, Save, X, CalendarIcon, CheckCircle, Trash2, Clock, FileText, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ const TEAM_NONE = "__none__";
 export default function ReinstallCard({ reinstall, campaignId, storeName, canEdit, isAdminOrMaster }: Props) {
   const qc = useQueryClient();
   const updateReason = useUpdateReinstallReason();
+  const fmt = useFormatters();
   const seq = (reinstall as any).reinstall_seq ?? 0;
   const reason = (reinstall as any).reinstall_reason ?? "";
   const [editing, setEditing] = useState(false);
@@ -171,7 +172,7 @@ export default function ReinstallCard({ reinstall, campaignId, storeName, canEdi
               <PopoverTrigger asChild>
                 <Button size="sm" variant="outline" disabled={!editAllowed} className="h-7 px-2 text-xs flex-1 justify-start">
                   {scheduledDate
-                    ? format(scheduledDate, "dd/MM/yyyy", { locale: ptBR })
+                    ? fmt.dateShort(scheduledDate)
                     : "Definir"}
                 </Button>
               </PopoverTrigger>

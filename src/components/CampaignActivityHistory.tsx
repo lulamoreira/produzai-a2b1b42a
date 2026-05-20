@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useCampaignActivityLog, type CampaignActivity } from "@/hooks/useCampaignActivityLog";
 import { format, isToday, isYesterday, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useFormatters } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -49,17 +49,17 @@ const iconColorClasses: Record<string, string> = {
   neutral: "bg-muted text-muted-foreground",
 };
 
-function groupByDate(activities: CampaignActivity[]): { label: string; items: CampaignActivity[] }[] {
+function groupByDate(activities: CampaignActivity[], fmt: any): { label: string; items: CampaignActivity[] }[] {
   const groups: Record<string, CampaignActivity[]> = {};
   for (const a of activities) {
     const date = parseISO(a.created_at);
     let label: string;
     if (isToday(date)) {
-      label = `Hoje — ${format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
+      label = `Hoje — ${fmt.date(date)}`;
     } else if (isYesterday(date)) {
-      label = `Ontem — ${format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
+      label = `Ontem — ${fmt.date(date)}`;
     } else {
-      label = format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+      label = fmt.date(date);
     }
     if (!groups[label]) groups[label] = [];
     groups[label].push(a);
@@ -73,6 +73,7 @@ interface Props {
 
 export default function CampaignActivityHistory({ campaignId }: Props) {
   const [actionFilter, setActionFilter] = useState<string>("__all__");
+  const fmt = useFormatters();
   const [actorTypeFilter, setActorTypeFilter] = useState<string>("__all__");
   const [storeSearch, setStoreSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -92,7 +93,7 @@ export default function CampaignActivityHistory({ campaignId }: Props) {
   const allActivities = useMemo(() =>
     data?.pages.flatMap(p => p) ?? [], [data]);
 
-  const grouped = useMemo(() => groupByDate(allActivities), [allActivities]);
+  const grouped = useMemo(() => groupByDate(allActivities, fmt), [allActivities, fmt]);
 
   return (
     <div className="space-y-4">

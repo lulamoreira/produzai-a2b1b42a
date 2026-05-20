@@ -1,4 +1,5 @@
 import { Fragment, useState, useMemo, useEffect } from "react";
+import { useFormatters } from "@/lib/formatters";
 import { useQuery } from "@tanstack/react-query";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -59,6 +60,7 @@ function ChangeBadge({ type }: { type: string }) {
 export default function AdjustmentDetailSheet({
   open, onOpenChange, adjustment, campaignId, campaignName, winnerSupplierId, hasNegotiationRateio,
 }: Props) {
+  const fmt = useFormatters();
   // Ajuste é sempre editável (mesmo Ativo ou Substituído)
   const readOnly = false;
   const { data: pieces = [], isLoading: piecesLoading } = useAdjustmentPieces(adjustment.id);

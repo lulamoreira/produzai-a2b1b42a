@@ -30,7 +30,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useFormatters } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { buildRescheduleToggleUpdates } from "@/lib/scheduleHelpers";
 import { toast } from "sonner";
@@ -68,7 +68,7 @@ function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string
   const firstName = contactName.split(" ")[0];
   const agencyFirst = agencyName.split(" ")[0];
   const clientFirst = clientName.split(" ")[0];
-  const dateStr = date ? format(new Date(date + "T12:00:00"), "dd/MM/yyyy") : "(data a definir)";
+  const dateStr = date ? fmt.dateShort(new Date(date + "T12:00:00")) : "(data a definir)";
   const timeStr = time || "(horário a definir)";
 
   const message = messageTemplate
@@ -89,6 +89,7 @@ function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string
 
 const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, campaignName, clientId, agencyId, initialFilter, onInitialFilterApplied }: SchedulingTabProps) => {
   const { t } = useTranslation();
+  const fmt = useFormatters();
   const PREFERENCE_OPTIONS = useMemo(() => [
     { value: "not_informed", label: t("scheduling.notInformed"), icon: HelpCircle },
     { value: "morning", label: t("scheduling.morning"), icon: Sun },

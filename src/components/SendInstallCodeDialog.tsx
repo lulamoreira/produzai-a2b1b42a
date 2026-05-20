@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Copy, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useFormatters } from "@/lib/formatters";
 import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 
 interface SendInstallCodeDialogProps {
@@ -23,6 +23,7 @@ export default function SendInstallCodeDialog({
   open, onOpenChange, schedule, store, team, teamMembers, agencyName, campaignName,
 }: SendInstallCodeDialogProps) {
   const [sending, setSending] = useState(false);
+  const fmt = useFormatters();
   const logCampaignActivity = useLogCampaignActivity();
 
   if (!schedule?.install_code) return null;
@@ -43,7 +44,7 @@ export default function SendInstallCodeDialog({
     : schedule.installation_preference;
 
   const dateLabel = scheduledDate
-    ? format(new Date(scheduledDate + "T12:00:00"), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+    ? fmt.date(new Date(scheduledDate + "T12:00:00"))
     : "";
   const prefLabel = preference === "morning" ? "Manhã" : preference === "afternoon" ? "Tarde" : preference === "night" ? "Noite" : "";
   const address = [store?.street, store?.number, store?.complement, store?.neighborhood, store?.city, store?.state]

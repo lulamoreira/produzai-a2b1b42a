@@ -4,7 +4,7 @@
 import { useState, useRef } from "react";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useFormatters } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -47,6 +47,7 @@ interface Props {
 
 const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canEditReporter = false, onFieldChange }: Props) => {
   const { user } = useAuth();
+  const fmt = useFormatters();
   const qc = useQueryClient();
   const updateFields = useUpdateOccurrenceFields();
   const { data: comments = [] } = useOccurrenceComments(occ.id);
@@ -288,7 +289,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="h-7 text-xs w-full justify-start">
                       <CalendarIcon className="w-3 h-3 mr-1.5" />
-                      {occ.reinstallation_datetime ? format(new Date(occ.reinstallation_datetime), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "Selecione data e hora"}
+                      {occ.reinstallation_datetime ? fmt.dateTime(new Date(occ.reinstallation_datetime)) : "Selecione data e hora"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -319,7 +320,7 @@ const OccurrenceDetailFields = ({ occ, campaignId, pieceLocations, canEdit, canE
                   </PopoverContent>
                 </Popover>
               ) : (
-                <span className="text-xs">{occ.reinstallation_datetime ? format(new Date(occ.reinstallation_datetime), "dd/MM/yyyy HH:mm", { locale: ptBR }) : "—"}</span>
+                <span className="text-xs">{occ.reinstallation_datetime ? fmt.dateTime(new Date(occ.reinstallation_datetime)) : "—"}</span>
               )}
             </div>
           </div>

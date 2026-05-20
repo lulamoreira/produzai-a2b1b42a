@@ -11,11 +11,11 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useFormatters } from "@/lib/formatters";
 
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const fmt = useFormatters();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -84,10 +84,7 @@ export default function NotificationBell() {
                   <p className="text-sm font-medium leading-tight truncate">{notif.title}</p>
                   <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.body}</p>
                   <p className="text-[10px] text-muted-foreground/70 mt-1">
-                    {formatDistanceToNow(new Date(notif.created_at), {
-                      addSuffix: true,
-                      locale: ptBR,
-                    })}
+                    {fmt.relative(new Date(notif.created_at))}
                   </p>
                 </div>
               </DropdownMenuItem>

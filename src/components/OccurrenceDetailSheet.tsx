@@ -4,7 +4,7 @@
 import { useState, useRef } from "react";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useFormatters } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -80,6 +80,7 @@ export function OccurrenceDetailSheet({
   onOpenLightbox, canLockCards, agencyId, clientId, getStoreName, getStoreInfo, getMotiveName, getPieceName,
 }: OccurrenceDetailSheetProps) {
   const { user } = useAuth();
+  const fmt = useFormatters();
   const { isAdminOrMaster } = useUserRole();
   const qc = useQueryClient();
   const deleteOcc = useDeleteOccurrence();
@@ -321,7 +322,7 @@ export function OccurrenceDetailSheet({
                 <Separator />
                 <div className="flex items-center justify-between py-1.5">
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1"><CalendarIcon className="w-3 h-3" /> Criado em</span>
-                  <span className="text-xs text-foreground">{occ.created_at ? format(new Date(occ.created_at), "dd/MM/yyyy HH:mm") : "—"}</span>
+                  <span className="text-xs text-foreground">{occ.created_at ? fmt.dateTime(new Date(occ.created_at)) : "—"}</span>
                 </div>
               </div>
 
@@ -359,7 +360,7 @@ export function OccurrenceDetailSheet({
                       <Button variant="outline" className="h-7 text-xs w-full justify-start">
                         <CalendarIcon className="w-3 h-3 mr-1.5" />
                         {merged.expected_resolution_date
-                          ? format(parseLocalDate(merged.expected_resolution_date) || new Date(), "dd/MM/yyyy", { locale: ptBR })
+                          ? fmt.date(parseLocalDate(merged.expected_resolution_date) || new Date())
                           : "Selecione uma data"}
                       </Button>
                     </PopoverTrigger>
